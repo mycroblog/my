@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: The viewer's private note on an account.
+type: object
+required: [note]
+properties:
+  note:
+    description: |
+      The note, up to 2,000 characters (Unicode code points). An empty note removes the one
+      the viewer has.
+    type: string
+    maxLength: 2000

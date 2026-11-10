@@ -21,8 +21,9 @@ import (
 )
 
 // TestDataExportHoldsFollowedHashtagsAndKeywordFilters checks that the archive of a data export (FR-008) holds the
-// hashtags the user follows as followed_hashtags.csv, one per line, as GET /csv_exports does, and
-// the user's keyword filters as keyword_filters.json (ADR-0157 §8).
+// hashtags the user follows as followed_hashtags.csv, one per line, as GET /csv_exports does,
+// the user's keyword filters as keyword_filters.json (ADR-0157 §8), and the user's private notes
+// on accounts as account_notes.json (FR-310), without the notes of others.
 func TestDataExportHoldsFollowedHashtagsAndKeywordFilters(t *testing.T) {
 	t.Parallel()
 	// The inline queue builds the archive before POST /exports answers.
@@ -33,7 +34,13 @@ func TestDataExportHoldsFollowedHashtagsAndKeywordFilters(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = app.Close() })
 	e := &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}
-	alice := e.user("alice")
+	alice, bob := e.user("alice"), e.user("bob")
+	if _, err := e.app.Graph.SetNote(t.Context(), alice.id, bob.id, "Met at the meetup"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.app.Graph.SetNote(t.Context(), bob.id, alice.id, "Bob's note"); err != nil {
+		t.Fatal(err)
+	}
 	for _, tag := range []string{"Cats", "#dogs"} {
 		if _, err := e.app.Timeline.FollowTag(t.Context(), alice.id, tag); err != nil {
 			t.Fatal(err)
@@ -63,6 +70,10 @@ func TestDataExportHoldsFollowedHashtagsAndKeywordFilters(t *testing.T) {
 			checkKeywordFiltersFile(t, f)
 			continue
 		}
+		if f.Name == "account_notes.json" {
+			checkAccountNotesFile(t, f, bob.id)
+			continue
+		}
 		if f.Name != "followed_hashtags.csv" {
 			continue
 		}
@@ -78,7 +89,7 @@ func TestDataExportHoldsFollowedHashtagsAndKeywordFilters(t *testing.T) {
 			t.Errorf("followed_hashtags.csv = %q, want Cats and dogs", csv)
 		}
 	}
-	for _, name := range []string{"followed_hashtags.csv", "keyword_filters.json"} {
+	for _, name := range []string{"followed_hashtags.csv", "keyword_filters.json", "account_notes.json"} {
 		if !slices.Contains(names, name) {
 			t.Errorf("the archive holds %v, without %s", names, name)
 		}
@@ -112,5 +123,28 @@ func checkKeywordFiltersFile(t *testing.T, f *zip.File) {
 		!slices.Equal(doc.Filters[0].Contexts, []string{"home"}) || len(doc.Filters[0].Keywords) != 1 ||
 		doc.Filters[0].Keywords[0].Keyword != "Spoiler" || !doc.Filters[0].Keywords[0].WholeWord {
 		t.Errorf("keyword_filters.json = %+v, want the Spoilers filter", doc)
+	}
+}
+
+// checkAccountNotesFile checks the account_notes.json of the archive: the one note, on target.
+func checkAccountNotesFile(t *testing.T, f *zip.File, target string) {
+	t.Helper()
+	r, err := f.Open()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = r.Close() }()
+	var doc struct {
+		Notes []struct {
+			AccountID  string `json:"account_id"`
+			AccountURI string `json:"account_uri"`
+			Note       string `json:"note"`
+		} `json:"notes"`
+	}
+	if err := json.NewDecoder(r).Decode(&doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Notes) != 1 || doc.Notes[0].AccountID != target || doc.Notes[0].Note != "Met at the meetup" || doc.Notes[0].AccountURI == "" {
+		t.Errorf("account_notes.json = %+v, want the note on %s alone", doc, target)
 	}
 }

@@ -5374,6 +5374,13 @@ type AccountMove struct {
 // the user mutes the server of `target` (`domain_muted`).
 type AccountMoveOutcome string
 
+// AccountNoteUpdate The viewer's private note on an account.
+type AccountNoteUpdate struct {
+	// Note The note, up to 2,000 characters (Unicode code points). An empty note removes the one
+	// the viewer has.
+	Note string `json:"note"`
+}
+
 // AccountPage A page of accounts.
 type AccountPage struct {
 	Items []Account `json:"items"`
@@ -14032,7 +14039,7 @@ type RejectCustomEmojiRequestRequest struct {
 // rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
 // `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
 // `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
-// `read:mutes` or `write:mutes`.
+// `read:mutes` or `write:mutes`; `note` needs `read:accounts` or `write:accounts`.
 type Relationship struct {
 	// Blocking Whether the viewer blocks the account.
 	Blocking *bool `json:"blocking,omitempty"`
@@ -14053,6 +14060,10 @@ type Relationship struct {
 
 	// MutingNotifications Whether the viewer's mute also hides the account's notifications.
 	MutingNotifications *bool `json:"muting_notifications,omitempty"`
+
+	// Note The viewer's private note on the account (`setAccountNote`), empty without one. Only the
+	// viewer reads it.
+	Note *string `json:"note,omitempty"`
 
 	// Notify Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
 	// without a follow. A subscription asked for with a follow request to an account on another
@@ -17242,6 +17253,9 @@ type FollowAccountJSONRequestBody = FollowAccountRequest
 // MuteAccountJSONRequestBody defines body for MuteAccount for application/json ContentType.
 type MuteAccountJSONRequestBody = MuteAccountRequest
 
+// SetAccountNoteJSONRequestBody defines body for SetAccountNote for application/json ContentType.
+type SetAccountNoteJSONRequestBody = AccountNoteUpdate
+
 // LiftAccountActionJSONRequestBody defines body for LiftAccountAction for application/json ContentType.
 type LiftAccountActionJSONRequestBody = LiftAccountActionRequest
 
@@ -19806,6 +19820,37 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/mute (the `MuteAccount` operationId).
 	MuteAccount(ctx context.Context, id AccountId, body MuteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAccountNote Remove the private note on an account
+	//
+	// Without a note it changes nothing. It also works on an account that blocks the user.
+	//
+	// Corresponds with DELETE /accounts/{id}/note (the `DeleteAccountNote` operationId).
+	DeleteAccountNote(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetAccountNoteWithBody Write a private note on an account
+	//
+	// Replaces the viewer's private note on the account, a local or a remote one. Only the
+	// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+	// not leave this server. An empty `note` removes the note. A note on the viewer's own
+	// account is a 422.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+	SetAccountNoteWithBody(ctx context.Context, id AccountId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetAccountNote Write a private note on an account
+	//
+	// Replaces the viewer's private note on the account, a local or a remote one. Only the
+	// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+	// not leave this server. An empty `note` removes the note. A note on the viewer's own
+	// account is a 422.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+	SetAccountNote(ctx context.Context, id AccountId, body SetAccountNoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListAccountStatuses List the posts and boosts of an account
 	//
@@ -23303,7 +23348,9 @@ type ClientInterface interface {
 	// Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 	// `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 	// activities), `moderation.json` (the moderation actions on the account, its appeals, and
-	// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+	// the reports it filed), `keyword_filters.json` (the user's keyword filters),
+	// `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+	// URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
 	// `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
 	// `pending` until the archive is built. While
 	// another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -26952,6 +26999,67 @@ func (c *Client) MuteAccountWithBody(ctx context.Context, id AccountId, contentT
 // Corresponds with POST /accounts/{id}/mute (the `MuteAccount` operationId).
 func (c *Client) MuteAccount(ctx context.Context, id AccountId, body MuteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMuteAccountRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteAccountNote Remove the private note on an account
+//
+// Without a note it changes nothing. It also works on an account that blocks the user.
+//
+// Corresponds with DELETE /accounts/{id}/note (the `DeleteAccountNote` operationId).
+func (c *Client) DeleteAccountNote(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAccountNoteRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetAccountNoteWithBody Write a private note on an account
+//
+// Replaces the viewer's private note on the account, a local or a remote one. Only the
+// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+// not leave this server. An empty `note` removes the note. A note on the viewer's own
+// account is a 422.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+func (c *Client) SetAccountNoteWithBody(ctx context.Context, id AccountId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetAccountNoteRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetAccountNote Write a private note on an account
+//
+// Replaces the viewer's private note on the account, a local or a remote one. Only the
+// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+// not leave this server. An empty `note` removes the note. A note on the viewer's own
+// account is a 422.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+func (c *Client) SetAccountNote(ctx context.Context, id AccountId, body SetAccountNoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetAccountNoteRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -33298,7 +33406,9 @@ func (c *Client) ListDataExports(ctx context.Context, reqEditors ...RequestEdito
 // Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 // `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 // activities), `moderation.json` (the moderation actions on the account, its appeals, and
-// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+// the reports it filed), `keyword_filters.json` (the user's keyword filters),
+// `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+// URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
 // `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
 // `pending` until the archive is built. While
 // another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -39372,6 +39482,87 @@ func NewMuteAccountRequestWithBody(server string, id AccountId, contentType stri
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteAccountNoteRequest constructs an http.Request for the DeleteAccountNote method
+func NewDeleteAccountNoteRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/note", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSetAccountNoteRequest calls the generic SetAccountNote builder with application/json body
+func NewSetAccountNoteRequest(server string, id AccountId, body SetAccountNoteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetAccountNoteRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewSetAccountNoteRequestWithBody constructs an http.Request for the SetAccountNote method, with any body, and a specified content type
+func NewSetAccountNoteRequestWithBody(server string, id AccountId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/note", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -57307,6 +57498,39 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /accounts/{id}/mute (the `MuteAccount` operationId).
 	MuteAccountWithResponse(ctx context.Context, id AccountId, body MuteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*MuteAccountResponse, error)
 
+	// DeleteAccountNoteWithResponse Remove the private note on an account
+	//
+	// Without a note it changes nothing. It also works on an account that blocks the user.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/{id}/note (the `DeleteAccountNote` operationId).
+	DeleteAccountNoteWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*DeleteAccountNoteResponse, error)
+
+	// SetAccountNoteWithBodyWithResponse Write a private note on an account
+	//
+	// Replaces the viewer's private note on the account, a local or a remote one. Only the
+	// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+	// not leave this server. An empty `note` removes the note. A note on the viewer's own
+	// account is a 422.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+	SetAccountNoteWithBodyWithResponse(ctx context.Context, id AccountId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAccountNoteResponse, error)
+
+	// SetAccountNoteWithResponse Write a private note on an account
+	//
+	// Replaces the viewer's private note on the account, a local or a remote one. Only the
+	// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+	// not leave this server. An empty `note` removes the note. A note on the viewer's own
+	// account is a 422.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+	SetAccountNoteWithResponse(ctx context.Context, id AccountId, body SetAccountNoteJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAccountNoteResponse, error)
+
 	// ListAccountStatusesWithResponse List the posts and boosts of an account
 	//
 	// The account's posts and boosts that the viewer may see, newest first: its public and unlisted posts
@@ -61123,7 +61347,9 @@ type ClientWithResponsesInterface interface {
 	// Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 	// `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 	// activities), `moderation.json` (the moderation actions on the account, its appeals, and
-	// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+	// the reports it filed), `keyword_filters.json` (the user's keyword filters),
+	// `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+	// URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
 	// `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
 	// `pending` until the archive is built. While
 	// another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -65881,6 +66107,136 @@ func (r MuteAccountResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r MuteAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeleteAccountNoteResponse200Headers the declared response headers of an HTTP 200 response for DeleteAccountNote
+type DeleteAccountNoteResponse200Headers struct {
+	CacheControl *string
+}
+
+// DeleteAccountNoteResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteAccountNote
+type DeleteAccountNoteResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeleteAccountNoteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *DeleteAccountNoteResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeleteAccountNoteResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DeleteAccountNoteResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeleteAccountNoteResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteAccountNoteResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAccountNoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAccountNoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteAccountNoteResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SetAccountNoteResponse200Headers the declared response headers of an HTTP 200 response for SetAccountNote
+type SetAccountNoteResponse200Headers struct {
+	CacheControl *string
+}
+
+// SetAccountNoteResponseDefaultHeaders the declared response headers of an HTTP default response for SetAccountNote
+type SetAccountNoteResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SetAccountNoteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SetAccountNoteResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SetAccountNoteResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetAccountNoteResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SetAccountNoteResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SetAccountNoteResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetAccountNoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetAccountNoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetAccountNoteResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -92315,6 +92671,57 @@ func (c *ClientWithResponses) MuteAccountWithResponse(ctx context.Context, id Ac
 	return ParseMuteAccountResponse(rsp)
 }
 
+// DeleteAccountNoteWithResponse Remove the private note on an account
+//
+// Without a note it changes nothing. It also works on an account that blocks the user.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/{id}/note (the `DeleteAccountNote` operationId).
+func (c *ClientWithResponses) DeleteAccountNoteWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*DeleteAccountNoteResponse, error) {
+	rsp, err := c.DeleteAccountNote(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAccountNoteResponse(rsp)
+}
+
+// SetAccountNoteWithBodyWithResponse Write a private note on an account
+//
+// Replaces the viewer's private note on the account, a local or a remote one. Only the
+// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+// not leave this server. An empty `note` removes the note. A note on the viewer's own
+// account is a 422.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+func (c *ClientWithResponses) SetAccountNoteWithBodyWithResponse(ctx context.Context, id AccountId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAccountNoteResponse, error) {
+	rsp, err := c.SetAccountNoteWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetAccountNoteResponse(rsp)
+}
+
+// SetAccountNoteWithResponse Write a private note on an account
+//
+// Replaces the viewer's private note on the account, a local or a remote one. Only the
+// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+// not leave this server. An empty `note` removes the note. A note on the viewer's own
+// account is a 422.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+func (c *ClientWithResponses) SetAccountNoteWithResponse(ctx context.Context, id AccountId, body SetAccountNoteJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAccountNoteResponse, error) {
+	rsp, err := c.SetAccountNote(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetAccountNoteResponse(rsp)
+}
+
 // ListAccountStatusesWithResponse List the posts and boosts of an account
 //
 // The account's posts and boosts that the viewer may see, newest first: its public and unlisted posts
@@ -97835,7 +98242,9 @@ func (c *ClientWithResponses) ListDataExportsWithResponse(ctx context.Context, r
 // Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 // `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 // activities), `moderation.json` (the moderation actions on the account, its appeals, and
-// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+// the reports it filed), `keyword_filters.json` (the user's keyword filters),
+// `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+// URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
 // `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
 // `pending` until the archive is built. While
 // another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -104244,6 +104653,160 @@ func ParseMuteAccountResponse(rsp *http.Response) (*MuteAccountResponse, error) 
 		response.Headers200 = &headers
 	case true:
 		var headers MuteAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAccountNoteResponse parses an HTTP response from a DeleteAccountNoteWithResponse call
+func ParseDeleteAccountNoteResponse(rsp *http.Response) (*DeleteAccountNoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAccountNoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers DeleteAccountNoteResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers DeleteAccountNoteResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSetAccountNoteResponse parses an HTTP response from a SetAccountNoteWithResponse call
+func ParseSetAccountNoteResponse(rsp *http.Response) (*SetAccountNoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetAccountNoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SetAccountNoteResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers SetAccountNoteResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

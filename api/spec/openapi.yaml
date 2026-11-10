@@ -272,6 +272,8 @@ paths:
     $ref: ./paths/accounts_{id}_featured_tags.yaml
   /accounts/{id}/mute:
     $ref: ./paths/accounts_{id}_mute.yaml
+  /accounts/{id}/note:
+    $ref: ./paths/accounts_{id}_note.yaml
   /accounts/{id}/follower:
     $ref: ./paths/accounts_{id}_follower.yaml
   /accounts/{id}/subscribe:
@@ -1211,6 +1213,8 @@ components:
       $ref: ./components/schemas/AccountBadge.yaml
     AccountMove:
       $ref: ./components/schemas/AccountMove.yaml
+    AccountNoteUpdate:
+      $ref: ./components/schemas/AccountNoteUpdate.yaml
     AccountFieldSource:
       $ref: ./components/schemas/AccountFieldSource.yaml
     AccountPage:

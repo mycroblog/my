@@ -929,7 +929,9 @@ export interface paths {
          * @description Starts building a ZIP archive of the user's data: `actor.json` (the actor),
          *     `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
          *     activities), `moderation.json` (the moderation actions on the account, its appeals, and
-         *     the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+         *     the reports it filed), `keyword_filters.json` (the user's keyword filters),
+         *     `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+         *     URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
          *     `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
          *     `pending` until the archive is built. While
          *     another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -1930,6 +1932,33 @@ export interface paths {
          * @description Without a mute it changes nothing. It also works on an account that blocks the user.
          */
         delete: operations["unmuteAccount"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/note": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Write a private note on an account
+         * @description Replaces the viewer's private note on the account, a local or a remote one. Only the
+         *     viewer reads the note (`Relationship.note`); the account is not told, and the note does
+         *     not leave this server. An empty `note` removes the note. A note on the viewer's own
+         *     account is a 422.
+         */
+        put: operations["setAccountNote"];
+        post?: never;
+        /**
+         * Remove the private note on an account
+         * @description Without a note it changes nothing. It also works on an account that blocks the user.
+         */
+        delete: operations["deleteAccountNote"];
         options?: never;
         head?: never;
         patch?: never;
@@ -9539,6 +9568,14 @@ export interface components {
              */
             outcome?: "followed" | "requested" | "blocking" | "blocked_by" | "domain_muted";
         };
+        /** @description The viewer's private note on an account. */
+        AccountNoteUpdate: {
+            /**
+             * @description The note, up to 2,000 characters (Unicode code points). An empty note removes the one
+             *     the viewer has.
+             */
+            note: string;
+        };
         /** @description A metadata field of a profile as the user typed it. */
         AccountFieldSource: {
             /** @description The label, at most 255 characters. */
@@ -16104,7 +16141,7 @@ export interface components {
          *     rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
          *     `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
          *     `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
-         *     `read:mutes` or `write:mutes`.
+         *     `read:mutes` or `write:mutes`; `note` needs `read:accounts` or `write:accounts`.
          */
         Relationship: {
             id: components["schemas"]["Id"];
@@ -16130,6 +16167,11 @@ export interface components {
             muting?: boolean;
             /** @description Whether the viewer's mute also hides the account's notifications. */
             muting_notifications?: boolean;
+            /**
+             * @description The viewer's private note on the account (`setAccountNote`), empty without one. Only the
+             *     viewer reads it.
+             */
+            note?: string;
         };
         /**
          * @description The follows that a `relationships_severed` tells of: the user lost them when the
@@ -20428,6 +20470,42 @@ export interface operations {
         };
     };
     unmuteAccount: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Relationship"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    setAccountNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AccountNoteUpdate"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Relationship"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteAccountNote: {
         parameters: {
             query?: never;
             header?: never;

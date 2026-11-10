@@ -36,6 +36,7 @@
 | FR-301〜302 フォロー・リクエスト | M | `follows`, `follow_acceptances`, `follow_rejections`, `follow_terminations`, `follow_edges` |
 | FR-303 ブロック・ミュート | M | `blocks`, `block_retractions`, `block_edges`, `mutes` |
 | FR-304 ドメインミュート | C | `account_domain_mutes`, `feed_domain_mutes`, `notification_domain_exclusions` |
+| FR-310 アカウントへの非公開のメモ | S | `account_notes` |
 | FR-305 リモートアカウント検索 | M | `account_handles`, `accounts.uri` |
 | FR-306 アカウントとハッシュタグの前方一致の検索（FR-119 の `@` と `#` の補完） | S | `account_search_terms`, `tags`, `tag_usage` |
 | FR-307 このサーバーのアカウントの部分一致の検索と見つけてもらう設定 | M | `account_search_terms`（`infix`・`exact_username`）, `account_profile_revisions`（`discoverable`） |

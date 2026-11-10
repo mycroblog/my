@@ -1490,7 +1490,9 @@ paths:
         Starts building a ZIP archive of the user's data: `actor.json` (the actor),
         `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
         activities), `moderation.json` (the moderation actions on the account, its appeals, and
-        the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+        the reports it filed), `keyword_filters.json` (the user's keyword filters),
+        `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+        URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
         `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
         `pending` until the archive is built. While
         another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -2881,6 +2883,49 @@ paths:
       security:
         - oauth2:
             - write:mutes
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
+  /accounts/{id}/note:
+    put:
+      operationId: setAccountNote
+      summary: Write a private note on an account
+      description: |
+        Replaces the viewer's private note on the account, a local or a remote one. Only the
+        viewer reads the note (`Relationship.note`); the account is not told, and the note does
+        not leave this server. An empty `note` removes the note. A note on the viewer's own
+        account is a 422.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountNoteUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteAccountNote
+      summary: Remove the private note on an account
+      description: Without a note it changes nothing. It also works on an account that blocks the user.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:accounts
       parameters:
         - $ref: '#/components/parameters/AccountId'
       responses:
@@ -14467,6 +14512,18 @@ components:
             - blocking
             - blocked_by
             - domain_muted
+    AccountNoteUpdate:
+      description: The viewer's private note on an account.
+      type: object
+      required:
+        - note
+      properties:
+        note:
+          description: |
+            The note, up to 2,000 characters (Unicode code points). An empty note removes the one
+            the viewer has.
+          type: string
+          maxLength: 2000
     AccountFieldSource:
       description: A metadata field of a profile as the user typed it.
       type: object
@@ -25234,7 +25291,7 @@ components:
         rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
         `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
         `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
-        `read:mutes` or `write:mutes`.
+        `read:mutes` or `write:mutes`; `note` needs `read:accounts` or `write:accounts`.
       type: object
       required:
         - id
@@ -25271,6 +25328,12 @@ components:
         muting_notifications:
           description: Whether the viewer's mute also hides the account's notifications.
           type: boolean
+        note:
+          description: |
+            The viewer's private note on the account (`setAccountNote`), empty without one. Only the
+            viewer reads it.
+          type: string
+          maxLength: 2000
     RelationshipSeverance:
       description: |
         The follows that a `relationships_severed` tells of: the user lost them when the

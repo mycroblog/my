@@ -93,6 +93,10 @@ type Relationship struct {
 	// MutingNotifications that the mute also hides the target's notifications.
 	Muting              bool
 	MutingNotifications bool
+	// Note is the account's private note on the target (FR-310), "" without one. Only
+	// Relationship and Relationships read it: RelationshipsWith, whose accounts are not the
+	// reader, leaves it empty.
+	Note string
 }
 
 // ActivelyFollowing reports whether the account's follow of the target is active; a pending
@@ -395,7 +399,15 @@ func (s *Service) changePreferencesIn(ctx context.Context, tx uow.Tx, edge graph
 
 // Relationship returns the follow, block, and mute relationship between accountID and targetID.
 func (s *Service) Relationship(ctx context.Context, accountID, targetID string) (Relationship, error) {
-	return relationshipOf(ctx, repoRelationshipReads{s.d.Repository}, accountID, targetID, s.d.Clock.Now())
+	r, err := relationshipOf(ctx, repoRelationshipReads{s.d.Repository}, accountID, targetID, s.d.Clock.Now())
+	if err != nil {
+		return Relationship{}, err
+	}
+	r.Note, err = s.noteOf(ctx, accountID, targetID)
+	if err != nil {
+		return Relationship{}, err
+	}
+	return r, nil
 }
 
 // Relationships returns the relationship of accountID with each of targetIDs, by target, as
@@ -411,10 +423,17 @@ func (s *Service) Relationships(ctx context.Context, accountID string, targetIDs
 	if err != nil {
 		return nil, err
 	}
+	notes, err := s.d.Repository.FindNotesOn(ctx, accountID, targetIDs)
+	if err != nil {
+		return nil, err
+	}
 	for _, id := range targetIDs {
-		if out[id], err = relationshipOf(ctx, partRelationshipReads(parts), accountID, id, now); err != nil {
+		r, err := relationshipOf(ctx, partRelationshipReads(parts), accountID, id, now)
+		if err != nil {
 			return nil, err
 		}
+		r.Note = notes[id].Text
+		out[id] = r
 	}
 	return out, nil
 }

@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: MIT
+put:
+  operationId: setAccountNote
+  summary: Write a private note on an account
+  description: |
+    Replaces the viewer's private note on the account, a local or a remote one. Only the
+    viewer reads the note (`Relationship.note`); the account is not told, and the note does
+    not leave this server. An empty `note` removes the note. A note on the viewer's own
+    account is a 422.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/AccountNoteUpdate.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Relationship.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: deleteAccountNote
+  summary: Remove the private note on an account
+  description: Without a note it changes nothing. It also works on an account that blocks the user.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:accounts"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Relationship.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

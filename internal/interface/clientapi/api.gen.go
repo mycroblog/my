@@ -5376,6 +5376,13 @@ type AccountMove struct {
 // the user mutes the server of `target` (`domain_muted`).
 type AccountMoveOutcome string
 
+// AccountNoteUpdate The viewer's private note on an account.
+type AccountNoteUpdate struct {
+	// Note The note, up to 2,000 characters (Unicode code points). An empty note removes the one
+	// the viewer has.
+	Note string `json:"note"`
+}
+
 // AccountPage A page of accounts.
 type AccountPage struct {
 	Items []Account `json:"items"`
@@ -14029,7 +14036,7 @@ type RejectCustomEmojiRequestRequest struct {
 // rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
 // `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
 // `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
-// `read:mutes` or `write:mutes`.
+// `read:mutes` or `write:mutes`; `note` needs `read:accounts` or `write:accounts`.
 type Relationship struct {
 	// Blocking Whether the viewer blocks the account.
 	Blocking *bool `json:"blocking,omitempty"`
@@ -14050,6 +14057,10 @@ type Relationship struct {
 
 	// MutingNotifications Whether the viewer's mute also hides the account's notifications.
 	MutingNotifications *bool `json:"muting_notifications,omitempty"`
+
+	// Note The viewer's private note on the account (`setAccountNote`), empty without one. Only the
+	// viewer reads it.
+	Note *string `json:"note,omitempty"`
 
 	// Notify Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
 	// without a follow. A subscription asked for with a follow request to an account on another
@@ -17233,6 +17244,9 @@ type FollowAccountJSONRequestBody = FollowAccountRequest
 // MuteAccountJSONRequestBody defines body for MuteAccount for application/json ContentType.
 type MuteAccountJSONRequestBody = MuteAccountRequest
 
+// SetAccountNoteJSONRequestBody defines body for SetAccountNote for application/json ContentType.
+type SetAccountNoteJSONRequestBody = AccountNoteUpdate
+
 // LiftAccountActionJSONRequestBody defines body for LiftAccountAction for application/json ContentType.
 type LiftAccountActionJSONRequestBody = LiftAccountActionRequest
 
@@ -17661,6 +17675,12 @@ type ServerInterface interface {
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	// DeleteAccountNote Remove the private note on an account
+	// (DELETE /accounts/{id}/note)
+	DeleteAccountNote(w http.ResponseWriter, r *http.Request, id AccountId)
+	// SetAccountNote Write a private note on an account
+	// (PUT /accounts/{id}/note)
+	SetAccountNote(w http.ResponseWriter, r *http.Request, id AccountId)
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params ListAccountStatusesParams)
@@ -19597,6 +19617,58 @@ func (siw *ServerInterfaceWrapper) MuteAccount(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.MuteAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAccountNote operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAccountNote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAccountNote(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetAccountNote operation middleware
+func (siw *ServerInterfaceWrapper) SetAccountNote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetAccountNote(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31269,6 +31341,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/featured_tags", wrapper.ListAccountFeaturedTags)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.UnmuteAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.MuteAccount)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/note", wrapper.DeleteAccountNote)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/accounts/{id}/note", wrapper.SetAccountNote)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/follower", wrapper.RemoveFollower)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.UnsubscribeAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.SubscribeAccount)
@@ -33790,6 +33864,117 @@ type MuteAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response MuteAccountdefaultApplicationProblemPlusJSONResponse) VisitMuteAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAccountNoteRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type DeleteAccountNoteResponseObject interface {
+	VisitDeleteAccountNoteResponse(w http.ResponseWriter) error
+}
+
+type DeleteAccountNote200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response DeleteAccountNote200JSONResponse) VisitDeleteAccountNoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAccountNotedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DeleteAccountNotedefaultApplicationProblemPlusJSONResponse) VisitDeleteAccountNoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountNoteRequestObject struct {
+	Id   AccountId `json:"id"`
+	Body *SetAccountNoteJSONRequestBody
+}
+
+type SetAccountNoteResponseObject interface {
+	VisitSetAccountNoteResponse(w http.ResponseWriter) error
+}
+
+type SetAccountNote200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response SetAccountNote200JSONResponse) VisitSetAccountNoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountNotedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SetAccountNotedefaultApplicationProblemPlusJSONResponse) VisitSetAccountNoteResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -57473,6 +57658,12 @@ type StrictServerInterface interface {
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(ctx context.Context, request MuteAccountRequestObject) (MuteAccountResponseObject, error)
+	// DeleteAccountNote Remove the private note on an account
+	// (DELETE /accounts/{id}/note)
+	DeleteAccountNote(ctx context.Context, request DeleteAccountNoteRequestObject) (DeleteAccountNoteResponseObject, error)
+	// SetAccountNote Write a private note on an account
+	// (PUT /accounts/{id}/note)
+	SetAccountNote(ctx context.Context, request SetAccountNoteRequestObject) (SetAccountNoteResponseObject, error)
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(ctx context.Context, request ListAccountStatusesRequestObject) (ListAccountStatusesResponseObject, error)
@@ -59523,6 +59714,65 @@ func (sh *strictHandler) MuteAccount(w http.ResponseWriter, r *http.Request, id 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MuteAccountResponseObject); ok {
 		if err := validResponse.VisitMuteAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAccountNote operation middleware
+func (sh *strictHandler) DeleteAccountNote(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request DeleteAccountNoteRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAccountNote(ctx, request.(DeleteAccountNoteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAccountNote")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAccountNoteResponseObject); ok {
+		if err := validResponse.VisitDeleteAccountNoteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetAccountNote operation middleware
+func (sh *strictHandler) SetAccountNote(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request SetAccountNoteRequestObject
+
+	request.Id = id
+
+	var body SetAccountNoteJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetAccountNote(ctx, request.(SetAccountNoteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetAccountNote")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetAccountNoteResponseObject); ok {
+		if err := validResponse.VisitSetAccountNoteResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

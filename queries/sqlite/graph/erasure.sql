@@ -70,3 +70,13 @@ DELETE FROM account_domain_mutes WHERE account_domain_mutes.account_id = sqlc.ar
 
 -- name: EraseFollowCounters :exec
 DELETE FROM follow_counters WHERE account_id = sqlc.arg(account_id);
+
+-- name: EraseAccountNotesBy :execrows
+DELETE FROM account_notes WHERE account_notes.account_id = sqlc.arg(account_id) AND account_notes.target_account_id IN (
+  SELECT n.target_account_id FROM account_notes n WHERE n.account_id = sqlc.arg(account_id)
+  ORDER BY n.target_account_id LIMIT sqlc.arg(lim));
+
+-- name: EraseAccountNotesOf :execrows
+DELETE FROM account_notes WHERE account_notes.target_account_id = sqlc.arg(account_id) AND account_notes.account_id IN (
+  SELECT n.account_id FROM account_notes n WHERE n.target_account_id = sqlc.arg(account_id)
+  ORDER BY n.account_id LIMIT sqlc.arg(lim));

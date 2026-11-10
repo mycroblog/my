@@ -24,7 +24,8 @@ import (
 // each recorded once, found by ID and by URI; the block_edges projection, paged newest first out of
 // a blocker and in block order into a blocked account, and rebuilt from the blocks; mutes replaced
 // by an upsert, hidden on read once expired, paged newest first, and deleted when expired in
-// batches; domain mutes inserted once, paged in the order of their domains, and counted; the
+// batches; domain mutes inserted once, paged in the order of their domains, and counted; private
+// notes replaced by an upsert, found by pair and by target, listed by owner, and deleted; the
 // relations among a set of accounts; and LockPair, which serializes the transactions of one pair
 // whichever order they name it in (ADR-0153 §5). The block and mute use cases on top of it are
 // BlockFlows, which internal/flowtest/graph runs once on SQLite.
@@ -43,6 +44,7 @@ func BlockRepositoryContract(t *testing.T, newHarness FollowFactory) {
 		{"PagesMutes", blockRepoMutePages},
 		{"DeletesExpiredMutesInBatches", blockRepoDeleteExpired},
 		{"KeepsDomainMutes", blockRepoDomainMutes},
+		{"KeepsPrivateNotes", blockRepoNotes},
 		{"ListsRelationsAmongAccounts", blockRepoRelations},
 		{"ReadsTheRelationshipPartsOfManyAccounts", blockRepoRelationshipParts},
 		{"ReadsTheBlocksAndNotificationRelationsOfOneWithMany", blockRepoOneWithMany},

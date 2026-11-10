@@ -16,6 +16,13 @@ type AccountDomainMute struct {
 	CreatedAt time.Time
 }
 
+type AccountNote struct {
+	AccountID       string
+	TargetAccountID string
+	Note            string
+	UpdatedAt       time.Time
+}
+
 type Block struct {
 	ID               string
 	Uri              *string

@@ -82,6 +82,10 @@ type Repository interface {
 	DeleteDomainMute(ctx context.Context, tx uow.Tx, accountID, domain string) (bool, error)
 	// CountDomainMutes returns how many domains accountID mutes.
 	CountDomainMutes(ctx context.Context, tx uow.Tx, accountID string) (int, error)
+	// UpsertNote writes accountID's private note on n.TargetAccountID, replacing the one it had.
+	UpsertNote(ctx context.Context, tx uow.Tx, n graph.Note) error
+	// DeleteNote deletes accountID's note on targetAccountID and reports whether there was one.
+	DeleteNote(ctx context.Context, tx uow.Tx, accountID, targetAccountID string) (bool, error)
 
 	// Projections, written only by this module's projectors and rebuild.
 
@@ -235,6 +239,12 @@ type Repository interface {
 	// ListDomainMutes returns accountID's domain mutes in the order of their domains, starting
 	// after the domain after ("" for the first) and returning at most limit mutes.
 	ListDomainMutes(ctx context.Context, accountID, after string, limit int) ([]graph.DomainMute, error)
+	// FindNote returns accountID's private note on targetAccountID; ErrNotFound when it has none.
+	FindNote(ctx context.Context, accountID, targetAccountID string) (graph.Note, error)
+	// FindNotesOn returns accountID's notes on those of targetIDs that it keeps one on, by target.
+	FindNotesOn(ctx context.Context, accountID string, targetIDs []string) (map[string]graph.Note, error)
+	// ListNotesBy returns every note of accountID, oldest first by update and then target.
+	ListNotesBy(ctx context.Context, accountID string) ([]graph.Note, error)
 	// MutesAnyDomain reports whether accountID mutes one of domains.
 	MutesAnyDomain(ctx context.Context, accountID string, domains []string) (bool, error)
 	// RelationsAmong returns the relations of accountID with the accounts among ids, with the

@@ -11,6 +11,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	appgraph "github.com/mycroblog/my/internal/app/graph"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
@@ -29,7 +30,7 @@ import (
 // revisions and head; a user loses its email addresses and password credentials; the statuses of
 // an author are listed in pages with whether they are deleted, and erased with their interactions,
 // keeping their deletions; an account's favourites and bookmarks go in bounded batches; its follows,
-// blocks, mutes, and counters go in bounded batches; its feed entries go; and its notifications go,
+// blocks, mutes, private notes, and counters go in bounded batches; its feed entries go; and its notifications go,
 // as do the notifications about erased statuses. Each method leaves the rows of other accounts.
 // The erasure on top of it is AccountErasureFlows, which internal/flowtest/federation runs once on
 // SQLite.
@@ -284,6 +285,7 @@ func erasureRepoGraph(t *testing.T, r *erasureRepo) {
 		}
 		for _, pair := range [][2]string{{erased, a}, {erased, b}, {c, erased}, {a, b}} {
 			errs = append(errs, r.h.Graph.UpsertMute(ctx, tx, graph.Mute{AccountID: pair[0], TargetAccountID: pair[1], CreatedAt: r.clock.Now()}))
+			errs = append(errs, r.h.Graph.UpsertNote(ctx, tx, graph.Note{AccountID: pair[0], TargetAccountID: pair[1], Text: "note", UpdatedAt: r.clock.Now()}))
 		}
 		errs = append(errs,
 			r.h.Graph.UpsertCounters(ctx, tx, graph.Counters{AccountID: erased, FollowersCount: 1, FollowingCount: 1}),
@@ -310,6 +312,8 @@ func erasureRepoGraph(t *testing.T, r *erasureRepo) {
 		{"EraseBlocksOf", r.h.GraphErasure.EraseBlocksOf, []int64{1, 1, 0}},
 		// Two mutes by the account and one of it: the more of the two counts per call.
 		{"EraseMutesOf", r.h.GraphErasure.EraseMutesOf, []int64{1, 1, 0}},
+		// Two notes by the account and one on it: the more of the two counts per call.
+		{"EraseNotesOf", r.h.GraphErasure.EraseNotesOf, []int64{1, 1, 0}},
 	} {
 		for i, want := range e.want {
 			r.tx(t, func(ctx context.Context, tx uow.Tx) error {
@@ -339,6 +343,14 @@ func erasureRepoGraph(t *testing.T, r *erasureRepo) {
 	})
 	if len(mutes) != 1 || mutes[0].AccountID != a {
 		t.Errorf("ListAllMutes after the erasure = %+v; want only the mute by %s", mutes, a)
+	}
+	for _, pair := range [][2]string{{erased, a}, {erased, b}, {c, erased}} {
+		if _, err := r.h.Graph.FindNote(ctx, pair[0], pair[1]); !errors.Is(err, appgraph.ErrNotFound) {
+			t.Errorf("FindNote(%s, %s) after the erasure = %v, want ErrNotFound", pair[0], pair[1], err)
+		}
+	}
+	if _, err := r.h.Graph.FindNote(ctx, a, b); err != nil {
+		t.Errorf("FindNote(%s, %s) after the erasure = %v, want the note kept", a, b, err)
 	}
 	counters, err := r.h.Graph.ListCounters(ctx)
 	if err != nil || len(counters) != 1 || counters[0].AccountID != a {
