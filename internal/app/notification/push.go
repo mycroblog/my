@@ -282,6 +282,10 @@ type PushDeps struct {
 	// Stopped reports whether the closure of the service stops Web Push (ADR-0088 §2), read
 	// per message; nil never stops it.
 	Stopped func(ctx context.Context) (bool, error)
+	// Filters judges the status of a message against the recipient's keyword filters: a hide
+	// filter drops the message, and a warn filter words it by the filter's title (ADR-0157 §7).
+	// nil judges none.
+	Filters StatusFilters
 }
 
 // PushService runs the Web Push use cases of the client API (FR-206): reading, registering, and
@@ -425,7 +429,14 @@ func (s *PushService) push(ctx context.Context, job pushJob) queue.Result {
 	case !shown:
 		return queue.Done() // the recipient no longer sees the notification or its status
 	}
-	payload, err := s.message(ctx, job)
+	verdict, err := filterVerdict(ctx, s.d.Filters, job)
+	switch {
+	case err != nil:
+		return queue.Retry(0, err)
+	case verdict.Hidden:
+		return queue.Done() // a keyword filter of the recipient hides its status
+	}
+	payload, err := s.message(ctx, job, verdict)
 	if errors.Is(err, ErrNotFound) {
 		return queue.Done() // the account the message names is gone
 	}
@@ -499,15 +510,16 @@ type PushPayload struct {
 	Path string `json:"path"`
 }
 
-// message returns the payload of job's message, worded in the recipient's locale.
-func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) {
-	p, _, err := describer{
+// message returns the payload of job's message, worded in the recipient's locale, and by the
+// filters of verdict when warn filters matched its status.
+func (s *PushService) message(ctx context.Context, job pushJob, verdict StatusVerdict) ([]byte, error) {
+	p, l, err := describer{
 		audience: s.d.Audience, messages: s.d.Messages, host: s.d.Host, instanceName: s.d.InstanceName,
 	}.describe(ctx, job)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(p)
+	return json.Marshal(warned(l, p, verdict))
 }
 
 // describer words a notification for its recipient: the title and the page of a Web Push

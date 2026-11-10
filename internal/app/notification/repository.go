@@ -126,6 +126,9 @@ type Repository interface {
 	// CountNotificationsAfter counts the recipient's visible notifications, as in
 	// ListNotifications with hidden, whose ID is greater than after ("" counts them all).
 	CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden Hidden, now time.Time) (int64, error)
+	// UnreadNotificationStatuses returns the status of each of the newest limit notifications that
+	// CountNotificationsAfter counts and that have a status, once per notification, newest first.
+	UnreadNotificationStatuses(ctx context.Context, recipientAccountID, after string, hidden Hidden, now time.Time, limit int) ([]string, error)
 	// FindReadMarker returns an account's read marker; ErrNotFound means it has read nothing.
 	FindReadMarker(ctx context.Context, accountID string) (notification.ReadMarker, error)
 	// StatusHasNotifications reports whether a notification, dismissed or not, is about the status.

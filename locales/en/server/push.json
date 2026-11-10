@@ -55,6 +55,10 @@
     "defaultMessage": "{name} favourited your post",
     "description": "Web Push notification. {name} is the display name, or the @handle, of the account that favourited the user's post."
   },
+  "push.filtered": {
+    "defaultMessage": "{title} (matches your filter “{filter}”)",
+    "description": "Web Push notification, and the subject of its email, about a post that one of the user's keyword filters with the action warn matched: it says what the notification is and names the filter instead of showing more. {title} is the usual text of the notification, such as \u201cAlice mentioned you\u201d; {filter} is the title of the filter, as the user wrote it."
+  },
   "push.follow": {
     "defaultMessage": "{name} followed you",
     "description": "Web Push notification. {name} is the display name, or the @handle, of the account that followed the user."

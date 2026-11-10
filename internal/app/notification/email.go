@@ -118,6 +118,8 @@ type EmailDeps struct {
 	// WebOrigin is the origin of the web client, whose page of the notification the emails link
 	// to.
 	WebOrigin string
+	// Filters judges the status of an email as for Web Push (PushDeps.Filters); nil judges none.
+	Filters StatusFilters
 }
 
 // RegisterEmailJobs registers the handler of JobNotificationEmail on reg. The handler sends
@@ -151,6 +153,10 @@ func sendNotificationEmail(ctx context.Context, d EmailDeps, run queue.Job, job 
 	if err != nil || !shown {
 		return err
 	}
+	verdict, err := filterVerdict(ctx, d.Filters, job)
+	if err != nil || verdict.Hidden {
+		return err // a keyword filter of the recipient hides its status
+	}
 	box, ok, err := d.Mailboxes.Mailbox(ctx, job.AccountID)
 	if err != nil || !ok {
 		return err
@@ -163,7 +169,7 @@ func sendNotificationEmail(ctx context.Context, d EmailDeps, run queue.Job, job 
 		return err
 	}
 	site := mailSite(ctx, d.Host, d.MailSite)
-	draft, ok := UnreadEmailDraft(l, site.Name, box.Address, p, d.WebOrigin, "")
+	draft, ok := UnreadEmailDraft(l, site.Name, box.Address, warned(l, p, verdict), d.WebOrigin, "")
 	if !ok {
 		return nil
 	}
