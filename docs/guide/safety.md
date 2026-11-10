@@ -33,35 +33,8 @@ are affected, and the server is not told.
 
 ## Filtering posts by keyword
 
-A keyword filter folds or hides the posts that contain one of its words, whoever wrote them. The server matches them, so
-every app you use shows the same result. A filter has a title, its words, where it applies, what it does, and optionally
-when it ends:
-
-- **Where it applies:** your home timeline and lists, your notifications, the local, federated, and hashtag timelines,
-  threads, and profiles. Each filter applies only where you choose. Searching, your bookmarks and favourites, and your
-  direct messages are never filtered.
-- **What it does:** "warn" folds a post behind the title of the filter, with a way to show it; "hide" leaves the post
-  out, and its notification too. A post you open yourself is folded rather than hidden, so a link to it still shows
-  something.
-- **When it ends:** a filter with an end stops applying at that moment. It stays in your list, marked as expired, until
-  you delete it; move its end later to use it again.
-
-A word matches the text of a post, its content warning (and the text behind it), the choices of its poll, and the
-descriptions of its images. Upper and lower case, half-width and full-width forms, and katakana and hiragana all match
-each other, so `ネタバレ` also matches `ねたばれ` and `ﾈﾀﾊﾞﾚ`. A phrase with spaces matches those words in that order.
-Links match by the text they show, not by the address behind them.
-
-A word matches anywhere it appears, so "cat" also matches "concatenate". Choosing "whole word" for a word makes it match
-only where no letter or digit touches it. Languages written without spaces between words, such as Japanese, Chinese,
-and Thai, have nothing to tell where a word ends, so there a word always matches anywhere: `猫` also matches `子猫`.
-Choose longer words in those languages to avoid matching more than you mean.
-
-Your own posts and boosts, and the posts they quote, are never filtered. When only a quoted post matches, only the quote
-is folded, even for "hide". A boost is filtered by the post it boosts.
-
-A filter applies at once to every post, old ones too, but an app shows the change when it loads the timeline again.
-You can have up to 100 filters, with up to 100 words each and 1,000 words in all.
-The archive of "Archive and deletion" in the settings holds your filters, expired ones included, as `keyword_filters.json`.
+"Keyword filters", under "Display and notifications" in the settings, folds or hides the posts that contain words you
+choose, whoever wrote them. [Keyword filters](keyword-filters.md) explains how to set them up and how their words match.
 
 ## Reporting an account or a post
 
