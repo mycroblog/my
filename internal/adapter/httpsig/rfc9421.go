@@ -137,17 +137,17 @@ func verifyRFC9421(r *federation.SignedRequest, sig *federation.Signature, opts 
 		return fmt.Errorf("%w: %w", federation.ErrSignatureMismatch, err)
 	}
 	v, err := rfc9421.NewVerifier(
-		rfc9421.Key{KeyID: sig.KeyID, Key: opts.PublicKey, Algorithm: rfc9421.SignatureAlgorithm(opts.Algorithm)},
+		rfc9421.Key{Material: opts.PublicKey, Algorithm: rfc9421.SignatureAlgorithm(opts.Algorithm)},
 		rfc9421.WithValidateAllSignatures(),
-		rfc9421.WithCreatedTimestampRequired(false),
-		rfc9421.WithExpiredTimestampRequired(false),
+		rfc9421.WithCreatedTimestamp(false),
+		rfc9421.WithExpiresTimestamp(false),
 		rfc9421.WithMaxAge(unbounded),
 		rfc9421.WithValidityTolerance(unbounded),
 	)
 	if err != nil {
 		return fmt.Errorf("create RFC 9421 verifier: %w", err)
 	}
-	if err := v.Verify(message(r.Method, r.URL, h, r.Body)); err != nil {
+	if _, err := v.Verify(message(r.Method, r.URL, h, r.Body)); err != nil {
 		return fmt.Errorf("%w: %w", federation.ErrSignatureMismatch, err)
 	}
 	return nil
@@ -190,10 +190,6 @@ func message(method string, u *url.URL, h http.Header, body []byte) *rfc9421.Mes
 	}
 }
 
-type fixedNonce string
-
-func (n fixedNonce) GetNonce(context.Context) (string, error) { return string(n), nil }
-
 // signRFC9421 signs req with RFC 9421. created comes from the system clock (the library's).
 func signRFC9421(req *kernel.HTTPRequest, key federation.SigningKey, opts federation.SignOptions) error {
 	u, err := url.Parse(req.URL)
@@ -214,18 +210,21 @@ func signRFC9421(req *kernel.HTTPRequest, key federation.SigningKey, opts federa
 		rfc9421.WithLabel(label),
 		rfc9421.WithTag(opts.Tag),
 		rfc9421.WithContentDigestAlgorithm(rfc9421.Sha256),
-	}
-	if opts.Nonce != "" {
-		signerOpts = append(signerOpts, rfc9421.WithNonce(fixedNonce(opts.Nonce)))
+		rfc9421.WithKeyID(key.KeyID),
+		rfc9421.WithAlg(),
 	}
 	s, err := rfc9421.NewSigner(
-		rfc9421.Key{KeyID: key.KeyID, Key: key.PrivateKey, Algorithm: rfc9421.SignatureAlgorithm(opts.Algorithm)},
+		rfc9421.Key{Material: key.PrivateKey, Algorithm: rfc9421.SignatureAlgorithm(opts.Algorithm)},
 		signerOpts...,
 	)
 	if err != nil {
 		return fmt.Errorf("create RFC 9421 signer: %w", err)
 	}
-	h, err := s.Sign(message(method, u, req.Header.Clone(), req.Body))
+	var signOpts []rfc9421.SignOption
+	if opts.Nonce != "" {
+		signOpts = append(signOpts, rfc9421.WithParameter(rfc9421.Nonce, opts.Nonce))
+	}
+	h, err := s.Sign(message(method, u, req.Header.Clone(), req.Body), signOpts...)
 	if err != nil {
 		return fmt.Errorf("sign with RFC 9421: %w", err)
 	}
