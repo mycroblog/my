@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: A change of the reminders of events of the authenticated user.
+type: object
+properties:
+  minutes_before:
+    description: |
+      The reminders, in minutes before the start: at most 3, each from 5 minutes to 7 days
+      (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
+    type: array
+    maxItems: 3
+    items:
+      type: integer
+  defaults:
+    description: Restores the defaults (one day and one hour before) instead.
+    type: boolean
+    default: false

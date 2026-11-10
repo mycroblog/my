@@ -42,6 +42,8 @@ var jobTypes = []string{
 	"federation.update_poll",
 	"federation.verify_quote",
 	"finance.import_billing",
+	"gathering.notify",
+	"gathering.tick",
 	"graph.expire_mutes",
 	"graph.migrate_follows",
 	"identity.build_export",

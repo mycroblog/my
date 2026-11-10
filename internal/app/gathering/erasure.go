@@ -10,8 +10,8 @@ import (
 )
 
 // Eraser empties the titles and descriptions, and deletes the places, of the revisions that a
-// deleted local account wrote (data-model §8, ADR-0161 §14); the events, the rest of their
-// revisions, their dates, and their answers stay.
+// deleted local account wrote (data-model §8, ADR-0161 §14), and forgets the reminders it chose;
+// the events, the rest of their revisions, their dates, and their answers stay.
 type Eraser struct {
 	uow  uow.UnitOfWork
 	repo Repository
@@ -28,8 +28,10 @@ func (e *Eraser) EraseAccountData(ctx context.Context, t account.ErasureTarget, 
 	var n int
 	err := e.uow.Tx(ctx, func(tx uow.Tx) error {
 		var err error
-		n, err = e.repo.EraseRevisions(ctx, tx, t.AccountID, limit)
-		return err
+		if n, err = e.repo.EraseRevisions(ctx, tx, t.AccountID, limit); err != nil || n >= limit {
+			return err
+		}
+		return e.repo.DeleteReminders(ctx, tx, t.AccountID)
 	})
 	return account.ErasureStep{Done: err == nil && n < limit}, err
 }

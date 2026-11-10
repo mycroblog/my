@@ -164,7 +164,7 @@ func (q *Queries) FilteredPairsOfStatuses(ctx context.Context, ids []string) ([]
 }
 
 const getNotificationRequest = `-- name: GetNotificationRequest :one
-SELECT r.recipient_account_id, r.source_account_id, r.notifications_count, r.last_notification_id, n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id, n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at FROM notification_requests r
+SELECT r.recipient_account_id, r.source_account_id, r.notifications_count, r.last_notification_id, n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id, n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.gathering_id, n.dedupe_key, n.created_at FROM notification_requests r
 JOIN notifications n ON n.id = r.last_notification_id
 WHERE r.recipient_account_id = $1 AND r.source_account_id = $2
   AND NOT EXISTS (SELECT 1 FROM notification_exclusions x
@@ -225,6 +225,7 @@ func (q *Queries) GetNotificationRequest(ctx context.Context, arg GetNotificatio
 		&i.Notification.HookAppealID,
 		&i.Notification.AutoDeleteLimitNoticeID,
 		&i.Notification.DraftScheduleID,
+		&i.Notification.GatheringID,
 		&i.Notification.DedupeKey,
 		&i.Notification.CreatedAt,
 	)
@@ -405,7 +406,7 @@ func (q *Queries) ListNotificationPoliciesOf(ctx context.Context, accountIds []s
 
 const listNotificationRequestNotifications = `-- name: ListNotificationRequestNotifications :many
 SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
-  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.gathering_id, n.dedupe_key, n.created_at
 FROM notification_filterings f JOIN notifications n ON n.id = f.notification_id
 WHERE f.recipient_account_id = $1 AND f.source_account_id = $2
   AND ($3::uuid IS NULL OR f.notification_id < $3::uuid)
@@ -471,6 +472,7 @@ func (q *Queries) ListNotificationRequestNotifications(ctx context.Context, arg 
 			&i.HookAppealID,
 			&i.AutoDeleteLimitNoticeID,
 			&i.DraftScheduleID,
+			&i.GatheringID,
 			&i.DedupeKey,
 			&i.CreatedAt,
 		); err != nil {
@@ -485,7 +487,7 @@ func (q *Queries) ListNotificationRequestNotifications(ctx context.Context, arg 
 }
 
 const listNotificationRequests = `-- name: ListNotificationRequests :many
-SELECT r.recipient_account_id, r.source_account_id, r.notifications_count, r.last_notification_id, n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id, n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at FROM notification_requests r
+SELECT r.recipient_account_id, r.source_account_id, r.notifications_count, r.last_notification_id, n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id, n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.gathering_id, n.dedupe_key, n.created_at FROM notification_requests r
 JOIN notifications n ON n.id = r.last_notification_id
 WHERE r.recipient_account_id = $1
   AND ($2::uuid IS NULL OR r.last_notification_id < $2::uuid)
@@ -563,6 +565,7 @@ func (q *Queries) ListNotificationRequests(ctx context.Context, arg ListNotifica
 			&i.Notification.HookAppealID,
 			&i.Notification.AutoDeleteLimitNoticeID,
 			&i.Notification.DraftScheduleID,
+			&i.Notification.GatheringID,
 			&i.Notification.DedupeKey,
 			&i.Notification.CreatedAt,
 		); err != nil {

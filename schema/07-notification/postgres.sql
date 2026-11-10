@@ -25,7 +25,9 @@ CREATE TABLE notifications (
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
     'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'admin_domain_list_failing', 'status', 'announcement',
     'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit', 'scheduled_status_failed',
-    'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected'
+    'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected',
+    'event_invited', 'event_schedule_confirmed', 'event_changed', 'event_cancelled', 'event_reminder', 'event_started',
+    'event_room_unavailable'
   )),
   source_account_id uuid,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -73,6 +75,9 @@ CREATE TABLE notifications (
   auto_delete_limit_notice_id uuid,
   -- scheduled_status_failed: the draft_schedules row of the schedule that could not be published.
   draft_schedule_id uuid,
+  -- event_invited, event_schedule_confirmed, event_changed, event_cancelled, event_reminder,
+  -- event_started, event_room_unavailable: the gatherings row of the event.
+  gathering_id uuid,
   dedupe_key text NOT NULL,
   created_at timestamptz NOT NULL,
   -- nobody is notified of their own actions.
@@ -160,7 +165,9 @@ CREATE TABLE push_subscription_alerts (
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
     'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'admin_domain_list_failing', 'status', 'announcement',
     'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit', 'scheduled_status_failed',
-    'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected'
+    'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected',
+    'event_invited', 'event_schedule_confirmed', 'event_changed', 'event_cancelled', 'event_reminder', 'event_started',
+    'event_room_unavailable'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 );
@@ -178,7 +185,7 @@ CREATE TABLE notification_settings (
     'admin_report', 'admin_sign_up', 'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request',
     'admin_account_moved', 'admin_service_closure_due', 'admin_error_group', 'admin_hook_failing', 'admin_hook_appeal', 'admin_domain_list_failing',
     'moderation', 'status', 'announcement', 'auto_delete_limit', 'interaction_request',
-    'scheduled_status_failed'
+    'scheduled_status_failed', 'event'
   )),
   channel text NOT NULL CHECK (channel IN ('in_app', 'email')),
   enabled boolean NOT NULL,

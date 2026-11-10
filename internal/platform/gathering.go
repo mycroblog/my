@@ -8,6 +8,7 @@ import (
 
 	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/queue"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/voice"
@@ -15,14 +16,26 @@ import (
 )
 
 // setUpGathering builds the events of the local users (ADR-0161): the projectors of their
-// projections and the Service of the client API. It comes after the voice chat, whose hosts it
-// reads.
+// projections, their notifications and gathering.tick, and the Service of the client API. It comes
+// after the voice chat, whose hosts it reads, and after the notifications, which it creates.
 func (a *App) setUpGathering(repo appgathering.Repository) {
 	appgathering.RegisterProjectors(a.Projectors, repo)
-	a.Events = appgathering.NewService(appgathering.Deps{
+	appgathering.RegisterDueProjectors(a.Projectors, repo)
+	outbox := a.Outbox
+	if outbox == nil {
+		// The inline queue has no transactional enqueue; its jobs are enqueued after the commit.
+		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
+	}
+	d := appgathering.Deps{
 		Repository: repo, UnitOfWork: a.UnitOfWork, Clock: a.Clock, IDs: a.IDs, RateLimiter: a.RateLimiter,
-		Members: gatheringMembers{a}, Relations: gatheringRelations{a}, Logger: a.Logger,
-	})
+		Members: gatheringMembers{a}, Relations: gatheringRelations{a}, Outbox: outbox, Logger: a.Logger,
+	}
+	if a.gatheringNotifier != nil {
+		d.Notifier = a.gatheringNotifier
+	}
+	a.Events = appgathering.NewService(d)
+	a.Events.RegisterNotificationProjectors(a.Projectors)
+	a.Events.RegisterNotificationJobs(a.Handlers, a.Scheduler)
 }
 
 // eventsAPI returns the events of the client API, nil before setUpGathering.

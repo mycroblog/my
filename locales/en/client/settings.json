@@ -2391,6 +2391,10 @@
     "defaultMessage": "Voice chats",
     "description": "Row of the notification settings table: an account the user follows opened a voice chat room, or the user was invited to one."
   },
+  "settings.notifications.group.event": {
+    "defaultMessage": "Events",
+    "description": "Row of the notification settings table: the invitations, changes of date or place, cancellations, reminders, and starts of the events of the server."
+  },
   "settings.notifications.group.admin_report": {
     "defaultMessage": "Reports",
     "description": "Row of the notification settings table: (moderators) an account was reported."

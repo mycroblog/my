@@ -188,6 +188,8 @@ paths:
     $ref: ./paths/preferences_notifications.yaml
   /preferences/notification_policy:
     $ref: ./paths/preferences_notification_policy.yaml
+  /preferences/event_reminders:
+    $ref: ./paths/preferences_event_reminders.yaml
   /preferences/supporter_listing:
     $ref: ./paths/preferences_supporter_listing.yaml
   /accounts/deactivation:
@@ -892,7 +894,7 @@ components:
         and its `type` tells what happened. The other objects that a notification carries need the
         scope that reads them elsewhere, and are omitted without it: `report` needs `read:reports`,
         `supporter_subscription` `read:supporters`, `custom_emoji_request` `read:custom_emojis`,
-        `relationship_severance` `read:follows`, and `voice_room` `read:voice`. `moderation_action`
+        `relationship_severance` `read:follows`, `voice_room` `read:voice`, and `event` `read:events`. `moderation_action`
         reaches first-party clients only.
       flows:
         authorizationCode:
@@ -1851,6 +1853,10 @@ components:
       $ref: ./components/schemas/EventPlaceDisclosure.yaml
     EventPlaceKind:
       $ref: ./components/schemas/EventPlaceKind.yaml
+    EventReminders:
+      $ref: ./components/schemas/EventReminders.yaml
+    EventRemindersUpdate:
+      $ref: ./components/schemas/EventRemindersUpdate.yaml
     EventRSVP:
       $ref: ./components/schemas/EventRSVP.yaml
     EventState:

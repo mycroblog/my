@@ -646,6 +646,34 @@ export interface paths {
         patch: operations["updateNotificationPolicy"];
         trace?: never;
     };
+    "/preferences/event_reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the authenticated user's reminders of events
+         * @description How long before the start of an event that the user answered going or maybe an
+         *     `event_reminder` reminds the user: one day and one hour before until the user chooses.
+         */
+        get: operations["getEventReminders"];
+        /**
+         * Change the authenticated user's reminders of events
+         * @description Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+         *     reminders of the upcoming events that the user answered going or maybe follow the change. A
+         *     422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+         *     longer than 7 days, or the same one twice; nothing is changed then.
+         */
+        put: operations["updateEventReminders"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/preferences/supporter_listing": {
         parameters: {
             query?: never;
@@ -14049,6 +14077,29 @@ export interface components {
          * @enum {string}
          */
         EventPlaceKind: "voice" | "physical" | "url";
+        /** @description The reminders of events of the authenticated user. */
+        EventReminders: {
+            /**
+             * @description How many minutes before the start of an event each reminder is, from the earliest; empty
+             *     for no reminders.
+             */
+            minutes_before: number[];
+            /** @description Whether these are the defaults (one day and one hour before), as the user has not chosen. */
+            defaults: boolean;
+        };
+        /** @description A change of the reminders of events of the authenticated user. */
+        EventRemindersUpdate: {
+            /**
+             * @description The reminders, in minutes before the start: at most 3, each from 5 minutes to 7 days
+             *     (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
+             */
+            minutes_before?: number[];
+            /**
+             * @description Restores the defaults (one day and one hour before) instead.
+             * @default false
+             */
+            defaults: boolean;
+        };
         /** @description An answer to an event. */
         EventRSVP: {
             answer: components["schemas"]["EventAnswer"];
@@ -15559,6 +15610,13 @@ export interface components {
              *     it is open and the user sees it; omitted otherwise, and without `read:voice`.
              */
             voice_room?: components["schemas"]["VoiceRoom"];
+            /** @description The event that an `event_*` notification is about. */
+            event_id?: components["schemas"]["Id"];
+            /**
+             * @description The event that an `event_*` notification is about, as the user sees it now; omitted when
+             *     the user no longer sees it, for the other types, and without `read:events`.
+             */
+            event?: components["schemas"]["Event"];
             /** @description What an `admin_error_group` tells of; omitted for the other types. */
             error_group?: components["schemas"]["NotificationErrorGroup"];
             /** @description The announcement that an `announcement` tells of, as the user sees it; omitted for the other types. */
@@ -15576,7 +15634,8 @@ export interface components {
          *     and off together. The ordinary notifications are one row per type (`mention`, `follow`,
          *     `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
          *     `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-         *     `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+         *     `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+         *     is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
          *     `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
          *     `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
          *     `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -15592,7 +15651,7 @@ export interface components {
          *     no `email` channel.
          * @enum {string}
          */
-        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "interaction_request" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement" | "auto_delete_limit" | "scheduled_status_failed";
+        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "interaction_request" | "poll_closed" | "account_moved" | "voice" | "event" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement" | "auto_delete_limit" | "scheduled_status_failed";
         /** @description How far the authenticated user has read the notifications, across all clients. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
@@ -15836,9 +15895,21 @@ export interface components {
          *     `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
          *     draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
          *     sends nothing.
+         *     The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+         *     sees it). `event_invited` tells that `account` invited the user, once per invitation;
+         *     `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+         *     user answered or to which the user was invited, once per date; `event_changed` that the date,
+         *     the places, or the voice chat room of an event that the user answered going or maybe to, or was
+         *     invited to, changed, once per change (a change of the title or the description sends
+         *     nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+         *     that the user answered going or maybe to starts soon, at each time before the start that the
+         *     user chose (`getEventReminders`), once per date and time, and never for a date that changed
+         *     since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+         *     the organizer that the voice chat room of the event cannot open. Their `account` is the
+         *     organizer, except for `event_invited`. Each is sent only while the user sees the event.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "scheduled_status_failed" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "scheduled_status_failed" | "event_invited" | "event_schedule_confirmed" | "event_changed" | "event_cancelled" | "event_reminder" | "event_started" | "event_room_unavailable" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
         /**
          * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -20062,6 +20133,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationPolicy"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getEventReminders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The reminders. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventReminders"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateEventReminders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRemindersUpdate"];
+            };
+        };
+        responses: {
+            /** @description The reminders after the change. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventReminders"];
                 };
             };
             default: components["responses"]["Problem"];

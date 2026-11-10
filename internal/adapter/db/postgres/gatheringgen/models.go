@@ -24,6 +24,11 @@ type GatheringCoorganizer struct {
 	ChangeID    string
 }
 
+type GatheringDue struct {
+	GatheringID string
+	NextDueAt   time.Time
+}
+
 type GatheringInvitation struct {
 	ID                 string
 	GatheringID        string

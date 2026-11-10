@@ -379,6 +379,38 @@
     "defaultMessage": "ルームを開く",
     "description": "Link in a voice chat notification to the page of the room."
   },
+  "notifications.type.event_invited": {
+    "defaultMessage": "{name}さんからイベントに招待されました",
+    "description": "Notification sentence. {name} is the display name of the account that invited the user to an event of the server."
+  },
+  "notifications.type.event_schedule_confirmed": {
+    "defaultMessage": "{name}さんのイベントの日時が決まりました",
+    "description": "Notification sentence: the organizers fixed the date of an event whose date poll the user answered, or to which the user was invited. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_changed": {
+    "defaultMessage": "{name}さんのイベントの日時か場所が変わりました",
+    "description": "Notification sentence: the organizers changed the date, the places, or the voice chat room of an event that the user is going to, may go to, or was invited to. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_cancelled": {
+    "defaultMessage": "{name}さんのイベントは中止になりました",
+    "description": "Notification sentence: an event that the user is going to, may go to, or was invited to was cancelled. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_reminder": {
+    "defaultMessage": "{name}さんのイベントがまもなく始まります",
+    "description": "Notification sentence: a reminder, at the time the user chose, of an event that the user is going to or may go to. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_started": {
+    "defaultMessage": "{name}さんのイベントが始まります",
+    "description": "Notification sentence: an event that the user is going to or may go to starts now. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_room_unavailable": {
+    "defaultMessage": "あなたのイベントの通話のルームを開けません",
+    "description": "Notification sentence to the organizer of an event: its voice chat room cannot open, or could not, for example because the voice chat is off. The event itself stays."
+  },
+  "notifications.link.event": {
+    "defaultMessage": "イベントを開く",
+    "description": "Link in a notification of an event to the page of the event."
+  },
   "notifications.type.admin_error_group_created": {
     "defaultMessage": "新しいエラーが報告されました",
     "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind."

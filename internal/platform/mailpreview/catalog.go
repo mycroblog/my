@@ -66,8 +66,18 @@ func sampleNotification(t notification.Type) appnotification.Wording {
 		StatusID:  "01JSAMPLE0STATUS00000000000", ReportID: "01JSAMPLE0REPORT00000000000", AppealID: "01JSAMPLE0APPEAL00000000000",
 		VoiceRoomID:          "01JSAMPLE0VOICEROOM0000000",
 		AutoDeleteMaxAgeDays: 90, AutoDeleteDaysLeft: 30,
+		GatheringID: "01JSAMPLE0EVENT000000000000", Event: &sampleEvent,
 	}
 }
+
+// sampleEvent is the event of the notifications of an event, a reminder an hour before its start.
+var sampleEvent = appnotification.EventMail{
+	Title: "Board game night", StartsAt: time.Date(2026, 12, 5, 12, 0, 0, 0, time.UTC), TimeZone: "Asia/Tokyo",
+	OrganizerID: "bob", CoorganizerIDs: []string{"carol"}, MinutesBefore: 60,
+}
+
+// sampleEventHosts names the hosts of sampleEvent.
+var sampleEventHosts = map[string]string{"bob": "Bob", "carol": "Carol"}
 
 // Sample is what an entry's draft is worded with: the localizer of one locale.
 type Sample struct {
@@ -153,6 +163,9 @@ func Catalog() []Entry {
 		}
 		entries = append(entries, Entry{JobType: appnotification.JobNotificationEmail, Variant: string(t), Draft: func(s Sample) (kernel.MailDraft, bool) {
 			p := appnotification.DescribeNotification(s.L, sampleNotification(t), sampleName)
+			if t.Event() {
+				p.Details = appnotification.EventDetails(s.L, &sampleEvent, sampleEventHosts)
+			}
 			return appnotification.UnreadEmailDraft(s.L, sampleName, sampleTo, p, sampleWebOrigin, sampleUnsubscribeURL)
 		}})
 	}

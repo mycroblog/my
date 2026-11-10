@@ -379,6 +379,38 @@
     "defaultMessage": "Open the room",
     "description": "Link in a voice chat notification to the page of the room."
   },
+  "notifications.type.event_invited": {
+    "defaultMessage": "{name} invited you to an event",
+    "description": "Notification sentence. {name} is the display name of the account that invited the user to an event of the server."
+  },
+  "notifications.type.event_schedule_confirmed": {
+    "defaultMessage": "The date of an event by {name} is set",
+    "description": "Notification sentence: the organizers fixed the date of an event whose date poll the user answered, or to which the user was invited. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_changed": {
+    "defaultMessage": "The date or place of an event by {name} changed",
+    "description": "Notification sentence: the organizers changed the date, the places, or the voice chat room of an event that the user is going to, may go to, or was invited to. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_cancelled": {
+    "defaultMessage": "An event by {name} was cancelled",
+    "description": "Notification sentence: an event that the user is going to, may go to, or was invited to was cancelled. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_reminder": {
+    "defaultMessage": "An event by {name} starts soon",
+    "description": "Notification sentence: a reminder, at the time the user chose, of an event that the user is going to or may go to. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_started": {
+    "defaultMessage": "An event by {name} is starting",
+    "description": "Notification sentence: an event that the user is going to or may go to starts now. {name} is the display name of the organizer of the event."
+  },
+  "notifications.type.event_room_unavailable": {
+    "defaultMessage": "The voice chat room of your event cannot open",
+    "description": "Notification sentence to the organizer of an event: its voice chat room cannot open, or could not, for example because the voice chat is off. The event itself stays."
+  },
+  "notifications.link.event": {
+    "defaultMessage": "Open the event",
+    "description": "Link in a notification of an event to the page of the event."
+  },
   "notifications.type.admin_error_group_created": {
     "defaultMessage": "A new error was reported",
     "description": "Notification sentence to an administrator who manages the errors: the server or the web client reported an error of a new kind."

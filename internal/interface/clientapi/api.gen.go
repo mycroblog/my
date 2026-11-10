@@ -3831,6 +3831,7 @@ const (
 	NotificationGroupAnnouncement            NotificationGroup = "announcement"
 	NotificationGroupAutoDeleteLimit         NotificationGroup = "auto_delete_limit"
 	NotificationGroupBoost                   NotificationGroup = "boost"
+	NotificationGroupEvent                   NotificationGroup = "event"
 	NotificationGroupFavourite               NotificationGroup = "favourite"
 	NotificationGroupFollow                  NotificationGroup = "follow"
 	NotificationGroupFollowAccepted          NotificationGroup = "follow_accepted"
@@ -3880,6 +3881,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAutoDeleteLimit:
 		return true
 	case NotificationGroupBoost:
+		return true
+	case NotificationGroupEvent:
 		return true
 	case NotificationGroupFavourite:
 		return true
@@ -3996,6 +3999,13 @@ const (
 	NotificationTypeBoost                      NotificationType = "boost"
 	NotificationTypeBoostRequest               NotificationType = "boost_request"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
+	NotificationTypeEventCancelled             NotificationType = "event_cancelled"
+	NotificationTypeEventChanged               NotificationType = "event_changed"
+	NotificationTypeEventInvited               NotificationType = "event_invited"
+	NotificationTypeEventReminder              NotificationType = "event_reminder"
+	NotificationTypeEventRoomUnavailable       NotificationType = "event_room_unavailable"
+	NotificationTypeEventScheduleConfirmed     NotificationType = "event_schedule_confirmed"
+	NotificationTypeEventStarted               NotificationType = "event_started"
 	NotificationTypeFavourite                  NotificationType = "favourite"
 	NotificationTypeFollow                     NotificationType = "follow"
 	NotificationTypeFollowAccepted             NotificationType = "follow_accepted"
@@ -4061,6 +4071,20 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeBoostRequest:
 		return true
 	case NotificationTypeCustomEmojiRequestDecided:
+		return true
+	case NotificationTypeEventCancelled:
+		return true
+	case NotificationTypeEventChanged:
+		return true
+	case NotificationTypeEventInvited:
+		return true
+	case NotificationTypeEventReminder:
+		return true
+	case NotificationTypeEventRoomUnavailable:
+		return true
+	case NotificationTypeEventScheduleConfirmed:
+		return true
+	case NotificationTypeEventStarted:
 		return true
 	case NotificationTypeFavourite:
 		return true
@@ -11172,6 +11196,26 @@ type EventRSVP struct {
 	Answer EventAnswer `json:"answer"`
 }
 
+// EventReminders The reminders of events of the authenticated user.
+type EventReminders struct {
+	// Defaults Whether these are the defaults (one day and one hour before), as the user has not chosen.
+	Defaults bool `json:"defaults"`
+
+	// MinutesBefore How many minutes before the start of an event each reminder is, from the earliest; empty
+	// for no reminders.
+	MinutesBefore []int `json:"minutes_before"`
+}
+
+// EventRemindersUpdate A change of the reminders of events of the authenticated user.
+type EventRemindersUpdate struct {
+	// Defaults Restores the defaults (one day and one hour before) instead.
+	Defaults *bool `json:"defaults,omitempty"`
+
+	// MinutesBefore The reminders, in minutes before the start: at most 3, each from 5 minutes to 7 days
+	// (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
+	MinutesBefore *[]int `json:"minutes_before,omitempty"`
+}
+
 // EventState Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
 // `ends_at` is in the past.
 type EventState string
@@ -13313,6 +13357,13 @@ type Notification struct {
 	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
 	ErrorGroup *NotificationErrorGroup `json:"error_group,omitempty"`
 
+	// Event The event that an `event_*` notification is about, as the user sees it now; omitted when
+	// the user no longer sees it, for the other types, and without `read:events`.
+	Event *Event `json:"event,omitempty"`
+
+	// EventId The event that an `event_*` notification is about.
+	EventId *Id `json:"event_id,omitempty"`
+
 	// HookAppeal The user's appeal of a refused post that a `hook_appeal_decided` tells of, with its state;
 	// first-party clients only, and absent once the appeal is no longer kept.
 	HookAppeal *OwnHookAppeal `json:"hook_appeal,omitempty"`
@@ -13448,6 +13499,18 @@ type Notification struct {
 	// `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
 	// draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
 	// sends nothing.
+	// The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+	// sees it). `event_invited` tells that `account` invited the user, once per invitation;
+	// `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+	// user answered or to which the user was invited, once per date; `event_changed` that the date,
+	// the places, or the voice chat room of an event that the user answered going or maybe to, or was
+	// invited to, changed, once per change (a change of the title or the description sends
+	// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+	// that the user answered going or maybe to starts soon, at each time before the start that the
+	// user chose (`getEventReminders`), once per date and time, and never for a date that changed
+	// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+	// the organizer that the voice chat room of the event cannot open. Their `account` is the
+	// organizer, except for `event_invited`. Each is sent only while the user sees the event.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -13490,7 +13553,8 @@ type NotificationErrorGroupChange string
 // and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 // `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 // `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 // `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 // `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13682,7 +13746,8 @@ type NotificationSettingRow struct {
 	// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 	// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-	// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+	// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+	// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 	// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 	// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13739,7 +13804,8 @@ type NotificationSettingsUpdate struct {
 		// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 		// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-		// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+		// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+		// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 		// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 		// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13846,6 +13912,18 @@ type NotificationSettingsUpdateChangesChannel string
 // `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
 // draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
 // sends nothing.
+// The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+// sees it). `event_invited` tells that `account` invited the user, once per invitation;
+// `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+// user answered or to which the user was invited, once per date; `event_changed` that the date,
+// the places, or the voice chat room of an event that the user answered going or maybe to, or was
+// invited to, changed, once per change (a change of the title or the description sends
+// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+// that the user answered going or maybe to starts soon, at each time before the start that the
+// user chose (`getEventReminders`), once per date and time, and never for a date that changed
+// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+// the organizer that the voice chat room of the event cannot open. Their `account` is the
+// organizer, except for `event_invited`. Each is sent only while the user sees the event.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
@@ -18476,6 +18554,9 @@ type PreviewAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
 // UpdateBadgeChoiceJSONRequestBody defines body for UpdateBadgeChoice for application/json ContentType.
 type UpdateBadgeChoiceJSONRequestBody = UpdateBadgeChoiceRequest
 
+// UpdateEventRemindersJSONRequestBody defines body for UpdateEventReminders for application/json ContentType.
+type UpdateEventRemindersJSONRequestBody = EventRemindersUpdate
+
 // UpdateNotificationPolicyJSONRequestBody defines body for UpdateNotificationPolicy for application/json ContentType.
 type UpdateNotificationPolicyJSONRequestBody = NotificationPolicyUpdate
 
@@ -19618,6 +19699,12 @@ type ServerInterface interface {
 	// UpdateBadgeChoice Show or hide the badge of a role on the authenticated user's profile
 	// (PUT /preferences/badges/{role_id})
 	UpdateBadgeChoice(w http.ResponseWriter, r *http.Request, roleId BadgeRoleId)
+	// GetEventReminders Get the authenticated user's reminders of events
+	// (GET /preferences/event_reminders)
+	GetEventReminders(w http.ResponseWriter, r *http.Request)
+	// UpdateEventReminders Change the authenticated user's reminders of events
+	// (PUT /preferences/event_reminders)
+	UpdateEventReminders(w http.ResponseWriter, r *http.Request)
 	// GetNotificationPolicy Get the authenticated user's notification policy
 	// (GET /preferences/notification_policy)
 	GetNotificationPolicy(w http.ResponseWriter, r *http.Request)
@@ -30165,6 +30252,34 @@ func (siw *ServerInterfaceWrapper) UpdateBadgeChoice(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// GetEventReminders operation middleware
+func (siw *ServerInterfaceWrapper) GetEventReminders(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEventReminders(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateEventReminders operation middleware
+func (siw *ServerInterfaceWrapper) UpdateEventReminders(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateEventReminders(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetNotificationPolicy operation middleware
 func (siw *ServerInterfaceWrapper) GetNotificationPolicy(w http.ResponseWriter, r *http.Request) {
 
@@ -32886,6 +33001,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences/notifications", wrapper.UpdateNotificationSettings)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/notification_policy", wrapper.GetNotificationPolicy)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences/notification_policy", wrapper.UpdateNotificationPolicy)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/event_reminders", wrapper.GetEventReminders)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/event_reminders", wrapper.UpdateEventReminders)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.GetSupporterListing)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.UpdateSupporterListing)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/deactivation", wrapper.GetDeactivationPreview)
@@ -54974,6 +55091,129 @@ func (response UpdateBadgeChoicedefaultApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
+type GetEventRemindersRequestObject struct {
+}
+
+type GetEventRemindersResponseObject interface {
+	VisitGetEventRemindersResponse(w http.ResponseWriter) error
+}
+
+type GetEventReminders200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetEventReminders200JSONResponse struct {
+	Body    EventReminders
+	Headers GetEventReminders200ResponseHeaders
+}
+
+func (response GetEventReminders200JSONResponse) VisitGetEventRemindersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEventRemindersdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetEventRemindersdefaultApplicationProblemPlusJSONResponse) VisitGetEventRemindersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEventRemindersRequestObject struct {
+	Body *UpdateEventRemindersJSONRequestBody
+}
+
+type UpdateEventRemindersResponseObject interface {
+	VisitUpdateEventRemindersResponse(w http.ResponseWriter) error
+}
+
+type UpdateEventReminders200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type UpdateEventReminders200JSONResponse struct {
+	Body    EventReminders
+	Headers UpdateEventReminders200ResponseHeaders
+}
+
+func (response UpdateEventReminders200JSONResponse) VisitUpdateEventRemindersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEventRemindersdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UpdateEventRemindersdefaultApplicationProblemPlusJSONResponse) VisitUpdateEventRemindersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetNotificationPolicyRequestObject struct {
 }
 
@@ -61398,6 +61638,12 @@ type StrictServerInterface interface {
 	// UpdateBadgeChoice Show or hide the badge of a role on the authenticated user's profile
 	// (PUT /preferences/badges/{role_id})
 	UpdateBadgeChoice(ctx context.Context, request UpdateBadgeChoiceRequestObject) (UpdateBadgeChoiceResponseObject, error)
+	// GetEventReminders Get the authenticated user's reminders of events
+	// (GET /preferences/event_reminders)
+	GetEventReminders(ctx context.Context, request GetEventRemindersRequestObject) (GetEventRemindersResponseObject, error)
+	// UpdateEventReminders Change the authenticated user's reminders of events
+	// (PUT /preferences/event_reminders)
+	UpdateEventReminders(ctx context.Context, request UpdateEventRemindersRequestObject) (UpdateEventRemindersResponseObject, error)
 	// GetNotificationPolicy Get the authenticated user's notification policy
 	// (GET /preferences/notification_policy)
 	GetNotificationPolicy(ctx context.Context, request GetNotificationPolicyRequestObject) (GetNotificationPolicyResponseObject, error)
@@ -71539,6 +71785,61 @@ func (sh *strictHandler) UpdateBadgeChoice(w http.ResponseWriter, r *http.Reques
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UpdateBadgeChoiceResponseObject); ok {
 		if err := validResponse.VisitUpdateBadgeChoiceResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetEventReminders operation middleware
+func (sh *strictHandler) GetEventReminders(w http.ResponseWriter, r *http.Request) {
+	var request GetEventRemindersRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEventReminders(ctx, request.(GetEventRemindersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEventReminders")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEventRemindersResponseObject); ok {
+		if err := validResponse.VisitGetEventRemindersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateEventReminders operation middleware
+func (sh *strictHandler) UpdateEventReminders(w http.ResponseWriter, r *http.Request) {
+	var request UpdateEventRemindersRequestObject
+
+	var body UpdateEventRemindersJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateEventReminders(ctx, request.(UpdateEventRemindersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateEventReminders")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateEventRemindersResponseObject); ok {
+		if err := validResponse.VisitUpdateEventRemindersResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

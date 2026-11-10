@@ -3616,6 +3616,27 @@ func (l *Localizer) ServerMailAutoDeleteLimitDetail() string {
 	return l.format("server:mail.auto_delete_limit.detail", nil)
 }
 
+// ServerMailEventCoorganizer formats "server:mail.event.coorganizer". Paragraph of the email of a notification of an event, one for each co-organizer. {name} is the display name, or the @handle, of a co-organizer.
+//
+//	en: Co-organized by {name}
+func (l *Localizer) ServerMailEventCoorganizer(name string) string {
+	return l.format("server:mail.event.coorganizer", map[string]any{"name": name})
+}
+
+// ServerMailEventOrganizer formats "server:mail.event.organizer". Paragraph of the email of a notification of an event: who organizes it. {name} is the display name, or the @handle, of the organizer.
+//
+//	en: Organized by {name}
+func (l *Localizer) ServerMailEventOrganizer(name string) string {
+	return l.format("server:mail.event.organizer", map[string]any{"name": name})
+}
+
+// ServerMailEventWhen formats "server:mail.event.when". Paragraph of the email of a notification of an event: when it starts. {when} is the date and time of the start in the event's time zone, written as 2026-11-14 21:00 followed by the IANA name of the zone in parentheses, such as (Asia/Tokyo). The email never says where the event is held.
+//
+//	en: When: {when}
+func (l *Localizer) ServerMailEventWhen(when string) string {
+	return l.format("server:mail.event.when", map[string]any{"when": when})
+}
+
 // ServerMailGroupAccountMoved formats "server:mail.group.account_moved". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
 //
 //	en: Accounts you follow moving
@@ -3712,6 +3733,13 @@ func (l *Localizer) ServerMailGroupAutoDeleteLimit() string {
 //	en: Boosts
 func (l *Localizer) ServerMailGroupBoost() string {
 	return l.format("server:mail.group.boost", nil)
+}
+
+// ServerMailGroupEvent formats "server:mail.group.event". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page: the invitations, changes, cancellations, reminders, and starts of events. Matches the row of the web client's notification settings.
+//
+//	en: Events
+func (l *Localizer) ServerMailGroupEvent() string {
+	return l.format("server:mail.group.event", nil)
 }
 
 // ServerMailGroupFavourite formats "server:mail.group.favourite". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
@@ -4922,6 +4950,81 @@ func (l *Localizer) ServerPushBoostRequest(name string) string {
 //	en: The administrators of {instance} reviewed your custom emoji request
 func (l *Localizer) ServerPushCustomEmojiRequestDecided(instance string) string {
 	return l.format("server:push.custom_emoji_request_decided", map[string]any{"instance": instance})
+}
+
+// ServerPushEventCancelled formats "server:push.event_cancelled". Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that an event was cancelled. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.
+//
+//	en: {title} was cancelled
+func (l *Localizer) ServerPushEventCancelled(title string) string {
+	return l.format("server:push.event_cancelled", map[string]any{"title": title})
+}
+
+// ServerPushEventChanged formats "server:push.event_changed". Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that the organizers changed the date, the places, or the voice chat room of an event. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.
+//
+//	en: The date or place of {title} changed
+func (l *Localizer) ServerPushEventChanged(title string) string {
+	return l.format("server:push.event_changed", map[string]any{"title": title})
+}
+
+// ServerPushEventInvitedArgs holds the arguments of ServerPushEventInvited, passed by name.
+//
+//exhaustruct:enforce
+type ServerPushEventInvitedArgs struct {
+	_     struct{} // forces keyed fields
+	Name  string
+	Title string
+}
+
+// ServerPushEventInvited formats "server:push.event_invited". Web Push notification, and the subject of its email, telling a local user that someone invited them to an event of the server. {name} is the display name, or the @handle, of the account that invited them. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.
+//
+//	en: {name} invited you to {title}
+func (l *Localizer) ServerPushEventInvited(args ServerPushEventInvitedArgs) string {
+	return l.format("server:push.event_invited", map[string]any{"name": args.Name, "title": args.Title})
+}
+
+// ServerPushEventReminderArgs holds the arguments of ServerPushEventReminder, passed by name.
+//
+//exhaustruct:enforce
+type ServerPushEventReminderArgs struct {
+	_     struct{} // forces keyed fields
+	Count int
+	Title string
+	Unit  string
+}
+
+// ServerPushEventReminder formats "server:push.event_reminder". Web Push notification, and the subject of its email, reminding a local user who is going or may go to an event that it starts soon, at the time before the start that the user chose. {unit} is day, hour, or minute, and {count} how many of them before the start. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.
+//
+//	en: {unit, select, day {{count, plural, one {{title} starts in # day} other {{title} starts in # days}}} hour {{count, plural, one {{title} starts in # hour} other {{title} starts in # hours}}} other {{count, plural, one {{title} starts in # minute} other {{title} starts in # minutes}}}}
+func (l *Localizer) ServerPushEventReminder(args ServerPushEventReminderArgs) string {
+	return l.format("server:push.event_reminder", map[string]any{"count": args.Count, "title": args.Title, "unit": args.Unit})
+}
+
+// ServerPushEventRoomUnavailable formats "server:push.event_room_unavailable". Web Push notification, and the subject of its email, telling the organizer of an event that its voice chat room cannot open, or could not, for example because the voice chat is off. The event itself stays. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.
+//
+//	en: The voice chat room of {title} cannot open
+func (l *Localizer) ServerPushEventRoomUnavailable(title string) string {
+	return l.format("server:push.event_room_unavailable", map[string]any{"title": title})
+}
+
+// ServerPushEventScheduleConfirmed formats "server:push.event_schedule_confirmed". Web Push notification, and the subject of its email, telling a local user who answered the date poll of an event, or who was invited to it, that its organizers fixed the date. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.
+//
+//	en: The date of {title} is set
+func (l *Localizer) ServerPushEventScheduleConfirmed(title string) string {
+	return l.format("server:push.event_schedule_confirmed", map[string]any{"title": title})
+}
+
+// ServerPushEventStarted formats "server:push.event_started". Web Push notification, and the subject of its email, telling a local user who is going or may go to an event that it starts now. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none.
+//
+//	en: {title} is starting
+func (l *Localizer) ServerPushEventStarted(title string) string {
+	return l.format("server:push.event_started", map[string]any{"title": title})
+}
+
+// ServerPushEventUntitled formats "server:push.event_untitled". Words for an event without a title (its organizer's account was erased), in place of {title} in the Web Push notifications of the events, such as “The date of an event is set”.
+//
+//	en: an event
+func (l *Localizer) ServerPushEventUntitled() string {
+	return l.format("server:push.event_untitled", nil)
 }
 
 // ServerPushFavourite formats "server:push.favourite". Web Push notification. {name} is the display name, or the @handle, of the account that favourited the user's post.

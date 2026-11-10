@@ -5,6 +5,7 @@ package notification
 import (
 	"errors"
 	"slices"
+	"strconv"
 	"time"
 )
 
@@ -30,7 +31,8 @@ type Type string
 // (ADR-0086). announcement tells every local user of a server-wide announcement once it starts
 // to show (ADR-0125 §2). auto_delete_limit tells a local account in advance that the server
 // maximum of the automatic deletion binds it (ADR-0151 §7). scheduled_status_failed tells the
-// author of a scheduled post that it could not be published (ADR-0156 §8).
+// author of a scheduled post that it could not be published (ADR-0156 §8). The event_* types come
+// from the events of the local users (ADR-0161 §11).
 const (
 	TypeFollow         Type = "follow"
 	TypeFollowRequest  Type = "follow_request"
@@ -139,7 +141,44 @@ const (
 	// the status interacted with, SourceAccountID its author.
 	TypeInteractionAccepted Type = "interaction_accepted"
 	TypeInteractionRejected Type = "interaction_rejected"
+	// The notifications of an event (ADR-0161 §11): GatheringID is the event and SourceAccountID
+	// the account it is from (the organizer, or for event_invited the account that invited).
+	// TypeEventInvited tells an account that it was invited to an event.
+	TypeEventInvited Type = "event_invited"
+	// TypeEventScheduleConfirmed tells those who answered the date poll of an event, and its
+	// invitees, that its date was fixed.
+	TypeEventScheduleConfirmed Type = "event_schedule_confirmed"
+	// TypeEventChanged tells the attendees who answered going or maybe, and the invitees, that the
+	// date, the places, or the voice chat room of an event changed.
+	TypeEventChanged Type = "event_changed"
+	// TypeEventCancelled tells the attendees who answered going or maybe, and the invitees, that an
+	// event was cancelled.
+	TypeEventCancelled Type = "event_cancelled"
+	// TypeEventReminder reminds an attendee who answered going or maybe of an event that is about
+	// to start, at the time before the start that the attendee chose.
+	TypeEventReminder Type = "event_reminder"
+	// TypeEventStarted tells the attendees who answered going or maybe that an event started.
+	TypeEventStarted Type = "event_started"
+	// TypeEventRoomUnavailable tells the organizer that the voice chat room of an event cannot
+	// open, or could not.
+	TypeEventRoomUnavailable Type = "event_room_unavailable"
 )
+
+// Event reports whether t is one of the notifications of an event (ADR-0161 §11).
+func (t Type) Event() bool {
+	switch t {
+	case TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
+		TypeEventStarted, TypeEventRoomUnavailable:
+		return true
+	}
+	return false
+}
+
+// EventTypes are the notifications of an event, in a stable order.
+var EventTypes = []Type{
+	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
+	TypeEventStarted, TypeEventRoomUnavailable,
+}
 
 // ErrorGroupChange is what an admin_error_group tells of (notifications.error_group_change).
 type ErrorGroupChange string
@@ -243,6 +282,8 @@ var Types = []Type{
 	TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit, TypeScheduledStatusFailed,
 	TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
 	TypeAdminDomainListFailing,
+	TypeEventInvited, TypeEventScheduleConfirmed, TypeEventChanged, TypeEventCancelled, TypeEventReminder,
+	TypeEventStarted, TypeEventRoomUnavailable,
 }
 
 // Valid reports whether t is a known notification type.
@@ -261,7 +302,7 @@ func (t Type) Valid() bool {
 		TypeAdminDomainListFailing:
 		return true
 	}
-	return false
+	return t.Event()
 }
 
 // Notification is one notification to a local account: an event that happened to it
@@ -324,8 +365,10 @@ type Notification struct {
 	// DraftScheduleID is the schedule of a draft (draft_schedules) of a scheduled_status_failed,
 	// "" for the other types.
 	DraftScheduleID string
-	DedupeKey       string
-	CreatedAt       time.Time
+	// GatheringID is the event (gatherings) of the event_* types, "" for the other types.
+	GatheringID string
+	DedupeKey   string
+	CreatedAt   time.Time
 }
 
 var (
@@ -405,6 +448,9 @@ func (n Notification) Validate() error {
 	}
 	if failed := n.Type == TypeScheduledStatusFailed; failed != (n.DraftScheduleID != "") || (failed && n.SourceAccountID != "") {
 		return errors.New("notification: a scheduled_status_failed, and only it, names a draft schedule, and it has no source account")
+	}
+	if event := n.Type.Event(); event != (n.GatheringID != "") || (event && n.SourceAccountID == "") {
+		return errors.New("notification: the notifications of an event, and only they, name an event, and they have a source account")
 	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
@@ -660,6 +706,49 @@ func VoiceRoomStartedKey(roomID string) string { return string(TypeVoiceRoomStar
 // invitation, which an account gets once per room.
 func VoiceRoomInvitedKey(invitationID string) string {
 	return string(TypeVoiceRoomInvited) + ":" + invitationID
+}
+
+// EventInvitedKey is the dedupe key of an event_invited notification: one per invitation, which
+// an account gets once per event.
+func EventInvitedKey(invitationID string) string {
+	return string(TypeEventInvited) + ":" + invitationID
+}
+
+// EventScheduleConfirmedKey is the dedupe key of an event_schedule_confirmed notification: one per
+// confirmation of the date and recipient.
+func EventScheduleConfirmedKey(confirmationID string) string {
+	return string(TypeEventScheduleConfirmed) + ":" + confirmationID
+}
+
+// EventChangedKey is the dedupe key of an event_changed notification: one per change and
+// recipient, the change named by the revision of the settings or the confirmation of the date
+// that made it.
+func EventChangedKey(changeID string) string { return string(TypeEventChanged) + ":" + changeID }
+
+// EventCancelledKey is the dedupe key of an event_cancelled notification: one per event, which is
+// cancelled once, and recipient.
+func EventCancelledKey(gatheringID string) string {
+	return string(TypeEventCancelled) + ":" + gatheringID
+}
+
+// EventReminderKey is the dedupe key of an event_reminder notification: one per confirmation of
+// the date, minutes before the start, and recipient, so that a new date reminds again and the old
+// one never does.
+func EventReminderKey(confirmationID string, minutesBefore int) string {
+	return string(TypeEventReminder) + ":" + confirmationID + ":" + strconv.Itoa(minutesBefore)
+}
+
+// EventStartedKey is the dedupe key of an event_started notification: one per confirmation of the
+// date and recipient.
+func EventStartedKey(confirmationID string) string {
+	return string(TypeEventStarted) + ":" + confirmationID
+}
+
+// EventRoomUnavailableKey is the dedupe key of an event_room_unavailable notification: one per
+// confirmation of the date, reason, and checkpoint (the confirmation, the day before, the start, or
+// the end of the wait).
+func EventRoomUnavailableKey(confirmationID, reason, checkpoint string) string {
+	return string(TypeEventRoomUnavailable) + ":" + confirmationID + ":" + reason + ":" + checkpoint
 }
 
 // AdminHookAppealKey is the dedupe key of an admin_hook_appeal notification: one per appeal.

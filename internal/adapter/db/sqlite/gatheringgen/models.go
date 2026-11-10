@@ -20,6 +20,11 @@ type GatheringCoorganizer struct {
 	ChangeID    string
 }
 
+type GatheringDue struct {
+	GatheringID string
+	NextDueAt   int64
+}
+
 type GatheringInvitation struct {
 	ID                 string
 	GatheringID        string

@@ -188,6 +188,7 @@ type ViewerFacts struct {
 // the transaction of the command; the reads run in tx, or outside any transaction when tx is nil.
 type Repository interface {
 	ProjectionRepository
+	DueRepository
 
 	// InsertGathering records an event.
 	InsertGathering(ctx context.Context, tx uow.Tx, g Gathering) error

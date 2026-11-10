@@ -523,6 +523,23 @@ With `queue = cloudtasks` the jobs stay in the database (`database = postgres`),
 - The server's own service account needs `roles/cloudtasks.enqueuer` on the queue and `roles/iam.serviceAccountUser` on `queue_cloudtasks_service_account`.
   It authenticates with Application Default Credentials.
 
+### How late periodic jobs run
+
+A periodic job runs up to one period of its trigger after its time, plus the time the platform takes to start it. This is what
+decides how late the reminders and start notifications of events arrive, since `gathering.tick` sends them: a reminder is
+late by up to the interval in the table. The values are what the scheduler code and each platform's trigger give; they were
+not measured on a running server.
+
+| Platform | What starts the periodic jobs | Expected delay of an event reminder or start |
+| --- | --- | --- |
+| Self-hosting and Docker Compose (`queue = db`) | The scheduler in each process with `role = all` or `worker` checks once a minute, from when the process started, and queues each job once per period for the whole server | Up to 1 minute, plus about a second for a worker to pick the job up |
+| AWS ECS Fargate (`queue = db`) | The same scheduler, in the worker tasks | Up to 1 minute, plus about a second |
+| Cloud Run (`queue = cloudtasks`) | Cloud Scheduler calls `/_internal/tick` on its schedule, `* * * * *` (every minute) by default; Cloud Tasks then wakes the server for each job | Up to 1 minute, plus the start of an instance when none is running (a cold start, usually a few seconds). With a longer `tick_schedule`, such as `*/10 * * * *`, up to that interval |
+| AWS Lambda | `my` has no Lambda deployment; on AWS, run it on ECS Fargate | — |
+
+A reminder that would arrive after its event started is not sent, and neither is a start notification after the event ended.
+So with a tick longer than 5 minutes, the shortest reminders can be lost.
+
 ### Routing job types to their own queues
 
 With `queue = cloudtasks`, a worker cannot choose the jobs it runs: `worker_job_types` works only with `queue = db`, because the platform decides who receives a signal.

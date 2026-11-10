@@ -3829,6 +3829,7 @@ const (
 	NotificationGroupAnnouncement            NotificationGroup = "announcement"
 	NotificationGroupAutoDeleteLimit         NotificationGroup = "auto_delete_limit"
 	NotificationGroupBoost                   NotificationGroup = "boost"
+	NotificationGroupEvent                   NotificationGroup = "event"
 	NotificationGroupFavourite               NotificationGroup = "favourite"
 	NotificationGroupFollow                  NotificationGroup = "follow"
 	NotificationGroupFollowAccepted          NotificationGroup = "follow_accepted"
@@ -3878,6 +3879,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAutoDeleteLimit:
 		return true
 	case NotificationGroupBoost:
+		return true
+	case NotificationGroupEvent:
 		return true
 	case NotificationGroupFavourite:
 		return true
@@ -3994,6 +3997,13 @@ const (
 	NotificationTypeBoost                      NotificationType = "boost"
 	NotificationTypeBoostRequest               NotificationType = "boost_request"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
+	NotificationTypeEventCancelled             NotificationType = "event_cancelled"
+	NotificationTypeEventChanged               NotificationType = "event_changed"
+	NotificationTypeEventInvited               NotificationType = "event_invited"
+	NotificationTypeEventReminder              NotificationType = "event_reminder"
+	NotificationTypeEventRoomUnavailable       NotificationType = "event_room_unavailable"
+	NotificationTypeEventScheduleConfirmed     NotificationType = "event_schedule_confirmed"
+	NotificationTypeEventStarted               NotificationType = "event_started"
 	NotificationTypeFavourite                  NotificationType = "favourite"
 	NotificationTypeFollow                     NotificationType = "follow"
 	NotificationTypeFollowAccepted             NotificationType = "follow_accepted"
@@ -4059,6 +4069,20 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeBoostRequest:
 		return true
 	case NotificationTypeCustomEmojiRequestDecided:
+		return true
+	case NotificationTypeEventCancelled:
+		return true
+	case NotificationTypeEventChanged:
+		return true
+	case NotificationTypeEventInvited:
+		return true
+	case NotificationTypeEventReminder:
+		return true
+	case NotificationTypeEventRoomUnavailable:
+		return true
+	case NotificationTypeEventScheduleConfirmed:
+		return true
+	case NotificationTypeEventStarted:
 		return true
 	case NotificationTypeFavourite:
 		return true
@@ -11173,6 +11197,26 @@ type EventRSVP struct {
 	Answer EventAnswer `json:"answer"`
 }
 
+// EventReminders The reminders of events of the authenticated user.
+type EventReminders struct {
+	// Defaults Whether these are the defaults (one day and one hour before), as the user has not chosen.
+	Defaults bool `json:"defaults"`
+
+	// MinutesBefore How many minutes before the start of an event each reminder is, from the earliest; empty
+	// for no reminders.
+	MinutesBefore []int `json:"minutes_before"`
+}
+
+// EventRemindersUpdate A change of the reminders of events of the authenticated user.
+type EventRemindersUpdate struct {
+	// Defaults Restores the defaults (one day and one hour before) instead.
+	Defaults *bool `json:"defaults,omitempty"`
+
+	// MinutesBefore The reminders, in minutes before the start: at most 3, each from 5 minutes to 7 days
+	// (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
+	MinutesBefore *[]int `json:"minutes_before,omitempty"`
+}
+
 // EventState Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
 // `ends_at` is in the past.
 type EventState string
@@ -13315,6 +13359,13 @@ type Notification struct {
 	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
 	ErrorGroup *NotificationErrorGroup `json:"error_group,omitempty"`
 
+	// Event The event that an `event_*` notification is about, as the user sees it now; omitted when
+	// the user no longer sees it, for the other types, and without `read:events`.
+	Event *Event `json:"event,omitempty"`
+
+	// EventId The event that an `event_*` notification is about.
+	EventId *Id `json:"event_id,omitempty"`
+
 	// HookAppeal The user's appeal of a refused post that a `hook_appeal_decided` tells of, with its state;
 	// first-party clients only, and absent once the appeal is no longer kept.
 	HookAppeal *OwnHookAppeal `json:"hook_appeal,omitempty"`
@@ -13450,6 +13501,18 @@ type Notification struct {
 	// `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
 	// draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
 	// sends nothing.
+	// The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+	// sees it). `event_invited` tells that `account` invited the user, once per invitation;
+	// `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+	// user answered or to which the user was invited, once per date; `event_changed` that the date,
+	// the places, or the voice chat room of an event that the user answered going or maybe to, or was
+	// invited to, changed, once per change (a change of the title or the description sends
+	// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+	// that the user answered going or maybe to starts soon, at each time before the start that the
+	// user chose (`getEventReminders`), once per date and time, and never for a date that changed
+	// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+	// the organizer that the voice chat room of the event cannot open. Their `account` is the
+	// organizer, except for `event_invited`. Each is sent only while the user sees the event.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -13492,7 +13555,8 @@ type NotificationErrorGroupChange string
 // and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 // `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 // `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 // `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 // `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13684,7 +13748,8 @@ type NotificationSettingRow struct {
 	// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 	// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-	// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+	// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+	// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 	// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 	// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13741,7 +13806,8 @@ type NotificationSettingsUpdate struct {
 		// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 		// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-		// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+		// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+		// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 		// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 		// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13848,6 +13914,18 @@ type NotificationSettingsUpdateChangesChannel string
 // `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
 // draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
 // sends nothing.
+// The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+// sees it). `event_invited` tells that `account` invited the user, once per invitation;
+// `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+// user answered or to which the user was invited, once per date; `event_changed` that the date,
+// the places, or the voice chat room of an event that the user answered going or maybe to, or was
+// invited to, changed, once per change (a change of the title or the description sends
+// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+// that the user answered going or maybe to starts soon, at each time before the start that the
+// user chose (`getEventReminders`), once per date and time, and never for a date that changed
+// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+// the organizer that the voice chat room of the event cannot open. Their `account` is the
+// organizer, except for `event_invited`. Each is sent only while the user sees the event.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
@@ -18484,6 +18562,9 @@ type PreviewAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
 
 // UpdateBadgeChoiceJSONRequestBody defines body for UpdateBadgeChoice for application/json ContentType.
 type UpdateBadgeChoiceJSONRequestBody = UpdateBadgeChoiceRequest
+
+// UpdateEventRemindersJSONRequestBody defines body for UpdateEventReminders for application/json ContentType.
+type UpdateEventRemindersJSONRequestBody = EventRemindersUpdate
 
 // UpdateNotificationPolicyJSONRequestBody defines body for UpdateNotificationPolicy for application/json ContentType.
 type UpdateNotificationPolicyJSONRequestBody = NotificationPolicyUpdate
@@ -25992,6 +26073,38 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 	UpdateBadgeChoice(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetEventReminders Get the authenticated user's reminders of events
+	//
+	// How long before the start of an event that the user answered going or maybe an
+	// `event_reminder` reminds the user: one day and one hour before until the user chooses.
+	//
+	// Corresponds with GET /preferences/event_reminders (the `GetEventReminders` operationId).
+	GetEventReminders(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateEventRemindersWithBody Change the authenticated user's reminders of events
+	//
+	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+	// reminders of the upcoming events that the user answered going or maybe follow the change. A
+	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+	// longer than 7 days, or the same one twice; nothing is changed then.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+	UpdateEventRemindersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateEventReminders Change the authenticated user's reminders of events
+	//
+	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+	// reminders of the upcoming events that the user answered going or maybe follow the change. A
+	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+	// longer than 7 days, or the same one twice; nothing is changed then.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+	UpdateEventReminders(ctx context.Context, body UpdateEventRemindersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetNotificationPolicy Get the authenticated user's notification policy
 	//
@@ -37717,6 +37830,68 @@ func (c *Client) UpdateBadgeChoiceWithBody(ctx context.Context, roleId BadgeRole
 // Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 func (c *Client) UpdateBadgeChoice(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateBadgeChoiceRequest(c.Server, roleId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetEventReminders Get the authenticated user's reminders of events
+//
+// How long before the start of an event that the user answered going or maybe an
+// `event_reminder` reminds the user: one day and one hour before until the user chooses.
+//
+// Corresponds with GET /preferences/event_reminders (the `GetEventReminders` operationId).
+func (c *Client) GetEventReminders(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEventRemindersRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateEventRemindersWithBody Change the authenticated user's reminders of events
+//
+// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+// reminders of the upcoming events that the user answered going or maybe follow the change. A
+// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+// longer than 7 days, or the same one twice; nothing is changed then.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+func (c *Client) UpdateEventRemindersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateEventRemindersRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateEventReminders Change the authenticated user's reminders of events
+//
+// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+// reminders of the upcoming events that the user answered going or maybe follow the change. A
+// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+// longer than 7 days, or the same one twice; nothing is changed then.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+func (c *Client) UpdateEventReminders(ctx context.Context, body UpdateEventRemindersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateEventRemindersRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -55761,6 +55936,73 @@ func NewUpdateBadgeChoiceRequestWithBody(server string, roleId BadgeRoleId, cont
 	return req, nil
 }
 
+// NewGetEventRemindersRequest constructs an http.Request for the GetEventReminders method
+func NewGetEventRemindersRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/preferences/event_reminders")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateEventRemindersRequest calls the generic UpdateEventReminders builder with application/json body
+func NewUpdateEventRemindersRequest(server string, body UpdateEventRemindersJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateEventRemindersRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdateEventRemindersRequestWithBody constructs an http.Request for the UpdateEventReminders method, with any body, and a specified content type
+func NewUpdateEventRemindersRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/preferences/event_reminders")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetNotificationPolicyRequest constructs an http.Request for the GetNotificationPolicy method
 func NewGetNotificationPolicyRequest(server string) (*http.Request, error) {
 	var err error
@@ -65974,6 +66216,40 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 	UpdateBadgeChoiceWithResponse(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBadgeChoiceResponse, error)
+
+	// GetEventRemindersWithResponse Get the authenticated user's reminders of events
+	//
+	// How long before the start of an event that the user answered going or maybe an
+	// `event_reminder` reminds the user: one day and one hour before until the user chooses.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /preferences/event_reminders (the `GetEventReminders` operationId).
+	GetEventRemindersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventRemindersResponse, error)
+
+	// UpdateEventRemindersWithBodyWithResponse Change the authenticated user's reminders of events
+	//
+	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+	// reminders of the upcoming events that the user answered going or maybe follow the change. A
+	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+	// longer than 7 days, or the same one twice; nothing is changed then.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+	UpdateEventRemindersWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateEventRemindersResponse, error)
+
+	// UpdateEventRemindersWithResponse Change the authenticated user's reminders of events
+	//
+	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+	// reminders of the upcoming events that the user answered going or maybe follow the change. A
+	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+	// longer than 7 days, or the same one twice; nothing is changed then.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+	UpdateEventRemindersWithResponse(ctx context.Context, body UpdateEventRemindersJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateEventRemindersResponse, error)
 
 	// GetNotificationPolicyWithResponse Get the authenticated user's notification policy
 	//
@@ -90378,6 +90654,136 @@ func (r UpdateBadgeChoiceResponse) ContentType() string {
 	return ""
 }
 
+// GetEventRemindersResponse200Headers the declared response headers of an HTTP 200 response for GetEventReminders
+type GetEventRemindersResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetEventRemindersResponseDefaultHeaders the declared response headers of an HTTP default response for GetEventReminders
+type GetEventRemindersResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetEventRemindersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventReminders
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetEventRemindersResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetEventRemindersResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetEventRemindersResponse) GetJSON200() *EventReminders {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetEventRemindersResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetEventRemindersResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetEventRemindersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetEventRemindersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetEventRemindersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateEventRemindersResponse200Headers the declared response headers of an HTTP 200 response for UpdateEventReminders
+type UpdateEventRemindersResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateEventRemindersResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateEventReminders
+type UpdateEventRemindersResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateEventRemindersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventReminders
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateEventRemindersResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateEventRemindersResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateEventRemindersResponse) GetJSON200() *EventReminders {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateEventRemindersResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateEventRemindersResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateEventRemindersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateEventRemindersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateEventRemindersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetNotificationPolicyResponse200Headers the declared response headers of an HTTP 200 response for GetNotificationPolicy
 type GetNotificationPolicyResponse200Headers struct {
 	CacheControl *string
@@ -105205,6 +105611,58 @@ func (c *ClientWithResponses) UpdateBadgeChoiceWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseUpdateBadgeChoiceResponse(rsp)
+}
+
+// GetEventRemindersWithResponse Get the authenticated user's reminders of events
+//
+// How long before the start of an event that the user answered going or maybe an
+// `event_reminder` reminds the user: one day and one hour before until the user chooses.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /preferences/event_reminders (the `GetEventReminders` operationId).
+func (c *ClientWithResponses) GetEventRemindersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventRemindersResponse, error) {
+	rsp, err := c.GetEventReminders(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetEventRemindersResponse(rsp)
+}
+
+// UpdateEventRemindersWithBodyWithResponse Change the authenticated user's reminders of events
+//
+// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+// reminders of the upcoming events that the user answered going or maybe follow the change. A
+// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+// longer than 7 days, or the same one twice; nothing is changed then.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+func (c *ClientWithResponses) UpdateEventRemindersWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateEventRemindersResponse, error) {
+	rsp, err := c.UpdateEventRemindersWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateEventRemindersResponse(rsp)
+}
+
+// UpdateEventRemindersWithResponse Change the authenticated user's reminders of events
+//
+// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+// reminders of the upcoming events that the user answered going or maybe follow the change. A
+// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+// longer than 7 days, or the same one twice; nothing is changed then.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+func (c *ClientWithResponses) UpdateEventRemindersWithResponse(ctx context.Context, body UpdateEventRemindersJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateEventRemindersResponse, error) {
+	rsp, err := c.UpdateEventReminders(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateEventRemindersResponse(rsp)
 }
 
 // GetNotificationPolicyWithResponse Get the authenticated user's notification policy
@@ -134837,6 +135295,160 @@ func ParseUpdateBadgeChoiceResponse(rsp *http.Response) (*UpdateBadgeChoiceRespo
 		response.Headers200 = &headers
 	case true:
 		var headers UpdateBadgeChoiceResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetEventRemindersResponse parses an HTTP response from a GetEventRemindersWithResponse call
+func ParseGetEventRemindersResponse(rsp *http.Response) (*GetEventRemindersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetEventRemindersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventReminders
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetEventRemindersResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetEventRemindersResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateEventRemindersResponse parses an HTTP response from a UpdateEventRemindersWithResponse call
+func ParseUpdateEventRemindersResponse(rsp *http.Response) (*UpdateEventRemindersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateEventRemindersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventReminders
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateEventRemindersResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateEventRemindersResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

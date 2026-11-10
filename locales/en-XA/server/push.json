@@ -79,6 +79,38 @@
     "defaultMessage": "[Ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş ǿǿƒ {instance} řḗḗṽīḗḗẇḗḗḓ ẏǿǿŭŭř ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī řḗḗɋŭŭḗḗşŧ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.event_cancelled": {
+    "defaultMessage": "[{title} ẇȧȧş ƈȧȧƞƈḗḗŀŀḗḗḓ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_changed": {
+    "defaultMessage": "[Ŧħḗḗ ḓȧȧŧḗḗ ǿǿř ƥŀȧȧƈḗḗ ǿǿƒ {title} ƈħȧȧƞɠḗḗḓ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_invited": {
+    "defaultMessage": "[{name} īƞṽīŧḗḗḓ ẏǿǿŭŭ ŧǿǿ {title}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_reminder": {
+    "defaultMessage": "[{unit,select,day{{count,plural,one{{title} şŧȧȧřŧş īƞ # ḓȧȧẏ} other{{title} şŧȧȧřŧş īƞ # ḓȧȧẏş}}} hour{{count,plural,one{{title} şŧȧȧřŧş īƞ # ħǿǿŭŭř} other{{title} şŧȧȧřŧş īƞ # ħǿǿŭŭřş}}} other{{count,plural,one{{title} şŧȧȧřŧş īƞ # ḿīƞŭŭŧḗḗ} other{{title} şŧȧȧřŧş īƞ # ḿīƞŭŭŧḗḗş}}}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_room_unavailable": {
+    "defaultMessage": "[Ŧħḗḗ ṽǿǿīƈḗḗ ƈħȧȧŧ řǿǿǿǿḿ ǿǿƒ {title} ƈȧȧƞƞǿǿŧ ǿǿƥḗḗƞ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_schedule_confirmed": {
+    "defaultMessage": "[Ŧħḗḗ ḓȧȧŧḗḗ ǿǿƒ {title} īş şḗḗŧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_started": {
+    "defaultMessage": "[{title} īş şŧȧȧřŧīƞɠ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_untitled": {
+    "defaultMessage": "[ȧȧƞ ḗḗṽḗḗƞŧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.favourite": {
     "defaultMessage": "[{name} ƒȧȧṽǿǿŭŭřīŧḗḗḓ ẏǿǿŭŭř ƥǿǿşŧ]",
     "description": "Generated from en by tools/i18n; do not edit."

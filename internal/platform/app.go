@@ -168,6 +168,8 @@ type App struct {
 	Notifications *notification.Service
 	// voiceNotifier creates the notifications of the voice chat rooms (ADR-0100 §8).
 	voiceNotifier *notification.VoiceNotifier
+	// gatheringNotifier creates the notifications of the events (ADR-0161 §11).
+	gatheringNotifier *notification.GatheringNotifier
 	// Subscriptions keeps the local accounts' subscriptions to new posts (ADR-0086).
 	Subscriptions *notification.Subscriptions
 	// ThreadMutes keeps the local accounts' mutes of conversations (ADR-0158 §8).

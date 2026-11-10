@@ -155,6 +155,8 @@ CREATE TABLE gathering_attendees (
 ) STRICT;
 -- The attendee list, in the order of the answers.
 CREATE INDEX gathering_attendees_gathering_rsvp ON gathering_attendees (gathering_id, rsvp_id);
+-- The events an account answered, which a change of its reminders reads.
+CREATE INDEX gathering_attendees_account_id ON gathering_attendees (account_id, gathering_id);
 
 -- Projection: the current co-organizers of each event; change_id, the assignment, orders the
 -- nominations.
@@ -166,3 +168,29 @@ CREATE TABLE gathering_coorganizers (
 ) STRICT;
 -- The events an account co-organizes.
 CREATE INDEX gathering_coorganizers_account_id ON gathering_coorganizers (account_id, gathering_id);
+
+-- Projection: the next time that gathering.tick handles an event (ADR-0161 §12, §13), for the
+-- events that have one: a reminder or the start that is still ahead. The confirmations, the
+-- answers, the reminder settings, and the cancellation derive it; an event with nothing ahead
+-- has no row.
+CREATE TABLE gathering_dues (
+  gathering_id TEXT NOT NULL PRIMARY KEY,
+  next_due_at INTEGER NOT NULL
+) STRICT;
+-- The events that are due, the earliest first.
+CREATE INDEX gathering_dues_next_due_at ON gathering_dues (next_due_at, gathering_id);
+
+-- Current value: an account chose its reminders of the events (ADR-0161 §12). Without a row the
+-- defaults apply; with one, its gathering_reminder_offsets, none for no reminders.
+CREATE TABLE gathering_reminder_settings (
+  account_id TEXT NOT NULL PRIMARY KEY,
+  updated_at INTEGER NOT NULL
+) STRICT;
+
+-- Current value (child of gathering_reminder_settings): how many minutes before the start of an
+-- event that the account answered going or maybe it is reminded, at most three per account.
+CREATE TABLE gathering_reminder_offsets (
+  account_id TEXT NOT NULL,
+  minutes_before INTEGER NOT NULL CHECK (minutes_before BETWEEN 5 AND 10080),
+  PRIMARY KEY (account_id, minutes_before)
+) STRICT;

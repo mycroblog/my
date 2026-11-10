@@ -229,6 +229,13 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   quote_request: "quote",
   interaction_accepted: "notice",
   interaction_rejected: "notice",
+  event_invited: "notice",
+  event_schedule_confirmed: "notice",
+  event_changed: "notice",
+  event_cancelled: "notice",
+  event_reminder: "notice",
+  event_started: "notice",
+  event_room_unavailable: "notice",
 };
 
 const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
@@ -275,6 +282,13 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   quote_request: "client:notifications.type.quote_request",
   interaction_accepted: "client:notifications.type.interaction_accepted",
   interaction_rejected: "client:notifications.type.interaction_rejected",
+  event_invited: "client:notifications.type.event_invited",
+  event_schedule_confirmed: "client:notifications.type.event_schedule_confirmed",
+  event_changed: "client:notifications.type.event_changed",
+  event_cancelled: "client:notifications.type.event_cancelled",
+  event_reminder: "client:notifications.type.event_reminder",
+  event_started: "client:notifications.type.event_started",
+  event_room_unavailable: "client:notifications.type.event_room_unavailable",
 };
 
 /** The sentences of a `service_closure` that tells of a change of the dates or of a withdrawal. */
@@ -567,6 +581,17 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return notification.voice_room_id === undefined
         ? []
         : [{ href: `/voice/${notification.voice_room_id}`, label: "client:notifications.link.voice_room" }];
+    // The page of the event, which says what changed and whether it was cancelled (ADR-0161 §11).
+    case "event_invited":
+    case "event_schedule_confirmed":
+    case "event_changed":
+    case "event_cancelled":
+    case "event_reminder":
+    case "event_started":
+    case "event_room_unavailable":
+      return notification.event_id === undefined
+        ? []
+        : [{ href: `/events/${notification.event_id}`, label: "client:notifications.link.event" }];
     // A titled announcement's title is the link (announcementOf); one without a title leads to it here.
     case "announcement":
       return notification.announcement === undefined || notification.announcement.title !== ""

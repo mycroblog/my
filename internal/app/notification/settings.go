@@ -188,6 +188,8 @@ func GroupLabel(l *i18n.Localizer, g notification.Group) string {
 		return l.ServerMailGroupAccountMoved()
 	case notification.GroupVoice:
 		return l.ServerMailGroupVoice()
+	case notification.GroupEvent:
+		return l.ServerMailGroupEvent()
 	case notification.GroupAdminReport:
 		return l.ServerMailGroupAdminReport()
 	case notification.GroupAdminSignUp:

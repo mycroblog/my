@@ -194,5 +194,37 @@
   "push.interaction_rejected": {
     "defaultMessage": "{name} declined your interaction with their post",
     "description": "Web Push notification. {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it."
+  },
+  "push.event_invited": {
+    "defaultMessage": "{name} invited you to {title}",
+    "description": "Web Push notification, and the subject of its email, telling a local user that someone invited them to an event of the server. {name} is the display name, or the @handle, of the account that invited them. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_schedule_confirmed": {
+    "defaultMessage": "The date of {title} is set",
+    "description": "Web Push notification, and the subject of its email, telling a local user who answered the date poll of an event, or who was invited to it, that its organizers fixed the date. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_changed": {
+    "defaultMessage": "The date or place of {title} changed",
+    "description": "Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that the organizers changed the date, the places, or the voice chat room of an event. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_cancelled": {
+    "defaultMessage": "{title} was cancelled",
+    "description": "Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that an event was cancelled. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_reminder": {
+    "defaultMessage": "{unit, select, day {{count, plural, one {{title} starts in # day} other {{title} starts in # days}}} hour {{count, plural, one {{title} starts in # hour} other {{title} starts in # hours}}} other {{count, plural, one {{title} starts in # minute} other {{title} starts in # minutes}}}}",
+    "description": "Web Push notification, and the subject of its email, reminding a local user who is going or may go to an event that it starts soon, at the time before the start that the user chose. {unit} is day, hour, or minute, and {count} how many of them before the start. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_started": {
+    "defaultMessage": "{title} is starting",
+    "description": "Web Push notification, and the subject of its email, telling a local user who is going or may go to an event that it starts now. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_room_unavailable": {
+    "defaultMessage": "The voice chat room of {title} cannot open",
+    "description": "Web Push notification, and the subject of its email, telling the organizer of an event that its voice chat room cannot open, or could not, for example because the voice chat is off. The event itself stays. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_untitled": {
+    "defaultMessage": "an event",
+    "description": "Words for an event without a title (its organizer's account was erased), in place of {title} in the Web Push notifications of the events, such as “The date of an event is set”."
   }
 }

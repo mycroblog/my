@@ -12,6 +12,7 @@ import (
 	"github.com/rivo/uniseg"
 
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/gathering"
 )
@@ -98,7 +99,12 @@ type Deps struct {
 	RateLimiter *kernel.RateLimiter
 	Members     Members
 	Relations   Relations
-	Logger      *slog.Logger
+	// Outbox enqueues the jobs of the notifications and of gathering.tick in the transactions of
+	// the commands, and Notifier creates the notifications (ADR-0161 §11, §12); with either nil the
+	// events notify nobody.
+	Outbox   queue.Outbox
+	Notifier Notifier
+	Logger   *slog.Logger
 }
 
 // Service runs the events (ADR-0161): creating, revising, and cancelling them, their

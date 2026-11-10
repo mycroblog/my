@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+description: The reminders of events of the authenticated user.
+type: object
+required: [minutes_before, defaults]
+properties:
+  minutes_before:
+    description: |
+      How many minutes before the start of an event each reminder is, from the earliest; empty
+      for no reminders.
+    type: array
+    maxItems: 3
+    items:
+      type: integer
+      minimum: 5
+      maximum: 10080
+  defaults:
+    description: Whether these are the defaults (one day and one hour before), as the user has not chosen.
+    type: boolean
