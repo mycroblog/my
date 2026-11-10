@@ -10,6 +10,7 @@ import (
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
@@ -23,12 +24,18 @@ const (
 // ErrLoginRequired reports a timeline that only a logged-in local account has: the home timeline.
 var ErrLoginRequired = errors.New("timeline: the timeline needs a logged-in account")
 
-// Deps are the ports a Service uses. UnitOfWork and IDs serve the commands of lists.
+// Deps are the ports a Service uses. UnitOfWork and IDs serve the commands of lists and of the
+// direct messages by conversation.
 type Deps struct {
 	UnitOfWork uow.UnitOfWork
 	Repository Repository
 	Clock      kernel.Clock
 	IDs        kernel.IDGenerator
+	// Conversations resolves the conversations that the direct messages name (nil takes every
+	// ID as it is), and Stream signals the viewer's streams after a command on one (nil for
+	// none).
+	Conversations ConversationResolver
+	Stream        stream.Publisher
 }
 
 // Service reads the home, local, hashtag, and profile timelines (FR-201 to FR-204, FR-208) from

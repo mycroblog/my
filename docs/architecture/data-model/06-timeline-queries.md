@@ -108,7 +108,43 @@ ORDER BY e.id DESC LIMIT :limit + 1;
 
 ### 6.4 ダイレクトメッセージ
 
-- 一覧は、閲覧者が送った・受け取った `direct` の投稿を、会話（`status_conversations` の `conversation_id`）ごとにまとめたものです。フォローしているかによりません。UI の名前は `en` で「Direct messages」、`ja` で「DM」です（[ADR-0154](../../adr/0154-conversations.md) §6）。
-- 一覧の投影は `timeline` モジュールが持ち、会話の ID を鍵にします。宛先は `feed_direct_recipients (recipient_account_id, entry_id)` から得ます。
-- `content.conversation_merged` を受けたら、併合された会話の行を併合先へ移し、既読の境界と非表示の境界は 2 つのうち新しい方を残します。併合された会話の ID を指す要求には、併合先の会話で答えます。
-- 行ごとの `canView`・ブロック・ミュート・作者の制限はホームと同じです。表とクエリの詳細は一覧の実装で決めます。
+- 一覧（FR-212）は、閲覧者が送った・受け取った `direct` の投稿を、会話（`status_conversations` の `conversation_id`）ごとにまとめたものです。フォローしているかによりません。UI の名前は `en` で「Direct messages」、`ja` で「DM」です（[ADR-0154](../../adr/0154-conversations.md) §6）。
+- 一覧の投影は `timeline` モジュールが持ち、会話の ID を鍵にします（§4.6 の「ダイレクトメッセージ」）。宛先は `feed_direct_recipients` と同じ現在版のメンションから得ます。
+- `content.conversation_merged` を受けたら、併合された会話の行を併合先へ移し、既読の境界と非表示の境界は 2 つのうち新しい方を残します。併合された会話の ID を指す要求には、併合先の会話で答えます（`content` の `ResolveConversation` で併合先をたどります）。
+
+1 ページは、会話の数によらず次の決まった数のクエリで読みます。
+
+```sql
+-- 1. ページ: 閲覧者の会話を、閲覧者の最新の direct の投稿の新しい順に、非表示を除いて
+SELECT c.conversation_id, c.last_entry_id, r.entry_id AS read_entry_id
+FROM feed_conversations c
+LEFT JOIN feed_conversation_reads r ON r.account_id = c.account_id AND r.conversation_id = c.conversation_id
+WHERE c.account_id = :viewer AND c.last_entry_id < :cursor
+  AND NOT EXISTS (SELECT 1 FROM feed_conversation_hides h
+        WHERE h.account_id = c.account_id AND h.conversation_id = c.conversation_id AND h.entry_id >= c.last_entry_id)
+ORDER BY c.last_entry_id DESC LIMIT :limit + 1;
+
+-- 2. ページの会話ごとに、見られる最新の投稿と、そのうちほかの人の最新の投稿
+SELECT p.conversation_id, max(e.id) AS last_entry_id,
+       max(CASE WHEN e.author_account_id <> :viewer THEN e.id END) AS last_other_entry_id
+FROM feed_conversation_participants p JOIN feed_entries e ON e.id = p.entry_id
+WHERE p.account_id = :viewer AND p.conversation_id IN (:page)
+  AND NOT EXISTS (/* 閲覧者のブロック・ミュート（feed_exclusions）を作者に */)
+  AND NOT EXISTS (/* 作者の profile_view（feed_author_restrictions）、作者のドメインの profile_view（feed_domain_restrictions） */)
+GROUP BY p.conversation_id;
+
+-- 3. ページの会話ごとの相手: 閲覧者が当事者の投稿の、ほかの当事者
+SELECT DISTINCT o.conversation_id, o.account_id
+FROM feed_conversation_participants v
+JOIN feed_conversation_participants o ON o.conversation_id = v.conversation_id AND o.entry_id = v.entry_id
+WHERE v.account_id = :viewer AND v.conversation_id IN (:page) AND o.account_id <> :viewer;
+```
+
+- 2 の投稿は `feed_entries` を ID でまとめて読み、ほかのタイムラインと同じく `Facts` をページの行についてまとめて読んで、`canView`（`ContextDirectMessages`。`direct` だけを作者と宛先に見せる。[visibility.md](../visibility.md) §3）を再適用します。拒んだ会話はページから省きます。
+  最新の投稿が隠れている（ミュート・ブロック・作者の制限）会話は、それより前の見られる投稿を見せ、見られる投稿が無い会話は省きます。省いてもページは詰めず、次のページのカーソルは読んだ最後の行の `last_entry_id` です。
+- 並びは閲覧者の最新の `direct` の投稿（`last_entry_id`）の順で、見せる投稿がそれより前のこともあります。タイムラインの言語（FR-208）は掛けません。
+- 未読は、2 の `last_other_entry_id` が既読の境界より新しいときです。閲覧者自身の投稿は未読にしません。
+- 非表示の会話は、境界より新しい投稿が届くと `last_entry_id` が進んで一覧に戻ります。単体の取得（`GET /api/v1/conversations/{id}`）は非表示でも返します。
+- 使うインデックス: `feed_conversations (account_id, last_entry_id)`、`feed_conversation_participants` の PK と `(conversation_id, entry_id)`、`feed_entries` の PK、`feed_exclusions` の PK。
+- ストリーム（FR-207）: `direct` の投稿の作成をコミットした後、当事者ごとに `stream.KindConversation`（会話の ID）を出し、既読にした後は閲覧者に出します。受けたストリームは、その会話を一覧と同じ規則で読み直して `conversation` イベントで送ります。一覧が出さない会話は送りません。
+- メンションの通知はこれまでどおりで、`direct` の投稿も宛先に `mention` の通知を作ります（`notification` の projector）。

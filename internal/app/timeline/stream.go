@@ -18,13 +18,20 @@ import (
 // the booster; the streams ask HomeAudience which of their viewers' home timelines may list it,
 // and HomeEntry whether each of those lists it. A status that the public timelines may list,
 // local or remote, also signals a public timeline entry (ADR-0013 §20), whose streams ask
-// LocalEntry or PublicEntry.
+// LocalEntry or PublicEntry. A direct post signals its conversation to each of its parties,
+// whose streams ask StreamConversation.
 func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	r.OnCommit(appcontent.EventStatusCreated, func(_ context.Context, e uow.Event) {
 		st := e.(appcontent.StatusCreated).Status
 		pub.Publish(stream.Event{Kind: stream.KindHomeEntry, EntryID: st.ID, AuthorAccountID: st.AuthorAccountID})
 		if onLocal, onFederated := publicTimelines(st.IsLocal, st.Visibility); onLocal || onFederated {
 			pub.Publish(stream.Event{Kind: stream.KindPublicEntry, EntryID: st.ID, OnLocal: onLocal, OnFederated: onFederated})
+		}
+		if ev := e.(appcontent.StatusCreated); st.Visibility == appcontent.VisibilityDirect && ev.ConversationID != "" {
+			// One signal for each party, whose streams read the conversation again (FR-212).
+			for _, id := range directParties(st.AuthorAccountID, ev.Revision.MentionedAccountIDs) {
+				pub.Publish(stream.Event{Kind: stream.KindConversation, AccountID: id, ConversationID: ev.ConversationID})
+			}
 		}
 	})
 	r.OnCommit(appcontent.EventBoosted, func(_ context.Context, e uow.Event) {

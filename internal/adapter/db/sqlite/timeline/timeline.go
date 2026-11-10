@@ -367,6 +367,7 @@ func (r *Repository) DeleteProjection(ctx context.Context, tx uow.Tx) error {
 	for _, del := range []func(context.Context) error{
 		q.DeleteAllFeedEntries, q.DeleteAllFeedDirectRecipients, q.DeleteAllFeedTagEntries, q.DeleteAllTagUsage,
 		q.DeleteAllFeedFollowEdges, q.DeleteAllFeedExclusions, q.DeleteAllFeedDomainMutes,
+		q.DeleteAllFeedConversationParticipants, q.DeleteAllFeedConversations,
 	} {
 		if err := del(ctx); err != nil {
 			return sqlite.Wrap(err, "empty the feed projections")
@@ -601,7 +602,7 @@ func (r *Repository) Snapshot(ctx context.Context) (apptimeline.Projection, erro
 	for _, row := range domainMutes {
 		p.DomainMutes = append(p.DomainMutes, apptimeline.DomainMute{ViewerAccountID: row.ViewerAccountID, Domain: row.Domain})
 	}
-	return p, nil
+	return p, conversationSnapshot(ctx, q, &p)
 }
 
 func entryFrom(row timelinegen.FeedEntry) apptimeline.Entry {

@@ -38,6 +38,10 @@ func (r *Repository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accountID stri
 			q.EraseFeedDirectRecipientsOfEntries, q.EraseFeedTagEntriesOfEntries, q.EraseFeedEntries); err != nil {
 			return 0, err
 		}
+		// The parties of the erased direct entries leave their conversations with them.
+		if err := deleteConversationEntries(ctx, q, entries); err != nil {
+			return 0, err
+		}
 		deltas := make(map[string]int64, len(used))
 		for _, u := range used {
 			deltas[u.TagID] = -u.N
@@ -76,6 +80,18 @@ func (r *Repository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accountID stri
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
 			return q.EraseListsOf(ctx, timelinegen.EraseListsOfParams{AccountID: a, Lim: n})
+		},
+		func(ctx context.Context, a string, n int64) (int64, error) {
+			return q.EraseFeedConversationParticipantsOf(ctx, timelinegen.EraseFeedConversationParticipantsOfParams{AccountID: a, Lim: n})
+		},
+		func(ctx context.Context, a string, n int64) (int64, error) {
+			return q.EraseFeedConversationsOf(ctx, timelinegen.EraseFeedConversationsOfParams{AccountID: a, Lim: n})
+		},
+		func(ctx context.Context, a string, n int64) (int64, error) {
+			return q.EraseFeedConversationReadsOf(ctx, timelinegen.EraseFeedConversationReadsOfParams{AccountID: a, Lim: n})
+		},
+		func(ctx context.Context, a string, n int64) (int64, error) {
+			return q.EraseFeedConversationHidesOf(ctx, timelinegen.EraseFeedConversationHidesOfParams{AccountID: a, Lim: n})
 		},
 	} {
 		n, err := step(ctx, accountID, lim)
