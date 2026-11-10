@@ -2,7 +2,7 @@
 get:
   operationId: exportCsv
   x-first-party-only: true
-  summary: Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
+  summary: Export the authenticated user's follows, followed hashtags, blocks, mutes, muted domains, or bookmarks as CSV
   description: |
     Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
     Mastodon and this server import: `following` is `following_accounts.csv`
@@ -11,7 +11,9 @@ get:
     `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
     `domain_mutes` is `blocked_domains.csv` (one domain per line, the domains the user
     mutes, which Mastodon imports as blocked domains), and `bookmarks` is `bookmarks.csv`
-    (one post URI per line, the posts the user may still see).
+    (one post URI per line, the posts the user may still see). `followed_tags` is
+    `followed_hashtags.csv` (one hashtag per line without its `#`, the latest followed
+    first), a file of this server that Mastodon neither exports nor imports.
     Addresses are `username@domain`, with the account domain for this server's accounts;
     remote accounts whose handle is unconfirmed are left out. At most 30 exports per account
     are accepted every hour.
@@ -32,7 +34,9 @@ get:
         Cache-Control:
           $ref: ../components/headers/CacheControl.yaml
         Content-Disposition:
-          description: Names the file to save the CSV as, the name Mastodon gives it.
+          description: |
+            Names the file to save the CSV as, the name Mastodon gives it (for
+            `followed_tags`, `followed_hashtags.csv`).
           schema:
             type: string
       content:

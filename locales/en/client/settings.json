@@ -176,7 +176,7 @@
     "description": "Badge of the settings menu's Follow requests item: how many follow requests await the user's approval. The item's name is its label followed by this."
   },
   "settings.import_export.export.description": {
-    "defaultMessage": "Download CSV files in the format Mastodon uses. Mastodon and other servers that read this format can import them.",
+    "defaultMessage": "Download CSV files in the format Mastodon uses. Mastodon and other servers that read this format can import them. Mastodon has no file of followed hashtags, so only servers that run the same software as this one import that file.",
     "description": "Explains the CSV files the user can download, above the list of them."
   },
   "settings.import_export.export.download": {
@@ -338,6 +338,10 @@
   "settings.import_export.kind.bookmarks": {
     "defaultMessage": "Bookmarks",
     "description": "Name of the list of posts the user bookmarked, as one kind of CSV file to export or import."
+  },
+  "settings.import_export.kind.followed_tags": {
+    "defaultMessage": "Followed hashtags",
+    "description": "Name of the list of hashtags the user follows, as one kind of CSV file to export or import."
   },
   "settings.import_export.kind.following": {
     "defaultMessage": "Follows",

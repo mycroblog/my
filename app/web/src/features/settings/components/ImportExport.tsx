@@ -41,6 +41,7 @@ import {
 
 const kindLabels: Readonly<Record<DataImportKind, ClientMessageKey>> = {
   following: "client:settings.import_export.kind.following",
+  followed_tags: "client:settings.import_export.kind.followed_tags",
   blocks: "client:settings.import_export.kind.blocks",
   mutes: "client:settings.import_export.kind.mutes",
   domain_mutes: "client:settings.import_export.kind.domain_mutes",
