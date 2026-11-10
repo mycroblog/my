@@ -14,8 +14,13 @@ import (
 // The approvals that this server gives to quotes of local statuses (FEP-044f, ADR-0069 §2, §3):
 // the answer to a remote QuoteRequest, and the author's revocation of an approval.
 
-// ErrQuoteRefused reports a quote that the policy of the quoted status refuses.
-var ErrQuoteRefused = errors.New("content: the quote is refused")
+var (
+	// ErrQuoteRefused reports a quote that the policy of the quoted status refuses.
+	ErrQuoteRefused = errors.New("content: the quote is refused")
+	// ErrQuoteAwaitsApproval reports a quote that a manual rule of the policy of the quoted
+	// status includes: its author answers it (ADR-0155 §6).
+	ErrQuoteAwaitsApproval = errors.New("content: the quote awaits the author's approval")
+)
 
 // QuoteRequestInput is a remote QuoteRequest of a quote of a local status.
 type QuoteRequestInput struct {
@@ -31,10 +36,11 @@ type QuoteRequestInput struct {
 // the quote was approved already. The quote is approved when the quoter is a remote account
 // that may see the status as an ActivityPub fetch would (content.CanView in
 // ContextObjectFetch), is not under the interaction restriction (FR-708), the policy of the
-// status includes them (content.MayQuote), and a quoting status that is stored already is
-// theirs; a local-only status refuses every remote quoter.
-// A refused quote, and one whose approval was revoked, fail with ErrQuoteRefused. A quoted
-// status that is not local, missing, or deleted fails with ErrNotFound.
+// status includes them automatically (content.MayQuote), and a quoting status that is stored
+// already is theirs; a local-only status refuses every remote quoter.
+// A refused quote, and one whose approval was revoked, fail with ErrQuoteRefused; one that a
+// manual rule includes, with ErrQuoteAwaitsApproval. A quoted status that is not local, missing,
+// or deleted fails with ErrNotFound.
 func (s *Interactions) AnswerQuoteRequest(ctx context.Context, in QuoteRequestInput) (content.QuoteAuthorization, content.Status, error) {
 	if s.d.Quotes == nil {
 		return content.QuoteAuthorization{}, content.Status{}, fmt.Errorf("quotes: %w", ErrNotFound)
@@ -77,18 +83,23 @@ func (s *Interactions) AnswerQuoteRequest(ctx context.Context, in QuoteRequestIn
 	if err != nil {
 		return content.QuoteAuthorization{}, quoted, err
 	}
-	var policy content.QuotePolicy
-	switch p, err := s.d.Quotes.FindQuotePolicy(ctx, quoted.ID); {
-	case err == nil:
-		policy = p.Policy
-	case !errors.Is(err, ErrNotFound):
+	policy, err := interactionPolicyOf(ctx, s.d.Quotes, quoted.ID)
+	if err != nil {
 		return content.QuoteAuthorization{}, quoted, err
 	}
-	allowance := content.MayQuote(content.QuoteFacts{
-		QuoterAccountID: in.QuoterAccountID, QuoterVisible: visible && !rel.Blocking && !rel.BlockedBy,
-		QuoterFollows: rel.ActivelyFollowing(), Quoted: quoted, Policy: policy,
-	})
-	if allowance != content.QuoteApproved {
+	mentioned, err := s.d.Interactions.Mentioned(ctx, quoted.ID, in.QuoterAccountID)
+	if err != nil {
+		return content.QuoteAuthorization{}, quoted, err
+	}
+	switch content.MayQuote(content.QuoteFacts{
+		QuoterAccountID: in.QuoterAccountID, QuoterURI: actor.Account.URI, QuoterVisible: visible && !rel.Blocking && !rel.BlockedBy,
+		QuoterFollows: rel.ActivelyFollowing(), QuoterFollowed: rel.ActivelyFollowedBy(), QuoterMentioned: mentioned,
+		Quoted: quoted, Policy: policy,
+	}) {
+	case content.QuoteApproved:
+	case content.QuotePending:
+		return content.QuoteAuthorization{}, quoted, fmt.Errorf("quote of %s by %s: %w", quoted.ID, in.QuoterAccountID, ErrQuoteAwaitsApproval)
+	default:
 		return content.QuoteAuthorization{}, quoted, refused
 	}
 	auth := content.QuoteAuthorization{

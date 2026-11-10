@@ -30,7 +30,9 @@ properties:
       `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
     allOf:
       - $ref: ./Id.yaml
-  quote_policy:
-    description: Who may quote the new status; the user's `default_quote_policy` when left out.
+  interaction_policy:
+    description: |
+      Who may reply to, boost, and quote the new status; the kinds left out take the user's
+      `default_interaction_policy`.
     allOf:
-      - $ref: ./QuotePolicy.yaml
+      - $ref: ./InteractionPolicyChange.yaml

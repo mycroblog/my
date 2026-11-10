@@ -184,8 +184,6 @@ CREATE TABLE user_preferences (
   user_id uuid NOT NULL PRIMARY KEY,
   locale text NOT NULL,
   default_visibility text NOT NULL CHECK (default_visibility IN ('public', 'local', 'unlisted', 'private', 'direct')),
-  -- Who may quote the user's new statuses (ADR-0069 §1).
-  default_quote_policy text NOT NULL DEFAULT 'public' CHECK (default_quote_policy IN ('public', 'followers', 'nobody')),
   default_post_language text NOT NULL,
   require_media_description boolean NOT NULL,
   -- Whether the web client inserts new timeline posts without asking (ADR-0013); on by default (ADR-0013 §22).
@@ -198,6 +196,17 @@ CREATE TABLE user_preferences (
   locale_follows_browser boolean NOT NULL DEFAULT false,
   time_zone_follows_browser boolean NOT NULL DEFAULT false,
   updated_at timestamptz NOT NULL
+);
+
+-- Current value: who may reply to, boost, and quote the user's new statuses that name no policy
+-- (ADR-0155 §4, §5), in the form of status_interaction_policies: one row per kind and approval.
+-- A kind without rows takes the default, everyone at once.
+CREATE TABLE user_interaction_policies (
+  user_id uuid NOT NULL,
+  kind text NOT NULL CHECK (kind IN ('reply', 'announce', 'quote')),
+  approval text NOT NULL CHECK (approval IN ('automatic', 'manual')),
+  audience text NOT NULL CHECK (audience IN ('everyone', 'followers', 'mentioned', 'nobody')),
+  PRIMARY KEY (user_id, kind, approval)
 );
 
 -- Current value: the time zone a user chose, or the one the web client last detected for a user

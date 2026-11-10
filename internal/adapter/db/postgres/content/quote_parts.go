@@ -41,22 +41,6 @@ func (r *StatusRepository) FindQuoteStates(ctx context.Context, statusIDs []stri
 	return out, nil
 }
 
-// FindQuotePolicies implements content.QuoteRepository.
-func (r *StatusRepository) FindQuotePolicies(ctx context.Context, statusIDs []string) (map[string]content.StatusQuotePolicy, error) {
-	out := map[string]content.StatusQuotePolicy{}
-	if len(statusIDs) == 0 {
-		return out, nil
-	}
-	rows, err := r.db.reader().ListQuotePoliciesOfStatuses(ctx, statusIDs)
-	if err != nil {
-		return nil, postgres.Wrap(err, "list quote policies")
-	}
-	for _, row := range rows {
-		out[row.StatusID] = content.StatusQuotePolicy{StatusID: row.StatusID, Policy: content.QuotePolicy(row.Policy), UpdatedAt: postgres.UTC(row.UpdatedAt)}
-	}
-	return out, nil
-}
-
 // FindStatusesByURIs implements content.Repository.
 func (r *StatusRepository) FindStatusesByURIs(ctx context.Context, uris []string) (map[string]content.Status, error) {
 	out := map[string]content.Status{}

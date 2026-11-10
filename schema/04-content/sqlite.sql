@@ -555,13 +555,19 @@ CREATE TABLE status_quote_states (
 ) STRICT;
 CREATE INDEX status_quote_states_authorization_uri ON status_quote_states (authorization_uri);
 
--- Current value: who may quote a status (ADR-0069 §1): what the author of a local status chose,
--- or what a remote status declares in interactionPolicy.canQuote. A remote status without a row
--- declares none; every local status has one.
-CREATE TABLE status_quote_policies (
-  status_id TEXT NOT NULL PRIMARY KEY,
-  policy TEXT NOT NULL CHECK (policy IN ('public', 'followers', 'nobody')),
-  updated_at INTEGER NOT NULL
+-- Current value: who may reply to, boost, and quote a status (ADR-0155 §4), one row per kind,
+-- approval, and audience: what the author of a local status chose, which has rows of every kind,
+-- or what a remote status declares in its interactionPolicy, which has rows of the kinds it
+-- declares and is replaced by every Create and Update. actor_uri is the one actor of the account
+-- audience, '' for the others.
+CREATE TABLE status_interaction_policies (
+  status_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('reply', 'announce', 'quote')),
+  approval TEXT NOT NULL CHECK (approval IN ('automatic', 'manual')),
+  audience TEXT NOT NULL CHECK (audience IN ('everyone', 'followers', 'mentioned', 'nobody', 'following', 'author', 'account')),
+  actor_uri TEXT NOT NULL DEFAULT '',
+  CHECK ((audience = 'account') = (actor_uri <> '')),
+  PRIMARY KEY (status_id, kind, approval, audience, actor_uri)
 ) STRICT;
 
 -- Resource: this server's approval of a quote of a local status (FEP-044f's QuoteAuthorization,

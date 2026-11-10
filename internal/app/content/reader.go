@@ -104,8 +104,9 @@ type StatusView struct {
 	// Quotable is whether the viewer, a local account, may quote the status
 	// (content.MayQuote); false for an anonymous viewer.
 	Quotable bool
-	// QuotePolicy is who may quote the status, for its author only; "" for anyone else.
-	QuotePolicy content.QuotePolicy
+	// InteractionPolicy is who may reply to, boost, and quote the status (ADR-0155 §10), for the
+	// author of a local status only; nil for anyone else.
+	InteractionPolicy *content.InteractionSettings
 }
 
 // Edited reports whether the status has a revision after its first.
@@ -503,7 +504,7 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 			return StatusView{}, err
 		}
 	}
-	if out.Quotable, out.QuotePolicy, err = r.quotable(ctx, viewer, st); err != nil {
+	if out.Quotable, out.InteractionPolicy, err = r.quotable(ctx, viewer, st); err != nil {
 		return StatusView{}, err
 	}
 	return out, nil

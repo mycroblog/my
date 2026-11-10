@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Whom an interaction policy admits, narrowest first: `nobody` the author alone, `mentioned`
+  the accounts the status mentions, `followers` the author's followers and the accounts the
+  status mentions, `everyone` anyone who may see the status. The author always may interact.
+type: string
+enum: [nobody, mentioned, followers, everyone]

@@ -293,8 +293,11 @@ func (noteQuote) FindQuote(_ context.Context, statusID string) (appcontent.Quote
 		appcontent.QuoteState{StatusID: statusID, Approval: appcontent.QuoteApprovalAccepted, AuthorizationURI: noteQuoteAuth}, nil
 }
 
-func (noteQuote) FindQuotePolicy(_ context.Context, statusID string) (appcontent.StatusQuotePolicy, error) {
-	return appcontent.StatusQuotePolicy{StatusID: statusID, Policy: appcontent.QuotePolicyFollowers}, nil
+func (noteQuote) FindInteractionPolicy(context.Context, string) (appcontent.InteractionPolicy, error) {
+	return appcontent.InteractionSettings{
+		Reply: appcontent.InteractionSetting{Automatic: appcontent.AudienceEveryone}, Announce: appcontent.InteractionSetting{Automatic: appcontent.AudienceEveryone},
+		Quote: appcontent.InteractionSetting{Automatic: appcontent.AudienceFollowers},
+	}.Policy(), nil
 }
 
 func (noteQuote) FederatedQuotePage(context.Context, string) (string, bool, error) {

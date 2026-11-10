@@ -21,7 +21,7 @@ import (
 
 // page returns a Reader for the statuses of ids that viewer sees. It reads the statuses, then the
 // statuses they reply to and quote, and then, for all of them together: their deletions, current
-// revisions, counters, hashtags, reaction counts, quotes and quote policies, the accounts of their
+// revisions, counters, hashtags, reaction counts, quotes and interaction policies, the accounts of their
 // authors and of the accounts they mention, and, for a signed-in viewer, the viewer's
 // relationships with the authors, the statuses that mention the viewer, and what the viewer did
 // with them. Anything else is read once, the first time a status needs it.
@@ -108,7 +108,7 @@ func (r *Reader) page(ctx context.Context, viewer Viewer, ids []string) (*Reader
 	}
 	if r.d.Quotes != nil {
 		quotes.page = live
-		if quotes.policies, err = r.d.Quotes.FindQuotePolicies(ctx, live); err != nil {
+		if quotes.policies, err = r.d.Quotes.FindInteractionPolicies(ctx, live); err != nil {
 			return nil, err
 		}
 	}
@@ -553,17 +553,17 @@ func (p *pageRelationships) Relationship(ctx context.Context, accountID, targetI
 	return rel, nil
 }
 
-// pageQuotes is the quote repository with the quotes, their states, and the quote policies of the
-// statuses of a page read beforehand.
+// pageQuotes is the quote repository with the quotes, their states, and the interaction policies
+// of the statuses of a page read beforehand.
 type pageQuotes struct {
 	QuoteRepository
 	// quoting are the statuses whose quotes were read: those of the page itself, not the ones it
-	// refers to. page are all of them, whose quote policies were read.
+	// refers to. page are all of them, whose interaction policies were read.
 	quoting  []string
 	page     []string
 	quotes   map[string]content.Quote
 	states   map[string]content.QuoteState
-	policies map[string]content.StatusQuotePolicy
+	policies map[string]content.InteractionPolicy
 }
 
 // quotePart returns the part of a status of the page from m, failing with ErrNotFound as its read
@@ -597,11 +597,11 @@ func (p *pageQuotes) FindQuoteState(ctx context.Context, statusID string) (conte
 	return p.QuoteRepository.FindQuoteState(ctx, statusID)
 }
 
-func (p *pageQuotes) FindQuotePolicy(ctx context.Context, statusID string) (content.StatusQuotePolicy, error) {
-	if pol, ok, err := quotePart(p, p.policies, statusID, "quote policy"); ok {
-		return pol, err
+func (p *pageQuotes) FindInteractionPolicy(ctx context.Context, statusID string) (content.InteractionPolicy, error) {
+	if p.policies != nil && slices.Contains(p.page, statusID) {
+		return p.policies[statusID], nil
 	}
-	return p.QuoteRepository.FindQuotePolicy(ctx, statusID)
+	return p.QuoteRepository.FindInteractionPolicy(ctx, statusID)
 }
 
 // restrictionBatch is a RestrictionPolicy that reads the restrictions of many accounts at once, as

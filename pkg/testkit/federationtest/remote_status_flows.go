@@ -1175,8 +1175,8 @@ func (noStatusAccounts) FindByURI(_ context.Context, uri string) (appaccount.Act
 	return appaccount.Actor{}, fmt.Errorf("%s: %w", uri, appaccount.ErrNotFound)
 }
 
-func (noStatusAccounts) RemoteFollowersURL(_ context.Context, accountID string) (string, error) {
-	return "", fmt.Errorf("%s: %w", accountID, appaccount.ErrNotFound)
+func (noStatusAccounts) RemoteCollectionURLs(_ context.Context, accountID string) (string, string, error) {
+	return "", "", fmt.Errorf("%s: %w", accountID, appaccount.ErrNotFound)
 }
 
 // everyAuthorFollowed gives every account one local follower.

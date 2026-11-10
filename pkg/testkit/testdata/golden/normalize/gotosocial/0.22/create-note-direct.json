@@ -23,9 +23,20 @@
                 "Language": "en"
               }
             ],
+            "CanAnnounce": {
+              "AutomaticApproval": [
+                "https://gotosocial.example/users/carol"
+              ]
+            },
             "CanQuote": {
               "AutomaticApproval": [
                 "https://gotosocial.example/users/carol"
+              ]
+            },
+            "CanReply": {
+              "AutomaticApproval": [
+                "https://gotosocial.example/users/carol",
+                "https://remote.example/ap/actors/01a148a1-365b-79f7-929a-781395cc457f"
               ]
             },
             "ID": "https://gotosocial.example/users/carol/statuses/01M54AAHBKGET0G8G7FX6B60DA",

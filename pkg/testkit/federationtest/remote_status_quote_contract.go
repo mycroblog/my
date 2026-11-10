@@ -111,27 +111,47 @@ func remoteStatusRepoQuotes(t *testing.T, r *remoteStatusRepo) {
 		}
 	}
 
-	// The policies.
-	policy := content.StatusQuotePolicy{StatusID: quotes[0].StatusID, Policy: content.QuotePolicyFollowers, UpdatedAt: r.clock.Now()}
-	if _, err := r.h.Quotes.FindQuotePolicy(ctx, policy.StatusID); !errors.Is(err, appcontent.ErrNotFound) {
-		t.Errorf("FindQuotePolicy before = %v, want ErrNotFound", err)
+	// The interaction policies: replaced per kind, read for many statuses together.
+	statusID := quotes[0].StatusID
+	if got, err := r.h.Quotes.FindInteractionPolicy(ctx, statusID); err != nil || len(got) != 0 {
+		t.Errorf("FindInteractionPolicy before = %+v, %v; want none", got, err)
 	}
-	for _, p := range []content.QuotePolicy{content.QuotePolicyFollowers, content.QuotePolicyNobody} {
-		policy.Policy, policy.UpdatedAt = p, policy.UpdatedAt.Add(time.Second)
-		r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Quotes.UpsertQuotePolicy(ctx, tx, policy) })
-		if got, err := r.h.Quotes.FindQuotePolicy(ctx, policy.StatusID); err != nil || got.Policy != p || !got.UpdatedAt.Equal(policy.UpdatedAt) {
-			t.Errorf("FindQuotePolicy after the upsert of %s = %+v, %v", p, got, err)
-		}
-		if got, err := r.h.Quotes.FindQuotePolicies(ctx, []string{policy.StatusID, other.StatusID}); err != nil || len(got) != 1 ||
-			got[policy.StatusID].Policy != p || !got[policy.StatusID].UpdatedAt.Equal(policy.UpdatedAt) {
-			t.Errorf("FindQuotePolicies after the upsert of %s = %+v, %v; want the policy alone, as FindQuotePolicy", p, got, err)
-		}
+	rule := func(kind content.InteractionKind, approval content.InteractionApproval, audience content.InteractionAudience, actor string) content.InteractionRule {
+		return content.InteractionRule{Kind: kind, Approval: approval, Audience: audience, ActorURI: actor}
+	}
+	declared := content.InteractionPolicy{
+		rule(content.InteractionQuote, content.ApprovalAutomatic, content.AudienceAuthor, ""),
+		rule(content.InteractionQuote, content.ApprovalManual, content.AudienceEveryone, ""),
+		rule(content.InteractionReply, content.ApprovalAutomatic, content.AudienceFollowers, ""),
+		rule(content.InteractionReply, content.ApprovalAutomatic, content.AudienceAccount, "https://remote.example/users/one"),
+		rule(content.InteractionReply, content.ApprovalAutomatic, content.AudienceAccount, "https://remote.example/users/two"),
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-		return r.h.Quotes.DeleteQuotePolicy(ctx, tx, policy.StatusID)
+		return r.h.Quotes.ReplaceInteractionPolicy(ctx, tx, statusID, nil, declared)
 	})
-	if _, err := r.h.Quotes.FindQuotePolicy(ctx, policy.StatusID); !errors.Is(err, appcontent.ErrNotFound) {
-		t.Errorf("FindQuotePolicy after the delete = %v, want ErrNotFound", err)
+	sameRules := func(got, want content.InteractionPolicy) bool {
+		return len(got) == len(want) && !slices.ContainsFunc(want, func(r content.InteractionRule) bool { return !slices.Contains(got, r) })
+	}
+	if got, err := r.h.Quotes.FindInteractionPolicy(ctx, statusID); err != nil || !sameRules(got, declared) {
+		t.Errorf("FindInteractionPolicy after the insert = %+v, %v; want %+v", got, err, declared)
+	}
+	// Replacing the quote rules leaves the reply rules.
+	replaced := content.InteractionPolicy{rule(content.InteractionQuote, content.ApprovalAutomatic, content.AudienceEveryone, "")}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Quotes.ReplaceInteractionPolicy(ctx, tx, statusID, []content.InteractionKind{content.InteractionQuote}, replaced)
+	})
+	want := append(slices.Clone(replaced), declared.Of(content.InteractionReply)...)
+	if got, err := r.h.Quotes.FindInteractionPolicy(ctx, statusID); err != nil || !sameRules(got, want) {
+		t.Errorf("FindInteractionPolicy after replacing the quote rules = %+v, %v; want %+v", got, err, want)
+	}
+	if got, err := r.h.Quotes.FindInteractionPolicies(ctx, []string{statusID, other.StatusID}); err != nil || len(got) != 1 || !sameRules(got[statusID], want) {
+		t.Errorf("FindInteractionPolicies = %+v, %v; want the rules of %s alone, as FindInteractionPolicy", got, err, statusID)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Quotes.ReplaceInteractionPolicy(ctx, tx, statusID, content.InteractionKinds, nil)
+	})
+	if got, err := r.h.Quotes.FindInteractionPolicy(ctx, statusID); err != nil || len(got) != 0 {
+		t.Errorf("FindInteractionPolicy after removing every kind = %+v, %v; want none", got, err)
 	}
 
 	// The approvals of this server, and their revocations.

@@ -12,6 +12,15 @@ import (
 	"time"
 )
 
+const deleteUserInteractionPolicies = `-- name: DeleteUserInteractionPolicies :exec
+DELETE FROM user_interaction_policies WHERE user_id = $1::uuid
+`
+
+func (q *Queries) DeleteUserInteractionPolicies(ctx context.Context, userID string) error {
+	_, err := q.db.Exec(ctx, deleteUserInteractionPolicies, userID)
+	return err
+}
+
 const deleteUserTimelineLanguages = `-- name: DeleteUserTimelineLanguages :exec
 DELETE FROM user_timeline_languages WHERE user_id = $1
 `
@@ -22,7 +31,7 @@ func (q *Queries) DeleteUserTimelineLanguages(ctx context.Context, userID string
 }
 
 const getUserPreferences = `-- name: GetUserPreferences :one
-SELECT user_id, locale, default_visibility, default_quote_policy, default_post_language, require_media_description,
+SELECT user_id, locale, default_visibility, default_post_language, require_media_description,
   timeline_auto_insert, link_card_size, locale_follows_browser, time_zone_follows_browser, updated_at
 FROM user_preferences WHERE user_id = $1
 `
@@ -34,7 +43,6 @@ func (q *Queries) GetUserPreferences(ctx context.Context, userID string) (UserPr
 		&i.UserID,
 		&i.Locale,
 		&i.DefaultVisibility,
-		&i.DefaultQuotePolicy,
 		&i.DefaultPostLanguage,
 		&i.RequireMediaDescription,
 		&i.TimelineAutoInsert,
@@ -47,7 +55,7 @@ func (q *Queries) GetUserPreferences(ctx context.Context, userID string) (UserPr
 }
 
 const getUserPreferencesForUpdate = `-- name: GetUserPreferencesForUpdate :one
-SELECT user_id, locale, default_visibility, default_quote_policy, default_post_language, require_media_description,
+SELECT user_id, locale, default_visibility, default_post_language, require_media_description,
   timeline_auto_insert, link_card_size, locale_follows_browser, time_zone_follows_browser, updated_at
 FROM user_preferences WHERE user_id = $1
 FOR UPDATE
@@ -61,7 +69,6 @@ func (q *Queries) GetUserPreferencesForUpdate(ctx context.Context, userID string
 		&i.UserID,
 		&i.Locale,
 		&i.DefaultVisibility,
-		&i.DefaultQuotePolicy,
 		&i.DefaultPostLanguage,
 		&i.RequireMediaDescription,
 		&i.TimelineAutoInsert,
@@ -84,19 +91,42 @@ func (q *Queries) GetUserTimeZone(ctx context.Context, userID string) (string, e
 	return time_zone, err
 }
 
+const insertUserInteractionPolicies = `-- name: InsertUserInteractionPolicies :exec
+INSERT INTO user_interaction_policies (user_id, kind, approval, audience)
+SELECT $1::uuid, unnest($2::text[]), unnest($3::text[]), unnest($4::text[])
+`
+
+type InsertUserInteractionPoliciesParams struct {
+	UserID    string
+	Kinds     []string
+	Approvals []string
+	Audiences []string
+}
+
+// InsertUserInteractionPolicies inserts the rules of a user's defaults (the unnests of a select
+// list advance together).
+func (q *Queries) InsertUserInteractionPolicies(ctx context.Context, arg InsertUserInteractionPoliciesParams) error {
+	_, err := q.db.Exec(ctx, insertUserInteractionPolicies,
+		arg.UserID,
+		arg.Kinds,
+		arg.Approvals,
+		arg.Audiences,
+	)
+	return err
+}
+
 const insertUserPreferences = `-- name: InsertUserPreferences :exec
 
 INSERT INTO user_preferences (
-  user_id, locale, default_visibility, default_quote_policy, default_post_language, require_media_description,
+  user_id, locale, default_visibility, default_post_language, require_media_description,
   timeline_auto_insert, link_card_size, locale_follows_browser, time_zone_follows_browser, updated_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type InsertUserPreferencesParams struct {
 	UserID                  string
 	Locale                  string
 	DefaultVisibility       string
-	DefaultQuotePolicy      string
 	DefaultPostLanguage     string
 	RequireMediaDescription bool
 	TimelineAutoInsert      bool
@@ -112,7 +142,6 @@ func (q *Queries) InsertUserPreferences(ctx context.Context, arg InsertUserPrefe
 		arg.UserID,
 		arg.Locale,
 		arg.DefaultVisibility,
-		arg.DefaultQuotePolicy,
 		arg.DefaultPostLanguage,
 		arg.RequireMediaDescription,
 		arg.TimelineAutoInsert,
@@ -136,6 +165,36 @@ type InsertUserTimelineLanguageParams struct {
 func (q *Queries) InsertUserTimelineLanguage(ctx context.Context, arg InsertUserTimelineLanguageParams) error {
 	_, err := q.db.Exec(ctx, insertUserTimelineLanguage, arg.UserID, arg.Language)
 	return err
+}
+
+const listUserInteractionPolicies = `-- name: ListUserInteractionPolicies :many
+SELECT kind, approval, audience FROM user_interaction_policies WHERE user_id = $1::uuid ORDER BY kind, approval
+`
+
+type ListUserInteractionPoliciesRow struct {
+	Kind     string
+	Approval string
+	Audience string
+}
+
+func (q *Queries) ListUserInteractionPolicies(ctx context.Context, userID string) ([]ListUserInteractionPoliciesRow, error) {
+	rows, err := q.db.Query(ctx, listUserInteractionPolicies, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUserInteractionPoliciesRow{}
+	for rows.Next() {
+		var i ListUserInteractionPoliciesRow
+		if err := rows.Scan(&i.Kind, &i.Approval, &i.Audience); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listUserTimelineLanguages = `-- name: ListUserTimelineLanguages :many
@@ -164,9 +223,9 @@ func (q *Queries) ListUserTimelineLanguages(ctx context.Context, userID string) 
 
 const updateUserPreferences = `-- name: UpdateUserPreferences :execrows
 UPDATE user_preferences SET
-  locale = $2, default_visibility = $3, default_quote_policy = $4, default_post_language = $5,
-  require_media_description = $6, timeline_auto_insert = $7, link_card_size = $8,
-  locale_follows_browser = $9, time_zone_follows_browser = $10, updated_at = $11
+  locale = $2, default_visibility = $3, default_post_language = $4,
+  require_media_description = $5, timeline_auto_insert = $6, link_card_size = $7,
+  locale_follows_browser = $8, time_zone_follows_browser = $9, updated_at = $10
 WHERE user_id = $1
 `
 
@@ -174,7 +233,6 @@ type UpdateUserPreferencesParams struct {
 	UserID                  string
 	Locale                  string
 	DefaultVisibility       string
-	DefaultQuotePolicy      string
 	DefaultPostLanguage     string
 	RequireMediaDescription bool
 	TimelineAutoInsert      bool
@@ -189,7 +247,6 @@ func (q *Queries) UpdateUserPreferences(ctx context.Context, arg UpdateUserPrefe
 		arg.UserID,
 		arg.Locale,
 		arg.DefaultVisibility,
-		arg.DefaultQuotePolicy,
 		arg.DefaultPostLanguage,
 		arg.RequireMediaDescription,
 		arg.TimelineAutoInsert,

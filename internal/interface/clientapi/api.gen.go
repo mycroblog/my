@@ -2905,6 +2905,30 @@ func (e InstanceTextKey) Valid() bool {
 	}
 }
 
+// Defines values for InteractionAudience.
+const (
+	InteractionAudienceEveryone  InteractionAudience = "everyone"
+	InteractionAudienceFollowers InteractionAudience = "followers"
+	InteractionAudienceMentioned InteractionAudience = "mentioned"
+	InteractionAudienceNobody    InteractionAudience = "nobody"
+)
+
+// Valid indicates whether the value is a known member of the InteractionAudience enum.
+func (e InteractionAudience) Valid() bool {
+	switch e {
+	case InteractionAudienceEveryone:
+		return true
+	case InteractionAudienceFollowers:
+		return true
+	case InteractionAudienceMentioned:
+		return true
+	case InteractionAudienceNobody:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InviteCreatorKind.
 const (
 	InviteCreatorKindMember InviteCreatorKind = "member"
@@ -3643,27 +3667,6 @@ func (e Permission) Valid() bool {
 	case PermissionViewAudit:
 		return true
 	case PermissionViewFinance:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for QuotePolicy.
-const (
-	QuotePolicyFollowers QuotePolicy = "followers"
-	QuotePolicyNobody    QuotePolicy = "nobody"
-	QuotePolicyPublic    QuotePolicy = "public"
-)
-
-// Valid indicates whether the value is a known member of the QuotePolicy enum.
-func (e QuotePolicy) Valid() bool {
-	switch e {
-	case QuotePolicyFollowers:
-		return true
-	case QuotePolicyNobody:
-		return true
-	case QuotePolicyPublic:
 		return true
 	default:
 		return false
@@ -8663,6 +8666,10 @@ type CreateStatusRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
 
+	// InteractionPolicy Who may reply to, boost, and quote the new status; the kinds left out take the user's
+	// `default_interaction_policy`.
+	InteractionPolicy *InteractionPolicyChange `json:"interaction_policy,omitempty"`
+
 	// Language A BCP 47 language tag; omitted means the user's default post language.
 	Language *StatusLanguageInput `json:"language,omitempty"`
 
@@ -8672,9 +8679,6 @@ type CreateStatusRequest struct {
 	// Poll A poll of a new status. It ends `expires_in` seconds after the status is
 	// posted; the author and the users who voted are notified then.
 	Poll *PollInput `json:"poll,omitempty"`
-
-	// QuotePolicy Who may quote the new status; the user's `default_quote_policy` when left out.
-	QuotePolicy *QuotePolicy `json:"quote_policy,omitempty"`
 
 	// QuotedStatusId The status to quote. It must be one the user may see and may quote
 	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
@@ -10496,6 +10500,59 @@ type InstanceTranslationProvider struct {
 	Visibilities []Visibility `json:"visibilities"`
 }
 
+// InteractionAudience Whom an interaction policy admits, narrowest first: `nobody` the author alone, `mentioned`
+// the accounts the status mentions, `followers` the author's followers and the accounts the
+// status mentions, `everyone` anyone who may see the status. The author always may interact.
+type InteractionAudience string
+
+// InteractionPolicy Who may reply to, boost, and quote a status. Whatever the policy, a followers-only status is
+// boosted and quoted only by its author, a direct one is neither boosted nor quoted, and a reply
+// from an account the status mentions is always admitted.
+type InteractionPolicy struct {
+	// Announce Who may boost the status.
+	Announce InteractionRule `json:"announce"`
+
+	// Quote Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+	// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+	// others are refused.
+	Quote InteractionRule `json:"quote"`
+
+	// Reply Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+	// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+	// others are refused.
+	Reply InteractionRule `json:"reply"`
+}
+
+// InteractionPolicyChange A change of an interaction policy: the kinds left out keep their rules. Interactions approved
+// before stay.
+type InteractionPolicyChange struct {
+	// Announce Who may boost the status.
+	Announce *InteractionRule `json:"announce,omitempty"`
+
+	// Quote Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+	// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+	// others are refused.
+	Quote *InteractionRule `json:"quote,omitempty"`
+
+	// Reply Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+	// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+	// others are refused.
+	Reply *InteractionRule `json:"reply,omitempty"`
+}
+
+// InteractionRule Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+// others are refused.
+type InteractionRule struct {
+	// Automatic Whom an interaction policy admits, narrowest first: `nobody` the author alone, `mentioned`
+	// the accounts the status mentions, `followers` the author's followers and the accounts the
+	// status mentions, `everyone` anyone who may see the status. The author always may interact.
+	Automatic InteractionAudience `json:"automatic"`
+
+	// Manual Whom the author approves by hand; wider than `automatic`. Left out for none.
+	Manual *InteractionAudience `json:"manual,omitempty"`
+}
+
 // InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
 // applies and its creator is not checked. `member`: by a member through their own invites,
 // under the caps of the instance settings; it works only while its creator may create invites.
@@ -12116,11 +12173,12 @@ type PostingLimits struct {
 
 // Preferences The authenticated user's preferences.
 type Preferences struct {
+	// DefaultInteractionPolicy Who may reply to, boost, and quote the user's new statuses, for the kinds their
+	// `interaction_policy` leaves out. Everyone at once for a new user.
+	DefaultInteractionPolicy InteractionPolicy `json:"default_interaction_policy"`
+
 	// DefaultPostLanguage The language of new posts that name none, a BCP 47 language tag; `und` when undetermined.
 	DefaultPostLanguage string `json:"default_post_language"`
-
-	// DefaultQuotePolicy Who may quote the user's new statuses that name no `quote_policy`.
-	DefaultQuotePolicy QuotePolicy `json:"default_quote_policy"`
 
 	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
@@ -12503,12 +12561,6 @@ type QrCode struct {
 	// Size The width and height of the view box, in modules.
 	Size int `json:"size"`
 }
-
-// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
-// the author's followers, `nobody` the author alone. A followers-only status is quoted only
-// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
-// its policy.
-type QuotePolicy string
 
 // QuoteState The state of a quote as the viewer sees it, with the values of Mastodon's
 // `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
@@ -12945,15 +12997,6 @@ type SetLinkCardDomainRuleRequest struct {
 	Note *string `json:"note,omitempty"`
 }
 
-// SetQuotePolicyRequest Who may quote the status from now on. Approvals given before stay.
-type SetQuotePolicyRequest struct {
-	// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
-	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
-	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
-	// its policy.
-	QuotePolicy QuotePolicy `json:"quote_policy"`
-}
-
 // SetThemeRequest The whole theme; tokens left out go back to their defaults.
 type SetThemeRequest struct {
 	CustomCss string            `json:"custom_css"`
@@ -13072,6 +13115,9 @@ type Status struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
 
+	// InteractionPolicy Who may reply to, boost, and quote the status; given only to its author.
+	InteractionPolicy *InteractionPolicy `json:"interaction_policy,omitempty"`
+
 	// Language The BCP 47 language tag of the text; `und` when it is unknown.
 	Language string `json:"language"`
 
@@ -13095,16 +13141,14 @@ type Status struct {
 	// `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
 	Poll *Poll `json:"poll,omitempty"`
 
-	// Quotable Whether the authenticated user may quote the status (its `quote_policy`, its visibility,
-	// and the user's follow of the author decide it); omitted for anonymous requests.
+	// Quotable Whether the authenticated user may quote the status (the `quote` rule of its interaction
+	// policy, its visibility, and how the user stands with the author decide it); true too when
+	// the quote waits for the author's approval. Omitted for anonymous requests.
 	Quotable *bool `json:"quotable,omitempty"`
 
 	// Quote The status that this status quotes; omitted when it quotes none, and in a
 	// `quoted_status`.
 	Quote *StatusQuote `json:"quote,omitempty"`
-
-	// QuotePolicy Who may quote the status; given only to its author.
-	QuotePolicy *QuotePolicy `json:"quote_policy,omitempty"`
 
 	// Reactions The emoji reactions to the status, counted per emoji: the 20 emoji with the most
 	// reactions, the most first. The others are seen in `listStatusReactions`. Favourites
@@ -13878,14 +13922,11 @@ type UpdateOwnCustomEmojiRequest struct {
 
 // UpdatePreferencesRequest A change of the preferences; properties left out keep their current values.
 type UpdatePreferencesRequest struct {
+	// DefaultInteractionPolicy The defaults of the kinds it has; the others stay.
+	DefaultInteractionPolicy *InteractionPolicyChange `json:"default_interaction_policy,omitempty"`
+
 	// DefaultPostLanguage The language of new posts that name none; `und` for undetermined.
 	DefaultPostLanguage *string `json:"default_post_language,omitempty"`
-
-	// DefaultQuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
-	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
-	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
-	// its policy.
-	DefaultQuotePolicy *QuotePolicy `json:"default_quote_policy,omitempty"`
 
 	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
@@ -15884,11 +15925,11 @@ type CreateStatusJSONRequestBody = CreateStatusRequest
 // EditStatusJSONRequestBody defines body for EditStatus for application/json ContentType.
 type EditStatusJSONRequestBody = EditStatusRequest
 
+// SetStatusInteractionPolicyJSONRequestBody defines body for SetStatusInteractionPolicy for application/json ContentType.
+type SetStatusInteractionPolicyJSONRequestBody = InteractionPolicyChange
+
 // VoteInPollJSONRequestBody defines body for VoteInPoll for application/json ContentType.
 type VoteInPollJSONRequestBody = VoteInPollRequest
-
-// SetStatusQuotePolicyJSONRequestBody defines body for SetStatusQuotePolicy for application/json ContentType.
-type SetStatusQuotePolicyJSONRequestBody = SetQuotePolicyRequest
 
 // ReactToStatusJSONRequestBody defines body for ReactToStatus for application/json ContentType.
 type ReactToStatusJSONRequestBody = ReactToStatusRequest
@@ -16900,6 +16941,9 @@ type ServerInterface interface {
 	// GetStatusHistory Get the edit history of a status
 	// (GET /statuses/{id}/history)
 	GetStatusHistory(w http.ResponseWriter, r *http.Request, id StatusId)
+	// SetStatusInteractionPolicy Change who may reply to, boost, and quote the authenticated user's status
+	// (PUT /statuses/{id}/interaction_policy)
+	SetStatusInteractionPolicy(w http.ResponseWriter, r *http.Request, id StatusId)
 	// UnpinStatus Unpin a status
 	// (DELETE /statuses/{id}/pin)
 	UnpinStatus(w http.ResponseWriter, r *http.Request, id StatusId)
@@ -16909,9 +16953,6 @@ type ServerInterface interface {
 	// VoteInPoll Vote in the poll of a status
 	// (POST /statuses/{id}/poll/votes)
 	VoteInPoll(w http.ResponseWriter, r *http.Request, id StatusId)
-	// SetStatusQuotePolicy Change who may quote the authenticated user's status
-	// (PUT /statuses/{id}/quote_policy)
-	SetStatusQuotePolicy(w http.ResponseWriter, r *http.Request, id StatusId)
 	// ListStatusQuotes List the statuses that quote the authenticated user's status
 	// (GET /statuses/{id}/quotes)
 	ListStatusQuotes(w http.ResponseWriter, r *http.Request, id StatusId, params ListStatusQuotesParams)
@@ -26203,6 +26244,32 @@ func (siw *ServerInterfaceWrapper) GetStatusHistory(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// SetStatusInteractionPolicy operation middleware
+func (siw *ServerInterfaceWrapper) SetStatusInteractionPolicy(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id StatusId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetStatusInteractionPolicy(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // UnpinStatus operation middleware
 func (siw *ServerInterfaceWrapper) UnpinStatus(w http.ResponseWriter, r *http.Request) {
 
@@ -26272,32 +26339,6 @@ func (siw *ServerInterfaceWrapper) VoteInPoll(w http.ResponseWriter, r *http.Req
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.VoteInPoll(w, r, id)
-	}))
-
-	for _, middleware := range siw.HandlerMiddlewares {
-		handler = middleware(handler)
-	}
-
-	handler.ServeHTTP(w, r)
-}
-
-// SetStatusQuotePolicy operation middleware
-func (siw *ServerInterfaceWrapper) SetStatusQuotePolicy(w http.ResponseWriter, r *http.Request) {
-
-	var err error
-	_ = err
-
-	// ------------- Path parameter "id" -------------
-	var id StatusId
-
-	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
-		return
-	}
-
-	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetStatusQuotePolicy(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -28279,7 +28320,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}/reaction", wrapper.ReactToStatus)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}/reactions", wrapper.ListStatusReactions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statuses/{id}/translation", wrapper.TranslateStatus)
-	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}/quote_policy", wrapper.SetStatusQuotePolicy)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}/interaction_policy", wrapper.SetStatusInteractionPolicy)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}/quotes", wrapper.ListStatusQuotes)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statuses/{id}/quotes/{quote_id}/approval", wrapper.RevokeStatusQuoteApproval)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}/source", wrapper.GetStatusSource)
@@ -48046,6 +48087,62 @@ func (response GetStatusHistorydefaultApplicationProblemPlusJSONResponse) VisitG
 	return err
 }
 
+type SetStatusInteractionPolicyRequestObject struct {
+	Id   StatusId `json:"id"`
+	Body *SetStatusInteractionPolicyJSONRequestBody
+}
+
+type SetStatusInteractionPolicyResponseObject interface {
+	VisitSetStatusInteractionPolicyResponse(w http.ResponseWriter) error
+}
+
+type SetStatusInteractionPolicy200JSONResponse struct{ StatusAfterActionJSONResponse }
+
+func (response SetStatusInteractionPolicy200JSONResponse) VisitSetStatusInteractionPolicyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetStatusInteractionPolicydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SetStatusInteractionPolicydefaultApplicationProblemPlusJSONResponse) VisitSetStatusInteractionPolicyResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type UnpinStatusRequestObject struct {
 	Id StatusId `json:"id"`
 }
@@ -48189,62 +48286,6 @@ type VoteInPolldefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response VoteInPolldefaultApplicationProblemPlusJSONResponse) VisitVoteInPollResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/problem+json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	if response.Headers.ContentLanguage != nil {
-		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
-	}
-	if response.Headers.RetryAfter != nil {
-		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
-	}
-	if response.Headers.WWWAuthenticate != nil {
-		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
-	}
-	w.WriteHeader(response.StatusCode)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SetStatusQuotePolicyRequestObject struct {
-	Id   StatusId `json:"id"`
-	Body *SetStatusQuotePolicyJSONRequestBody
-}
-
-type SetStatusQuotePolicyResponseObject interface {
-	VisitSetStatusQuotePolicyResponse(w http.ResponseWriter) error
-}
-
-type SetStatusQuotePolicy200JSONResponse struct{ StatusAfterActionJSONResponse }
-
-func (response SetStatusQuotePolicy200JSONResponse) VisitSetStatusQuotePolicyResponse(w http.ResponseWriter) error {
-
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
-		return err
-	}
-	w.Header().Set("Content-Type", "application/json")
-	if response.Headers.CacheControl != nil {
-		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
-	}
-	w.WriteHeader(200)
-	_, err := buf.WriteTo(w)
-	return err
-}
-
-type SetStatusQuotePolicydefaultApplicationProblemPlusJSONResponse struct {
-	Body       Problem
-	Headers    ProblemResponseHeaders
-	StatusCode int
-}
-
-func (response SetStatusQuotePolicydefaultApplicationProblemPlusJSONResponse) VisitSetStatusQuotePolicyResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -52512,6 +52553,9 @@ type StrictServerInterface interface {
 	// GetStatusHistory Get the edit history of a status
 	// (GET /statuses/{id}/history)
 	GetStatusHistory(ctx context.Context, request GetStatusHistoryRequestObject) (GetStatusHistoryResponseObject, error)
+	// SetStatusInteractionPolicy Change who may reply to, boost, and quote the authenticated user's status
+	// (PUT /statuses/{id}/interaction_policy)
+	SetStatusInteractionPolicy(ctx context.Context, request SetStatusInteractionPolicyRequestObject) (SetStatusInteractionPolicyResponseObject, error)
 	// UnpinStatus Unpin a status
 	// (DELETE /statuses/{id}/pin)
 	UnpinStatus(ctx context.Context, request UnpinStatusRequestObject) (UnpinStatusResponseObject, error)
@@ -52521,9 +52565,6 @@ type StrictServerInterface interface {
 	// VoteInPoll Vote in the poll of a status
 	// (POST /statuses/{id}/poll/votes)
 	VoteInPoll(ctx context.Context, request VoteInPollRequestObject) (VoteInPollResponseObject, error)
-	// SetStatusQuotePolicy Change who may quote the authenticated user's status
-	// (PUT /statuses/{id}/quote_policy)
-	SetStatusQuotePolicy(ctx context.Context, request SetStatusQuotePolicyRequestObject) (SetStatusQuotePolicyResponseObject, error)
 	// ListStatusQuotes List the statuses that quote the authenticated user's status
 	// (GET /statuses/{id}/quotes)
 	ListStatusQuotes(ctx context.Context, request ListStatusQuotesRequestObject) (ListStatusQuotesResponseObject, error)
@@ -61542,6 +61583,39 @@ func (sh *strictHandler) GetStatusHistory(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// SetStatusInteractionPolicy operation middleware
+func (sh *strictHandler) SetStatusInteractionPolicy(w http.ResponseWriter, r *http.Request, id StatusId) {
+	var request SetStatusInteractionPolicyRequestObject
+
+	request.Id = id
+
+	var body SetStatusInteractionPolicyJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetStatusInteractionPolicy(ctx, request.(SetStatusInteractionPolicyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetStatusInteractionPolicy")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetStatusInteractionPolicyResponseObject); ok {
+		if err := validResponse.VisitSetStatusInteractionPolicyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // UnpinStatus operation middleware
 func (sh *strictHandler) UnpinStatus(w http.ResponseWriter, r *http.Request, id StatusId) {
 	var request UnpinStatusRequestObject
@@ -61620,39 +61694,6 @@ func (sh *strictHandler) VoteInPoll(w http.ResponseWriter, r *http.Request, id S
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(VoteInPollResponseObject); ok {
 		if err := validResponse.VisitVoteInPollResponse(w); err != nil {
-			sh.options.ResponseErrorHandlerFunc(w, r, err)
-		}
-	} else if response != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
-	}
-}
-
-// SetStatusQuotePolicy operation middleware
-func (sh *strictHandler) SetStatusQuotePolicy(w http.ResponseWriter, r *http.Request, id StatusId) {
-	var request SetStatusQuotePolicyRequestObject
-
-	request.Id = id
-
-	var body SetStatusQuotePolicyJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
-	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.SetStatusQuotePolicy(ctx, request.(SetStatusQuotePolicyRequestObject))
-	}
-	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "SetStatusQuotePolicy")
-	}
-
-	response, err := handler(r.Context(), w, r, request)
-
-	if err != nil {
-		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(SetStatusQuotePolicyResponseObject); ok {
-		if err := validResponse.VisitSetStatusQuotePolicyResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -66,17 +66,17 @@ func (e *AccountEnv) preferences(t *testing.T, userID string) appidentity.UserPr
 func defaultPreferencesOf(userID, locale string, at time.Time) appidentity.UserPreferences {
 	return appidentity.UserPreferences{
 		Preferences: identity.Preferences{
-			UserID:                 userID,
-			Locale:                 locale,
-			TimeZone:               "UTC",
-			LocaleFollowsBrowser:   true,
-			TimeZoneFollowsBrowser: true,
-			DefaultVisibility:      identity.VisibilityPublic,
-			DefaultQuotePolicy:     identity.QuotePolicyPublic,
-			LinkCardSize:           identity.LinkCardLarge,
-			DefaultPostLanguage:    "und",
-			TimelineAutoInsert:     true,
-			UpdatedAt:              at,
+			UserID:                   userID,
+			Locale:                   locale,
+			TimeZone:                 "UTC",
+			LocaleFollowsBrowser:     true,
+			TimeZoneFollowsBrowser:   true,
+			DefaultVisibility:        identity.VisibilityPublic,
+			DefaultInteractionPolicy: identity.DefaultInteractionDefaults,
+			LinkCardSize:             identity.LinkCardLarge,
+			DefaultPostLanguage:      "und",
+			TimelineAutoInsert:       true,
+			UpdatedAt:                at,
 		},
 		TimelineLanguages: []string{},
 	}
@@ -163,17 +163,17 @@ func preferencesSet(t *testing.T, e *AccountEnv) {
 	}
 	want := appidentity.UserPreferences{
 		Preferences: identity.Preferences{
-			UserID:                  reg.User.ID,
-			Locale:                  "zh-Hant-TW",
-			TimeZone:                "Asia/Tokyo",
-			TimeZoneChosen:          true,
-			DefaultVisibility:       identity.VisibilityUnlisted,
-			DefaultQuotePolicy:      identity.QuotePolicyPublic,
-			LinkCardSize:            identity.LinkCardLarge,
-			DefaultPostLanguage:     "he",
-			RequireMediaDescription: true,
-			TimelineAutoInsert:      true,
-			UpdatedAt:               e.Clock.Now(),
+			UserID:                   reg.User.ID,
+			Locale:                   "zh-Hant-TW",
+			TimeZone:                 "Asia/Tokyo",
+			TimeZoneChosen:           true,
+			DefaultVisibility:        identity.VisibilityUnlisted,
+			DefaultInteractionPolicy: identity.DefaultInteractionDefaults,
+			LinkCardSize:             identity.LinkCardLarge,
+			DefaultPostLanguage:      "he",
+			RequireMediaDescription:  true,
+			TimelineAutoInsert:       true,
+			UpdatedAt:                e.Clock.Now(),
 		},
 		TimelineLanguages: []string{},
 	}
@@ -321,17 +321,19 @@ func preferencesUpdatePartially(t *testing.T, e *AccountEnv) {
 	}
 	checkPreferences(t, e.preferences(t, reg.User.ID), defaultPreferencesOf(reg.User.ID, "en", reg.User.CreatedAt))
 	cardSize := identity.LinkCardSmall
-	tz, vis, langs, quote := "Asia/Tokyo", identity.VisibilityPrivate, []string{"ja-jp", "en", "ja-JP"}, identity.QuotePolicyFollowers
+	tz, vis, langs := "Asia/Tokyo", identity.VisibilityPrivate, []string{"ja-jp", "en", "ja-JP"}
+	quote := identity.InteractionSetting{Automatic: identity.AudienceFollowers, Manual: identity.AudienceEveryone}
 	e.Clock.Advance(time.Minute)
 	got, err := e.Identity.UpdatePreferences(ctx, reg.User.ID, appidentity.PreferencesUpdate{
-		TimeZone: &tz, DefaultVisibility: &vis, LinkCardSize: &cardSize, TimelineLanguages: &langs, DefaultQuotePolicy: &quote,
+		TimeZone: &tz, DefaultVisibility: &vis, LinkCardSize: &cardSize, TimelineLanguages: &langs,
+		DefaultInteractionPolicy: map[identity.InteractionKind]identity.InteractionSetting{identity.InteractionQuote: quote},
 	})
 	if err != nil {
 		t.Fatalf("UpdatePreferences = %v", err)
 	}
 	want := defaultPreferencesOf(reg.User.ID, "en", e.Clock.Now())
 	want.TimeZone, want.TimeZoneChosen, want.DefaultVisibility, want.TimelineLanguages = tz, true, vis, []string{"en", "ja-JP"}
-	want.DefaultQuotePolicy, want.TimeZoneFollowsBrowser = quote, false
+	want.DefaultInteractionPolicy.Quote, want.TimeZoneFollowsBrowser = quote, false
 	want.LinkCardSize = identity.LinkCardSmall
 	checkPreferences(t, got, want)
 	checkPreferences(t, e.preferences(t, reg.User.ID), want)
@@ -384,7 +386,11 @@ func preferencesUpdatePartially(t *testing.T, e *AccountEnv) {
 	checkPreferences(t, e.preferences(t, reg.User.ID), want)
 
 	badCardSize := identity.LinkCardSize("huge")
-	bad, badVis, badQuote, tooMany := "nope/nope", identity.Visibility("everyone"), identity.QuotePolicy("friends"), make([]string, identity.MaxTimelineLanguageCount+1)
+	bad, badVis, tooMany := "nope/nope", identity.Visibility("everyone"), make([]string, identity.MaxTimelineLanguageCount+1)
+	badQuote := map[identity.InteractionKind]identity.InteractionSetting{identity.InteractionQuote: {Automatic: "friends"}}
+	narrowManual := map[identity.InteractionKind]identity.InteractionSetting{
+		identity.InteractionReply: {Automatic: identity.AudienceFollowers, Manual: identity.AudienceMentioned},
+	}
 	for i := range tooMany {
 		tooMany[i] = "en"
 	}
@@ -398,7 +404,8 @@ func preferencesUpdatePartially(t *testing.T, e *AccountEnv) {
 		{appidentity.PreferencesUpdate{DefaultPostLanguage: &bad}, "default_post_language", identity.ErrInvalidLanguageTag},
 		{appidentity.PreferencesUpdate{DefaultVisibility: &badVis}, "default_visibility", identity.ErrInvalidVisibility},
 		{appidentity.PreferencesUpdate{LinkCardSize: &badCardSize}, "link_card_size", identity.ErrInvalidLinkCardSize},
-		{appidentity.PreferencesUpdate{DefaultQuotePolicy: &badQuote}, "default_quote_policy", identity.ErrInvalidQuotePolicy},
+		{appidentity.PreferencesUpdate{DefaultInteractionPolicy: badQuote}, "default_interaction_policy", identity.ErrInvalidInteractionPolicy},
+		{appidentity.PreferencesUpdate{DefaultInteractionPolicy: narrowManual}, "default_interaction_policy", identity.ErrInvalidInteractionPolicy},
 		{appidentity.PreferencesUpdate{TimeZone: &tz, TimelineLanguages: &tooMany}, "timeline_languages", identity.ErrTooManyLanguages},
 	} {
 		_, err := e.Identity.UpdatePreferences(ctx, reg.User.ID, tc.in)

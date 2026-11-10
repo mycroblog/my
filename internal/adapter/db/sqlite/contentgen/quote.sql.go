@@ -21,15 +21,6 @@ func (q *Queries) DeleteAllStatusQuoteStates(ctx context.Context) error {
 	return err
 }
 
-const deleteStatusQuotePolicy = `-- name: DeleteStatusQuotePolicy :exec
-DELETE FROM status_quote_policies WHERE status_id = ?1
-`
-
-func (q *Queries) DeleteStatusQuotePolicy(ctx context.Context, statusID string) error {
-	_, err := q.db.ExecContext(ctx, deleteStatusQuotePolicy, statusID)
-	return err
-}
-
 const getQuoteAuthorization = `-- name: GetQuoteAuthorization :one
 SELECT a.id, a.quoting_uri, a.quoting_account_id, a.quoted_status_id, a.created_at, r.revoked_at
 FROM quote_authorizations a LEFT JOIN quote_authorization_revocations r ON r.authorization_id = a.id
@@ -101,17 +92,6 @@ func (q *Queries) GetStatusQuote(ctx context.Context, statusID string) (StatusQu
 	row := q.db.QueryRowContext(ctx, getStatusQuote, statusID)
 	var i StatusQuote
 	err := row.Scan(&i.StatusID, &i.QuotedUri, &i.Form)
-	return i, err
-}
-
-const getStatusQuotePolicy = `-- name: GetStatusQuotePolicy :one
-SELECT status_id, policy, updated_at FROM status_quote_policies WHERE status_id = ?1
-`
-
-func (q *Queries) GetStatusQuotePolicy(ctx context.Context, statusID string) (StatusQuotePolicy, error) {
-	row := q.db.QueryRowContext(ctx, getStatusQuotePolicy, statusID)
-	var i StatusQuotePolicy
-	err := row.Scan(&i.StatusID, &i.Policy, &i.UpdatedAt)
 	return i, err
 }
 
@@ -408,15 +388,6 @@ func (q *Queries) PurgeStatusQuoteEvents(ctx context.Context, ids string) error 
 	return err
 }
 
-const purgeStatusQuotePolicies = `-- name: PurgeStatusQuotePolicies :exec
-DELETE FROM status_quote_policies WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
-`
-
-func (q *Queries) PurgeStatusQuotePolicies(ctx context.Context, ids string) error {
-	_, err := q.db.ExecContext(ctx, purgeStatusQuotePolicies, ids)
-	return err
-}
-
 const purgeStatusQuoteStates = `-- name: PurgeStatusQuoteStates :exec
 DELETE FROM status_quote_states WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
 `
@@ -432,22 +403,6 @@ DELETE FROM status_quotes WHERE status_id IN (SELECT value FROM json_each(CAST(?
 
 func (q *Queries) PurgeStatusQuotes(ctx context.Context, ids string) error {
 	_, err := q.db.ExecContext(ctx, purgeStatusQuotes, ids)
-	return err
-}
-
-const upsertStatusQuotePolicy = `-- name: UpsertStatusQuotePolicy :exec
-INSERT INTO status_quote_policies (status_id, policy, updated_at) VALUES (?1, ?2, ?3)
-ON CONFLICT (status_id) DO UPDATE SET policy = excluded.policy, updated_at = excluded.updated_at
-`
-
-type UpsertStatusQuotePolicyParams struct {
-	StatusID  string
-	Policy    string
-	UpdatedAt int64
-}
-
-func (q *Queries) UpsertStatusQuotePolicy(ctx context.Context, arg UpsertStatusQuotePolicyParams) error {
-	_, err := q.db.ExecContext(ctx, upsertStatusQuotePolicy, arg.StatusID, arg.Policy, arg.UpdatedAt)
 	return err
 }
 

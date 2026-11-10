@@ -485,7 +485,7 @@ func (o *Objects) viewNote(ctx context.Context, notes notes, v appcontent.Status
 	if err != nil {
 		return federation.NoteDocument{}, err
 	}
-	return notes.withQuotes(ctx, note, v.Status, v.Author, v.Status.Visibility)
+	return notes.withQuotes(ctx, note, v.Status, v.Author, v.Status.Visibility, parts.Mentions)
 }
 
 // pageNotes returns the notes that build the Notes of views, with the quotes of views read
@@ -573,15 +573,11 @@ func (p *pageNoteQuotes) FindQuote(ctx context.Context, statusID string) (appcon
 	return q, p.read.States[statusID], nil
 }
 
-func (p *pageNoteQuotes) FindQuotePolicy(ctx context.Context, statusID string) (appcontent.StatusQuotePolicy, error) {
+func (p *pageNoteQuotes) FindInteractionPolicy(ctx context.Context, statusID string) (appcontent.InteractionPolicy, error) {
 	if !slices.Contains(p.page, statusID) {
-		return p.NoteQuotes.FindQuotePolicy(ctx, statusID)
+		return p.NoteQuotes.FindInteractionPolicy(ctx, statusID)
 	}
-	pol, ok := p.read.Policies[statusID]
-	if !ok {
-		return appcontent.StatusQuotePolicy{}, fmt.Errorf("quote policy of %s: %w", statusID, appcontent.ErrNotFound)
-	}
-	return pol, nil
+	return p.read.Policies[statusID], nil
 }
 
 func (p *pageNoteQuotes) FederatedQuotePage(ctx context.Context, uri string) (string, bool, error) {

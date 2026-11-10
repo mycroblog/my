@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Who may reply to, boost, and quote a status. Whatever the policy, a followers-only status is
+  boosted and quoted only by its author, a direct one is neither boosted nor quoted, and a reply
+  from an account the status mentions is always admitted.
+type: object
+required: [reply, announce, quote]
+properties:
+  reply:
+    $ref: ./InteractionRule.yaml
+  announce:
+    description: Who may boost the status.
+    allOf:
+      - $ref: ./InteractionRule.yaml
+  quote:
+    $ref: ./InteractionRule.yaml

@@ -28,8 +28,6 @@ type (
 	QuoteState = content.QuoteState
 	// QuoteApproval is content.QuoteApproval.
 	QuoteApproval = content.QuoteApproval
-	// StatusQuotePolicy is content.StatusQuotePolicy.
-	StatusQuotePolicy = content.StatusQuotePolicy
 )
 
 // The values of the quotes' types that other modules use.
@@ -41,19 +39,21 @@ const (
 	QuoteEventAccepted    = content.QuoteEventAccepted
 )
 
-// QuoteRepository stores the quotes of statuses; the status repositories implement it.
+// QuoteRepository stores the quotes of statuses, and the interaction policies that decide who may
+// quote them; the status repositories implement it.
 type QuoteRepository interface {
+	InteractionPolicyRepository
+
 	// InsertQuote records the status that a status quotes. It reports false, writing nothing,
 	// when the status has a quote.
 	InsertQuote(ctx context.Context, tx uow.Tx, q content.Quote) (bool, error)
 	// FindQuote returns the quote of a status, ErrNotFound when it quotes nothing.
 	FindQuote(ctx context.Context, statusID string) (content.Quote, error)
-	// FindQuotes, FindQuoteStates, and FindQuotePolicies return the quotes, their states, and
-	// the quote policies of the statuses of statusIDs that have them, by status ID, as FindQuote,
-	// FindQuoteState, and FindQuotePolicy return those of one, with one query each.
+	// FindQuotes and FindQuoteStates return the quotes and their states of the statuses of
+	// statusIDs that have them, by status ID, as FindQuote and FindQuoteState return those of
+	// one, with one query each.
 	FindQuotes(ctx context.Context, statusIDs []string) (map[string]content.Quote, error)
 	FindQuoteStates(ctx context.Context, statusIDs []string) (map[string]content.QuoteState, error)
-	FindQuotePolicies(ctx context.Context, statusIDs []string) (map[string]content.StatusQuotePolicy, error)
 	// FindQuoteTx reads as FindQuote does, in tx.
 	FindQuoteTx(ctx context.Context, tx uow.Tx, statusID string) (content.Quote, error)
 	// ListQuotesAfter returns up to limit quotes whose status ID is above after ("" for the
@@ -66,13 +66,6 @@ type QuoteRepository interface {
 	// ListQuotesOf returns up to limit quotes of the status uri whose status ID is below before
 	// ("" for the newest), newest first.
 	ListQuotesOf(ctx context.Context, uri, before string, limit int) ([]content.Quote, error)
-
-	// UpsertQuotePolicy sets who may quote a status; DeleteQuotePolicy removes the policy of a
-	// remote status that declares none any more.
-	UpsertQuotePolicy(ctx context.Context, tx uow.Tx, p content.StatusQuotePolicy) error
-	DeleteQuotePolicy(ctx context.Context, tx uow.Tx, statusID string) error
-	// FindQuotePolicy returns who may quote a status, ErrNotFound when it declares nobody.
-	FindQuotePolicy(ctx context.Context, statusID string) (content.StatusQuotePolicy, error)
 
 	// InsertQuoteAuthorization records this server's approval of a quote. It reports false,
 	// writing nothing, when the quoting status has one for the quoted status.

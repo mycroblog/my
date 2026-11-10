@@ -29,9 +29,19 @@
                 "Language": "en"
               }
             ],
+            "CanAnnounce": {
+              "AutomaticApproval": [
+                "https://www.w3.org/ns/activitystreams#Public"
+              ]
+            },
             "CanQuote": {
               "AutomaticApproval": [
                 "http://gotosocial.example/users/the_mighty_zork"
+              ]
+            },
+            "CanReply": {
+              "AutomaticApproval": [
+                "https://www.w3.org/ns/activitystreams#Public"
               ]
             },
             "ID": "http://gotosocial.example/users/the_mighty_zork/statuses/01F8MHAMCHF6Y650WCRSCP4WMY",

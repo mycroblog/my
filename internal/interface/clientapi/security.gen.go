@@ -389,6 +389,6 @@ var operationSecurity = map[string]operationAccess{
 	"PUT /api/v1/preferences/supporter_listing":                                     {Operation: "updateSupporterListing", Scopes: []string{"write:accounts"}},
 	"PUT /api/v1/push/subscription":                                                 {Operation: "putPushSubscription", Scopes: []string{"push"}},
 	"PUT /api/v1/statuses/{id}":                                                     {Operation: "editStatus", Scopes: []string{"write:statuses"}},
-	"PUT /api/v1/statuses/{id}/quote_policy":                                        {Operation: "setStatusQuotePolicy", Scopes: []string{"write:statuses"}},
+	"PUT /api/v1/statuses/{id}/interaction_policy":                                  {Operation: "setStatusInteractionPolicy", Scopes: []string{"write:statuses"}},
 	"PUT /api/v1/statuses/{id}/reaction":                                            {Operation: "reactToStatus", Scopes: []string{"write:favourites"}},
 }

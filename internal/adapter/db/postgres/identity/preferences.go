@@ -26,7 +26,6 @@ func (r *Repository) InsertPreferences(ctx context.Context, tx uow.Tx, p identit
 		UserID:                  p.UserID,
 		Locale:                  p.Locale,
 		DefaultVisibility:       string(p.DefaultVisibility),
-		DefaultQuotePolicy:      string(p.DefaultQuotePolicy),
 		DefaultPostLanguage:     p.DefaultPostLanguage,
 		RequireMediaDescription: p.RequireMediaDescription,
 		TimelineAutoInsert:      p.TimelineAutoInsert,
@@ -38,7 +37,45 @@ func (r *Repository) InsertPreferences(ctx context.Context, tx uow.Tx, p identit
 	if err != nil {
 		return postgres.Wrap(err, "insert preferences")
 	}
+	if err := insertInteractionDefaults(ctx, q, p.UserID, p.DefaultInteractionPolicy); err != nil {
+		return err
+	}
 	return setTimeZone(ctx, q, p)
+}
+
+// ReplaceInteractionDefaults implements identity.PreferencesRepository.
+func (r *Repository) ReplaceInteractionDefaults(ctx context.Context, tx uow.Tx, userID string, d identity.InteractionDefaults) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	if err := q.DeleteUserInteractionPolicies(ctx, userID); err != nil {
+		return postgres.Wrap(err, "delete interaction defaults")
+	}
+	return insertInteractionDefaults(ctx, q, userID, d)
+}
+
+// interactionDefaultsFrom returns the defaults of the rows of user_interaction_policies; a kind
+// without rows takes identity.DefaultInteractionDefaults.
+func interactionDefaultsFrom(rows []identitygen.ListUserInteractionPoliciesRow) identity.InteractionDefaults {
+	out := identity.DefaultInteractionDefaults
+	for _, k := range identity.InteractionKinds {
+		var set identity.InteractionSetting
+		for _, row := range rows {
+			if identity.InteractionKind(row.Kind) != k {
+				continue
+			}
+			if row.Approval == "manual" {
+				set.Manual = identity.InteractionAudience(row.Audience)
+			} else {
+				set.Automatic = identity.InteractionAudience(row.Audience)
+			}
+		}
+		if set.Automatic != "" {
+			out = out.With(k, set)
+		}
+	}
+	return out
 }
 
 // UpdatePreferences implements identity.PreferencesRepository.
@@ -51,7 +88,6 @@ func (r *Repository) UpdatePreferences(ctx context.Context, tx uow.Tx, p identit
 		UserID:                  p.UserID,
 		Locale:                  p.Locale,
 		DefaultVisibility:       string(p.DefaultVisibility),
-		DefaultQuotePolicy:      string(p.DefaultQuotePolicy),
 		DefaultPostLanguage:     p.DefaultPostLanguage,
 		RequireMediaDescription: p.RequireMediaDescription,
 		TimelineAutoInsert:      p.TimelineAutoInsert,
@@ -138,20 +174,24 @@ func userPreferencesFrom(ctx context.Context, q *identitygen.Queries, row identi
 	case !errors.Is(err, pgx.ErrNoRows):
 		return identity.Preferences{}, postgres.Wrap(err, "get time zone")
 	}
+	policies, err := q.ListUserInteractionPolicies(ctx, row.UserID)
+	if err != nil {
+		return identity.Preferences{}, postgres.Wrap(err, "list interaction defaults")
+	}
 	return identity.Preferences{
-		UserID:                  row.UserID,
-		TimeZone:                tz,
-		TimeZoneChosen:          chosen,
-		Locale:                  row.Locale,
-		DefaultVisibility:       identity.Visibility(row.DefaultVisibility),
-		DefaultQuotePolicy:      identity.QuotePolicy(row.DefaultQuotePolicy),
-		DefaultPostLanguage:     row.DefaultPostLanguage,
-		RequireMediaDescription: row.RequireMediaDescription,
-		TimelineAutoInsert:      row.TimelineAutoInsert,
-		LinkCardSize:            identity.LinkCardSize(row.LinkCardSize),
-		LocaleFollowsBrowser:    row.LocaleFollowsBrowser,
-		TimeZoneFollowsBrowser:  row.TimeZoneFollowsBrowser,
-		UpdatedAt:               postgres.UTC(row.UpdatedAt),
+		UserID:                   row.UserID,
+		DefaultInteractionPolicy: interactionDefaultsFrom(policies),
+		TimeZone:                 tz,
+		TimeZoneChosen:           chosen,
+		Locale:                   row.Locale,
+		DefaultVisibility:        identity.Visibility(row.DefaultVisibility),
+		DefaultPostLanguage:      row.DefaultPostLanguage,
+		RequireMediaDescription:  row.RequireMediaDescription,
+		TimelineAutoInsert:       row.TimelineAutoInsert,
+		LinkCardSize:             identity.LinkCardSize(row.LinkCardSize),
+		LocaleFollowsBrowser:     row.LocaleFollowsBrowser,
+		TimeZoneFollowsBrowser:   row.TimeZoneFollowsBrowser,
+		UpdatedAt:                postgres.UTC(row.UpdatedAt),
 	}, nil
 }
 
@@ -159,4 +199,20 @@ func userPreferencesFrom(ctx context.Context, q *identitygen.Queries, row identi
 func (r *Repository) ListTimelineLanguages(ctx context.Context, userID string) ([]string, error) {
 	langs, err := r.db.reader().ListUserTimelineLanguages(ctx, userID)
 	return langs, postgres.Wrap(err, "list timeline languages")
+}
+
+// insertInteractionDefaults inserts the rows of the defaults d of a user with one statement.
+func insertInteractionDefaults(ctx context.Context, q *identitygen.Queries, userID string, d identity.InteractionDefaults) error {
+	arg := identitygen.InsertUserInteractionPoliciesParams{UserID: userID}
+	add := func(k identity.InteractionKind, approval string, a identity.InteractionAudience) {
+		arg.Kinds, arg.Approvals, arg.Audiences = append(arg.Kinds, string(k)), append(arg.Approvals, approval), append(arg.Audiences, string(a))
+	}
+	for _, k := range identity.InteractionKinds {
+		set := d.Of(k)
+		add(k, "automatic", set.Automatic)
+		if set.Manual != "" {
+			add(k, "manual", set.Manual)
+		}
+	}
+	return postgres.Wrap(q.InsertUserInteractionPolicies(ctx, arg), "insert interaction defaults")
 }

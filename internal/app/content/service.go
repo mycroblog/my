@@ -158,9 +158,10 @@ type Deps struct {
 	// DefaultLanguage returns the default post language of a user (FR-110), used when a post
 	// names none; nil or UndeterminedLanguage leaves the language undetermined.
 	DefaultLanguage func(ctx context.Context, userID string) (string, error)
-	// DefaultQuotePolicy returns who may quote the new statuses of a user (ADR-0069 §1), used
-	// when a status names no policy; nil means content.DefaultQuotePolicy.
-	DefaultQuotePolicy func(ctx context.Context, userID string) (content.QuotePolicy, error)
+	// DefaultInteractionPolicy returns who may reply to, boost, and quote the new statuses of a
+	// user (ADR-0155 §5), used for the kinds a status names no policy of; nil means
+	// content.DefaultInteractionSettings.
+	DefaultInteractionPolicy func(ctx context.Context, userID string) (content.InteractionSettings, error)
 	// LocalEmojis returns the enabled local custom emoji that texts use as :shortcode:
 	// ((*CustomEmojiService).LocalEmojiIDs, ADR-0051 §3); nil records no custom emoji.
 	LocalEmojis func(ctx context.Context, texts ...string) ([]string, error)
@@ -246,8 +247,9 @@ type CreateInput struct {
 	IdempotencyKey string
 	// QuotedStatusID is the ID of the status quoted, "" for none (FR-114).
 	QuotedStatusID string
-	// QuotePolicy is who may quote the status; "" takes the author's default (ADR-0069 §1).
-	QuotePolicy content.QuotePolicy
+	// InteractionPolicy is who may reply to, boost, and quote the status; the kinds it leaves out
+	// take the author's defaults (ADR-0155 §5).
+	InteractionPolicy InteractionPolicyChange
 }
 
 // Create posts a local status. The text becomes HTML with mentions of active accounts (local
@@ -257,8 +259,8 @@ type CreateInput struct {
 // A poll (FR-112) must keep the limits of content.NewPoll (content.ErrInvalidPoll) and comes
 // without media (ErrPollWithMedia); it is posted with a tally observation of no votes. A quote
 // must name a status the author may see (ErrQuoteTargetNotFound) and may quote
-// (ErrQuoteNotAllowed, ADR-0069 §3); the status gets the quote policy asked for or the author's
-// default (ErrInvalidQuotePolicy).
+// (ErrQuoteNotAllowed, ADR-0069 §3); the status gets the interaction policy asked for, with the
+// author's defaults for the kinds it leaves out (ErrInvalidInteractionPolicy).
 //
 // Retrying with an IdempotencyKey that the author already used returns the status posted with it
 // and changes nothing; when that status is deleted, it fails with ErrAlreadyDeleted. A key that
@@ -354,7 +356,7 @@ type PreparedCreate struct {
 	local       content.LocalStatus
 	rev         content.Revision
 	tags        []content.Tag
-	quotePolicy content.QuotePolicy
+	interaction content.InteractionSettings
 	quote       *localQuote
 	tally       *content.PollTallyObservation
 	// media are the decisions of media.check on the attachments that CreateTx acts on.
@@ -404,7 +406,7 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 		return Post{}, err
 	}
 	if s.d.Quotes != nil {
-		if err := s.d.Quotes.UpsertQuotePolicy(ctx, tx, content.StatusQuotePolicy{StatusID: p.st.ID, Policy: p.quotePolicy, UpdatedAt: p.now}); err != nil {
+		if err := s.d.Quotes.ReplaceInteractionPolicy(ctx, tx, p.st.ID, nil, p.interaction.Policy()); err != nil {
 			return Post{}, err
 		}
 	}
@@ -466,7 +468,7 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 		}
 		st.InReplyToURI = parent.URI
 	}
-	quotePolicy, err := s.newQuotePolicy(ctx, author, in.QuotePolicy)
+	interaction, err := s.newInteractionSettings(ctx, author, in.InteractionPolicy)
 	if err != nil {
 		return PreparedCreate{}, err
 	}
@@ -499,7 +501,7 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 	if err != nil {
 		return PreparedCreate{}, err
 	}
-	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, quotePolicy: quotePolicy, quote: quote, tally: tally, media: verdicts, now: now}, nil
+	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, interaction: interaction, quote: quote, tally: tally, media: verdicts, now: now}, nil
 }
 
 // Replay returns the post that an author posted with an Idempotency-Key, so that a retry is

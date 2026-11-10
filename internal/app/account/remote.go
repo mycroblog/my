@@ -608,15 +608,15 @@ func (s *Service) RemoteProfileURLs(ctx context.Context, accountIDs []string) (m
 	return s.d.Repository.ListRemoteProfileURLs(ctx, accountIDs)
 }
 
-// RemoteFollowersURL returns the followers collection of a remote actor, from its newest
-// document: "" when the document has none. It fails with ErrNotFound for a local account and for
-// a remote one that has never been fetched.
-func (s *Service) RemoteFollowersURL(ctx context.Context, accountID string) (string, error) {
+// RemoteCollectionURLs returns the followers and following collections of a remote actor, from
+// its newest document: "" for one the document has not. It fails with ErrNotFound for a local
+// account and for a remote one that has never been fetched.
+func (s *Service) RemoteCollectionURLs(ctx context.Context, accountID string) (followers, following string, err error) {
 	snap, err := s.d.Repository.FindLatestRemoteSnapshot(ctx, accountID)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
-	return snap.FollowersURL, nil
+	return snap.FollowersURL, snap.FollowingURL, nil
 }
 
 // RemoteOutboxURL returns the outbox of a remote actor, from its newest document: "" when the

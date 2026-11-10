@@ -123,6 +123,9 @@ DELETE FROM user_timeline_languages WHERE user_id = sqlc.arg(user_id);
 -- name: EraseUserTimeZone :exec
 DELETE FROM user_time_zones WHERE user_id = sqlc.arg(user_id);
 
+-- name: EraseUserInteractionPolicies :exec
+DELETE FROM user_interaction_policies WHERE user_id = sqlc.arg(user_id);
+
 -- name: EraseRegistrationDecisions :exec
 DELETE FROM registration_decisions WHERE application_id IN (
   SELECT a.id FROM registration_applications a WHERE a.user_id = sqlc.arg(user_id));

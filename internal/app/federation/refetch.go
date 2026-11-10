@@ -132,18 +132,18 @@ func (h *StatusHandlers) Refetch(ctx context.Context, statusID string) error {
 	case author.Account.ID != st.AuthorAccountID:
 		return fmt.Errorf("%w: %s is attributed to %s, not to its author", ErrNotTaken, obj.ID, obj.AttributedTo)
 	}
-	followers, err := h.followers(ctx, author)
+	cols, err := h.collections(ctx, author)
 	if err != nil {
 		return err
 	}
-	mentions, err := h.mentions(ctx, obj, followers)
+	mentions, err := h.mentions(ctx, obj, cols.followers)
 	if err != nil {
 		return err
 	}
 	if err := h.resolveMentions(ctx, mentions); err != nil {
 		return err
 	}
-	in := h.inputOf(author, federation.Audience{}, "", obj, followers, mentions)
+	in := h.inputOf(author, federation.Audience{}, "", obj, cols, mentions)
 	err = h.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		_, err := h.d.Statuses.ReviseRemoteStatus(ctx, tx, in)
 		return err

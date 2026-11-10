@@ -26,49 +26,21 @@ var (
 	// ErrQuoteRemoteAudience reports a local, private, or direct status that quotes a remote one
 	// (content.QuotesRemotePosts).
 	ErrQuoteRemoteAudience = errors.New("content: a status of this visibility may not quote a remote status")
-	// ErrInvalidQuotePolicy reports a quote policy that is not one of content's.
-	ErrInvalidQuotePolicy = errors.New("content: invalid quote policy")
 )
 
-// The quote policies as part of this module's public API.
-type (
-	// QuotePolicy is content.QuotePolicy.
-	QuotePolicy = content.QuotePolicy
-	// QuoteAuthorization is content.QuoteAuthorization.
-	QuoteAuthorization = content.QuoteAuthorization
-)
-
-// The values of the quote policies that other modules use.
-const (
-	QuotePolicyPublic    = content.QuotePolicyPublic
-	QuotePolicyFollowers = content.QuotePolicyFollowers
-	QuotePolicyNobody    = content.QuotePolicyNobody
-)
+// QuoteAuthorization is content.QuoteAuthorization, as part of this module's public API.
+type QuoteAuthorization = content.QuoteAuthorization
 
 // QuoteAuthorizationURI returns the ActivityPub id of a QuoteAuthorization of host.
 func QuoteAuthorizationURI(host, authorizationID string) string {
 	return content.QuoteAuthorizationURI(host, authorizationID)
 }
 
-// Events of the quote policies and the approvals this server gives (data-model §4.4):
-//   - EventQuotePolicyChanged: the author of a local status changed who may quote it. The
-//     federation module delivers an Update of the status, whose interactionPolicy says it.
+// Event of the approvals this server gives (data-model §4.4):
 //   - EventQuoteAuthorizationRevoked: the author of a local status revoked an approval of a quote
 //     of it. The federation module delivers the Delete of the QuoteAuthorization to the quoting
 //     author when that author is remote.
-const (
-	EventQuotePolicyChanged        = "content.quote_policy_changed"
-	EventQuoteAuthorizationRevoked = "content.quote_authorization_revoked"
-)
-
-// QuotePolicyChanged is emitted when the author of a local status changes its quote policy.
-type QuotePolicyChanged struct {
-	Policy content.StatusQuotePolicy
-	Status StatusRef
-}
-
-// EventType implements uow.Event.
-func (QuotePolicyChanged) EventType() string { return EventQuotePolicyChanged }
+const EventQuoteAuthorizationRevoked = "content.quote_authorization_revoked"
 
 // QuoteAuthorizationRevoked is emitted when an approval this server gave is revoked.
 type QuoteAuthorizationRevoked struct {
@@ -96,21 +68,27 @@ func (s *Service) quoteTarget(ctx context.Context, authorID, statusID string, vi
 	if s.d.Quotes == nil {
 		return localQuote{}, fmt.Errorf("status %s: %w", statusID, ErrQuoteTargetNotFound)
 	}
-	quoted, follows, err := s.visibleTo(ctx, authorID, statusID)
+	quoted, rel, err := s.visibleTo(ctx, authorID, statusID)
 	if errors.Is(err, ErrReplyTargetNotFound) {
 		return localQuote{}, fmt.Errorf("status %s: %w", statusID, ErrQuoteTargetNotFound)
 	}
 	if err != nil {
 		return localQuote{}, err
 	}
-	policy, err := s.quotePolicy(ctx, quoted.ID)
+	policy, err := interactionPolicyOf(ctx, s.d.Quotes, quoted.ID)
 	if err != nil {
 		return localQuote{}, err
 	}
-	allowance := content.MayQuote(content.QuoteFacts{
-		QuoterAccountID: authorID, QuoterIsLocal: true, QuoterVisible: true, QuoterFollows: follows,
-		QuotingVisibility: vis, Quoted: quoted, Policy: policy,
-	})
+	facts := content.QuoteFacts{
+		QuoterAccountID: authorID, QuoterIsLocal: true, QuoterVisible: true, QuoterFollows: rel.follows,
+		QuoterFollowed: rel.followedBy, QuoterMentioned: rel.mentioned, QuotingVisibility: vis, Quoted: quoted, Policy: policy,
+	}
+	if namesActors(policy, content.InteractionQuote) {
+		if facts.QuoterURI, err = s.actorURI(ctx, authorID); err != nil {
+			return localQuote{}, err
+		}
+	}
+	allowance := content.MayQuote(facts)
 	if allowance == content.QuoteDenied {
 		return localQuote{}, fmt.Errorf("status %s: %w", statusID, ErrQuoteNotAllowed)
 	}
@@ -120,18 +98,10 @@ func (s *Service) quoteTarget(ctx context.Context, authorID, statusID string, vi
 	return localQuote{quoted: quoted, allowance: allowance}, nil
 }
 
-// quotePolicy returns who may quote statusID, "" when it declares nobody.
-func (s *Service) quotePolicy(ctx context.Context, statusID string) (content.QuotePolicy, error) {
-	p, err := s.d.Quotes.FindQuotePolicy(ctx, statusID)
-	if errors.Is(err, ErrNotFound) {
-		return "", nil
-	}
-	return p.Policy, err
-}
-
 // recordLocalQuote records in tx that the local status st quotes q (ADR-0069 §3): an approved
 // quote of a local status of another author gets this server's QuoteAuthorization at once, a
-// quote of the author's own status needs none, a quote of a remote status that declares a policy
+// quote of the author's own status needs none, a quote that a manual rule of a local status
+// includes waits for its author (ADR-0155 §6), a quote of a remote status that declares a policy
 // waits for its server's answer to a QuoteRequest, and one of a remote status without one is a
 // legacy quote.
 func (s *Service) recordLocalQuote(ctx context.Context, tx uow.Tx, st content.Status, q localQuote) error {
@@ -157,73 +127,6 @@ func (s *Service) recordLocalQuote(ctx context.Context, tx uow.Tx, st content.St
 	}
 	_, err := s.changeQuote(ctx, tx, st, content.QuoteEventAccepted, uri)
 	return err
-}
-
-// newQuotePolicy returns the quote policy of a new status of author: requested, or the author's
-// default.
-func (s *Service) newQuotePolicy(ctx context.Context, author appaccount.Actor, requested content.QuotePolicy) (content.QuotePolicy, error) {
-	if requested != "" {
-		if !requested.Valid() {
-			return "", fmt.Errorf("%w: %q", ErrInvalidQuotePolicy, requested)
-		}
-		return requested, nil
-	}
-	if s.d.DefaultQuotePolicy == nil || author.Local == nil {
-		return content.DefaultQuotePolicy, nil
-	}
-	p, err := s.d.DefaultQuotePolicy(ctx, author.Local.UserID)
-	if err != nil || !p.Valid() {
-		return content.DefaultQuotePolicy, err
-	}
-	return p, nil
-}
-
-// SetQuotePolicy changes who may quote a local status of accountID (ADR-0069 §1). Approvals
-// given before stay. It emits QuotePolicyChanged unless the policy stays the same. A status that
-// does not exist or is deleted fails with ErrNotFound, another account's with ErrNotAuthor.
-func (s *Service) SetQuotePolicy(ctx context.Context, accountID, statusID string, policy content.QuotePolicy) (content.StatusQuotePolicy, error) {
-	if !policy.Valid() {
-		return content.StatusQuotePolicy{}, fmt.Errorf("%w: %q", ErrInvalidQuotePolicy, policy)
-	}
-	if s.d.Quotes == nil {
-		return content.StatusQuotePolicy{}, fmt.Errorf("status %s: %w", statusID, ErrNotFound)
-	}
-	st, err := s.ownStatus(ctx, accountID, statusID)
-	if err != nil {
-		return content.StatusQuotePolicy{}, err
-	}
-	p := content.StatusQuotePolicy{StatusID: st.ID, Policy: policy, UpdatedAt: s.d.Clock.Now()}
-	if cur, err := s.d.Quotes.FindQuotePolicy(ctx, st.ID); err == nil && cur.Policy == policy {
-		return cur, nil
-	} else if err != nil && !errors.Is(err, ErrNotFound) {
-		return content.StatusQuotePolicy{}, err
-	}
-	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		deleted, err := s.d.Repository.IsDeleted(ctx, tx, st.ID)
-		if err != nil {
-			return err
-		}
-		if deleted {
-			return fmt.Errorf("status %s: %w", st.ID, ErrNotFound)
-		}
-		if err := s.d.Quotes.UpsertQuotePolicy(ctx, tx, p); err != nil {
-			return err
-		}
-		return tx.Emit(ctx, QuotePolicyChanged{Policy: p, Status: RefOf(st)})
-	})
-	if err != nil {
-		return content.StatusQuotePolicy{}, err
-	}
-	return p, nil
-}
-
-// FindQuotePolicy returns who may quote a status: its author's choice for a local status, what
-// a remote status declares. A remote status that declares nobody fails with ErrNotFound.
-func (s *Service) FindQuotePolicy(ctx context.Context, statusID string) (content.StatusQuotePolicy, error) {
-	if s.d.Quotes == nil {
-		return content.StatusQuotePolicy{}, fmt.Errorf("quote policy of %s: %w", statusID, ErrNotFound)
-	}
-	return s.d.Quotes.FindQuotePolicy(ctx, statusID)
 }
 
 // FederatedQuotePage returns the HTML page of the quoted status uri, which the fallback of a quote
@@ -271,22 +174,22 @@ type FederatedQuoteLink struct {
 	OK   bool
 }
 
-// NoteQuotes are the quotes of statuses as FindQuote, FindQuotePolicy, and FederatedQuotePage
-// read them one by one: Quotes and States by quoting status, Policies by status, and Links by
-// quoted URI. A status missing from a map has none.
+// NoteQuotes are the quotes of statuses as FindQuote, FindInteractionPolicy, and
+// FederatedQuotePage read them one by one: Quotes and States by quoting status, Policies by
+// status, and Links by quoted URI. A status missing from a map has none.
 type NoteQuotes struct {
 	Quotes   map[string]content.Quote
 	States   map[string]content.QuoteState
-	Policies map[string]content.StatusQuotePolicy
+	Policies map[string]content.InteractionPolicy
 	Links    map[string]FederatedQuoteLink
 }
 
-// NoteQuotesOf reads what the Notes of statusIDs say of quotes, as FindQuote, FindQuotePolicy,
+// NoteQuotesOf reads what the Notes of statusIDs say of quotes, as FindQuote, FindInteractionPolicy,
 // and FederatedQuotePage read it for one status, with a number of queries that does not grow with
 // statusIDs.
 func (s *Service) NoteQuotesOf(ctx context.Context, statusIDs []string) (NoteQuotes, error) {
 	out := NoteQuotes{Quotes: map[string]content.Quote{}, States: map[string]content.QuoteState{},
-		Policies: map[string]content.StatusQuotePolicy{}, Links: map[string]FederatedQuoteLink{}}
+		Policies: map[string]content.InteractionPolicy{}, Links: map[string]FederatedQuoteLink{}}
 	if s.d.Quotes == nil || len(statusIDs) == 0 {
 		return out, nil
 	}
@@ -294,7 +197,7 @@ func (s *Service) NoteQuotesOf(ctx context.Context, statusIDs []string) (NoteQuo
 	if out.Quotes, err = s.d.Quotes.FindQuotes(ctx, statusIDs); err != nil {
 		return NoteQuotes{}, err
 	}
-	if out.Policies, err = s.d.Quotes.FindQuotePolicies(ctx, statusIDs); err != nil {
+	if out.Policies, err = s.d.Quotes.FindInteractionPolicies(ctx, statusIDs); err != nil {
 		return NoteQuotes{}, err
 	}
 	quoting := make([]string, 0, len(out.Quotes))
@@ -348,61 +251,67 @@ func (s *Service) RejectQuote(ctx context.Context, statusID string) (bool, error
 	return s.quoteCommand(ctx, statusID, content.QuoteEventRejected, "")
 }
 
-// RemoteQuotePolicyInput is who may quote a remote post, as its interactionPolicy.canQuote
-// declares (ADR-0069 §3); nil declares nobody.
-type RemoteQuotePolicyInput struct {
-	Policy content.QuotePolicy
-}
-
-// recordRemoteQuotePolicy sets in tx who may quote the remote status st: in, or none.
-func (s *Service) recordRemoteQuotePolicy(ctx context.Context, tx uow.Tx, st content.Status, in *RemoteQuotePolicyInput) error {
-	if s.d.Quotes == nil {
-		return nil
-	}
-	if in == nil || !in.Policy.Valid() {
-		return s.d.Quotes.DeleteQuotePolicy(ctx, tx, st.ID)
-	}
-	return s.d.Quotes.UpsertQuotePolicy(ctx, tx, content.StatusQuotePolicy{StatusID: st.ID, Policy: in.Policy, UpdatedAt: s.d.Clock.Now()})
+// interactor is how an account stands with the author of a status it interacts with: whether it
+// actively follows the author, the author actively follows it, and the status mentions it.
+type interactor struct {
+	follows, followedBy, mentioned bool
 }
 
 // visibleTo returns the status that the local account accountID refers to, provided that it may
-// see it, and whether it actively follows its author. A status that does not exist, is deleted,
+// see it, and how the account stands with its author. A status that does not exist, is deleted,
 // or is hidden from the account fails alike with ErrReplyTargetNotFound.
-func (s *Service) visibleTo(ctx context.Context, accountID, statusID string) (content.Status, bool, error) {
+func (s *Service) visibleTo(ctx context.Context, accountID, statusID string) (content.Status, interactor, error) {
 	notFound := fmt.Errorf("status %s: %w", statusID, ErrReplyTargetNotFound)
 	st, err := s.d.Repository.FindStatus(ctx, statusID)
 	if errors.Is(err, ErrNotFound) {
-		return content.Status{}, false, notFound
+		return content.Status{}, interactor{}, notFound
 	}
 	if err != nil {
-		return content.Status{}, false, err
+		return content.Status{}, interactor{}, err
 	}
 	rev, err := s.d.Repository.FindCurrentRevision(ctx, statusID)
 	if errors.Is(err, ErrNotFound) {
-		return content.Status{}, false, notFound // deleted
+		return content.Status{}, interactor{}, notFound // deleted
 	}
 	if err != nil {
-		return content.Status{}, false, err
+		return content.Status{}, interactor{}, err
 	}
 	restrictions, err := s.d.Restrictions.Restrictions(ctx, st.AuthorAccountID)
 	if err != nil {
-		return content.Status{}, false, err
+		return content.Status{}, interactor{}, err
 	}
 	rel := content.Relation{Mentioned: slices.Contains(rev.MentionedAccountIDs, accountID)}
+	var followedBy bool
 	if st.AuthorAccountID != accountID {
 		r, err := s.d.Relationships.Relationship(ctx, accountID, st.AuthorAccountID)
 		if err != nil {
-			return content.Status{}, false, err
+			return content.Status{}, interactor{}, err
 		}
 		if r.ActivelyFollowing() {
 			rel.Follow = content.FollowActive
 		}
 		rel.Blocking, rel.BlockedBy = r.Blocking, r.BlockedBy
+		followedBy = r.ActivelyFollowedBy()
 	}
 	viewer := content.Viewer{Kind: content.ViewerLocal, AccountID: accountID}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
 	if !content.CanView(content.ContextStatus, viewer, facts, restrictions.Author, rel) {
-		return content.Status{}, false, notFound
+		return content.Status{}, interactor{}, notFound
 	}
-	return st, rel.Follow == content.FollowActive, nil
+	return st, interactor{follows: rel.Follow == content.FollowActive, followedBy: followedBy, mentioned: rel.Mentioned}, nil
+}
+
+// namesActors reports whether the rules of kind of p name single actors, whom only the actor
+// IRI of an account tells apart.
+func namesActors(p content.InteractionPolicy, kind content.InteractionKind) bool {
+	return slices.ContainsFunc(p.Of(kind), func(r content.InteractionRule) bool { return r.Audience == content.AudienceAccount })
+}
+
+// actorURI returns the actor IRI of an account, "" when it is not known.
+func (s *Service) actorURI(ctx context.Context, accountID string) (string, error) {
+	a, err := s.d.Accounts.FindByID(ctx, accountID)
+	if errors.Is(err, appaccount.ErrNotFound) {
+		return "", nil
+	}
+	return a.Account.URI, err
 }

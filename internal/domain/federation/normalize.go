@@ -200,7 +200,7 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 		return nil, err
 	}
 	obj.Quote = n.quote(o)
-	obj.CanQuote = n.canQuote(o)
+	obj.CanReply, obj.CanAnnounce, obj.CanQuote = n.canInteract(o, "canReply"), n.canInteract(o, "canAnnounce"), n.canInteract(o, "canQuote")
 	if t == ObjectQuoteAuthorization {
 		obj.InteractingObject = n.firstRef(o.get("interactingObject"))
 		obj.InteractionTarget = n.firstRef(o.get("interactionTarget"))
@@ -270,17 +270,35 @@ func (n normalizer) quote(o object) *Quote {
 	return nil
 }
 
-// canQuote reads interactionPolicy.canQuote, nil when the object has none.
-func (n normalizer) canQuote(o object) *CanQuote {
+// canInteract reads the property kind (canReply, canAnnounce, or canQuote) of the object's
+// interactionPolicy, nil when the object declares none: no interactionPolicy, no such property,
+// or one that is null or has neither list (GoToSocial's convention). The names before GoToSocial
+// 0.20, always and approvalRequired, are read too.
+func (n normalizer) canInteract(o object, kind string) *CanInteract {
 	policy, ok := o.get("interactionPolicy").(object)
 	if !ok {
 		return nil
 	}
-	c, ok := policy.get("canQuote").(object)
+	c, ok := policy.get(kind).(object)
 	if !ok {
 		return nil
 	}
-	return &CanQuote{AutomaticApproval: n.recipients(list(c.get("automaticApproval"))), ManualApproval: n.recipients(list(c.get("manualApproval")))}
+	declared := false
+	read := func(names ...string) []IRI {
+		var vs []any
+		for _, name := range names {
+			if v := c.get(name); v != nil {
+				declared = true
+				vs = append(vs, list(v)...)
+			}
+		}
+		return n.recipients(vs)
+	}
+	out := &CanInteract{AutomaticApproval: read("automaticApproval", "always"), ManualApproval: read("manualApproval", "approvalRequired")}
+	if !declared {
+		return nil
+	}
+	return out
 }
 
 // activityStreamsMediaType reports whether the mediaType of a Link names an ActivityStreams

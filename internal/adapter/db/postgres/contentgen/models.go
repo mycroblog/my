@@ -320,6 +320,14 @@ type StatusHead struct {
 	LastRevisedAt time.Time
 }
 
+type StatusInteractionPolicy struct {
+	StatusID string
+	Kind     string
+	Approval string
+	Audience string
+	ActorUri string
+}
+
 type StatusLinkCard struct {
 	StatusID string
 	Url      string
@@ -350,12 +358,6 @@ type StatusQuoteEvent struct {
 	Kind             string
 	AuthorizationUri *string
 	OccurredAt       time.Time
-}
-
-type StatusQuotePolicy struct {
-	StatusID  string
-	Policy    string
-	UpdatedAt time.Time
 }
 
 type StatusQuoteState struct {

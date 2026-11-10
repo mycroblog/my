@@ -5,6 +5,7 @@ package identity
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -25,7 +26,6 @@ func (r *Repository) InsertPreferences(ctx context.Context, tx uow.Tx, p identit
 		UserID:                  p.UserID,
 		Locale:                  p.Locale,
 		DefaultVisibility:       string(p.DefaultVisibility),
-		DefaultQuotePolicy:      string(p.DefaultQuotePolicy),
 		DefaultPostLanguage:     p.DefaultPostLanguage,
 		RequireMediaDescription: sqlite.BoolToInt(p.RequireMediaDescription),
 		TimelineAutoInsert:      sqlite.BoolToInt(p.TimelineAutoInsert),
@@ -37,7 +37,45 @@ func (r *Repository) InsertPreferences(ctx context.Context, tx uow.Tx, p identit
 	if err != nil {
 		return sqlite.Wrap(err, "insert preferences")
 	}
+	if err := insertInteractionDefaults(ctx, q, p.UserID, p.DefaultInteractionPolicy); err != nil {
+		return err
+	}
 	return setTimeZone(ctx, q, p)
+}
+
+// ReplaceInteractionDefaults implements identity.PreferencesRepository.
+func (r *Repository) ReplaceInteractionDefaults(ctx context.Context, tx uow.Tx, userID string, d identity.InteractionDefaults) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	if err := q.DeleteUserInteractionPolicies(ctx, userID); err != nil {
+		return sqlite.Wrap(err, "delete interaction defaults")
+	}
+	return insertInteractionDefaults(ctx, q, userID, d)
+}
+
+// interactionDefaultsFrom returns the defaults of the rows of user_interaction_policies; a kind
+// without rows takes identity.DefaultInteractionDefaults.
+func interactionDefaultsFrom(rows []identitygen.ListUserInteractionPoliciesRow) identity.InteractionDefaults {
+	out := identity.DefaultInteractionDefaults
+	for _, k := range identity.InteractionKinds {
+		var set identity.InteractionSetting
+		for _, row := range rows {
+			if identity.InteractionKind(row.Kind) != k {
+				continue
+			}
+			if row.Approval == "manual" {
+				set.Manual = identity.InteractionAudience(row.Audience)
+			} else {
+				set.Automatic = identity.InteractionAudience(row.Audience)
+			}
+		}
+		if set.Automatic != "" {
+			out = out.With(k, set)
+		}
+	}
+	return out
 }
 
 // UpdatePreferences implements identity.PreferencesRepository.
@@ -49,7 +87,6 @@ func (r *Repository) UpdatePreferences(ctx context.Context, tx uow.Tx, p identit
 	n, err := q.UpdateUserPreferences(ctx, identitygen.UpdateUserPreferencesParams{
 		Locale:                  p.Locale,
 		DefaultVisibility:       string(p.DefaultVisibility),
-		DefaultQuotePolicy:      string(p.DefaultQuotePolicy),
 		DefaultPostLanguage:     p.DefaultPostLanguage,
 		RequireMediaDescription: sqlite.BoolToInt(p.RequireMediaDescription),
 		TimelineAutoInsert:      sqlite.BoolToInt(p.TimelineAutoInsert),
@@ -137,20 +174,24 @@ func userPreferencesFrom(ctx context.Context, q *identitygen.Queries, row identi
 	case !errors.Is(err, sql.ErrNoRows):
 		return identity.Preferences{}, sqlite.Wrap(err, "get time zone")
 	}
+	policies, err := q.ListUserInteractionPolicies(ctx, row.UserID)
+	if err != nil {
+		return identity.Preferences{}, sqlite.Wrap(err, "list interaction defaults")
+	}
 	return identity.Preferences{
-		UserID:                  row.UserID,
-		TimeZone:                tz,
-		TimeZoneChosen:          chosen,
-		Locale:                  row.Locale,
-		DefaultVisibility:       identity.Visibility(row.DefaultVisibility),
-		DefaultQuotePolicy:      identity.QuotePolicy(row.DefaultQuotePolicy),
-		DefaultPostLanguage:     row.DefaultPostLanguage,
-		RequireMediaDescription: row.RequireMediaDescription != 0,
-		TimelineAutoInsert:      row.TimelineAutoInsert != 0,
-		LinkCardSize:            identity.LinkCardSize(row.LinkCardSize),
-		LocaleFollowsBrowser:    row.LocaleFollowsBrowser != 0,
-		TimeZoneFollowsBrowser:  row.TimeZoneFollowsBrowser != 0,
-		UpdatedAt:               sqlite.FromMillis(row.UpdatedAt),
+		UserID:                   row.UserID,
+		DefaultInteractionPolicy: interactionDefaultsFrom(policies),
+		TimeZone:                 tz,
+		TimeZoneChosen:           chosen,
+		Locale:                   row.Locale,
+		DefaultVisibility:        identity.Visibility(row.DefaultVisibility),
+		DefaultPostLanguage:      row.DefaultPostLanguage,
+		RequireMediaDescription:  row.RequireMediaDescription != 0,
+		TimelineAutoInsert:       row.TimelineAutoInsert != 0,
+		LinkCardSize:             identity.LinkCardSize(row.LinkCardSize),
+		LocaleFollowsBrowser:     row.LocaleFollowsBrowser != 0,
+		TimeZoneFollowsBrowser:   row.TimeZoneFollowsBrowser != 0,
+		UpdatedAt:                sqlite.FromMillis(row.UpdatedAt),
 	}, nil
 }
 
@@ -158,4 +199,27 @@ func userPreferencesFrom(ctx context.Context, q *identitygen.Queries, row identi
 func (r *Repository) ListTimelineLanguages(ctx context.Context, userID string) ([]string, error) {
 	langs, err := r.db.reader().ListUserTimelineLanguages(ctx, userID)
 	return langs, sqlite.Wrap(err, "list timeline languages")
+}
+
+// insertInteractionDefaults inserts the rows of the defaults d of a user with one statement.
+func insertInteractionDefaults(ctx context.Context, q *identitygen.Queries, userID string, d identity.InteractionDefaults) error {
+	type row struct {
+		Kind     string `json:"kind"`
+		Approval string `json:"approval"`
+		Audience string `json:"audience"`
+	}
+	var rows []row
+	for _, k := range identity.InteractionKinds {
+		set := d.Of(k)
+		rows = append(rows, row{Kind: string(k), Approval: "automatic", Audience: string(set.Automatic)})
+		if set.Manual != "" {
+			rows = append(rows, row{Kind: string(k), Approval: "manual", Audience: string(set.Manual)})
+		}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertUserInteractionPolicies(ctx, identitygen.InsertUserInteractionPoliciesParams{UserID: userID, Rules: string(list)}),
+		"insert interaction defaults")
 }

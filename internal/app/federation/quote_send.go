@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -85,7 +86,8 @@ func (h *QuoteHandlers) Register(p *InboxProcessor) {
 //     to the quoted author's inbox.
 //   - content.quote_changed that approves a local status's quote by a remote
 //     QuoteAuthorization: the Update of the status, whose Note names it.
-//   - content.quote_policy_changed: the Update of the status, whose interactionPolicy says it.
+//   - content.interaction_policy_changed of the quote rules: the Update of the status, whose
+//     interactionPolicy says them.
 //   - content.quote_authorization_revoked of a remote quote: the Delete of the
 //     QuoteAuthorization to the quoting author's inbox.
 func (h *QuoteHandlers) RegisterProjectors(r *uow.Projectors) {
@@ -104,9 +106,10 @@ func (h *QuoteHandlers) RegisterProjectors(r *uow.Projectors) {
 		}
 		return h.recordUpdate(ctx, tx, ev.Status)
 	})
-	r.Register(appcontent.EventQuotePolicyChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		ev, ok := e.(appcontent.QuotePolicyChanged)
-		if !ok || !ev.Status.IsLocal {
+	r.Register(appcontent.EventInteractionPolicyChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appcontent.InteractionPolicyChanged)
+		// The Note carries canQuote alone.
+		if !ok || !ev.Status.IsLocal || !slices.Contains(ev.Kinds, appcontent.InteractionQuote) {
 			return nil
 		}
 		return h.recordUpdate(ctx, tx, ev.Status)
@@ -286,6 +289,8 @@ func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) err
 	auth, st, err := h.answer(ctx, in, quoted, quoting)
 	accepted := err == nil
 	switch {
+	case errors.Is(err, appcontent.ErrQuoteAwaitsApproval):
+		return nil // the author answers it
 	case errors.Is(err, appcontent.ErrQuoteRefused):
 	case errors.Is(err, appcontent.ErrNotFound):
 		return fmt.Errorf("%w: QuoteRequest of %s: %w", ErrDropActivity, quoted, err)
