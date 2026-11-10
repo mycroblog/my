@@ -28,6 +28,21 @@ func (r *StatusRepository) InsertArticle(ctx context.Context, tx uow.Tx, a conte
 	return postgres.Wrap(err, "insert status article")
 }
 
+// ListLiveArticleIDs implements content.Repository.
+func (r *StatusRepository) ListLiveArticleIDs(ctx context.Context, authorAccountID, before string, limit int) ([]string, error) {
+	lim, err := postgres.ToInt32(limit, "limit")
+	if err != nil {
+		return nil, err
+	}
+	ids, err := r.db.reader().ListLiveArticleIDsOfAuthor(ctx, contentgen.ListLiveArticleIDsOfAuthorParams{
+		AuthorAccountID: authorAccountID, Before: postgres.ToNullString(before), Lim: lim,
+	})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list articles of "+authorAccountID)
+	}
+	return ids, nil
+}
+
 // insertRevisionArticle writes the article children of rev, none for a revision of a post.
 func insertRevisionArticle(ctx context.Context, q *contentgen.Queries, rev content.Revision) error {
 	a := rev.Article

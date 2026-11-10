@@ -3339,6 +3339,22 @@ func (l *Localizer) ServerErrorsWrongPassword() string {
 	return l.format("server:errors.wrong_password", nil)
 }
 
+// ServerFeedArticlesTitleArgs holds the arguments of ServerFeedArticlesTitle, passed by name.
+//
+//exhaustruct:enforce
+type ServerFeedArticlesTitleArgs struct {
+	_      struct{} // forces keyed fields
+	Handle string
+	Name   string
+}
+
+// ServerFeedArticlesTitle formats "server:feed.articles_title". Title of the Atom feed that lists only the articles (long posts with a title) of a profile. {name} is the display name, or the username when there is none; {handle} is username@domain.
+//
+//	en: Articles by {name} (@{handle})
+func (l *Localizer) ServerFeedArticlesTitle(args ServerFeedArticlesTitleArgs) string {
+	return l.format("server:feed.articles_title", map[string]any{"handle": args.Handle, "name": args.Name})
+}
+
 // ServerFeedContentWarning formats "server:feed.content_warning". Text of a post in an Atom feed when the post has a content warning: the feed shows only the warning, and the body and the media stay on the post's page. {warning} is the warning, written by the author.
 //
 //	en: Content warning: {warning}. Open the post to read it.

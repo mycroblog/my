@@ -74,7 +74,10 @@ A hashtag's page adds only `<link rel="alternate" type="application/atom+xml">` 
 used the hashtag yet. A shared link to a hashtag or the public costs page shows the instance's card.
 
 The feeds themselves are Atom 1.0 documents of the 20 newest local public posts that are not replies or boosts, with
-`ETag`, `Last-Modified`, and `Cache-Control: public, max-age=60`. The server keeps each rendered feed in its key-value
+`ETag`, `Last-Modified`, and `Cache-Control: public, max-age=60`. An article's entry is its title and summary, with the
+link to the article; its body stays on the article's page. Each profile with a feed also has an articles-only feed,
+`https://<host>/@<username>/articles.atom`, titled "Articles by name (@handle)" (`server:feed.articles_title`), which
+follows the same rules; the profile's page links only its main feed. The server keeps each rendered feed in its key-value
 store for a minute, so a change reaches a feed within about a minute. A feed carries the same `X-Robots-Tag` and AI
 statements as its profile; a hashtag's feed is always `noindex`, and states the AI refusal of any of its authors. A
 profile without a feed, and a hashtag no post has used, answer 404.

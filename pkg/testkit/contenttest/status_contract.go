@@ -51,6 +51,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"RevisesStatuses", statusRevises},
 		{"ReadsTheCurrentRevisionsOfManyStatuses", statusReadsCurrentRevisions},
 		{"StoresArticles", statusStoresArticles},
+		{"ListsTheLiveArticlesOfAnAuthor", statusListsLiveArticles},
 		{"DeletesStatuses", statusDeletes},
 		{"DeletesManyStatuses", statusDeletesMany},
 		{"LinksReplies", statusLinksReplies},
@@ -529,8 +530,6 @@ func statusReportsMissing(t *testing.T, e *StatusEnv) {
 // Second returns the error of a call that returns a value and an error.
 func Second[T any](_ T, err error) error { return err }
 
-// statusListsLiveRemote checks ListLiveRemoteStatusIDs: the remote statuses of one author that
-// are not deleted, newest first, in keyset pages; local statuses and other authors are left out.
 // statusListsSearchable checks ListAuthorSearchableStatusIDs: an author's public and local statuses
 // in ID order, deleted ones included, and page by page.
 func statusListsSearchable(t *testing.T, e *StatusEnv) {
@@ -587,6 +586,8 @@ func statusListsAllSearchable(t *testing.T, e *StatusEnv) {
 	}
 }
 
+// statusListsLiveRemote checks ListLiveRemoteStatusIDs: the remote statuses of one author that
+// are not deleted, newest first, in keyset pages; local statuses and other authors are left out.
 func statusListsLiveRemote(t *testing.T, e *StatusEnv) {
 	ctx := t.Context()
 	author, other := e.IDs.NewID(), e.IDs.NewID()
@@ -1421,6 +1422,53 @@ func statusStoresArticles(t *testing.T, e *StatusEnv) {
 		t.Errorf("FindRevision(the first) = %+v, %v; want %+v", first.Article, err, rev.Article)
 	}
 	sameCurrentRevisions(t, e, st.ID, plain.ID)
+}
+
+// statusListsLiveArticles checks ListLiveArticleIDs: the articles of one author that are not
+// deleted, newest first, in keyset pages; posts and the articles of other authors are left out.
+func statusListsLiveArticles(t *testing.T, e *StatusEnv) {
+	ctx := t.Context()
+	author, other := e.IDs.NewID(), e.IDs.NewID()
+	article := func(author string) content.Status {
+		t.Helper()
+		st := e.NewStatus(author, content.VisibilityPublic)
+		rev := e.FirstRevision(st)
+		rev.Source = &content.Source{Text: "body", Format: content.SourceTextMarkdown}
+		rev.Article = &content.ArticleRevision{Title: "A title", Summary: "body", SummaryOrigin: content.SummaryFromBody}
+		err := e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			if err := e.H.Statuses.InsertStatus(ctx, tx, st); err != nil {
+				return err
+			}
+			if err := e.H.Statuses.InsertArticle(ctx, tx, content.Article{StatusID: st.ID, AuthorAccountID: author}); err != nil {
+				return err
+			}
+			if err := e.H.Statuses.InsertRevision(ctx, tx, rev); err != nil {
+				return err
+			}
+			return tx.Emit(ctx, appcontent.StatusCreated{Status: st, Revision: rev})
+		})
+		if err != nil {
+			t.Fatalf("create the article = %v", err)
+		}
+		return st
+	}
+	oldest, deleted, middle := article(author), article(author), article(author)
+	e.MustRemove(t, deleted)
+	article(other)
+	e.mustCreate(t, e.NewStatus(author, content.VisibilityPublic))
+	newest := article(author)
+
+	page, err := e.H.Statuses.ListLiveArticleIDs(ctx, author, "", 2)
+	if err != nil || !slices.Equal(page, []string{newest.ID, middle.ID}) {
+		t.Fatalf("first page = %v, %v; want [%s %s]", page, err, newest.ID, middle.ID)
+	}
+	page, err = e.H.Statuses.ListLiveArticleIDs(ctx, author, middle.ID, 2)
+	if err != nil || !slices.Equal(page, []string{oldest.ID}) {
+		t.Fatalf("second page = %v, %v; want [%s]", page, err, oldest.ID)
+	}
+	if page, err := e.H.Statuses.ListLiveArticleIDs(ctx, e.IDs.NewID(), "", 2); err != nil || len(page) != 0 {
+		t.Errorf("the articles of an author without any = %v, %v; want none", page, err)
+	}
 }
 
 // statusStoresConversations checks the conversations of statuses (ADR-0154): a conversation is
