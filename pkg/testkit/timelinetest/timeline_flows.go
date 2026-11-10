@@ -97,6 +97,7 @@ func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 		{"HomeShowsPostsOfFollowedTags", timelineHomeFollowedTags},
 		{"HomeFollowedTagsForStreams", timelineHomeFollowedTagStreams},
 		{"KeywordFilterCommands", timelineKeywordFilterCommands},
+		{"ExportsKeywordFilters", timelineKeywordFilterExport},
 		{"FeaturedTagCommands", timelineFeaturedTagCommands},
 		{"FeaturedTagsOfRemoteAccounts", timelineRemoteFeaturedTags},
 	}
