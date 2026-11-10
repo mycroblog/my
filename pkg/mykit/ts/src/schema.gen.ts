@@ -12835,6 +12835,19 @@ export interface components {
              *     pages of this instance only; other servers and the media files do not carry it.
              */
             ai_opt_out: boolean;
+            /**
+             * @description Whether the owner lets the Atom feed of the account's public posts be served at the
+             *     profile's `url` followed by `.atom`, and its public posts appear in the Atom feeds of
+             *     hashtags. It is the owner's own choice once made, and `indexable` until then
+             *     (`feed_follows_indexable`). A restricted or moved account has no feed whatever it says.
+             */
+            feed_enabled: boolean;
+            /**
+             * @description Whether the owner has not chosen about the feed yet, so that `feed_enabled` follows
+             *     `indexable`. Setting `feed_enabled` makes the choice, and a later change of `indexable`
+             *     leaves it as it is.
+             */
+            feed_follows_indexable: boolean;
             source: components["schemas"]["AccountSource"];
             posting: components["schemas"]["PostingLimits"];
             /**
@@ -17016,6 +17029,11 @@ export interface components {
             indexable?: boolean;
             /** @description Whether the account's pages state that AI may neither train on nor use them. */
             ai_opt_out?: boolean;
+            /**
+             * @description Whether the Atom feed of the account's public posts may be served. Setting it makes the
+             *     owner's choice, which a later change of `indexable` leaves as it is.
+             */
+            feed_enabled?: boolean;
         };
         /** @description The settings of a custom emoji to change; absent ones stay. */
         UpdateCustomEmojiRequest: {

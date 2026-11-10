@@ -1917,48 +1917,55 @@ FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.tag_id = ?1 AND t.visibility IN ('public', 'local')
   AND (CAST(?2 AS INTEGER) = 1 OR t.visibility = 'public')
-  AND (CAST(?3 AS TEXT) = '' OR t.entry_id < CAST(?3 AS TEXT))
+  AND (CAST(?3 AS INTEGER) = 0 OR t.is_local = 1)
+  AND (CAST(?4 AS INTEGER) = 0 OR e.is_reply = 0)
+  AND (CAST(?5 AS TEXT) = '' OR t.entry_id < CAST(?5 AS TEXT))
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
     WHERE r.account_id = t.author_account_id
       AND r.restriction IN ('public_discovery', 'visibility_ceiling_private', 'profile_view')
-      AND (r.effective_until IS NULL OR r.effective_until > CAST(?4 AS INTEGER)))
+      AND (r.effective_until IS NULL OR r.effective_until > CAST(?6 AS INTEGER)))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_restrictions dr
     WHERE dr.restriction IN ('public_discovery', 'profile_view')
-      AND (dr.effective_until IS NULL OR dr.effective_until > CAST(?4 AS INTEGER))
+      AND (dr.effective_until IS NULL OR dr.effective_until > CAST(?6 AS INTEGER))
       AND (dr.domain = e.author_domain OR substr(e.author_domain, -(length(dr.domain) + 1)) = '.' || dr.domain))
   AND NOT EXISTS (
     SELECT 1 FROM feed_exclusions x
-    WHERE x.viewer_account_id = ?5 AND x.target_account_id = t.author_account_id
-      AND (x.expires_at IS NULL OR x.expires_at > CAST(?4 AS INTEGER)))
+    WHERE x.viewer_account_id = ?7 AND x.target_account_id = t.author_account_id
+      AND (x.expires_at IS NULL OR x.expires_at > CAST(?6 AS INTEGER)))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_mutes dm
-    WHERE dm.viewer_account_id = ?5
+    WHERE dm.viewer_account_id = ?7
       AND (dm.domain = e.author_domain OR substr(e.author_domain, -(length(dm.domain) + 1)) = '.' || dm.domain))
-  AND (CAST(?6 AS INTEGER) = 1 OR e.language = 'und' OR e.language IN (SELECT value FROM json_each(CAST(?7 AS TEXT))))
+  AND (CAST(?8 AS INTEGER) = 1 OR e.language = 'und' OR e.language IN (SELECT value FROM json_each(CAST(?9 AS TEXT))))
 ORDER BY t.entry_id DESC
-LIMIT ?8
+LIMIT ?10
 `
 
 type ListTagEntriesParams struct {
-	TagID        string
-	IncludeLocal int64
-	Before       string
-	Now          int64
-	Viewer       string
-	AllLanguages int64
-	Languages    string
-	PageLimit    int64
+	TagID          string
+	IncludeLocal   int64
+	LocalOnly      int64
+	ExcludeReplies int64
+	Before         string
+	Now            int64
+	Viewer         string
+	AllLanguages   int64
+	Languages      string
+	PageLimit      int64
 }
 
 // ListTagEntries is the timeline of a hashtag (FR-203): the public and local posts with the tag
 // (public only when include_local is 0), with the exclusions of ListLocalEntries and of the
-// author's domain.
+// author's domain. local_only keeps the posts of local authors, and exclude_replies leaves out
+// the posts that reply to a status (the Atom feed of a hashtag, FR-213).
 func (q *Queries) ListTagEntries(ctx context.Context, arg ListTagEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.QueryContext(ctx, listTagEntries,
 		arg.TagID,
 		arg.IncludeLocal,
+		arg.LocalOnly,
+		arg.ExcludeReplies,
 		arg.Before,
 		arg.Now,
 		arg.Viewer,

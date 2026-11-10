@@ -25,7 +25,10 @@ type ProfileRevision struct {
 	Indexable    bool
 	// AIOptOut denies the training and use by AI of the account's pages (FR-412, ADR-0057); it
 	// only narrows what the instance states, and remote profiles never have it.
-	AIOptOut      bool
+	AIOptOut bool
+	// Feed is whether the account's Atom feed is served (FR-213); remote profiles keep the zero
+	// value, which follows Indexable.
+	Feed          FeedSetting
 	AvatarMediaID string // "" when there is no avatar
 	HeaderMediaID string // "" when there is no header image
 	RevisedAt     time.Time
@@ -43,7 +46,7 @@ type ProfileRevision struct {
 // identity, Seq, time, and sources.
 func (r ProfileRevision) SameContent(o ProfileRevision) bool {
 	if r.DisplayName != o.DisplayName || r.NoteHTML != o.NoteHTML || r.Locked != o.Locked || r.Bot != o.Bot ||
-		r.Discoverable != o.Discoverable || r.Indexable != o.Indexable || r.AIOptOut != o.AIOptOut ||
+		r.Discoverable != o.Discoverable || r.Indexable != o.Indexable || r.AIOptOut != o.AIOptOut || r.Feed.Normalize() != o.Feed.Normalize() ||
 		r.AvatarMediaID != o.AvatarMediaID || r.HeaderMediaID != o.HeaderMediaID || len(r.Fields) != len(o.Fields) ||
 		!slices.Equal(r.EmojiIDs, o.EmojiIDs) {
 		return false
@@ -55,6 +58,54 @@ func (r ProfileRevision) SameContent(o ProfileRevision) bool {
 		}
 	}
 	return true
+}
+
+// FeedSetting is the owner's choice about the Atom feed of a local account (FR-213): to follow
+// indexable, which the zero value and FeedFollowIndexable mean, or to serve it or not whatever
+// indexable says. The choice is kept apart from indexable, so that changing indexable later does
+// not override an explicit choice.
+type FeedSetting string
+
+// Feed settings (account_profile_revisions.feed).
+const (
+	FeedFollowIndexable FeedSetting = "follow_indexable"
+	FeedEnabled         FeedSetting = "enabled"
+	FeedDisabled        FeedSetting = "disabled"
+)
+
+// Normalize returns s, or FeedFollowIndexable for the zero value or an unknown value.
+func (s FeedSetting) Normalize() FeedSetting {
+	switch s {
+	case FeedEnabled, FeedDisabled:
+		return s
+	}
+	return FeedFollowIndexable
+}
+
+// FeedSettingOf returns the explicit choice to serve the feed (true) or not (false).
+func FeedSettingOf(enabled bool) FeedSetting {
+	if enabled {
+		return FeedEnabled
+	}
+	return FeedDisabled
+}
+
+// FeedEnabled reports whether the owner lets the account's Atom feed be served: the explicit
+// choice, or indexable when there is none. The account's restrictions and move decide too (the
+// content module's feeds).
+func (r ProfileRevision) FeedEnabled() bool {
+	switch r.Feed.Normalize() {
+	case FeedEnabled:
+		return true
+	case FeedDisabled:
+		return false
+	}
+	return r.Indexable
+}
+
+// FeedFollowsIndexable reports whether the owner has made no explicit choice about the feed.
+func (r ProfileRevision) FeedFollowsIndexable() bool {
+	return r.Feed.Normalize() == FeedFollowIndexable
 }
 
 // ProfileField is one metadata field of a profile revision (FR-006), ordered by Position.

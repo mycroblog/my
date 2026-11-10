@@ -32,6 +32,9 @@ type ProfileUpdate struct {
 	Discoverable  *bool
 	Indexable     *bool
 	AIOptOut      *bool
+	// FeedEnabled is the owner's explicit choice about the account's Atom feed (FR-213); while
+	// there has been none, the feed follows Indexable.
+	FeedEnabled *bool
 }
 
 // UpdateProfile records a new revision of a local account's profile: the current revision
@@ -104,7 +107,7 @@ func (s *Service) updateProfile(ctx context.Context, accountID string, in Profil
 
 	next := ProfileInput{
 		DisplayName: text.DisplayName, NoteHTML: cur.NoteHTML,
-		Locked: cur.Locked, Bot: cur.Bot, Discoverable: cur.Discoverable, Indexable: cur.Indexable, AIOptOut: cur.AIOptOut,
+		Locked: cur.Locked, Bot: cur.Bot, Discoverable: cur.Discoverable, Indexable: cur.Indexable, AIOptOut: cur.AIOptOut, Feed: cur.Feed,
 		AvatarMediaID: cur.AvatarMediaID, HeaderMediaID: cur.HeaderMediaID,
 		Fields: cur.Fields, Source: &account.ProfileSource{Note: text.Note, FieldValues: src.FieldValues},
 	}
@@ -140,6 +143,9 @@ func (s *Service) updateProfile(ctx context.Context, accountID string, in Profil
 		if b.src != nil {
 			*b.dst = *b.src
 		}
+	}
+	if in.FeedEnabled != nil {
+		next.Feed = account.FeedSettingOf(*in.FeedEnabled)
 	}
 
 	// The ID of the new revision is fixed before the transaction: it is the subject of

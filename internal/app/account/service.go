@@ -255,13 +255,15 @@ func (s *Service) EnsureInstanceActor(ctx context.Context) (account.Account, err
 
 // ProfileInput is the content of a new profile revision.
 type ProfileInput struct {
-	DisplayName   string
-	NoteHTML      string
-	Locked        bool
-	Bot           bool
-	Discoverable  bool
-	Indexable     bool
-	AIOptOut      bool
+	DisplayName  string
+	NoteHTML     string
+	Locked       bool
+	Bot          bool
+	Discoverable bool
+	Indexable    bool
+	AIOptOut     bool
+	// Feed is the owner's choice about the Atom feed; the zero value follows Indexable.
+	Feed          account.FeedSetting
 	AvatarMediaID string
 	HeaderMediaID string
 	// Fields are numbered by their order.
@@ -322,6 +324,7 @@ func (s *Service) reviseProfile(ctx context.Context, accountID string, in Profil
 		Discoverable:  in.Discoverable,
 		Indexable:     in.Indexable,
 		AIOptOut:      in.AIOptOut,
+		Feed:          in.Feed.Normalize(),
 		AvatarMediaID: in.AvatarMediaID,
 		HeaderMediaID: in.HeaderMediaID,
 		RevisedAt:     s.d.Clock.Now(),

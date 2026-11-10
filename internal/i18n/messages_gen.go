@@ -3178,6 +3178,36 @@ func (l *Localizer) ServerErrorsWrongPassword() string {
 	return l.format("server:errors.wrong_password", nil)
 }
 
+// ServerFeedContentWarning formats "server:feed.content_warning". Text of a post in an Atom feed when the post has a content warning: the feed shows only the warning, and the body and the media stay on the post's page. {warning} is the warning, written by the author.
+//
+//	en: Content warning: {warning}. Open the post to read it.
+func (l *Localizer) ServerFeedContentWarning(warning string) string {
+	return l.format("server:feed.content_warning", map[string]any{"warning": warning})
+}
+
+// ServerFeedTagTitleArgs holds the arguments of ServerFeedTagTitle, passed by name.
+//
+//exhaustruct:enforce
+type ServerFeedTagTitleArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Tag      string
+}
+
+// ServerFeedTagTitle formats "server:feed.tag_title". Title of the Atom feed of a hashtag, and of the link to it in the hashtag's page. {tag} is the hashtag without #; {instance} is the name of the server.
+//
+//	en: #{tag} on {instance}
+func (l *Localizer) ServerFeedTagTitle(args ServerFeedTagTitleArgs) string {
+	return l.format("server:feed.tag_title", map[string]any{"instance": args.Instance, "tag": args.Tag})
+}
+
+// ServerFeedUntitled formats "server:feed.untitled". Title of a post in an Atom feed when the post has no text to take its title from (pictures only, say). {name} is the author's display name, or the username when there is none.
+//
+//	en: Post by {name}
+func (l *Localizer) ServerFeedUntitled(name string) string {
+	return l.format("server:feed.untitled", map[string]any{"name": name})
+}
+
 // ServerHealthUnavailable formats "server:health.unavailable". Body of the readiness check response (HTTP 503) while a dependency such as the database is unavailable.
 //
 //	en: The server is not ready to accept requests.

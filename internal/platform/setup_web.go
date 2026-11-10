@@ -33,6 +33,8 @@ func (a *App) setUpWeb(opts AppOptions) error {
 		DefaultLocale: func(ctx context.Context) string { return a.Locales.Locale(ctx, "") },
 		// Profile and post pages carry link previews of what an anonymous visitor may see.
 		Previews: a.Previews, Messages: a.Messages,
+		// The Atom feeds of profiles and hashtags (FR-213), kept in the key-value store for a minute.
+		Feeds: a.Feeds, FeedCache: a.KV,
 		// The pages of the published documents carry link previews under their names.
 		Documents: a.Instance,
 		// The pages of the voice chat rooms carry the summaries the instance shows (ADR-0100 §9).

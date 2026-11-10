@@ -154,12 +154,35 @@ func (s *Service) Hashtag(ctx context.Context, viewer appcontent.Viewer, tagID s
 	return s.page(ctx, appcontent.ContextHashtag, viewer, w, rows)
 }
 
+// HashtagFeed returns the entries of the Atom feed of the hashtag tagID (FR-213): the public posts
+// with the tag of local authors, without the replies, as an anonymous visitor sees them on the
+// hashtag timeline. Whether each author lets their posts into feeds is the caller's to decide.
+func (s *Service) HashtagFeed(ctx context.Context, tagID string, q Query) (Page, error) {
+	viewer := appcontent.Viewer{Kind: appcontent.ViewerAnonymous}
+	w := s.window(viewer, q)
+	rows, err := s.d.Repository.ListTag(ctx, TagQuery{Window: w, TagID: tagID, LocalOnly: true, ExcludeReplies: true})
+	if err != nil {
+		return Page{}, err
+	}
+	return s.page(ctx, appcontent.ContextHashtag, viewer, w, rows)
+}
+
+// ProfileFeed returns the entries of the Atom feed of a local author (FR-213): the author's
+// public posts, without the replies and the boosts, as an anonymous visitor sees them on the
+// profile. Whether the author has a feed is the caller's to decide.
+func (s *Service) ProfileFeed(ctx context.Context, authorAccountID string, q Query) (Page, error) {
+	return s.Profile(ctx, appcontent.Viewer{Kind: appcontent.ViewerAnonymous}, authorAccountID,
+		ProfileFilter{ExcludeReplies: true, ExcludeBoosts: true, PublicOnly: true}, q)
+}
+
 // ProfileFilter narrows a profile timeline.
 type ProfileFilter struct {
 	// ExcludeReplies leaves out the author's posts that reply to a status.
 	ExcludeReplies bool
 	// ExcludeBoosts leaves out the author's boosts.
 	ExcludeBoosts bool
+	// PublicOnly keeps only the posts and boosts of visibility public.
+	PublicOnly bool
 }
 
 // Profile returns the profile timeline of an author (FR-204): the author's posts and boosts in
@@ -178,18 +201,24 @@ func (s *Service) Profile(ctx context.Context, viewer appcontent.Viewer, authorA
 	// author has no local posts, and CanView below judges each entry by its real facts.
 	restrictions := facts.restrictions(authorAccountID, "")
 	rel := facts.relation(authorAccountID, "")
-	for _, v := range []appcontent.Visibility{
+	visibilities := []appcontent.Visibility{
 		appcontent.VisibilityPublic, appcontent.VisibilityLocal, appcontent.VisibilityUnlisted, appcontent.VisibilityPrivate,
-	} {
+	}
+	if f.PublicOnly {
+		visibilities = visibilities[:1]
+	}
+	for _, v := range visibilities {
 		st := appcontent.StatusFacts{AuthorAccountID: authorAccountID, AuthorIsLocal: true, Visibility: v}
 		if appcontent.CanView(appcontent.ContextProfile, viewer, st, restrictions, rel) {
 			pq.Visibilities = append(pq.Visibilities, v)
 		}
 	}
-	direct := appcontent.StatusFacts{AuthorAccountID: authorAccountID, AuthorIsLocal: true, Visibility: appcontent.VisibilityDirect}
-	mentioned := rel
-	mentioned.Mentioned = true
-	pq.IncludeDirect = appcontent.CanView(appcontent.ContextProfile, viewer, direct, restrictions, mentioned)
+	if !f.PublicOnly {
+		direct := appcontent.StatusFacts{AuthorAccountID: authorAccountID, AuthorIsLocal: true, Visibility: appcontent.VisibilityDirect}
+		mentioned := rel
+		mentioned.Mentioned = true
+		pq.IncludeDirect = appcontent.CanView(appcontent.ContextProfile, viewer, direct, restrictions, mentioned)
+	}
 	if len(pq.Visibilities) == 0 && !pq.IncludeDirect {
 		return Page{}, nil
 	}

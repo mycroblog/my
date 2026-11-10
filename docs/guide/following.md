@@ -77,6 +77,20 @@ you met, what they like. Only you can see it; the account is not told, and the n
 note" or "Edit note" opens it, and saving it empty removes the note. The archive of "Archive and deletion" in the
 settings holds your notes, and a note goes when you or the other account is deleted.
 
+## Following in a feed reader
+
+People without an account on the fediverse can follow a profile or a hashtag in a feed reader: add the address of the
+profile followed by `.atom` (for example `https://example.com/@alice.atom`), or of the hashtag page
+(`https://example.com/tags/cats.atom`). Most feed readers also find the feed from the page's own address. A feed holds
+the 20 newest public posts of this server's accounts, without replies or boosts; a hashtag's feed holds those with the
+tag. A post with a content warning shows only the warning, and its text and media stay on the post's page.
+
+Whether your own posts are in feeds is "Publish a feed of my public posts" under "Feeds" in the profile settings. Until
+you change it, it follows "Search engines and AI": your posts are in feeds while you let search engines index your
+profile. Once you change it, changing the search setting leaves it as it is. When it is off, your profile has no feed
+and your posts are in no hashtag's feed. A feed reader may take a minute or two to see a change. Accounts that a
+moderator has limited or suspended, and accounts that moved, have no feed.
+
 ## Lists
 
 "Lists" puts people you follow in a list, so that you read their posts apart from your home timeline. Only you see your

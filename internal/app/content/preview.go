@@ -27,6 +27,9 @@ type PreviewDeps struct {
 	// DefaultLanguage returns the default post language of a user (FR-110), the language of
 	// a profile and of a status whose language is undetermined; nil leaves them undetermined.
 	DefaultLanguage func(ctx context.Context, userID string) (string, error)
+	// Moved reports whether a local account moved to another account (ADR-0089), which then has
+	// no Atom feed (FR-213); nil moves no one.
+	Moved func(ctx context.Context, accountID string) (bool, error)
 }
 
 // Previews reads profiles and statuses as an anonymous visitor sees them.
@@ -61,6 +64,9 @@ type ProfilePreview struct {
 	Language string
 	// Header and Avatar are the profile images, nil when unset or not processed.
 	Header, Avatar *PreviewImage
+	// Feed reports whether the account has an Atom feed (FR-213): its owner lets it be served,
+	// and it is neither kept from public discovery nor capped at followers-only, nor moved.
+	Feed bool
 }
 
 // Username returns the local username.
@@ -108,6 +114,9 @@ func (p *Previews) profile(ctx context.Context, a appaccount.Actor) (ProfilePrev
 		return ProfilePreview{}, hidden
 	}
 	out := ProfilePreview{Actor: a}
+	if out.Feed, err = p.hasFeed(ctx, a, r); err != nil {
+		return ProfilePreview{}, err
+	}
 	if out.Language, err = p.defaultLanguage(ctx, a.Local.UserID); err != nil {
 		return ProfilePreview{}, err
 	}
@@ -127,6 +136,24 @@ func (p *Previews) profile(ctx context.Context, a appaccount.Actor) (ProfilePrev
 // private, and direct statuses, and the statuses of restricted or inactive authors) fails with
 // ErrNotFound.
 func (p *Previews) Status(ctx context.Context, statusID string) (StatusPreview, error) {
+	return p.status(ctx, statusID, nil)
+}
+
+// previewAuthors holds the authors that status read, by account ID, so that a feed reads each
+// author once; nil reads every author again.
+type previewAuthors map[string]previewAuthor
+
+type previewAuthor struct {
+	actor appaccount.Actor
+	// found is false for an author that FindByID does not find.
+	found   bool
+	profile ProfilePreview
+	// err is the result of profile: nil or one wrapping ErrNotFound.
+	err error
+}
+
+// status is Status, reading the authors through authors when it is not nil.
+func (p *Previews) status(ctx context.Context, statusID string, authors previewAuthors) (StatusPreview, error) {
 	hidden := fmt.Errorf("status %s: %w", statusID, ErrNotFound)
 	st, err := p.d.Repository.FindStatus(ctx, statusID)
 	if errors.Is(err, ErrNotFound) {
@@ -157,27 +184,24 @@ func (p *Previews) Status(ctx context.Context, statusID string) (StatusPreview, 
 		return StatusPreview{}, err
 	}
 	restrictions := r.Author
-	author, err := p.d.Accounts.FindByID(ctx, st.AuthorAccountID)
-	switch {
-	case errors.Is(err, appaccount.ErrNotFound):
-		restrictions.ProfileView = true
-	case err != nil:
+	author, err := p.author(ctx, st.AuthorAccountID, authors)
+	if err != nil {
 		return StatusPreview{}, err
-	default:
+	}
+	if !author.found {
+		restrictions.ProfileView = true
+	} else {
 		// A suspended or deleted author is shown to no one else (data-model §5.1).
-		restrictions.ProfileView = restrictions.ProfileView || !author.Lifecycle.Active() || author.Local == nil
+		restrictions.ProfileView = restrictions.ProfileView || !author.actor.Lifecycle.Active() || author.actor.Local == nil
 	}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
 	if !content.CanView(content.ContextStatus, content.Viewer{Kind: content.ViewerAnonymous}, facts, restrictions, content.Relation{}) {
 		return StatusPreview{}, hidden
 	}
-	prof, err := p.profile(ctx, author)
-	if errors.Is(err, ErrNotFound) {
+	if errors.Is(author.err, ErrNotFound) {
 		return StatusPreview{}, hidden
 	}
-	if err != nil {
-		return StatusPreview{}, err
-	}
+	prof := author.profile
 
 	out := StatusPreview{
 		Post: Post{Status: st, Revision: rev}, Author: prof,
@@ -206,6 +230,51 @@ func (p *Previews) Status(ctx context.Context, statusID string) (StatusPreview, 
 		}
 	}
 	return out, nil
+}
+
+// author reads the author of a status and its profile as an anonymous visitor sees it, through
+// authors when it is not nil. An error is returned only when reading fails; an author that is
+// not found or hidden is in the result.
+func (p *Previews) author(ctx context.Context, accountID string, authors previewAuthors) (previewAuthor, error) {
+	if a, ok := authors[accountID]; ok {
+		return a, nil
+	}
+	var out previewAuthor
+	actor, err := p.d.Accounts.FindByID(ctx, accountID)
+	switch {
+	case errors.Is(err, appaccount.ErrNotFound):
+		out.err = fmt.Errorf("account %s: %w", accountID, ErrNotFound)
+	case err != nil:
+		return previewAuthor{}, err
+	default:
+		out.actor, out.found = actor, true
+		out.profile, out.err = p.profile(ctx, actor)
+		if out.err != nil && !errors.Is(out.err, ErrNotFound) {
+			return previewAuthor{}, out.err
+		}
+	}
+	if authors != nil {
+		authors[accountID] = out
+	}
+	return out, nil
+}
+
+// hasFeed reports whether a local account with restrictions r has an Atom feed (FR-213): its
+// owner lets it be served (account.ProfileRevision.FeedEnabled), it is neither kept from public
+// discovery nor capped at followers-only (silenced), and it has not moved. A suspended account
+// never gets here.
+func (p *Previews) hasFeed(ctx context.Context, a appaccount.Actor, r Restrictions) (bool, error) {
+	if a.Profile == nil || !a.Profile.FeedEnabled() || r.Author.PublicDiscovery || r.Author.VisibilityCeilingPrivate {
+		return false, nil
+	}
+	if p.d.Moved == nil {
+		return true, nil
+	}
+	moved, err := p.d.Moved(ctx, a.Account.ID)
+	if err != nil {
+		return false, err
+	}
+	return !moved, nil
 }
 
 // defaultLanguage returns a user's default post language, "" when undetermined.

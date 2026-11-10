@@ -32,6 +32,7 @@
 | FR-209 キーワードフィルタ | S | `keyword_filters`, `keyword_filter_settings`, `keyword_filter_contexts`, `keyword_filter_words`（照合は読み取りのたび、§6） |
 | FR-211 リスト | S | `lists`, `list_names`, `list_members`, `feed_follow_edges`, `feed_entries` |
 | FR-212 ダイレクトメッセージの一覧 | S | `feed_conversation_participants`, `feed_conversations`, `feed_conversation_reads`, `feed_conversation_hides`, `status_conversations`, `conversation_merges` |
+| FR-213 Atom フィード | S | `account_profile_revisions.feed`, `feed_entries`, `feed_tag_entries`, `kv_entries`（描いたフィードを 1 分間） |
 | FR-208 言語フィルタ | S | `user_timeline_languages`, `feed_entries.language` |
 | FR-301〜302 フォロー・リクエスト | M | `follows`, `follow_acceptances`, `follow_rejections`, `follow_terminations`, `follow_edges` |
 | FR-303 ブロック・ミュート | M | `blocks`, `block_retractions`, `block_edges`, `mutes` |

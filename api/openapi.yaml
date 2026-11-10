@@ -20105,6 +20105,8 @@ components:
             - discoverable
             - indexable
             - ai_opt_out
+            - feed_enabled
+            - feed_follows_indexable
             - source
             - posting
             - permissions
@@ -20127,6 +20129,19 @@ components:
               description: |
                 Whether the account's pages state that AI may neither train on nor use them, whatever the instance's `ai_usage`. The statement is made by the
                 pages of this instance only; other servers and the media files do not carry it.
+              type: boolean
+            feed_enabled:
+              description: |
+                Whether the owner lets the Atom feed of the account's public posts be served at the
+                profile's `url` followed by `.atom`, and its public posts appear in the Atom feeds of
+                hashtags. It is the owner's own choice once made, and `indexable` until then
+                (`feed_follows_indexable`). A restricted or moved account has no feed whatever it says.
+              type: boolean
+            feed_follows_indexable:
+              description: |
+                Whether the owner has not chosen about the feed yet, so that `feed_enabled` follows
+                `indexable`. Setting `feed_enabled` makes the choice, and a later change of `indexable`
+                leaves it as it is.
               type: boolean
             source:
               $ref: '#/components/schemas/AccountSource'
@@ -26740,6 +26755,11 @@ components:
           type: boolean
         ai_opt_out:
           description: Whether the account's pages state that AI may neither train on nor use them.
+          type: boolean
+        feed_enabled:
+          description: |
+            Whether the Atom feed of the account's public posts may be served. Setting it makes the
+            owner's choice, which a later change of `indexable` leaves as it is.
           type: boolean
     UpdateCustomEmojiRequest:
       description: The settings of a custom emoji to change; absent ones stay.

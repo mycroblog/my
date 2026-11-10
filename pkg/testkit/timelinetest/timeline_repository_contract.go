@@ -492,21 +492,25 @@ func timelineRepoTag(t *testing.T, r *timelineRepo) {
 	r.post(t, alice, appcontent.VisibilityUnlisted, entryOpts{tags: []string{tag}})
 	r.post(t, alice, appcontent.VisibilityPublic, entryOpts{tags: []string{other}})
 	farPub := r.post(t, far, appcontent.VisibilityPublic, entryOpts{tags: []string{tag}})
+	reply := r.post(t, alice, appcontent.VisibilityPublic, entryOpts{tags: []string{tag}, reply: true})
 	list := func(v timelineAuthor, includeLocal bool) ([]apptimeline.Entry, error) {
 		return r.repo.ListTag(ctx, apptimeline.TagQuery{Window: r.window(v), TagID: tag, IncludeLocal: includeLocal})
 	}
 	got, err := list(viewer, true)
-	checkTimeline(t, "ListTag", got, err, pub, loc, farPub)
+	checkTimeline(t, "ListTag", got, err, reply, pub, loc, farPub)
 	got, err = list(viewer, false)
-	checkTimeline(t, "ListTag(public only)", got, err, pub, farPub)
+	checkTimeline(t, "ListTag(public only)", got, err, reply, pub, farPub)
 	page, err := r.repo.ListTag(ctx, apptimeline.TagQuery{Window: apptimeline.Window{ViewerAccountID: viewer.id, Limit: 1, Before: farPub.ID, Now: r.clock.Now()}, TagID: tag, IncludeLocal: true})
 	checkTimeline(t, "ListTag(page)", page, err, loc)
+	// The Atom feed of a hashtag keeps the public posts of local authors that are not replies.
+	got, err = r.repo.ListTag(ctx, apptimeline.TagQuery{Window: r.window(timelineAuthor{}), TagID: tag, LocalOnly: true, ExcludeReplies: true})
+	checkTimeline(t, "ListTag(local only, no replies)", got, err, pub)
 
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		return r.repo.InsertDomainMute(ctx, tx, apptimeline.DomainMute{ViewerAccountID: viewer.id, Domain: timelineRepoRemote})
 	})
 	got, err = list(viewer, true)
-	checkTimeline(t, "ListTag(domain mute)", got, err, pub, loc)
+	checkTimeline(t, "ListTag(domain mute)", got, err, reply, pub, loc)
 	r.exclude(t, viewer, alice, timeline.ExcludedBlock, nil)
 	got, err = list(viewer, true)
 	checkTimeline(t, "ListTag(block)", got, err)

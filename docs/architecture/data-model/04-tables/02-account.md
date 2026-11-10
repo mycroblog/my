@@ -31,7 +31,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `account_profile_revisions` | イベント | `id`, `account_id`, `seq`（1 以上）, `display_name`, `note_html`, `locked`, `bot`, `discoverable`, `indexable`, `ai_opt_out`（`bool`。ADR-0057）, `avatar_media_id` / `header_media_id`（NULL 可）, `revised_at` | 一意 `(account_id, seq)`。インデックス `(avatar_media_id)`、インデックス `(header_media_id)` |
+| `account_profile_revisions` | イベント | `id`, `account_id`, `seq`（1 以上）, `display_name`, `note_html`, `locked`, `bot`, `discoverable`, `indexable`, `ai_opt_out`（`bool`。ADR-0057）, `avatar_media_id` / `header_media_id`（NULL 可）, `revised_at`, `feed`（`follow_indexable` / `enabled` / `disabled`、既定 `follow_indexable`。FR-213） | 一意 `(account_id, seq)`。インデックス `(avatar_media_id)`、インデックス `(header_media_id)` |
 | `account_profile_revision_sources` | イベント（部分型） | `revision_id`（PK）, `note_source` | ローカルのみ。入力されたままの自己紹介 |
 | `account_profile_fields` | イベント（版の子） | `revision_id`, `position`（`int`）, `name`, `value_html` | PK `(revision_id, position)`（FR-006） |
 | `account_profile_revision_emojis` | イベント（版の子） | `revision_id`, `emoji_id` | PK `(revision_id, emoji_id)`。インデックス `(emoji_id)`（リモートの絵文字の消去）。表示名・自己紹介・補足情報のカスタム絵文字（ADR-0051）。`emoji_id` は `content` の `custom_emojis` の行で、`content` の公開 API で得る |
@@ -40,6 +40,7 @@
 | `account_profile_heads` | 投影 | `account_id`（PK）, `revision_id` | `seq` が最大の版を指す |
 
 - 鍵アカウント（`locked`）・bot などのフラグはプロフィールの一部として版を持ちます。いつから鍵アカウントだったかが分かります。
+- `feed` は Atom フィード（FR-213）についての本人の選択です。`follow_indexable` は選んでいないことを表し、フィードはその版の `indexable` に従います。本人が選ぶと `enabled` か `disabled` になり、後の版で `indexable` を変えてもそのまま写します。リモートの版は常に `follow_indexable` です。
 - 新しい版の `seq` は現在の版の `seq + 1` です。同時に版を作って `(account_id, seq)` が衝突したら、トランザクションを再実行して次の `seq` を取ります。
 - ローカルアカウントは作成時に `seq = 1` の版を持ちます。
 - ローカルの版は、入力されたままの自己紹介と補足情報の値を `account_profile_revision_sources` と `account_profile_field_sources` に持ちます。

@@ -436,7 +436,7 @@ func (r *Repository) ListTag(ctx context.Context, tq apptimeline.TagQuery) ([]ap
 		return nil, err
 	}
 	rows, err := r.db.reader().ListTagEntries(ctx, timelinegen.ListTagEntriesParams{
-		TagID: tq.TagID, IncludeLocal: tq.IncludeLocal, Before: postgres.ToNullString(tq.Before), Now: tq.Now,
+		TagID: tq.TagID, IncludeLocal: tq.IncludeLocal, LocalOnly: tq.LocalOnly, ExcludeReplies: tq.ExcludeReplies, Before: postgres.ToNullString(tq.Before), Now: tq.Now,
 		Viewer: postgres.ToNullString(tq.ViewerAccountID), AllLanguages: all, Languages: langs, PageLimit: limit,
 	})
 	return entriesFrom(rows, err, "list tag entries")

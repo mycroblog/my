@@ -7,8 +7,10 @@ import (
 	"errors"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/domain/hook"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/platform/config"
@@ -86,13 +88,42 @@ func (a *App) setUpStatusReader(statuses content.Repository, interactions conten
 	})
 }
 
-// setUpPreviews builds the link previews of profiles and statuses. They read statuses and their
-// images, so they come after the media use cases.
+// setUpPreviews builds the link previews of profiles and statuses and the Atom feeds (FR-213).
+// They read statuses and their images, so they come after the media use cases, and the feeds
+// list their posts from the timelines.
 func (a *App) setUpPreviews(statuses content.Repository) {
 	a.Previews = content.NewPreviews(content.PreviewDeps{
 		Repository: statuses, Accounts: a.Accounts, Restrictions: a.AccountPolicy.Content(), Media: a.Media,
-		DefaultLanguage: a.defaultPostLanguage,
+		DefaultLanguage: a.defaultPostLanguage, Moved: a.moved,
 	})
+	page := func(p timeline.Page, err error) ([]string, string, error) {
+		if err != nil {
+			return nil, "", err
+		}
+		ids := make([]string, 0, len(p.Entries))
+		for _, e := range p.Entries {
+			ids = append(ids, e.StatusID)
+		}
+		return ids, p.Next, nil
+	}
+	a.Feeds = content.NewFeeds(content.FeedDeps{
+		Previews: a.Previews, Repository: statuses,
+		ProfilePosts: func(ctx context.Context, accountID, before string, limit int) ([]string, string, error) {
+			return page(a.Timeline.ProfileFeed(ctx, accountID, timeline.Query{Before: before, Limit: limit}))
+		},
+		TagPosts: func(ctx context.Context, tagID, before string, limit int) ([]string, string, error) {
+			return page(a.Timeline.HashtagFeed(ctx, tagID, timeline.Query{Before: before, Limit: limit}))
+		},
+	})
+}
+
+// moved reports whether an account moved to another one (ADR-0089).
+func (a *App) moved(ctx context.Context, accountID string) (bool, error) {
+	_, err := a.Accounts.MoveState(ctx, accountID)
+	if errors.Is(err, account.ErrNotFound) {
+		return false, nil
+	}
+	return err == nil, err
 }
 
 // defaultInteractionPolicy returns who may reply to, boost, and quote the new statuses of a user

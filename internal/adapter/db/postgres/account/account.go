@@ -86,6 +86,7 @@ func (r *Repository) InsertProfileRevision(ctx context.Context, tx uow.Tx, rev a
 		AvatarMediaID: postgres.ToNullString(rev.AvatarMediaID),
 		HeaderMediaID: postgres.ToNullString(rev.HeaderMediaID),
 		RevisedAt:     rev.RevisedAt,
+		Feed:          string(rev.Feed.Normalize()),
 	})
 	if postgres.IsUniqueViolation(err, "account_profile_revisions_account_id_seq") {
 		// A concurrent revision took this seq after the command read the head at READ COMMITTED.
@@ -624,6 +625,7 @@ func profileRow(row accountgen.AccountProfileRevision) account.ProfileRevision {
 		AvatarMediaID: postgres.FromNullString(row.AvatarMediaID),
 		HeaderMediaID: postgres.FromNullString(row.HeaderMediaID),
 		RevisedAt:     postgres.UTC(row.RevisedAt),
+		Feed:          account.FeedSetting(row.Feed),
 	}
 }
 

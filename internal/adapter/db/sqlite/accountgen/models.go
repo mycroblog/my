@@ -101,6 +101,7 @@ type AccountProfileRevision struct {
 	AvatarMediaID sql.NullString
 	HeaderMediaID sql.NullString
 	RevisedAt     int64
+	Feed          string
 }
 
 type AccountProfileRevisionEmoji struct {

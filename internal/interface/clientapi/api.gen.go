@@ -9512,6 +9512,17 @@ type CredentialAccount struct {
 	// image, and the rest as text.
 	Emojis []CustomEmoji `json:"emojis"`
 
+	// FeedEnabled Whether the owner lets the Atom feed of the account's public posts be served at the
+	// profile's `url` followed by `.atom`, and its public posts appear in the Atom feeds of
+	// hashtags. It is the owner's own choice once made, and `indexable` until then
+	// (`feed_follows_indexable`). A restricted or moved account has no feed whatever it says.
+	FeedEnabled bool `json:"feed_enabled"`
+
+	// FeedFollowsIndexable Whether the owner has not chosen about the feed yet, so that `feed_enabled` follows
+	// `indexable`. Setting `feed_enabled` makes the choice, and a later change of `indexable`
+	// leaves it as it is.
+	FeedFollowsIndexable bool `json:"feed_follows_indexable"`
+
 	// Fields The profile's metadata fields, in their order; empty when there are none.
 	Fields []ProfileField `json:"fields"`
 
@@ -15267,6 +15278,10 @@ type UpdateCredentialsRequest struct {
 
 	// DisplayName The display name, at most 30 characters; empty removes it.
 	DisplayName *string `json:"display_name,omitempty"`
+
+	// FeedEnabled Whether the Atom feed of the account's public posts may be served. Setting it makes the
+	// owner's choice, which a later change of `indexable` leaves as it is.
+	FeedEnabled *bool `json:"feed_enabled,omitempty"`
 
 	// Fields The metadata fields, replacing the current ones; at most 4.
 	Fields *[]AccountFieldSource `json:"fields,omitempty"`

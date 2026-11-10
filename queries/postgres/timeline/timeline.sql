@@ -228,8 +228,9 @@ ORDER BY e.id DESC
 LIMIT sqlc.arg(page_limit);
 
 -- ListTagEntries is the timeline of a hashtag (FR-203): the public and local posts with the tag
--- (public only when include_local is 0), with the exclusions of ListLocalEntries and of the
--- author's domain.
+-- (public only when include_local is false), with the exclusions of ListLocalEntries and of the
+-- author's domain. local_only keeps the posts of local authors, and exclude_replies leaves out
+-- the posts that reply to a status (the Atom feed of a hashtag, FR-213).
 -- name: ListTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
@@ -237,6 +238,8 @@ FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.tag_id = sqlc.arg(tag_id) AND t.visibility IN ('public', 'local')
   AND (sqlc.arg(include_local)::boolean OR t.visibility = 'public')
+  AND (NOT sqlc.arg(local_only)::boolean OR t.is_local)
+  AND (NOT sqlc.arg(exclude_replies)::boolean OR NOT e.is_reply)
   AND (sqlc.narg(before)::uuid IS NULL OR t.entry_id < sqlc.narg(before)::uuid)
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r

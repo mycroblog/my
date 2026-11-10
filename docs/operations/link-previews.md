@@ -20,7 +20,8 @@ A request for HTML is always treated as signed out, so a preview shows only what
 | An `unlisted` post | 200. The shell with meta tags, plus `<meta name="robots" content="noindex, noarchive">` and `X-Robots-Tag: noindex, noarchive` |
 | A `local`, `private`, `direct`, deleted, or nonexistent post, and the profile and posts of a suspended, deactivated, deleted, or limited account | 404. The generic shell and `X-Robots-Tag: noindex, noarchive`. The body and headers are the same whatever the reason |
 | `/@<old username>/status/<post ID>` | 301, to the URL with the current username |
-| Every other page of the web client (hashtags, explore, the public costs and supporters pages, sign-in, and so on) | 200. The generic shell, with the meta tags of the instance (see "The generic shell" below) |
+| A hashtag's page (`/tags/<tag>`) | 200. The generic shell, with the link to the hashtag's Atom feed (see "The generic shell" below) |
+| Every other page of the web client (explore, the public costs and supporters pages, sign-in, and so on) | 200. The generic shell, with the meta tags of the instance (see "The generic shell" below) |
 
 Every page also carries the statements to search engines and AI crawlers (meta tags such as `noindex` and `noai`, and
 `X-Robots-Tag`, `Content-Usage`, and `tdm-reservation`), according to the instance settings and the owner's settings
@@ -46,6 +47,7 @@ actor's `id`, and a post a signed-out visitor can see answers with a 302 to its 
 | `twitter:card` | `summary_large_image` when the image is wider than about 2:1 (width / height >= 1.7) and at least 300x157, otherwise `summary` |
 | `fediverse:creator` | `@username@account domain`. Mastodon shows it as the "author" |
 | `<link rel="alternate" type="application/activity+json">` | The AP `id` (the actor or the post's object) |
+| `<link rel="alternate" type="application/atom+xml">` | Profiles that have an Atom feed only: the feed's address (`https://<host>/@<username>.atom`), titled like `og:title`. A profile whose owner turned the feed off, and a limited or moved account, have none |
 
 The meta tags of the landing page introduce the instance itself.
 
@@ -67,7 +69,15 @@ The generic shell, which every other page and the 404 of a hidden post return, c
 without an address of its own: `og:type` `website`, the instance name as `og:site_name` and `og:title`, `short_description`
 as `og:description`, `og:locale`, the instance image, and `twitter:card`. It has no `og:url` and no
 `<link rel="canonical">`, so one copy serves every path, and the 404 of a hidden post stays identical to any other page.
-A shared link to a hashtag or the public costs page shows the instance's card.
+A hashtag's page adds only `<link rel="alternate" type="application/atom+xml">` to the hashtag's feed
+(`https://<host>/tags/<tag>.atom`), titled "#tag on instance name" (`server:feed.tag_title`), whether or not a post has
+used the hashtag yet. A shared link to a hashtag or the public costs page shows the instance's card.
+
+The feeds themselves are Atom 1.0 documents of the 20 newest local public posts that are not replies or boosts, with
+`ETag`, `Last-Modified`, and `Cache-Control: public, max-age=60`. The server keeps each rendered feed in its key-value
+store for a minute, so a change reaches a feed within about a minute. A feed carries the same `X-Robots-Tag` and AI
+statements as its profile; a hashtag's feed is always `noindex`, and states the AI refusal of any of its authors. A
+profile without a feed, and a hashtag no post has used, answer 404.
 
 `og:image` is chosen in this order.
 

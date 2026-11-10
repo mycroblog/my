@@ -193,6 +193,8 @@ type App struct {
 	// Previews reads profiles and statuses as an anonymous visitor sees them, for the link
 	// previews of the web client's profile and post pages (ADR-0028).
 	Previews *content.Previews
+	// Feeds reads the posts of the Atom feeds of profiles and hashtags (FR-213).
+	Feeds *content.Feeds
 	// Webhooks sends the events of the other modules to the instance's webhooks (ADR-0060).
 	Webhooks *webhook.Service
 	// Finance records the instance's costs and totals them by week, month, and year (ADR-0067).
