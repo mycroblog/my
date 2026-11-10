@@ -43,13 +43,20 @@ func (x *failingIndex) Replace(ctx context.Context, doc search.Document) error {
 	return x.Index.Replace(ctx, doc)
 }
 
-// newRebuildEnv is a server with the fake backend whose rebuild covers batch statuses in a job.
+// frozenClock tells the time of its start until a test moves it, so that a rebuild's rate, which
+// spaces its jobs by the clock, never lets the next job fall due while a slow machine goes on.
+type frozenClock struct{ at time.Time }
+
+func (c frozenClock) Now() time.Time { return c.at }
+
+// newRebuildEnv is a server with the fake backend whose rebuild covers batch statuses in a job,
+// on a clock that does not move.
 func newRebuildEnv(t *testing.T, batch int) (*searchEnv, *failingIndex) {
 	t.Helper()
 	index := &failingIndex{Index: fake.New()}
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
 	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{
-		Logger: slog.New(slog.DiscardHandler), SearchIndex: index, SearchRebuildBatch: batch,
+		Logger: slog.New(slog.DiscardHandler), SearchIndex: index, SearchRebuildBatch: batch, Clock: frozenClock{at: time.Now().Round(0)},
 	})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
