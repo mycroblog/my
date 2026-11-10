@@ -155,6 +155,11 @@ Mastodon と同じ形にする。凍結は `Update(Actor)` に `suspended: true`
 - 開示請求（GDPR 15 条・個人情報保護法 33 条）には、運営者が CLI でアカウントのモデレーション記録をすべて書き出して応じる。非公開のメモを含め、通報者の身元だけを伏せる。
 - IP アドレスとメールアドレスは `manage_accounts` を持つ人にだけ、明示的な「表示」の操作で見せ、その操作を監査ログに残す（§7）。
   例外は、審査待ちの登録の一覧（`GET /admin/registrations`）のメールアドレスで、表示の操作なしに返し、監査ログにも残さない。審査の判断材料（使い捨てのドメインや同じ人の再登録の見分け）で、1 件ずつ表示させると監査ログが審査の記録で埋まるだけだからである。決定済みの登録には返さない（承認・却下の答えも同じ）。
+- リモートのサーバーへの配送とその試行（`GET /admin/instances/{domain}/deliveries`）は、連合先（§1）と同じ `manage_domains` を持つ人に見せ、権限を足さない。アクティビティの種類と時刻、各試行の結果・署名方式・状態コード・エラー・時刻は、どの配送にもいつも返す。
+  - アクティビティが公開範囲 `private`・`direct`・`local` の投稿についてのものか、フォロワーを承認制にしたローカルのアカウントの `Follow`・`Accept`・`Reject` であれば、ローカルの送り手・アクティビティの URI・個人の inbox を伏せ、伏せたことと理由（公開範囲の区分）だけを返す。公開範囲は単一の可視性ポリシー関数で判定し、伏せるかは `internal/app/federation` が決める。共有 inbox は受け手を名指さないので伏せない。
+  - 伏せた値は、配送ごとの表示の操作（`POST /admin/instances/{domain}/deliveries/{id}/reveal`）で返し、IP アドレスとメールアドレスの表示と同じく、監査ログ（`delivery_revealed`）に残す。
+  - ローカルのアカウントでの絞り込み（`account_id`）は使える。それを使った問い合わせごとに、操作者・アカウント・サーバーを監査ログ（`account_deliveries_viewed`）に残す。絞り込みのない一覧と、アクティビティの URI での絞り込みは残さない。
+  - 送ったアクティビティの本文（`outbound_activity_documents`）は、一覧でも表示の操作でも返さない。
 
 ### 10. 異議申し立ての期間
 
@@ -174,6 +179,8 @@ Mastodon と同じ形にする。凍結は `Update(Actor)` に `suspended: true`
 処分の連合（FR-703、FR-713、FR-702、FR-716、FR-717、FR-709、NFR-MOD-3、NFR-MOD-5）: 処分はこのサーバーの中でだけ効き、凍結しても連合先に投稿とプロフィールが残っていた。2026-10-17 にソースで確認した挙動（[#327 の調査報告](https://github.com/mycroblog/my/issues/327)）では、Mastodon は凍結で `suspended: true` の `Update` を送り、データを 30 日後に消すときに `Delete` を送る（[`suspended`](https://docs.joinmastodon.org/spec/activitypub/#suspended)）。Misskey は凍結で `Delete(Person)` を送り、解除で `Undo(Delete)` を送る。GoToSocial のドメインブロックは関係・投稿・メディアを消す。サイレンスは連合せず、通報の転送はインスタンス Actor から `Flag` を送る（[Flag](https://docs.joinmastodon.org/spec/activitypub/#Flag)）。解除できる処分を連合先で戻せること、既存の語彙だけを使うこと、通報者の身元を出さないこと、送る数をフォロワーのサーバー数に比例する範囲に抑えること（NFR-COST-5）を基準に選んだ。
 
 通報の後からの転送（FR-709、ADR-0147 §7）: 判定フックの自動の通報は起票時に転送しないので、送るかはモデレーターが後から決める。その操作はすべてのローカルの通報に開いたが、`Flag` の `content` に通報のコメントを入れると、転送しないと選んだ通報者の文や、このサーバーのモデレーター向けのプラグインのメモが、同意なしに相手のサーバーへ出る。判断者の決定により、後からの転送が運ぶのは対象と投稿とモデレーターが転送するときに書く文だけにした。起票時に通報者が選んだ転送は、通報者のコメントを送るまま変えない。
+
+配送の開示: 利用者からの連合の不具合の報告は、ほとんどが「投稿・フォロー・承認が相手のサーバーに届いたか、何と答えたか」から始まる。その記録（`delivery_attempts`）はあったが、運用者は DB を直接引くしかなかった。一方で配送の一覧は、非公開の投稿やフォロワーを承認制にしたアカウントの関係を、誰がどのサーバーの誰に送ったかとして見せてしまう。判断者の決定により、届いたかどうかの判断に要る種類・時刻・試行はいつも見せ、送り手・URI・個人の inbox だけを伏せて、表示を 1 件ずつの監査つきの操作にした。
 
 監査ログ（FR-704、NFR-MOD-1）: 対象の操作は `moderation`・`identity`・`instance` にまたがり、各イベントテーブルを横断して読むと `moderation` が他のモジュールのテーブルを読むことになる（ADR-0002）。Mastodon は専用の `admin_action_logs`（[`Admin::ActionLog`](https://github.com/mastodon/mastodon/blob/main/app/models/admin/action_log.rb)）、Misskey は `moderation_log`、Pleroma / Akkoma は `ModerationLog` を持つ。GDPR 32 条と個人情報保護法 23 条は処理の記録を検証できる仕組みを求める。
 
