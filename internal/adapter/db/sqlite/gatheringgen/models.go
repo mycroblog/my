@@ -33,6 +33,19 @@ type GatheringInvitation struct {
 	InvitedAt          int64
 }
 
+type GatheringRevision struct {
+	ID                 string
+	GatheringID        string
+	Title              string
+	Description        string
+	Visibility         string
+	TimeZone           string
+	PlaceDisclosure    string
+	Capacity           int64
+	RevisedByAccountID string
+	RevisedAt          int64
+}
+
 type GatheringRevisionPlace struct {
 	RevisionID string
 	Position   int64

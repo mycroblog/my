@@ -32,6 +32,7 @@ Review the policy when you change a setting below or a service, and after each u
 | Actions against accounts, and appeals | 365 days | `moderation_actions_retention_days` | 180-3650 | The end of the action |
 | Audit log | 730 days | `audit_log_retention_days` | 365-3650 | The record |
 | Who took part in a voice chat room | 90 days | `voice_participants_retention_days` | 30-3650 | The end of the room |
+| Who answered, voted on the dates of, and was invited to an event | 90 days | `event_records_retention_days` | 30-3650 | The earlier of the end of the event and its cancellation |
 | The decisions of an external review, when you use one | 90 days | `hook_decisions_retention_days` | 30-3650 | The decision |
 | Remote posts nothing here refers to | 90 days | `remote_status_retention_days` | 1-3650 | The post's publication |
 | Any remote post | No limit (`0`) | `remote_status_max_retention_days` | 0-3650 | The post's publication |
@@ -169,7 +170,7 @@ This policy covers people with an account here, people who read pages here witho
 | {{IF voice}} Voice chat rooms: name, description, hosts, and how they ended | Showing and moderating rooms | Kept. The name and description you wrote are emptied when your account is erased |
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
 | Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
-| Invitations to events, your answers to them and to their candidate dates, and their approval | Showing who comes and who can come on which date, and showing the address and link to the approved | Kept |
+| Invitations to events, your answers to them and to their candidate dates, and their approval | Showing who comes and who can come on which date, and showing the address and link to the approved | {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
 | Copies of activities sent to and received from other servers | Delivering, retrying, and rejecting duplicates | 30 days. The first delivery of a post stays until 30 days after the post or its author is deleted |

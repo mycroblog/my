@@ -109,6 +109,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `translation_server_monthly_characters` | integer 0-1000000000000 | `500000` | How many characters the whole server may send to translation providers in a UTC month. At `0` nothing is sent. There is no unlimited value: set a large number |
 | `translation_retention_days` | integer 1-3650 (days) | `30` | How many days a translation is kept after it was made. Reading it does not extend this, and it goes with the post |
 | `translation_reports_to_server` | boolean | `false` | Whether moderators may send the text of a report, the reported posts and the reporter's comment, to the server-side providers. Each provider still receives only the visibilities that `translation_provider_visibilities` allows it, whoever asks: a reported direct post goes only to a provider allowed `direct`, and the comment counts as `private`. The comment's translation is never kept, nor is that of a deleted post, and the characters count against `translation_server_monthly_characters` only. When `false`, nothing of a report reaches a provider |
+| `event_records_retention_days` | integer 30-3650 (days) | `90` | How many days after an event ended or was cancelled to keep who answered it, who was approved, who was invited, and who voted on its candidate dates. An event whose date was never fixed ends with its last candidate date. The event itself (its settings, places, date and candidate dates, and cancellation) is kept. The records of a reported event are kept as long as the report, and holds apply as to the other records ([record retention](moderation.md#record-retention-and-holds)) |
 | `voice_participants_retention_days` | integer 30-3650 (days) | `90` | How many days after a voice chat room ended to keep the records of who took part in it: the participations, the speakers and listeners, the raised hands, the invitations, and the removals. The room itself (its name, description, hosts, and how it ended) is kept. The records of a reported room are kept as long as the report, and holds apply as to the other records |
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode`, `hook_inbound_actor_mode`, `hook_local_profile_mode` | `off`, `observe`, `enforce` | `observe` | How far each [decision hook](decision-hooks.md#modes) acts while it has a plugin. `off` goes to `enforce` only through `observe`. |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure`, `hook_inbound_actor_on_failure` | `pass`, `retry` | `pass` | What the hook does when it enforces and its plugin fails ([details](decision-hooks.md#when-the-plugin-fails)). |
@@ -265,6 +266,9 @@ and visitors who are not signed in see none of them.
   the places that user sees, so an address kept for the approved attendees never appears in it. There is no calendar
   subscription address.
 - A user creates at most 10 events an hour, and an event sends at most 100 invitations an hour.
+- Users can report an event, and moderators can cancel one; suspending or deleting an organizer cancels the organizer's
+  events that have not started ([moderation](moderation.md#events)). Who answered and who was invited is kept for
+  `event_records_retention_days` after the event, and so are the votes on its candidate dates.
 
 ### Texts (one key, one value)
 

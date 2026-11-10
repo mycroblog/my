@@ -201,6 +201,12 @@ func (r *Repository) InsertReport(ctx context.Context, tx uow.Tx, rep moderation
 			return false, sqlite.Wrap(err, "insert report voice room")
 		}
 	}
+	if g := rep.Gathering; g != nil {
+		err := q.InsertReportGathering(ctx, moderationgen.InsertReportGatheringParams{ReportID: rep.ID, GatheringID: g.GatheringID, RevisionID: g.RevisionID})
+		if err != nil {
+			return false, sqlite.Wrap(err, "insert report gathering")
+		}
+	}
 	return true, nil
 }
 
@@ -431,7 +437,15 @@ func (r *Repository) reportFrom(ctx context.Context, row moderationgen.Report) (
 	if err != nil {
 		return moderation.Report{}, err
 	}
-	return reportOf(row, ids, rules, room, origin, forward), nil
+	gatherings, err := r.db.reader().GetReportGathering(ctx, row.ID)
+	if err != nil {
+		return moderation.Report{}, sqlite.Wrap(err, "read report gathering")
+	}
+	rep := reportOf(row, ids, rules, room, origin, forward)
+	if len(gatherings) > 0 {
+		rep.Gathering = &moderation.ReportGathering{GatheringID: gatherings[0].GatheringID, RevisionID: gatherings[0].RevisionID}
+	}
+	return rep, nil
 }
 
 // FindReport implements moderation.Repository.

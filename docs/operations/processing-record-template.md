@@ -215,7 +215,7 @@ Delete this activity when `translation_providers` is empty.
 | Data subjects | Organizers, co-organizers, invited users, and attendees |
 | Personal data | Title, description, date, time zone, and places (a meeting place's address, a link) of each version of an event; organizers and co-organizers; candidate dates and each user's answer to them; invitations; answers and their approval; cancellations with their reason; how long before an event each user is reminded. Events are not federated |
 | Recipients | Hosting, the local users who see the event (the address and the link only to the approved attendees, unless the organizer shows them to all), and the email provider for the notification emails, which give the title, start, and organizers and never the places |
-| Erasure | The title, description, and places of the versions an account wrote, and its reminder times, at its erasure. Events, their dates and candidate dates, invitations, and answers have no automatic end: {{PERIOD}} |
+| Erasure | The title, description, and places of the versions an account wrote, and its reminder times, at its erasure. Invitations, answers, their approval, and votes on candidate dates {{90 days}} after the event ended or was cancelled (`event_records_retention_days`), longer while a report points at the event or a hold covers an account they name. Events, their dates, and candidate dates have no automatic end: {{PERIOD}} |
 | Legal basis | {{e.g. contract, legitimate interests}} |
 
 ### Security measures (Article 30(1)(g))

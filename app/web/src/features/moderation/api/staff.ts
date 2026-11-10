@@ -415,6 +415,7 @@ export const auditActions = [
   "domain_list_draft_accepted",
   "domain_list_draft_rejected",
   "domain_list_fetch_queued",
+  "event_cancelled",
 ] as const satisfies readonly AuditAction[];
 
 /** The kinds of target of an audited operation, in the order of the filter. */
@@ -450,6 +451,7 @@ export const auditTargetKinds = [
   "link_card_domain",
   "domain_allow",
   "domain_list_subscription",
+  "event",
 ] as const satisfies readonly AuditTargetKind[];
 
 /**

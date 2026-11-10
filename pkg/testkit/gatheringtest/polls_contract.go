@@ -156,9 +156,9 @@ func votes(t *testing.T, e *dueEnv) {
 	_, err = e.svc.Vote(ctx, bob, v.ID, v.ID, gathering.VoteYes)
 	wantErr(t, "an unknown candidate", err, appgathering.ErrNotFound)
 
-	ballots, more, err := e.svc.Ballots(ctx, carol, v.ID, first, "", "", 10)
+	_, _, err = e.svc.Ballots(ctx, carol, v.ID, first, "", "", 10)
 	wantErr(t, "the answers for someone who does not see the event", err, appgathering.ErrNotFound)
-	ballots, more, err = e.svc.Ballots(ctx, bob, v.ID, first, "", "", 1)
+	ballots, more, err := e.svc.Ballots(ctx, bob, v.ID, first, "", "", 1)
 	if err != nil || len(ballots) != 1 || !more {
 		t.Errorf("Ballots page = %+v, %v, %v; want one and more", ballots, more, err)
 	}

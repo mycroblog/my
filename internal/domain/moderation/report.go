@@ -44,6 +44,9 @@ type Report struct {
 	// VoiceRoom is the voice chat room that a local report points at (report_voice_rooms,
 	// ADR-0100 §11), nil for none; the target is the host of the room when it was reported.
 	VoiceRoom *ReportVoiceRoom
+	// Gathering is the event that a local report points at (report_gatherings, ADR-0161 §14), nil
+	// for none; the target is the organizer of the event.
+	Gathering *ReportGathering
 	// HookOrigin is the decision of a hook that filed the report (report_hook_origins, ADR-0147
 	// §7), nil for a report that a person or another server filed.
 	HookOrigin *ReportHookOrigin
@@ -104,9 +107,9 @@ func (r Report) SentToTarget() bool { return r.Forwarded || r.Forward != nil }
 
 // Forwardable reports whether a moderator can forward the report to the target's server;
 // targetRemote says whether the target is a remote account. Only a report filed on this server
-// (no URI) and of no voice chat room can be, and only once.
+// (no URI), of no voice chat room, and of no event can be, and only once.
 func (r Report) Forwardable(targetRemote bool) bool {
-	return targetRemote && r.URI == "" && r.VoiceRoom == nil && !r.SentToTarget()
+	return targetRemote && r.URI == "" && r.VoiceRoom == nil && r.Gathering == nil && !r.SentToTarget()
 }
 
 // ReportVoiceRoom is the voice chat room of a report with the revision of its settings when it
@@ -114,6 +117,13 @@ func (r Report) Forwardable(targetRemote bool) bool {
 type ReportVoiceRoom struct {
 	RoomID     string
 	RevisionID string
+}
+
+// ReportGathering is the event of a report with the revision of its settings that the reporter
+// saw (ADR-0161 §14). The event and its revisions are the gathering module's.
+type ReportGathering struct {
+	GatheringID string
+	RevisionID  string
 }
 
 // ReportHookOrigin says that a decision of a hook filed a report, with the immutable facts of that
@@ -157,10 +167,14 @@ func (r Report) Validate() error {
 		return fmt.Errorf("%w: the voice chat room has an empty field", ErrInvalidReport)
 	case r.VoiceRoom != nil && (r.URI != "" || r.Forwarded || len(r.StatusIDs) > 0):
 		return fmt.Errorf("%w: a report of a voice chat room is local and points at no statuses", ErrInvalidReport)
+	case r.Gathering != nil && (r.Gathering.GatheringID == "" || r.Gathering.RevisionID == ""):
+		return fmt.Errorf("%w: the event has an empty field", ErrInvalidReport)
+	case r.Gathering != nil && (r.URI != "" || r.Forwarded || len(r.StatusIDs) > 0 || r.VoiceRoom != nil):
+		return fmt.Errorf("%w: a report of an event is local and points at no statuses and no voice chat room", ErrInvalidReport)
 	case r.HookOrigin != nil && (r.HookOrigin.DecisionID == "" || r.HookOrigin.Hook == ""):
 		return fmt.Errorf("%w: the origin in a hook has an empty field", ErrInvalidReport)
-	case r.HookOrigin != nil && (r.URI != "" || r.Forwarded || r.VoiceRoom != nil):
-		return fmt.Errorf("%w: a report of a hook has no URI, no voice chat room, and is not forwarded", ErrInvalidReport)
+	case r.HookOrigin != nil && (r.URI != "" || r.Forwarded || r.VoiceRoom != nil || r.Gathering != nil):
+		return fmt.Errorf("%w: a report of a hook has no URI, no voice chat room, no event, and is not forwarded", ErrInvalidReport)
 	}
 	if err := checkText("comment", r.Comment, MaxReportComment); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalidReport, err)

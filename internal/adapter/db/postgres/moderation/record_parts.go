@@ -122,6 +122,16 @@ func (r *Repository) reportsWithParts(ctx context.Context, rows []moderationgen.
 			roomOf[v.ReportID] = &moderation.ReportVoiceRoom{RoomID: v.RoomID, RevisionID: v.RevisionID}
 		}
 	}
+	gatheringRows, err := q.ListReportGatheringsOf(ctx, ids)
+	if err != nil {
+		return nil, postgres.Wrap(err, "read report gatherings")
+	}
+	gatheringOf := map[string]*moderation.ReportGathering{}
+	for _, g := range gatheringRows {
+		if _, ok := gatheringOf[g.ReportID]; !ok {
+			gatheringOf[g.ReportID] = &moderation.ReportGathering{GatheringID: g.GatheringID, RevisionID: g.RevisionID}
+		}
+	}
 	originRows, err := q.ListReportHookOriginsOf(ctx, ids)
 	if err != nil {
 		return nil, postgres.Wrap(err, "read report hook origins")
@@ -144,7 +154,9 @@ func (r *Repository) reportsWithParts(ctx context.Context, rows []moderationgen.
 	}
 	for _, row := range rows {
 		// A report without statuses or rules has empty lists, as the queries of one return them.
-		out[row.ID] = reportOf(row, append([]string{}, statusesOf[row.ID]...), append([]string{}, rulesOf[row.ID]...), roomOf[row.ID], originOf[row.ID], forwardOf[row.ID])
+		rep := reportOf(row, append([]string{}, statusesOf[row.ID]...), append([]string{}, rulesOf[row.ID]...), roomOf[row.ID], originOf[row.ID], forwardOf[row.ID])
+		rep.Gathering = gatheringOf[row.ID]
+		out[row.ID] = rep
 	}
 	return out, nil
 }

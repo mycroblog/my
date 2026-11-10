@@ -555,6 +555,15 @@ func (q *Queries) PurgeReportForwards(ctx context.Context, ids []string) error {
 	return err
 }
 
+const purgeReportGatherings = `-- name: PurgeReportGatherings :exec
+DELETE FROM report_gatherings WHERE report_id = ANY($1::uuid[])
+`
+
+func (q *Queries) PurgeReportGatherings(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, purgeReportGatherings, ids)
+	return err
+}
+
 const purgeReportHookOrigins = `-- name: PurgeReportHookOrigins :exec
 DELETE FROM report_hook_origins WHERE report_id = ANY($1::uuid[])
 `

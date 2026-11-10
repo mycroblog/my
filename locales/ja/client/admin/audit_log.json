@@ -670,5 +670,13 @@
   "admin.audit_log.target_kind.domain_list_subscription": {
     "defaultMessage": "ブロックリストの購読",
     "description": "Kind of target of an audited operation: a subscription to a domain block list, shown by its title."
+  },
+  "admin.audit_log.action.event_cancelled": {
+    "defaultMessage": "イベントの中止",
+    "description": "Kind of an audited operation: a moderator cancelled an event."
+  },
+  "admin.audit_log.target_kind.event": {
+    "defaultMessage": "イベント",
+    "description": "Kind of target of an audited operation: an event of the local users, shown by its ID."
   }
 }

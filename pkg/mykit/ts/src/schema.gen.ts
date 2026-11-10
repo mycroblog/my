@@ -6790,6 +6790,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/events/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel an event as a moderator
+         * @description Cancels an event with an optional reason, which the event shows with its cancellation, and
+         *     notifies the users who answered going or maybe and the invited users. Recorded in the audit
+         *     log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+         *     `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
+         *     `manage_reports` permission.
+         */
+        post: operations["cancelEventAsModerator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/accounts/{id}/actions": {
         parameters: {
             query?: never;
@@ -10907,10 +10931,11 @@ export interface components {
          *     `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
          *     `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
          *     that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-         *     the `system` as the actor.
+         *     the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+         *     the event; the ID and the label are the event's ID.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_cancelled";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -10969,7 +10994,7 @@ export interface components {
          * @description The kind of what an audited operation acted on.
          * @enum {string}
          */
-        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider" | "link_card_domain" | "hook_decision" | "domain_allow" | "domain_list_subscription";
+        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider" | "link_card_domain" | "hook_decision" | "domain_allow" | "domain_list_subscription" | "event";
         /** @description The time a remote server was marked unavailable or available again, and why. */
         AdminAvailabilityEvent: {
             id: components["schemas"]["Id"];
@@ -11793,8 +11818,8 @@ export interface components {
             forwarded: boolean;
             /**
              * @description Whether a moderator can forward the report to the target's server now: it was filed on
-             *     this server, its target is a remote account, it points at no voice chat room, and it is
-             *     not forwarded yet.
+             *     this server, its target is a remote account, it points at no voice chat room and no
+             *     event, and it is not forwarded yet.
              */
             forwardable: boolean;
             /** Format: date-time */
@@ -11824,6 +11849,8 @@ export interface components {
              *     none.
              */
             voice_room_id?: components["schemas"]["Id"];
+            /** @description The event that the report points at, whose organizer is the target; omitted for none. */
+            event_id?: components["schemas"]["Id"];
             hook_origin?: components["schemas"]["AdminReportHookOrigin"];
             /**
              * @description The IDs of the instance rules that the report cites, retired ones included; only a
@@ -11846,6 +11873,7 @@ export interface components {
              */
             statuses: components["schemas"]["AdminReportStatus"][];
             voice_room?: components["schemas"]["AdminReportVoiceRoom"];
+            event?: components["schemas"]["AdminReportEvent"];
         };
         /** @description A moderator's internal note on a report; never shown to the target or the reporter. */
         AdminReportNote: {
@@ -11895,6 +11923,70 @@ export interface components {
             participations: components["schemas"]["AdminVoiceRoomParticipation"][];
             /** @description The accounts removed from the room, who may not join it again. */
             bans: components["schemas"]["AdminVoiceRoomBan"][];
+        };
+        /**
+         * @description The event that a report points at, as the moderators review it: its organizer, its current
+         *     date, its cancellation, and every revision of its settings with all its places, whoever the
+         *     places were shown to. `reported_revision_id` is the revision that the reporter saw.
+         */
+        AdminReportEvent: {
+            id: components["schemas"]["Id"];
+            organizer_account_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            created_at: string;
+            state: components["schemas"]["EventState"];
+            /**
+             * Format: date-time
+             * @description When the event starts; omitted while it has no date.
+             */
+            starts_at?: string;
+            /**
+             * Format: date-time
+             * @description When the event ends; omitted while it has no date.
+             */
+            ends_at?: string;
+            /** @description How the event was cancelled; omitted while it is not. */
+            cancellation?: components["schemas"]["AdminEventCancellation"];
+            /** @description The revision of the settings that the reporter saw. */
+            reported_revision_id: components["schemas"]["Id"];
+            /** @description The revisions of the settings, oldest first. */
+            revisions: components["schemas"]["AdminEventRevision"][];
+        };
+        /** @description A moderator cancelling an event. */
+        AdminEventCancel: {
+            /**
+             * @description Why the event is cancelled, as plain text of up to 500 characters. The event shows it
+             *     with its cancellation to everyone who sees the event.
+             */
+            reason?: string;
+        };
+        /** @description The cancellation of an event as the moderators see it. */
+        AdminEventCancellation: {
+            reason: components["schemas"]["EventCancelReason"];
+            /** @description Who cancelled the event; omitted for an automatic cancellation. */
+            cancelled_by_account_id?: components["schemas"]["Id"];
+            /** @description The reason given for the cancellation; omitted for none. */
+            note?: string;
+            /** Format: date-time */
+            cancelled_at: string;
+        };
+        /**
+         * @description A revision of the settings of an event with all its places. The title and the description
+         *     are empty, and the places are gone, once the account that wrote them is erased.
+         */
+        AdminEventRevision: {
+            id: components["schemas"]["Id"];
+            title: string;
+            description: string;
+            visibility: components["schemas"]["EventVisibility"];
+            time_zone: string;
+            place_disclosure: components["schemas"]["EventPlaceDisclosure"];
+            /** @description How many attendees may answer going; 0 for no limit. */
+            capacity: number;
+            places: components["schemas"]["EventPlace"][];
+            revised_by_account_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            revised_at: string;
         };
         /**
          * @description The decision hook that filed the report; omitted for a report that a person or another server
@@ -13415,6 +13507,12 @@ export interface components {
              *     host. Such a report points at no posts and is never forwarded.
              */
             voice_room_id?: components["schemas"]["Id"];
+            /**
+             * @description An event on this server that the user can see; `account_id` is then its organizer. Such
+             *     a report points at no posts and no voice chat room, and is never forwarded. The
+             *     moderators see the settings of the event as the user saw them.
+             */
+            event_id?: components["schemas"]["Id"];
             /**
              * @description Asks to forward the report to the server of a remote account, without naming the
              *     reporter. It means nothing for a local account.
@@ -15144,7 +15242,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "event_records_retention_days" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -17359,6 +17457,8 @@ export interface components {
             rule_ids: components["schemas"]["Id"][];
             /** @description The voice chat room reported; omitted for none. */
             voice_room_id?: components["schemas"]["Id"];
+            /** @description The event reported; omitted for none. */
+            event_id?: components["schemas"]["Id"];
             state: components["schemas"]["ReportState"];
         };
         /**
@@ -27096,6 +27196,32 @@ export interface operations {
         };
         responses: {
             /** @description The room ended. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelEventAsModerator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AdminEventCancel"];
+            };
+        };
+        responses: {
+            /** @description The event is cancelled. */
             204: {
                 headers: {
                     [name: string]: unknown;

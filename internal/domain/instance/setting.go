@@ -126,6 +126,9 @@ const (
 	SettingVoiceParticipantsRetentionDays SettingKey = "voice_participants_retention_days"
 	// SettingEventCreators decides who may create events (ADR-0161 §3).
 	SettingEventCreators SettingKey = "event_creators"
+	// SettingEventRecordsRetentionDays is how many days the answers and the invitations of an
+	// event are kept after it ended or was cancelled (ADR-0161 §14).
+	SettingEventRecordsRetentionDays SettingKey = "event_records_retention_days"
 
 	// The decision hooks (ADR-0147 §5): the mode of each hook, what each does when its plugin fails
 	// while it enforces, and how many days the records of the decisions stay.
@@ -453,6 +456,9 @@ const (
 	// The records of the participants of voice chat rooms (ADR-0100 §13).
 	MinRetentionVoiceParticipants     = 30
 	DefaultRetentionVoiceParticipants = 90
+	// The answers and the invitations of the events (ADR-0161 §14).
+	MinRetentionEventRecords     = 30
+	DefaultRetentionEventRecords = 90
 	// The bounds and default of SettingHookDecisionsRetentionDays, in days (ADR-0147 §6).
 	MinHookDecisionsRetentionDays     = 30
 	DefaultHookDecisionsRetentionDays = 90
@@ -792,6 +798,10 @@ var definitions = []Definition{
 		Key: SettingEventCreators, Kind: KindEnum, Default: string(EventCreatorsEveryone),
 		Choices: []string{string(EventCreatorsEveryone), string(EventCreatorsPermitted)},
 		Doc:     "Who may create events: everyone (every signed-in local user who is not suspended or limited) or permitted (only the holders of the create_events permission) (ADR-0161 §3).",
+	},
+	{
+		Key: SettingEventRecordsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultRetentionEventRecords), Min: MinRetentionEventRecords, Max: MaxRetention,
+		Doc: "How many days the answers and the invitations of an event are kept after it ended or was cancelled; those of a reported event are kept as long as the report (ADR-0161 §14).",
 	},
 	{
 		Key: SettingInviteCreators, Kind: KindEnum, Default: string(InviteCreatorsPermitted),
@@ -1398,7 +1408,8 @@ func (s Settings) AppealWindow() time.Duration {
 // Retention returns the value of a retention setting (SettingSessionOriginsRetentionDays,
 // SettingRegistrationOriginsRetentionDays, SettingReportsRetentionDays,
 // SettingModerationActionsRetentionDays, SettingAuditLogRetentionDays,
-// SettingVoiceParticipantsRetentionDays, SettingHookDecisionsRetentionDays) as a duration.
+// SettingVoiceParticipantsRetentionDays, SettingHookDecisionsRetentionDays,
+// SettingEventRecordsRetentionDays) as a duration.
 func (s Settings) Retention(key SettingKey) time.Duration {
 	return time.Duration(s.intValue(key)) * 24 * time.Hour
 }

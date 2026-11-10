@@ -78,6 +78,8 @@ func TestParse(t *testing.T) {
 		{instance.SettingVoiceParticipantsRetentionDays, "29", ""},
 		{instance.SettingVoiceParticipantsRetentionDays, "3650", "3650"},
 		{instance.SettingVoiceParticipantsRetentionDays, "3651", ""},
+		{instance.SettingEventRecordsRetentionDays, "30", "30"},
+		{instance.SettingEventRecordsRetentionDays, "29", ""},
 	} {
 		d, err := instance.Lookup(tc.key)
 		if err != nil {
@@ -248,7 +250,7 @@ func TestIntegerSettingsNameTheirUnit(t *testing.T) {
 		instance.SettingAppealWindowDays, instance.SettingSessionOriginsRetentionDays,
 		instance.SettingRegistrationOriginsRetentionDays, instance.SettingReportsRetentionDays,
 		instance.SettingModerationActionsRetentionDays, instance.SettingAuditLogRetentionDays,
-		instance.SettingVoiceParticipantsRetentionDays,
+		instance.SettingVoiceParticipantsRetentionDays, instance.SettingEventRecordsRetentionDays,
 	} {
 		if !strings.HasSuffix(string(key), "_days") {
 			t.Errorf("%s does not name its unit, days", key)

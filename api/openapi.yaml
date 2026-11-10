@@ -9466,6 +9466,34 @@ paths:
           description: The room ended.
         default:
           $ref: '#/components/responses/Problem'
+  /admin/events/{id}/cancel:
+    post:
+      operationId: cancelEventAsModerator
+      x-permission: manage_reports
+      summary: Cancel an event as a moderator
+      description: |
+        Cancels an event with an optional reason, which the event shows with its cancellation, and
+        notifies the users who answered going or maybe and the invited users. Recorded in the audit
+        log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+        `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
+        `manage_reports` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/EventId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminEventCancel'
+      responses:
+        '204':
+          description: The event is cancelled.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/accounts/{id}/actions:
     get:
       operationId: listAccountActions
@@ -16557,7 +16585,8 @@ components:
         `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
         `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
         that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-        the `system` as the actor.
+        the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+        the event; the ID and the label are the event's ID.
       type: string
       enum:
         - account_action_issued
@@ -16668,6 +16697,7 @@ components:
         - domain_list_draft_accepted
         - domain_list_draft_rejected
         - domain_list_fetch_queued
+        - event_cancelled
     AdminAuditActorKind:
       description: |
         Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -16787,6 +16817,7 @@ components:
         - hook_decision
         - domain_allow
         - domain_list_subscription
+        - event
     AdminAvailabilityEvent:
       description: The time a remote server was marked unavailable or available again, and why.
       type: object
@@ -18173,8 +18204,8 @@ components:
         forwardable:
           description: |
             Whether a moderator can forward the report to the target's server now: it was filed on
-            this server, its target is a remote account, it points at no voice chat room, and it is
-            not forwarded yet.
+            this server, its target is a remote account, it points at no voice chat room and no
+            event, and it is not forwarded yet.
           type: boolean
         filed_at:
           type: string
@@ -18217,6 +18248,11 @@ components:
             none.
           allOf:
             - $ref: '#/components/schemas/Id'
+        event_id:
+          description: |
+            The event that the report points at, whose organizer is the target; omitted for none.
+          allOf:
+            - $ref: '#/components/schemas/Id'
         hook_origin:
           $ref: '#/components/schemas/AdminReportHookOrigin'
         rule_ids:
@@ -18255,6 +18291,8 @@ components:
                 $ref: '#/components/schemas/AdminReportStatus'
             voice_room:
               $ref: '#/components/schemas/AdminReportVoiceRoom'
+            event:
+              $ref: '#/components/schemas/AdminReportEvent'
     AdminReportNote:
       description: A moderator's internal note on a report; never shown to the target or the reporter.
       type: object
@@ -18339,6 +18377,120 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AdminVoiceRoomBan'
+    AdminReportEvent:
+      description: |
+        The event that a report points at, as the moderators review it: its organizer, its current
+        date, its cancellation, and every revision of its settings with all its places, whoever the
+        places were shown to. `reported_revision_id` is the revision that the reporter saw.
+      type: object
+      required:
+        - id
+        - organizer_account_id
+        - created_at
+        - state
+        - reported_revision_id
+        - revisions
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        organizer_account_id:
+          $ref: '#/components/schemas/Id'
+        created_at:
+          type: string
+          format: date-time
+        state:
+          $ref: '#/components/schemas/EventState'
+        starts_at:
+          description: When the event starts; omitted while it has no date.
+          type: string
+          format: date-time
+        ends_at:
+          description: When the event ends; omitted while it has no date.
+          type: string
+          format: date-time
+        cancellation:
+          description: How the event was cancelled; omitted while it is not.
+          allOf:
+            - $ref: '#/components/schemas/AdminEventCancellation'
+        reported_revision_id:
+          description: The revision of the settings that the reporter saw.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        revisions:
+          description: The revisions of the settings, oldest first.
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminEventRevision'
+    AdminEventCancel:
+      description: A moderator cancelling an event.
+      type: object
+      properties:
+        reason:
+          description: |
+            Why the event is cancelled, as plain text of up to 500 characters. The event shows it
+            with its cancellation to everyone who sees the event.
+          type: string
+          maxLength: 500
+    AdminEventCancellation:
+      description: The cancellation of an event as the moderators see it.
+      type: object
+      required:
+        - reason
+        - cancelled_at
+      properties:
+        reason:
+          $ref: '#/components/schemas/EventCancelReason'
+        cancelled_by_account_id:
+          description: Who cancelled the event; omitted for an automatic cancellation.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        note:
+          description: The reason given for the cancellation; omitted for none.
+          type: string
+        cancelled_at:
+          type: string
+          format: date-time
+    AdminEventRevision:
+      description: |
+        A revision of the settings of an event with all its places. The title and the description
+        are empty, and the places are gone, once the account that wrote them is erased.
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - visibility
+        - time_zone
+        - place_disclosure
+        - capacity
+        - places
+        - revised_by_account_id
+        - revised_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        title:
+          type: string
+        description:
+          type: string
+        visibility:
+          $ref: '#/components/schemas/EventVisibility'
+        time_zone:
+          type: string
+        place_disclosure:
+          $ref: '#/components/schemas/EventPlaceDisclosure'
+        capacity:
+          description: How many attendees may answer going; 0 for no limit.
+          type: integer
+        places:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventPlace'
+        revised_by_account_id:
+          $ref: '#/components/schemas/Id'
+        revised_at:
+          type: string
+          format: date-time
     AdminReportHookOrigin:
       description: |
         The decision hook that filed the report; omitted for a report that a person or another server
@@ -20953,6 +21105,13 @@ components:
           description: |
             A voice chat room open on this server that the user can see; `account_id` is then its
             host. Such a report points at no posts and is never forwarded.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        event_id:
+          description: |
+            An event on this server that the user can see; `account_id` is then its organizer. Such
+            a report points at no posts and no voice chat room, and is never forwarded. The
+            moderators see the settings of the event as the user saw them.
           allOf:
             - $ref: '#/components/schemas/Id'
         forward:
@@ -23831,6 +23990,7 @@ components:
         - auto_delete_default_keep_articles
         - auto_delete_max_allow_articles
         - event_creators
+        - event_records_retention_days
         - funding_meter_visibility
         - funding_meter_target_amount
         - funding_meter_target_currency
@@ -27159,6 +27319,10 @@ components:
             $ref: '#/components/schemas/Id'
         voice_room_id:
           description: The voice chat room reported; omitted for none.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        event_id:
+          description: The event reported; omitted for none.
           allOf:
             - $ref: '#/components/schemas/Id'
         state:

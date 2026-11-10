@@ -143,6 +143,12 @@ type ReportForward struct {
 	ForwardedAt       int64
 }
 
+type ReportGathering struct {
+	ReportID    string
+	GatheringID string
+	RevisionID  string
+}
+
 type ReportHookOrigin struct {
 	ReportID       string
 	HookDecisionID string

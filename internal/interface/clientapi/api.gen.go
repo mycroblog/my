@@ -334,6 +334,7 @@ const (
 	AdminAuditActionDomainListSubscriptionUpdated   AdminAuditAction = "domain_list_subscription_updated"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
+	AdminAuditActionEventCancelled                  AdminAuditAction = "event_cancelled"
 	AdminAuditActionHookAppealUpheld                AdminAuditAction = "hook_appeal_upheld"
 	AdminAuditActionHookDecisionApplied             AdminAuditAction = "hook_decision_applied"
 	AdminAuditActionHookDecisionOverridden          AdminAuditAction = "hook_decision_overridden"
@@ -486,6 +487,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
 	case AdminAuditActionEmailSuppressionLifted:
+		return true
+	case AdminAuditActionEventCancelled:
 		return true
 	case AdminAuditActionHookAppealUpheld:
 		return true
@@ -664,6 +667,7 @@ const (
 	AdminAuditTargetKindDomain                 AdminAuditTargetKind = "domain"
 	AdminAuditTargetKindDomainAllow            AdminAuditTargetKind = "domain_allow"
 	AdminAuditTargetKindDomainListSubscription AdminAuditTargetKind = "domain_list_subscription"
+	AdminAuditTargetKindEvent                  AdminAuditTargetKind = "event"
 	AdminAuditTargetKindHookDecision           AdminAuditTargetKind = "hook_decision"
 	AdminAuditTargetKindInstance               AdminAuditTargetKind = "instance"
 	AdminAuditTargetKindInvite                 AdminAuditTargetKind = "invite"
@@ -709,6 +713,8 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindDomainAllow:
 		return true
 	case AdminAuditTargetKindDomainListSubscription:
+		return true
+	case AdminAuditTargetKindEvent:
 		return true
 	case AdminAuditTargetKindHookDecision:
 		return true
@@ -3026,6 +3032,7 @@ const (
 	InstanceSettingKeyDomainActionsVisibility            InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration          InstanceSettingKey = "dynamic_client_registration"
 	InstanceSettingKeyEventCreators                      InstanceSettingKey = "event_creators"
+	InstanceSettingKeyEventRecordsRetentionDays          InstanceSettingKey = "event_records_retention_days"
 	InstanceSettingKeyFeaturedAccounts                   InstanceSettingKey = "featured_accounts"
 	InstanceSettingKeyFederatedTimelineVisibility        InstanceSettingKey = "federated_timeline_visibility"
 	InstanceSettingKeyFederationMode                     InstanceSettingKey = "federation_mode"
@@ -3186,6 +3193,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyDynamicClientRegistration:
 		return true
 	case InstanceSettingKeyEventCreators:
+		return true
+	case InstanceSettingKeyEventRecordsRetentionDays:
 		return true
 	case InstanceSettingKeyFeaturedAccounts:
 		return true
@@ -6193,7 +6202,8 @@ type AdminAppealPage struct {
 // `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
 // `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
 // that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-// the `system` as the actor.
+// the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+// the event; the ID and the label are the event's ID.
 type AdminAuditAction string
 
 // AdminAuditActorKind Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -6281,7 +6291,8 @@ type AdminAuditEntry struct {
 	// `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
 	// `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
 	// that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-	// the `system` as the actor.
+	// the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+	// the event; the ID and the label are the event's ID.
 	Action AdminAuditAction `json:"action"`
 
 	// ActorAccount The account of `actor_account_id`; omitted when it is gone.
@@ -6774,6 +6785,63 @@ type AdminDomainListSubscriptionPage struct {
 
 // AdminDomainListSuspendAs What a `suspend` of the list issues on this server; `ignore` issues nothing.
 type AdminDomainListSuspendAs string
+
+// AdminEventCancel A moderator cancelling an event.
+type AdminEventCancel struct {
+	// Reason Why the event is cancelled, as plain text of up to 500 characters. The event shows it
+	// with its cancellation to everyone who sees the event.
+	Reason *string `json:"reason,omitempty"`
+}
+
+// AdminEventCancellation The cancellation of an event as the moderators see it.
+type AdminEventCancellation struct {
+	CancelledAt time.Time `json:"cancelled_at"`
+
+	// CancelledByAccountId Who cancelled the event; omitted for an automatic cancellation.
+	CancelledByAccountId *Id `json:"cancelled_by_account_id,omitempty"`
+
+	// Note The reason given for the cancellation; omitted for none.
+	Note *string `json:"note,omitempty"`
+
+	// Reason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+	// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+	Reason EventCancelReason `json:"reason"`
+}
+
+// AdminEventRevision A revision of the settings of an event with all its places. The title and the description
+// are empty, and the places are gone, once the account that wrote them is erased.
+type AdminEventRevision struct {
+	// Capacity How many attendees may answer going; 0 for no limit.
+	Capacity    int    `json:"capacity"`
+	Description string `json:"description"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+	// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+	// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+	// event.
+	PlaceDisclosure EventPlaceDisclosure `json:"place_disclosure"`
+	Places          []EventPlace         `json:"places"`
+	RevisedAt       time.Time            `json:"revised_at"`
+
+	// RevisedByAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	RevisedByAccountId Id     `json:"revised_by_account_id"`
+	TimeZone           string `json:"time_zone"`
+	Title              string `json:"title"`
+
+	// Visibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+	// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+	// whom the organizer follows, and `invited` the invited users only. The organizer, the
+	// co-organizers, the invited users, and the users who answered always see it, unless a block
+	// separates them from the organizer or a co-organizer.
+	Visibility EventVisibility `json:"visibility"`
+}
 
 // AdminHook A decision hook with its settings and the decisions of the period.
 type AdminHook struct {
@@ -7469,12 +7537,15 @@ type AdminReport struct {
 	Category ReportCategory `json:"category"`
 
 	// Comment The reporter's comment as plain text, up to 5,000 characters.
-	Comment string    `json:"comment"`
+	Comment string `json:"comment"`
+
+	// EventId The event that the report points at, whose organizer is the target; omitted for none.
+	EventId *Id       `json:"event_id,omitempty"`
 	FiledAt time.Time `json:"filed_at"`
 
 	// Forwardable Whether a moderator can forward the report to the target's server now: it was filed on
-	// this server, its target is a remote account, it points at no voice chat room, and it is
-	// not forwarded yet.
+	// this server, its target is a remote account, it points at no voice chat room and no
+	// event, and it is not forwarded yet.
 	Forwardable bool `json:"forwardable"`
 
 	// Forwarded Whether the report was forwarded to the target's server: when it was filed, because
@@ -7547,12 +7618,20 @@ type AdminReportDetail struct {
 	Category ReportCategory `json:"category"`
 
 	// Comment The reporter's comment as plain text, up to 5,000 characters.
-	Comment string    `json:"comment"`
+	Comment string `json:"comment"`
+
+	// Event The event that a report points at, as the moderators review it: its organizer, its current
+	// date, its cancellation, and every revision of its settings with all its places, whoever the
+	// places were shown to. `reported_revision_id` is the revision that the reporter saw.
+	Event *AdminReportEvent `json:"event,omitempty"`
+
+	// EventId The event that the report points at, whose organizer is the target; omitted for none.
+	EventId *Id       `json:"event_id,omitempty"`
 	FiledAt time.Time `json:"filed_at"`
 
 	// Forwardable Whether a moderator can forward the report to the target's server now: it was filed on
-	// this server, its target is a remote account, it points at no voice chat room, and it is
-	// not forwarded yet.
+	// this server, its target is a remote account, it points at no voice chat room and no
+	// event, and it is not forwarded yet.
 	Forwardable bool `json:"forwardable"`
 
 	// Forwarded Whether the report was forwarded to the target's server: when it was filed, because
@@ -7628,6 +7707,42 @@ type AdminReportDetail struct {
 	// VoiceRoomId The voice chat room that the report points at, whose host is the target; omitted for
 	// none.
 	VoiceRoomId *Id `json:"voice_room_id,omitempty"`
+}
+
+// AdminReportEvent The event that a report points at, as the moderators review it: its organizer, its current
+// date, its cancellation, and every revision of its settings with all its places, whoever the
+// places were shown to. `reported_revision_id` is the revision that the reporter saw.
+type AdminReportEvent struct {
+	// Cancellation How the event was cancelled; omitted while it is not.
+	Cancellation *AdminEventCancellation `json:"cancellation,omitempty"`
+	CreatedAt    time.Time               `json:"created_at"`
+
+	// EndsAt When the event ends; omitted while it has no date.
+	EndsAt *time.Time `json:"ends_at,omitempty"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// OrganizerAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	OrganizerAccountId Id `json:"organizer_account_id"`
+
+	// ReportedRevisionId The revision of the settings that the reporter saw.
+	ReportedRevisionId Id `json:"reported_revision_id"`
+
+	// Revisions The revisions of the settings, oldest first.
+	Revisions []AdminEventRevision `json:"revisions"`
+
+	// StartsAt When the event starts; omitted while it has no date.
+	StartsAt *time.Time `json:"starts_at,omitempty"`
+
+	// State Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
+	// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+	// past.
+	State EventState `json:"state"`
 }
 
 // AdminReportHookOrigin The decision hook that filed the report; omitted for a report that a person or another server
@@ -9760,6 +9875,11 @@ type CreateReportRequest struct {
 
 	// Comment A comment for the moderators as plain text.
 	Comment *string `json:"comment,omitempty"`
+
+	// EventId An event on this server that the user can see; `account_id` is then its organizer. Such
+	// a report points at no posts and no voice chat room, and is never forwarded. The
+	// moderators see the settings of the event as the user saw them.
+	EventId *Id `json:"event_id,omitempty"`
 
 	// Forward Asks to forward the report to the server of a remote account, without naming the
 	// reporter. It means nothing for a local account.
@@ -15190,7 +15310,10 @@ type Report struct {
 	Category ReportCategory `json:"category"`
 
 	// Comment The comment as plain text.
-	Comment string    `json:"comment"`
+	Comment string `json:"comment"`
+
+	// EventId The event reported; omitted for none.
+	EventId *Id       `json:"event_id,omitempty"`
 	FiledAt time.Time `json:"filed_at"`
 
 	// Forwarded Whether the report is to be forwarded to the target's server.
@@ -18472,6 +18595,9 @@ type AcceptDomainListDraftsJSONRequestBody = DomainListDraftsRequest
 // RejectDomainListDraftsJSONRequestBody defines body for RejectDomainListDrafts for application/json ContentType.
 type RejectDomainListDraftsJSONRequestBody = DomainListDraftsRequest
 
+// CancelEventAsModeratorJSONRequestBody defines body for CancelEventAsModerator for application/json ContentType.
+type CancelEventAsModeratorJSONRequestBody = AdminEventCancel
+
 // SanitizeAdminBrandMultipartRequestBody defines body for SanitizeAdminBrand for multipart/form-data ContentType.
 type SanitizeAdminBrandMultipartRequestBody = SanitizeBrandRequest
 
@@ -19107,6 +19233,9 @@ type ServerInterface interface {
 	// UnmuteErrorGroup Unmute an error group
 	// (POST /admin/error_groups/{id}/unmute)
 	UnmuteErrorGroup(w http.ResponseWriter, r *http.Request, id ErrorGroupId)
+	// CancelEventAsModerator Cancel an event as a moderator
+	// (POST /admin/events/{id}/cancel)
+	CancelEventAsModerator(w http.ResponseWriter, r *http.Request, id EventId)
 	// ListHookAppeals List the appeals of refused posts
 	// (GET /admin/hook_appeals)
 	ListHookAppeals(w http.ResponseWriter, r *http.Request, params ListHookAppealsParams)
@@ -23527,6 +23656,32 @@ func (siw *ServerInterfaceWrapper) UnmuteErrorGroup(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UnmuteErrorGroup(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelEventAsModerator operation middleware
+func (siw *ServerInterfaceWrapper) CancelEventAsModerator(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelEventAsModerator(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33706,6 +33861,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/comment/translation", wrapper.TranslateReportComment)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/reports/{id}/statuses/{status_id}/translation", wrapper.TranslateReportedStatus)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/voice_rooms/{id}/end", wrapper.EndVoiceRoomAsModerator)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/events/{id}/cancel", wrapper.CancelEventAsModerator)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/accounts/{id}/actions", wrapper.ListAccountActions)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/accounts/{id}/actions", wrapper.CreateAccountAction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/account_actions/{id}", wrapper.GetAccountAction)
@@ -40960,6 +41116,53 @@ type UnmuteErrorGroupdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response UnmuteErrorGroupdefaultApplicationProblemPlusJSONResponse) VisitUnmuteErrorGroupResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelEventAsModeratorRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *CancelEventAsModeratorJSONRequestBody
+}
+
+type CancelEventAsModeratorResponseObject interface {
+	VisitCancelEventAsModeratorResponse(w http.ResponseWriter) error
+}
+
+type CancelEventAsModerator204Response struct {
+}
+
+func (response CancelEventAsModerator204Response) VisitCancelEventAsModeratorResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type CancelEventAsModeratordefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CancelEventAsModeratordefaultApplicationProblemPlusJSONResponse) VisitCancelEventAsModeratorResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -61766,6 +61969,9 @@ type StrictServerInterface interface {
 	// UnmuteErrorGroup Unmute an error group
 	// (POST /admin/error_groups/{id}/unmute)
 	UnmuteErrorGroup(ctx context.Context, request UnmuteErrorGroupRequestObject) (UnmuteErrorGroupResponseObject, error)
+	// CancelEventAsModerator Cancel an event as a moderator
+	// (POST /admin/events/{id}/cancel)
+	CancelEventAsModerator(ctx context.Context, request CancelEventAsModeratorRequestObject) (CancelEventAsModeratorResponseObject, error)
 	// ListHookAppeals List the appeals of refused posts
 	// (GET /admin/hook_appeals)
 	ListHookAppeals(ctx context.Context, request ListHookAppealsRequestObject) (ListHookAppealsResponseObject, error)
@@ -65987,6 +66193,42 @@ func (sh *strictHandler) UnmuteErrorGroup(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UnmuteErrorGroupResponseObject); ok {
 		if err := validResponse.VisitUnmuteErrorGroupResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelEventAsModerator operation middleware
+func (sh *strictHandler) CancelEventAsModerator(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request CancelEventAsModeratorRequestObject
+
+	request.Id = id
+
+	var body CancelEventAsModeratorJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelEventAsModerator(ctx, request.(CancelEventAsModeratorRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelEventAsModerator")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelEventAsModeratorResponseObject); ok {
+		if err := validResponse.VisitCancelEventAsModeratorResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

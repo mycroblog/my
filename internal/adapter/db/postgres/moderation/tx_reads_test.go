@@ -44,6 +44,10 @@ func TestTxReadsUseTheTransactionsConnection(t *testing.T) {
 			_, err := moderation.ReportedVoiceRoomsTx(ctx, tx, []string{id})
 			return err
 		},
+		"ReportedGatheringsTx": func(ctx context.Context, tx uow.Tx) error {
+			_, err := moderation.ReportedGatheringsTx(ctx, tx, []string{id})
+			return err
+		},
 	}
 	for name, read := range reads {
 		t.Run(name, func(t *testing.T) {

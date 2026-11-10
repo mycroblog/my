@@ -634,6 +634,8 @@ paths:
     $ref: ./paths/admin_reports_{id}_statuses_{status_id}_translation.yaml
   /admin/voice_rooms/{id}/end:
     $ref: ./paths/admin_voice_rooms_{id}_end.yaml
+  /admin/events/{id}/cancel:
+    $ref: ./paths/admin_events_{id}_cancel.yaml
   /admin/accounts/{id}/actions:
     $ref: ./paths/admin_accounts_{id}_actions.yaml
   /admin/account_actions/{id}:
@@ -1491,6 +1493,14 @@ components:
       $ref: ./components/schemas/AdminReportOutcome.yaml
     AdminReportVoiceRoom:
       $ref: ./components/schemas/AdminReportVoiceRoom.yaml
+    AdminReportEvent:
+      $ref: ./components/schemas/AdminReportEvent.yaml
+    AdminEventCancel:
+      $ref: ./components/schemas/AdminEventCancel.yaml
+    AdminEventCancellation:
+      $ref: ./components/schemas/AdminEventCancellation.yaml
+    AdminEventRevision:
+      $ref: ./components/schemas/AdminEventRevision.yaml
     AdminReportHookOrigin:
       $ref: ./components/schemas/AdminReportHookOrigin.yaml
     AdminVoiceRoomBan:

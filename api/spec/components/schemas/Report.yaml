@@ -36,5 +36,9 @@ properties:
     description: The voice chat room reported; omitted for none.
     allOf:
       - $ref: ./Id.yaml
+  event_id:
+    description: The event reported; omitted for none.
+    allOf:
+      - $ref: ./Id.yaml
   state:
     $ref: ./ReportState.yaml

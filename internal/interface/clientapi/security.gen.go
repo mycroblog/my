@@ -312,6 +312,7 @@ var operationSecurity = map[string]operationAccess{
 	"POST /api/v1/admin/error_groups/{id}/mute":                                     {Operation: "muteErrorGroup", Permission: "manage_errors", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/error_groups/{id}/resolve":                                  {Operation: "resolveErrorGroup", Permission: "manage_errors", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/error_groups/{id}/unmute":                                   {Operation: "unmuteErrorGroup", Permission: "manage_errors", Scopes: []string{"admin:write"}},
+	"POST /api/v1/admin/events/{id}/cancel":                                         {Operation: "cancelEventAsModerator", Permission: "manage_reports", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/hook_appeals/{id}/overturn":                                 {Operation: "overturnHookAppeal", Permission: "manage_reports", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/hook_appeals/{id}/uphold":                                   {Operation: "upholdHookAppeal", Permission: "manage_reports", Scopes: []string{"admin:write"}},
 	"POST /api/v1/admin/hook_decisions/{id}/override":                               {Operation: "overrideHookDecision", Permission: "manage_reports", Scopes: []string{"admin:write"}},

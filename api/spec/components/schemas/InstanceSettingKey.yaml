@@ -118,6 +118,7 @@ enum:
   - auto_delete_default_keep_articles
   - auto_delete_max_allow_articles
   - event_creators
+  - event_records_retention_days
   - funding_meter_visibility
   - funding_meter_target_amount
   - funding_meter_target_currency

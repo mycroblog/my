@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The event that a report points at, as the moderators review it: its organizer, its current
+  date, its cancellation, and every revision of its settings with all its places, whoever the
+  places were shown to. `reported_revision_id` is the revision that the reporter saw.
+type: object
+required: [id, organizer_account_id, created_at, state, reported_revision_id, revisions]
+properties:
+  id:
+    $ref: ./Id.yaml
+  organizer_account_id:
+    $ref: ./Id.yaml
+  created_at:
+    type: string
+    format: date-time
+  state:
+    $ref: ./EventState.yaml
+  starts_at:
+    description: When the event starts; omitted while it has no date.
+    type: string
+    format: date-time
+  ends_at:
+    description: When the event ends; omitted while it has no date.
+    type: string
+    format: date-time
+  cancellation:
+    description: How the event was cancelled; omitted while it is not.
+    allOf:
+      - $ref: ./AdminEventCancellation.yaml
+  reported_revision_id:
+    description: The revision of the settings that the reporter saw.
+    allOf:
+      - $ref: ./Id.yaml
+  revisions:
+    description: The revisions of the settings, oldest first.
+    type: array
+    items:
+      $ref: ./AdminEventRevision.yaml

@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: cancelEventAsModerator
+  x-permission: manage_reports
+  summary: Cancel an event as a moderator
+  description: |
+    Cancels an event with an optional reason, which the event shows with its cancellation, and
+    notifies the users who answered going or maybe and the invited users. Recorded in the audit
+    log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+    `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
+    `manage_reports` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/EventId.yaml
+  requestBody:
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/AdminEventCancel.yaml
+  responses:
+    "204":
+      description: The event is cancelled.
+    default:
+      $ref: ../components/responses/Problem.yaml

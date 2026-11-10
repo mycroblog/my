@@ -104,7 +104,11 @@ type Deps struct {
 	// events notify nobody.
 	Outbox   queue.Outbox
 	Notifier Notifier
-	Logger   *slog.Logger
+	// Retention reads what JobPurgeRecords keeps, and Store keeps its cursor; with Retention nil
+	// the purge erases nothing (ADR-0161 §14).
+	Retention Retention
+	Store     kernel.KeyValueStore
+	Logger    *slog.Logger
 }
 
 // Service runs the events (ADR-0161): creating, revising, and cancelling them, their

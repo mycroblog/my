@@ -42,6 +42,10 @@ func (s *Server) reportDetailResponse(ctx context.Context, d moderation.ReportDe
 	if body.VoiceRoom, err = s.reportVoiceRoom(ctx, d.Report); err != nil {
 		return AdminReportDetailJSONResponse{}, err
 	}
+	body.EventId = r.EventId
+	if body.Event, err = s.reportEvent(ctx, d.Report); err != nil {
+		return AdminReportDetailJSONResponse{}, err
+	}
 	authors := map[string]string{}
 	if s.o.UserAccounts != nil {
 		users := make([]string, len(d.Notes))

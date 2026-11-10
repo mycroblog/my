@@ -192,6 +192,8 @@ type Repository interface {
 	ProjectionRepository
 	DueRepository
 	PollRepository
+	ModerationRepository
+	RecordsRepository
 
 	// InsertGathering records an event.
 	InsertGathering(ctx context.Context, tx uow.Tx, g Gathering) error

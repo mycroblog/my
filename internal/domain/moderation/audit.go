@@ -116,6 +116,10 @@ const (
 	// AuditTargetDomainListSubscription is a subscription to a domain block list (ADR-0159 §8);
 	// its ID is domain_list_subscriptions.id and its label the subscription's title.
 	AuditTargetDomainListSubscription AuditTargetKind = "domain_list_subscription"
+	// AuditTargetEvent is an event of the local users (ADR-0161 §14); its ID and its label are
+	// gatherings.id: the title goes with the erasure of the account that wrote it, and the
+	// moderators read it from the report.
+	AuditTargetEvent AuditTargetKind = "event"
 )
 
 var auditTargetKinds = []AuditTargetKind{
@@ -128,6 +132,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetLoginProvider, AuditTargetLinkCardDomain, AuditTargetHookDecision,
 	AuditTargetDomainAllow,
 	AuditTargetDomainListSubscription,
+	AuditTargetEvent,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -399,6 +404,10 @@ const (
 	// AuditDomainListFetchQueued: a moderator asked for a fetch of a subscribed list now; the
 	// operation has no row of its own until the fetch (domain_list_fetches).
 	AuditDomainListFetchQueued AuditAction = "domain_list_fetch_queued"
+	// AuditEventCancelled: a holder of manage_reports cancelled an event (gathering_cancellations
+	// with the reason moderator, ADR-0161 §14); the source event is the cancellation, whose ID is
+	// the event's.
+	AuditEventCancelled AuditAction = "event_cancelled"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -514,6 +523,7 @@ var auditActions = []struct {
 	{AuditDomainListDraftAccepted, AuditTargetDomainListSubscription},
 	{AuditDomainListDraftRejected, AuditTargetDomainListSubscription},
 	{AuditDomainListFetchQueued, AuditTargetDomainListSubscription},
+	{AuditEventCancelled, AuditTargetEvent},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

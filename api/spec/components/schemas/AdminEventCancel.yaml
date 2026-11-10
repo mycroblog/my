@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: A moderator cancelling an event.
+type: object
+properties:
+  reason:
+    description: |
+      Why the event is cancelled, as plain text of up to 500 characters. The event shows it
+      with its cancellation to everyone who sees the event.
+    type: string
+    maxLength: 500
