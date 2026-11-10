@@ -96,7 +96,7 @@ func supporterRepoTips(t *testing.T, r *supporterRepo) {
 		}
 	}
 	rec, err := r.s.FindTip(ctx, nil, tip.ID)
-	if err != nil || rec.Tip.ID != tip.ID || rec.UserID != user || rec.AmountMinor != 500 || !rec.CreatedAt.Equal(now) ||
+	if err != nil || rec.ID != tip.ID || rec.UserID != user || rec.AmountMinor != 500 || !rec.CreatedAt.Equal(now) ||
 		rec.Checkout == nil || rec.Checkout.Ref != "cs_tip_1" || !rec.Checkout.ExpiresAt.Equal(co.ExpiresAt) ||
 		rec.Payment == nil || rec.Payment.Ref != "pi_tip_1" || rec.State() != supporters.TipStatePaid || !rec.Has(supporters.TipRefunded) {
 		t.Errorf("FindTip = %+v, %v", rec, err)

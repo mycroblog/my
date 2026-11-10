@@ -210,7 +210,11 @@ func (r *SupporterRepository) OpenTipID(ctx context.Context, tx uow.Tx, userID s
 
 // DueOpenTips implements supporters.TipRepository.
 func (r *SupporterRepository) DueOpenTips(ctx context.Context, now time.Time, limit int) ([]string, error) {
-	ids, err := r.db.reader().ListDueSupporterOpenTips(ctx, supportersgen.ListDueSupporterOpenTipsParams{ExpiresAt: now, Limit: int32(min(limit, 1<<30))})
+	lim, err := postgres.ToInt32(limit, "due supporter open tips limit")
+	if err != nil {
+		return nil, err
+	}
+	ids, err := r.db.reader().ListDueSupporterOpenTips(ctx, supportersgen.ListDueSupporterOpenTipsParams{ExpiresAt: now, Limit: lim})
 	return ids, postgres.Wrap(err, "list due supporter open tips")
 }
 

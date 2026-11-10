@@ -8,7 +8,6 @@ import (
 	"log/slog"
 
 	appfinance "github.com/mycroblog/my/internal/app/finance"
-	"github.com/mycroblog/my/internal/domain/finance"
 )
 
 // The hand-over of the provider's money movements to the finance module's income records
@@ -21,6 +20,14 @@ type IncomeRecorder interface {
 	KnownIncome(ctx context.Context, provider string, ids []string) (map[string]bool, error)
 }
 
+// The sources of the income records (finance.IncomeSource, ADR-0162 §8), which this module
+// hands over as plain values (appfinance.IncomeMovement.Source).
+const (
+	incomeSubscription = "subscription"
+	incomeOneTime      = "one_time"
+	incomeUnknown      = "unknown"
+)
+
 // IncomeOf returns m of provider in the form of the income records, with subscriptionID, our
 // ID of its subscription ("" for none): the source subscription with one, unknown without.
 func IncomeOf(provider string, m MoneyMovement, subscriptionID string) appfinance.IncomeMovement {
@@ -31,12 +38,12 @@ func IncomeOf(provider string, m MoneyMovement, subscriptionID string) appfinanc
 // one_time (ADR-0162 §16). The finance module gives a refund, a chargeback, or a reversal the
 // source of its payment.
 func incomeOf(provider string, m MoneyMovement, subscriptionID, tipID string) appfinance.IncomeMovement {
-	source := string(finance.SourceUnknown)
+	source := incomeUnknown
 	switch {
 	case subscriptionID != "":
-		source = string(finance.SourceSubscription)
+		source = incomeSubscription
 	case tipID != "":
-		source = string(finance.SourceOneTime)
+		source = incomeOneTime
 	}
 	out := appfinance.IncomeMovement{
 		Provider: provider, ProviderID: m.ID, Kind: string(m.Kind), ParentID: m.ParentID, SubscriptionID: subscriptionID, TipID: tipID, Source: source,
