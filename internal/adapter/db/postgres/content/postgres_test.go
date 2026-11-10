@@ -73,3 +73,10 @@ func TestPostingContract(t *testing.T) {
 		}
 	})
 }
+
+func TestDraftRepositoryContract(t *testing.T) {
+	contenttest.DraftRepositoryContract(t, func(t *testing.T, opts uow.Options) contenttest.DraftRepositoryHarness {
+		db := newTestDB(t, opts)
+		return contenttest.DraftRepositoryHarness{UnitOfWork: db, Drafts: NewStatusRepository(db), Media: NewMediaRepository(db)}
+	})
+}

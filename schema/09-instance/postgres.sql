@@ -49,7 +49,8 @@ CREATE TABLE instance_setting_revisions (
     'hook_signup_check_reject', 'hook_local_status_account_age_days', 'hook_local_profile_account_age_days',
     'hook_inbound_status_unfollowed_direct',
     'hook_decisions_retention_days',
-    'single_user'
+    'single_user',
+    'max_drafts', 'max_scheduled_posts', 'max_scheduled_posts_per_day', 'scheduled_post_min_lead_minutes', 'scheduled_post_max_lead_days'
   )),
   value text NOT NULL,
   revised_by_user_id uuid,

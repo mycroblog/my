@@ -871,6 +871,26 @@ var definitions = []Definition{
 		Key: SettingSingleUser, Kind: KindBool, Default: "false",
 		Doc: "Whether the server is a one-person server: registration stays closed, the local and federated timelines, invites, the review of registrations, the sign-up blocks, and the suggestions of accounts are off, and new posts cannot be local. It can be turned on only while exactly one local account exists (FR-811, ADR-0152).",
 	},
+	{
+		Key: SettingMaxDrafts, Kind: KindInt, Default: "100", Min: 1, Max: MaxDraftLimit,
+		Doc: "How many drafts without a schedule a local account may keep on the server; lowering it deletes none (ADR-0156 §7).",
+	},
+	{
+		Key: SettingMaxScheduledPosts, Kind: KindInt, Default: "300", Min: 1, Max: MaxDraftLimit,
+		Doc: "How many scheduled posts a local account may have waiting; lowering it cancels none (ADR-0156 §7).",
+	},
+	{
+		Key: SettingMaxScheduledPostsPerDay, Kind: KindInt, Default: "25", Min: 1, Max: MaxDraftLimit,
+		Doc: "How many scheduled posts of a local account may wait for one UTC day (ADR-0156 §7).",
+	},
+	{
+		Key: SettingScheduledPostMinLeadMinutes, Kind: KindInt, Default: "5", Min: 1, Max: 1440,
+		Doc: "How many minutes ahead, at least, a post may be scheduled (ADR-0156 §7).",
+	},
+	{
+		Key: SettingScheduledPostMaxLeadDays, Kind: KindInt, Default: "366", Min: 1, Max: 3660,
+		Doc: "How many days ahead, at most, a post may be scheduled (ADR-0156 §7).",
+	},
 }
 
 // autoDeleteDefaultKeep is the definition of an exception of the server default of the automatic

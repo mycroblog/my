@@ -32,6 +32,7 @@ ON CONFLICT (media_id) DO UPDATE SET focus_x = excluded.focus_x, focus_y = exclu
 DELETE FROM media_files
 WHERE media_files.id = sqlc.arg(id)
   AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = sqlc.arg(id))
+  AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = sqlc.arg(id))
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = sqlc.arg(id));
 
 -- name: DeleteUploadedMedia :exec
@@ -65,20 +66,22 @@ WHERE r.media_id = $1 ORDER BY v.result_id, v.size, v.motion;
 SELECT media_id, focus_x, focus_y FROM media_focus WHERE media_id = $1;
 
 -- Uploads by ID, which is a UUIDv7 and so also orders and bounds them by creation time, that no
--- status revision attaches and no custom emoji uses as its image.
+-- status revision or draft attaches and no custom emoji uses as its image.
 -- name: ListUnattachedUploads :many
 SELECT m.id FROM media_files m
 WHERE m.origin = 'upload' AND m.id > COALESCE(sqlc.narg(after_id)::uuid, '00000000-0000-0000-0000-000000000000') AND m.id < sqlc.arg(before_id)
   AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = m.id)
+  AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id)
 ORDER BY m.id
 LIMIT sqlc.arg(row_limit);
 
--- The uploads of an owner by ID, with whether a status revision attaches each or a custom emoji
--- uses it as its image, for the erasure of a deleted account (data-model section 8): a custom
+-- The uploads of an owner by ID, with whether a status revision or a draft attaches each or a
+-- custom emoji uses it as its image, for the erasure of a deleted account (data-model section 8): a custom
 -- emoji of the instance outlives the administrator who uploaded its image.
 -- name: ListOwnerUploads :many
 SELECT m.id, CAST(EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = m.id)
+  OR EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
   OR EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id) AS BOOLEAN) AS attached
 FROM media_files m
 WHERE m.owner_account_id = sqlc.arg(owner_account_id) AND m.origin = 'upload' AND m.id > COALESCE(sqlc.narg(after_id)::uuid, '00000000-0000-0000-0000-000000000000')

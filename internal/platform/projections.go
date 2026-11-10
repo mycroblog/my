@@ -45,6 +45,7 @@ type projectionRepositories struct {
 	supporters    supporters.Repository
 	voice         voice.Repository
 	diagnostics   diagnostics.Repository
+	drafts        content.DraftRepository
 }
 
 // projectionRepositories returns the repositories of the database that the projections rebuild.
@@ -53,7 +54,7 @@ func (r *repositories) projectionRepositories() projectionRepositories {
 		accounts: r.accounts, instances: r.instances, follows: r.follows, statuses: r.statuses, interactions: r.interactions, emojis: r.emojis,
 		feeds: r.feeds, notifications: r.notifs, moderation: r.mods, decisions: r.decisions, identities: r.identities, webhooks: r.hooks, relays: r.feds,
 		finance: r.finance, quotes: r.quotes, supporters: r.supporters, voice: r.voice,
-		diagnostics: r.diagnostics,
+		diagnostics: r.diagnostics, drafts: r.drafts,
 	}
 }
 
@@ -115,6 +116,13 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				Tables: []string{"status_heads", "status_mention_index", "status_reply_links", "status_counters", "account_post_counters", "local_post_counters", "poll_tallies"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return content.RebuildProjections(ctx, u, r.statuses)
+				},
+			},
+			{
+				Name: "scheduled_drafts", Module: "content",
+				Tables: []string{"scheduled_drafts"},
+				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+					return content.RebuildScheduledDrafts(ctx, u, r.drafts)
 				},
 			},
 			{

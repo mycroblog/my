@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	queuedb "github.com/mycroblog/my/internal/adapter/queue/db"
 	"github.com/mycroblog/my/internal/adapter/queue/inline"
@@ -20,7 +21,7 @@ import (
 // scheduler of the periodic jobs. The db queue is set with the database, before it, and so is the
 // database queue of cloudtasks with its waker: there a push receiver runs the jobs of
 // the signals instead of a runner (ADR-0004 §10).
-func (a *App) setUpQueue(cfg *config.Config) error {
+func (a *App) setUpQueue(cfg *config.Config, inlineMaxDelay time.Duration) error {
 	runnerOpts := a.runnerOptions()
 	switch cfg.Queue {
 	case "db":
@@ -33,7 +34,7 @@ func (a *App) setUpQueue(cfg *config.Config) error {
 		a.Scheduler = queue.NewScheduler(a.Jobs, a.Clock, a.Logger)
 		return nil
 	case "inline":
-		q := inline.New(inline.Options{Clock: a.Clock, IDs: a.IDs, Tracer: a.Tracer})
+		q := inline.New(inline.Options{Clock: a.Clock, IDs: a.IDs, Tracer: a.Tracer, MaxDelay: inlineMaxDelay})
 		a.Jobs, a.DeadJobs, a.JobInspector = q, q, q
 		a.Runner = queue.NewPullRunner(q, a.Handlers, runnerOpts)
 		q.RunSynchronously(a.Runner)

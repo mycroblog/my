@@ -18,6 +18,7 @@ var jobTypes = []string{
 	"content.auto_delete_statuses",
 	"content.close_poll",
 	"content.fetch_link_card",
+	"content.publish_scheduled_draft",
 	"content.purge_link_cards",
 	"content.purge_relayed_statuses",
 	"content.purge_remote_emojis",
