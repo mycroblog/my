@@ -11,6 +11,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	appnotification "github.com/mycroblog/my/internal/app/notification"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -373,22 +374,45 @@ func erasureRepoFeeds(t *testing.T, r *erasureRepo) {
 	r.rows(t, "feed_entries", "author_account_id", erased, 0)
 	r.rows(t, "feed_entries", "author_account_id", other, 1)
 
-	notify := func(recipient, source, statusID string) {
-		n := notification.Notification{ID: r.ids.NewID(), RecipientAccountID: recipient, Type: notification.TypeFavourite, SourceAccountID: source, StatusID: statusID, CreatedAt: r.clock.Now()}
+	notify := func(recipient, source, statusID string, filtered bool) {
+		id := r.ids.NewID()
+		n := notification.Notification{ID: id, RecipientAccountID: recipient, Type: notification.TypeFavourite, SourceAccountID: source, StatusID: statusID, DedupeKey: id, CreatedAt: r.clock.Now()}
 		if statusID == "" {
 			n.Type = notification.TypeFollow
 		}
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-			_, err := r.h.Notifications.InsertNotification(ctx, tx, n)
-			return err
+			inserted, err := r.h.Notifications.InsertNotification(ctx, tx, n)
+			if err != nil || !inserted {
+				if err == nil {
+					err = errors.New("the notification was not inserted")
+				}
+				return err
+			}
+			if !filtered {
+				return nil
+			}
+			// The policy of the recipient filtered it into the source's request (ADR-0158 §7).
+			if err := r.h.Notifications.InsertFilterings(ctx, tx, []notification.Notification{n}); err != nil {
+				return err
+			}
+			return r.h.Notifications.RefreshRequests(ctx, tx, []appnotification.RequestPair{{RecipientAccountID: recipient, SourceAccountID: source}})
 		})
 	}
 	third := r.account(t)
 	erasedStatus := r.ids.NewID()
-	notify(erased, other, "")
-	notify(other, erased, "")
-	notify(other, third, erasedStatus)
-	notify(third, other, "")
+	notify(erased, other, "", false)
+	notify(other, erased, "", true)
+	notify(other, third, erasedStatus, true)
+	notify(third, other, "", false)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		err := r.h.Notifications.SavePolicyChoices(ctx, tx, []notification.PolicyChoice{
+			{AccountID: erased, Condition: notification.ConditionNotFollowing, Action: notification.ActionFilter, UpdatedAt: r.clock.Now()},
+		})
+		if err != nil {
+			return err
+		}
+		return r.h.Notifications.InsertAcceptedSource(ctx, tx, notification.AcceptedSource{RecipientAccountID: third, SourceAccountID: erased, CreatedAt: r.clock.Now()})
+	})
 	conversation := r.ids.NewID()
 	for _, account := range []string{erased, other} {
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
@@ -409,9 +433,17 @@ func erasureRepoFeeds(t *testing.T, r *erasureRepo) {
 	r.rows(t, "notifications", "source_account_id", erased, 0)
 	r.rows(t, "conversation_mutes", "account_id", erased, 0)
 	r.rows(t, "conversation_mutes", "account_id", other, 1)
+	r.rows(t, "notification_filterings", "source_account_id", erased, 0)
+	r.rows(t, "notification_requests", "source_account_id", erased, 0)
+	r.rows(t, "notification_policies", "account_id", erased, 0)
+	r.rows(t, "notification_accepted_sources", "source_account_id", erased, 0)
+	r.rows(t, "notification_requests", "source_account_id", third, 1)
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		return r.h.NotificationErasure.EraseStatusNotifications(ctx, tx, []string{erasedStatus})
 	})
 	r.rows(t, "notifications", "status_id", erasedStatus, 0)
 	r.rows(t, "notifications", "recipient_account_id", third, 1)
+	r.rows(t, "notification_filterings", "source_account_id", third, 0)
+	// The request held only the erased notification.
+	r.rows(t, "notification_requests", "source_account_id", third, 0)
 }

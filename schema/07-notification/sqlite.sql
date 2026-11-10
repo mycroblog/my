@@ -237,3 +237,67 @@ CREATE TABLE conversation_mutes (
 -- The accounts that mute a conversation: the check of the recipients of a notification, and the
 -- merge.
 CREATE INDEX conversation_mutes_conversation_account ON conversation_mutes (conversation_id, account_id);
+
+-- ---------------------------------------------------------------------------------------------
+-- The notification policy and the requests of the filtered notifications (ADR-0158 §1-§7,
+-- §9, data-model §4.7).
+-- ---------------------------------------------------------------------------------------------
+
+-- Current value: a local account's action for the notifications whose source meets a condition.
+-- A condition without a row accepts.
+CREATE TABLE notification_policies (
+  account_id TEXT NOT NULL,
+  policy_condition TEXT NOT NULL CHECK (policy_condition IN (
+    'not_following', 'not_follower', 'new_account', 'unsolicited_private_mention', 'limited_account'
+  )),
+  policy_action TEXT NOT NULL CHECK (policy_action IN ('accept', 'filter', 'drop')),
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (account_id, policy_condition)
+) STRICT;
+
+-- Event (subtype of notifications): the policy filtered the notification when it was created.
+-- It is listed only once its recipient accepts its source and no dismissal of the source's
+-- request covers it; until then it waits in the request. Never changed after it is created.
+CREATE TABLE notification_filterings (
+  notification_id TEXT NOT NULL PRIMARY KEY,
+  recipient_account_id TEXT NOT NULL,
+  source_account_id TEXT NOT NULL
+) STRICT;
+CREATE INDEX notification_filterings_recipient_source ON notification_filterings (recipient_account_id, source_account_id, notification_id);
+CREATE INDEX notification_filterings_source_account_id ON notification_filterings (source_account_id);
+
+-- Resource: a source whose request the recipient accepted. Its filtered notifications are
+-- listed, and the policy accepts its later ones.
+CREATE TABLE notification_accepted_sources (
+  recipient_account_id TEXT NOT NULL,
+  source_account_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (recipient_account_id, source_account_id),
+  CHECK (recipient_account_id <> source_account_id)
+) STRICT;
+CREATE INDEX notification_accepted_sources_source_account_id ON notification_accepted_sources (source_account_id);
+
+-- Event: the recipient dismissed the request of a source. The filtered notifications up to and
+-- including last_notification_id leave the request and are never listed.
+CREATE TABLE notification_request_dismissals (
+  id TEXT NOT NULL PRIMARY KEY,
+  recipient_account_id TEXT NOT NULL,
+  source_account_id TEXT NOT NULL,
+  last_notification_id TEXT NOT NULL,
+  dismissed_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX notification_request_dismissals_recipient_source ON notification_request_dismissals (recipient_account_id, source_account_id, last_notification_id);
+CREATE INDEX notification_request_dismissals_source_account_id ON notification_request_dismissals (source_account_id);
+
+-- Projection of notification_filterings, notification_accepted_sources, and
+-- notification_request_dismissals: the filtered notifications of each source that wait for the
+-- recipient, neither accepted nor dismissed.
+CREATE TABLE notification_requests (
+  recipient_account_id TEXT NOT NULL,
+  source_account_id TEXT NOT NULL,
+  notifications_count INTEGER NOT NULL CHECK (notifications_count > 0),
+  last_notification_id TEXT NOT NULL,
+  PRIMARY KEY (recipient_account_id, source_account_id)
+) STRICT;
+CREATE INDEX notification_requests_recipient_last ON notification_requests (recipient_account_id, last_notification_id);
+CREATE INDEX notification_requests_source_account_id ON notification_requests (source_account_id);

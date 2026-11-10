@@ -80,6 +80,11 @@ WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR n.announcement_id = ANY(sqlc.arg(shown_announcements)::uuid[]))
 ORDER BY n.id DESC
 LIMIT sqlc.arg(page_limit);
@@ -102,6 +107,11 @@ WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR n.announcement_id = ANY(sqlc.arg(shown_announcements)::uuid[]))
 ORDER BY n.id ASC
 LIMIT sqlc.arg(page_limit);
@@ -120,6 +130,11 @@ WHERE n.id = sqlc.arg(id)::uuid AND n.recipient_account_id = sqlc.arg(recipient_
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR n.announcement_id = ANY(sqlc.arg(shown_announcements)::uuid[])));
 
 -- CountNotificationsAfter counts the notifications of a recipient after the ID after that
@@ -138,6 +153,11 @@ WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR n.announcement_id = ANY(sqlc.arg(shown_announcements)::uuid[]));
 
 -- Read markers (current value).

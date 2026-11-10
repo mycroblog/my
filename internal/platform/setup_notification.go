@@ -20,7 +20,7 @@ import (
 // unread (ADR-0086 §11).
 func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository, pushes notification.PushRepository) error {
 	a.Notifications = notification.NewService(notification.Deps{
-		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a}, Announcements: a.Instance,
+		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs, Staff: moderatorStaff{a}, Announcements: a.Instance,
 		Filters: notificationFilters{a},
 		// The supporter row of the settings is offered while the program is on; the supporters
 		// module is built after this one.
@@ -43,7 +43,7 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 	}
 	deps := notification.ProjectorDeps{
 		Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Reach: a.AccountPolicy, Conversations: a.Content,
-		IDs: a.IDs, Push: pusher, PostJobs: outbox,
+		IDs: a.IDs, Push: pusher, PostJobs: outbox, Ages: a.Accounts, Mentions: a.Content,
 	}
 	a.ThreadMutes = notification.NewThreadMutes(notification.ThreadMuteDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Conversations: a.Content, Clock: a.Clock,

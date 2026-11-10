@@ -66,6 +66,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"LinksAParentAndAReplyCreatedConcurrently", statusLinksConcurrentParentAndReply},
 		{"KeepsADeletionOverAConcurrentRevision", statusDeletionWinsOverConcurrentRevision},
 		{"StoresConversationsAndMerges", statusStoresConversations},
+		{"ReadsPrivateMentions", statusReadsPrivateMentions},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newStatusEnv(t, newHarness)) })

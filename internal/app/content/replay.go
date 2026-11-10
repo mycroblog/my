@@ -74,3 +74,11 @@ func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interacti
 	}
 	return nil
 }
+
+// PrivateMentionTx reports inside tx whether the status statusID is direct, and whether it
+// answers an exchange that recipientID started: its conversation (ADR-0154) holds a direct status
+// of recipientID that mentions sourceID. The notification policy's unsolicited_private_mention
+// condition reads it (ADR-0158 §6); an unknown status is neither.
+func (s *Service) PrivateMentionTx(ctx context.Context, tx uow.Tx, statusID, recipientID, sourceID string) (direct, solicited bool, err error) {
+	return s.d.Repository.PrivateMentionTx(ctx, tx, statusID, recipientID, sourceID)
+}

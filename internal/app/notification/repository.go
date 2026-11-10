@@ -26,6 +26,7 @@ var ErrNotFound = errors.New("notification: not found")
 type Repository interface {
 	SubscriptionRepository
 	ThreadMuteRepository
+	PolicyRepository
 
 	// InsertNotification inserts a notification and reports false, writing nothing, when the
 	// recipient already has one with the same dedupe key.

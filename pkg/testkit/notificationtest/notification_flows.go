@@ -60,7 +60,10 @@ type NotificationFactory func(t *testing.T, opts uow.Options) NotificationHarnes
 // gone; the decision on an appeal to the account that appealed; the notification settings, their
 // defaults and fixed rows, and the types turned off in the app, which create nothing; the
 // emails of the notifications that stay unread; the subscriptions to new posts with their
-// status notifications; and the thread mutes, which follow a merge of conversations.
+// status notifications; the thread mutes, which follow a merge of conversations; and the
+// notification policy, which accepts everything by default, filters into the requests of the
+// sources, which are accepted or dismissed, drops, takes the strictest action of the conditions
+// met, and never touches the notices of the instance.
 func NotificationFlows(t *testing.T, newHarness NotificationFactory) {
 	t.Helper()
 	cases := []struct {
@@ -93,6 +96,12 @@ func NotificationFlows(t *testing.T, newHarness NotificationFactory) {
 		{"AppliesNotificationSettings", notificationSettings},
 		{"EmailsUnreadNotifications", notificationEmails},
 		{"MutesThreads", notificationThreadMutes},
+		{"AcceptsEverythingByDefault", notificationPolicyDefaults},
+		{"FiltersIntoRequests", notificationPolicyFilters},
+		{"DismissesRequests", notificationPolicyDismisses},
+		{"TakesTheStrictestAction", notificationPolicyStrictest},
+		{"FiltersUnsolicitedPrivateMentions", notificationPolicyPrivateMentions},
+		{"FiltersLimitedAccountsButNotNotices", notificationPolicyLimited},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newNotificationEnv(t, newHarness)) })
@@ -148,6 +157,7 @@ func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificat
 	deps := appnotification.ProjectorDeps{
 		Repository: nh.Notifications, Accounts: ae.Accounts, Relationships: e.graph, Reach: e.reach, Conversations: e.content,
 		IDs: ae.IDs, Email: &appnotification.EmailScheduler{Outbox: e.outbox, Clock: ae.Clock}, PostJobs: e.postJobs,
+		Ages: ae.Accounts, Mentions: e.content,
 	}
 	e.deps = deps
 	appnotification.RegisterProjectors(captured.Projectors, deps)
@@ -163,7 +173,7 @@ func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificat
 		Accounts: ae.Accounts, Relationships: e.graph, Clock: ae.Clock, IDs: ae.IDs, Host: testkit.ContractHost,
 	})
 	e.svc = appnotification.NewService(appnotification.Deps{
-		UnitOfWork: nh.UnitOfWork, Repository: nh.Notifications, Clock: ae.Clock, Staff: e.staff,
+		UnitOfWork: nh.UnitOfWork, Repository: nh.Notifications, Clock: ae.Clock, IDs: ae.IDs, Staff: e.staff,
 	})
 	return e
 }

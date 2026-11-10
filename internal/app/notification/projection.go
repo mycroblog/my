@@ -59,7 +59,11 @@ type ProjectorDeps struct {
 	// Conversations reads the conversations of the statuses that the thread mutes are checked
 	// against (ADR-0158 §8); nil mutes no thread.
 	Conversations Conversations
-	IDs           kernel.IDGenerator
+	// Ages and Mentions read the facts of the conditions new_account and
+	// unsolicited_private_mention of the notification policy (ADR-0158 §6); nil meets neither.
+	Ages     AccountAges
+	Mentions PrivateMentions
+	IDs      kernel.IDGenerator
 	// Push enqueues the Web Push messages of the new notifications; nil pushes none.
 	Push *Pusher
 	// Email enqueues the emails of the new notifications whose recipients get them by email;
@@ -124,9 +128,12 @@ type ProjectorDeps struct {
 // turned the type's group off in the app (FR-210). Each notification
 // has a dedupe key unique per recipient (notification.FollowKey, MentionKey, InteractionKey,
 // ModerationNoticeKey),
-// so projecting an event again, or a repeated boost or favourite, creates nothing more. Each new
-// notification enqueues its Web Push messages through d.Push, and its email through d.Email when
-// the recipient gets its group by email, in the same transaction.
+// so projecting an event again, or a repeated boost or favourite, creates nothing more. Then the
+// recipient's notification policy (ADR-0158, notification.Classify) accepts, filters, or drops a
+// notification of the types it applies to: a dropped one is not created, and a filtered one waits
+// in its source's request and is delivered nowhere. Each new accepted notification enqueues its
+// Web Push messages through d.Push, and its email through d.Email when the recipient gets its group
+// by email, in the same transaction.
 //
 // The exclusion projectors keep notification_exclusions, which the list and the unread count
 // apply at read time, so that a later block or mute also hides the notifications that came
@@ -653,6 +660,10 @@ func (p *projector) notifyWith(ctx context.Context, tx uow.Tx, n notification.No
 	if !choices.TypeEnabled(n.Type, notification.ChannelInApp) {
 		return nil // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
 	}
+	actions, err := p.classifyEach(ctx, tx, []notification.Notification{n}, nil)
+	if err != nil || actions[0] == notification.ActionDrop {
+		return err // the recipient's policy drops it (ADR-0158 §2)
+	}
 	n.ID = p.d.IDs.NewID()
 	if err := n.Validate(); err != nil {
 		return err
@@ -660,6 +671,9 @@ func (p *projector) notifyWith(ctx context.Context, tx uow.Tx, n notification.No
 	created, err := p.d.Repository.InsertNotification(ctx, tx, n)
 	if err != nil || !created {
 		return err
+	}
+	if actions[0] == notification.ActionFilter {
+		return p.filter(ctx, tx, []notification.Notification{n})
 	}
 	if err := p.d.Push.enqueueWith(ctx, tx, n, complete); err != nil {
 		return err
@@ -710,8 +724,9 @@ func (p *projector) notifyAll(ctx context.Context, tx uow.Tx, n notification.Not
 		return err
 	}
 	ids = slices.DeleteFunc(ids, func(id string) bool { return !notifiable[id] })
+	var rels map[string]appgraph.NotificationRelation
 	if n.SourceAccountID != "" && len(ids) > 0 {
-		rels, err := relations.NotificationRelations(ctx, tx, ids, n.SourceAccountID)
+		rels, err = relations.NotificationRelations(ctx, tx, ids, n.SourceAccountID)
 		if err != nil {
 			return err
 		}
@@ -754,19 +769,39 @@ func (p *projector) notifyAll(ctx context.Context, tx uow.Tx, n notification.Not
 		return fmt.Errorf("notification: the settings of %d recipients: %w", len(ids), err)
 	}
 	choices := make(map[string]notification.Choices, len(ids))
-	var kept, newIDs []string
+	var enabled []notification.Notification
 	for _, id := range ids {
 		c := notification.NewChoices(saved[id])
 		if !c.TypeEnabled(n.Type, notification.ChannelInApp) {
 			continue // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
 		}
 		one := n
-		one.ID, one.RecipientAccountID = p.d.IDs.NewID(), id
+		one.RecipientAccountID = id
+		choices[id] = c
+		enabled = append(enabled, one)
+	}
+	actions, err := p.classifyEach(ctx, tx, enabled, func(i int) *bool {
+		if rels == nil {
+			return nil
+		}
+		f := rels[enabled[i].RecipientAccountID].Follows
+		return &f
+	})
+	if err != nil {
+		return err
+	}
+	filtered := map[string]bool{}
+	var kept, newIDs []string
+	for i, one := range enabled {
+		if actions[i] == notification.ActionDrop {
+			continue // the recipient's policy drops it (ADR-0158 §2)
+		}
+		one.ID = p.d.IDs.NewID()
 		if err := one.Validate(); err != nil {
 			return err
 		}
-		choices[id] = c
-		kept, newIDs = append(kept, id), append(newIDs, one.ID)
+		filtered[one.RecipientAccountID] = actions[i] == notification.ActionFilter
+		kept, newIDs = append(kept, one.RecipientAccountID), append(newIDs, one.ID)
 	}
 	if len(kept) == 0 {
 		return nil
@@ -775,13 +810,20 @@ func (p *projector) notifyAll(ctx context.Context, tx uow.Tx, n notification.Not
 	if err != nil {
 		return err
 	}
-	var created []notification.Notification
+	var created, held []notification.Notification
 	for i, id := range kept {
 		if inserted[id] {
 			one := n
 			one.ID, one.RecipientAccountID = newIDs[i], id
-			created = append(created, one)
+			if filtered[id] {
+				held = append(held, one)
+			} else {
+				created = append(created, one)
+			}
 		}
+	}
+	if err := p.filter(ctx, tx, held); err != nil {
+		return err
 	}
 	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
 		return err
@@ -907,8 +949,9 @@ func (p *projector) notifyFromMany(ctx context.Context, tx uow.Tx, ns []notifica
 			sources = append(sources, n.SourceAccountID)
 		}
 	}
+	var rels map[string]appgraph.NotificationRelation
 	if len(sources) > 0 {
-		rels, err := relations.NotificationRelationsFrom(ctx, tx, recipient, sources)
+		rels, err = relations.NotificationRelationsFrom(ctx, tx, recipient, sources)
 		if err != nil {
 			return err
 		}
@@ -953,17 +996,49 @@ func (p *projector) notifyFromMany(ctx context.Context, tx uow.Tx, ns []notifica
 	if !choices.TypeEnabled(ns[0].Type, notification.ChannelInApp) {
 		return nil // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
 	}
+	actions, err := p.classifyEach(ctx, tx, ns, func(i int) *bool {
+		if rels == nil || ns[i].SourceAccountID == "" {
+			return nil
+		}
+		f := rels[ns[i].SourceAccountID].Follows
+		return &f
+	})
+	if err != nil {
+		return err
+	}
+	filtered := map[string]bool{}
+	kept := ns[:0:0]
 	for i := range ns {
+		if actions[i] == notification.ActionDrop {
+			continue // the recipient's policy drops it (ADR-0158 §2)
+		}
 		ns[i].ID = p.d.IDs.NewID()
 		if err := ns[i].Validate(); err != nil {
 			return err
 		}
+		filtered[ns[i].ID] = actions[i] == notification.ActionFilter
+		kept = append(kept, ns[i])
 	}
-	inserted, err := p.d.Repository.InsertNotificationsForEach(ctx, tx, ns)
+	if len(kept) == 0 {
+		return nil
+	}
+	inserted, err := p.d.Repository.InsertNotificationsForEach(ctx, tx, kept)
 	if err != nil {
 		return err
 	}
-	created := slices.DeleteFunc(ns, func(n notification.Notification) bool { return !inserted[n.ID] })
+	var created, held []notification.Notification
+	for _, n := range kept {
+		switch {
+		case !inserted[n.ID]:
+		case filtered[n.ID]:
+			held = append(held, n)
+		default:
+			created = append(created, n)
+		}
+	}
+	if err := p.filter(ctx, tx, held); err != nil {
+		return err
+	}
 	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
 		return err
 	}

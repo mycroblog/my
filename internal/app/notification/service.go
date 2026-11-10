@@ -17,6 +17,8 @@ type Deps struct {
 	UnitOfWork uow.UnitOfWork
 	Repository Repository
 	Clock      kernel.Clock
+	// IDs names the dismissals of the requests (DismissRequest).
+	IDs kernel.IDGenerator
 	// Staff reads the permissions of the recipients of the moderator notifications, which the
 	// list leaves out once the recipient no longer holds them, and which offer the moderator rows
 	// of the notification settings; nil holds none.
