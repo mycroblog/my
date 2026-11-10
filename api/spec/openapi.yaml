@@ -340,6 +340,8 @@ paths:
     $ref: ./paths/statuses_{id}.yaml
   /statuses/{id}/bookmark:
     $ref: ./paths/statuses_{id}_bookmark.yaml
+  /statuses/{id}/mute:
+    $ref: ./paths/statuses_{id}_mute.yaml
   /statuses/{id}/boost:
     $ref: ./paths/statuses_{id}_boost.yaml
   /statuses/{id}/context:
@@ -866,7 +868,7 @@ components:
             "write:filters": Create, change, and delete the user's keyword filters.
             "write:follows": Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
             "write:media": Upload media, read their state while they process, and change their descriptions.
-            "write:mutes": Mute and unmute accounts and domains.
+            "write:mutes": Mute and unmute accounts, domains, and threads.
             "write:notifications": Mark notifications read and dismiss them.
             "write:reports": Report accounts and posts to the moderators.
             "write:statuses": Post, edit, delete, boost, and pin posts, vote in polls, and set who may quote a post.

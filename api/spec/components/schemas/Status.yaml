@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-  describe the authenticated user's relation to it and are omitted for anonymous
+  A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
+  `muted` describe the authenticated user's relation to it and are omitted for anonymous
   requests; `pinned` is only given to the author.
 
   In a timeline, a boost is a status of the booster with `boost` set to the boosted
@@ -152,6 +152,11 @@ properties:
     type: boolean
   bookmarked:
     description: Whether the authenticated user bookmarked the status.
+    type: boolean
+  muted:
+    description: |
+      Whether the authenticated user mutes the thread (conversation) of the status, which
+      keeps the user from being notified of what happens in it (`muteStatusThread`).
     type: boolean
   pinned:
     description: Whether the status is pinned to the author's profile; given only to the author.

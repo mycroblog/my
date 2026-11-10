@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/StatusId.yaml
+post:
+  operationId: muteStatusThread
+  summary: Mute the thread of a status
+  description: |
+    Mutes the thread (conversation) that the status belongs to: from then on, replies and
+    mentions in it, boosts, favourites, reactions, and quotes of its posts, and new posts
+    in it by accounts the user is notified of no longer notify the user, the user's own
+    posts in the thread included. Notifications that came before stay, and the posts still
+    appear in timelines. The mute has no expiry and follows the thread when it is joined
+    with another. Muting a thread that is already muted changes nothing; the status's
+    `muted` tells the state.
+  tags: [statuses]
+  security:
+    - oauth2: ["write:mutes"]
+  responses:
+    "200":
+      $ref: ../components/responses/StatusAfterAction.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: unmuteStatusThread
+  summary: Unmute the thread of a status
+  description: |
+    Ends the mute of the thread that the status belongs to. What happened in the thread
+    while it was muted does not notify the user afterwards. Without a mute it changes
+    nothing.
+  tags: [statuses]
+  security:
+    - oauth2: ["write:mutes"]
+  responses:
+    "200":
+      $ref: ../components/responses/StatusAfterAction.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -123,6 +123,9 @@ type Options struct {
 	// Subscriptions runs the viewer's subscriptions to new posts; nil answers their operations
 	// 404 and presents Relationship.notify false.
 	Subscriptions PostSubscriptions
+	// ThreadMutes mutes and unmutes the threads of statuses for the viewer and presents
+	// Status.muted; nil answers their operations 404 and presents Status.muted false.
+	ThreadMutes ThreadMutes
 	// Notifications runs the use cases of the viewer's notifications.
 	Notifications Notifications
 	// NotificationPreferences reads and changes the viewer's notification settings; nil answers

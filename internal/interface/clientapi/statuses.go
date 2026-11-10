@@ -266,12 +266,16 @@ func (s *Server) presentStatuses(ctx context.Context, views []appcontent.StatusV
 
 // statusParts reads the parts of the authors of views, of the statuses they quote, and of more
 // accounts, and the profile pages of the accounts that they mention, together
-// (Server.accountParts).
+// (Server.accountParts), and the threads that the viewers of views mute (Server.threadMuted).
 func (s *Server) statusParts(ctx context.Context, views []appcontent.StatusView, more ...appaccount.Actor) (accountParts, error) {
 	actors := slices.Clone(more)
 	var mentioned []appaccount.Actor
 	var emojis []string
+	var seen []statusViewRef
 	add := func(v appcontent.StatusView) {
+		if v.Relation != nil {
+			seen = append(seen, statusViewRef{accountID: v.Relation.AccountID, statusID: v.Status.ID})
+		}
 		actors = append(actors, v.Author)
 		if v.Card != nil && v.Card.Author != nil {
 			actors = append(actors, *v.Card.Author)
@@ -285,7 +289,14 @@ func (s *Server) statusParts(ctx context.Context, views []appcontent.StatusView,
 			add(*v.Quote.Status)
 		}
 	}
-	return s.readAccountParts(ctx, actors, mentioned, emojis)
+	parts, err := s.readAccountParts(ctx, actors, mentioned, emojis)
+	if err != nil {
+		return accountParts{}, err
+	}
+	if parts.threadMuted, err = s.threadMuted(ctx, seen); err != nil {
+		return accountParts{}, err
+	}
+	return parts, nil
 }
 
 // newStatus presents a status as the Status schema; parts holds its author's images and the
@@ -339,6 +350,8 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 	}
 	if r := v.Relation; r != nil {
 		out.Favourited, out.Boosted, out.Bookmarked = &r.Favourited, &r.Boosted, &r.Bookmarked
+		muted := parts.threadMuted[r.AccountID][st.ID]
+		out.Muted = &muted
 		if r.Author {
 			out.Pinned = &r.Pinned
 		}

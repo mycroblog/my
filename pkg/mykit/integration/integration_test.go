@@ -441,3 +441,71 @@ func TestDrafts(t *testing.T) {
 		t.Errorf("get the published draft = %v, want a 404 problem", err)
 	}
 }
+
+// TestThreadMutes mutes the thread of a post: a reply that mentions its author notifies nobody while it is
+// muted, the post tells it with muted, the home timeline still shows the reply, and after the unmute the next
+// reply notifies again.
+func TestThreadMutes(t *testing.T) {
+	t.Parallel()
+	srv := platformtest.Start(t, platformtest.Options{})
+	alice, bob := srv.User(t, "alice"), srv.User(t, "bob")
+	aliceAPI, bobAPI := signIn(t, srv, alice, mykit.Config{}), signIn(t, srv, bob, mykit.Config{})
+	ctx := t.Context()
+
+	if _, err := aliceAPI.FollowAccountWithResponse(ctx, bob.AccountID, mykit.FollowAccountRequest{}); err != nil {
+		t.Fatalf("alice follows bob: %v", err)
+	}
+	thread := post(t, aliceAPI, "a thread that spreads")
+	muted, err := aliceAPI.MuteStatusThreadWithResponse(ctx, thread.Id)
+	if err != nil {
+		t.Fatalf("mute the thread: %v", err)
+	}
+	if muted.JSON200 == nil || muted.JSON200.Muted == nil || !*muted.JSON200.Muted {
+		t.Fatalf("mute the thread = %d %s, want 200 with muted", muted.StatusCode(), muted.Body)
+	}
+	reply := func(text string) mykit.Status {
+		t.Helper()
+		resp, err := bobAPI.CreateStatusWithResponse(ctx, &mykit.CreateStatusParams{}, mykit.CreateStatusRequest{
+			Text: text, Visibility: mykit.VisibilityPublic, InReplyToId: &thread.Id,
+		})
+		if err != nil || resp.JSON201 == nil {
+			t.Fatalf("bob replies %q = %v %s", text, err, resp.Body)
+		}
+		return *resp.JSON201
+	}
+	mentions := func() []string {
+		t.Helper()
+		resp, err := aliceAPI.ListNotificationsWithResponse(ctx, &mykit.ListNotificationsParams{})
+		if err != nil || resp.JSON200 == nil {
+			t.Fatalf("alice's notifications = %v %s", err, resp.Body)
+		}
+		var ids []string
+		for _, n := range resp.JSON200.Items {
+			if n.Status != nil {
+				ids = append(ids, n.Status.Id)
+			}
+		}
+		return ids
+	}
+
+	first := reply("@alice what a thread")
+	if got := mentions(); len(got) != 0 {
+		t.Errorf("alice's notifications of a muted thread = %v, want none", got)
+	}
+	home, err := aliceAPI.GetHomeTimelineWithResponse(ctx, &mykit.GetHomeTimelineParams{})
+	if err != nil || home.JSON200 == nil {
+		t.Fatalf("alice's home timeline = %v %s", err, home.Body)
+	}
+	if !slices.ContainsFunc(home.JSON200.Items, func(s mykit.Status) bool { return s.Id == first.Id }) {
+		t.Errorf("alice's home timeline lacks bob's reply %s in the muted thread", first.Id)
+	}
+
+	unmuted, err := aliceAPI.UnmuteStatusThreadWithResponse(ctx, first.Id)
+	if err != nil || unmuted.JSON200 == nil || unmuted.JSON200.Muted == nil || *unmuted.JSON200.Muted {
+		t.Fatalf("unmute the thread by the reply = %v %s, want 200 without muted", err, unmuted.Body)
+	}
+	second := reply("@alice and again")
+	if got := mentions(); !slices.Equal(got, []string{second.Id}) {
+		t.Errorf("alice's notifications after the unmute = %v, want the mention of %s", got, second.Id)
+	}
+}
