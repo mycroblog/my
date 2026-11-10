@@ -57,6 +57,8 @@ CREATE INDEX feed_tag_entries_usage ON feed_tag_entries (tag_id, revised_at) WHE
 -- The counts of an account's featured hashtags (featured_tags) read its public and unlisted posts
 -- of each tag.
 CREATE INDEX feed_tag_entries_author ON feed_tag_entries (author_account_id, tag_id, revised_at) WHERE visibility IN ('public', 'unlisted');
+-- The posts of a profile with a hashtag (GET /accounts/{id}/statuses?tagged=), newest first.
+CREATE INDEX feed_tag_entries_author_entry ON feed_tag_entries (author_account_id, tag_id, entry_id);
 
 -- Projection: how many posts of visibility public, local, or unlisted carry each hashtag now,
 -- and the latest time one of them was revised with it, for the prefix search of hashtags

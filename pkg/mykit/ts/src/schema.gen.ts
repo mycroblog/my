@@ -3630,11 +3630,14 @@ export interface paths {
          *     followers, and its direct posts addressed to the viewer. With `pinned`, the page lists
          *     the account's pinned posts instead, newest pin first, in a single page. With `articles`, the page
          *     lists only the account's articles, newest first, and `exclude_replies` and `exclude_boosts`
-         *     change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. A
-         *     reply whose parent the viewer may not see has no `in_reply_to_id`.
+         *     change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. With
+         *     `tagged`, the page lists only the account's posts that carry that hashtag now, newest first,
+         *     with the visibility of the profile: no boosts, so `exclude_boosts` changes nothing, while
+         *     `exclude_replies` still applies. `pinned` takes precedence over `articles`, and `articles` over
+         *     `tagged`. A reply whose parent the viewer may not see has no `in_reply_to_id`.
          *
          *     The page lists only the posts this server has received. For a remote account, the first
-         *     page (no `cursor`, no `pinned`, no `articles`) of a logged-in viewer may start fetching the account's
+         *     page (no `cursor`, no `pinned`, no `articles`, no `tagged`) of a logged-in viewer may start fetching the account's
          *     recent public posts from its server in the background; `remote_fetch_started` tells
          *     that it did. It does at most once a day per account, for at most 30 accounts per viewer
          *     in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
@@ -23765,6 +23768,11 @@ export interface operations {
                 pinned?: boolean;
                 /** @description List only the account's articles; `pinned` takes precedence. */
                 articles?: boolean;
+                /**
+                 * @description List only the account's posts with this hashtag, by its name with or without `#` and in any
+                 *     case; a name that no post used lists nothing. `pinned` and `articles` take precedence.
+                 */
+                tagged?: string;
                 /** @description The `next_cursor` of the previous page; omitted for the first page. */
                 cursor?: components["parameters"]["Cursor"];
                 /** @description The maximum number of items in the page. */

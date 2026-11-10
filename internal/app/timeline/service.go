@@ -183,6 +183,8 @@ type ProfileFilter struct {
 	ExcludeBoosts bool
 	// PublicOnly keeps only the posts and boosts of visibility public.
 	PublicOnly bool
+	// TagID, unless "", keeps only the author's posts with that hashtag, and no boosts.
+	TagID string
 }
 
 // Profile returns the profile timeline of an author (FR-204): the author's posts and boosts in
@@ -196,7 +198,7 @@ func (s *Service) Profile(ctx context.Context, viewer appcontent.Viewer, authorA
 	if err != nil {
 		return Page{}, err
 	}
-	pq := ProfileQuery{Window: w, AuthorAccountID: authorAccountID, ExcludeReplies: f.ExcludeReplies, ExcludeBoosts: f.ExcludeBoosts}
+	pq := ProfileQuery{Window: w, AuthorAccountID: authorAccountID, ExcludeReplies: f.ExcludeReplies, ExcludeBoosts: f.ExcludeBoosts, TagID: f.TagID}
 	// The visibilities CanView allows on the profile, judged as for a local author: a remote
 	// author has no local posts, and CanView below judges each entry by its real facts.
 	restrictions := facts.restrictions(authorAccountID, "")

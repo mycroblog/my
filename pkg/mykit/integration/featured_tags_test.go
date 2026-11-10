@@ -14,7 +14,8 @@ import (
 )
 
 // TestFeaturedTags chooses the hashtags of a profile with mykit and reads them back as the owner
-// and as another user, with the count of the owner's public posts of each.
+// and as another user, with the count of the owner's public posts of each, and lists the owner's
+// posts with one of them.
 func TestFeaturedTags(t *testing.T) {
 	t.Parallel()
 	srv := platformtest.Start(t, platformtest.Options{})
@@ -44,7 +45,17 @@ func TestFeaturedTags(t *testing.T) {
 		t.Errorf("11 hashtags = %v, want the problem 422 too-many-featured-tags", err)
 	}
 
-	post(t, aliceAPI, "about #cats")
+	cats := post(t, aliceAPI, "about #cats")
+	post(t, aliceAPI, "about #dogs")
+	// The link of a featured hashtag lists the owner's posts with it.
+	tagged := "Cats"
+	statuses, err := bobAPI.ListAccountStatusesWithResponse(t.Context(), alice.AccountID, &mykit.ListAccountStatusesParams{Tagged: &tagged})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if statuses.JSON200 == nil || len(statuses.JSON200.Items) != 1 || statuses.JSON200.Items[0].Id != cats.Id {
+		t.Errorf("listAccountStatuses(tagged Cats) = %d %s, want the post about #cats", statuses.StatusCode(), statuses.Body)
+	}
 	got, err := bobAPI.ListAccountFeaturedTagsWithResponse(t.Context(), alice.AccountID)
 	if err != nil {
 		t.Fatal(err)

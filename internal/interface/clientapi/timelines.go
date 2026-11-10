@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"slices"
+	"strings"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -367,7 +368,8 @@ func (s *Server) GetHashtagTimeline(ctx context.Context, req GetHashtagTimelineR
 }
 
 // ListAccountStatuses serves GET /api/v1/accounts/{id}/statuses: the account's profile
-// timeline, or its pinned statuses in one page. An account that getAccount answers with a 404
+// timeline, its pinned statuses in one page, its articles, or its posts with a hashtag
+// (tagged), in that precedence. An account that getAccount answers with a 404
 // (unknown, not active, hidden by moderation, the instance actor, or blocking the viewer) is a
 // 404 here too. The viewer's
 // timeline languages do not apply: a profile shows the account in every language. The first
@@ -417,16 +419,31 @@ func (s *Server) ListAccountStatuses(ctx context.Context, req ListAccountStatuse
 		ExcludeReplies: params.ExcludeReplies != nil && *params.ExcludeReplies,
 		ExcludeBoosts:  params.ExcludeBoosts != nil && *params.ExcludeBoosts,
 	}
-	p, err := s.o.Timelines.Profile(ctx, cv, req.Id, f, q)
-	if err != nil {
-		return nil, err
+	var p apptimeline.Page
+	tagged := params.Tagged != nil
+	if tagged {
+		// The posts of the account with the hashtag (feed_tag_entries); a hashtag that no status
+		// used lists nothing.
+		tag, err := s.o.TimelineReader.Tag(ctx, strings.TrimPrefix(*params.Tagged, "#"))
+		switch {
+		case err == nil:
+			f.TagID = tag.ID
+		case errors.Is(err, appcontent.ErrNotFound):
+		default:
+			return nil, err
+		}
+	}
+	if !tagged || f.TagID != "" {
+		if p, err = s.o.Timelines.Profile(ctx, cv, req.Id, f, q); err != nil {
+			return nil, err
+		}
 	}
 	res, err := s.statusPage(ctx, v, timeline.FilterContextAccount, entryItems(p.Entries), p.Next)
 	if err != nil {
 		return nil, err
 	}
 	out := AccountStatusPage{Items: res.Body.Items, NextCursor: res.Body.NextCursor}
-	if params.Cursor == nil && v != nil && s.o.Outboxes != nil && !account.Account.IsLocal() {
+	if params.Cursor == nil && !tagged && v != nil && s.o.Outboxes != nil && !account.Account.IsLocal() {
 		// The page shows what is stored now; the fetched posts show when it is read again.
 		started, err := s.o.Outboxes.FetchOutbox(ctx, v.AccountID, req.Id)
 		if err != nil {

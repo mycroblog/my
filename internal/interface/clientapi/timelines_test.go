@@ -566,6 +566,25 @@ func TestListAccountStatuses(t *testing.T) {
 		t.Errorf("articles with pinned read the articles: %+v", e.views.articles)
 	}
 
+	// tagged narrows the profile to the posts with the hashtag, matched as the hashtag timeline
+	// matches it; a hashtag that no status used lists nothing, through no timeline.
+	decodePage(t, e.get(t, "/accounts/"+aliceAccountID+"/statuses?tagged=%23CATS&exclude_replies=true", nil))
+	wantTagged := timelineCall{
+		timeline: "profile", viewer: appcontent.Viewer{Kind: appcontent.ViewerAnonymous}, arg: aliceAccountID,
+		filter: apptimeline.ProfileFilter{ExcludeReplies: true, TagID: tagID},
+	}
+	if len(e.timelines.calls) != 2 || !equalCall(e.timelines.calls[1], wantTagged) {
+		t.Errorf("tagged calls = %+v, want %+v", e.timelines.calls, wantTagged)
+	}
+	page = decodePage(t, e.get(t, "/accounts/"+aliceAccountID+"/statuses?tagged=nobody-uses-this", nil))
+	if len(page.Items) != 0 || page.NextCursor != nil || len(e.timelines.calls) != 2 {
+		t.Errorf("unknown tagged hashtag = %+v after %+v, want an empty page", page, e.timelines.calls)
+	}
+	// articles takes precedence over tagged.
+	if decodePage(t, e.get(t, "/accounts/"+aliceAccountID+"/statuses?tagged=cats&articles=true", nil)); len(e.timelines.calls) != 2 || len(e.views.articles) != 3 {
+		t.Errorf("tagged with articles = %+v and %+v, want the articles", e.timelines.calls, e.views.articles)
+	}
+
 	res := e.get(t, "/accounts/01890a5d-ac96-774b-bcce-b302099a80ff/statuses", map[string]string{"Accept-Language": "ja"})
 	if res.StatusCode != http.StatusNotFound {
 		t.Fatalf("unknown account = %d, want 404", res.StatusCode)
@@ -602,7 +621,7 @@ func TestListAccountStatusesStartsFetchingRecentPosts(t *testing.T) {
 		t.Errorf("page that started a fetch = %+v, want remote_fetch_started", p)
 	}
 	want := [][2]string{{aliceAccountID, remote}, {aliceAccountID, remote}}
-	for _, path := range []string{"/statuses?cursor=" + postID, "/statuses?pinned=true"} {
+	for _, path := range []string{"/statuses?cursor=" + postID, "/statuses?pinned=true", "/statuses?tagged=cats"} {
 		if p := decode(e.get(t, "/accounts/"+remote+path, auth)); p.RemoteFetchStarted != nil {
 			t.Errorf("%s = %+v, want no fetch", path, p)
 		}

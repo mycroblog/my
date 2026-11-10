@@ -307,6 +307,27 @@ WHERE e.author_account_id = sqlc.arg(author)
 ORDER BY e.id DESC
 LIMIT sqlc.arg(page_limit);
 
+-- ListProfileTagEntries is ListProfileEntries narrowed to the author's posts with the hashtag
+-- tag_id (the posts of a profile tagged with it): no boosts, which carry no hashtags of their own.
+-- name: ListProfileTagEntries :many
+SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+FROM feed_tag_entries t
+JOIN feed_entries e ON e.id = t.entry_id
+WHERE t.author_account_id = sqlc.arg(author) AND t.tag_id = sqlc.arg(tag_id)
+  AND (sqlc.narg(before)::uuid IS NULL OR t.entry_id < sqlc.narg(before)::uuid)
+  AND ((t.visibility = 'public' AND sqlc.arg(include_public)::boolean)
+    OR (t.visibility = 'local' AND sqlc.arg(include_local)::boolean)
+    OR (t.visibility = 'unlisted' AND sqlc.arg(include_unlisted)::boolean)
+    OR (t.visibility = 'private' AND sqlc.arg(include_private)::boolean)
+    OR (sqlc.arg(include_direct)::boolean
+    AND t.visibility = 'direct' AND (t.author_account_id = sqlc.narg(viewer)::uuid OR EXISTS (
+      SELECT 1 FROM feed_direct_recipients d WHERE d.recipient_account_id = sqlc.narg(viewer)::uuid AND d.entry_id = t.entry_id))))
+  AND (sqlc.arg(all_languages)::boolean OR e.language = 'und' OR e.language = ANY(sqlc.arg(languages)::text[]))
+  AND (NOT sqlc.arg(exclude_replies)::boolean OR NOT e.is_reply)
+ORDER BY t.entry_id DESC
+LIMIT sqlc.arg(page_limit);
+
 -- Relation facts of a page, for re-applying CanView ---------------------------------------------
 
 -- name: ListFeedFollowedAmong :many

@@ -17603,6 +17603,10 @@ type ListAccountStatusesParams struct {
 	// Articles List only the account's articles; `pinned` takes precedence.
 	Articles *bool `form:"articles,omitempty" json:"articles,omitempty"`
 
+	// Tagged List only the account's posts with this hashtag, by its name with or without `#` and in any
+	// case; a name that no post used lists nothing. `pinned` and `articles` take precedence.
+	Tagged *string `form:"tagged,omitempty" json:"tagged,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -21140,6 +21144,19 @@ func (siw *ServerInterfaceWrapper) ListAccountStatuses(w http.ResponseWriter, r 
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "articles"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "articles", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "tagged" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tagged", r.URL.Query(), &params.Tagged, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "tagged"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tagged", Err: err})
 		}
 		return
 	}
