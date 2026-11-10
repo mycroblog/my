@@ -4,7 +4,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { delay, http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import type { Schemas } from "../../test/fixtures";
+import { otherAccountFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -223,6 +223,224 @@ describe("remote servers", () => {
     expect(await screen.findByText("Could not resume deliveries: Service Unavailable")).toBeInTheDocument();
     expect(screen.getByText("Paused")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Resume deliveries" })).toBeInTheDocument();
+  });
+});
+
+const accepted: Schemas["AdminDelivery"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000d1",
+  domain: "flaky.example",
+  activity_type: "Accept",
+  activity_created_at: "2026-11-10T01:37:12Z",
+  created_at: "2026-11-10T01:37:12Z",
+  shared_inbox: false,
+  sender: { account_id: otherAccountFixture.id, username: "bob" },
+  activity_uri: "https://my.example/activities/accept-1",
+  inbox_url: "https://flaky.example/users/8ak9qsd92w/inbox",
+  attempts: [
+    {
+      id: "0192f0c4-7a8e-7000-8000-0000000000a1",
+      outcome: "succeeded",
+      signature_scheme: "cavage",
+      status_code: 202,
+      attempted_at: "2026-11-10T01:37:12Z",
+    },
+  ],
+};
+const masked: Schemas["AdminDelivery"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000d2",
+  domain: "flaky.example",
+  activity_type: "Create",
+  activity_created_at: "2026-11-09T00:00:00Z",
+  created_at: "2026-11-09T00:00:00Z",
+  shared_inbox: false,
+  mask: "direct",
+  attempts: [
+    {
+      id: "0192f0c4-7a8e-7000-8000-0000000000a2",
+      outcome: "retryable_failure",
+      error: "dial tcp: i/o timeout",
+      attempted_at: "2026-11-09T00:00:00Z",
+    },
+    {
+      id: "0192f0c4-7a8e-7000-8000-0000000000a3",
+      outcome: "permanent_failure",
+      signature_scheme: "rfc9421",
+      status_code: 410,
+      attempted_at: "2026-11-09T01:00:00Z",
+    },
+  ],
+};
+
+describe("deliveries", () => {
+  test("a server's page shows the deliveries with their attempts, masked ones without their sender, URI or inbox, and loads more", async () => {
+    server.use(
+      operatorHandler(["manage_domains"]),
+      http.get(`${apiBase}/admin/instances/:domain/deliveries`, ({ request }) =>
+        new URL(request.url).searchParams.get("cursor") === "next"
+          ? HttpResponse.json({ items: [masked] })
+          : HttpResponse.json({ items: [accepted], next_cursor: "next" }),
+      ),
+    );
+    const requests = recordAdminRequests();
+    const { user } = await renderApp({ path: "/moderation/instances/flaky.example" });
+
+    const region = within(await screen.findByRole("region", { name: "Deliveries" }));
+    const [first] = await region.findAllByRole("listitem");
+    if (first === undefined) throw new Error("no delivery is listed");
+    const delivery = within(first);
+    expect(delivery.getByRole("heading", { level: 3, name: "Accept" })).toBeInTheDocument();
+    expect(delivery.getByText("@bob")).toBeInTheDocument();
+    expect(delivery.getByText("https://flaky.example/users/8ak9qsd92w/inbox")).toBeInTheDocument();
+    expect(delivery.getByText("https://my.example/activities/accept-1")).toBeInTheDocument();
+    const attempts = within(delivery.getByRole("list", { name: "Attempts" }));
+    expect(attempts.getByText("Accepted")).toBeInTheDocument();
+    expect(attempts.getByText("HTTP 202")).toBeInTheDocument();
+    expect(attempts.getByText("Cavage signature")).toBeInTheDocument();
+    expect(region.queryByRole("button", { name: "Show masked fields" })).not.toBeInTheDocument();
+
+    await user.click(region.getByRole("button", { name: "Show more" }));
+    await region.findByRole("heading", { level: 3, name: "Create" });
+    const created = region
+      .getAllByRole("listitem")
+      .find((item) => within(item).queryByRole("heading", { level: 3, name: "Create" }) !== null);
+    if (created === undefined) throw new Error("the masked delivery is not listed");
+    const second = within(created);
+    expect(second.getAllByText("Masked")).toHaveLength(3);
+    expect(
+      second.getByText(
+        "The sender, the activity ID and the inbox are masked: the activity is about a post for mentioned people only.",
+      ),
+    ).toBeInTheDocument();
+    expect(second.getByText("Failed, tried again")).toBeInTheDocument();
+    expect(second.getByText("dial tcp: i/o timeout")).toBeInTheDocument();
+    expect(second.getByText("Refused")).toBeInTheDocument();
+    expect(second.getByText("HTTP 410")).toBeInTheDocument();
+    expect(second.getByText("RFC 9421 signature")).toBeInTheDocument();
+    expect(second.getByRole("button", { name: "Show masked fields" })).toHaveAccessibleDescription(
+      "Showing them is recorded in the audit log.",
+    );
+    expect(requests.filter((request) => request.includes("/deliveries"))).toEqual([
+      "GET /admin/instances/flaky.example/deliveries?limit=40",
+      "GET /admin/instances/flaky.example/deliveries?limit=40&cursor=next",
+    ]);
+  });
+
+  test("revealing a masked delivery asks the server, shows the fields, and says that it is recorded", async () => {
+    server.use(
+      operatorHandler(["manage_domains"]),
+      http.get(`${apiBase}/admin/instances/:domain/deliveries`, () => HttpResponse.json({ items: [masked] })),
+      http.post(`${apiBase}/admin/instances/:domain/deliveries/:id/reveal`, () =>
+        HttpResponse.json({
+          id: masked.id,
+          mask: "direct",
+          sender: { account_id: otherAccountFixture.id, username: "bob" },
+          activity_uri: "https://my.example/activities/create-2",
+          inbox_url: "https://flaky.example/users/carol/inbox",
+        }),
+      ),
+    );
+    const requests = recordAdminRequests();
+    const { user } = await renderApp({ path: "/moderation/instances/flaky.example" });
+
+    await user.click(await screen.findByRole("button", { name: "Show masked fields" }));
+
+    expect(
+      await screen.findByText("The masked fields are shown. Seeing them is recorded in the audit log."),
+    ).toBeInTheDocument();
+    expect(screen.getByText("@bob")).toBeInTheDocument();
+    expect(screen.getByText("https://my.example/activities/create-2")).toBeInTheDocument();
+    expect(screen.getByText("https://flaky.example/users/carol/inbox")).toBeInTheDocument();
+    expect(screen.queryByText("Masked")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Show masked fields" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 3, name: "Create" })).toHaveFocus();
+    expect(requests).toContain(`POST /admin/instances/flaky.example/deliveries/${masked.id}/reveal`);
+  });
+
+  test("a failed reveal keeps the delivery masked and says why", async () => {
+    server.use(
+      operatorHandler(["manage_domains"]),
+      http.get(`${apiBase}/admin/instances/:domain/deliveries`, () => HttpResponse.json({ items: [masked] })),
+      http.post(`${apiBase}/admin/instances/:domain/deliveries/:id/reveal`, () =>
+        problem(503, "about:blank", "Service Unavailable"),
+      ),
+    );
+    const { user } = await renderApp({ path: "/moderation/instances/flaky.example" });
+
+    await user.click(await screen.findByRole("button", { name: "Show masked fields" }));
+
+    expect(await screen.findByText("Could not show the masked fields: Service Unavailable")).toBeInTheDocument();
+    expect(screen.getAllByText("Masked")).toHaveLength(3);
+    expect(screen.getByRole("button", { name: "Show masked fields" })).toBeInTheDocument();
+  });
+
+  test("the filter by account says it is recorded before it runs, and the filter by activity ID does not", async () => {
+    server.use(
+      operatorHandler(["manage_domains"]),
+      http.get(`${apiBase}/accounts/lookup`, ({ request }) =>
+        new URL(request.url).searchParams.get("acct") === "bob"
+          ? HttpResponse.json(otherAccountFixture)
+          : problem(404, "/api/v1/problems/not-found", "Not Found"),
+      ),
+      http.get(`${apiBase}/admin/instances/:domain/deliveries`, ({ request }) => {
+        const query = new URL(request.url).searchParams;
+        if (query.get("account_id") === otherAccountFixture.id) return HttpResponse.json({ items: [accepted] });
+        if (query.get("activity_uri") !== null) return HttpResponse.json({ items: [] });
+        return HttpResponse.json({ items: [accepted, masked] });
+      }),
+    );
+    const requests = recordAdminRequests();
+    const { user } = await renderApp({ path: "/moderation/instances/flaky.example" });
+
+    const form = within(await screen.findByRole("search", { name: "Filter deliveries" }));
+    const account = form.getByRole("textbox", { name: "Local account" });
+    const activity = form.getByRole("textbox", { name: "Activity ID" });
+    expect(account).toHaveAccessibleDescription(
+      "The username of an account on this server. Each filter by an account is recorded in the audit log.",
+    );
+    expect(activity).not.toHaveAccessibleDescription(/audit log/u);
+    expect(await screen.findByRole("heading", { level: 3, name: "Create" })).toBeInTheDocument();
+
+    await user.type(activity, "https://my.example/activities/none");
+    await user.click(form.getByRole("button", { name: "Filter" }));
+    expect(
+      await screen.findByRole("heading", { level: 3, name: "No deliveries match the filter" }),
+    ).toBeInTheDocument();
+
+    await user.click(form.getByRole("button", { name: "Clear filter" }));
+    expect(await screen.findByRole("heading", { level: 3, name: "Create" })).toBeInTheDocument();
+    expect(activity).toHaveValue("");
+
+    await user.type(account, "bob@flaky.example");
+    await user.click(form.getByRole("button", { name: "Filter" }));
+    expect(
+      await screen.findByText("Enter the username of an account on this server, without a domain."),
+    ).toBeInTheDocument();
+
+    await user.clear(account);
+    await user.type(account, "@bob");
+    await user.click(form.getByRole("button", { name: "Filter" }));
+    await waitFor(() => {
+      expect(screen.queryByRole("heading", { level: 3, name: "Create" })).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("heading", { level: 3, name: "Accept" })).toBeInTheDocument();
+
+    await user.clear(account);
+    await user.type(account, "nobody");
+    await user.click(form.getByRole("button", { name: "Filter" }));
+    expect(await screen.findByText("No account on this server is named @nobody.")).toBeInTheDocument();
+
+    expect(requests.filter((request) => request.includes("/deliveries"))).toEqual([
+      "GET /admin/instances/flaky.example/deliveries?limit=40",
+      `GET /admin/instances/flaky.example/deliveries?limit=40&activity_uri=${encodeURIComponent("https://my.example/activities/none")}`,
+      `GET /admin/instances/flaky.example/deliveries?limit=40&account_id=${otherAccountFixture.id}`,
+    ]);
+  });
+
+  test("says when nothing was delivered to the server", async () => {
+    server.use(operatorHandler(["manage_domains"]));
+    await renderApp({ path: "/moderation/instances/flaky.example" });
+
+    expect(await screen.findByRole("heading", { level: 3, name: "No deliveries to this server" })).toBeInTheDocument();
   });
 });
 

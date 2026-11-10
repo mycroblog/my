@@ -12,7 +12,7 @@ import {
   statusFixture,
   viewerFixture,
 } from "../../../test/fixtures";
-import { apiBase, withViewer } from "../../../test/msw/http";
+import { apiBase, problem, withViewer } from "../../../test/msw/http";
 
 /** A moderation action on the viewer's account: a suspension in effect, taken on 16 October 2026, appealable. */
 export function ownActionFixture(overrides: Partial<Schemas["ModerationAction"]> = {}): Schemas["ModerationAction"] {
@@ -600,6 +600,13 @@ export const handlers = [
   ),
   http.post(`${apiBase}/admin/instances/:domain/mark_available`, ({ request, params }) =>
     withViewer(request, () => HttpResponse.json(availableHealth(String(params["domain"])))),
+  ),
+  // operationIds listInstanceDeliveries, revealInstanceDelivery: nothing was delivered, so there is nothing to reveal.
+  http.get(`${apiBase}/admin/instances/:domain/deliveries`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] })),
+  ),
+  http.post(`${apiBase}/admin/instances/:domain/deliveries/:id/reveal`, ({ request }) =>
+    withViewer(request, () => problem(404, "/api/v1/problems/not-found", "Not Found")),
   ),
   // operationIds refetchStatus, refetchAccountStatuses, refetchInstanceStatuses: every refetch is queued.
   http.post(`${apiBase}/admin/statuses/:id/refetch`, ({ request }) =>

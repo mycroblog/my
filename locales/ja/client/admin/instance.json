@@ -114,5 +114,177 @@
   "admin.instance.column.occurred_at": {
     "defaultMessage": "日時",
     "description": "Header of the column of a remote server's availability history that holds when it happened."
+  },
+  "admin.instance.deliveries.title": {
+    "defaultMessage": "配送",
+    "description": "Heading of the section of a remote server's page with what this server delivered to it and what it answered."
+  },
+  "admin.instance.deliveries.description": {
+    "defaultMessage": "このサーバーが相手のサーバーに送ったものと、その応答を、新しい順にすべての試行とともに示します。試行は 30 日間残ります。アクティビティの中身は表示しません。",
+    "description": "Description under the heading of the deliveries of a remote server."
+  },
+  "admin.instance.deliveries.filter.label": {
+    "defaultMessage": "配送を絞り込む",
+    "description": "Accessible name of the form that filters the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.filter.activity_uri": {
+    "defaultMessage": "アクティビティの ID",
+    "description": "Label of the field that keeps only the deliveries of one activity, by its ID (a URI)."
+  },
+  "admin.instance.deliveries.filter.activity_uri.description": {
+    "defaultMessage": "1 つのアクティビティの ID (https:// で始まる URL) をそのまま入れます。",
+    "description": "Description under the field of the activity ID in the filter of deliveries."
+  },
+  "admin.instance.deliveries.filter.account": {
+    "defaultMessage": "このサーバーのアカウント",
+    "description": "Label of the field that keeps only the deliveries of the activities of one account on this server, by its username."
+  },
+  "admin.instance.deliveries.filter.account.description": {
+    "defaultMessage": "このサーバーのアカウントのユーザー名。アカウントで絞り込むたびに監査ログに記録されます。",
+    "description": "Description under the field of the local account in the filter of deliveries: says that filtering by an account is recorded in the audit log."
+  },
+  "admin.instance.deliveries.filter.account.not_local": {
+    "defaultMessage": "このサーバーのアカウントのユーザー名を、ドメインを付けずに入れてください。",
+    "description": "Error of the local account field in the filter of deliveries when a handle with a domain was typed."
+  },
+  "admin.instance.deliveries.filter.unknown_account": {
+    "defaultMessage": "@{username} というアカウントはこのサーバーにありません。",
+    "description": "Why the deliveries filtered by a local account could not be shown: no account has that username. {username} is what the moderator typed."
+  },
+  "admin.instance.deliveries.filter.submit": {
+    "defaultMessage": "絞り込む",
+    "description": "Button that runs the filter of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.filter.clear": {
+    "defaultMessage": "絞り込みを解除",
+    "description": "Button that removes the filter of the deliveries to a remote server and shows every delivery."
+  },
+  "admin.instance.deliveries.loading": {
+    "defaultMessage": "配送を読み込み中",
+    "description": "Accessible label of the spinner while the deliveries to a remote server load."
+  },
+  "admin.instance.deliveries.failed": {
+    "defaultMessage": "配送を読み込めませんでした",
+    "description": "Heading of the error in place of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "Button that loads the deliveries to a remote server again after a failure."
+  },
+  "admin.instance.deliveries.more_failed": {
+    "defaultMessage": "続きの配送を読み込めませんでした",
+    "description": "Heading of the error when the next page of the deliveries to a remote server failed to load."
+  },
+  "admin.instance.deliveries.empty": {
+    "defaultMessage": "このサーバーへの配送はありません",
+    "description": "Heading of the empty state of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.empty.description": {
+    "defaultMessage": "過去 30 日間、このサーバーには何も送っていません。",
+    "description": "Description of the empty state of the deliveries to a remote server."
+  },
+  "admin.instance.deliveries.empty.filtered": {
+    "defaultMessage": "絞り込みに合う配送はありません",
+    "description": "Heading of the empty state of the deliveries to a remote server under a filter."
+  },
+  "admin.instance.deliveries.sender": {
+    "defaultMessage": "送信者",
+    "description": "Term of a delivery: the account on this server that sent the activity."
+  },
+  "admin.instance.deliveries.sender.gone": {
+    "defaultMessage": "削除されたアカウント",
+    "description": "Value of the sender of a delivery whose account is gone."
+  },
+  "admin.instance.deliveries.inbox": {
+    "defaultMessage": "受信箱",
+    "description": "Term of a delivery: the inbox of the remote server it went to."
+  },
+  "admin.instance.deliveries.inbox.shared": {
+    "defaultMessage": "サーバーの共有受信箱",
+    "description": "Note under the inbox of a delivery that went to the shared inbox of the server, which names no recipient."
+  },
+  "admin.instance.deliveries.activity_uri": {
+    "defaultMessage": "アクティビティの ID",
+    "description": "Term of a delivery: the ID (URI) of the activity it delivered."
+  },
+  "admin.instance.deliveries.activity_created_at": {
+    "defaultMessage": "アクティビティの記録",
+    "description": "Term of a delivery: when the activity it delivered was recorded."
+  },
+  "admin.instance.deliveries.masked": {
+    "defaultMessage": "非表示",
+    "description": "Value of a field of a delivery that is masked because the activity is not public."
+  },
+  "admin.instance.deliveries.mask.private": {
+    "defaultMessage": "送信者・アクティビティの ID・受信箱を伏せています。フォロワー限定の投稿についてのアクティビティです。",
+    "description": "Why the fields of a delivery are masked: the activity is about a followers-only post."
+  },
+  "admin.instance.deliveries.mask.direct": {
+    "defaultMessage": "送信者・アクティビティの ID・受信箱を伏せています。メンションした相手だけへの投稿についてのアクティビティです。",
+    "description": "Why the fields of a delivery are masked: the activity is about a post for the mentioned people only."
+  },
+  "admin.instance.deliveries.mask.local": {
+    "defaultMessage": "送信者・アクティビティの ID・受信箱を伏せています。このサーバー限定の投稿についてのアクティビティです。",
+    "description": "Why the fields of a delivery are masked: the activity is about a post visible on this server only."
+  },
+  "admin.instance.deliveries.mask.approves_followers": {
+    "defaultMessage": "送信者・アクティビティの ID・受信箱を伏せています。フォロワーを承認制にしているアカウントのフォローか、その応答です。",
+    "description": "Why the fields of a delivery are masked: a follow, its undo, an accept or a reject of a local account that approves its followers."
+  },
+  "admin.instance.deliveries.mask.unknown": {
+    "defaultMessage": "送信者・アクティビティの ID・受信箱を伏せています。アクティビティの対象の投稿かアカウントがなくなり、公開だったかが分かりません。",
+    "description": "Why the fields of a delivery are masked: what the activity was about is gone."
+  },
+  "admin.instance.deliveries.reveal": {
+    "defaultMessage": "伏せた項目を表示",
+    "description": "Button of a masked delivery that shows its sender, activity ID and inbox."
+  },
+  "admin.instance.deliveries.reveal.description": {
+    "defaultMessage": "表示すると監査ログに記録されます。",
+    "description": "Description under the button that shows the masked fields of a delivery."
+  },
+  "admin.instance.deliveries.reveal.shown": {
+    "defaultMessage": "伏せた項目を表示しました。表示したことは監査ログに記録されています。",
+    "description": "Status message after the masked fields of a delivery were shown."
+  },
+  "admin.instance.deliveries.reveal.failed": {
+    "defaultMessage": "伏せた項目を表示できませんでした: {reason}",
+    "description": "Error toast when the masked fields of a delivery could not be shown. {reason} is the server's localized reason."
+  },
+  "admin.instance.deliveries.attempts": {
+    "defaultMessage": "試行",
+    "description": "Heading of the attempts of a delivery, oldest first."
+  },
+  "admin.instance.deliveries.attempts.none": {
+    "defaultMessage": "まだ送っていません。",
+    "description": "Text of a delivery that has no attempt yet."
+  },
+  "admin.instance.deliveries.outcome.succeeded": {
+    "defaultMessage": "受け付けられた",
+    "description": "Outcome of an attempt of a delivery: the remote server accepted the activity."
+  },
+  "admin.instance.deliveries.outcome.retryable_failure": {
+    "defaultMessage": "失敗 (再試行する)",
+    "description": "Outcome of an attempt of a delivery: it failed in a way that is tried again."
+  },
+  "admin.instance.deliveries.outcome.permanent_failure": {
+    "defaultMessage": "拒否された",
+    "description": "Outcome of an attempt of a delivery: the remote server refused the activity, and it is not sent again."
+  },
+  "admin.instance.deliveries.outcome.skipped": {
+    "defaultMessage": "送らなかった",
+    "description": "Outcome of an attempt of a delivery: nothing was sent, for the reason shown below."
+  },
+  "admin.instance.deliveries.status_code": {
+    "defaultMessage": "HTTP {code}",
+    "description": "The HTTP status code of the response to an attempt of a delivery. {code} is the number, such as 202."
+  },
+  "admin.instance.deliveries.scheme.rfc9421": {
+    "defaultMessage": "RFC 9421 の署名",
+    "description": "The signature scheme of the request of an attempt: HTTP Message Signatures (RFC 9421)."
+  },
+  "admin.instance.deliveries.scheme.cavage": {
+    "defaultMessage": "Cavage 方式の署名",
+    "description": "The signature scheme of the request of an attempt: the draft-cavage HTTP Signatures."
   }
 }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A remote server's page below its heading (federation.md §7.3): its health, why it is in its state, when
-// deliveries last resumed, the button that resumes them, the way to its moderation actions (FR-702), the refetch
-// of its accounts' posts (FR-407), and the history of its availability, newest first.
+// deliveries last resumed, the button that resumes them, what was delivered to it and what it answered (#2748), the
+// way to its moderation actions (FR-702), the refetch of its accounts' posts (FR-407), and the history of its availability, newest first.
 import { Button, Card, DescriptionItem, DescriptionList, EmptyState, Heading, Hint, Link, Stack } from "@my/ui";
 import { useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
@@ -16,6 +16,7 @@ import {
   RecordTable,
   RequirePermission,
 } from "./parts";
+import { InstanceDeliveries } from "./InstanceDeliveries";
 import { RefetchStatusesSection } from "./RefetchStatuses";
 
 const eventLabels: Readonly<Record<AvailabilityEvent["kind"], ClientMessageKey>> = {
@@ -107,6 +108,7 @@ function InstanceView({ domain }: InstanceDetailProps) {
           )}
         </Stack>
       </Card>
+      <InstanceDeliveries domain={domain} />
       <Section surface="card" title={t("client:admin.instance.moderation.title")}>
         <Stack align="start" gap="1">
           <Link

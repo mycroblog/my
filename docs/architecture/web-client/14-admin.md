@@ -21,7 +21,10 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   メニューの通報・登録の審査・異議申し立ての項目は、待っている件数の `Badge` を持ち、その文言（「承認待ち 1 件」）は項目の名前に入る。使える画面がないロールには、その理由を `EmptyState` で出す。
   設定の画面は、どちらかの区分の画面を使えるロールにだけ、管理のモードへの入口（`StaffModeEntry`。待っている件数付き）を 1 つ出す。
 - **連合先**（`/moderation/instances`）: 状態のタブ（`?state=unavailable` / `available`、URL に置く。S3）と、ドメイン順の一覧。各サーバーは見出し（ドメインへのリンク）と、状態・その状態になった日時・失敗した日数・最後に失敗した日（UTC の日付）の説明リストにする。状態は文言で示し、色はそれを繰り返すだけにする。
-- **連合先の詳細**（`/moderation/instances/{domain}`）: 状態と、最新の `instance_availability_events` の理由、最後に配送を再開した日時（最新の `marked_available`）、新しい順の履歴。
+- **連合先の詳細**（`/moderation/instances/{domain}`、[画面](screens/moderation-instance.md)）: 状態と、最新の `instance_availability_events` の理由、最後に配送を再開した日時（最新の `marked_available`）、配送とその試行、新しい順の履歴。
+  「配送」の区画は `GET /admin/instances/{domain}/deliveries` の新しい順の一覧（`RecordList` と「さらに表示」）で、配送ごとに種類・日時・送信者・受信箱・アクティビティの ID と、試行（結果・日時・状態コード・署名の方式・エラー）を出す。アクティビティの中身はどこにも出さない。
+  公開でない配送は送信者・アクティビティの ID・個人の受信箱を伏せた理由を言い、「伏せた項目を表示」（`POST …/deliveries/{id}/reveal`。監査ログに残ることを説明に書く。答えは mutation にだけ持つ）を置く。
+  絞り込みはアクティビティの ID と、このサーバーのアカウント（ユーザー名を `GET /accounts/lookup` で ID に直す。監査ログに残ることを欄の説明で送る前に言う）で、実行のたびに監査ログに残るのでページの state に置き、URL には置かない。
   データモデルは成功した配送の日時を持たない（`instance_health` は失敗の間だけ更新する。[data-model §4.8](../data-model/04-tables/08-federation.md#48-federation)）ので、「最後の成功」は配送の再開の日時で示す。
   失敗の日数があるか停止中なら「配送を再開する」を出し、成功したら詳細の答えを置き換え、一覧と履歴を無効にして結果を知らせる。失敗はトーストで知らせ、状態とボタンを残す（E2）。
   「モデレーション」の区画から、そのドメインのドメインへの処分の画面（`/moderation/domain-actions?domain=…`）へリンクする。「投稿の取り直し」の区画（下の「投稿の取り直し」）を持つ。
@@ -445,7 +448,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
 - **取り消せない操作**（BAN・ドメインの凍結・投稿の削除。NFR-MOD-7）: `@my/ui` の `ConfirmDialog`（APG の alertdialog）を挟む。理由は `ReasonField`、期限は `DurationSelect` をダイアログの中に置く。
   開くと最初の入力欄（なければ「キャンセル」）にフォーカスが移り、Esc で閉じ、閉じると開いたボタンにフォーカスが戻る。失敗はダイアログの中（`errorMessage`）に出して開いたままにし、成功したら閉じて、結果を画面の `StatusMessage`（`role="status"`）に出す。
   操作で開いたボタンが消えるとき（一覧から行が消えるなど）は、`lib/useFocusAfterRemoval.ts` でフォーカスの行き先を決める。
-- **テスト**: `features/admin/admin.test.tsx` が設定の画面の 2 つの区画の出し分けと、ジョブのキューの件数とタイルのリンク・未完了のジョブの表（ペイロードを出さないこと）・絞り込みと URL・一覧できないキュー・一覧とジョブのページからの再実行とフォーカス・その失敗・ジョブのページの事実と試行の履歴・見つからないジョブ・権限を、`features/moderation/instances.test.tsx` が連合先の一覧と絞り込み・ページの読み足し・再開・失敗・403 を MSW で検査する。
+- **テスト**: `features/admin/admin.test.tsx` が設定の画面の 2 つの区画の出し分けと、ジョブのキューの件数とタイルのリンク・未完了のジョブの表（ペイロードを出さないこと）・絞り込みと URL・一覧できないキュー・一覧とジョブのページからの再実行とフォーカス・その失敗・ジョブのページの事実と試行の履歴・見つからないジョブ・権限を、`features/moderation/instances.test.tsx` が連合先の一覧と絞り込み・ページの読み足し・再開・失敗・配送の一覧と伏せた項目の表示と絞り込み・403 を MSW で検査する。
   既定の閲覧者は権限を持たないので、テストは `test/msw/http.ts` の `operatorHandler()` で権限を与える。
   `features/moderation/refetch.test.tsx` は、連合先の詳細・リモートのアカウント・通報のリモートの投稿からの取り直しと送る要求、結果の `StatusMessage`、失敗のトーストとボタン、`manage_domains` のない閲覧者とローカルのアカウントに出さないことを検査する。
   `features/moderation/domainActions.test.tsx` は、一覧の 4 つの列とコメントを出さないこと、詳細のコメントと日時、詳細での解除と見出しへのフォーカスと各一覧への反映、解除の失敗、新しい処分のページでの IDN のドメインの処分（A-label で記録され、両方の形で出る）、必須の入力、`suspend` の確認と取り消し、ダイアログの中とフォームの下の失敗、連合先の詳細からのリンクとドメインの絞り込みと `?domain=` を引き継ぐフォーム、各ページの権限を検査する。
