@@ -7,7 +7,7 @@
 
 ## Decision（決定）
 
-AWS は Cost Explorer を 1 日 1 回（約 $0.31/月。決定者が受け入れた）、Google Cloud は BigQuery の export を 1 日 1 回（無料枠の範囲で $0）読み、予算の Pub/Sub 通知を簡易な方法として残す。どちらも請求月の粒度で取得する。値が変わったときだけ版のイベントを足し、最新の版を投影に持つ。
+AWS は Cost Explorer を 1 日 1 回（約 $0.31/月。決定者が受け入れた）、Google Cloud は BigQuery の export を 1 日 1 回（無料枠の範囲で $0）読み、予算の Pub/Sub 通知を簡易な方法として残す。どちらも請求月の粒度で取得する。Cloudflare は pay-as-you-go のアカウントの従量課金を billable usage の API（公式の SDK）で 1 日 1 回（$0）読み、日ごとの記録を UTC の暦月に合計する（§11）。値が変わったときだけ版のイベントを足し、最新の版を投影に持つ。
 
 ### 1. `BillingSource` ポート
 
@@ -140,11 +140,12 @@ type CostLine struct {
 
 | キー | 内容 |
 | --- | --- |
-| `billing_sources` | 取り込む事業者の一覧（`aws`, `gcp`）。既定は空（取り込まない） |
+| `billing_sources` | 取り込む事業者の一覧（`aws`, `gcp`, `cloudflare`）。既定は空（取り込まない） |
 | `billing_aws_metric`, `billing_aws_filter`, `billing_aws_tag`, `billing_aws_linked_accounts`, `billing_aws_max_requests_per_day`, `billing_aws_max_requests_per_month`, `billing_aws_role_arn` | §4・§6 と下の認証 |
 | `billing_gcp_method`, `billing_gcp_table`（`project.dataset.table`）, `billing_gcp_query_project`, `billing_gcp_projects`, `billing_gcp_label`, `billing_gcp_max_bytes_billed`, `billing_gcp_budget_subscription` | §4・§7 |
+| `billing_cloudflare_account_id`, `billing_cloudflare_api_token`（秘密） | §11 |
 
-- このサーバーの秘密の設定（`MY_*` の secret）は足さない。認証は既存の SNS・Pub/Sub の adapter と同じく SDK の既定の連鎖（AWS は `config.LoadDefaultConfig`、Google Cloud は ADC）に任せ、鍵が要る環境では、その連鎖が読む環境変数とファイルをシークレットストアから渡す（ADR-0019 §6）。
+- このサーバーの秘密の設定（`MY_*` の secret）は足さない（Cloudflare のトークンだけは例外。§11）。認証は既存の SNS・Pub/Sub の adapter と同じく SDK の既定の連鎖（AWS は `config.LoadDefaultConfig`、Google Cloud は ADC）に任せ、鍵が要る環境では、その連鎖が読む環境変数とファイルをシークレットストアから渡す（ADR-0019 §6）。
 
 | 実行環境 | AWS（Cost Explorer） | Google Cloud（BigQuery・Pub/Sub） |
 | --- | --- | --- |
@@ -166,9 +167,7 @@ type CostLine struct {
 - `no_billing_gcp` を付けない build は、予算の方法のために Pub/Sub のクライアントを含む。`no_pubsub` は `stream = pubsub` を外すだけなので、Pub/Sub のクライアントを外すには両方を付ける。
 - 代表の組み合わせ: self-hosted の組に両方、AWS の組に `no_billing_gcp`、Google Cloud の組に `no_billing_aws`。
 
-### 11. Cloudflare adapter（`internal/adapter/billing/cloudflare`、提案）
-
-この節は、SDK を使うこと（決定者が決めた）を除いて**提案**で、決定者の判断を待つ。根拠は spike #2664 の[調査報告](https://github.com/mycroblog/my/issues/2664#issuecomment-6755532016)。
+### 11. Cloudflare adapter（`internal/adapter/billing/cloudflare`）
 
 - **対象**: pay-as-you-go のアカウントの従量課金だけ。Cloudflare の billable usage は Enterprise の契約アカウントを対象にしない。定額のサブスクリプション（Pro・Business のプランなど）・税・クレジット・返金は API が返さないので、運営者は手入力の費用（ADR-0067）か plugin（ADR-0146 §11）で足す。設定の説明に書く。
 - **API**: `GET /accounts/{account_id}/billable-usage/info`（請求周期の基準日 `billing_cycle_anchor_timestamp` と `covered`）と `GET /accounts/{account_id}/billable-usage`（Version 1、Alpha）。`billable-usage` の範囲は周期の基準日を含まないと何も返さないので、取り直す月と重なる周期ごとに 1 回呼ぶ。2 か月で最大 4 要求（`info` 1 回と周期 3 つ）。
@@ -177,15 +176,15 @@ type CostLine struct {
 - **写し方**: `Service` は `ServiceName`、`ChargeType` は常に `usage`（`ChargeCategory` は常に `Usage`）、金額は `ContractedCost`（pay-as-you-go では `BilledCost` と同じ額）、通貨は `BillingCurrency`。月の中で通貨が混ざれば `invalid_response`。区分は既知の製品名の表で決める: Workers・Durable Objects・Queues・Workers AI → `compute`、R2・Workers KV・Images・Stream → `storage`、D1・Hyperdrive → `database`、Argo・Load Balancing・Spectrum → `network`、ほかは `other`。
 - **見込みと確定**: 応答に確定の印はない。暦月 M は、M の末日を含む周期（サブスクリプションごと）がすべて終わり、その終わりから 2 日たった取り込みで `Final` にする。ただし M+1 月の末日を過ぎれば `Final` にする（基準日が月末に近いと、§2 の取り直しの期限を過ぎるため）。2 日は Google Cloud の「翌月 5 日」と同じ暫定値で、`internal/adapter/billing/cloudflare` の定数に持つ。`Covered` は確定の月は暦月の全体、見込みの月は月の初日から記録のある最後の日まで。
 - **費用の上限**: API の課金は文書になく、`finance` の上限（§4 の `RequestCaps`）を持たせない。`Snapshot.Requests` には記録のために要求数を入れる。レート制限（ユーザーごとに 1,200 要求 / 5 分）から遠い。
-- **SDK**（決定者が決めた）: 公式の `github.com/cloudflare/cloudflare-go/v7`（Apache-2.0）を使う。実行ファイルは約 16 MB 増えるが、手書きの client が Alpha の API の変化に遅れる危険を負わない。
+- **SDK**: 公式の `github.com/cloudflare/cloudflare-go/v7`（Apache-2.0）を使う。実行ファイルは約 16 MB 増えるが、手書きの client が Alpha の API の変化に遅れる危険を負わない。
   - `cloudflare.NewClient` と `DefaultClientOptions` を使わず、`billing.NewUsageService` に option を渡して組み立てる。`DefaultClientOptions` は `CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_BASE_URL` などの環境変数を読むため。
   - `option.WithHTTPClient` に `internal/platform` のリダイレクトを追わない専用の `*http.Client` を渡す（AGENTS.md の Design rules）。`option.WithMaxRetries(0)` で SDK の再試行を止め、§9 のジョブの再試行に任せる。
   - 金額は SDK の `float64` の列ではなく、応答の JSON の文字列（`JSON.ContractedCost.Raw()`）から 10 進で読み、丸めずに合計する（§1）。
-- **設定と認証**（§8 に足す）: `billing_sources` に `cloudflare`。`billing_cloudflare_account_id` と、秘密の設定 `billing_cloudflare_api_token`（`MY_BILLING_CLOUDFLARE_API_TOKEN`、`_FILE` でファイルからも読む。ADR-0010、ADR-0019 §6）。トークンはアカウントの Billing Read だけを持つものを勧める。
+- **設定と認証**（§8 の例外）: `billing_sources` に `cloudflare`。`billing_cloudflare_account_id` と、秘密の設定 `billing_cloudflare_api_token`（`MY_BILLING_CLOUDFLARE_API_TOKEN`、`_FILE` でファイルからも読む。ADR-0010、ADR-0019 §6）。トークンはアカウントの Billing Read だけを持つものを勧める。
   Cloudflare には AWS・Google Cloud のような認証の連鎖も実行環境に紐づく資格もないので、§8 の「秘密の設定を足さない」の例外にする。
-- **失敗の種類**（§9 に足す）: 401・403 → `permission`、`info` の `covered: false` → `not_enabled`、404 → `not_found`、429 → `throttled`、5xx・ネットワーク → `unavailable`、封筒の `success: false`・要る列の欠け・1 日を超える記録・通貨の混在 → `invalid_response`。失敗は SDK の `*cloudflare.Error` の `StatusCode` で分ける。
-- **データモデル**（§5 に足す）: `billing_import_runs.source` と `imported_cost_revisions.source` の enum に `cloudflare`。
-- **build tag**（§10 に足す）: `no_billing_cloudflare` は `internal/adapter/billing/cloudflare` と `cloudflare-go` を外し、`billing_sources` の `cloudflare` を拒む。Cloudflare はどの実行環境とも組み合わせて使うので、代表の組み合わせには付けない。
+- **失敗の種類**（§9 の分類）: 401・403 → `permission`、`info` の `covered: false` → `not_enabled`、404 → `not_found`、429 → `throttled`、5xx・ネットワーク → `unavailable`、封筒の `success: false`・要る列の欠け・1 日を超える記録・通貨の混在 → `invalid_response`。失敗は SDK の `*cloudflare.Error` の `StatusCode` で分ける。
+- **データモデル**（§5）: `billing_import_runs.source` と `imported_cost_revisions.source` の enum に `cloudflare`。
+- **build tag**（§10）: `no_billing_cloudflare` は `internal/adapter/billing/cloudflare` と `cloudflare-go` を外し、`billing_sources` の `cloudflare` を拒む。Cloudflare はどの実行環境とも組み合わせて使うので、代表の組み合わせには付けない。
 - **契約テスト**: `BillingSourceContract` の名前の一覧に `cloudflare` を足し、`usage` の行だけを返す事業者のための変種（`BillingTotalsSourceContract` と同じく、筋書きのクレジット・税の行を求めない）を足す。fake は `billable-usage` の HTTP を `httptest` で返す。
 
 ### この決定を覆す条件
@@ -211,7 +210,7 @@ FR-904 は、AWS と Google Cloud の利用料金を定期的に取り込んで�
 
 要求は当初、`billing_import_runs` の `requests` の合計だけで数えていた。記録の前の試行が数に入らないので、同じ事業者の試行が同時に走る（定期のジョブと手動の取り込み、再試行とリースの切れた二重の実行、複数のレプリカ）と、どれも同じ残りを読んで呼ぶので、合わせて日の上限を超えて課金されうる数え方だった。許していたずれ（1 回につき 4 要求、$0.04 まで）は 1 つの試行が止まった場合だけのものだった。#1552 が実装した予約の規則を決定者が採用し、#1469 で数え方を置き換えた（§4）。上限の値、`request_cap` の扱い、Google Cloud の上限は変えていない。
 
-Cloudflare（§11）は spike #2664 の[調査報告](https://github.com/mycroblog/my/issues/2664#issuecomment-6755532016)（2026-11-10 に公式の API リファレンスと Billing の文書で確認。実アカウントでは呼んでいない）による。Cloudflare の従量課金は Version 1（Alpha）の billable usage が返し、pay-as-you-go のアカウントだけが対象で、期間は最初の購入日を基準日とする UTC の周期である。公式の Go SDK は `billing` だけを使っても実行ファイルが約 16 MB 増えるが、決定者は、手書きの client が Alpha の API の変化に遅れる危険より小さいとして SDK を選んだ。
+Cloudflare（§11）は spike #2664 の[調査報告](https://github.com/mycroblog/my/issues/2664#issuecomment-6755532016)（2026-11-10 に公式の API リファレンスと Billing の文書で確認。実アカウントでは呼んでいない）による。Cloudflare の従量課金は Version 1（Alpha）の billable usage が返し、pay-as-you-go のアカウントだけが対象で、期間は最初の購入日を基準日とする UTC の周期である。公式の Go SDK は `billing` だけを使っても実行ファイルが約 16 MB 増えるが、決定者は、手書きの client が Alpha の API の変化に遅れる危険より小さいとして SDK を選び、日ごとの記録を UTC の暦月に合計すること、周期の終わりから 2 日の確定の規則（暫定値）、秘密の設定のトークン、失敗の種類、build tag、契約テストの変種を含む §11 を採った。
 
 ## 採らなかった案
 
@@ -244,6 +243,8 @@ Cloudflare（§11）は spike #2664 の[調査報告](https://github.com/mycrobl
 - 悪い: Google Cloud の export の設定はコンソールでの手作業で、最初の遡りに最大 5 日かかる。
 - 悪い: 記録の前にプロセスが止まった試行の予約は、実際に呼んだ数より多くても上限に数えられ、その日・その月の残りが減る。
 - 悪い: 同じ事業者の試行は 1 つずつしか呼べず、重なった試行は 1 分ずつ遅れる。止まった試行があると、次の取り込みは最大 15 分待つ。`billing_import_reservations` の行は試行ごとに増える。
+- 良い: Cloudflare の従量課金（R2・Workers など）を、plugin を書かずにトークンとアカウント ID だけで $0 で取り込める（§11）。
+- 悪い: Cloudflare の API は Alpha で、定額のプラン・税・クレジットを返さず、Enterprise の契約アカウントは対象外。確定の印もないので「周期の終わりから 2 日」の規則で決める。公式の SDK で実行ファイルが約 16 MB 増える（`no_billing_cloudflare` で外せる）。
 - 後続: #882（M6、決定者）で spike の手順 A-1〜A-4・G-1〜G-5 により、ページ数、`Estimated` が `false` になる日、指標の選び方、タグの絞り込みと税、請求書の発行日、スキャン量、税の行の `project.id`、環境をまたぐ認証を確かめ、暫定値の 15 日と 5 日を見直す。
 
 ## Open Questions / 要検証
