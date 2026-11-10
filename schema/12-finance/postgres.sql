@@ -88,7 +88,7 @@ CREATE TABLE cost_item_heads (
 -- and UTC month of occurred_at.
 CREATE TABLE billing_import_runs (
   id uuid NOT NULL PRIMARY KEY,
-  source text NOT NULL CHECK (source IN ('aws', 'gcp', 'plugin')),
+  source text NOT NULL CHECK (source IN ('aws', 'gcp', 'cloudflare', 'plugin')),
   run_key text COLLATE "C" NOT NULL,
   outcome text NOT NULL CHECK (outcome IN ('succeeded', 'failed')),
   error_kind text NOT NULL CHECK (error_kind IN (
@@ -109,7 +109,7 @@ CREATE INDEX billing_import_runs_run_key ON billing_import_runs (run_key);
 -- requests, so that attempts running at the same time cannot together exceed the caps.
 CREATE TABLE billing_import_reservations (
   id uuid NOT NULL PRIMARY KEY,
-  source text NOT NULL CHECK (source IN ('aws', 'gcp', 'plugin')),
+  source text NOT NULL CHECK (source IN ('aws', 'gcp', 'cloudflare', 'plugin')),
   requests integer NOT NULL CHECK (requests >= 0),
   reserved_at timestamptz NOT NULL
 );
@@ -121,7 +121,7 @@ CREATE INDEX billing_import_reservations_source_reserved_at ON billing_import_re
 -- The attempts of one job write a key once (the unique run_key).
 CREATE TABLE imported_cost_revisions (
   id uuid NOT NULL PRIMARY KEY,
-  source text NOT NULL CHECK (source IN ('aws', 'gcp', 'plugin')),
+  source text NOT NULL CHECK (source IN ('aws', 'gcp', 'cloudflare', 'plugin')),
   billing_month text COLLATE "C" NOT NULL CHECK (billing_month ~ '^[0-9]{4}-[0-1][0-9]$'),
   service text COLLATE "C" NOT NULL CHECK (length(service) BETWEEN 1 AND 200),
   charge_type text NOT NULL CHECK (charge_type IN (
@@ -145,7 +145,7 @@ CREATE UNIQUE INDEX imported_cost_revisions_key_run_key ON imported_cost_revisio
 -- Projection of imported_cost_revisions: the newest revision of each key, updated in the
 -- transaction that adds the revision.
 CREATE TABLE imported_cost_heads (
-  source text NOT NULL CHECK (source IN ('aws', 'gcp', 'plugin')),
+  source text NOT NULL CHECK (source IN ('aws', 'gcp', 'cloudflare', 'plugin')),
   billing_month text COLLATE "C" NOT NULL,
   service text COLLATE "C" NOT NULL,
   charge_type text NOT NULL CHECK (charge_type IN (

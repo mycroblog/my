@@ -51,7 +51,7 @@
     <td width="50%" valign="top">
       <strong>Supporters and open books</strong><br>
       Paid plans through Stripe or PAY.JP that grant roles, badges and the right to add custom emoji. Record what the
-      server costs, import AWS and Google Cloud bills automatically, and publish costs and income to your community.
+      server costs, import AWS, Google Cloud, and Cloudflare charges automatically, and publish costs and income to your community.
     </td>
     <td width="50%" valign="top">
       <strong>Voice rooms</strong><br>

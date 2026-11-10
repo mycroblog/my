@@ -7,7 +7,8 @@ The state of the imports (the last success, the kind of the last failure, and th
 The metrics count every attempt by source, outcome, and kind of failure (`my.billing.imports`) and report the sources whose newest attempt failed (`my.billing.import.failing`);
 [Alerts and runbook](alerts.md#mybillingimportfailing) has the alert on them.
 
-No credentials are kept in this server's configuration. Give the runtime environment what the default credential chain of each provider's SDK reads (for AWS, the execution role, environment variables, or shared credential files; for Google Cloud, Application Default Credentials).
+For AWS and Google Cloud, no credentials are kept in this server's configuration. Give the runtime environment what the default credential chain of each provider's SDK reads (for AWS, the execution role, environment variables, or shared credential files; for Google Cloud, Application Default Credentials).
+Cloudflare has no such chain, so its import reads an API token from [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare).
 
 ## With the OpenTofu modules
 
@@ -22,6 +23,7 @@ The modules [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md)
 | The topic and the pull subscription of a budget, and the subscriber role | `billing-gcp` with `method = "budget"` |
 | Create the budget and connect it to the topic | By hand, in the Google Cloud console, with a role on the billing account |
 | Enable the BigQuery or Pub/Sub API | By hand, as in [Deploying on Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
+| Cloudflare | Not by these modules. Set `MY_BILLING_SOURCES`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID`, and `MY_BILLING_CLOUDFLARE_API_TOKEN` (from a secret) as for a plugin |
 | A plugin | Not by these modules. With no billing module in the `backends`, set `MY_BILLING_SOURCES = plugin` and the settings of [the plugin](#a-plugin-billing_sources--plugin) in the app module's `env`; beside a billing module, the app module refuses `MY_BILLING_SOURCES` in `env`, so add a backend of your own that returns `billing_sources = ["plugin"]` ([the fields of a backend](../../deploy/opentofu/README.md)) |
 
 ## AWS (`billing_sources = aws`)
@@ -281,6 +283,50 @@ The build tag `no_billing_gcp` removes this method too. The Pub/Sub client libra
 | `throttled` | `RESOURCE_EXHAUSTED` | The job retries after a pause |
 | `unavailable` | `UNAVAILABLE`, `INTERNAL`, and the like, network failure | The job retries after a pause |
 | `invalid_response` | A message that cannot be read as a budget notification, a budget that is not monthly, two budgets with the same display name | Make the budget monthly, give the budgets distinct display names, and send no other messages to the topic |
+
+## Cloudflare (`billing_sources = cloudflare`)
+
+The server reads the billable usage of a Cloudflare account: the usage charges of its pay-as-you-go products, such as R2, Workers, and D1, one record per metric and day.
+It sums them by product (`R2`, `Workers`, `D1`) into UTC calendar months, so each product is one usage line a month. Usage within a free allowance is imported too, at 0.
+Only an account billed pay-as-you-go has this data; an Enterprise contract account fails with `not_enabled`.
+A binary built with the build tag `no_billing_cloudflare` refuses `cloudflare` (see [build-tags.md](../reference/build-tags.md)).
+
+### What it does not import
+
+Cloudflare's billable usage holds usage charges alone. Plans and add-ons with a fixed fee (Pro, Business, Workers Paid, and the like), taxes, and credits are not in it, so the costs show only the usage part of the invoice.
+Add the fixed fees as costs of your own on the costs page, or import them from [a plugin](#a-plugin-billing_sources--plugin).
+
+### Billing cycles and final months
+
+Cloudflare bills in cycles that start on the same day of every month, the day of the account's first purchase, in UTC (a cycle that would start on the 31st starts on the last day of a shorter month).
+The invoice of a cycle comes when the cycle ends, so a calendar month spans parts of two cycles. The server reads each cycle that overlaps the months it imports and places every daily record in the calendar month of its day, so a month's lines are the charges of its own days, not of one invoice.
+A month is final once the cycle that holds its last day has ended two days ago, or once the next month is over, whichever comes first. Until then it is an estimate from the first of the month to the last day with data. Cloudflare's data runs a day or two behind.
+
+### Cost and limits
+
+Cloudflare does not bill its API, so the server sets no cap on the requests. An import makes one request for the account's subscriptions and one for each billing cycle it reads: up to four for two months.
+The API allows 1,200 requests every five minutes per user, shared with the dashboard and your other uses of the token's owner.
+
+### Create the API token
+
+1. In the Cloudflare dashboard, open the account, and note its account ID on the account's overview (32 hexadecimal digits).
+2. Under "Manage Account" → "Account API Tokens" (or "My Profile" → "API Tokens"), create a custom token with the single permission **Account** → **Billing** → **Read**, for this account only.
+3. Set `MY_BILLING_SOURCES=cloudflare`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID=<account ID>`, and `MY_BILLING_CLOUDFLARE_API_TOKEN=<token>`, the token from a secret store (or `MY_BILLING_CLOUDFLARE_API_TOKEN_FILE`).
+
+Give the import a token of its own. The server never reads `CLOUDFLARE_API_TOKEN`, which Wrangler and the OpenTofu provider use, so a token that can edit DNS or Workers is not picked up by mistake.
+
+### Kinds of failure
+
+| Kind | Cloudflare response | How to fix |
+| --- | --- | --- |
+| `permission` | `400` with code 9106 (an invalid token), `401`, `403` (the token lacks Billing Read, or the account ID is wrong: Cloudflare answers both with code 10000) | Check the token's permission and `billing_cloudflare_account_id` |
+| `not_enabled` | The account's billable usage is not covered | The account is not billed pay-as-you-go (an Enterprise contract), so there is nothing to import |
+| `not_found` | `404` | Check `billing_cloudflare_account_id` |
+| `throttled` | `429` | The job retries after a pause |
+| `unavailable` | 5xx, network failure | The job retries after a pause |
+| `invalid_response` | An unreadable response, a record over more than one day, two currencies in one month | Cloudflare changed its answer; report it |
+
+Retrying cannot fix a failure other than `throttled` and `unavailable`, so the server records it and stops, and the next day's scheduled import tries again.
 
 ## A plugin (`billing_sources = plugin`)
 

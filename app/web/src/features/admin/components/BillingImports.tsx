@@ -108,6 +108,9 @@ function BillingImportRow({
     <Stack gap="3">
       <Heading level={3}>{source.provider}</Heading>
       {source.method === "budget" && <Hint size="inherit">{t("client:admin.finance.imports.method.budget")}</Hint>}
+      {source.method === "billable_usage" && (
+        <Hint size="inherit">{t("client:admin.finance.imports.method.billable_usage")}</Hint>
+      )}
       <DescriptionList>
         <DescriptionItem term={t("client:admin.finance.imports.time_zone")}>{source.time_zone}</DescriptionItem>
         <DescriptionItem term={t("client:admin.finance.imports.last_success")}>

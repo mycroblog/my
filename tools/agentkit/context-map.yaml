@@ -562,6 +562,12 @@ entries:
     paths: ["internal/adapter/billing/**", "internal/platform/adapters_*billing_plugin.go", "internal/platform/billing_import_plugin_test.go"]
     docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]
     userdocs: ["docs/operations/billing-import.md"]
+  - name: billing-cloudflare
+    paths: ["internal/adapter/billing/cloudflare/**", "internal/platform/adapters_*billing_cloudflare.go", "internal/platform/config/adapters_*billing_cloudflare.go", "internal/platform/billing_import_cloudflare_test.go"]
+    docs: ["docs/adr/0068-billing-import.md#11-cloudflare-adapterinternaladapterbillingcloudflare", "docs/operations/billing-import.md#cloudflare-billing_sources--cloudflare"]
+    userdocs: ["docs/operations/billing-import.md", "docs/reference/build-tags.md"]
+    notes:
+      - "The SDK (cloudflare-go/v7) is built through billing.NewUsageService with explicit options only, never cloudflare.NewClient or DefaultClientOptions, which read CLOUDFLARE_* variables; it takes the dedicated no-redirect client of internal/platform and no retries of its own. Amounts come from the raw JSON (JSON.ContractedCost.Raw()), never the float64 fields. Products are ServiceFamilyName; ServiceName is the metric. A billable-usage request starts on a cycle's first day and its `to` is excluded."
   - name: adapter-payment
     paths: ["internal/adapter/payment/**"]
     docs: ["docs/adr/0074-payment-provider-port.md", "docs/adr/0074-payment-provider-port.md", "docs/operations/payments-stripe.md", "docs/operations/payments-payjp.md"]

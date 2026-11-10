@@ -439,6 +439,10 @@
     "defaultMessage": "予算の通知による概算です。見込みに基づく合計で、サービスごとの内訳はありません。",
     "description": "Note under a provider on the costs screen when Google Cloud is imported from its budget notifications (billing_gcp_method = budget): the figures are approximate."
   },
+  "admin.finance.imports.method.billable_usage": {
+    "defaultMessage": "従量課金だけを製品ごとに取り込みます。プラン・アドオン・税・クレジットは取り込まないので、費用として手で追加してください。",
+    "description": "Note under a provider on the costs screen when Cloudflare is imported from its billable usage (billing_sources = cloudflare): only usage charges by product, without plans, taxes, or credits."
+  },
   "admin.finance.imports.months": {
     "defaultMessage": "{provider}の請求月",
     "description": "Accessible name of the list of a provider's imported billing months on the costs screen."
@@ -460,7 +464,7 @@
     "description": "Result of an import attempt that succeeded."
   },
   "admin.finance.imports.error.permission": {
-    "defaultMessage": "失敗: 認証情報に請求データを読む権限がありません。サーバーのロールかサービスアカウントに権限を付けてください。",
+    "defaultMessage": "失敗: 認証情報に請求データを読む権限がありません。サーバーのロール・サービスアカウント・API トークンに権限を付け、デプロイの設定のアカウントを確かめてください。",
     "description": "Result of an import attempt refused for lack of permission, with how to fix it."
   },
   "admin.finance.imports.error.not_enabled": {

@@ -14,9 +14,11 @@ properties:
       Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
       bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
       `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-      without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
+      without a breakdown by service; `billable_usage` (Cloudflare's billable usage) the usage
+      charges of a pay-as-you-go account by product, without fixed fees, taxes, or credits;
+      `plugin` (the operator's plugin) what the plugin reports.
     type: string
-    enum: [cost_explorer, bigquery, budget, plugin]
+    enum: [cost_explorer, bigquery, budget, billable_usage, plugin]
   time_zone:
     description: |
       The IANA time zone of the provider's billing months (`UTC`, `America/Los_Angeles`, or

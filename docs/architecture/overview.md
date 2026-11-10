@@ -257,6 +257,7 @@ internal/
     valkey/          # Valkey（Redis 互換）への接続（valkey-go）。valkey_url を使うアダプタが共有する
     billing/aws/     # finance.BillingSource の AWS Cost Explorer（GetCostAndUsage の MONTHLY、SERVICE × RECORD_TYPE。ADR-0068 §6）
     billing/gcp/     # finance.BillingSource の Google Cloud（Cloud Billing の BigQuery への export を jobs.query で invoice.month × サービス × cost_type に集計、または予算の Pub/Sub 通知を pull して月ごとの合計の概算。ADR-0068 §7）
+    billing/cloudflare/ # finance.BillingSource の Cloudflare（billable usage の Version 1 を公式 SDK で周期ごとに読み、日ごとの記録を製品 × UTC の暦月に合計。従量課金だけ。ADR-0068 §11）
     billing/plugin/  # finance.BillingSource のプラグインへの委譲。1 つの宛先が source `plugin` で、複数の事業者はプラグインの中で集約する（ADR-0146 §11）
     translator/fake/ # translation.Translator のテスト用の fake（訳は断片の前に翻訳先の言語を付けたもの。提供元を呼ばない）
     translator/plugin/ # translation.Translator を運営者のプラグインへ委譲する（ADR-0146、ADR-0148 §14）。提供元の ID は plugin

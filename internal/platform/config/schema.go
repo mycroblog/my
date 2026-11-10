@@ -810,7 +810,7 @@ var schema = []field{
 	},
 	{
 		key:   "billing_sources",
-		doc:   "Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request), `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`), and `plugin` (a plugin of yours that aggregates any other providers: `plugin_billing_address`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of each provider ([importing cloud costs](../operations/billing-import.md)). The build tags `no_billing_aws`, `no_billing_gcp`, and `no_plugins` leave `aws`, `gcp`, and `plugin` out. Empty imports nothing.",
+		doc:   "Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request), `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`), `cloudflare` (the usage charges of a pay-as-you-go Cloudflare account by product, without plans, taxes, or credits: `billing_cloudflare_account_id`), and `plugin` (a plugin of yours that aggregates any other providers: `plugin_billing_address`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of AWS and Google Cloud, and from `billing_cloudflare_api_token` for Cloudflare ([importing cloud costs](../operations/billing-import.md)). The build tags `no_billing_aws`, `no_billing_gcp`, `no_billing_cloudflare`, and `no_plugins` leave `aws`, `gcp`, `cloudflare`, and `plugin` out. Empty imports nothing.",
 		check: checkBillingSources,
 		set: func(c *Config, v string) {
 			for s := range strings.SplitSeq(v, ",") {
@@ -933,6 +933,20 @@ var schema = []field{
 		requiredWhen: "when `billing_sources` includes `gcp` and `billing_gcp_method = budget`",
 		check:        checkBillingGCPSubscription,
 		set:          func(c *Config, v string) { c.BillingGCPBudgetSubscription = strings.TrimSpace(v) },
+	},
+	{
+		key:          "billing_cloudflare_account_id",
+		doc:          "The Cloudflare account whose usage charges `billing_sources = cloudflare` imports: its account ID, 32 hexadecimal digits, on the account's overview in the dashboard. Only a pay-as-you-go account has them; an Enterprise contract account fails as `not_enabled` ([importing cloud costs](../operations/billing-import.md)).",
+		requiredWhen: "when `billing_sources` includes `cloudflare`",
+		check:        checkBillingCloudflareAccountID,
+		set:          func(c *Config, v string) { c.BillingCloudflareAccountID = strings.TrimSpace(v) },
+	},
+	{
+		key:          "billing_cloudflare_api_token",
+		doc:          "An API token of the account of `billing_cloudflare_account_id` that the Cloudflare imports read with. Give it the account permission Billing Read and nothing else: the imports only read. Use a token of its own rather than one that also edits DNS or Workers; the server never reads `CLOUDFLARE_API_TOKEN` ([importing cloud costs](../operations/billing-import.md)).",
+		requiredWhen: "when `billing_sources` includes `cloudflare`",
+		secret:       true,
+		set:          func(c *Config, v string) { c.BillingCloudflareAPIToken = strings.TrimSpace(v) },
 	},
 	{
 		key: "payments",
@@ -1634,6 +1648,11 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if slices.Contains(splitList(vals["billing_sources"]), "gcp") && vals["billing_gcp_method"] == "budget" && !present["billing_gcp_budget_subscription"] {
 		issues = append(issues, Issue{Key: "billing_gcp_budget_subscription", Missing: true, Message: "required when billing_sources includes gcp and billing_gcp_method is budget"})
 	}
+	for _, key := range []string{"billing_cloudflare_account_id", "billing_cloudflare_api_token"} {
+		if slices.Contains(splitList(vals["billing_sources"]), "cloudflare") && !present[key] {
+			issues = append(issues, Issue{Key: key, Missing: true, Message: "required when billing_sources includes cloudflare"})
+		}
+	}
 	if vals["payments"] == "fake" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "payments", Message: "fake is refused in the production profile: it records payments as paid without any money moving; set profile = development"})
 	}
@@ -1688,7 +1707,7 @@ func checkRatio(v string) error {
 }
 
 // billingSourceNames are the values of billing_sources (ADR-0068).
-var billingSourceNames = []string{"aws", "gcp", "plugin"}
+var billingSourceNames = []string{"aws", "gcp", "cloudflare", "plugin"}
 
 // The defaults of the AWS request caps (ADR-0068 §4); finance.DefaultAWSRequestsPerDay and
 // _PerMonth are the same.
@@ -1703,7 +1722,7 @@ func checkBillingSources(v string) error {
 	for s := range strings.SplitSeq(v, ",") {
 		s = strings.TrimSpace(s)
 		if !slices.Contains(billingSourceNames, s) {
-			return fmt.Errorf("%q is not a billing source; use aws, gcp, or plugin, comma-separated", s)
+			return fmt.Errorf("%q is not a billing source; use aws, gcp, cloudflare, or plugin, comma-separated", s)
 		}
 		if tag, ok := excludedValues["billing_sources"][s]; ok {
 			return excludedError(s, tag)

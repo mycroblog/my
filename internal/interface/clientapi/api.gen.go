@@ -1182,16 +1182,19 @@ func (e BadgeColor) Valid() bool {
 
 // Defines values for BillingImportMethod.
 const (
-	BillingImportMethodBigquery     BillingImportMethod = "bigquery"
-	BillingImportMethodBudget       BillingImportMethod = "budget"
-	BillingImportMethodCostExplorer BillingImportMethod = "cost_explorer"
-	BillingImportMethodPlugin       BillingImportMethod = "plugin"
+	BillingImportMethodBigquery      BillingImportMethod = "bigquery"
+	BillingImportMethodBillableUsage BillingImportMethod = "billable_usage"
+	BillingImportMethodBudget        BillingImportMethod = "budget"
+	BillingImportMethodCostExplorer  BillingImportMethod = "cost_explorer"
+	BillingImportMethodPlugin        BillingImportMethod = "plugin"
 )
 
 // Valid indicates whether the value is a known member of the BillingImportMethod enum.
 func (e BillingImportMethod) Valid() bool {
 	switch e {
 	case BillingImportMethodBigquery:
+		return true
+	case BillingImportMethodBillableUsage:
 		return true
 	case BillingImportMethodBudget:
 		return true
@@ -1284,15 +1287,18 @@ func (e BillingImportRunOutcome) Valid() bool {
 
 // Defines values for BillingSourceName.
 const (
-	BillingSourceNameAws    BillingSourceName = "aws"
-	BillingSourceNameGcp    BillingSourceName = "gcp"
-	BillingSourceNamePlugin BillingSourceName = "plugin"
+	BillingSourceNameAws        BillingSourceName = "aws"
+	BillingSourceNameCloudflare BillingSourceName = "cloudflare"
+	BillingSourceNameGcp        BillingSourceName = "gcp"
+	BillingSourceNamePlugin     BillingSourceName = "plugin"
 )
 
 // Valid indicates whether the value is a known member of the BillingSourceName enum.
 func (e BillingSourceName) Valid() bool {
 	switch e {
 	case BillingSourceNameAws:
+		return true
+	case BillingSourceNameCloudflare:
 		return true
 	case BillingSourceNameGcp:
 		return true
@@ -5385,7 +5391,7 @@ type AdminAppealPage struct {
 // posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
 // `account_statuses_refetch_queued` on an `account`, and `domain_statuses_refetch_queued`
 // on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
-// the ID is the source (`aws`, `gcp`, `plugin`) and the label the provider's name. On a `cost_item`:
+// the ID is the source (`aws`, `gcp`, `cloudflare`, `plugin`) and the label the provider's name. On a `cost_item`:
 // `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
 // `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 // the item's name. On the `supporter_program`: `supporter_program_enabled`,
@@ -5465,7 +5471,7 @@ type AdminAuditEntry struct {
 	// posts from their servers: `status_refetch_queued` on a `status` (the label is its URI),
 	// `account_statuses_refetch_queued` on an `account`, and `domain_statuses_refetch_queued`
 	// on a `domain`. On a `billing_source`: `billing_import_queued`, an import started by hand;
-	// the ID is the source (`aws`, `gcp`, `plugin`) and the label the provider's name. On a `cost_item`:
+	// the ID is the source (`aws`, `gcp`, `cloudflare`, `plugin`) and the label the provider's name. On a `cost_item`:
 	// `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
 	// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 	// the item's name. On the `supporter_program`: `supporter_program_enabled`,
@@ -7827,7 +7833,9 @@ type BillingImport struct {
 	// Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 	// bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 	// `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-	// without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
+	// without a breakdown by service; `billable_usage` (Cloudflare's billable usage) the usage
+	// charges of a pay-as-you-go account by product, without fixed fees, taxes, or credits;
+	// `plugin` (the operator's plugin) what the plugin reports.
 	Method BillingImportMethod `json:"method"`
 
 	// Months The billing months of the last year with imported costs, newest first.
@@ -7855,7 +7863,9 @@ type BillingImport struct {
 // Explorer) and `bigquery` (the Cloud Billing export to BigQuery, `billing_gcp_method =
 // bigquery`) by service and charge type; `budget` (the notifications of a Cloud Billing budget,
 // `billing_gcp_method = budget`) an approximation, one estimated total per budget and month
-// without a breakdown by service; `plugin` (the operator's plugin) what the plugin reports.
+// without a breakdown by service; `billable_usage` (Cloudflare's billable usage) the usage
+// charges of a pay-as-you-go account by product, without fixed fees, taxes, or credits;
+// `plugin` (the operator's plugin) what the plugin reports.
 type BillingImportMethod string
 
 // BillingImportList The billing sources and the state of their imports.
