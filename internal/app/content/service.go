@@ -146,6 +146,10 @@ type Deps struct {
 	RemoteMedia RemoteMediaRecorder
 	// Quotes stores the quotes of statuses (ADR-0069); nil records none.
 	Quotes QuoteRepository
+	// ReconsiderRequests approves the pending requests of interactions with a status that its new
+	// rules admit at once (Interactions.ReconsiderRequests, ADR-0155 §3); nil leaves them to the
+	// author.
+	ReconsiderRequests func(ctx context.Context, statusID string) error
 	// MaxStatusLength returns the current max_status_length instance setting (FR-101); it is
 	// read per command, so that changes apply at once.
 	MaxStatusLength func(ctx context.Context) (int, error)

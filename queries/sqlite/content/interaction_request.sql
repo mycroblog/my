@@ -67,6 +67,15 @@ WHERE s.target_account_id = sqlc.arg(account_id) AND s.state = 'pending'
   AND (CAST(@before AS TEXT) = '' OR s.request_id < CAST(@before AS TEXT))
 ORDER BY s.request_id DESC LIMIT @page_limit;
 
+-- ListPendingInteractionRequestsTo returns the pending requests of interactions with the status
+-- target_uri, oldest first.
+-- name: ListPendingInteractionRequestsTo :many
+SELECT r.id, r.kind, r.direction, r.target_uri, r.target_account_id, r.interacting_uri, r.interacting_account_id,
+  r.activity_uri, r.visibility, r.created_at
+FROM interaction_requests r JOIN interaction_request_states s ON s.request_id = r.id
+WHERE r.target_uri = @target_uri AND s.state = 'pending'
+ORDER BY r.id;
+
 -- ListOwnInteractionStates returns the states of the replies and boosts of an account among
 -- uris: its replies whose URI is among them, and its boosts of the statuses among them.
 -- name: ListOwnInteractionStates :many

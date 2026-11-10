@@ -210,6 +210,57 @@ func (s *Interactions) AnswerInteractionRequest(ctx context.Context, accountID, 
 	return out, err
 }
 
+// ReconsiderRequests approves the pending requests of interactions with the local status
+// statusID that its rules admit at once now (ADR-0155 §3): after its author widened them. The
+// others keep waiting for the author's answer. An approval is answered as the author's would be
+// (InteractionAnswered.Deferred).
+func (s *Interactions) ReconsiderRequests(ctx context.Context, statusID string) error {
+	if s.d.Quotes == nil {
+		return nil
+	}
+	target, err := s.audience().live(ctx, statusID)
+	if err != nil || !target.IsLocal {
+		return err
+	}
+	pending, err := s.d.Quotes.ListPendingInteractionRequestsTo(ctx, target.URI)
+	if err != nil {
+		return err
+	}
+	for _, r := range pending {
+		var d content.InteractionDecision
+		switch r.Direction {
+		case content.DirectionInbound:
+			d, err = s.remoteVerdict(ctx, r.Kind, r.InteractingAccountID, target)
+		case content.DirectionLocal:
+			d, err = s.interactionReaders().mayInteract(ctx, r.Kind, r.InteractingAccountID, true, nil, target)
+		default:
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if d != content.InteractionAllowed {
+			continue
+		}
+		err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			cur, err := s.approvals().state(ctx, tx, r)
+			if err != nil || cur.State != content.InteractionRequestPending {
+				return err
+			}
+			uri, err := s.approvals().authorize(ctx, tx, r.Kind, r.InteractingURI, r.InteractingAccountID, target)
+			if err != nil {
+				return err
+			}
+			_, err = s.answerTx(ctx, tx, r, answer{kind: content.InteractionEventAccepted, authorization: uri, deferred: true}, target)
+			return err
+		})
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // ReceiveInteractionAnswer records the answer of a remote server to the request requestID of a
 // local account's reply or boost of a remote status (ADR-0155 §7): the authorization that the
 // federation module verified when accepted, "" when rejected. An approved reply is released into

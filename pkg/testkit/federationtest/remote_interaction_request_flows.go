@@ -215,6 +215,34 @@ func remoteHoldsRepliesWithoutRequests(t *testing.T, e *remoteInteractionEnv) {
 	if got := e.replies(t, "", closed.Status.ID); len(got) != 0 {
 		t.Errorf("replies of the closed post = %v, want none", got)
 	}
+
+	// A pending reply that wider rules admit at once is approved when the author widens them;
+	// the refused one stays refused.
+	waiting := e.manualPost(t, author)
+	e.expect(t, remoteActivity(t, "Create", carol+"/notes/3/activity", carol, remoteNote(carol+"/notes/3", carol, remoteNow.Add(-time.Minute),
+		map[string]any{"inReplyTo": waiting.URI})), appfederation.InboxHandled)
+	third := e.post(t, carol+"/notes/3").Status
+	if got := e.replies(t, "", waiting.ID); len(got) != 0 {
+		t.Fatalf("replies before the change = %v, want none", got)
+	}
+	open := appcontent.InteractionPolicyChange{content.InteractionReply: {Automatic: content.AudienceEveryone}}
+	for _, st := range []content.Status{waiting, closed.Status} {
+		if _, err := e.content.SetInteractionPolicy(ctx, author, st.ID, open); err != nil {
+			t.Fatal(err)
+		}
+		if err := e.interactions.ReconsiderRequests(ctx, st.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got := e.replies(t, "", waiting.ID); !slices.Equal(got, []string{third.ID}) {
+		t.Errorf("replies after widening the rules = %v, want %s", got, third.ID)
+	}
+	if sent := e.quoteActivities(t, federation.OutboundQuote, waiting.ID); len(sent) != 1 || sent[0].Type != federation.ActivityAccept {
+		t.Errorf("answers after widening the rules = %+v, want an Accept", sent)
+	}
+	if got := e.replies(t, "", closed.Status.ID); len(got) != 0 {
+		t.Errorf("replies of the refused reply's post after widening = %v, want none", got)
+	}
 }
 
 func remoteRequestsLocalRepliesAndBoosts(t *testing.T, e *remoteInteractionEnv) {

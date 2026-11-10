@@ -24,12 +24,16 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 	content.RegisterApprovalProjectors(a.Projectors, quotes)
 	a.Content = content.NewService(content.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: statuses, Accounts: a.Accounts, Relationships: a.Graph,
-		Restrictions:             a.AccountPolicy.Content(),
-		Media:                    medias,
-		RemoteMentions:           remoteMentions{a}, // reads a.RemoteActors, built by setUpRemoteActors
-		Sanitizer:                newHTMLSanitizer(),
-		RemoteMedia:              remoteMediaRecorder{a}, // reads a.Media, built by setMedia
-		Quotes:                   quotes,
+		Restrictions:   a.AccountPolicy.Content(),
+		Media:          medias,
+		RemoteMentions: remoteMentions{a}, // reads a.RemoteActors, built by setUpRemoteActors
+		Sanitizer:      newHTMLSanitizer(),
+		RemoteMedia:    remoteMediaRecorder{a}, // reads a.Media, built by setMedia
+		Quotes:         quotes,
+		// Reads a.Interactions, built below.
+		ReconsiderRequests: func(ctx context.Context, statusID string) error {
+			return a.Interactions.ReconsiderRequests(ctx, statusID)
+		},
 		DefaultInteractionPolicy: a.defaultInteractionPolicy,
 		MaxStatusLength:          a.Instance.MaxStatusLength,
 		RequireMediaDescription:  a.Instance.RequireMediaDescription,

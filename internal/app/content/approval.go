@@ -89,6 +89,9 @@ type ApprovalRepository interface {
 	// empty) that wait for the answer of the author accountID, whose ID is below before ("" for
 	// the newest), newest first.
 	ListPendingInteractionRequests(ctx context.Context, accountID string, kinds []content.InteractionKind, before string, limit int) ([]content.InteractionRequest, error)
+	// ListPendingInteractionRequestsTo returns the pending requests of the interactions with the
+	// status targetURI, oldest first.
+	ListPendingInteractionRequestsTo(ctx context.Context, targetURI string) ([]content.InteractionRequest, error)
 	// ListOwnInteractions returns the requests of the replies of accountID whose URI is among
 	// uris, and of its boosts of the statuses among uris, with their states, with one query.
 	ListOwnInteractions(ctx context.Context, accountID string, uris []string) ([]OwnInteraction, error)
