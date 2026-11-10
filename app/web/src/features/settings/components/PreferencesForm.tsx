@@ -19,11 +19,9 @@ import {
 } from "@my/ui";
 import { type ReactNode, useId, useRef } from "react";
 import {
+  InteractionPolicyFields,
   isVisibility,
   languageOptions,
-  quotePolicies,
-  quotePolicyDescription,
-  quotePolicyLabel,
   useOfferedVisibilities,
   visibilityDescription,
   visibilityLabel,
@@ -50,13 +48,15 @@ export function PreferencesForm() {
     locale,
     timeZone,
     defaultVisibility,
-    defaultQuotePolicy,
+    defaultInteractionPolicy,
     defaultPostLanguage,
     requireMediaDescription,
     timelineLanguages,
     timelineAutoInsert,
     linkCardSize,
   } = usePreferences();
+  const policyLabelId = useId();
+  const policyDescriptionId = useId();
   // A one-person server takes no default of `local` (ADR-0152 §5) and reads a stored one as `private`.
   const offeredVisibilities = useOfferedVisibilities();
   return (
@@ -115,24 +115,18 @@ export function PreferencesForm() {
               ))}
             </RadioGroup>
           </Autosaved>
-          <Autosaved state={defaultQuotePolicy.saveState}>
-            <RadioGroup
-              label={t("client:settings.default_quote_policy.label")}
-              description={t("client:settings.default_quote_policy.description")}
-              value={defaultQuotePolicy.value}
-              onChange={(value) => {
-                const policy = quotePolicies.find((p) => p === value);
-                if (policy !== undefined) defaultQuotePolicy.onChange(policy);
-              }}
-              isInvalid={defaultQuotePolicy.error !== undefined}
-              errorMessage={defaultQuotePolicy.error}
-            >
-              {quotePolicies.map((policy) => (
-                <Radio key={policy} value={policy} description={t(quotePolicyDescription[policy])}>
-                  {t(quotePolicyLabel[policy])}
-                </Radio>
-              ))}
-            </RadioGroup>
+          <Autosaved state={defaultInteractionPolicy.saveState}>
+            <Stack gap="2" role="group" aria-labelledby={policyLabelId} aria-describedby={policyDescriptionId}>
+              <Text as="p" id={policyLabelId} weight="medium">
+                {t("client:settings.default_interaction_policy.label")}
+              </Text>
+              <Hint id={policyDescriptionId}>{t("client:settings.default_interaction_policy.description")}</Hint>
+              <InteractionPolicyFields
+                value={defaultInteractionPolicy.value}
+                onChange={defaultInteractionPolicy.onChange}
+                errors={defaultInteractionPolicy.errors}
+              />
+            </Stack>
           </Autosaved>
           <DefaultPostLanguageSelect control={defaultPostLanguage} />
           <Autosaved state={requireMediaDescription.saveState}>

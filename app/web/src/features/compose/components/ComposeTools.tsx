@@ -7,7 +7,6 @@ import {
   ImageIcon,
   LanguageIcon,
   PollIcon,
-  QuoteIcon,
   Select,
   SelectItem,
   Tooltip,
@@ -18,8 +17,8 @@ import {
 import { useId } from "react";
 import { useT } from "../../../lib/i18n";
 import { acceptedMediaTypes, maxAttachments } from "../hooks/policy";
-import { quotePolicies, quotePolicyLabel } from "../hooks/quotePolicyMessages";
 import type { ReadyComposeForm } from "../hooks/useComposeForm";
+import { InteractionPolicyPicker } from "./InteractionPolicyPicker";
 import { VisibilityPicker } from "./VisibilityPicker";
 
 export type ComposeToolsProps = { form: ReadyComposeForm };
@@ -27,12 +26,12 @@ export type ComposeToolsProps = { form: ReadyComposeForm };
 /**
  * The tools of the form, in one row under the text, by weight (web-client/screens/compose.md): first the visibility,
  * which decides most about the post, as a `secondary` button with the chosen level's icon and name; then, after a
- * rule, images, poll, content warning, who may quote the post (FR-114) and language as `ghost` buttons
+ * rule, images, poll, content warning, who may reply to, boost, and quote the post (ADR-0155) and language as `ghost` buttons
  * (web-client/12-compose.md §12); the emoji picker is in the corner of the text (ADR-0091 §4).
  * Every control is a button of the same height, so the row stays level at every width. The icon-only buttons are named by aria-label and show the same words as a tooltip
  * (G12); each control also says its current value: the images attached (description), the poll and the warning
- * (aria-pressed), the visibility (its name and who can see it), and the quote policy and the language (the selects
- * show them).
+ * (aria-pressed), the visibility (its name and who can see it), who may interact (its name and tooltip say the
+ * effective policy), and the language (the select shows it).
  */
 export function ComposeTools({ form }: ComposeToolsProps) {
   const t = useT();
@@ -43,7 +42,6 @@ export function ComposeTools({ form }: ComposeToolsProps) {
   const addLabel = t("client:compose.media.add");
   const warningLabel = t("client:compose.warning.toggle");
   const pollLabel = t("client:compose.poll.toggle");
-  const quotePolicyName = t(quotePolicyLabel[form.quotePolicy]);
   const languageName = form.languages.find((option) => option.id === form.language)?.name ?? form.language;
   return (
     <Cluster align="center" gap="2" shrink>
@@ -95,24 +93,11 @@ export function ComposeTools({ form }: ComposeToolsProps) {
         >
           <WarningIcon filled={draft.hasWarning} />
         </IconToggleButton>
-        <Select
-          variant="toolbar"
-          aria-label={t("client:compose.quote_policy.label")}
-          tooltip={t("client:compose.quote_policy.tooltip", { value: quotePolicyName })}
-          icon={<QuoteIcon />}
-          items={quotePolicies.map((id) => ({ id, name: t(quotePolicyLabel[id]) }))}
-          value={form.quotePolicy}
-          onChange={(quotePolicy) => {
-            if (quotePolicy === "public" || quotePolicy === "followers" || quotePolicy === "nobody")
-              form.edit({ quotePolicy });
-          }}
-        >
-          {(option) => (
-            <SelectItem id={option.id} textValue={option.name}>
-              {option.name}
-            </SelectItem>
-          )}
-        </Select>
+        <InteractionPolicyPicker
+          value={form.interactionPolicy}
+          onChange={form.setInteractionRule}
+          visibility={form.visibility}
+        />
         <Select
           variant="toolbar"
           aria-label={t("client:compose.language.label")}

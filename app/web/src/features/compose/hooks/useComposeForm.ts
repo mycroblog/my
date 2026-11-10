@@ -19,15 +19,19 @@ import {
   instanceQueryOptions,
   type PostingLimits,
   preferencesQueryOptions,
-  type QuotePolicy,
-  quotePolicyChange,
-  quotePolicyOf,
   type Status,
   statusQueryOptions,
   statusRejection,
   type Visibility,
 } from "../api/compose";
 import { type Draft, isEmptyDraft, type Rejection } from "./draftStore";
+import {
+  type InteractionKind,
+  type InteractionPolicy,
+  type InteractionRule,
+  isOpenRule,
+  withChange,
+} from "./interactionPolicy";
 import { newPoll, type PollDraft, pollProblem, pollRequest, withOption, withoutOption } from "./poll";
 import { type LanguageOption, languageOptions } from "./languages";
 import { countCharacters, chosenVisibility, domainMentions, postedVisibility } from "./policy";
@@ -97,8 +101,15 @@ export type ReadyComposeForm = {
   /** The post quoted (FR-114). */
   quoteOf: ReplyTarget;
   cancelQuote: () => void;
-  /** Who may quote the post: the chosen policy, or the preference. */
-  quotePolicy: QuotePolicy;
+  /**
+   * Who may reply to, boost, and quote the post (ADR-0155 §10): the rules chosen in the form over the defaults of the
+   * preferences, as the server gives the post.
+   */
+  interactionPolicy: InteractionPolicy;
+  /** Whether a rule of the post admits less than everyone at once: the form then says who may interact. */
+  isPolicyRestricted: boolean;
+  /** Chooses the rule of one kind for this post, in place of the default. */
+  setInteractionRule: (kind: InteractionKind, rule: InteractionRule) => void;
   attachments: Attachments;
   /** Whether files can be attached: not to a post with a poll (FR-112), and up to the limit. */
   canAttach: boolean;
@@ -190,7 +201,7 @@ function requestBody(draft: Draft, visibility: Visibility, language: string): Cr
     ...(draft.poll === null ? {} : { poll: pollRequest(draft.poll) }),
     ...(draft.replyToId === null ? {} : { in_reply_to_id: draft.replyToId }),
     ...(draft.quoteId === null ? {} : { quoted_status_id: draft.quoteId }),
-    ...(draft.quotePolicy === null ? {} : { interaction_policy: quotePolicyChange(draft.quotePolicy) }),
+    ...(Object.keys(draft.interactionPolicy).length === 0 ? {} : { interaction_policy: draft.interactionPolicy }),
   };
 }
 
@@ -328,7 +339,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const { default_post_language: preferredLanguage, require_media_description: requireDescriptions } = preferences.data;
   const replyTo = targetOf(draft.replyToId, replyPost, replyQuery.isError);
   const quoteOf = targetOf(draft.quoteId, draft.quoteId === null ? undefined : quoteQuery.data, quoteQuery.isError);
-  const quotePolicy = draft.quotePolicy ?? quotePolicyOf(preferences.data.default_interaction_policy.quote);
+  const interactionPolicy = withChange(preferences.data.default_interaction_policy, draft.interactionPolicy);
   const ownDomain = accountDomain.toLowerCase();
   const staysLocal =
     !reachesRemote &&
@@ -420,7 +431,15 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     cancelQuote: () => {
       store.edit({ quoteId: null });
     },
-    quotePolicy,
+    interactionPolicy,
+    isPolicyRestricted: !(
+      isOpenRule(interactionPolicy.reply) &&
+      isOpenRule(interactionPolicy.announce) &&
+      isOpenRule(interactionPolicy.quote)
+    ),
+    setInteractionRule: (kind, rule) => {
+      store.edit({ interactionPolicy: { ...draft.interactionPolicy, [kind]: rule } });
+    },
     attachments,
     canAttach: attachments.canAdd && draft.poll === null,
     takesFiles: draft.poll === null,

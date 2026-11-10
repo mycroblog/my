@@ -144,6 +144,13 @@ export function relationshipFixture(
 }
 
 /** An `InteractionPolicy` that lets everyone reply, boost, and quote at once: a new user's default. */
+/** What a signed-in viewer may do with a post whose policy admits everyone at once (`Status.permissions`). */
+export const permissionsFixture: Schemas["InteractionPermissions"] = {
+  reply: "allowed",
+  announce: "allowed",
+  quote: "allowed",
+};
+
 export const interactionPolicyFixture: Schemas["InteractionPolicy"] = {
   reply: { automatic: "everyone" },
   announce: { automatic: "everyone" },

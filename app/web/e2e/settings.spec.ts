@@ -873,8 +873,8 @@ test.describe("display language", () => {
 
     // The note that changes save at once, then the sections: Display (the display language and time zone selects,
     // the theme radio group, the autoplay switch), Navigation (the tab bar preview, the items, and the button that
-    // restores them), New posts (the visibility and quote radio groups, the default post language select, the switch
-    // that asks for descriptions), and Timelines (the languages group and the switch that shows new posts at once).
+    // restores them), New posts (the visibility radio group, the group of who may reply, boost, and quote with a select and a
+    // checkbox of each, the default post language select, the switch that asks for descriptions), and Timelines (the languages group and the switch that shows new posts at once).
     await expect(page.getByRole("main")).toMatchAriaSnapshot(`
       - heading [level=1]
       - link
@@ -904,10 +904,15 @@ test.describe("display language", () => {
           - radio
           - radio
           - radio
-        - radiogroup:
-          - radio
-          - radio
-          - radio
+        - group:
+          - paragraph
+          - paragraph
+          - button
+          - checkbox
+          - button
+          - checkbox
+          - button
+          - checkbox
         - button
         - switch
       - region:

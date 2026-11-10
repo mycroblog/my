@@ -166,6 +166,29 @@ describe("preferences", () => {
     expect((await screen.findAllByText("Saved")).length).toBeGreaterThan(0);
   });
 
+  test("who may reply to, boost, and quote new posts is saved one kind at a time", async () => {
+    const prefs = preferencesServer();
+    const { user } = await renderApp({ path: "/settings/preferences" });
+    const group = await screen.findByRole("group", { name: "Who can reply to, boost, and quote your new posts" });
+
+    await user.click(within(group).getByRole("button", { name: "Anyone Who can boost" }));
+    await user.click(await screen.findByRole("option", { name: "Followers and people you mention" }));
+    expect(
+      await within(group).findByRole("button", { name: "Followers and people you mention Who can boost" }),
+    ).toBeInTheDocument();
+    await user.click(within(group).getByRole("checkbox", { name: "Others can boost with your approval" }));
+
+    await waitFor(() => {
+      expect(prefs.changes).toEqual([
+        { default_interaction_policy: { announce: { automatic: "followers" } } },
+        { default_interaction_policy: { announce: { automatic: "followers", manual: "everyone" } } },
+      ]);
+    });
+    expect(within(group).getByRole("checkbox", { name: "Others can boost with your approval" })).toBeChecked();
+    // Everyone may still reply at once, so there is no one left to approve.
+    expect(within(group).getByRole("checkbox", { name: "Others can reply with your approval" })).toBeDisabled();
+  });
+
   test("a preference shows that it is saving right after the change, and then that it is saved, beside it", async () => {
     const prefs = preferencesServer();
     let answer: () => void = () => undefined;
