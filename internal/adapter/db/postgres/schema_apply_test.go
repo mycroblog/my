@@ -210,6 +210,26 @@ func TestApplySchemaAddsAColumn(t *testing.T) {
 	}
 }
 
+func TestApplySchemaChangesTheExpressionOfACheck(t *testing.T) {
+	pgtest.RequireRealServer(t)
+	url := pgtest.NewEmptyDatabase(t)
+	probe := func(values string) string {
+		return schema.Postgres + "\nCREATE TABLE probe_kinds (kind text NOT NULL CONSTRAINT probe_kinds_kind_check CHECK (kind IN (" + values + ")));\n"
+	}
+	mustApply(t, url, probe("'a'"), schemaapply.Options{})
+	r := mustApply(t, url, probe("'a', 'b'"), schemaapply.Options{})
+	if !r.Applied || len(r.Drops) > 0 {
+		t.Fatalf("applying a changed CHECK = %+v, want it applied with nothing dropped", r)
+	}
+	def := query(t, url, "SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conname = 'probe_kinds_kind_check'")
+	if len(def) != 1 || !strings.Contains(def[0], "'b'") {
+		t.Errorf("the CHECK after the apply = %q, want one that allows 'b'", def)
+	}
+	if again := mustApply(t, url, probe("'a', 'b'"), schemaapply.Options{}); len(again.Statements) > 0 {
+		t.Errorf("ApplySchema after the change = %+v, want nothing to do", again)
+	}
+}
+
 func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 	pgtest.RequireRealServer(t)
 	url := pgtest.NewEmptyDatabase(t)

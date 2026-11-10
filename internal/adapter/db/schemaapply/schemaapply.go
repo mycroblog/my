@@ -70,8 +70,12 @@ func Drops(changes []schema.Change) []string {
 // Run diffs current (the target database) with desired on drv, plans the changes, and, unless
 // there are none, opts.DryRun is set, or the plan is destructive without
 // opts.AllowDestructive, calls apply with them. apply runs the changes in one transaction.
+//
+// Both schemas are inspected from a database (desired from the dev database the adapter
+// executed the schema on), so the diff runs in Atlas's normalized mode. Without it, Atlas
+// matches a CHECK by its name alone and never sees that its expression changed.
 func Run(ctx context.Context, drv migrate.Driver, current, desired *schema.Schema, opts Options, apply func([]schema.Change) error) (Result, error) {
-	changes, err := drv.SchemaDiff(current, desired)
+	changes, err := drv.SchemaDiff(current, desired, schema.DiffNormalized())
 	if err != nil {
 		return Result{}, fmt.Errorf("diff: %w", err)
 	}
