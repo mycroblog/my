@@ -296,7 +296,9 @@ const openMenu: NonNullable<Story["play"]> = async (context) => {
   const more = await canvas.findAllByRole("button", { name: "More actions" });
   await userEvent.click(more[more.length > 1 ? 1 : 0] as HTMLElement);
   await waitFor(async () => {
-    await expect(within(document.body).getByRole("menuitem", { name: /^Mute / })).not.toHaveAttribute("aria-disabled");
+    await expect(within(document.body).getByRole("menuitem", { name: /^Mute (?!this thread)/ })).not.toHaveAttribute(
+      "aria-disabled",
+    );
   });
 };
 

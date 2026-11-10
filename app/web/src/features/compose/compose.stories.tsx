@@ -194,7 +194,9 @@ export const Scheduling: Story = {
     const dialog = within(await openCompose(context));
     await userEvent.type(dialog.getByRole("textbox", { name: "Your post" }), "The market opens at nine tomorrow.");
     await userEvent.click(dialog.getByRole("button", { name: "Schedule the post" }));
-    await expect(await within(document.body).findByRole("dialog", { name: "Schedule the post" })).toBeVisible();
+    // The popover enters with a transition from opacity 0: it is visible once the transition has run.
+    const picker = await within(document.body).findByRole("dialog", { name: "Schedule the post" });
+    await waitFor(() => expect(picker).toBeVisible());
   },
 };
 
@@ -204,7 +206,9 @@ export const SaveWhileEmpty: Story = {
     const { userEvent } = context;
     const dialog = within(await openCompose(context));
     await userEvent.click(dialog.getByRole("button", { name: "Save draft" }));
-    await expect(await dialog.findByText("There is nothing to save yet.")).toBeVisible();
+    // The result enters with a transition from opacity 0 (@starting-style): it is visible once the transition has run.
+    const reason = await dialog.findByText("There is nothing to save yet.");
+    await waitFor(() => expect(reason).toBeVisible());
   },
 };
 
