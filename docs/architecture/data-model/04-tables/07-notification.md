@@ -13,6 +13,7 @@
 | `push_subscription_alerts` | 現在値 | `subscription_id`, `notification_type` | PK `(subscription_id, notification_type)` |
 | `post_subscriptions` | 現在値 | `account_id`（購読する人）, `target_account_id`（対象のアカウント）, `created_at` | PK `(account_id, target_account_id)`。CHECK `account_id <> target_account_id`。インデックス `(account_id, created_at, target_account_id)`（購読の一覧。新しい順のキーセット）、`(target_account_id, account_id)`（投稿の通知の購読者の走査）。1 人あたり 1,000 件まで（ADR-0086） |
 | `post_subscription_requests` | 現在値 | `account_id`, `target_account_id`, `created_at` | PK `(account_id, target_account_id)`。インデックス `(target_account_id, account_id)`。承認待ちのリモートのフォローと同時に頼まれた購読 |
+| `conversation_mutes` | 現在値 | `account_id`（ミュートした人）, `conversation_id`（`content` の `conversations`）, `created_at` | PK `(account_id, conversation_id)`。インデックス `(conversation_id, account_id)`（通知の受け取る人の照合と併合）。スレッドのミュート（ADR-0158 §8）。会話の併合で行を併合先へ移す |
 | `notification_settings` | 現在値 | `account_id`, `notification_group`（`enum(mention, follow, follow_request, follow_accepted, boost, favourite, reaction, quote, poll_closed, account_moved, voice, admin_report, admin_sign_up, admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved, admin_service_closure_due, admin_error_group, admin_hook_failing, admin_domain_list_failing, moderation, status, announcement, auto_delete_limit, interaction_request, scheduled_status_failed)`）, `channel`（`enum(in_app, email)`）, `enabled`（`bool`）, `updated_at` | PK `(account_id, notification_group, channel)`。CHECK `moderation` は `email` だけ（FR-210、ADR-0086 §13） |
 
 - 通知は `notification` の同期 projector が、`graph` と `content` のドメインイベントから同じトランザクションで作ります（§2.1）。
@@ -43,6 +44,13 @@
   - 一覧と未読数は、`source_account_id` を `target_account_id` とする受け取る人の行のうち、読み取り時点で有効なもの（`expires_at` が NULL か現在時刻より後）がある通知を除きます。解除や期限切れで行が無効になれば、その通知はまた見えます。差出人の無い通知（`moderation_notice`）は除きません。
   - 作成時の判定は残します。ミュート中に起きたことは、解除しても通知になりません。
   - `graph.domain_muted` は `notification_domain_exclusions` に行を作り、`graph.domain_unmuted` は消します。一覧と未読数は、`source_domain` がその行のドメインかそのサブドメインである通知を除きます。
+- スレッドのミュート（ADR-0158 §8）は、ローカルの利用者が `content` の会話（ADR-0154）ごとに `conversation_mutes` に持ちます。期限はありません。
+  - 利用者は見られる投稿からその会話をミュートし、解除します（クライアント API の `muteStatusThread`・`unmuteStatusThread`）。書き込みは、`content` の公開 API `LockConversationOfTx` で投稿の今の会話を、併合が取るのと同じロックの下で引いてから行うので、同時の併合に取り残されません。
+  - 作成時に、`mention`（返信を含む）と `status` はその投稿の、`boost`・`favourite`・`reaction` は対象の投稿の、`quote` は引用された投稿の会話を受け取る人がミュートしていれば、通知を作りません（破棄）。自分の投稿のスレッドにも効きます。ほかの種類、とくにインスタンスとモデレーターからの知らせには効きません。照合はブロック・ミュート・ドメインのミュート・`unsolicited_reach` の後、アプリ内の設定の前に行い、`content` の公開 API で投稿の会話を引き、`conversation_mutes` を引きます。だれもミュートしていなければ、2 つの読み取りの間に併合されていないかを併合先（`FinalConversationTx`）で確かめ、併合先のミュートも見ます。
+  - 作成時の判定だけに効きます。ミュートする前の通知は隠さず、解除してもミュート中に起きたことは通知になりません。タイムラインには会話の投稿がそのまま出ます。
+  - `content.conversation_merged` の同期 projector が、併合のトランザクションで、併合された会話の行を併合先へ移します。両方をミュートしていた人の行は 1 つにします（併合先の行を残す）。同じイベントを何度処理しても結果は同じです。
+  - クライアント API の `Status.muted` は、閲覧者がその投稿の会話をミュートしているかを返します。表示する投稿の会話（`content` の `ConversationsOf`）と閲覧者たちのミュートを、ページごとに 2 回の読み取りで引きます。
+  - アカウントの消去（§8）は、その人の行を消します。
 - 交流の承認の通知（ADR-0155 §10）は `content` のドメインイベントから作ります。どれも `status_id` と差出人を持ちます。
 
   | ドメインイベント | 種類 | 受け取る人 | 差出人・`status_id` | `dedupe_key` |
