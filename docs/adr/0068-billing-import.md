@@ -170,10 +170,12 @@ type CostLine struct {
 ### 11. Cloudflare adapter（`internal/adapter/billing/cloudflare`）
 
 - **対象**: pay-as-you-go のアカウントの従量課金だけ。Cloudflare の billable usage は Enterprise の契約アカウントを対象にしない。定額のサブスクリプション（Pro・Business のプランなど）・税・クレジット・返金は API が返さないので、運営者は手入力の費用（ADR-0067）か plugin（ADR-0146 §11）で足す。設定の説明に書く。
-- **API**: `GET /accounts/{account_id}/billable-usage/info`（請求周期の基準日 `billing_cycle_anchor_timestamp` と `covered`）と `GET /accounts/{account_id}/billable-usage`（Version 1、Alpha）。`billable-usage` の範囲は周期の基準日を含まないと何も返さないので、取り直す月と重なる周期ごとに 1 回呼ぶ。2 か月で最大 4 要求（`info` 1 回と周期 3 つ）。
+- **API**: `GET /accounts/{account_id}/billable-usage/info`（サブスクリプションごとの `start_timestamp`・`billing_cycle_anchor_timestamp` と `covered`）と `GET /accounts/{account_id}/billable-usage`（Version 1、Alpha）。
+  - 周期は毎月同じ日に始まる。その日は `billing_cycle_anchor_timestamp`（最初の更新日、`start_timestamp` の 1 か月後）の日で、短い月はその月の末日にする。最初の周期は `start_timestamp` の日に始まる。
+  - `billable-usage` は、範囲の中にある周期の始まりの日からの記録だけを返し、`to` の日を含まない。そこで、取り直す月と重なる周期ごとに、`from` を周期の始まりの日、`to` を次の周期の始まりの日にして 1 回呼ぶ。2 か月で最大 4 要求（`info` 1 回と周期 3 つ）。範囲は 61 日まで受け付けることを確かめた。
   Version 2（`/billable/usage`）は Restricted で、GET の応答に費用の列がないので使わない。
-- **期間**: Cloudflare の請求周期は最初の購入日を基準日とする周期で、暦月ではない。日付は UTC。adapter は日ごとの記録を、その日（UTC）の暦月に `ServiceName` ごとに合計して返す（`Location()` は UTC）。日付を事業者のタイムゾーンのまま持つので、ADR-0067 §5 の切り直しに当たらない（同 §5 の「日ごとの値」）。1 日を超える記録は月に置けないので `invalid_response` にする。
-- **写し方**: `Service` は `ServiceName`、`ChargeType` は常に `usage`（`ChargeCategory` は常に `Usage`）、金額は `ContractedCost`（pay-as-you-go では `BilledCost` と同じ額）、通貨は `BillingCurrency`。月の中で通貨が混ざれば `invalid_response`。区分は既知の製品名の表で決める: Workers・Durable Objects・Queues・Workers AI → `compute`、R2・Workers KV・Images・Stream → `storage`、D1・Hyperdrive → `database`、Argo・Load Balancing・Spectrum → `network`、ほかは `other`。
+- **期間**: Cloudflare の請求周期は最初の購入日を基準日とする周期で、暦月ではない。日付は UTC。記録は 1 日 1 指標で、`ChargePeriodStart` から `ChargePeriodEnd` までちょうど 24 時間ある（実アカウントで確かめた）。adapter は日ごとの記録を、その日（UTC）の暦月に `ServiceFamilyName` ごとに合計して返す（`Location()` は UTC）。日付を事業者のタイムゾーンのまま持つので、ADR-0067 §5 の切り直しに当たらない（同 §5 の「日ごとの値」）。1 日を超える記録は月に置けないので `invalid_response` にする。
+- **写し方**: `Service` は製品の名前 `ServiceFamilyName`（`R2`・`D1`・`Workers`）。`ServiceName` は指標の名前（`R2 Data Storage (First 10GB-Month included)` のように無料枠の説明を含む）なので使わず、指標ごとの記録を製品ごとに合計する。無料枠の中の使用も 0 円の記録として返り、0 円の行になる。`ChargeType` は常に `usage`（`ChargeCategory` は常に `Usage`）、金額は `ContractedCost`（pay-as-you-go では `BilledCost` と同じ額）、通貨は `BillingCurrency`。月の中で通貨が混ざれば `invalid_response`。区分は `ServiceFamilyName` の表で決める: Workers・Durable Objects・Queues・Workers AI → `compute`、R2・Workers KV・Images・Stream → `storage`、D1・Hyperdrive → `database`、Argo・Load Balancing・Spectrum → `network`、ほかは `other`。
 - **見込みと確定**: 応答に確定の印はない。暦月 M は、M の末日を含む周期（サブスクリプションごと）がすべて終わり、その終わりから 2 日たった取り込みで `Final` にする。ただし M+1 月の末日を過ぎれば `Final` にする（基準日が月末に近いと、§2 の取り直しの期限を過ぎるため）。2 日は Google Cloud の「翌月 5 日」と同じ暫定値で、`internal/adapter/billing/cloudflare` の定数に持つ。`Covered` は確定の月は暦月の全体、見込みの月は月の初日から記録のある最後の日まで。
 - **費用の上限**: API の課金は文書になく、`finance` の上限（§4 の `RequestCaps`）を持たせない。`Snapshot.Requests` には記録のために要求数を入れる。レート制限（ユーザーごとに 1,200 要求 / 5 分）から遠い。
 - **SDK**: 公式の `github.com/cloudflare/cloudflare-go/v7`（Apache-2.0）を使う。実行ファイルは約 16 MB 増えるが、手書きの client が Alpha の API の変化に遅れる危険を負わない。
@@ -182,7 +184,7 @@ type CostLine struct {
   - 金額は SDK の `float64` の列ではなく、応答の JSON の文字列（`JSON.ContractedCost.Raw()`）から 10 進で読み、丸めずに合計する（§1）。
 - **設定と認証**（§8 の例外）: `billing_sources` に `cloudflare`。`billing_cloudflare_account_id` と、秘密の設定 `billing_cloudflare_api_token`（`MY_BILLING_CLOUDFLARE_API_TOKEN`、`_FILE` でファイルからも読む。ADR-0010、ADR-0019 §6）。トークンはアカウントの Billing Read だけを持つものを勧める。
   Cloudflare には AWS・Google Cloud のような認証の連鎖も実行環境に紐づく資格もないので、§8 の「秘密の設定を足さない」の例外にする。
-- **失敗の種類**（§9 の分類）: 401・403 → `permission`、`info` の `covered: false` → `not_enabled`、404 → `not_found`、429 → `throttled`、5xx・ネットワーク → `unavailable`、封筒の `success: false`・要る列の欠け・1 日を超える記録・通貨の混在 → `invalid_response`。失敗は SDK の `*cloudflare.Error` の `StatusCode` で分ける。
+- **失敗の種類**（§9 の分類）: 無効なトークン（400、エラーコード 9106）・401・403 → `permission`（アカウント ID の誤りも 403、エラーコード 10000 で返るので、管理画面はトークンの権限とアカウント ID の両方を確かめるよう案内する）、`info` の `covered: false` → `not_enabled`、404 → `not_found`、429 → `throttled`、5xx・ネットワーク → `unavailable`、封筒の `success: false`・要る列の欠け・1 日を超える記録・通貨の混在 → `invalid_response`。失敗は SDK の `*cloudflare.Error` の `StatusCode` で分ける。
 - **データモデル**（§5）: `billing_import_runs.source` と `imported_cost_revisions.source` の enum に `cloudflare`。
 - **build tag**（§10）: `no_billing_cloudflare` は `internal/adapter/billing/cloudflare` と `cloudflare-go` を外し、`billing_sources` の `cloudflare` を拒む。Cloudflare はどの実行環境とも組み合わせて使うので、代表の組み合わせには付けない。
 - **契約テスト**: `BillingSourceContract` の名前の一覧に `cloudflare` を足し、`usage` の行だけを返す事業者のための変種（`BillingTotalsSourceContract` と同じく、筋書きのクレジット・税の行を求めない）を足す。fake は `billable-usage` の HTTP を `httptest` で返す。
@@ -210,7 +212,7 @@ FR-904 は、AWS と Google Cloud の利用料金を定期的に取り込んで�
 
 要求は当初、`billing_import_runs` の `requests` の合計だけで数えていた。記録の前の試行が数に入らないので、同じ事業者の試行が同時に走る（定期のジョブと手動の取り込み、再試行とリースの切れた二重の実行、複数のレプリカ）と、どれも同じ残りを読んで呼ぶので、合わせて日の上限を超えて課金されうる数え方だった。許していたずれ（1 回につき 4 要求、$0.04 まで）は 1 つの試行が止まった場合だけのものだった。#1552 が実装した予約の規則を決定者が採用し、#1469 で数え方を置き換えた（§4）。上限の値、`request_cap` の扱い、Google Cloud の上限は変えていない。
 
-Cloudflare（§11）は spike #2664 の[調査報告](https://github.com/mycroblog/my/issues/2664#issuecomment-6755532016)（2026-11-10 に公式の API リファレンスと Billing の文書で確認。実アカウントでは呼んでいない）による。Cloudflare の従量課金は Version 1（Alpha）の billable usage が返し、pay-as-you-go のアカウントだけが対象で、期間は最初の購入日を基準日とする UTC の周期である。公式の Go SDK は `billing` だけを使っても実行ファイルが約 16 MB 増えるが、決定者は、手書きの client が Alpha の API の変化に遅れる危険より小さいとして SDK を選び、日ごとの記録を UTC の暦月に合計すること、周期の終わりから 2 日の確定の規則（暫定値）、秘密の設定のトークン、失敗の種類、build tag、契約テストの変種を含む §11 を採った。
+Cloudflare（§11）は spike #2664 の[調査報告](https://github.com/mycroblog/my/issues/2664#issuecomment-6755532016)（2026-11-10 に公式の API リファレンスと Billing の文書で確認）と、Billing Read のトークンで 2 つの実アカウントを読んだ[追記](https://github.com/mycroblog/my/issues/2664#issuecomment-6755927052)による。Cloudflare の従量課金は Version 1（Alpha）の billable usage が 1 日 1 指標の記録で返し、pay-as-you-go のアカウントだけが対象で、期間は最初の購入日から毎月同じ日に始まる UTC の周期である。基準日の値・`to` を含まないこと・失敗の応答・製品の名前の列は、文書ではなく実アカウントの応答に合わせた。請求書は API で合計だけが読め、明細がないので使わない（決定者が従量課金だけを取り込むことにした）。公式の Go SDK は `billing` だけを使っても実行ファイルが約 16 MB 増えるが、決定者は、手書きの client が Alpha の API の変化に遅れる危険より小さいとして SDK を選び、日ごとの記録を UTC の暦月に合計すること、周期の終わりから 2 日の確定の規則（暫定値）、秘密の設定のトークン、失敗の種類、build tag、契約テストの変種を含む §11 を採った。
 
 ## 採らなかった案
 
@@ -224,7 +226,7 @@ Cloudflare（§11）は spike #2664 の[調査報告](https://github.com/mycrobl
 - 管理画面で設定し、鍵を `Sealer` で暗号化して DB に持つ: 再デプロイなしに有効にできる。実行ロールを使えず長期の鍵を DB に置くことになり、ほかのクラウドの adapter とも設定の場所が違う。
 - Cloudflare を標準ライブラリだけの REST client で読む（§11）: 依存が増えず、実行ファイルが約 16 MB 小さい（spike の commit ed0b2e6）。Alpha の API の改名や形の変化に手で追いつくことになる。
 - Cloudflare の billable usage の Version 2（`/billable/usage`、§11）: FOCUS 1.3 に沿い、1 日 1 指標 1 行と文書にある。Restricted で、GET の応答に費用の列がなく、費用を返す `POST` は文書にない。
-- Cloudflare の請求の履歴（`/accounts/{id}/billing/history`、§11）: 定額の料金も含む。サービスと請求期間の列がなく、項目が請求書の単位か明細の単位かも文書にない。
+- Cloudflare の請求書の合計（`/accounts/{id}/billing/history`、§11）: 定額の料金・税も含み、払った額と一致する。項目は請求書 1 枚の合計で、サービス・明細・期間の列がなく、明細を返す API もない。請求書が出るまで月の途中の額も出ない。
 - Cloudflare の周期の額を暦月に日割りで分ける（§11）: 日ごとの記録がなくても使える。$25 / 30 日のような割り算は丸めずに 10 進で返せない（§1）。
 - Cloudflare のトークンを `CLOUDFLARE_API_TOKEN` から読む（§11）: 設定が要らない。wrangler・OpenTofu の provider と同じ名前なので、同じ環境の広い権限のトークンを取り込みが黙って使う。
 - 要求を記録の後に数える: 表が増えない。同時の試行のずれに上限がない。
@@ -254,4 +256,4 @@ Cloudflare（§11）は spike #2664 の[調査報告](https://github.com/mycrobl
 - Cloud Run から AWS への web identity、ECS Fargate から Google Cloud への Workload Identity Federation の組み立て（#882 の A-4・G-4）。
 - Google Cloud の請求書の発行日と締めの後の行の追加の頻度（暫定値の「翌月 5 日」と「15 日」）、export のテーブルのパーティションの列と 1 回のスキャン量、税の行の `project.id`（#882 の G-2・G-3）。
 - Billing export の設定を API で行えるか。
-- Cloudflare（§11、実アカウントで確かめる）: `billable-usage` の記録が 1 日 1 指標か（C-1）、Billing Read だけのトークンで読めるかと、従量課金のない Free・Enterprise のアカウントの応答（C-2）、`ServiceName` の値と区分の表（C-3）、終わった周期の値がいつ止まり請求書と一致するか（暫定値の 2 日、C-4）、周期が毎月同じ日か 30 日ごとかと複数のサブスクリプション（C-5）、USD 以外の通貨（C-6）。
+- Cloudflare（§11、実アカウントで確かめる）: 今の周期の記録が周期の途中に日ごとに入るか、周期が終わるまで入らないか（入らなければ見込みの月は出ない）。終わった周期の値がいつ止まり請求書と一致するか（暫定値の 2 日）。Enterprise のアカウントの応答、複数のサブスクリプションの周期、USD 以外の通貨。
