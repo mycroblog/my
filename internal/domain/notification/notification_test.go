@@ -203,6 +203,22 @@ func TestValidateVoiceNotifications(t *testing.T) {
 	}
 }
 
+func TestValidateScheduledStatusFailed(t *testing.T) {
+	ok := Notification{ID: idN, RecipientAccountID: idA, Type: TypeScheduledStatusFailed, DraftScheduleID: idR, DedupeKey: ScheduledStatusFailedKey(idR)}
+	if err := ok.Validate(); err != nil {
+		t.Errorf("Validate(%+v) = %v", ok, err)
+	}
+	for _, n := range []Notification{
+		{ID: idN, RecipientAccountID: idA, Type: TypeScheduledStatusFailed, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeScheduledStatusFailed, SourceAccountID: idB, DraftScheduleID: idR, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeFollow, SourceAccountID: idB, DraftScheduleID: idR, DedupeKey: "k"},
+	} {
+		if err := n.Validate(); err == nil {
+			t.Errorf("Validate(%+v) = nil, want an error", n)
+		}
+	}
+}
+
 func TestHiddenTypes(t *testing.T) {
 	for _, tc := range []struct {
 		granted []Permission

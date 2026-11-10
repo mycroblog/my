@@ -88,6 +88,9 @@ const (
 	// recipient's approval, and the answers to the recipient's own (ADR-0155 §10): in the app, on
 	// by default, without email.
 	GroupInteractionRequest Group = "interaction_request"
+	// GroupScheduledStatusFailed is the scheduled posts that could not be published (ADR-0156 §8):
+	// in the app, on by default, and the user may turn it off; it has no email channel.
+	GroupScheduledStatusFailed Group = "scheduled_status_failed"
 )
 
 // Section is the kind of a group, which decides its defaults and how its emails are sent.
@@ -224,6 +227,10 @@ var Groups = []GroupSpec{
 	{
 		Group: GroupAutoDeleteLimit, Section: SectionInstance, Types: []Type{TypeAutoDeleteLimit},
 		InApp: Rule{Default: true}, Email: Rule{Default: true},
+	},
+	{
+		Group: GroupScheduledStatusFailed, Section: SectionInstance, Types: []Type{TypeScheduledStatusFailed},
+		InApp: Rule{Default: true}, Email: Rule{Absent: true},
 	},
 }
 

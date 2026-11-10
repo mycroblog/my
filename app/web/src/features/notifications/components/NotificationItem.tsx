@@ -161,6 +161,8 @@ export function NotificationItem({ group, isUnread, surface = "card" }: Notifica
           <SupporterNotice supporter={view.supporter} />
         ) : view.autoDeleteLimit !== null ? (
           <AutoDeleteLimitNotice limit={view.autoDeleteLimit} />
+        ) : view.scheduledFailure !== null ? (
+          <ScheduledFailureNotice failure={view.scheduledFailure} />
         ) : view.move !== null && view.move.outcome !== null ? (
           <MoveOutcome move={view.move} outcome={view.move.outcome} />
         ) : null
@@ -326,6 +328,31 @@ function AutoDeleteLimitNotice({ limit }: { limit: NonNullable<NotificationView[
             date: (
               <time key="from" dateTime={limit.from.dateTime}>
                 {limit.from.text}
+              </time>
+            ),
+          },
+        )}
+      </Hint>
+    </QuoteBlock>
+  );
+}
+
+/**
+ * What a `scheduled_status_failed` tells of the scheduled post (ADR-0156 §8): why it was not published and when it was
+ * to be; the draft stays, to fix and schedule again.
+ */
+function ScheduledFailureNotice({ failure }: { failure: NonNullable<NotificationView["scheduledFailure"]> }) {
+  const intl = useIntl();
+  return (
+    <QuoteBlock>
+      <Hint as="p">
+        {intl.formatMessage(
+          { id: "client:notifications.scheduled_status_failed.detail" },
+          {
+            reason: failure.reason,
+            date: (
+              <time key="at" dateTime={failure.at.dateTime}>
+                {failure.at.text}
               </time>
             ),
           },

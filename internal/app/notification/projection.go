@@ -102,6 +102,9 @@ type ProjectorDeps struct {
 //   - content.auto_delete_limit_noticed: auto_delete_limit, to the account that the server maximum
 //     of the automatic deletion newly binds (ADR-0151 §7), once per notice
 //     (notification.AutoDeleteLimitKey). It comes from the instance and has no source account.
+//   - content.draft_schedule_failed: scheduled_status_failed, to the author of a scheduled post
+//     that could not be published (ADR-0156 §8), once per schedule
+//     (notification.ScheduledStatusFailedKey). It comes from the instance and has no source account.
 //   - hook.appeal_decided: hook_appeal_decided, to the author who appealed a post that local.status
 //     refused, upheld or overturned (ADR-0147 §9). It comes from the instance and has no source
 //     account; its dedupe key is the appeal's (notification.HookAppealDecidedKey).
@@ -147,6 +150,7 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 	p := &projector{d: d}
 	registerSubscriptionProjectors(r, d)
 	registerAutoDeleteProjector(r, p)
+	registerScheduledStatusProjector(r, p)
 	r.Register(appgraph.EventFollowed, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.Followed)
 		f := ev.Follow

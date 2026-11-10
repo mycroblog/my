@@ -165,6 +165,8 @@ type pushJob struct {
 	// of and the days of its grace period, as of the notice.
 	AutoDeleteMaxAgeDays int `json:"auto_delete_max_age_days,omitempty"`
 	AutoDeleteDaysLeft   int `json:"auto_delete_days_left,omitempty"`
+	// DraftFailureReason is why the scheduled post of a scheduled_status_failed was not published.
+	DraftFailureReason string `json:"draft_failure_reason,omitempty"`
 }
 
 // jobOf returns the payload of a job about n: JobPush to the subscription subscriptionID, or
@@ -557,6 +559,7 @@ func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18
 		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange, ErrorGroupID: job.ErrorGroupID,
 		AnnouncementID: job.AnnouncementID, AnnouncementTitle: job.AnnouncementTitle,
 		AutoDeleteMaxAgeDays: job.AutoDeleteMaxAgeDays, AutoDeleteDaysLeft: job.AutoDeleteDaysLeft,
+		DraftFailureReason: job.DraftFailureReason,
 	}, instance), l, nil
 }
 
@@ -582,6 +585,9 @@ type Wording struct {
 	// AutoDeleteMaxAgeDays and AutoDeleteDaysLeft are the maximum of an auto_delete_limit and the
 	// days until it applies to the recipient's posts.
 	AutoDeleteMaxAgeDays, AutoDeleteDaysLeft int
+	// DraftFailureReason is why the scheduled post of a scheduled_status_failed was not published
+	// (content.DraftFailureReason).
+	DraftFailureReason string
 }
 
 // DescribeNotification words n in the locale of l for the instance named instance: the title
@@ -709,6 +715,8 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 			Instance: instance, Days: n.AutoDeleteMaxAgeDays, DaysLeft: n.AutoDeleteDaysLeft,
 		})
 		p.Path = AutoDeleteSettingsPath
+	case notification.TypeScheduledStatusFailed:
+		p.Title = l.ServerPushScheduledStatusFailed(i18n.ServerPushScheduledStatusFailedArgs{Instance: instance, Reason: n.DraftFailureReason})
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}

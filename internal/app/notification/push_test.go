@@ -5,10 +5,12 @@ package notification
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/domain/notification"
+	"github.com/mycroblog/my/internal/i18n"
 )
 
 type stubPushRepository struct {
@@ -111,5 +113,26 @@ func TestAnnouncementPath(t *testing.T) {
 	const id = "01a18bbc-4663-71ea-a2b8-f3f169979c0a"
 	if got, want := AnnouncementPath(id), "/announcements/"+id; got != want {
 		t.Errorf("AnnouncementPath = %q, want %q", got, want)
+	}
+}
+
+// TestDescribeScheduledStatusFailed checks that the Web Push message of a scheduled post that
+// could not be published says why in plain words, for each reason (ADR-0156 §8).
+func TestDescribeScheduledStatusFailed(t *testing.T) {
+	b, err := i18n.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, loc := range []string{"en", "ja"} {
+		l := b.Localizer(loc)
+		seen := map[string]bool{}
+		// The reasons of content.DraftFailureReason.
+		for _, reason := range []string{"restricted", "reply_unavailable", "quote_unavailable", "media_unavailable", "invalid", "rejected"} {
+			p := DescribeNotification(l, Wording{Type: notification.TypeScheduledStatusFailed, DraftFailureReason: reason}, "example.com")
+			if !strings.HasPrefix(p.Title, "example.com") || seen[p.Title] || p.Path != "/notifications" {
+				t.Errorf("%s, %s: %+v; want a title of its own that names the server, to the notifications", loc, reason, p)
+			}
+			seen[p.Title] = true
+		}
 	}
 }

@@ -29,7 +29,8 @@ type Type string
 // (ModeratorPermission). status tells a subscriber of a new post of an account it subscribes to
 // (ADR-0086). announcement tells every local user of a server-wide announcement once it starts
 // to show (ADR-0125 §2). auto_delete_limit tells a local account in advance that the server
-// maximum of the automatic deletion binds it (ADR-0151 §7).
+// maximum of the automatic deletion binds it (ADR-0151 §7). scheduled_status_failed tells the
+// author of a scheduled post that it could not be published (ADR-0156 §8).
 const (
 	TypeFollow         Type = "follow"
 	TypeFollowRequest  Type = "follow_request"
@@ -123,6 +124,10 @@ const (
 	// binds it, and from when its posts go by the maximum (ADR-0151 §7): AutoDeleteLimitNoticeID is
 	// the notice, and it has no source account.
 	TypeAutoDeleteLimit Type = "auto_delete_limit"
+	// TypeScheduledStatusFailed tells the author of a scheduled post that it could not be
+	// published (ADR-0156 §8): DraftScheduleID is the schedule (draft_schedules), whose result
+	// says why, and it has no source account.
+	TypeScheduledStatusFailed Type = "scheduled_status_failed"
 	// TypeReplyRequest, TypeBoostRequest, and TypeQuoteRequest tell the author of a local status
 	// of a reply, a boost, or a quote of it that waits for the author's approval (ADR-0155 §10).
 	// StatusID is the status, SourceAccountID the account that interacts.
@@ -235,7 +240,7 @@ var Types = []Type{
 	TypeAccountMoved, TypeAdminAccountMoved,
 	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
 	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
-	TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit,
+	TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit, TypeScheduledStatusFailed,
 	TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
 	TypeAdminDomainListFailing,
 }
@@ -251,7 +256,7 @@ func (t Type) Valid() bool {
 		TypeAccountMoved, TypeAdminAccountMoved,
 		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
 		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
-		TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit,
+		TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit, TypeScheduledStatusFailed,
 		TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
 		TypeAdminDomainListFailing:
 		return true
@@ -316,8 +321,11 @@ type Notification struct {
 	// AutoDeleteLimitNoticeID is the notice of the server maximum of the automatic deletion
 	// (status_auto_delete_limit_notices) of an auto_delete_limit, "" for the other types.
 	AutoDeleteLimitNoticeID string
-	DedupeKey               string
-	CreatedAt               time.Time
+	// DraftScheduleID is the schedule of a draft (draft_schedules) of a scheduled_status_failed,
+	// "" for the other types.
+	DraftScheduleID string
+	DedupeKey       string
+	CreatedAt       time.Time
 }
 
 var (
@@ -394,6 +402,9 @@ func (n Notification) Validate() error {
 	}
 	if limit := n.Type == TypeAutoDeleteLimit; limit != (n.AutoDeleteLimitNoticeID != "") || (limit && n.SourceAccountID != "") {
 		return errors.New("notification: an auto_delete_limit, and only it, names a notice of the maximum, and it has no source account")
+	}
+	if failed := n.Type == TypeScheduledStatusFailed; failed != (n.DraftScheduleID != "") || (failed && n.SourceAccountID != "") {
+		return errors.New("notification: a scheduled_status_failed, and only it, names a draft schedule, and it has no source account")
 	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
@@ -482,6 +493,12 @@ func ApprovalKey(t Type, requestID string) string { return string(t) + ":" + req
 
 // AutoDeleteLimitKey is the dedupe key of an auto_delete_limit notification: one per notice.
 func AutoDeleteLimitKey(noticeID string) string { return string(TypeAutoDeleteLimit) + ":" + noticeID }
+
+// ScheduledStatusFailedKey is the dedupe key of a scheduled_status_failed notification: one per
+// schedule.
+func ScheduledStatusFailedKey(scheduleID string) string {
+	return string(TypeScheduledStatusFailed) + ":" + scheduleID
+}
 
 // AnnouncementKey is the dedupe key of an announcement notification: one per announcement and
 // recipient.

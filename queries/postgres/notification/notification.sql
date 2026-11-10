@@ -5,8 +5,8 @@
 -- InsertNotification inserts nothing when the recipient already has a notification with the
 -- dedupe key.
 -- name: InsertNotification :execrows
-INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28)
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27, $28, $29)
 ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING;
 
 -- InsertNotificationsFor inserts one notification for each recipient of the arrays, of one length
@@ -14,9 +14,9 @@ ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING;
 -- column the same, as InsertNotification inserts one, and returns the recipients it inserted
 -- one for.
 -- name: InsertNotificationsFor :many
-INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at)
 SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(recipient_account_ids)::uuid[]), sqlc.arg(type)::text,
-  sqlc.narg(source_account_id)::uuid, sqlc.narg(source_domain)::text, sqlc.narg(status_id)::uuid, sqlc.narg(moderation_action_id)::uuid, sqlc.narg(report_id)::uuid, sqlc.narg(subject_user_id)::uuid, sqlc.narg(severance_id)::uuid, sqlc.narg(appeal_id)::uuid, sqlc.narg(custom_emoji_request_id)::uuid, sqlc.narg(supporter_subscription_id)::uuid, sqlc.narg(reaction_emoji)::text, sqlc.narg(reaction_custom_emoji_id)::uuid, sqlc.narg(account_move_id)::uuid, sqlc.narg(account_move_outcome)::text, sqlc.narg(service_closure_event_id)::uuid, sqlc.narg(service_closure_change)::text, sqlc.narg(voice_room_id)::uuid, sqlc.narg(error_group_change)::text, sqlc.narg(error_group_id)::uuid, sqlc.narg(error_group_hour)::timestamptz, sqlc.narg(announcement_id)::uuid, sqlc.narg(hook_appeal_id)::uuid, sqlc.narg(auto_delete_limit_notice_id)::uuid,
+  sqlc.narg(source_account_id)::uuid, sqlc.narg(source_domain)::text, sqlc.narg(status_id)::uuid, sqlc.narg(moderation_action_id)::uuid, sqlc.narg(report_id)::uuid, sqlc.narg(subject_user_id)::uuid, sqlc.narg(severance_id)::uuid, sqlc.narg(appeal_id)::uuid, sqlc.narg(custom_emoji_request_id)::uuid, sqlc.narg(supporter_subscription_id)::uuid, sqlc.narg(reaction_emoji)::text, sqlc.narg(reaction_custom_emoji_id)::uuid, sqlc.narg(account_move_id)::uuid, sqlc.narg(account_move_outcome)::text, sqlc.narg(service_closure_event_id)::uuid, sqlc.narg(service_closure_change)::text, sqlc.narg(voice_room_id)::uuid, sqlc.narg(error_group_change)::text, sqlc.narg(error_group_id)::uuid, sqlc.narg(error_group_hour)::timestamptz, sqlc.narg(announcement_id)::uuid, sqlc.narg(hook_appeal_id)::uuid, sqlc.narg(auto_delete_limit_notice_id)::uuid, sqlc.narg(draft_schedule_id)::uuid,
   sqlc.arg(dedupe_key)::text, sqlc.arg(created_at)::timestamptz
 ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
 RETURNING recipient_account_id;
@@ -25,9 +25,9 @@ RETURNING recipient_account_id;
 -- domain, severance, dedupe key, and time too, an empty source, domain, or severance standing
 -- for none (the unnests of a select list advance together). It returns the IDs it inserted.
 -- name: InsertNotificationsForEach :many
-INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at)
 SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(recipient_account_ids)::uuid[]), sqlc.arg(type)::text,
-  NULLIF(unnest(sqlc.arg(source_account_ids)::text[]), '')::uuid, NULLIF(unnest(sqlc.arg(source_domains)::text[]), ''), sqlc.narg(status_id)::uuid, sqlc.narg(moderation_action_id)::uuid, sqlc.narg(report_id)::uuid, sqlc.narg(subject_user_id)::uuid, NULLIF(unnest(sqlc.arg(severance_ids)::text[]), '')::uuid, sqlc.narg(appeal_id)::uuid, sqlc.narg(custom_emoji_request_id)::uuid, sqlc.narg(supporter_subscription_id)::uuid, sqlc.narg(reaction_emoji)::text, sqlc.narg(reaction_custom_emoji_id)::uuid, sqlc.narg(account_move_id)::uuid, sqlc.narg(account_move_outcome)::text, sqlc.narg(service_closure_event_id)::uuid, sqlc.narg(service_closure_change)::text, sqlc.narg(voice_room_id)::uuid, sqlc.narg(error_group_change)::text, sqlc.narg(error_group_id)::uuid, sqlc.narg(error_group_hour)::timestamptz, sqlc.narg(announcement_id)::uuid, sqlc.narg(hook_appeal_id)::uuid, sqlc.narg(auto_delete_limit_notice_id)::uuid,
+  NULLIF(unnest(sqlc.arg(source_account_ids)::text[]), '')::uuid, NULLIF(unnest(sqlc.arg(source_domains)::text[]), ''), sqlc.narg(status_id)::uuid, sqlc.narg(moderation_action_id)::uuid, sqlc.narg(report_id)::uuid, sqlc.narg(subject_user_id)::uuid, NULLIF(unnest(sqlc.arg(severance_ids)::text[]), '')::uuid, sqlc.narg(appeal_id)::uuid, sqlc.narg(custom_emoji_request_id)::uuid, sqlc.narg(supporter_subscription_id)::uuid, sqlc.narg(reaction_emoji)::text, sqlc.narg(reaction_custom_emoji_id)::uuid, sqlc.narg(account_move_id)::uuid, sqlc.narg(account_move_outcome)::text, sqlc.narg(service_closure_event_id)::uuid, sqlc.narg(service_closure_change)::text, sqlc.narg(voice_room_id)::uuid, sqlc.narg(error_group_change)::text, sqlc.narg(error_group_id)::uuid, sqlc.narg(error_group_hour)::timestamptz, sqlc.narg(announcement_id)::uuid, sqlc.narg(hook_appeal_id)::uuid, sqlc.narg(auto_delete_limit_notice_id)::uuid, sqlc.narg(draft_schedule_id)::uuid,
   unnest(sqlc.arg(dedupe_keys)::text[]), unnest(sqlc.arg(created_ats)::timestamptz[])
 ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
 RETURNING id;
@@ -44,7 +44,7 @@ SELECT account_id, notification_group, channel, enabled, updated_at FROM notific
 WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) ORDER BY account_id, notification_group, channel;
 
 -- name: GetNotification :one
-SELECT id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at
+SELECT id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at
 FROM notifications WHERE id = $1;
 
 -- InsertNotificationDismissal inserts nothing when the notification is already dismissed.
@@ -66,7 +66,7 @@ ON CONFLICT (notification_id) DO NOTHING;
 -- newest. With all_types false only the listed types count; hidden_types are left out.
 -- name: ListNotifications :many
 SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
-  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.dedupe_key, n.created_at
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at
 FROM notifications n
 WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
   AND (sqlc.narg(before)::uuid IS NULL OR n.id < sqlc.narg(before)::uuid)
@@ -88,7 +88,7 @@ LIMIT sqlc.arg(page_limit);
 -- ID is greater than after, oldest first.
 -- name: ListNotificationsAfter :many
 SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
-  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.dedupe_key, n.created_at
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at
 FROM notifications n
 WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
   AND n.id > sqlc.arg(after)::uuid

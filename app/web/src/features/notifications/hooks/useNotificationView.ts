@@ -26,6 +26,7 @@ import { announcementPath } from "../../announcements";
 import { useViewer } from "../../session";
 import { statusPath } from "../../status";
 import type {
+  DraftFailureReason,
   ModerationAction,
   Notification,
   NotificationAccount,
@@ -163,6 +164,11 @@ export type NotificationView = {
    */
   autoDeleteLimit: { days: number; from: { dateTime: string; text: string } } | null;
   /**
+   * What a `scheduled_status_failed` tells of the scheduled post (ADR-0156 §8): why it was not published, and when it
+   * was to be; null for the other types and once its draft is gone.
+   */
+  scheduledFailure: { reason: DraftFailureReason; at: { dateTime: string; text: string } } | null;
+  /**
    * The pages the row leads to besides the actor's profile and the post, where the user follows up what it
    * tells: the account status, the report, the registrations, or the user's follow lists.
    */
@@ -208,6 +214,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   status: "status",
   announcement: "announcement",
   auto_delete_limit: "notice",
+  scheduled_status_failed: "notice",
   reply_request: "mention",
   boost_request: "boost",
   quote_request: "quote",
@@ -249,6 +256,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   supporter_service_closure: "client:notifications.type.supporter_service_closure",
   announcement: "client:notifications.type.announcement",
   auto_delete_limit: "client:notifications.type.auto_delete_limit",
+  scheduled_status_failed: "client:notifications.type.scheduled_status_failed",
   voice_room_started: "client:notifications.type.voice_room_started",
   voice_room_invited: "client:notifications.type.voice_room_invited",
   admin_error_group: "client:notifications.type.admin_error_group",
@@ -650,6 +658,16 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
             from: {
               dateTime: notification.auto_delete_limit.enforce_from,
               text: intl.formatDate(notification.auto_delete_limit.enforce_from, { dateStyle: "long" }),
+            },
+          }
+        : null,
+    scheduledFailure:
+      notification.type === "scheduled_status_failed" && notification.scheduled_status_failure !== undefined
+        ? {
+            reason: notification.scheduled_status_failure.reason,
+            at: {
+              dateTime: notification.scheduled_status_failure.publish_at,
+              text: formatDate(notification.scheduled_status_failure.publish_at),
             },
           }
         : null,

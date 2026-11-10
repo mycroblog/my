@@ -57,6 +57,7 @@ const notificationGroupLabels: Readonly<Record<NotificationGroup, ClientMessageK
   supporter: "client:settings.notifications.group.supporter",
   announcement: "client:settings.notifications.group.announcement",
   auto_delete_limit: "client:settings.notifications.group.auto_delete_limit",
+  scheduled_status_failed: "client:settings.notifications.group.scheduled_status_failed",
 };
 
 /** A channel of the table, in the order of its columns. */

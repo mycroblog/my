@@ -2383,6 +2383,10 @@
     "defaultMessage": "Automatic deletion of posts",
     "description": "Row of the notification settings table: the notices that the server's maximum of the automatic deletion of old posts will apply to the user's posts."
   },
+  "settings.notifications.group.scheduled_status_failed": {
+    "defaultMessage": "Scheduled posts that could not be published",
+    "description": "Row of the notification settings table: the notices that a post the user scheduled could not be published at its time."
+  },
   "settings.notifications.sound.title": {
     "defaultMessage": "Notification sound",
     "description": "Heading of the section of the notification settings about the sound this device plays for new notifications."

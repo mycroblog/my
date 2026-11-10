@@ -215,6 +215,10 @@
     "defaultMessage": "サーバーの投稿の保持の上限があなたの投稿に適用されます",
     "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
   },
+  "notifications.type.scheduled_status_failed": {
+    "defaultMessage": "予約した投稿を公開できませんでした",
+    "description": "Notification sentence: a post that the user scheduled could not be published at its time. The draft stays, to fix and schedule again; the notification says why below."
+  },
   "notifications.type.supporter_payment_failed": {
     "defaultMessage": "サポーターのプランの支払いに失敗しました",
     "description": "Notification sentence: a payment for the user's supporter plan failed and the grace period began."
@@ -450,6 +454,10 @@
   "notifications.auto_delete_limit.detail": {
     "defaultMessage": "{date}から、{days, plural, other {# 日}}より古いあなたの投稿は、このサーバーで残せるものを除いて削除されます。それまでは、あなたの設定のとおりです。",
     "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
+  },
+  "notifications.scheduled_status_failed.detail": {
+    "defaultMessage": "{reason, select, restricted {今はあなたのアカウントから投稿できません。} reply_unavailable {返信先の投稿が見られなくなりました。} quote_unavailable {引用した投稿が見られなくなりました。} media_unavailable {添付したファイルが使えなくなりました。} invalid {投稿の条件を満たしていません。} rejected {サーバーの自動審査で断られました。} other {}}{date}に公開する予定でした。下書きは残っているので、直して予約し直せます。",
+    "description": "In the notification that a scheduled post could not be published: {reason} says why (restricted: the account may not post now, because of a moderation action, a suspension, or an account that is not active; reply_unavailable: the post it replies to is gone, hidden from the user, or does not take the reply; quote_unavailable: the post it quotes is gone, hidden, or may not be quoted; media_unavailable: an attached file is gone or failed processing; invalid: the post does not pass the checks of a post, such as its length; rejected: the server's automated review refused the post). {date} is the formatted date and time it was to be published."
   },
   "notifications.link.auto_delete": {
     "defaultMessage": "削除される投稿を確かめる",
