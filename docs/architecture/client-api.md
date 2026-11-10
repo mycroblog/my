@@ -81,7 +81,7 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - 投稿の引用（`Status.quote`、`StatusQuote`）は、`StatusView.Quote`（`content.Reader` が閲覧者ごとに決める `QuoteView`）を `Server.newStatus` で詰め替えます（ADR-0069 §5）。
   `state` は承認の状態か、閲覧者に引用先を見せない理由（`QuoteState`）で、`quoted_status` は `accepted`・`legacy` と、閲覧者のミュートの理由（`muted_account`・`blocked_domain`）のときだけ入れます。
   引用は 1 段で、`quoted_status` には `quote` を入れません。引用先の著者などのアカウントの分は、`Server.statusParts` が引用元と一緒に読みます。
-  `Status.quotable`（ログインした閲覧者が引用できるか、`content.MayQuote`。承認待ちになる引用も真）と、ローカルの投稿の作者にだけの `Status.interaction_policy`（返信・ブースト・引用の種類ごとの `automatic` と `manual` の相手、[ADR-0155](../adr/0155-interaction-policy.md) §10）も `StatusView` から詰め替えます。
+  `Status.permissions`（ログインした閲覧者が返信・ブースト・引用のそれぞれを `allowed`（すぐできる）・`pending`（作者の承認待ちになる）・`denied`（できない）のどれでできるか。`content.MayInteract` の判定で、3 つの判定は作者との関係の読み出しを共有する）と、ローカルの投稿の作者にだけの `Status.interaction_policy`（返信・ブースト・引用の種類ごとの `automatic` と `manual` の相手、[ADR-0155](../adr/0155-interaction-policy.md) §10）も `StatusView` から詰め替えます。
   公開範囲が `local`・`private`・`direct` の投稿でリモートの投稿を引用すると `422` で、投稿を作りません（[ADR-0018](../adr/0018-federated-uris.md) §15）。
   引用は投稿の作成（`createStatus` の `quoted_status_id`）でだけ付け、編集（`editStatus` の `remove_quote`）では外すことしかできません。
   作者は `listStatusQuotes` で自分の投稿への引用を一覧し、`revokeStatusQuoteApproval` で承認を取り消します。

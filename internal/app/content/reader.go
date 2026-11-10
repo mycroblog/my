@@ -101,9 +101,9 @@ type StatusView struct {
 	// Quote is the quote of the status, nil for none or for a status presented as a quote
 	// (ADR-0069).
 	Quote *QuoteView
-	// Quotable is whether the viewer, a local account, may quote the status
-	// (content.MayQuote); false for an anonymous viewer.
-	Quotable bool
+	// Permissions is what the viewer, a local account, may do with the status by each kind of
+	// interaction (content.MayInteract, ADR-0155 §10); nil for an anonymous viewer.
+	Permissions *InteractionPermissions
 	// InteractionPolicy is who may reply to, boost, and quote the status (ADR-0155 §10), for the
 	// author of a local status only; nil for anyone else.
 	InteractionPolicy *content.InteractionSettings
@@ -510,7 +510,7 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 			return StatusView{}, err
 		}
 	}
-	if out.Quotable, out.InteractionPolicy, err = r.quotable(ctx, viewer, st); err != nil {
+	if out.Permissions, out.InteractionPolicy, err = r.permissions(ctx, viewer, st, out.InReplyTo); err != nil {
 		return StatusView{}, err
 	}
 	return out, nil

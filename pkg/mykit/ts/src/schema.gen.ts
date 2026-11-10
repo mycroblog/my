@@ -10182,7 +10182,7 @@ export interface components {
         /**
          * @description A post that a report points at, as a moderator reviews it. `status` is the post as it
          *     was last, without the moderator's own relation to it (`favourited`, `boosted`,
-         *     `bookmarked`, `pinned`, and `quotable` are omitted, and so are `me` of each of its
+         *     `bookmarked`, `pinned`, and `permissions` are omitted, and so are `me` of each of its
          *     `reactions` and `voted` and `own_votes` of its `poll`). What a moderator blocks, what
          *     blocks them, and the restrictions on an author hide nothing of it. Its `quote` shows the
          *     quoted post unless the post's visibility keeps it from an account with no relation to its
@@ -11645,7 +11645,7 @@ export interface components {
             poll?: components["schemas"]["PollInput"];
             /**
              * @description The status to quote. It must be one the user may see and may quote
-             *     (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
+             *     (`quote` of `Status.permissions` is not `denied`); a quote of a boost is a quote of the boosted status. A `local`,
              *     `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
              *     is created. Quoting a
              *     remote status while the instance does not send posts out (`Instance.federation.mode`
@@ -14580,6 +14580,22 @@ export interface components {
             quote?: components["schemas"]["InteractionRule"];
         };
         /**
+         * @description Whether the authenticated user may interact with a status in one way, by its interaction
+         *     policy, its visibility, and how the user stands with its author: `allowed` at once,
+         *     `pending` once its author approves it (the interaction waits for the approval), or `denied`.
+         * @enum {string}
+         */
+        InteractionPermission: "allowed" | "pending" | "denied";
+        /** @description What the authenticated user may do with a status, by each kind of interaction. */
+        InteractionPermissions: {
+            /** @description Whether the user may reply to the status. */
+            reply: components["schemas"]["InteractionPermission"];
+            /** @description Whether the user may boost the status. */
+            announce: components["schemas"]["InteractionPermission"];
+            /** @description Whether the user may quote the status. */
+            quote: components["schemas"]["InteractionPermission"];
+        };
+        /**
          * @description Who may interact with a status in one way. Interactions of `automatic` are approved at once;
          *     those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
          *     others are refused.
@@ -15058,11 +15074,10 @@ export interface components {
              */
             quote?: components["schemas"]["StatusQuote"];
             /**
-             * @description Whether the authenticated user may quote the status (the `quote` rule of its interaction
-             *     policy, its visibility, and how the user stands with the author decide it); true too when
-             *     the quote waits for the author's approval. Omitted for anonymous requests.
+             * @description What the authenticated user may do with the status: reply to it, boost it, and quote it.
+             *     Omitted for anonymous requests.
              */
-            quotable?: boolean;
+            permissions?: components["schemas"]["InteractionPermissions"];
             /** @description Who may reply to, boost, and quote the status; given only to its author. */
             interaction_policy?: components["schemas"]["InteractionPolicy"];
         };

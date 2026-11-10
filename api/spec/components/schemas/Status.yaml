@@ -158,12 +158,12 @@ properties:
       `quoted_status`.
     allOf:
       - $ref: ./StatusQuote.yaml
-  quotable:
+  permissions:
     description: |
-      Whether the authenticated user may quote the status (the `quote` rule of its interaction
-      policy, its visibility, and how the user stands with the author decide it); true too when
-      the quote waits for the author's approval. Omitted for anonymous requests.
-    type: boolean
+      What the authenticated user may do with the status: reply to it, boost it, and quote it.
+      Omitted for anonymous requests.
+    allOf:
+      - $ref: ./InteractionPermissions.yaml
   interaction_policy:
     description: Who may reply to, boost, and quote the status; given only to its author.
     allOf:

@@ -1862,6 +1862,10 @@ components:
       $ref: ./components/schemas/InteractionRequestPage.yaml
     InteractionPolicyChange:
       $ref: ./components/schemas/InteractionPolicyChange.yaml
+    InteractionPermission:
+      $ref: ./components/schemas/InteractionPermission.yaml
+    InteractionPermissions:
+      $ref: ./components/schemas/InteractionPermissions.yaml
     InteractionRule:
       $ref: ./components/schemas/InteractionRule.yaml
     QuoteState:
