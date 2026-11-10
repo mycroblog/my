@@ -39,6 +39,18 @@ func requestDoc(t *testing.T, typ, id, actor, target string, instrument any) []b
 
 // manualPost makes author post a public status whose reply and boost rules admit the author's
 // followers at once and everyone else once the author approves.
+// answers reports whether the Accept or Reject doc answers the ReplyRequest or AnnounceRequest
+// request of the interaction: its object is the request embedded, then the interaction's IRI
+// (ADR-0155 §6).
+func answers(doc *federation.Activity, request, interaction string) bool {
+	if len(doc.Objects) != 2 || doc.Objects[0].ID != federation.IRI(request) || doc.Objects[0].Untrusted() == nil ||
+		doc.Objects[1].ID != federation.IRI(interaction) || doc.Objects[1].Untrusted() != nil {
+		return false
+	}
+	embedded := doc.Objects[0].Untrusted().Activity
+	return embedded != nil && embedded.Instrument.ID == federation.IRI(interaction)
+}
+
 func (e *remoteInteractionEnv) manualPost(t *testing.T, author string) content.Status {
 	t.Helper()
 	p, err := e.content.Create(t.Context(), appcontent.CreateInput{
@@ -89,8 +101,8 @@ func remoteAnswersReplyAndAnnounceRequests(t *testing.T, e *remoteInteractionEnv
 		t.Fatalf("answers = %+v, want an Accept to alice", sent)
 	}
 	result := string(sent[0].Doc.Result)
-	if !strings.HasPrefix(result, "https://"+testkit.ContractHost+"/ap/reply_authorizations/") || sent[0].Doc.Object().ID != alice+"/requests/1" {
-		t.Errorf("Accept = %s, want the ReplyRequest with this server's ReplyAuthorization", sent[0].Raw)
+	if !strings.HasPrefix(result, "https://"+testkit.ContractHost+"/ap/reply_authorizations/") || !answers(sent[0].Doc, alice+"/requests/1", alice+"/notes/r1") {
+		t.Errorf("Accept = %s, want the ReplyRequest and the reply with this server's ReplyAuthorization", sent[0].Raw)
 	}
 	id := result[strings.LastIndexByte(result, '/')+1:]
 	if ok, err := e.interactions.VerifyLocalAuthorization(ctx, content.InteractionReply, id, alice+"/notes/r1", aliceID, post.ID); err != nil || !ok {
@@ -148,12 +160,12 @@ func remoteAnswersReplyAndAnnounceRequests(t *testing.T, e *remoteInteractionEnv
 	}
 	sent = e.quoteActivities(t, federation.OutboundReply, post.ID)
 	if len(sent) != 2 || sent[1].Type != federation.ActivityAccept || !slices.Equal(sent[1].Inboxes, []string{bob + "/inbox"}) ||
-		sent[1].Doc.Object().ID != bob+"/requests/1" {
-		t.Fatalf("answers of replies = %+v, want an Accept of the ReplyRequest to bob", sent)
+		!answers(sent[1].Doc, bob+"/requests/1", bob+"/notes/r2") {
+		t.Fatalf("answers of replies = %+v, want an Accept of the ReplyRequest and the reply to bob", sent)
 	}
 	if rejects := e.quoteActivities(t, federation.OutboundAnnounce, post.ID); len(rejects) != 1 || rejects[0].Type != federation.ActivityReject ||
-		rejects[0].Doc.Object().ID != bob+"/requests/2" {
-		t.Fatalf("answers of boosts = %+v, want a Reject of the AnnounceRequest", rejects)
+		!answers(rejects[0].Doc, bob+"/requests/2", bob+"/announces/1") {
+		t.Fatalf("answers of boosts = %+v, want a Reject of the AnnounceRequest and the Announce", rejects)
 	}
 	// The boost that comes all the same is not recorded; the approved reply is in the thread.
 	e.expect(t, remoteAnnounce(t, bob+"/announces/1", bob, post.URI), appfederation.InboxDropped)
@@ -343,7 +355,8 @@ func remoteRequestsLocalRepliesAndBoosts(t *testing.T, e *remoteInteractionEnv) 
 			"object": request, "result": result})
 	}
 	e.expect(t, accept(alice+"/accepts/1", string(sent[0].Doc.ID), replyAuth), appfederation.InboxHandled)
-	e.expect(t, accept(alice+"/accepts/2", string(requests[0].Doc.ID), announceAuth), appfederation.InboxHandled)
+	// GoToSocial names the interaction instead of the request: the Announce's IRI is enough.
+	e.expect(t, accept(alice+"/accepts/2", announceURI, announceAuth), appfederation.InboxHandled)
 	if n := e.notified(t, fan, aliceID, notification.TypeInteractionAccepted); n != 2 {
 		t.Errorf("interaction_accepted notifications = %d, want 2", n)
 	}
@@ -362,8 +375,11 @@ func remoteRequestsLocalRepliesAndBoosts(t *testing.T, e *remoteInteractionEnv) 
 	if len(announces) != 1 || announces[0].Doc.Authorization != federation.IRI(announceAuth) {
 		t.Errorf("Announce = %+v, want it to name the AnnounceAuthorization", announces)
 	}
-	// An answer again, or one of another server, changes nothing.
+	// An answer again, also as the request and the interaction, or one of another server, changes
+	// nothing.
 	e.expect(t, accept(alice+"/accepts/3", string(sent[0].Doc.ID), replyAuth), appfederation.InboxHandled)
+	e.expect(t, mustJSON(t, map[string]any{"@context": "https://www.w3.org/ns/activitystreams", "id": alice + "/accepts/4", "type": "Accept",
+		"actor": alice, "object": []any{string(sent[0].Doc.ID), reply.URI}, "result": replyAuth}), appfederation.InboxHandled)
 	const mallory = "https://evil.example/users/mallory"
 	e.actor(t, mallory)
 	e.expect(t, mustJSON(t, map[string]any{"@context": "https://www.w3.org/ns/activitystreams", "id": mallory + "/rejects/1", "type": "Reject",

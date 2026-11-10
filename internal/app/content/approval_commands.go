@@ -565,6 +565,27 @@ func (s *Interactions) FindRequest(ctx context.Context, id string) (content.Inte
 	return r, st, err
 }
 
+// FindOutboundRequestOf returns the pending request that asks a remote author to approve the
+// local reply or boost interactingURI (ADR-0155 §7), and whether there is one: for an answer that
+// names the interaction instead of the request.
+func (s *Interactions) FindOutboundRequestOf(ctx context.Context, interactingURI string) (content.InteractionRequest, bool, error) {
+	if s.d.Quotes == nil {
+		return content.InteractionRequest{}, false, nil
+	}
+	for _, kind := range []content.InteractionKind{content.InteractionReply, content.InteractionAnnounce} {
+		pending, err := s.d.Quotes.ListPendingInteractionRequestsBy(ctx, nil, kind, interactingURI)
+		if err != nil {
+			return content.InteractionRequest{}, false, err
+		}
+		for _, r := range pending {
+			if r.Direction == content.DirectionOutbound {
+				return r, true, nil
+			}
+		}
+	}
+	return content.InteractionRequest{}, false, nil
+}
+
 // FindInteractionAuthorization returns an approval of kind that this server gave, with its
 // revocation, for its ActivityPub object. One that does not exist fails with ErrNotFound.
 func (s *Interactions) FindInteractionAuthorization(ctx context.Context, kind content.InteractionKind, id string) (content.InteractionAuthorization, error) {

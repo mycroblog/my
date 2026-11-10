@@ -33,6 +33,7 @@ type InteractionApprovals interface {
 	ReceiveInteractionAnswer(ctx context.Context, requestID string, accepted bool, authorizationURI string) (appcontent.InteractionState, bool, error)
 	AcceptRemoteInteraction(ctx context.Context, kind appcontent.InteractionKind, interactingURI, targetURI, uri string) (bool, error)
 	FindRequest(ctx context.Context, id string) (appcontent.InteractionRequest, appcontent.InteractionState, error)
+	FindOutboundRequestOf(ctx context.Context, interactingURI string) (appcontent.InteractionRequest, bool, error)
 	WithdrawRemoteInteraction(ctx context.Context, kind appcontent.InteractionKind, interactingURI, accountID string) (bool, error)
 }
 
@@ -75,8 +76,7 @@ func (h *QuoteHandlers) interactionRequest(kind appcontent.InteractionKind) Inbo
 		if !ok {
 			return fmt.Errorf("%w: no inbox for %s", ErrDropActivity, act.Actor)
 		}
-		request := federation.NewActivityDocument(act.ID, act.Type, act.Actor, time.Time{}, federation.Audience{}, target).Embedded()
-		request.Instrument = interacting
+		object := answerObject(kind, act.ID, act.Type, act.Actor, target, interacting)
 		accepted := ans.State.State == appcontent.InteractionRequestAccepted
 		return h.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 			first, err := h.rec.firstAnswer(ctx, tx, in.Received.ActivityURI, h.d.Clock.Now())
@@ -85,7 +85,7 @@ func (h *QuoteHandlers) interactionRequest(kind appcontent.InteractionKind) Inbo
 			}
 			return h.answerTx(ctx, tx, answerOf{
 				kind: kind, accepted: accepted, authorization: federation.IRI(ans.AuthorizationURI), target: ans.Target,
-				requester: requester, inbox: inbox, object: request,
+				requester: requester, inbox: inbox, object: object,
 			})
 		})
 	}
@@ -108,6 +108,20 @@ func (h *QuoteHandlers) receiveRequest(ctx context.Context, in *InboxActivity, k
 		return appcontent.RequestAnswer{}, fmt.Errorf("status %s: %w", st.ID, appcontent.ErrNotFound)
 	}
 	return appcontent.RequestAnswer{Target: st, State: appcontent.InteractionState{State: appcontent.InteractionRequestRejected}}, nil
+}
+
+// answerObject is the object of the Accept or Reject of the request id of type by actor, of the
+// interaction interacting with the status target: the request embedded, and for a ReplyRequest or
+// an AnnounceRequest the interaction's IRI after it (ADR-0155 §6). GoToSocial takes the answer of
+// its AnnounceRequest, and the Reject of its ReplyRequest, only from the interaction's IRI; the
+// answer of a QuoteRequest embeds the request alone (ADR-0069 §2).
+func answerObject(kind appcontent.InteractionKind, id federation.IRI, typ federation.ActivityType, actor, target, interacting federation.IRI) any {
+	request := federation.NewActivityDocument(id, typ, actor, time.Time{}, federation.Audience{}, target).Embedded()
+	request.Instrument = interacting
+	if kind == appcontent.InteractionQuote {
+		return request
+	}
+	return []any{request, interacting}
 }
 
 // answerOf is an Accept or a Reject of a remote account's interaction with the local status
@@ -176,9 +190,7 @@ func (h *QuoteHandlers) recordDeferredAnswer(ctx context.Context, tx uow.Tx, ev 
 		target: target, requester: requester, inbox: inbox, object: federation.IRI(r.InteractingURI),
 	}
 	if r.ActivityURI != "" {
-		request := federation.NewActivityDocument(federation.IRI(r.ActivityURI), requestTypes[r.Kind], requester, time.Time{}, federation.Audience{}, federation.IRI(r.TargetURI)).Embedded()
-		request.Instrument = federation.IRI(r.InteractingURI)
-		a.object = request
+		a.object = answerObject(r.Kind, federation.IRI(r.ActivityURI), requestTypes[r.Kind], requester, federation.IRI(r.TargetURI), federation.IRI(r.InteractingURI))
 	} else {
 		a.interactionTarget = federation.IRI(r.TargetURI)
 	}
@@ -273,9 +285,12 @@ func (h *QuoteHandlers) recordWithdrawal(ctx context.Context, tx uow.Tx, r appco
 // host that approves the interaction (checkAuthorization); the reply then goes out with its
 // Create, or the boost with its Announce. A Reject refuses it.
 func (h *QuoteHandlers) receiveInteractionAnswer(ctx context.Context, in *InboxActivity, accepted bool) (bool, error) {
-	id, ok := h.interactionRequestID(in.Activity.Object().ID)
-	if !ok || h.d.Interactions == nil {
+	if h.d.Interactions == nil {
 		return false, nil
+	}
+	id, ok, err := h.answeredRequest(ctx, in.Activity.Objects)
+	if err != nil || !ok {
+		return ok, err
 	}
 	r, _, err := h.d.Interactions.FindRequest(ctx, id)
 	if errors.Is(err, appcontent.ErrNotFound) {
@@ -305,6 +320,28 @@ func (h *QuoteHandlers) receiveInteractionAnswer(ctx context.Context, in *InboxA
 	}
 	_, _, err = h.d.Interactions.ReceiveInteractionAnswer(ctx, id, accepted, result)
 	return true, quoteError(err)
+}
+
+// answeredRequest returns the ID of this server's request that an Accept or Reject with the
+// objects answers, as liberally as ADR-0155 §6 allows: an object that is the request (its IRI,
+// or the request embedded) or, failing that, one that is the IRI of the local reply or Announce
+// whose approval a pending request asks for.
+func (h *QuoteHandlers) answeredRequest(ctx context.Context, objects []federation.Ref) (string, bool, error) {
+	for _, o := range objects {
+		if id, ok := h.interactionRequestID(o.ID); ok {
+			return id, true, nil
+		}
+	}
+	for _, o := range objects {
+		if o.ID == "" || !h.isLocal(o.ID) || o.Untrusted() != nil {
+			continue
+		}
+		r, ok, err := h.d.Interactions.FindOutboundRequestOf(ctx, string(o.ID))
+		if err != nil || ok {
+			return r.ID, ok, err
+		}
+	}
+	return "", false, nil
 }
 
 // interactionRequestID returns the request whose ReplyRequest or AnnounceRequest is the IRI id.
