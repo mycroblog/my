@@ -29,3 +29,9 @@ properties:
   maximum:
     description: The greatest value of an `int` setting; omitted for other kinds.
     type: integer
+  image:
+    description: |
+      For a `media` setting with a value, its image, so that a client can show what is set
+      whoever uploaded it; omitted for other kinds, for none, and while the file is processing
+      or is not an image.
+    $ref: ./AdminSettingImage.yaml

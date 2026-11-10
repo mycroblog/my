@@ -67,6 +67,21 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
    gh run list -R mycroblog/my --workflow docs-site-deploy.yml --limit 1
    ```
 
+## Skipping the slow suite
+
+In an emergency, when a failure that has nothing to do with the release (a flaky test, a service that did not start in
+time) holds up a pre-release, the decider can release it without the slow suite:
+
+```sh
+gh workflow run release.yml -R mycroblog/my --ref main -f version=v0.1.0-rc.5 -f skip_slow_suite=true
+```
+
+- Only a pre-release takes it: `validate` refuses `skip_slow_suite` with a version such as `v0.1.0`, which is released only after the suite passes.
+- `gate` looks for nothing and calls the suite with `scope: none`, which runs no job, not even the upgrade test and the restore drill.
+  Every other job runs as usual: the tags, the draft, the libraries, and the image with its check, attestation, and scan.
+- The summary of `gate` and the draft's notes (a section **Not gated by the slow suite** before **Container image**) say that the suite was skipped.
+- Fix the failure that made you skip it on `main` before the next release.
+
 ## The upgrade test
 
 The slow suite's `upgrade` job checks the upgrade that operators are promised: from the latest patch release of the previous minor version.

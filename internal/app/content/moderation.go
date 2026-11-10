@@ -29,6 +29,32 @@ func (s *Service) DeleteByModeration(ctx context.Context, tx uow.Tx, st Status, 
 	return tx.Emit(ctx, StatusDeleted{Deletion: d, Status: st})
 }
 
+// DeleteManyByModeration is DeleteByModeration of sts, with one insert of their deletions and one
+// StatusesDeleted for all of them.
+func (s *Service) DeleteManyByModeration(ctx context.Context, tx uow.Tx, sts []Status, actionID string, at time.Time) error {
+	ds := make([]content.Deletion, len(sts))
+	for i, st := range sts {
+		ds[i] = content.Deletion{
+			StatusID: st.ID, URI: st.URI, AuthorAccountID: st.AuthorAccountID, Origin: content.DeletedByModeration,
+			ModerationActionID: actionID, DeletedAt: at,
+		}
+	}
+	if err := s.d.Repository.InsertDeletions(ctx, tx, ds); err != nil {
+		return err
+	}
+	ev := StatusesDeleted{Deletions: make([]StatusDeleted, len(sts))}
+	for i, st := range sts {
+		ev.Deletions[i] = StatusDeleted{Deletion: ds[i], Status: st}
+	}
+	return tx.Emit(ctx, ev)
+}
+
+// MarkManySensitiveByModeration is MarkSensitiveByModeration of each of statusIDs, with one
+// statement.
+func (s *Service) MarkManySensitiveByModeration(ctx context.Context, tx uow.Tx, statusIDs []string, actionID string) error {
+	return s.d.Repository.InsertSensitivityOverrides(ctx, tx, statusIDs, actionID)
+}
+
 // MarkSensitiveByModeration records inside tx that the mark_statuses_sensitive action actionID
 // shows a status as sensitive until it is lifted (status_sensitivity_overrides).
 func (s *Service) MarkSensitiveByModeration(ctx context.Context, tx uow.Tx, statusID, actionID string) error {

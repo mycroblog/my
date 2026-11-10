@@ -33,15 +33,16 @@ default locale, who can see the timelines, the instance name, description, terms
 | `default_locale` | BCP 47 language tag | `en` | The default locale. It is the initial UI locale of new users, and the fallback when no catalog matches a user's preference |
 | `local_timeline_visibility` | `off` / `signed_in` / `everyone` | `everyone` | Who can see the local timeline (`GET /api/v1/timelines/local`): nobody, signed-in users, or everyone. `off` answers 404 and `signed_in` answers visitors who are not signed in with 401; in both cases the navigation hides it. Unless the value is `everyone`, the landing page shows no sample posts. On a [one-person server](#one-person-server) it reads as `off` |
 | `federated_timeline_visibility` | `off` / `signed_in` / `everyone` | `signed_in` | Who can see the federated timeline (`GET /api/v1/timelines/federated`). The values mean the same as for the local timeline, and it reads as `off` on a one-person server too |
-| `preview_image` | media ID (empty = unset) | empty | The link preview image (`og:image`) for posts and profiles without an image. When unset, the bundled default image is used ([link previews](link-previews.md)) |
+| `preview_image` | media ID (empty = unset) | empty | The link preview image (`og:image`) for the pages without an image of their own, under "Link previews" on Settings → General. When unset, the thumbnail, then the logo, then the bundled image is used ([link previews](link-previews.md)) |
 | `contact_account` | username of a local account (empty = unset) | empty | The account to contact the operators. See [contact and thumbnail](#contact-and-thumbnail) |
 | `contact_email` | email address (empty = unset) | empty | The email address to contact the operators. It is also the `Reply-To` and the signature of the emails the server sends |
-| `thumbnail` | media ID (empty = unset) | empty | An image that represents the instance (thumbnail) |
+| `thumbnail` | media ID (empty = unset) | empty | An image that represents the instance (thumbnail), on the about and landing pages, and in link previews when `preview_image` is unset |
 | `remote_media_policy` | `none` / `avatars` / `all` | `none` | Whether to keep copies of remote media. `none`: the media proxy relays every request. `avatars`: avatars, headers, and custom emoji are cached in blob storage for `remote_media_cache_ttl_seconds`. `all`: all remote media is. The total size of the cache is limited by the configuration `remote_media_cache_max_bytes` |
 | `remote_media_cache_ttl_seconds` | integer 60-31536000 (seconds) | `86400` | How long fetched remote media may be kept. It is also the `Cache-Control: max-age` of the media proxy responses, so CDNs and browsers cache for this long |
 | `remote_media_cache_max_bytes` | integer from 1 (bytes) | `1073741824` | The size limit of the copies of remote media the media proxy keeps. The hourly cleanup deletes the expired copies, then the least recently accessed ones over this limit |
 | `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch (secure mode). When `true`, an ActivityPub GET without a verifiable HTTP signature is answered with `401` for objects and collections, and with a minimal document that carries the key for a user's actor. The instance actor always returns its whole document, so any server can fetch the key to verify a signature |
 | `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | The direction of federation. `off`: no federation. `inbound`: you follow and read remote accounts, but local posts, profiles, and reactions are not sent out, and follows from outside are refused (`Reject`). `outbound`: you accept follows from outside and deliver local posts, but remote posts and reactions are not taken in. `both`: send and receive. A change takes effect at once and needs the permission `manage_settings` |
+| `federation_scope` | `open` / `allowlist` | `open` | Which servers this server federates with. `open`: every server that no domain action suspends. `allowlist`: only the domains on the allowlist and their subdomains; every other server is treated as suspended, and ActivityPub GETs need a signature from an allowed server whatever `authorized_fetch` says. Switching to `allowlist` ends the follows with the servers it cuts off for good; see [federating only with allowed servers](moderation.md#federating-only-with-allowed-servers). A change takes effect at once and needs the permission `manage_settings` |
 | `dynamic_client_registration` | `true` / `false` | `true` | Dynamic client registration (RFC 7591). While `true`, `POST /oauth/register` accepts the registration of public clients without authentication. When `false`, the endpoint refuses every request with `403` (`access_denied`); clients that are already registered keep working. A periodic job deletes dynamically registered clients that are not used, following the configuration `dynamic_client_unredeemed_retention` and `dynamic_client_idle_retention`. A change takes effect at once and needs `manage_settings` |
 | `domain_actions_visibility` | `off` / `signed_in` / `everyone` | `off` | Who can see the list of domains with actions taken (`GET /api/v1/instance/domain_actions`): nobody, signed-in users, or everyone ([moderation](moderation.md#publishing-the-domains-you-act-on)) |
 | `domain_actions_rationale_visibility` | `off` / `signed_in` / `everyone` | `off` | Who can see the public comments of that list. Someone who cannot see the list never sees them |
@@ -62,6 +63,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `auto_delete_default_min_age_days` | integer 1-3650 (days) | `30` | How many days after its publication the policy of a new account deletes a post |
 | `auto_delete_default_keep_pinned`, `auto_delete_default_keep_bookmarked`, `auto_delete_default_keep_favourited` | `true` / `false` | `true` | Whether the policy of a new account keeps the posts its author pinned, bookmarked, or favourited |
 | `auto_delete_default_keep_media`, `auto_delete_default_keep_polls` | `true` / `false` | `false` | Whether the policy of a new account keeps the posts with media or a poll |
+| `auto_delete_default_keep_articles` | `true` / `false` | `true` | Whether the policy of a new account keeps [articles](#articles) |
 | `auto_delete_default_keep_public`, `auto_delete_default_keep_local`, `auto_delete_default_keep_unlisted`, `auto_delete_default_keep_private` | `true` / `false` | `false` | Whether the policy of a new account keeps the posts of that visibility |
 | `auto_delete_default_keep_direct` | `true` / `false` | `true` | Whether the policy of a new account keeps direct posts |
 | `auto_delete_default_keep_min_boosts`, `auto_delete_default_keep_min_favourites` | integer 0-1000000 | `0` | The policy of a new account keeps a post boosted or favourited at least this many times. `0` sets no threshold |
@@ -69,6 +71,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `auto_delete_max_allow_pinned` | `true` / `false` | `true` | Whether pinned posts may still be kept under the maximum |
 | `auto_delete_max_kept_pins` | integer 1-5 | `5` | How many pins keep posts under the maximum, the most recently pinned first. `5`, the most pins of an account, keeps every pinned post |
 | `auto_delete_max_allow_bookmarked`, `auto_delete_max_allow_favourited`, `auto_delete_max_allow_media`, `auto_delete_max_allow_polls` | `true` / `false` | `false` | Whether the posts that the author bookmarked or favourited, or with media or a poll, may still be kept under the maximum |
+| `auto_delete_max_allow_articles` | `true` / `false` | `true` | Whether articles may still be kept under the maximum |
 | `auto_delete_max_allow_visibilities` | `true` / `false` | `false` | Whether posts may still be kept by their visibility under the maximum |
 | `auto_delete_max_allow_thresholds` | `true` / `false` | `false` | Whether posts may still be kept by their boosts and favourites under the maximum |
 | `auto_delete_grace_days` | integer 0-365 (days) | `30` | How many days an account that the maximum newly applies to keeps its own settings after it is told. A change does not move the dates of the accounts already told |
@@ -87,6 +90,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `user_app_registration` | `true` / `false` | `true` | Whether signed-in users can register their own OAuth apps (public or confidential) with the client API (`POST /api/v1/oauth_apps`). When `false`, registering answers 403. Listing, changing, and deleting registered apps, reissuing secrets, issuing a token to yourself, and authorization by other users keep working |
 | `voice_room_starters` | `everyone` / `permitted` | `permitted` | Who can open voice chat rooms, while the configuration `voice` is not `off` ([configuration](../reference/configuration.md#voice)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `start_voice_rooms`, which only the built-in `admin` role has by default and which a role of a supporter plan may have |
 | `voice_public_summary` | `true` / `false` | `false` | Whether the page of a voice chat room whose visibility is `local` shows its name, description, host, and whether it is still open to visitors who are not signed in to this server and to remote users, and in its link preview. The participants are never shown. When `false`, those visitors see only that the room is for the local users of this server |
+| `event_creators` | `everyone` / `permitted` | `everyone` | Who can create events ([events](#events)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `create_events`, which only the built-in `admin` role has by default and which a role of a supporter plan may have |
 | `public_counts` | `true` / `false` | `true` | Whether the landing page (`/`, signed out) and `GET /api/v1/instance/overview` show how many members the server has, how many public posts its users made on each of the last 7 days, and when the server started. Only public posts of this server's users count; the numbers are refreshed every few minutes. When `false`, the API leaves them out |
 | `featured_accounts` | usernames of up to 20 local accounts, separated by spaces or commas (empty = none) | empty | The accounts that the suggestions of people to follow show first, in this order, before the people of this server who posted recently. An account whose owner turned off "Suggest my account and find it by part of its name" is not suggested. See [suggestions](#suggestions-of-accounts) |
 | `login_providers_only` | `true` / `false` | `false` | Whether registration and sign-in are limited to the login providers while at least one is enabled: passwords and passkeys no longer sign in, and users without a linked provider cannot sign in again once their sessions end. With no enabled provider it does not apply. `my instance set` prints how many active users have no link to an enabled provider. See [limit sign-in to login providers](login-providers.md#limit-sign-in-to-login-providers). |
@@ -111,6 +115,14 @@ default locale, who can see the timelines, the instance name, description, terms
 | `hook_local_profile_account_age_days` | integer 0-3650 (days) | `7` | `local.profile` [reviews the profile changes](decision-hooks.md#local-profiles) of accounts younger than this; `0` reviews every account. The information page (`/about`) states it while the hook is in use. |
 | `hook_decisions_retention_days` | integer 30-3650 (days) | `90` | How many days to keep the [decisions of the hooks](decision-hooks.md#the-decisions). |
 | `single_user` | boolean | `false` | Whether the server is a [one-person server](#one-person-server). It can be turned on only while the server has exactly one local account, and turned off at any time |
+| `max_drafts` | integer 1-10000 | `100` | How many drafts that are not scheduled one user may keep on the server. Lowering it deletes no draft: a user above it saves no new one |
+| `max_scheduled_posts` | integer 1-10000 | `300` | How many scheduled posts of one user may wait. Lowering it cancels no schedule |
+| `max_scheduled_posts_per_day` | integer 1-10000 | `25` | How many scheduled posts of one user may wait for one UTC day |
+| `scheduled_post_min_lead_minutes` | integer 1-1440 (minutes) | `5` | How many minutes ahead, at least, a post may be scheduled |
+| `scheduled_post_max_lead_days` | integer 1-3660 (days) | `366` | How many days ahead, at most, a post may be scheduled |
+| `article_authoring` | `everyone` / `permission` | `everyone` | Who may write new [articles](#articles): every local user, or only the users whose roles have the permission `create_articles` |
+| `max_article_bytes` | integer 1000-100000 (bytes) | `100000` | The most bytes of the HTML that the body of an article makes |
+| `max_article_images` | integer 0-100 | `20` | The most images of the author's own uploads in the body of an article, besides its cover |
 
 - Values are normalized before they are stored (`TRUE` becomes `true`, `0750` becomes `750`, `ja_jp` becomes `ja-JP`, media IDs are lowercased).
   An invalid value is rejected and nothing is written.
@@ -138,15 +150,15 @@ whole username, or for the people who follow it.
 
 Users can have their own posts deleted automatically some days after they publish them (Settings, "Delete old posts").
 Each user's policy is their own: whether it is on, after how many days, and which posts it keeps (pinned, bookmarked, and
-favourited posts, posts with media or a poll, posts of chosen visibilities, and posts with at least some boosts or
-favourites). Deleting a post this way is the same as its author deleting it: the servers it went to receive a `Delete`.
+favourited posts, posts with media or a poll, articles, posts of chosen visibilities, and posts with at least some boosts
+or favourites). Deleting a post this way is the same as its author deleting it: the servers it went to receive a `Delete`.
 Only the posts of local accounts are deleted this way, never boosts.
 
 The `auto_delete_default_*` keys are the policy that each new local account starts with, whichever way it is created
 (the sign-up form, an external login provider, an invite, or `my admin`). The account receives it when it is created and
 then owns it: changing the keys later changes neither the accounts that exist nor those that received an earlier value.
 The settings screen shows the values as the user's own. With the keys unset, a new account starts with the automatic
-deletion off, after 30 days, keeping pinned, bookmarked, and favourited posts and direct posts. The default is not shown
+deletion off, after 30 days, keeping pinned, bookmarked, and favourited posts, articles, and direct posts. The default is not shown
 to people outside the instance. When a maximum is set, a new account receives the default cut to the maximum, as
 described below, so it starts within it.
 
@@ -182,6 +194,64 @@ The maximum is public: `GET /api/v1/instance` returns it in `auto_delete_limit`,
 know it before they sign up. Changes of these keys need `manage_settings` and are recorded in the audit log like any
 other setting. In the web client they are on the "Post deletion" page of "Server settings", which asks before it saves a
 maximum that is turned on or made stricter.
+
+### Drafts and scheduled posts
+
+Users save drafts of posts on the server, go on writing them on another device, and publish them at once or at a chosen
+time. Only their author reads a draft; drafts are never federated, are not in the export of an account's data, and go
+with the account when it is erased. The five `max_drafts` and `scheduled_post_*` settings above bound them; a save or a
+schedule past a limit is refused with a message that names it.
+
+- A scheduled post is published by the job `content.publish_scheduled_draft` at its time or soon after, also when the
+  time is further ahead than the delay limit of the queue service: the job comes back and waits again. Set them with
+  `my instance set`, for example `my instance set max_scheduled_posts 100`.
+- The post is checked when it is published, not only when it is scheduled: a user whom a moderation action bars from
+  posting by then, or whose post replies to or quotes a post that is gone, gets no post. The draft stays, and the user
+  gets a notification that says why (`scheduled_status_failed`, which users may turn off in their notification
+  settings, and which is never emailed). The automated review of local posts, while it is in use, reviews the post
+  when it is published.
+- A post is stamped with the time it is published, and the automatic deletion of old posts counts from then.
+- The media files a draft attaches are kept while the draft is; deleting the draft makes them unattached, and they go
+  with the cleanup of unattached uploads.
+
+### Articles
+
+An article is a long post with a title, a summary, and a cover image, whose body its author writes in Markdown. Articles
+are posts in every other way: they have a visibility, can be edited with their history kept, boosted, favourited, quoted,
+replied to, reported, and deleted, and moderation acts on them as on posts. The server renders the body once, when it is
+written: raw HTML in it is not rendered, and only the images of the author's own uploads show as images; any other image
+becomes a link, so that readers never load images from other sites. Timelines, notifications, and search show the title,
+the summary, and the cover; the body shows where the article is opened.
+
+- By default every local user may write articles. With `article_authoring` set to `permission`, only the users whose
+  roles have the permission `create_articles` may write new ones; the articles already written stay, and their authors
+  may still edit them. A moderation action that bars an account from posting bars it from writing and editing articles
+  too. A [supporter plan](supporters.md) may give `create_articles` as a benefit.
+- `max_article_bytes` bounds the HTML of a body, not the Markdown: the servers that receive articles count the HTML, and
+  100,000 bytes, the most it may be, is what they keep in full. A body in Japanese of about 30,000 characters fits.
+  `max_article_images` bounds the images in a body. The editor shows both before the article is published.
+- An article is never a direct post, and has no poll, no attachments other than its images, and no content warning: a
+  sensitive article shows its title and summary and folds the body and the cover.
+- The automatic deletion of old posts keeps articles unless the user turns that off (`auto_delete_default_keep_articles`
+  for new accounts, `auto_delete_max_allow_articles` under a maximum).
+- `GET /api/v1/instance` returns the limits in `limits.articles` and the authoring setting in `article_authoring`. Set
+  them with `my instance set`, for example `my instance set article_authoring permission`.
+
+### Events
+
+Local users plan events with a date, a time zone, and up to three places: a voice chat room of this server, a place to
+meet in person, and a link. Events are for the users of this server only: they are never federated, and remote users
+and visitors who are not signed in see none of them.
+
+- Who may create one is `event_creators`. An organizer must also be able to open voice chat rooms (`voice_room_starters`
+  and the configuration `voice`) to hold an event in one.
+- The organizer chooses who sees the event: every local user, the organizer's followers, the people the organizer
+  follows, mutual follows, or only the invited. The invited and those who answered always see it, and a block between
+  a user and the organizer or a co-organizer hides it from that user.
+- The address and the link of an event are shown only to the attendees that the organizer or a co-organizer approved,
+  unless the organizer shows them to everyone who sees the event. Links must be `http` or `https`, and the server never
+  opens them.
+- A user creates at most 10 events an hour, and an event sends at most 100 invitations an hour.
 
 ### Texts (one key, one value)
 
@@ -371,7 +441,7 @@ audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
   | Registration (`/admin/settings/registration`) | Registration (`registration_mode`, `login_providers_only`); Member invites (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds`); Apps (`user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration`) |
   | Content (`/admin/settings/content`) | Language (`default_locale`, chosen from the languages the app has); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Posts (`require_media_description`); Landing page (`public_counts`); Suggested accounts (`featured_accounts`) |
   | Post deletion (`/admin/settings/auto-delete`) | Default for new accounts (the `auto_delete_default_*` settings); Maximum (`auto_delete_max_age_days`, the `auto_delete_max_allow_*` settings, `auto_delete_max_kept_pins`, `auto_delete_grace_days`). Saving a maximum that is turned on or made stricter (fewer days, fewer exceptions or pins) asks first, since it notifies the accounts it newly holds ([A maximum for keeping posts](#a-maximum-for-keeping-posts)) |
-  | Federation (`/admin/settings/federation`) | Federation (`federation_mode`, `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards`, `link_cards_ignore_robots_txt`); Limited and suspended servers (`domain_actions_visibility`, `domain_actions_rationale_visibility`); External review (the `hook_*` settings, see [Decision hooks](decision-hooks.md)) |
+  | Federation (`/admin/settings/federation`) | Federation (`federation_mode`, `federation_scope` (saving `allowlist` first shows the follows the switch would end and asks, see [federating only with allowed servers](moderation.md#federating-only-with-allowed-servers)), `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards`, `link_cards_ignore_robots_txt`); Limited and suspended servers (`domain_actions_visibility`, `domain_actions_rationale_visibility`); External review (the `hook_*` settings, see [Decision hooks](decision-hooks.md)) |
   | Search and crawlers (`/admin/settings/discovery`) | Search engines and AI (`search_indexing`, `indexable_default`, `ai_usage`, `security_contact`); Post search (`search_visibilities`, only while the server has full-text search) |
   | Voice chat (`/admin/settings/voice`) | `voice_room_starters`, `voice_public_summary`, `voice_participants_retention_days`; the page is listed only while the server offers voice chat |
 

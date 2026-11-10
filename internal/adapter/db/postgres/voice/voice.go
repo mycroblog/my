@@ -381,6 +381,46 @@ func (r *Repository) Participants(ctx context.Context, tx uow.Tx, roomID string)
 	return out, nil
 }
 
+// ParticipantsOfRooms implements appvoice.Repository.
+func (r *Repository) ParticipantsOfRooms(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string][]appvoice.Participant, error) {
+	out := make(map[string][]appvoice.Participant, len(roomIDs))
+	if len(roomIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListVoiceRoomParticipantsOf(ctx, roomIDs)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list voice room participants")
+	}
+	for _, row := range rows {
+		out[row.RoomID] = append(out[row.RoomID], voiceParticipant(row))
+	}
+	return out, nil
+}
+
+// HostGraces implements appvoice.Repository.
+func (r *Repository) HostGraces(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]appvoice.HostGrace, error) {
+	out := make(map[string]appvoice.HostGrace, len(roomIDs))
+	if len(roomIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListVoiceRoomHostGraces(ctx, roomIDs)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list voice room host graces")
+	}
+	for _, row := range rows {
+		out[row.RoomID] = appvoice.HostGrace{RoomID: row.RoomID, EndsAt: postgres.UTC(row.EndsAt)}
+	}
+	return out, nil
+}
+
 // FindParticipant implements appvoice.Repository.
 func (r *Repository) FindParticipant(ctx context.Context, tx uow.Tx, accountID string) (appvoice.Participant, error) {
 	q, err := r.q(tx)
@@ -457,6 +497,46 @@ func (r *Repository) SpeakGranted(ctx context.Context, tx uow.Tx, roomID, accoun
 	return granted, postgres.Wrap(err, "find voice room speak grant")
 }
 
+// ViewerFacts implements appvoice.Repository.
+func (r *Repository) ViewerFacts(ctx context.Context, tx uow.Tx, roomID string, accountIDs []string) (map[string]appvoice.ViewerFacts, error) {
+	out := make(map[string]appvoice.ViewerFacts, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListVoiceRoomViewerFacts(ctx, voicegen.ListVoiceRoomViewerFactsParams{RoomID: roomID, AccountIds: accountIDs})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list voice room viewer facts")
+	}
+	for _, row := range rows {
+		out[row.AccountID] = appvoice.ViewerFacts{Banned: row.Banned, Invited: row.Invited, SpeakGranted: row.SpeakGranted}
+	}
+	return out, nil
+}
+
+// ViewerFactsInRooms implements appvoice.Repository.
+func (r *Repository) ViewerFactsInRooms(ctx context.Context, tx uow.Tx, accountID string, roomIDs []string) (map[string]appvoice.ViewerFacts, error) {
+	out := make(map[string]appvoice.ViewerFacts, len(roomIDs))
+	if len(roomIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.q(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListVoiceRoomFactsOfViewer(ctx, voicegen.ListVoiceRoomFactsOfViewerParams{AccountID: accountID, RoomIds: roomIDs})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list voice room facts of a viewer")
+	}
+	for _, row := range rows {
+		out[row.RoomID] = appvoice.ViewerFacts{Banned: row.Banned, Invited: row.Invited, SpeakGranted: row.SpeakGranted}
+	}
+	return out, nil
+}
+
 // RefreshHead implements appvoice.Repository.
 func (r *Repository) RefreshHead(ctx context.Context, tx uow.Tx, roomID string) error {
 	q, err := r.db.queries(tx)
@@ -525,4 +605,88 @@ func (r *Repository) lock(ctx context.Context, tx uow.Tx, key string) error {
 		return err
 	}
 	return postgres.Wrap(q.LockVoice(ctx, key), "lock "+key)
+}
+
+// InsertSchedule implements appvoice.Repository.
+func (r *Repository) InsertSchedule(ctx context.Context, tx uow.Tx, sc appvoice.Schedule) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return postgres.Wrap(q.InsertVoiceRoomSchedule(ctx, voicegen.InsertVoiceRoomScheduleParams{
+		RoomID: sc.RoomID, ScheduleKey: sc.Key, WaitEndsAt: sc.WaitEndsAt,
+	}), "insert voice room schedule")
+}
+
+func scheduleOf(row voicegen.VoiceRoomSchedule) appvoice.Schedule {
+	return appvoice.Schedule{RoomID: row.RoomID, Key: row.ScheduleKey, WaitEndsAt: postgres.UTC(row.WaitEndsAt)}
+}
+
+// FindSchedule implements appvoice.Repository.
+func (r *Repository) FindSchedule(ctx context.Context, tx uow.Tx, roomID string) (appvoice.Schedule, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return appvoice.Schedule{}, err
+	}
+	row, err := q.GetVoiceRoomSchedule(ctx, roomID)
+	if err != nil {
+		return appvoice.Schedule{}, postgres.NotFound(err, appvoice.ErrNotFound, "voice room schedule")
+	}
+	return scheduleOf(row), nil
+}
+
+// FindScheduleByKey implements appvoice.Repository.
+func (r *Repository) FindScheduleByKey(ctx context.Context, tx uow.Tx, key string) (appvoice.Schedule, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return appvoice.Schedule{}, err
+	}
+	row, err := q.GetVoiceRoomScheduleByKey(ctx, key)
+	if err != nil {
+		return appvoice.Schedule{}, postgres.NotFound(err, appvoice.ErrNotFound, "voice room schedule")
+	}
+	return scheduleOf(row), nil
+}
+
+// InsertCohostCandidates implements appvoice.Repository.
+func (r *Repository) InsertCohostCandidates(ctx context.Context, tx uow.Tx, roomID string, accountIDs []string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	for i, id := range accountIDs {
+		pos, err := postgres.ToInt32(i, "voice room co-host candidate position")
+		if err != nil {
+			return err
+		}
+		if err := q.InsertVoiceRoomCohostCandidate(ctx, voicegen.InsertVoiceRoomCohostCandidateParams{
+			RoomID: roomID, AccountID: id, Position: pos,
+		}); err != nil {
+			return postgres.Wrap(err, "insert voice room co-host candidate")
+		}
+	}
+	return nil
+}
+
+// FindCohostCandidate implements appvoice.Repository.
+func (r *Repository) FindCohostCandidate(ctx context.Context, tx uow.Tx, roomID, accountID string) (appvoice.CohostCandidate, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return appvoice.CohostCandidate{}, err
+	}
+	row, err := q.GetVoiceRoomCohostCandidate(ctx, voicegen.GetVoiceRoomCohostCandidateParams{RoomID: roomID, AccountID: accountID})
+	if err != nil {
+		return appvoice.CohostCandidate{}, postgres.NotFound(err, appvoice.ErrNotFound, "voice room co-host candidate")
+	}
+	return appvoice.CohostCandidate{Position: int(row.Position), Removed: row.Removed}, nil
+}
+
+// Attended implements appvoice.Repository.
+func (r *Repository) Attended(ctx context.Context, tx uow.Tx, roomID string) (bool, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return false, err
+	}
+	ok, err := q.IsVoiceRoomAttended(ctx, roomID)
+	return ok, postgres.Wrap(err, "find voice room participation")
 }

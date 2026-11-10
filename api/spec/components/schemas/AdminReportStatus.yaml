@@ -2,7 +2,7 @@
 description: |
   A post that a report points at, as a moderator reviews it. `status` is the post as it
   was last, without the moderator's own relation to it (`favourited`, `boosted`,
-  `bookmarked`, `pinned`, and `quotable` are omitted, and so are `me` of each of its
+  `bookmarked`, `pinned`, and `permissions` are omitted, and so are `me` of each of its
   `reactions` and `voted` and `own_votes` of its `poll`). What a moderator blocks, what
   blocks them, and the restrictions on an author hide nothing of it. Its `quote` shows the
   quoted post unless the post's visibility keeps it from an account with no relation to its

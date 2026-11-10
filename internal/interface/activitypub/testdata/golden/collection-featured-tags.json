@@ -1,5 +1,99 @@
 {
-  "@context": "https://www.w3.org/ns/activitystreams",
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    "https://w3id.org/security/v1",
+    {
+      "AnnounceAuthorization": "gts:AnnounceAuthorization",
+      "AnnounceRequest": "gts:AnnounceRequest",
+      "Emoji": "toot:Emoji",
+      "Hashtag": "as:Hashtag",
+      "PropertyValue": "schema:PropertyValue",
+      "QuoteAuthorization": "https://w3id.org/fep/044f#QuoteAuthorization",
+      "QuoteRequest": "https://w3id.org/fep/044f#QuoteRequest",
+      "ReplyAuthorization": "gts:ReplyAuthorization",
+      "ReplyRequest": "gts:ReplyRequest",
+      "_misskey_quote": "https://misskey-hub.net/ns#_misskey_quote",
+      "announceAuthorization": {
+        "@id": "gts:announceAuthorization",
+        "@type": "@id"
+      },
+      "automaticApproval": {
+        "@id": "gts:automaticApproval",
+        "@type": "@id"
+      },
+      "blurhash": "toot:blurhash",
+      "canAnnounce": {
+        "@id": "gts:canAnnounce",
+        "@type": "@id"
+      },
+      "canQuote": {
+        "@id": "gts:canQuote",
+        "@type": "@id"
+      },
+      "canReply": {
+        "@id": "gts:canReply",
+        "@type": "@id"
+      },
+      "conversation": "ostatus:conversation",
+      "discoverable": "toot:discoverable",
+      "featured": {
+        "@id": "toot:featured",
+        "@type": "@id"
+      },
+      "featuredTags": {
+        "@id": "toot:featuredTags",
+        "@type": "@id"
+      },
+      "focalPoint": {
+        "@container": "@list",
+        "@id": "toot:focalPoint"
+      },
+      "gts": "https://gotosocial.org/ns#",
+      "indexable": "toot:indexable",
+      "interactingObject": {
+        "@id": "gts:interactingObject",
+        "@type": "@id"
+      },
+      "interactionPolicy": {
+        "@id": "gts:interactionPolicy",
+        "@type": "@id"
+      },
+      "interactionTarget": {
+        "@id": "gts:interactionTarget",
+        "@type": "@id"
+      },
+      "manualApproval": {
+        "@id": "gts:manualApproval",
+        "@type": "@id"
+      },
+      "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
+      "movedTo": {
+        "@id": "as:movedTo",
+        "@type": "@id"
+      },
+      "ostatus": "http://ostatus.org#",
+      "quote": {
+        "@id": "https://w3id.org/fep/044f#quote",
+        "@type": "@id"
+      },
+      "quoteAuthorization": {
+        "@id": "https://w3id.org/fep/044f#quoteAuthorization",
+        "@type": "@id"
+      },
+      "quoteUri": "http://fedibird.com/ns#quoteUri",
+      "quoteUrl": "as:quoteUrl",
+      "replyAuthorization": {
+        "@id": "gts:replyAuthorization",
+        "@type": "@id"
+      },
+      "schema": "http://schema.org#",
+      "sensitive": "as:sensitive",
+      "suspended": "toot:suspended",
+      "toot": "http://joinmastodon.org/ns#",
+      "value": "schema:value",
+      "votersCount": "toot:votersCount"
+    }
+  ],
   "id": "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f/featured-tags",
   "type": "Collection",
   "totalItems": 0,

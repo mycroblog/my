@@ -23,8 +23,9 @@ CREATE TABLE notifications (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'status', 'announcement',
-    'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit'
+    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'admin_domain_list_failing', 'status', 'announcement',
+    'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit', 'scheduled_status_failed',
+    'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected'
   )),
   source_account_id TEXT,
   -- the domain of a remote source account; NULL for a local source or none.
@@ -70,6 +71,8 @@ CREATE TABLE notifications (
   hook_appeal_id TEXT,
   -- auto_delete_limit: the status_auto_delete_limit_notices row.
   auto_delete_limit_notice_id TEXT,
+  -- scheduled_status_failed: the draft_schedules row of the schedule that could not be published.
+  draft_schedule_id TEXT,
   dedupe_key TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   -- nobody is notified of their own actions.
@@ -155,8 +158,9 @@ CREATE TABLE push_subscription_alerts (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'status', 'announcement',
-    'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit'
+    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'admin_domain_list_failing', 'status', 'announcement',
+    'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit', 'scheduled_status_failed',
+    'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected'
   )),
   PRIMARY KEY (subscription_id, notification_type)
 ) STRICT;
@@ -172,8 +176,9 @@ CREATE TABLE notification_settings (
     'mention', 'follow', 'follow_request', 'follow_accepted', 'boost', 'favourite', 'reaction', 'quote', 'poll_closed',
     'account_moved', 'voice',
     'admin_report', 'admin_sign_up', 'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request',
-    'admin_account_moved', 'admin_service_closure_due', 'admin_error_group', 'admin_hook_failing', 'admin_hook_appeal',
-    'moderation', 'status', 'announcement', 'auto_delete_limit'
+    'admin_account_moved', 'admin_service_closure_due', 'admin_error_group', 'admin_hook_failing', 'admin_hook_appeal', 'admin_domain_list_failing',
+    'moderation', 'status', 'announcement', 'auto_delete_limit', 'interaction_request',
+    'scheduled_status_failed'
   )),
   channel TEXT NOT NULL CHECK (channel IN ('in_app', 'email')),
   enabled INTEGER NOT NULL CHECK (enabled IN (0, 1)),
@@ -216,3 +221,83 @@ CREATE INDEX notifications_source_account_id ON notifications (source_account_id
 CREATE INDEX notifications_subject_user_id ON notifications (subject_user_id);
 
 CREATE INDEX notification_exclusions_target_account_id ON notification_exclusions (target_account_id);
+
+-- Thread mutes (ADR-0158 §8, §9).
+-- Current value: a local account's mute of a conversation (content's conversations, ADR-0154),
+-- which keeps the mention, boost, favourite, reaction, quote, and status notifications about the
+-- statuses of the conversation from being created; timelines still show them. The merge of a
+-- conversation (content.conversation_merged) moves its rows to the conversation it was merged
+-- into, keeping one row when the account muted both.
+CREATE TABLE conversation_mutes (
+  account_id TEXT NOT NULL,
+  conversation_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (account_id, conversation_id)
+) STRICT;
+-- The accounts that mute a conversation: the check of the recipients of a notification, and the
+-- merge.
+CREATE INDEX conversation_mutes_conversation_account ON conversation_mutes (conversation_id, account_id);
+
+-- ---------------------------------------------------------------------------------------------
+-- The notification policy and the requests of the filtered notifications (ADR-0158 §1-§7,
+-- §9, data-model §4.7).
+-- ---------------------------------------------------------------------------------------------
+
+-- Current value: a local account's action for the notifications whose source meets a condition.
+-- A condition without a row accepts.
+CREATE TABLE notification_policies (
+  account_id TEXT NOT NULL,
+  policy_condition TEXT NOT NULL CHECK (policy_condition IN (
+    'not_following', 'not_follower', 'new_account', 'unsolicited_private_mention', 'limited_account'
+  )),
+  policy_action TEXT NOT NULL CHECK (policy_action IN ('accept', 'filter', 'drop')),
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (account_id, policy_condition)
+) STRICT;
+
+-- Event (subtype of notifications): the policy filtered the notification when it was created.
+-- It is listed only once its recipient accepts its source and no dismissal of the source's
+-- request covers it; until then it waits in the request. Never changed after it is created.
+CREATE TABLE notification_filterings (
+  notification_id TEXT NOT NULL PRIMARY KEY,
+  recipient_account_id TEXT NOT NULL,
+  source_account_id TEXT NOT NULL
+) STRICT;
+CREATE INDEX notification_filterings_recipient_source ON notification_filterings (recipient_account_id, source_account_id, notification_id);
+CREATE INDEX notification_filterings_source_account_id ON notification_filterings (source_account_id);
+
+-- Resource: a source whose request the recipient accepted. Its filtered notifications are
+-- listed, and the policy accepts its later ones.
+CREATE TABLE notification_accepted_sources (
+  recipient_account_id TEXT NOT NULL,
+  source_account_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (recipient_account_id, source_account_id),
+  CHECK (recipient_account_id <> source_account_id)
+) STRICT;
+CREATE INDEX notification_accepted_sources_source_account_id ON notification_accepted_sources (source_account_id);
+
+-- Event: the recipient dismissed the request of a source. The filtered notifications up to and
+-- including last_notification_id leave the request and are never listed.
+CREATE TABLE notification_request_dismissals (
+  id TEXT NOT NULL PRIMARY KEY,
+  recipient_account_id TEXT NOT NULL,
+  source_account_id TEXT NOT NULL,
+  last_notification_id TEXT NOT NULL,
+  dismissed_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX notification_request_dismissals_recipient_source ON notification_request_dismissals (recipient_account_id, source_account_id, last_notification_id);
+CREATE INDEX notification_request_dismissals_source_account_id ON notification_request_dismissals (source_account_id);
+
+-- Projection of notification_filterings, notification_accepted_sources, and
+-- notification_request_dismissals: the filtered notifications of each source that wait for the
+-- recipient, neither accepted nor dismissed.
+CREATE TABLE notification_requests (
+  recipient_account_id TEXT NOT NULL,
+  source_account_id TEXT NOT NULL,
+  notifications_count INTEGER NOT NULL CHECK (notifications_count > 0),
+  last_notification_id TEXT NOT NULL,
+  PRIMARY KEY (recipient_account_id, source_account_id)
+) STRICT;
+CREATE INDEX notification_requests_recipient_last ON notification_requests (recipient_account_id, last_notification_id);
+CREATE INDEX notification_requests_source_account_id ON notification_requests (source_account_id);

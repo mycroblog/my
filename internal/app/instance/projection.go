@@ -20,6 +20,9 @@ const (
 // SettingRevised is emitted when a setting revision is inserted.
 type SettingRevised struct {
 	Revision instance.SettingRevision
+	// Previous is the value of the setting before the revision, its default when it had none,
+	// read in the transaction of the revision.
+	Previous string
 }
 
 // EventType implements uow.Event.

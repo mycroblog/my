@@ -13,37 +13,28 @@ import (
 	"strings"
 )
 
-const addTagUsage = `-- name: AddTagUsage :exec
+const addManyTagUsage = `-- name: AddManyTagUsage :exec
 INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
-VALUES (CAST(?1 AS TEXT), CAST(?2 AS INTEGER), (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = CAST(?1 AS TEXT) AND f.visibility IN ('public', 'local', 'unlisted')))
+SELECT value ->> '$.tag_id', value ->> '$.n',
+  (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = value ->> '$.tag_id' AND f.visibility IN ('public', 'local', 'unlisted'))
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
 ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at
 `
 
-type AddTagUsageParams struct {
-	TagID string
-	N     int64
-}
-
-// AddTagUsage adds n posts to the usage of a tag, which a post that counts carries.
-func (q *Queries) AddTagUsage(ctx context.Context, arg AddTagUsageParams) error {
-	_, err := q.db.ExecContext(ctx, addTagUsage, arg.TagID, arg.N)
+func (q *Queries) AddManyTagUsage(ctx context.Context, usage string) error {
+	_, err := q.db.ExecContext(ctx, addManyTagUsage, usage)
 	return err
 }
 
-const adjustTagUsage = `-- name: AdjustTagUsage :exec
-UPDATE tag_usage SET statuses_count = statuses_count + CAST(?1 AS INTEGER), last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = CAST(?2 AS TEXT) AND f.visibility IN ('public', 'local', 'unlisted'))
-WHERE tag_id = CAST(?2 AS TEXT)
+const adjustManyTagUsage = `-- name: AdjustManyTagUsage :exec
+UPDATE tag_usage SET
+  statuses_count = statuses_count + (SELECT CAST(value ->> '$.n' AS INTEGER) FROM json_each(CAST(?1 AS TEXT)) WHERE value ->> '$.tag_id' = tag_usage.tag_id),
+  last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = tag_usage.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
+WHERE tag_id IN (SELECT value ->> '$.tag_id' FROM json_each(CAST(?1 AS TEXT)))
 `
 
-type AdjustTagUsageParams struct {
-	Delta int64
-	TagID string
-}
-
-// AdjustTagUsage adds delta (which may be zero or negative) posts to the usage of a tag that has
-// a row and that a post that counts still carries, and reads its last_used_at again.
-func (q *Queries) AdjustTagUsage(ctx context.Context, arg AdjustTagUsageParams) error {
-	_, err := q.db.ExecContext(ctx, adjustTagUsage, arg.Delta, arg.TagID)
+func (q *Queries) AdjustManyTagUsage(ctx context.Context, usage string) error {
+	_, err := q.db.ExecContext(ctx, adjustManyTagUsage, usage)
 	return err
 }
 
@@ -134,21 +125,6 @@ func (q *Queries) DeleteAllTagUsage(ctx context.Context) error {
 	return err
 }
 
-const deleteDrainedTagUsage = `-- name: DeleteDrainedTagUsage :exec
-DELETE FROM tag_usage WHERE tag_id = CAST(?1 AS TEXT) AND statuses_count <= CAST(?2 AS INTEGER)
-`
-
-type DeleteDrainedTagUsageParams struct {
-	TagID string
-	N     int64
-}
-
-// DeleteDrainedTagUsage deletes the usage of a tag that n posts fewer would leave at zero.
-func (q *Queries) DeleteDrainedTagUsage(ctx context.Context, arg DeleteDrainedTagUsageParams) error {
-	_, err := q.db.ExecContext(ctx, deleteDrainedTagUsage, arg.TagID, arg.N)
-	return err
-}
-
 const deleteFeedAuthorRestriction = `-- name: DeleteFeedAuthorRestriction :exec
 DELETE FROM feed_author_restrictions WHERE account_id = ? AND restriction = ?
 `
@@ -169,6 +145,18 @@ DELETE FROM feed_direct_recipients WHERE entry_id = ?
 
 func (q *Queries) DeleteFeedDirectRecipients(ctx context.Context, entryID string) error {
 	_, err := q.db.ExecContext(ctx, deleteFeedDirectRecipients, entryID)
+	return err
+}
+
+const deleteFeedDirectRecipientsOf = `-- name: DeleteFeedDirectRecipientsOf :exec
+
+DELETE FROM feed_direct_recipients WHERE entry_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+// The rows of the entries of many deleted statuses, each statement as the one of one entry above
+// does for every entry it names. The lists are JSON arrays.
+func (q *Queries) DeleteFeedDirectRecipientsOf(ctx context.Context, entryIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteFeedDirectRecipientsOf, entryIds)
 	return err
 }
 
@@ -206,6 +194,15 @@ DELETE FROM feed_entries WHERE status_id = ?
 
 func (q *Queries) DeleteFeedEntriesOfStatus(ctx context.Context, statusID string) error {
 	_, err := q.db.ExecContext(ctx, deleteFeedEntriesOfStatus, statusID)
+	return err
+}
+
+const deleteFeedEntriesOfStatuses = `-- name: DeleteFeedEntriesOfStatuses :exec
+DELETE FROM feed_entries WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteFeedEntriesOfStatuses(ctx context.Context, statusIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteFeedEntriesOfStatuses, statusIds)
 	return err
 }
 
@@ -247,12 +244,33 @@ func (q *Queries) DeleteFeedFollowEdge(ctx context.Context, arg DeleteFeedFollow
 	return err
 }
 
+const deleteFeedFollowEdges = `-- name: DeleteFeedFollowEdges :exec
+DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?1 AS TEXT)))
+`
+
+// DeleteFeedFollowEdges and DeleteListMembersOfFollows are DeleteFeedFollowEdge and
+// DeleteListMembersOfFollow of many pairs, a JSON array of {"a": follower, "b": followee}.
+func (q *Queries) DeleteFeedFollowEdges(ctx context.Context, pairs string) error {
+	_, err := q.db.ExecContext(ctx, deleteFeedFollowEdges, pairs)
+	return err
+}
+
 const deleteFeedTagEntries = `-- name: DeleteFeedTagEntries :exec
 DELETE FROM feed_tag_entries WHERE entry_id = ?
 `
 
 func (q *Queries) DeleteFeedTagEntries(ctx context.Context, entryID string) error {
 	_, err := q.db.ExecContext(ctx, deleteFeedTagEntries, entryID)
+	return err
+}
+
+const deleteFeedTagEntriesOf = `-- name: DeleteFeedTagEntriesOf :exec
+DELETE FROM feed_tag_entries WHERE entry_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteFeedTagEntriesOf(ctx context.Context, entryIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteFeedTagEntriesOf, entryIds)
 	return err
 }
 
@@ -295,6 +313,16 @@ func (q *Queries) DeleteListMembersOfFollow(ctx context.Context, arg DeleteListM
 	return err
 }
 
+const deleteListMembersOfFollows = `-- name: DeleteListMembersOfFollows :exec
+DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteListMembersOfFollows(ctx context.Context, pairs string) error {
+	_, err := q.db.ExecContext(ctx, deleteListMembersOfFollows, pairs)
+	return err
+}
+
 const deleteListMembersOfList = `-- name: DeleteListMembersOfList :exec
 DELETE FROM list_members WHERE list_id = ?
 `
@@ -323,6 +351,17 @@ DELETE FROM list_names WHERE list_id = ?
 
 func (q *Queries) DeleteListName(ctx context.Context, listID string) error {
 	_, err := q.db.ExecContext(ctx, deleteListName, listID)
+	return err
+}
+
+const deleteManyDrainedTagUsage = `-- name: DeleteManyDrainedTagUsage :exec
+DELETE FROM tag_usage WHERE EXISTS (
+  SELECT 1 FROM json_each(CAST(?1 AS TEXT))
+  WHERE value ->> '$.tag_id' = tag_usage.tag_id AND tag_usage.statuses_count <= CAST(value ->> '$.n' AS INTEGER))
+`
+
+func (q *Queries) DeleteManyDrainedTagUsage(ctx context.Context, usage string) error {
+	_, err := q.db.ExecContext(ctx, deleteManyDrainedTagUsage, usage)
 	return err
 }
 
@@ -396,18 +435,26 @@ func (q *Queries) GetList(ctx context.Context, id string) (GetListRow, error) {
 	return i, err
 }
 
-const insertFeedDirectRecipient = `-- name: InsertFeedDirectRecipient :exec
-INSERT INTO feed_direct_recipients (entry_id, recipient_account_id) VALUES (?, ?)
+const insertFeedDirectRecipients = `-- name: InsertFeedDirectRecipients :exec
+
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT CAST(?1 AS TEXT), value FROM json_each(CAST(?2 AS TEXT)) WHERE true
 ON CONFLICT DO NOTHING
 `
 
-type InsertFeedDirectRecipientParams struct {
-	EntryID            string
-	RecipientAccountID string
+type InsertFeedDirectRecipientsParams struct {
+	EntryID             string
+	RecipientAccountIds string
 }
 
-func (q *Queries) InsertFeedDirectRecipient(ctx context.Context, arg InsertFeedDirectRecipientParams) error {
-	_, err := q.db.ExecContext(ctx, insertFeedDirectRecipient, arg.EntryID, arg.RecipientAccountID)
+// The rows of an entry's direct recipients and tag entries, and the tag usage that they change,
+// written with one statement each; the lists are JSON arrays, and WHERE true keeps ON CONFLICT
+// from reading as a join constraint. Tag usage: AddManyTagUsage adds n posts to the usage of each
+// tag; DeleteManyDrainedTagUsage deletes the usage of each tag that n posts fewer would leave at
+// zero; AdjustManyTagUsage adds n (zero or negative) posts to each tag that has a row, and reads
+// its last_used_at again.
+func (q *Queries) InsertFeedDirectRecipients(ctx context.Context, arg InsertFeedDirectRecipientsParams) error {
+	_, err := q.db.ExecContext(ctx, insertFeedDirectRecipients, arg.EntryID, arg.RecipientAccountIds)
 	return err
 }
 
@@ -475,28 +522,31 @@ func (q *Queries) InsertFeedEntry(ctx context.Context, arg InsertFeedEntryParams
 	return result.RowsAffected()
 }
 
-const insertFeedTagEntry = `-- name: InsertFeedTagEntry :exec
-INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at) VALUES (?, ?, ?, ?, ?, ?)
+const insertFeedTagEntries = `-- name: InsertFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT value, CAST(?1 AS TEXT), CAST(?2 AS TEXT), CAST(?3 AS TEXT),
+  CAST(?4 AS INTEGER), CAST(?5 AS INTEGER)
+FROM json_each(CAST(?6 AS TEXT)) WHERE true
 ON CONFLICT DO NOTHING
 `
 
-type InsertFeedTagEntryParams struct {
-	TagID           string
+type InsertFeedTagEntriesParams struct {
 	EntryID         string
 	AuthorAccountID string
 	Visibility      string
 	IsLocal         int64
 	RevisedAt       int64
+	TagIds          string
 }
 
-func (q *Queries) InsertFeedTagEntry(ctx context.Context, arg InsertFeedTagEntryParams) error {
-	_, err := q.db.ExecContext(ctx, insertFeedTagEntry,
-		arg.TagID,
+func (q *Queries) InsertFeedTagEntries(ctx context.Context, arg InsertFeedTagEntriesParams) error {
+	_, err := q.db.ExecContext(ctx, insertFeedTagEntries,
 		arg.EntryID,
 		arg.AuthorAccountID,
 		arg.Visibility,
 		arg.IsLocal,
 		arg.RevisedAt,
+		arg.TagIds,
 	)
 	return err
 }
@@ -826,6 +876,33 @@ func (q *Queries) ListCountedFeedTagIDs(ctx context.Context, entryID string) ([]
 	return items, nil
 }
 
+const listCountedFeedTagIDsOf = `-- name: ListCountedFeedTagIDsOf :many
+SELECT tag_id FROM feed_tag_entries WHERE entry_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id
+`
+
+func (q *Queries) ListCountedFeedTagIDsOf(ctx context.Context, entryIds string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listCountedFeedTagIDsOf, entryIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var tag_id string
+		if err := rows.Scan(&tag_id); err != nil {
+			return nil, err
+		}
+		items = append(items, tag_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFeedAuthorRestrictionsAmong = `-- name: ListFeedAuthorRestrictionsAmong :many
 SELECT account_id, restriction FROM feed_author_restrictions
 WHERE (effective_until IS NULL OR effective_until > CAST(?1 AS INTEGER))
@@ -898,6 +975,44 @@ func (q *Queries) ListFeedDirectEntriesAmong(ctx context.Context, arg ListFeedDi
 	return items, nil
 }
 
+const listFeedDirectEntriesAmongOf = `-- name: ListFeedDirectEntriesAmongOf :many
+SELECT recipient_account_id, entry_id FROM feed_direct_recipients
+WHERE recipient_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND entry_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))
+`
+
+type ListFeedDirectEntriesAmongOfParams struct {
+	Viewers  string
+	EntryIds string
+}
+
+type ListFeedDirectEntriesAmongOfRow struct {
+	RecipientAccountID string
+	EntryID            string
+}
+
+func (q *Queries) ListFeedDirectEntriesAmongOf(ctx context.Context, arg ListFeedDirectEntriesAmongOfParams) ([]ListFeedDirectEntriesAmongOfRow, error) {
+	rows, err := q.db.QueryContext(ctx, listFeedDirectEntriesAmongOf, arg.Viewers, arg.EntryIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListFeedDirectEntriesAmongOfRow{}
+	for rows.Next() {
+		var i ListFeedDirectEntriesAmongOfRow
+		if err := rows.Scan(&i.RecipientAccountID, &i.EntryID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFeedDomainMutesAmong = `-- name: ListFeedDomainMutesAmong :many
 SELECT domain FROM feed_domain_mutes
 WHERE viewer_account_id = ?1 AND domain IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))
@@ -921,6 +1036,39 @@ func (q *Queries) ListFeedDomainMutesAmong(ctx context.Context, arg ListFeedDoma
 			return nil, err
 		}
 		items = append(items, domain)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFeedDomainMutesAmongOf = `-- name: ListFeedDomainMutesAmongOf :many
+SELECT viewer_account_id, domain FROM feed_domain_mutes
+WHERE viewer_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND domain IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))
+`
+
+type ListFeedDomainMutesAmongOfParams struct {
+	Viewers string
+	Domains string
+}
+
+func (q *Queries) ListFeedDomainMutesAmongOf(ctx context.Context, arg ListFeedDomainMutesAmongOfParams) ([]FeedDomainMute, error) {
+	rows, err := q.db.QueryContext(ctx, listFeedDomainMutesAmongOf, arg.Viewers, arg.Domains)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeedDomainMute{}
+	for rows.Next() {
+		var i FeedDomainMute
+		if err := rows.Scan(&i.ViewerAccountID, &i.Domain); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -1010,6 +1158,47 @@ func (q *Queries) ListFeedExclusionsAmong(ctx context.Context, arg ListFeedExclu
 	return items, nil
 }
 
+const listFeedExclusionsAmongOf = `-- name: ListFeedExclusionsAmongOf :many
+SELECT viewer_account_id, target_account_id, reason FROM feed_exclusions
+WHERE viewer_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND (expires_at IS NULL OR expires_at > CAST(?2 AS INTEGER))
+  AND target_account_id IN (SELECT value FROM json_each(CAST(?3 AS TEXT)))
+`
+
+type ListFeedExclusionsAmongOfParams struct {
+	Viewers    string
+	Now        int64
+	AccountIds string
+}
+
+type ListFeedExclusionsAmongOfRow struct {
+	ViewerAccountID string
+	TargetAccountID string
+	Reason          string
+}
+
+func (q *Queries) ListFeedExclusionsAmongOf(ctx context.Context, arg ListFeedExclusionsAmongOfParams) ([]ListFeedExclusionsAmongOfRow, error) {
+	rows, err := q.db.QueryContext(ctx, listFeedExclusionsAmongOf, arg.Viewers, arg.Now, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListFeedExclusionsAmongOfRow{}
+	for rows.Next() {
+		var i ListFeedExclusionsAmongOfRow
+		if err := rows.Scan(&i.ViewerAccountID, &i.TargetAccountID, &i.Reason); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFeedFollowedAmong = `-- name: ListFeedFollowedAmong :many
 
 SELECT followee_account_id FROM feed_follow_edges
@@ -1045,8 +1234,90 @@ func (q *Queries) ListFeedFollowedAmong(ctx context.Context, arg ListFeedFollowe
 	return items, nil
 }
 
-const listHomeEntries = `-- name: ListHomeEntries :many
+const listFeedFollowedAmongOf = `-- name: ListFeedFollowedAmongOf :many
 
+SELECT follower_account_id, followee_account_id FROM feed_follow_edges
+WHERE follower_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND followee_account_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))
+`
+
+type ListFeedFollowedAmongOfParams struct {
+	Viewers    string
+	AccountIds string
+}
+
+type ListFeedFollowedAmongOfRow struct {
+	FollowerAccountID string
+	FolloweeAccountID string
+}
+
+// The facts of many viewers, each as the query of one viewer above reads it, for deciding one new
+// entry for many streams at once.
+func (q *Queries) ListFeedFollowedAmongOf(ctx context.Context, arg ListFeedFollowedAmongOfParams) ([]ListFeedFollowedAmongOfRow, error) {
+	rows, err := q.db.QueryContext(ctx, listFeedFollowedAmongOf, arg.Viewers, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListFeedFollowedAmongOfRow{}
+	for rows.Next() {
+		var i ListFeedFollowedAmongOfRow
+		if err := rows.Scan(&i.FollowerAccountID, &i.FolloweeAccountID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFeedFollowersAmong = `-- name: ListFeedFollowersAmong :many
+
+SELECT follower_account_id FROM feed_follow_edges
+WHERE followee_account_id = ?1 AND follower_account_id IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))
+`
+
+type ListFeedFollowersAmongParams struct {
+	Followee    string
+	FollowerIds string
+}
+
+// Timelines (data-model 6) ----------------------------------------------------------------------
+// A list argument is a JSON array of strings, read with json_each: the SQLite engine of sqlc
+// expands sqlc.slice into plain ? placeholders, which SQLite numbers after the largest ?N, so a
+// slice followed by another argument would bind the wrong values.
+// before = ” starts at the newest entry. A language filter applies when all_languages is 0:
+// entries in an undetermined language ('und') always pass. A restriction or mute applies while
+// its end is NULL or after now. A domain restriction also covers the subdomains of its domain.
+// The accounts among follower_ids whose home timelines follow the followee.
+func (q *Queries) ListFeedFollowersAmong(ctx context.Context, arg ListFeedFollowersAmongParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listFeedFollowersAmong, arg.Followee, arg.FollowerIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var follower_account_id string
+		if err := rows.Scan(&follower_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, follower_account_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listHomeEntries = `-- name: ListHomeEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
 FROM feed_entries e
@@ -1095,13 +1366,6 @@ type ListHomeEntriesParams struct {
 	PageLimit    int64
 }
 
-// Timelines (data-model 6) ----------------------------------------------------------------------
-// A list argument is a JSON array of strings, read with json_each: the SQLite engine of sqlc
-// expands sqlc.slice into plain ? placeholders, which SQLite numbers after the largest ?N, so a
-// slice followed by another argument would bind the wrong values.
-// before = ” starts at the newest entry. A language filter applies when all_languages is 0:
-// entries in an undetermined language ('und') always pass. A restriction or mute applies while
-// its end is NULL or after now. A domain restriction also covers the subdomains of its domain.
 // ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
 // accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
 // boosts, within the read window (id >= window_floor).
@@ -1653,48 +1917,55 @@ FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.tag_id = ?1 AND t.visibility IN ('public', 'local')
   AND (CAST(?2 AS INTEGER) = 1 OR t.visibility = 'public')
-  AND (CAST(?3 AS TEXT) = '' OR t.entry_id < CAST(?3 AS TEXT))
+  AND (CAST(?3 AS INTEGER) = 0 OR t.is_local = 1)
+  AND (CAST(?4 AS INTEGER) = 0 OR e.is_reply = 0)
+  AND (CAST(?5 AS TEXT) = '' OR t.entry_id < CAST(?5 AS TEXT))
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
     WHERE r.account_id = t.author_account_id
       AND r.restriction IN ('public_discovery', 'visibility_ceiling_private', 'profile_view')
-      AND (r.effective_until IS NULL OR r.effective_until > CAST(?4 AS INTEGER)))
+      AND (r.effective_until IS NULL OR r.effective_until > CAST(?6 AS INTEGER)))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_restrictions dr
     WHERE dr.restriction IN ('public_discovery', 'profile_view')
-      AND (dr.effective_until IS NULL OR dr.effective_until > CAST(?4 AS INTEGER))
+      AND (dr.effective_until IS NULL OR dr.effective_until > CAST(?6 AS INTEGER))
       AND (dr.domain = e.author_domain OR substr(e.author_domain, -(length(dr.domain) + 1)) = '.' || dr.domain))
   AND NOT EXISTS (
     SELECT 1 FROM feed_exclusions x
-    WHERE x.viewer_account_id = ?5 AND x.target_account_id = t.author_account_id
-      AND (x.expires_at IS NULL OR x.expires_at > CAST(?4 AS INTEGER)))
+    WHERE x.viewer_account_id = ?7 AND x.target_account_id = t.author_account_id
+      AND (x.expires_at IS NULL OR x.expires_at > CAST(?6 AS INTEGER)))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_mutes dm
-    WHERE dm.viewer_account_id = ?5
+    WHERE dm.viewer_account_id = ?7
       AND (dm.domain = e.author_domain OR substr(e.author_domain, -(length(dm.domain) + 1)) = '.' || dm.domain))
-  AND (CAST(?6 AS INTEGER) = 1 OR e.language = 'und' OR e.language IN (SELECT value FROM json_each(CAST(?7 AS TEXT))))
+  AND (CAST(?8 AS INTEGER) = 1 OR e.language = 'und' OR e.language IN (SELECT value FROM json_each(CAST(?9 AS TEXT))))
 ORDER BY t.entry_id DESC
-LIMIT ?8
+LIMIT ?10
 `
 
 type ListTagEntriesParams struct {
-	TagID        string
-	IncludeLocal int64
-	Before       string
-	Now          int64
-	Viewer       string
-	AllLanguages int64
-	Languages    string
-	PageLimit    int64
+	TagID          string
+	IncludeLocal   int64
+	LocalOnly      int64
+	ExcludeReplies int64
+	Before         string
+	Now            int64
+	Viewer         string
+	AllLanguages   int64
+	Languages      string
+	PageLimit      int64
 }
 
 // ListTagEntries is the timeline of a hashtag (FR-203): the public and local posts with the tag
 // (public only when include_local is 0), with the exclusions of ListLocalEntries and of the
-// author's domain.
+// author's domain. local_only keeps the posts of local authors, and exclude_replies leaves out
+// the posts that reply to a status (the Atom feed of a hashtag, FR-213).
 func (q *Queries) ListTagEntries(ctx context.Context, arg ListTagEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.QueryContext(ctx, listTagEntries,
 		arg.TagID,
 		arg.IncludeLocal,
+		arg.LocalOnly,
+		arg.ExcludeReplies,
 		arg.Before,
 		arg.Now,
 		arg.Viewer,
@@ -1849,6 +2120,19 @@ func (q *Queries) UpsertFeedExclusion(ctx context.Context, arg UpsertFeedExclusi
 	return err
 }
 
+const upsertFeedExclusions = `-- name: UpsertFeedExclusions :exec
+INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at
+`
+
+// UpsertFeedExclusions is UpsertFeedExclusion of many exclusions, a JSON array.
+func (q *Queries) UpsertFeedExclusions(ctx context.Context, exclusions string) error {
+	_, err := q.db.ExecContext(ctx, upsertFeedExclusions, exclusions)
+	return err
+}
+
 const upsertFeedFollowEdge = `-- name: UpsertFeedFollowEdge :exec
 INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts) VALUES (?, ?, ?)
 ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts
@@ -1862,6 +2146,20 @@ type UpsertFeedFollowEdgeParams struct {
 
 func (q *Queries) UpsertFeedFollowEdge(ctx context.Context, arg UpsertFeedFollowEdgeParams) error {
 	_, err := q.db.ExecContext(ctx, upsertFeedFollowEdge, arg.FollowerAccountID, arg.FolloweeAccountID, arg.ShowBoosts)
+	return err
+}
+
+const upsertFeedFollowEdges = `-- name: UpsertFeedFollowEdges :exec
+INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
+SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.show_boosts'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts
+`
+
+// UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges, a JSON array; WHERE true keeps
+// ON CONFLICT from reading as a join constraint.
+func (q *Queries) UpsertFeedFollowEdges(ctx context.Context, edges string) error {
+	_, err := q.db.ExecContext(ctx, upsertFeedFollowEdges, edges)
 	return err
 }
 

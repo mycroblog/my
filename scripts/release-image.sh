@@ -10,7 +10,14 @@
 #                                                           back to it); a pre-release has its own tag alone
 #   scripts/release-image.sh series                         the X.Y tags to scan, given the image tags on stdin: those of
 #                                                           the two latest minor versions, which operators upgrade through
-#   scripts/release-image.sh metadata VERSION SHA CREATED   the OCI labels and annotations of the image, as key=value lines
+#   scripts/release-image.sh metadata VERSION SHA CREATED [REF]
+#                                                           the OCI labels and annotations of the image, as key=value lines;
+#                                                           its documentation is at REF (default VERSION, a tag)
+#   scripts/release-image.sh nightly-version LATEST SHA TIME
+#                                                           the version of a nightly image of commit SHA made at TIME
+#                                                           (YYYYMMDDhhmmss, UTC), after the release tag LATEST (empty when
+#                                                           none): a pseudo-version, as Go's, that sorts after LATEST and
+#                                                           before the next release
 #   scripts/release-image.sh list-tags                      the tags of the image on the registry (REGISTRY_TOKEN when it
 #                                                           is not public); nothing when anonymous and not public
 #   scripts/release-image.sh digest REF                     the digest of the index that REF names
@@ -79,8 +86,8 @@ series() {
 }
 
 metadata() {
-  (($# == 3)) || usage
-  local version="$1" sha="$2" created="$3" base
+  (($# == 3 || $# == 4)) || usage
+  local version="$1" sha="$2" created="$3" ref="${4:-$1}" base
   check_version "$version"
   base="$(sed -n 's/^FROM \([^ ]*\)@\(sha256:[0-9a-f]*\) AS app$/\1 \2/p' "$root/Dockerfile")"
   [[ "$base" == *" sha256:"* ]] || die "the Dockerfile's app stage has no base image pinned by digest"
@@ -89,7 +96,7 @@ org.opencontainers.image.title=my
 org.opencontainers.image.description=An ActivityPub-compatible microblog server.
 org.opencontainers.image.url=https://github.com/mycroblog/my
 org.opencontainers.image.source=https://github.com/mycroblog/my
-org.opencontainers.image.documentation=https://github.com/mycroblog/my/blob/$version/README.md
+org.opencontainers.image.documentation=https://github.com/mycroblog/my/blob/$ref/README.md
 org.opencontainers.image.version=${version#v}
 org.opencontainers.image.revision=$sha
 org.opencontainers.image.created=$created
@@ -97,6 +104,26 @@ org.opencontainers.image.licenses=AGPL-3.0-only
 org.opencontainers.image.base.name=${base% *}
 org.opencontainers.image.base.digest=${base#* }
 META
+}
+
+nightly_version() {
+  (($# == 3)) || usage
+  local latest="$1" sha="$2" time="$3"
+  [[ "$sha" =~ ^[0-9a-f]{12,40}$ ]] || die "not a commit: $sha"
+  [[ "$time" =~ ^[0-9]{14}$ ]] || die "the time must be YYYYMMDDhhmmss: $time"
+  local tail="0.$time.g${sha:0:12}"
+  if [[ -z "$latest" ]]; then
+    echo "v0.0.0-$tail"
+    return
+  fi
+  check_version "$latest"
+  # After a pre-release, a pre-release of the same version that sorts after it; after a release, a pre-release of the
+  # next patch.
+  if [[ -n "$pre" ]]; then
+    echo "$latest.$tail"
+  else
+    echo "v$major.$minor.$((patch + 1))-$tail"
+  fi
 }
 
 list_tags() {
@@ -200,6 +227,7 @@ case "$cmd" in
   tags) tags "$@" ;;
   series) series "$@" ;;
   metadata) metadata "$@" ;;
+  nightly-version) nightly_version "$@" ;;
   list-tags) list_tags "$@" ;;
   digest) digest "$@" ;;
   tag) tag "$@" ;;

@@ -1,0 +1,66 @@
+{
+  "direct_messages.title": {
+    "defaultMessage": "DM",
+    "description": "Heading and document title of the page of the user's direct messages by conversation, and its item in the main navigation. Keep it short: it is shown under an icon in the side rail of tablets and in the menu sheet of phones."
+  },
+  "direct_messages.nav_unread": {
+    "defaultMessage": "DM、{count, plural, other {未読 # 件}}",
+    "description": "Accessible name of the navigation item of the direct messages while some conversations are unread. Start it with the text of direct_messages.title, which is shown. {count} is the number of unread conversations."
+  },
+  "direct_messages.unread_count": {
+    "defaultMessage": "{count, plural, other {未読 # 件}}",
+    "description": "The number of unread conversations on the badge of the navigation item of the direct messages, for example '3 unread'."
+  },
+  "direct_messages.unread": {
+    "defaultMessage": "未読:",
+    "description": "Read by screen readers before the names of a conversation in which a post of another account is unread."
+  },
+  "direct_messages.participants.self": {
+    "defaultMessage": "自分だけ",
+    "description": "Names of a conversation in which the user wrote only to themselves, in place of the names of the other people."
+  },
+  "direct_messages.participants.more": {
+    "defaultMessage": "{names} ほか {count, plural, other {# 人}}",
+    "description": "Names of a conversation with more than three other people. {names} is a list of the first three names, {count} how many more people there are."
+  },
+  "direct_messages.content_warning": {
+    "defaultMessage": "CW: {summary}",
+    "description": "Excerpt of the newest post of a conversation when that post has a content warning: only the warning is shown. {summary} is the warning, written by the author."
+  },
+  "direct_messages.open": {
+    "defaultMessage": "会話を開く",
+    "description": "Excerpt of the newest post of a conversation when that post has no text (pictures only): a link to the conversation's thread."
+  },
+  "direct_messages.empty": {
+    "defaultMessage": "まだ DM はありません",
+    "description": "Heading of the empty state of the direct messages."
+  },
+  "direct_messages.empty.description": {
+    "defaultMessage": "メンションした人だけが見られる投稿が、会話ごとにここに集まります。送るには、投稿の公開範囲で「メンションした人」を選ぶか、相手の投稿のメニューで「ダイレクトメッセージ」を選びます。",
+    "description": "Description of the empty state of the direct messages: what the page shows and how to write a direct message. “Mentioned people” is compose.visibility.direct."
+  },
+  "direct_messages.failed": {
+    "defaultMessage": "DM を読み込めませんでした",
+    "description": "Heading of the failure of the direct messages in place of the list."
+  },
+  "direct_messages.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "Button that loads the direct messages again after a failure."
+  },
+  "direct_messages.load_more": {
+    "defaultMessage": "さらに会話を読み込む",
+    "description": "Button at the end of the direct messages that loads older conversations."
+  },
+  "direct_messages.loading": {
+    "defaultMessage": "DM を読み込んでいます",
+    "description": "Read by screen readers while the direct messages load."
+  },
+  "direct_messages.signed_out.heading": {
+    "defaultMessage": "ログインしていません",
+    "description": "Heading of the direct messages page for a visitor who is not signed in."
+  },
+  "direct_messages.signed_out": {
+    "defaultMessage": "DM を見るにはログインしてください。",
+    "description": "Description of the direct messages page for a visitor who is not signed in."
+  }
+}

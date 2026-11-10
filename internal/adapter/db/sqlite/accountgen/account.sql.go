@@ -239,7 +239,7 @@ func (q *Queries) GetProfileHead(ctx context.Context, accountID string) (GetProf
 
 const getProfileRevision = `-- name: GetProfileRevision :one
 SELECT id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at
+  avatar_media_id, header_media_id, revised_at, feed
 FROM account_profile_revisions WHERE id = ?
 `
 
@@ -260,6 +260,7 @@ func (q *Queries) GetProfileRevision(ctx context.Context, id string) (AccountPro
 		&i.AvatarMediaID,
 		&i.HeaderMediaID,
 		&i.RevisedAt,
+		&i.Feed,
 	)
 	return i, err
 }
@@ -430,8 +431,8 @@ func (q *Queries) InsertProfileFieldSource(ctx context.Context, arg InsertProfil
 const insertProfileRevision = `-- name: InsertProfileRevision :exec
 INSERT INTO account_profile_revisions (
   id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  avatar_media_id, header_media_id, revised_at, feed
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type InsertProfileRevisionParams struct {
@@ -448,6 +449,7 @@ type InsertProfileRevisionParams struct {
 	AvatarMediaID sql.NullString
 	HeaderMediaID sql.NullString
 	RevisedAt     int64
+	Feed          string
 }
 
 func (q *Queries) InsertProfileRevision(ctx context.Context, arg InsertProfileRevisionParams) error {
@@ -465,6 +467,7 @@ func (q *Queries) InsertProfileRevision(ctx context.Context, arg InsertProfileRe
 		arg.AvatarMediaID,
 		arg.HeaderMediaID,
 		arg.RevisedAt,
+		arg.Feed,
 	)
 	return err
 }
@@ -618,6 +621,57 @@ func (q *Queries) ListAccountKeys(ctx context.Context, accountID string) ([]Acco
 			&i.PublicKeyPem,
 			&i.Fingerprint,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAccountKeysWithPrivate = `-- name: ListAccountKeysWithPrivate :many
+SELECT k.id, k.account_id, k.key_id, k.algorithm, k.public_key_pem, k.fingerprint, k.created_at, p.private_key_enc
+FROM account_keys k LEFT JOIN local_account_private_keys p ON p.account_key_id = k.id
+WHERE k.account_id = ? ORDER BY k.id
+`
+
+type ListAccountKeysWithPrivateRow struct {
+	ID            string
+	AccountID     string
+	KeyID         string
+	Algorithm     string
+	PublicKeyPem  string
+	Fingerprint   []byte
+	CreatedAt     int64
+	PrivateKeyEnc []byte
+}
+
+// The keys of an account, as ListAccountKeys reads them, with their sealed private keys (NULL
+// for a key without one), as GetLocalAccountPrivateKey reads each.
+func (q *Queries) ListAccountKeysWithPrivate(ctx context.Context, accountID string) ([]ListAccountKeysWithPrivateRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAccountKeysWithPrivate, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAccountKeysWithPrivateRow{}
+	for rows.Next() {
+		var i ListAccountKeysWithPrivateRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.AccountID,
+			&i.KeyID,
+			&i.Algorithm,
+			&i.PublicKeyPem,
+			&i.Fingerprint,
+			&i.CreatedAt,
+			&i.PrivateKeyEnc,
 		); err != nil {
 			return nil, err
 		}

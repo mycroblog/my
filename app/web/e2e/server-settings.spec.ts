@@ -8,6 +8,7 @@
 import type { Page, Route } from "@playwright/test";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 /** The client message `key` in the project's locale. */
 function message(key: string): string {
@@ -34,6 +35,8 @@ const administrator = {
   discoverable: true,
   indexable: true,
   ai_opt_out: false,
+  feed_enabled: true,
+  feed_follows_indexable: true,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: ["manage_settings"],
@@ -133,14 +136,7 @@ async function administratorServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, administrator);
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "und",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale }));
     }
     if (key === "GET /admin/instance_texts") {
       return json(route, {

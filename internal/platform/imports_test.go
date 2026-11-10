@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
+	"strings"
 	"testing"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -69,6 +71,12 @@ func TestCSVExportAndImport(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// Alice follows two hashtags.
+	for _, tag := range []string{"#Cats", "dogs"} {
+		if _, err := e.app.Timeline.FollowTag(ctx, alice.accountID, tag); err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	domain := e.app.Config.Host
 	if e.app.Config.AccountDomain != "" {
@@ -103,6 +111,14 @@ func TestCSVExportAndImport(t *testing.T) {
 		t.Errorf("bookmarks = %q, want the post's URI", bookmarks)
 	}
 	files[domidentity.ImportBookmarks] = bookmarks
+	// The followed hashtags, one per line without the #, in any order of two that were followed
+	// at once.
+	tags := export(string(domidentity.ImportFollowedTags))
+	if lines := strings.Fields(tags); len(lines) != 2 || !slices.Contains(lines, "Cats") || !slices.Contains(lines, "dogs") {
+		t.Errorf("followed_tags = %q, want Cats and dogs", tags)
+	}
+	// A line that is no hashtag fails when it is followed.
+	files[domidentity.ImportFollowedTags] = tags + "123\n"
 	// A Mastodon file may name remote accounts and accounts that do not exist.
 	files[domidentity.ImportFollowing] += "carol@remote.example,true,false,\nghost@" + domain + ",true,false,\n"
 	// This server's own domain cannot be muted.
@@ -130,6 +146,8 @@ func TestCSVExportAndImport(t *testing.T) {
 			wantFailed = 2 // himself, and the ghost
 		case domidentity.ImportDomainMutes:
 			wantFailed = 1 // this server's domain
+		case domidentity.ImportFollowedTags:
+			wantFailed = 1 // 123, which is no hashtag
 		}
 		if !imp.Finished() || imp.Failed != wantFailed {
 			t.Errorf("%s import = %+v, want finished with %d failed", imp.Kind, imp, wantFailed)
@@ -155,6 +173,9 @@ func TestCSVExportAndImport(t *testing.T) {
 	if mutes, err := e.app.Graph.DomainMutes(ctx, bob.accountID, graph.DomainMutePage{}); err != nil || len(mutes) != 2 ||
 		mutes[0].Domain != "spam.example" || mutes[1].Domain != "xn--r8jz45g.xn--zckzah" {
 		t.Errorf("bob's domain mutes = %+v, %v", mutes, err)
+	}
+	if followed, err := e.app.Timeline.FollowedTags(ctx, bob.accountID); err != nil || len(followed) != 2 {
+		t.Errorf("bob's followed hashtags = %+v, %v; want cats and dogs", followed, err)
 	}
 	page, err := e.app.Statuses.Bookmarks(ctx, domcontent.Viewer{Kind: domcontent.ViewerLocal, AccountID: bob.accountID}, "", 10)
 	if err != nil || len(page.Statuses) != 1 || page.Statuses[0].Status.ID != post {
@@ -192,5 +213,31 @@ func TestCSVExportAndImport(t *testing.T) {
 	}
 	if mutes, err := e.app.Graph.DomainMutes(ctx, alice.accountID, graph.DomainMutePage{}); err != nil || len(mutes) != 1 || mutes[0].Domain != "xn--r8jz45g.xn--zckzah" {
 		t.Errorf("alice's domain mutes after the overwrite = %+v, %v", mutes, err)
+	}
+
+	// Alice overwrites her followed hashtags: cats stays, dogs goes, and birds comes.
+	in = identity.ImportInput{
+		UserID: alice.userID, AccountID: alice.accountID, Kind: domidentity.ImportFollowedTags, Mode: domidentity.ImportOverwrite,
+		Text: "#Birds\nCATS\n",
+	}
+	preview, err = e.app.Imports.PreviewImport(ctx, in)
+	if err != nil || preview.Present != 1 || len(preview.Removals) != 1 || preview.Removals[0].ID != "dogs" {
+		t.Fatalf("PreviewImport(followed hashtags) = %+v, %v; want cats present and dogs removed", preview, err)
+	}
+	started, err = e.app.Imports.StartImport(ctx, in)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := e.app.Imports.ProcessImport(ctx, started.ID); err != nil {
+		t.Fatal(err)
+	}
+	followed, err := e.app.Timeline.FollowedTags(ctx, alice.accountID)
+	var names []string
+	for _, f := range followed {
+		names = append(names, f.Tag.Name)
+	}
+	slices.Sort(names)
+	if err != nil || !slices.Equal(names, []string{"Birds", "Cats"}) {
+		t.Errorf("alice's followed hashtags after the overwrite = %v, %v; want Birds and Cats", names, err)
 	}
 }

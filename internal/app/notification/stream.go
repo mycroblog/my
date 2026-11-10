@@ -4,6 +4,7 @@ package notification
 
 import (
 	"context"
+	"slices"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
@@ -28,14 +29,43 @@ func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	r.OnCommit(appgraph.EventFollowRequested, func(_ context.Context, e uow.Event) {
 		signal(e.(appgraph.FollowRequested).Follow.FolloweeAccountID)
 	})
+	r.OnCommit(appgraph.EventFollowsCreated, func(_ context.Context, e uow.Event) {
+		ev := e.(appgraph.FollowsCreated)
+		var ids []string
+		for _, f := range ev.Followed {
+			ids = append(ids, f.Follow.FolloweeAccountID)
+		}
+		for _, f := range ev.Requested {
+			ids = append(ids, f.Follow.FolloweeAccountID)
+		}
+		slices.Sort(ids)
+		signal(slices.Compact(ids)...)
+	})
 	r.OnCommit(appgraph.EventFollowAccepted, func(_ context.Context, e uow.Event) {
 		signal(e.(appgraph.FollowAccepted).Follow.FollowerAccountID)
 	})
 	r.OnCommit(appcontent.EventStatusCreated, func(_ context.Context, e uow.Event) {
-		signal(e.(appcontent.StatusCreated).Revision.MentionedAccountIDs...)
+		if ev := e.(appcontent.StatusCreated); !ev.HeldReply {
+			signal(ev.Revision.MentionedAccountIDs...)
+		}
+	})
+	r.OnCommit(appcontent.EventStatusReleased, func(_ context.Context, e uow.Event) {
+		signal(e.(appcontent.StatusReleased).Revision.MentionedAccountIDs...)
+	})
+	r.OnCommit(appcontent.EventInteractionRequested, func(_ context.Context, e uow.Event) {
+		if ev := e.(appcontent.InteractionRequested); ev.State.State == appcontent.InteractionRequestPending && ev.Target != nil && ev.Target.IsLocal {
+			signal(ev.Target.AuthorAccountID)
+		}
+	})
+	r.OnCommit(appcontent.EventInteractionAnswered, func(_ context.Context, e uow.Event) {
+		if ev := e.(appcontent.InteractionAnswered); ev.Request.Direction == appcontent.DirectionOutbound || ev.Request.Direction == appcontent.DirectionLocal && ev.Deferred {
+			signal(ev.Request.InteractingAccountID)
+		}
 	})
 	r.OnCommit(appcontent.EventStatusRevised, func(_ context.Context, e uow.Event) {
-		signal(e.(appcontent.StatusRevised).Revision.MentionedAccountIDs...)
+		if ev := e.(appcontent.StatusRevised); !ev.HeldReply {
+			signal(ev.Revision.MentionedAccountIDs...)
+		}
 	})
 	r.OnCommit(appcontent.EventBoosted, func(_ context.Context, e uow.Event) {
 		signal(e.(appcontent.Boosted).Status.AuthorAccountID)
@@ -45,5 +75,9 @@ func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	})
 	r.OnCommit(appcontent.EventReacted, func(_ context.Context, e uow.Event) {
 		signal(e.(appcontent.Reacted).Status.AuthorAccountID)
+	})
+	// The counts of the requests changed: the streams send them again (ADR-0158 §7).
+	r.OnCommit(EventRequestsChanged, func(_ context.Context, e uow.Event) {
+		signal(e.(RequestsChanged).AccountID)
 	})
 }

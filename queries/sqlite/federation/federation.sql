@@ -68,6 +68,13 @@ WHERE (uri, actor_uri) IN (
 INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
 VALUES (@id, @activity_uri, @type, @actor_account_id, @object_type, @object_id, @created_at);
 
+-- InsertOutboundActivities is InsertOutboundActivity of many activities, a JSON array.
+-- name: InsertOutboundActivities :exec
+INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
+SELECT value ->> '$.id', value ->> '$.activity_uri', value ->> '$.type', value ->> '$.actor_account_id',
+  value ->> '$.object_type', value ->> '$.object_id', value ->> '$.created_at'
+FROM json_each(CAST(sqlc.arg(activities) AS TEXT));
+
 -- name: GetOutboundActivity :one
 SELECT id, activity_uri, type, actor_account_id, object_type, object_id, created_at
 FROM outbound_activities WHERE id = @id;
@@ -102,6 +109,29 @@ WHERE outbound_activity_id IN (
 INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
 VALUES (@id, @outbound_activity_id, @inbox_url, @domain, @created_at)
 ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING;
+
+-- InsertDeliveries inserts the deliveries of a JSON array, one row per element, as InsertDelivery
+-- inserts one, and returns the IDs of those it inserted. WHERE true keeps ON CONFLICT from
+-- reading as a join constraint.
+-- name: InsertDeliveries :many
+INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
+SELECT value ->> '$.id', value ->> '$.outbound_activity_id', value ->> '$.inbox_url', value ->> '$.domain', value ->> '$.created_at'
+FROM json_each(CAST(sqlc.arg(deliveries) AS TEXT)) WHERE true
+ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING
+RETURNING id;
+
+-- GetDeliveryContext returns a delivery with its activity, the activity's document (NULL for
+-- none), and the health state of the delivery's server (NULL for a server without a row), as
+-- GetDelivery, GetOutboundActivity, GetOutboundActivityDocument, and GetInstanceHealth read them.
+-- name: GetDeliveryContext :one
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at,
+  doc.document, h.state AS health_state
+FROM deliveries d
+JOIN outbound_activities a ON a.id = d.outbound_activity_id
+LEFT JOIN outbound_activity_documents doc ON doc.outbound_activity_id = a.id
+LEFT JOIN instance_health h ON h.domain = d.domain
+WHERE d.id = sqlc.arg(id);
 
 -- name: GetDelivery :one
 SELECT id, outbound_activity_id, inbox_url, domain, created_at FROM deliveries WHERE id = @id;
@@ -214,6 +244,10 @@ ON CONFLICT (domain) DO UPDATE SET
 
 -- name: GetInstanceHealth :one
 SELECT domain, state, since, failure_days, last_failure_day FROM instance_health WHERE domain = @domain;
+
+-- The health of the servers of domains that have a row, as GetInstanceHealth reads one.
+-- name: ListInstanceHealthOf :many
+SELECT domain, state FROM instance_health WHERE domain IN (SELECT value FROM json_each(CAST(sqlc.arg(domains) AS TEXT)));
 
 -- ListUnavailableInstances returns the servers that are not delivery targets, in domain order
 -- after @after_domain.
@@ -346,3 +380,16 @@ WHERE id IN (
     AND EXISTS (SELECT 1 FROM instance_availability_events n WHERE n.domain = e.domain AND n.id > e.id)
   ORDER BY e.id LIMIT @batch_limit
 );
+
+-- InsertOutboundActivityDocuments is InsertOutboundActivityDocument of many activities, a JSON
+-- array whose documents are hex; WHERE true keeps ON CONFLICT from reading as a join constraint.
+-- name: InsertOutboundActivityDocuments :exec
+INSERT INTO outbound_activity_documents (outbound_activity_id, document, built_at)
+SELECT value ->> '$.id', unhex(value ->> '$.document'), CAST(sqlc.arg(built_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(documents) AS TEXT)) WHERE true
+ON CONFLICT (outbound_activity_id) DO NOTHING;
+
+-- ListReceivedActivities is GetReceivedActivity of many activities, a JSON array.
+-- name: ListReceivedActivities :many
+SELECT activity_uri, actor_uri, type, signature_scheme, trust, received_at FROM received_activities
+WHERE activity_uri IN (SELECT value FROM json_each(CAST(sqlc.arg(activity_uris) AS TEXT)));

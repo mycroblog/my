@@ -6,7 +6,8 @@ import { tv } from "tailwind-variants";
 
 const descriptionList = tv({
   slots: {
-    root: "@container min-w-0",
+    // A size container takes no width from its content: it fills what it is given, even in a start-aligned stack.
+    root: "@container w-full min-w-0",
     list: "grid grid-cols-1 gap-x-6 gap-y-3",
     item: "flex min-w-0 flex-col",
     term: "text-sm font-bold text-fg-muted",
@@ -33,7 +34,7 @@ export type DescriptionListProps = {
   className?: string;
 };
 
-/** A `<dl>` that is its own size container, so its columns answer to the space it has. */
+/** A `<dl>` that is its own size container, so its columns answer to the space it has. It fills its parent's width. */
 export function DescriptionList({ children, columns, className }: DescriptionListProps) {
   const styles = descriptionList({ columns: columns && `${columns}` });
   return (

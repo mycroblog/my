@@ -117,12 +117,7 @@ func (s *Service) handleSyncAuthor(ctx context.Context, j queue.Job) queue.Resul
 		Size:  authorJobSize,
 		Batch: authorBatch,
 		Handle: func(ctx context.Context, ids []string) error {
-			for _, id := range ids {
-				if err := s.syncStatus(ctx, id); err != nil {
-					return err
-				}
-			}
-			return nil
+			return s.syncStatusesOf(ctx, ids, indexable, author)
 		},
 		Enqueue: func(ctx context.Context, steps []queue.FanOutStep) error {
 			return s.enqueueSteps(ctx, JobSyncAuthor+":"+j.ID, JobSyncAuthor, steps, func(step queue.FanOutStep) any {

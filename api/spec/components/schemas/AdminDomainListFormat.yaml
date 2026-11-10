@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The format of a subscribed list. `mastodon_csv`: Mastodon's domain block CSV, read as the
+  import reads it. `mastodon_json`: the answer of Mastodon's
+  `GET /api/v1/instance/domain_blocks`; obfuscated domains are skipped. `plain_text`: one
+  domain per line, each a suspend.
+type: string
+enum: [mastodon_csv, mastodon_json, plain_text]

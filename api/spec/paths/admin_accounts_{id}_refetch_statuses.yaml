@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: refetchAccountStatuses
+  x-permission: manage_domains
   summary: Refetch the posts of a remote account from its server
   description: |
     Queues the refetch, as `POST /admin/statuses/{id}/refetch` does, of the newest 1000

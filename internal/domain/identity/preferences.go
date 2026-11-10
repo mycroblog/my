@@ -28,8 +28,9 @@ type Preferences struct {
 	TimeZoneFollowsBrowser bool
 	// DefaultVisibility is the visibility a new post starts with.
 	DefaultVisibility Visibility
-	// DefaultQuotePolicy is who may quote a new post (ADR-0069 §1).
-	DefaultQuotePolicy QuotePolicy
+	// DefaultInteractionPolicy is who may reply to, boost, and quote a new post that names no
+	// policy of a kind (ADR-0155 §4, §5; user_interaction_policies).
+	DefaultInteractionPolicy InteractionDefaults
 	// DefaultPostLanguage is the language a new post starts with; UndeterminedLanguage leaves it
 	// to the client.
 	DefaultPostLanguage string
@@ -46,9 +47,8 @@ type Preferences struct {
 // Defaults of a new user's preferences (data-model §4.1). The locale comes from the registration
 // or the instance default.
 const (
-	DefaultTimeZone        = "UTC"
-	DefaultPostVisibility  = VisibilityPublic
-	DefaultPostQuotePolicy = QuotePolicyPublic
+	DefaultTimeZone       = "UTC"
+	DefaultPostVisibility = VisibilityPublic
 	// DefaultTimelineAutoInsert inserts new timeline posts without asking (ADR-0013 §22).
 	DefaultTimelineAutoInsert = true
 	DefaultLinkCardSize       = LinkCardLarge
@@ -70,25 +70,14 @@ const (
 	VisibilityDirect   Visibility = "direct"
 )
 
-// QuotePolicy is who may quote a post (ADR-0069 §1). Preferences use it for the default of new
-// posts.
-type QuotePolicy string
-
-// The quote policies.
-const (
-	QuotePolicyPublic    QuotePolicy = "public"
-	QuotePolicyFollowers QuotePolicy = "followers"
-	QuotePolicyNobody    QuotePolicy = "nobody"
-)
-
 // Errors that preference validation reports.
 var (
-	ErrInvalidLanguageTag  = errors.New("invalid language tag")
-	ErrInvalidTimeZone     = errors.New("invalid time zone")
-	ErrInvalidVisibility   = errors.New("invalid visibility")
-	ErrInvalidQuotePolicy  = errors.New("invalid quote policy")
-	ErrInvalidLinkCardSize = errors.New("invalid link card size")
-	ErrTooManyLanguages    = errors.New("too many timeline languages")
+	ErrInvalidLanguageTag       = errors.New("invalid language tag")
+	ErrInvalidTimeZone          = errors.New("invalid time zone")
+	ErrInvalidVisibility        = errors.New("invalid visibility")
+	ErrInvalidInteractionPolicy = errors.New("invalid interaction policy")
+	ErrInvalidLinkCardSize      = errors.New("invalid link card size")
+	ErrTooManyLanguages         = errors.New("too many timeline languages")
 )
 
 // ValidateVisibility accepts the five visibility levels.
@@ -118,15 +107,6 @@ func ValidateLinkCardSize(s LinkCardSize) error {
 		return nil
 	}
 	return fmt.Errorf("%w: %q", ErrInvalidLinkCardSize, s)
-}
-
-// ValidateQuotePolicy accepts the three quote policies.
-func ValidateQuotePolicy(p QuotePolicy) error {
-	switch p {
-	case QuotePolicyPublic, QuotePolicyFollowers, QuotePolicyNobody:
-		return nil
-	}
-	return fmt.Errorf("%w: %q", ErrInvalidQuotePolicy, p)
 }
 
 // ValidateTimeZone accepts an IANA time zone name that the time zone database knows, such as

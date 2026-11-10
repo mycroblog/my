@@ -63,6 +63,16 @@ func (f fakeAccounts) FindByID(_ context.Context, id string) (appaccount.Actor, 
 	return a, nil
 }
 
+func (f fakeAccounts) FindByIDs(_ context.Context, ids []string) (map[string]appaccount.Actor, error) {
+	out := map[string]appaccount.Actor{}
+	for _, id := range ids {
+		if a, ok := f[id]; ok {
+			out[id] = a
+		}
+	}
+	return out, nil
+}
+
 func (f fakeAccounts) FindByHandle(_ context.Context, username, domain string) (appaccount.Actor, error) {
 	for _, a := range f {
 		if a.Local != nil && domain == account.LocalDomain && a.Local.Username == username {

@@ -73,7 +73,8 @@ func (a *App) setUpRemoteActors(cfg *config.Config, repo federationRepository) {
 	a.RemoteActors = federation.NewRemoteActors(federation.RemoteActorsDeps{
 		UnitOfWork: a.UnitOfWork, Accounts: a.Accounts, Instances: repo, Fetcher: fetcher, HTTP: a.HTTPClient,
 		Jobs: a.Jobs, Outbox: outbox, Followers: a.Graph, Clock: a.Clock, IDs: a.IDs, Logger: a.Logger,
-		Review: federation.ActorReview{Gate: a.Hooks, Reports: a.Moderation},
+		Featured: federation.RemoteFeaturedClearers{Pins: a.Interactions, FeaturedTags: a.Timeline},
+		Review:   federation.ActorReview{Gate: a.Hooks, Reports: a.Moderation},
 	})
 	a.RemoteActors.RegisterJobs(a.Handlers, a.Scheduler)
 	a.Hooks.RegisterOverrideEffect(apphook.InboundActor, federation.RefetchDroppedProfile(outbox))
@@ -90,4 +91,9 @@ func (m remoteMentions) ResolveHandle(ctx context.Context, username, domain stri
 
 func (m remoteMentions) RemoteProfileURL(ctx context.Context, accountID string) (string, error) {
 	return m.a.Accounts.RemoteProfileURL(ctx, accountID)
+}
+
+// RemoteProfileURLs reads the profile pages of many remote accounts at once.
+func (m remoteMentions) RemoteProfileURLs(ctx context.Context, accountIDs []string) (map[string]string, error) {
+	return m.a.Accounts.RemoteProfileURLs(ctx, accountIDs)
 }

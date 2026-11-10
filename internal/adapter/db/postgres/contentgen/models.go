@@ -45,6 +45,19 @@ type BoostRetraction struct {
 	RetractedAt time.Time
 }
 
+type Conversation struct {
+	ID      string
+	Uri     string
+	IsLocal bool
+}
+
+type ConversationMerge struct {
+	MergedConversationID string
+	IntoConversationID   string
+	StatusID             string
+	MergedAt             time.Time
+}
+
 type CustomEmoji struct {
 	ID              string
 	Shortcode       string
@@ -73,12 +86,87 @@ type CustomEmojiSetting struct {
 	Category        *string
 }
 
+type Draft struct {
+	ID        string
+	AccountID string
+	CreatedAt time.Time
+}
+
+type DraftAttachment struct {
+	DraftID     string
+	Position    int32
+	MediaID     string
+	Description *string
+}
+
+type DraftContent struct {
+	DraftID           string
+	SourceText        string
+	SpoilerText       string
+	Sensitive         bool
+	Language          *string
+	Visibility        string
+	InReplyToStatusID *string
+	QuotedStatusID    *string
+	UpdatedAt         time.Time
+}
+
+type DraftInteractionPolicy struct {
+	DraftID  string
+	Kind     string
+	Approval string
+	Audience string
+}
+
+type DraftPoll struct {
+	DraftID         string
+	Multiple        bool
+	HideTotals      bool
+	DurationSeconds int32
+}
+
+type DraftSchedule struct {
+	ID        string
+	DraftID   string
+	PublishAt time.Time
+	CreatedAt time.Time
+}
+
 type Favourite struct {
 	AccountID string
 	StatusID  string
 	Uri       string
 	CreatedAt time.Time
 	ID        string
+}
+
+type InteractionRequest struct {
+	ID                   string
+	Kind                 string
+	Direction            string
+	TargetUri            string
+	TargetAccountID      *string
+	InteractingUri       string
+	InteractingAccountID string
+	ActivityUri          string
+	Visibility           string
+	CreatedAt            time.Time
+}
+
+type InteractionRequestEvent struct {
+	ID               string
+	RequestID        string
+	Kind             string
+	AuthorizationUri *string
+	OccurredAt       time.Time
+}
+
+type InteractionRequestState struct {
+	RequestID        string
+	Kind             string
+	TargetAccountID  *string
+	State            string
+	AuthorizationUri *string
 }
 
 type LinkCard struct {
@@ -244,6 +332,13 @@ type RemoteStatusRevision struct {
 	OmittedAttachmentCount int32
 }
 
+type ScheduledDraft struct {
+	DraftID    string
+	ScheduleID string
+	AccountID  string
+	PublishAt  time.Time
+}
+
 type Status struct {
 	ID              string
 	Uri             string
@@ -252,7 +347,6 @@ type Status struct {
 	IsLocal         bool
 	Visibility      string
 	InReplyToUri    *string
-	ConversationUri *string
 	PublishedAt     time.Time
 }
 
@@ -283,6 +377,7 @@ type StatusAutoDeletePolicy struct {
 	KeepMinBoosts     int32
 	KeepMinFavourites int32
 	UpdatedAt         time.Time
+	KeepArticles      bool
 }
 
 type StatusCounter struct {
@@ -308,6 +403,19 @@ type StatusHead struct {
 	LastRevisedAt time.Time
 }
 
+type StatusInteractionPolicy struct {
+	StatusID string
+	Kind     string
+	Approval string
+	Audience string
+	ActorUri string
+}
+
+type StatusLinkCard struct {
+	StatusID string
+	Url      string
+}
+
 type StatusMentionIndex struct {
 	AccountID string
 	StatusID  string
@@ -325,26 +433,6 @@ type StatusQuote struct {
 	StatusID  string
 	QuotedUri string
 	Form      string
-}
-
-type StatusQuoteEvent struct {
-	ID               string
-	StatusID         string
-	Kind             string
-	AuthorizationUri *string
-	OccurredAt       time.Time
-}
-
-type StatusQuotePolicy struct {
-	StatusID  string
-	Policy    string
-	UpdatedAt time.Time
-}
-
-type StatusQuoteState struct {
-	StatusID         string
-	State            string
-	AuthorizationUri *string
 }
 
 type StatusReactionCount struct {
@@ -370,6 +458,26 @@ type StatusRevision struct {
 	RevisedAt   time.Time
 }
 
+type StatusRevisionArticle struct {
+	RevisionID    string
+	Title         string
+	Summary       string
+	SummaryOrigin string
+}
+
+type StatusRevisionArticleCover struct {
+	RevisionID  string
+	MediaID     string
+	Description string
+}
+
+type StatusRevisionArticleImage struct {
+	RevisionID  string
+	Position    int32
+	MediaID     string
+	Description string
+}
+
 type StatusRevisionAttachment struct {
 	RevisionID  string
 	Position    int32
@@ -383,10 +491,25 @@ type StatusRevisionBody struct {
 	ContentHtml string
 }
 
+type StatusRevisionEmoji struct {
+	RevisionID string
+	EmojiID    string
+}
+
+type StatusRevisionMention struct {
+	RevisionID string
+	AccountID  string
+}
+
 type StatusRevisionSource struct {
 	RevisionID   string
 	SourceText   string
 	SourceFormat string
+}
+
+type StatusRevisionTag struct {
+	RevisionID string
+	TagID      string
 }
 
 type Tag struct {

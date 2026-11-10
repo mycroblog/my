@@ -40,6 +40,8 @@ func FollowRepositoryContract(t *testing.T, newHarness FollowFactory) {
 		{"KeepsOneEdgePerPair", graphFollowRepoEdges},
 		{"PagesFollowersAndFollowing", graphFollowRepoPages},
 		{"KeepsCounters", graphFollowRepoCounters},
+		{"EndsManyFollows", graphFollowRepoEndMany},
+		{"StartsManyFollows", graphFollowRepoStartMany},
 		{"ListsHistoriesAndRebuilds", graphFollowRepoHistories},
 		{"InsertsOneEdgeUnderConcurrency", graphFollowRepoConcurrentEdges},
 	}
@@ -331,6 +333,196 @@ func graphFollowRepoPages(t *testing.T, r *graphFollowRepo) {
 	}
 	if page, err := r.repo.ListFollowing(ctx, star, graph.StatePending, "", 10); err != nil || len(page) != 0 {
 		t.Errorf("ListFollowing(pending) = %+v, %v; want none", page, err)
+	}
+	// The accounts among some with an edge into them in a state, each once: star with its five
+	// active followers, and each fan with star, but not a stranger or star's pending requests.
+	stranger := r.ids.NewID()
+	among := append([]string{stranger, star, star}, fans...)
+	got, err := r.repo.ListFolloweesAmong(ctx, among, graph.StateActive)
+	want := append([]string{star}, fans...)
+	slices.Sort(want)
+	if err != nil || !slices.Equal(got, want) {
+		t.Errorf("ListFolloweesAmong(active) = %v, %v; want star and its fans once each, sorted: %v", got, err, want)
+	}
+	if got, err := r.repo.ListFolloweesAmong(ctx, among, graph.StatePending); err != nil || !slices.Equal(got, []string{star}) {
+		t.Errorf("ListFolloweesAmong(pending) = %v, %v; want star", got, err)
+	}
+	if got, err := r.repo.ListFolloweesAmong(ctx, nil, graph.StateActive); err != nil || len(got) != 0 {
+		t.Errorf("ListFolloweesAmong(none) = %v, %v; want none", got, err)
+	}
+	// The edges into star from some accounts, active and pending, in follower order.
+	from, err := r.repo.ListFollowEdgesFromAmong(ctx, star, append([]string{stranger}, fans...))
+	if err != nil || len(from) != len(fans) {
+		t.Fatalf("ListFollowEdgesFromAmong(star, fans) = %+v, %v; want an edge of each fan", from, err)
+	}
+	for _, e := range from {
+		if e.FolloweeAccountID != star || e.State != graph.StateActive || !slices.Contains(fans, e.FollowerAccountID) {
+			t.Errorf("ListFollowEdgesFromAmong edge %+v, want a fan's active edge into star", e)
+		}
+	}
+	if got, err := r.repo.ListFollowEdgesFromAmong(ctx, star, nil); err != nil || len(got) != 0 {
+		t.Errorf("ListFollowEdgesFromAmong(none) = %v, %v; want none", got, err)
+	}
+}
+
+// graphFollowRepoEndMany ends many follows with the writes of a batch, as the writes of one
+// follow end each: their follows found by ID, their terminations recorded once, their edges
+// deleted only in the state given, and the counters of many accounts added, from zero and gone
+// at zero.
+func graphFollowRepoEndMany(t *testing.T, r *graphFollowRepo) {
+	ctx := t.Context()
+	ids := r.accounts(4)
+	star, fans := ids[0], ids[1:]
+	var follows []graph.Follow
+	for _, fan := range fans {
+		follows = append(follows, r.follow(t, fan, star, graph.StateActive))
+	}
+	pending := r.follow(t, star, fans[0], graph.StatePending)
+	all := append(append([]graph.Follow{}, follows...), pending)
+	byID := make([]string, len(all))
+	for i, f := range all {
+		byID[i] = f.ID
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.repo.LockPairs(ctx, tx, []string{star, star, star}, fans); err != nil {
+			return err
+		}
+		// The edges of many accounts, each once, as ListEdgesOf reads those of one; and the edges
+		// between the pairs named, in either direction.
+		of, err := r.repo.ListEdgesOfAccounts(ctx, tx, []string{star, fans[0], r.ids.NewID()})
+		if want, werr := r.repo.ListEdgesOf(ctx, tx, star); err != nil || werr != nil || !reflect.DeepEqual(of, want) {
+			t.Errorf("ListEdgesOfAccounts(star, a fan of it) = %+v, %v; want star's edges once each, %+v", of, err, want)
+		}
+		between, err := r.repo.ListEdgesBetween(ctx, tx, []string{fans[0], star}, []string{star, fans[1]})
+		if err != nil || len(between) != 3 {
+			t.Errorf("ListEdgesBetween(fan 0 and star, star and fan 1) = %+v, %v; want the three edges of the two pairs", between, err)
+		}
+		if got, err := r.repo.ListEdgesBetween(ctx, tx, []string{fans[0]}, []string{fans[1]}); err != nil || len(got) != 0 {
+			t.Errorf("ListEdgesBetween(two fans) = %+v, %v; want none", got, err)
+		}
+		got, err := r.repo.FollowsByIDs(ctx, tx, append(byID, r.ids.NewID()))
+		if err != nil {
+			return err
+		}
+		if len(got) != len(all) {
+			t.Errorf("FollowsByIDs = %d follows, want the %d that exist", len(got), len(all))
+		}
+		for _, f := range all {
+			if one, err := r.repo.Follow(ctx, tx, f.ID); err != nil || got[f.ID] != one {
+				t.Errorf("FollowsByIDs[%s] = %+v, want %+v as Follow finds it (%v)", f.ID, got[f.ID], one, err)
+			}
+		}
+		return r.repo.InsertTerminations(ctx, tx, byID, graph.TerminatedModeration, r.clock.Now())
+	})
+	err := r.uow.Tx(ctx, func(tx uow.Tx) error {
+		return r.repo.InsertTerminations(ctx, tx, byID[:1], graph.TerminatedModeration, r.clock.Now())
+	})
+	if !errors.Is(err, appgraph.ErrAlreadyRecorded) {
+		t.Errorf("InsertTerminations of an ended follow = %v, want ErrAlreadyRecorded", err)
+	}
+	fresh := r.ids.NewID()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		// The active edges and the pending one, and one named in a state it is not in.
+		edges := []graph.Edge{{FollowID: pending.ID, State: graph.StateActive}}
+		deleted, err := r.repo.DeleteEdgesOfFollows(ctx, tx, edges)
+		if err != nil || deleted != 0 {
+			t.Errorf("DeleteEdgesOfFollows in another state = %d, %v; want none", deleted, err)
+		}
+		edges = []graph.Edge{{FollowID: pending.ID, State: graph.StatePending}}
+		for _, f := range follows {
+			edges = append(edges, graph.Edge{FollowerAccountID: f.FollowerAccountID, FolloweeAccountID: f.FolloweeAccountID, FollowID: f.ID, State: graph.StateActive})
+		}
+		if deleted, err = r.repo.DeleteEdgesOfFollows(ctx, tx, edges); err != nil || deleted != len(edges) {
+			t.Errorf("DeleteEdgesOfFollows = %d, %v; want %d", deleted, err, len(edges))
+		}
+		deltas := map[string]appgraph.CounterDelta{star: {Followers: -3}, fresh: {Followers: 2, Following: 1}}
+		for _, fan := range fans {
+			deltas[fan] = appgraph.CounterDelta{Following: -1}
+		}
+		return r.repo.AddManyCounters(ctx, tx, deltas)
+	})
+	if edges, err := r.repo.ListEdges(ctx); err != nil || len(edges) != 0 {
+		t.Errorf("ListEdges after DeleteEdgesOfFollows = %+v, %v; want none", edges, err)
+	}
+	for _, id := range ids {
+		if _, err := r.repo.FindCounters(ctx, id); !errors.Is(err, appgraph.ErrNotFound) {
+			t.Errorf("FindCounters(%s) after AddManyCounters = %v, want none at zero", id, err)
+		}
+	}
+	if got, err := r.repo.FindCounters(ctx, fresh); err != nil || got != (graph.Counters{AccountID: fresh, FollowersCount: 2, FollowingCount: 1}) {
+		t.Errorf("FindCounters of an account without a row after AddManyCounters = %+v, %v; want them from zero", got, err)
+	}
+	if n, err := r.repo.CountFollowers(ctx, star, graph.StateActive); err != nil || n != 0 {
+		t.Errorf("CountFollowers after the end = %d, %v", n, err)
+	}
+}
+
+// graphFollowRepoStartMany starts many follows with the writes of a batch, each read back as the
+// writes of one follow record it.
+func graphFollowRepoStartMany(t *testing.T, r *graphFollowRepo) {
+	ids := r.accounts(3)
+	star, fans := ids[0], ids[1:]
+	now := r.clock.Now()
+	var fs []graph.Follow
+	var ps []graph.Preferences
+	for i, fan := range fans {
+		id := r.ids.NewID()
+		fs = append(fs, graph.Follow{ID: id, URI: graph.FollowURI(testkit.ContractHost, id), FollowerAccountID: fan, FolloweeAccountID: star, RequestedAt: now})
+		ps = append(ps, graph.Preferences{FollowID: id, ShowBoosts: i == 0})
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.repo.InsertFollows(ctx, tx, fs); err != nil {
+			return err
+		}
+		if err := r.repo.UpsertManyPreferences(ctx, tx, ps); err != nil {
+			return err
+		}
+		if err := r.repo.InsertAutoAcceptances(ctx, tx, []string{fs[0].ID}, now); err != nil {
+			return err
+		}
+		edges := []graph.Edge{graph.ActiveEdge(fs[0], graph.Acceptance{FollowID: fs[0].ID, AcceptedBy: graph.AcceptedByAuto, AcceptedAt: now}), graph.PendingEdge(fs[1])}
+		if n, err := r.repo.InsertEdges(ctx, tx, edges); err != nil || n != 2 {
+			t.Errorf("InsertEdges = %d, %v; want 2", n, err)
+		}
+		if n, err := r.repo.InsertEdges(ctx, tx, edges[:1]); err != nil || n != 0 {
+			t.Errorf("InsertEdges of a pair with an edge = %d, %v; want 0", n, err)
+		}
+		got, err := r.repo.PreferencesOf(ctx, tx, []string{fs[0].ID, fs[1].ID, r.ids.NewID()})
+		if err != nil {
+			return err
+		}
+		for i, f := range fs {
+			one, err := r.repo.Follow(ctx, tx, f.ID)
+			if err != nil || one.URI != f.URI || one.FollowerAccountID != f.FollowerAccountID || one.FolloweeAccountID != star || !one.RequestedAt.Equal(now) {
+				t.Errorf("Follow(%s) after InsertFollows = %+v, %v; want %+v", f.ID, one, err, f)
+			}
+			if p, err := r.repo.Preferences(ctx, tx, f.ID); err != nil || p != ps[i] || got[f.ID] != ps[i] {
+				t.Errorf("the preferences of %s = %+v / %+v, %v; want %+v", f.ID, p, got[f.ID], err, ps[i])
+			}
+		}
+		if len(got) != 2 {
+			t.Errorf("PreferencesOf = %+v, want the two that exist", got)
+		}
+		return nil
+	})
+	err := r.uow.Tx(t.Context(), func(tx uow.Tx) error {
+		return r.repo.InsertAutoAcceptances(t.Context(), tx, []string{fs[0].ID}, now)
+	})
+	if !errors.Is(err, appgraph.ErrAlreadyRecorded) {
+		t.Errorf("InsertAutoAcceptances of an accepted follow = %v, want ErrAlreadyRecorded", err)
+	}
+	edges, err := r.repo.ListEdges(t.Context())
+	if err != nil || len(edges) != 2 {
+		t.Fatalf("ListEdges = %+v, %v; want the two", edges, err)
+	}
+	for _, e := range edges {
+		want := graph.StatePending
+		if e.FollowID == fs[0].ID {
+			want = graph.StateActive
+		}
+		if e.State != want || !e.Since.Equal(now) || e.FolloweeAccountID != star {
+			t.Errorf("edge %+v, want %s since %v", e, want, now)
+		}
 	}
 }
 

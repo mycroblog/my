@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: overrideHookDecision
+  x-permission: manage_reports
   summary: Cancel a decision
   description: |
     Records the cancellation as its own event and in the audit log, and undoes what the hook

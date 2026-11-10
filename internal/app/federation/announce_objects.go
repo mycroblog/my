@@ -95,6 +95,10 @@ func (o *Objects) Announce(ctx context.Context, req Requester, id string) (Objec
 			mentioned = append(mentioned, federation.IRI(author.Account.URI))
 		}
 	}
-	out.Document, err = announceDocument(b, st, federation.IRI(booster.Account.URI), vis, mentioned).Marshal()
+	announce := announceDocument(b, st, federation.IRI(booster.Account.URI), vis, mentioned)
+	if announce.AnnounceAuthorization, err = o.notes.announceAuthorization(ctx, b, st); err != nil {
+		return Object{}, err
+	}
+	out.Document, err = announce.Marshal()
 	return out, err
 }

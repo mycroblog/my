@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Whether the authenticated user may interact with a status in one way, by its interaction
+  policy, its visibility, and how the user stands with its author: `allowed` at once,
+  `pending` once its author approves it (the interaction waits for the approval), or `denied`.
+type: string
+enum: [allowed, pending, denied]

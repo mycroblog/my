@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The profile pages in every width × locale project (FR-204, FR-301 to FR-303, ADR-0110): the header, the
-// follow button and its confirmation, the menu, the tabs and the follow lists. The built client runs on
+// The profile pages in every width × locale project (FR-204, FR-301 to FR-303, FR-310, ADR-0110): the header, the
+// follow button and its confirmation, the menu, the private note and its dialog, the tabs and the follow lists. The built client runs on
 // `vite preview`, which has no API: the specs answer the OAuth refresh and the client API with
 // `page.route`, as a signed-in user's server would. Names change with the locale, so elements are found by
 // role and position.
@@ -96,6 +96,7 @@ function post(n: number): Status {
     boosts_count: 0,
     favourites_count: 0,
     reactions: [],
+    filtered: [],
   };
 }
 
@@ -110,6 +111,7 @@ const none: Relationship = {
   blocking: false,
   muting: false,
   muting_notifications: false,
+  note: "",
 };
 
 /** Answers the session refresh and the account operations as Alice's server; returns the changes it got. */
@@ -141,6 +143,8 @@ async function signedInServer(page: Page) {
       ? route.fulfill(json({ items: [] }))
       : route.fulfill(json({ items: [post(1), post(2), { ...post(3), boost: post(30), content: "" }] })),
   );
+  // Bob features no hashtags on his profile.
+  await page.route(`**/api/v1/accounts/${bob.id}/featured_tags`, (route) => route.fulfill(json({ items: [] })));
   await page.route(`**/api/v1/accounts/${bob.id}/followers*`, (route) =>
     route.fulfill(json({ items: [alice, layla, { ...bob, id: "0192f0c4-7a8e-7000-8000-000000000003" }] })),
   );
@@ -162,6 +166,12 @@ async function signedInServer(page: Page) {
       return route.fulfill(json(relationship));
     });
   }
+  await page.route(`**/api/v1/accounts/${bob.id}/note`, async (route) => {
+    const note = route.request().method() === "DELETE" ? "" : (route.request().postDataJSON() as { note: string }).note;
+    changes.push(`note:${note}`);
+    relationship = { ...relationship, note };
+    return route.fulfill(json(relationship));
+  });
   return { changes };
 }
 
@@ -307,6 +317,30 @@ test.describe("a profile", () => {
     await page.keyboard.press("Enter");
     await expect.poll(() => server.changes).toEqual(["subscribe", "unsubscribe"]);
     await expect(bell).toHaveAttribute("aria-pressed", "false");
+  });
+
+  test("writes a private note in its dialog from the keyboard, and shows it on the profile", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const region = page.getByRole("main").getByRole("region", { name: message("profile.note.title"), exact: true });
+    const add = region.getByRole("button", { name: message("profile.note.add"), exact: true });
+    await add.focus();
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog");
+    const field = dialog.getByRole("textbox", { name: message("profile.note.field"), exact: true });
+    await expect(field).toBeFocused();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await page.keyboard.type("Met at the bakery. パンが好き");
+    await dialog.getByRole("button", { name: message("profile.note.save"), exact: true }).click();
+    await expect(dialog).toBeHidden();
+    await expect.poll(() => server.changes).toEqual(["note:Met at the bakery. パンが好き"]);
+    await expect(region.getByText("Met at the bakery. パンが好き", { exact: true })).toBeVisible();
+    // The dialog gives the focus back to the button, which now edits the note.
+    await expect(region.getByRole("button", { name: message("profile.note.edit"), exact: true })).toBeFocused();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
   });
 
   test("keeps the selected tab in the URL", async ({ page }) => {

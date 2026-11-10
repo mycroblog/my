@@ -1,7 +1,0 @@
-# SPDX-License-Identifier: MIT
-description: Who may quote the status from now on. Approvals given before stay.
-type: object
-required: [quote_policy]
-properties:
-  quote_policy:
-    $ref: ./QuotePolicy.yaml

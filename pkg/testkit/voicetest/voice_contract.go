@@ -49,6 +49,7 @@ func VoiceRepositoryContract(t *testing.T, newHarness VoiceFactory) {
 		{"RecordsInvitationsBansAndGrants", voiceInvitations},
 		{"EndsARoomOnce", voiceEnd},
 		{"KeepsTheHostGrace", voiceGrace},
+		{"KeepsTheScheduleAndTheCohostCandidates", voiceSchedule},
 		{"RebuildsItsProjections", voiceRebuild},
 	}
 	for _, tc := range cases {
@@ -371,6 +372,9 @@ func voiceParticipants(t *testing.T, e *voiceEnv) {
 	if got, err := e.h.Voice.FindParticipant(t.Context(), nil, bob); err != nil || !reflect.DeepEqual(got, want[2]) || !got.Cohost() {
 		t.Errorf("FindParticipant(bob) = %+v, %v; want %+v", got, err, want[2])
 	}
+	if got, err := e.h.Voice.ParticipantsAmong(t.Context(), nil, []string{alice, bob, e.ids.NewID()}); err != nil || len(got) != 2 || !got[alice] || !got[bob] {
+		t.Errorf("ParticipantsAmong(alice, bob, a stranger) = %v, %v; want alice and bob, as FindParticipant", got, err)
+	}
 
 	e.hand(t, pb, voice.HandGranted)
 	e.role(t, pb, voice.RoleSpeaker, host)
@@ -531,6 +535,24 @@ func voiceInvitations(t *testing.T, e *voiceEnv) {
 	if !granted() {
 		t.Error("not granted after a new grant")
 	}
+	// What the room's own records say of alice and of an account it knows nothing of, together.
+	facts, err := e.h.Voice.ViewerFacts(ctx, nil, room.ID, []string{alice, host})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := (appvoice.ViewerFacts{Banned: banned(room.ID), Invited: false, SpeakGranted: granted()}); facts[alice] != want {
+		t.Errorf("ViewerFacts of alice = %+v, want %+v, as Banned, FindInvitation, and SpeakGranted", facts[alice], want)
+	}
+	if facts[host] != (appvoice.ViewerFacts{}) {
+		t.Errorf("ViewerFacts of the host = %+v, want none", facts[host])
+	}
+	if facts, err := e.h.Voice.ViewerFacts(ctx, nil, other.ID, []string{alice}); err != nil || facts[alice] != (appvoice.ViewerFacts{}) {
+		t.Errorf("ViewerFacts in the other room = %+v, %v; want none", facts, err)
+	}
+	if inRooms, err := e.h.Voice.ViewerFactsInRooms(ctx, nil, alice, []string{room.ID, other.ID}); err != nil ||
+		inRooms[room.ID] != facts[alice] || inRooms[other.ID] != (appvoice.ViewerFacts{}) {
+		t.Errorf("ViewerFactsInRooms = %+v, %v; want %+v in the room, as ViewerFacts", inRooms, err, facts[alice])
+	}
 }
 
 func voiceEnd(t *testing.T, e *voiceEnv) {
@@ -578,6 +600,10 @@ func voiceGrace(t *testing.T, e *voiceEnv) {
 		if got, err := e.h.Voice.FindHostGrace(ctx, nil, room.ID); err != nil || !got.EndsAt.Equal(g.EndsAt) || got.RoomID != room.ID {
 			t.Errorf("FindHostGrace = %+v, %v; want %+v", got, err, g)
 		}
+		if got, err := e.h.Voice.HostGraces(ctx, nil, []string{room.ID, e.ids.NewID()}); err != nil || len(got) != 1 ||
+			!got[room.ID].EndsAt.Equal(g.EndsAt) || got[room.ID].RoomID != room.ID {
+			t.Errorf("HostGraces = %+v, %v; want %+v alone, as FindHostGrace", got, err, g)
+		}
 	}
 	for i, want := range []bool{true, false} {
 		var deleted bool
@@ -592,6 +618,58 @@ func voiceGrace(t *testing.T, e *voiceEnv) {
 	}
 	if _, err := e.h.Voice.FindHostGrace(ctx, nil, room.ID); !errors.Is(err, appvoice.ErrNotFound) {
 		t.Errorf("FindHostGrace after the delete = %v, want ErrNotFound", err)
+	}
+}
+
+func voiceSchedule(t *testing.T, e *voiceEnv) {
+	ctx := t.Context()
+	host, cand, other := testkit.NamedID("voice-host"), testkit.NamedID("voice-candidate"), testkit.NamedID("voice-other")
+	room := e.openRoom(t, host, voiceSettings("Scheduled"), true)
+	if _, err := e.h.Voice.FindSchedule(ctx, nil, room.ID); !errors.Is(err, appvoice.ErrNotFound) {
+		t.Errorf("FindSchedule of a room without one = %v, want ErrNotFound", err)
+	}
+	attended, err := e.h.Voice.Attended(ctx, nil, room.ID)
+	if err != nil || attended {
+		t.Errorf("Attended before anybody joined = %v, %v; want false", attended, err)
+	}
+	sc := appvoice.Schedule{RoomID: room.ID, Key: "event:1:occurrence:2", WaitEndsAt: e.now().Add(30 * time.Minute)}
+	e.tx(t, func(tx uow.Tx) error {
+		if err := e.h.Voice.InsertSchedule(ctx, tx, sc); err != nil {
+			return err
+		}
+		return e.h.Voice.InsertCohostCandidates(ctx, tx, room.ID, []string{other, cand})
+	})
+	// Recording a candidate again keeps its position.
+	e.tx(t, func(tx uow.Tx) error { return e.h.Voice.InsertCohostCandidates(ctx, tx, room.ID, []string{cand}) })
+	for name, find := range map[string]func() (appvoice.Schedule, error){
+		"FindSchedule":      func() (appvoice.Schedule, error) { return e.h.Voice.FindSchedule(ctx, nil, room.ID) },
+		"FindScheduleByKey": func() (appvoice.Schedule, error) { return e.h.Voice.FindScheduleByKey(ctx, nil, sc.Key) },
+	} {
+		if got, err := find(); err != nil || got.RoomID != sc.RoomID || got.Key != sc.Key || !got.WaitEndsAt.Equal(sc.WaitEndsAt) {
+			t.Errorf("%s = %+v, %v; want %+v", name, got, err, sc)
+		}
+	}
+	if _, err := e.h.Voice.FindScheduleByKey(ctx, nil, "event:other"); !errors.Is(err, appvoice.ErrNotFound) {
+		t.Errorf("FindScheduleByKey(unknown) = %v, want ErrNotFound", err)
+	}
+	if got, err := e.h.Voice.FindCohostCandidate(ctx, nil, room.ID, cand); err != nil || got.Position != 1 || got.Removed {
+		t.Errorf("FindCohostCandidate = %+v, %v; want position 1, not removed", got, err)
+	}
+	if _, err := e.h.Voice.FindCohostCandidate(ctx, nil, room.ID, host); !errors.Is(err, appvoice.ErrNotFound) {
+		t.Errorf("FindCohostCandidate(not a candidate) = %v, want ErrNotFound", err)
+	}
+	p := e.join(t, room.ID, cand, voice.RoleListener)
+	e.cohost(t, room.ID, cand, voice.CohostAssigned)
+	if got, err := e.h.Voice.FindCohostCandidate(ctx, nil, room.ID, cand); err != nil || got.Removed {
+		t.Errorf("FindCohostCandidate of an assigned co-host = %+v, %v; want not removed", got, err)
+	}
+	e.cohost(t, room.ID, cand, voice.CohostRemoved)
+	if got, err := e.h.Voice.FindCohostCandidate(ctx, nil, room.ID, cand); err != nil || !got.Removed {
+		t.Errorf("FindCohostCandidate of a removed co-host = %+v, %v; want removed", got, err)
+	}
+	e.leave(t, p, voice.LeftRoom)
+	if attended, err := e.h.Voice.Attended(ctx, nil, room.ID); err != nil || !attended {
+		t.Errorf("Attended after a participation ended = %v, %v; want true", attended, err)
 	}
 }
 

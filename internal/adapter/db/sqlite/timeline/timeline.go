@@ -4,6 +4,7 @@ package timeline
 
 import (
 	"context"
+	"encoding/json"
 	"maps"
 	"slices"
 	"time"
@@ -97,6 +98,39 @@ func (r *Repository) DeleteStatusEntries(ctx context.Context, tx uow.Tx, statusI
 	return sqlite.Wrap(q.DeleteFeedEntriesOfStatus(ctx, statusID), "delete feed entries of a status")
 }
 
+// DeleteStatusEntriesOf implements timeline.Repository.
+func (r *Repository) DeleteStatusEntriesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error {
+	if len(statusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	list, err := sqlite.JSONList(statusIDs)
+	if err != nil {
+		return err
+	}
+	if err := q.DeleteFeedDirectRecipientsOf(ctx, list); err != nil {
+		return sqlite.Wrap(err, "delete feed direct recipients")
+	}
+	used, err := q.ListCountedFeedTagIDsOf(ctx, list)
+	if err != nil {
+		return sqlite.Wrap(err, "list the counted tags of feed entries")
+	}
+	if err := q.DeleteFeedTagEntriesOf(ctx, list); err != nil {
+		return sqlite.Wrap(err, "delete feed tag entries")
+	}
+	deltas := make(map[string]int64, len(used))
+	for _, id := range used {
+		deltas[id]--
+	}
+	if err := applyTagUsage(ctx, q, deltas); err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.DeleteFeedEntriesOfStatuses(ctx, list), "delete feed entries of statuses")
+}
+
 func deleteEntryChildren(ctx context.Context, q *timelinegen.Queries, entryID string) error {
 	if err := q.DeleteFeedDirectRecipients(ctx, entryID); err != nil {
 		return sqlite.Wrap(err, "delete feed direct recipients")
@@ -119,21 +153,36 @@ func deleteEntryChildren(ctx context.Context, q *timelinegen.Queries, entryID st
 // feed_tag_entries has changed, and reads its last_used_at again (tag_usage, ADR-0092 §1). A
 // tag's usage that drops to zero is deleted.
 func applyTagUsage(ctx context.Context, q *timelinegen.Queries, deltas map[string]int64) error {
+	type usage struct {
+		TagID string `json:"tag_id"`
+		N     int64  `json:"n"`
+	}
+	var add, drain, adjust []usage
 	for _, id := range slices.Sorted(maps.Keys(deltas)) {
-		d := deltas[id]
-		var err error
-		switch {
+		switch d := deltas[id]; {
 		case d > 0:
-			err = q.AddTagUsage(ctx, timelinegen.AddTagUsageParams{TagID: id, N: d})
-		case d < 0:
-			if err = q.DeleteDrainedTagUsage(ctx, timelinegen.DeleteDrainedTagUsageParams{TagID: id, N: -d}); err == nil {
-				err = q.AdjustTagUsage(ctx, timelinegen.AdjustTagUsageParams{TagID: id, Delta: d})
-			}
+			add = append(add, usage{TagID: id, N: d})
 		default:
-			err = q.AdjustTagUsage(ctx, timelinegen.AdjustTagUsageParams{TagID: id})
+			if d < 0 {
+				drain = append(drain, usage{TagID: id, N: -d})
+			}
+			adjust = append(adjust, usage{TagID: id, N: d})
 		}
+	}
+	for _, step := range []struct {
+		rows []usage
+		run  func(context.Context, string) error
+		what string
+	}{{add, q.AddManyTagUsage, "add tag usage"}, {drain, q.DeleteManyDrainedTagUsage, "delete drained tag usage"}, {adjust, q.AdjustManyTagUsage, "adjust tag usage"}} {
+		if len(step.rows) == 0 {
+			continue
+		}
+		list, err := json.Marshal(step.rows)
 		if err != nil {
-			return sqlite.Wrap(err, "update tag usage")
+			return err
+		}
+		if err := step.run(ctx, string(list)); err != nil {
+			return sqlite.Wrap(err, step.what)
 		}
 	}
 	return nil
@@ -148,12 +197,14 @@ func (r *Repository) ReplaceDirectRecipients(ctx context.Context, tx uow.Tx, ent
 	if err := q.DeleteFeedDirectRecipients(ctx, entryID); err != nil {
 		return sqlite.Wrap(err, "delete feed direct recipients")
 	}
-	for _, id := range accountIDs {
-		if err := q.InsertFeedDirectRecipient(ctx, timelinegen.InsertFeedDirectRecipientParams{EntryID: entryID, RecipientAccountID: id}); err != nil {
-			return sqlite.Wrap(err, "insert feed direct recipient")
-		}
+	if len(accountIDs) == 0 {
+		return nil
 	}
-	return nil
+	list, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertFeedDirectRecipients(ctx, timelinegen.InsertFeedDirectRecipientsParams{EntryID: entryID, RecipientAccountIds: list}), "insert feed direct recipients")
 }
 
 // ReplaceTags implements timeline.Repository.
@@ -175,14 +226,20 @@ func (r *Repository) ReplaceTags(ctx context.Context, tx uow.Tx, e apptimeline.E
 	}
 	counts := apptimeline.CountsTagUsage(e.Visibility)
 	added := map[string]bool{}
-	for _, id := range tagIDs {
-		err := q.InsertFeedTagEntry(ctx, timelinegen.InsertFeedTagEntryParams{
-			TagID: id, EntryID: e.ID, AuthorAccountID: e.AuthorAccountID, Visibility: string(e.Visibility), IsLocal: sqlite.BoolToInt(e.IsLocal),
+	if len(tagIDs) > 0 {
+		list, err := sqlite.JSONList(tagIDs)
+		if err != nil {
+			return err
+		}
+		err = q.InsertFeedTagEntries(ctx, timelinegen.InsertFeedTagEntriesParams{
+			TagIds: list, EntryID: e.ID, AuthorAccountID: e.AuthorAccountID, Visibility: string(e.Visibility), IsLocal: sqlite.BoolToInt(e.IsLocal),
 			RevisedAt: sqlite.ToMillis(revisedAt),
 		})
 		if err != nil {
-			return sqlite.Wrap(err, "insert feed tag entry")
+			return sqlite.Wrap(err, "insert feed tag entries")
 		}
+	}
+	for _, id := range tagIDs {
 		if counts && !added[id] { // a tag listed twice counts once
 			added[id] = true
 			deltas[id]++
@@ -310,12 +367,33 @@ func (r *Repository) DeleteProjection(ctx context.Context, tx uow.Tx) error {
 	for _, del := range []func(context.Context) error{
 		q.DeleteAllFeedEntries, q.DeleteAllFeedDirectRecipients, q.DeleteAllFeedTagEntries, q.DeleteAllTagUsage,
 		q.DeleteAllFeedFollowEdges, q.DeleteAllFeedExclusions, q.DeleteAllFeedDomainMutes,
+		q.DeleteAllFeedConversationParticipants, q.DeleteAllFeedConversations,
 	} {
 		if err := del(ctx); err != nil {
 			return sqlite.Wrap(err, "empty the feed projections")
 		}
 	}
 	return nil
+}
+
+// FeedFollowersAmong implements apptimeline.Repository.
+func (r *Repository) FeedFollowersAmong(ctx context.Context, followeeID string, followerIDs []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(followerIDs) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(followerIDs)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := r.db.reader().ListFeedFollowersAmong(ctx, timelinegen.ListFeedFollowersAmongParams{Followee: followeeID, FollowerIds: list})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list feed followers")
+	}
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, nil
 }
 
 // ListHome implements timeline.Repository.
@@ -364,7 +442,7 @@ func (r *Repository) ListTag(ctx context.Context, tq apptimeline.TagQuery) ([]ap
 		return nil, err
 	}
 	rows, err := r.db.reader().ListTagEntries(ctx, timelinegen.ListTagEntriesParams{
-		TagID: tq.TagID, IncludeLocal: sqlite.BoolToInt(tq.IncludeLocal), Before: tq.Before, Now: sqlite.ToMillis(tq.Now),
+		TagID: tq.TagID, IncludeLocal: sqlite.BoolToInt(tq.IncludeLocal), LocalOnly: sqlite.BoolToInt(tq.LocalOnly), ExcludeReplies: sqlite.BoolToInt(tq.ExcludeReplies), Before: tq.Before, Now: sqlite.ToMillis(tq.Now),
 		Viewer: tq.ViewerAccountID, AllLanguages: all, Languages: langs, PageLimit: int64(tq.Limit),
 	})
 	return entriesFrom(rows, err, "list tag entries")
@@ -524,7 +602,7 @@ func (r *Repository) Snapshot(ctx context.Context) (apptimeline.Projection, erro
 	for _, row := range domainMutes {
 		p.DomainMutes = append(p.DomainMutes, apptimeline.DomainMute{ViewerAccountID: row.ViewerAccountID, Domain: row.Domain})
 	}
-	return p, nil
+	return p, conversationSnapshot(ctx, q, &p)
 }
 
 func entryFrom(row timelinegen.FeedEntry) apptimeline.Entry {

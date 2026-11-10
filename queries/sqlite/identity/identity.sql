@@ -63,3 +63,9 @@ SELECT DISTINCT ur.user_id FROM user_roles ur
 JOIN role_permissions rp ON rp.role_id = ur.role_id
 WHERE rp.permission = ?
 ORDER BY ur.user_id;
+
+-- ListUserRolesOf is ListUserRoles of many users (a JSON array), with the user of each role.
+-- name: ListUserRolesOf :many
+SELECT ur.user_id, r.id, r.key, r.position, r.created_at FROM user_roles ur
+JOIN roles r ON r.id = ur.role_id
+WHERE ur.user_id IN (SELECT value FROM json_each(CAST(sqlc.arg(user_ids) AS TEXT))) ORDER BY ur.user_id, r.position DESC, r.key;

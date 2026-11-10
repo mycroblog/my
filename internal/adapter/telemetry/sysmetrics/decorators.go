@@ -38,6 +38,33 @@ func (s *kv) Get(ctx context.Context, namespace, key string) ([]byte, error) {
 	return v, err
 }
 
+// GetMany implements kernel.KeyValueBatch, through the batch read of the store when it has one.
+func (s *kv) GetMany(ctx context.Context, namespace string, keys []string) (map[string][]byte, error) {
+	start := time.Now()
+	var out map[string][]byte
+	var err error
+	if b, ok := s.next.(kernel.KeyValueBatch); ok {
+		out, err = b.GetMany(ctx, namespace, keys)
+	} else {
+		out = make(map[string][]byte, len(keys))
+		for _, key := range keys {
+			v, gerr := s.next.Get(ctx, namespace, key)
+			switch {
+			case keyNotFound(gerr):
+			case gerr != nil:
+				err = gerr
+			default:
+				out[key] = v
+			}
+			if err != nil {
+				break
+			}
+		}
+	}
+	s.ops.done(ctx, "get_many", start, err, nil)
+	return out, err
+}
+
 func (s *kv) Set(ctx context.Context, namespace, key string, value []byte, ttl time.Duration) error {
 	start := time.Now()
 	err := s.next.Set(ctx, namespace, key, value, ttl)

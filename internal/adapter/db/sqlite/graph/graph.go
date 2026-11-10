@@ -399,6 +399,38 @@ func (r *Repository) ListFollowers(ctx context.Context, followeeAccountID string
 	return edgesFrom(rows), nil
 }
 
+// ListFollowEdgesFromAmong implements graph.Repository.
+func (r *Repository) ListFollowEdgesFromAmong(ctx context.Context, accountID string, followerIDs []string) ([]graph.Edge, error) {
+	if len(followerIDs) == 0 {
+		return nil, nil
+	}
+	targets, err := sqlite.JSONList(followerIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListFollowEdgesTo(ctx, graphgen.ListFollowEdgesToParams{AccountID: accountID, Targets: targets})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list follow edges to "+accountID)
+	}
+	return edgesFrom(rows), nil
+}
+
+// ListFolloweesAmong implements graph.Repository.
+func (r *Repository) ListFolloweesAmong(ctx context.Context, accountIDs []string, state graph.State) ([]string, error) {
+	if len(accountIDs) == 0 {
+		return nil, nil
+	}
+	ids, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListFolloweesAmong(ctx, graphgen.ListFolloweesAmongParams{AccountIds: ids, State: string(state)})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list followees among accounts")
+	}
+	return rows, nil
+}
+
 // ListFollowing implements graph.Repository.
 func (r *Repository) ListFollowing(ctx context.Context, followerAccountID string, state graph.State, before string, limit int) ([]graph.Edge, error) {
 	rows, err := r.db.reader().ListFollowingPage(ctx, graphgen.ListFollowingPageParams{

@@ -2,8 +2,8 @@
 
 -- name: InsertStatus :exec
 INSERT INTO statuses (
-  id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+  id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: InsertLocalStatus :exec
 INSERT INTO local_statuses (status_id, author_account_id, oauth_client_id, idempotency_key) VALUES ($1, $2, $3, $4);
@@ -17,18 +17,6 @@ INSERT INTO status_revision_bodies (revision_id, language, content_html) VALUES 
 
 -- name: InsertStatusRevisionSource :exec
 INSERT INTO status_revision_sources (revision_id, source_text, source_format) VALUES ($1, $2, $3);
-
--- name: InsertStatusRevisionAttachment :exec
-INSERT INTO status_revision_attachments (revision_id, position, media_id, description) VALUES ($1, $2, $3, $4);
-
--- name: InsertStatusRevisionMention :exec
-INSERT INTO status_revision_mentions (revision_id, account_id) VALUES ($1, $2);
-
--- name: InsertStatusRevisionTag :exec
-INSERT INTO status_revision_tags (revision_id, tag_id) VALUES ($1, $2);
-
--- name: InsertStatusRevisionEmoji :exec
-INSERT INTO status_revision_emojis (revision_id, emoji_id) VALUES ($1, $2);
 
 -- name: InsertStatusDeletion :exec
 INSERT INTO status_deletions (status_id, uri, author_account_id, origin, moderation_action_id, deleted_at)
@@ -78,8 +66,7 @@ DELETE FROM status_mention_index WHERE status_id = $1;
 SELECT EXISTS (SELECT 1 FROM status_deletions WHERE status_id = $1);
 
 -- name: GetLiveStatusByURI :one
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.uri = $1 AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id);
 
@@ -90,10 +77,12 @@ WHERE s.uri = $1 AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status
 SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
 
 -- name: ListLiveRepliesTo :many
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.in_reply_to_uri = $1 AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM interaction_requests r WHERE r.kind = 'reply' AND r.interacting_uri = s.uri
+    AND r.target_uri = s.in_reply_to_uri
+    AND NOT EXISTS (SELECT 1 FROM interaction_request_events e WHERE e.request_id = r.id AND e.kind = 'accepted'))
 ORDER BY s.id;
 
 -- name: ListLiveRemoteStatusIDsOfAuthor :many
@@ -189,7 +178,10 @@ INSERT INTO status_reply_links (status_id, parent_status_id, parent_author_accou
 SELECT c.id, p.id, p.author_account_id
 FROM statuses c JOIN statuses p ON p.uri = c.in_reply_to_uri
 WHERE NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = c.id)
-  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = p.id);
+  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = p.id)
+  AND NOT EXISTS (SELECT 1 FROM interaction_requests r WHERE r.kind = 'reply' AND r.interacting_uri = c.uri
+    AND r.target_uri = c.in_reply_to_uri
+    AND NOT EXISTS (SELECT 1 FROM interaction_request_events e WHERE e.request_id = r.id AND e.kind = 'accepted'));
 
 -- name: DeleteAllStatusCounters :exec
 DELETE FROM status_counters;
@@ -199,7 +191,10 @@ INSERT INTO status_counters (status_id, replies_count, boosts_count, favourites_
 SELECT s.id,
   (SELECT COUNT(*) FROM statuses c
     WHERE c.in_reply_to_uri = s.uri AND c.visibility IN ('public', 'local', 'unlisted')
-      AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = c.id)),
+      AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = c.id)
+      AND NOT EXISTS (SELECT 1 FROM interaction_requests r WHERE r.kind = 'reply' AND r.interacting_uri = c.uri
+        AND r.target_uri = c.in_reply_to_uri
+        AND NOT EXISTS (SELECT 1 FROM interaction_request_events e WHERE e.request_id = r.id AND e.kind = 'accepted'))),
   (SELECT COUNT(*) FROM boosts b
     WHERE b.status_id = s.id AND NOT EXISTS (SELECT 1 FROM boost_retractions r WHERE r.boost_id = b.id)),
   (SELECT COUNT(*) FROM favourites f WHERE f.status_id = s.id)
@@ -255,11 +250,16 @@ ORDER BY id
 LIMIT sqlc.arg(page_limit);
 
 -- name: GetStatus :one
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE id = $1;
 
+-- ListStatusesByIDs reads what GetStatus reads, of many statuses at once.
+-- name: ListStatusesByIDs :many
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
+FROM statuses WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;
+
 -- name: GetStatusByURI :one
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE uri = $1;
 
 -- name: GetLocalStatus :one
@@ -318,8 +318,7 @@ SELECT account_id, statuses_count, last_status_at FROM account_post_counters WHE
 -- ListLiveStatusHeads returns every status that is not deleted (each has a head) with the ID of
 -- its current revision, ordered by ID.
 -- name: ListLiveStatusHeads :many
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at, h.revision_id
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at, h.revision_id
 FROM statuses s
 JOIN status_heads h ON h.status_id = s.id
 ORDER BY s.id;

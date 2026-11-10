@@ -94,7 +94,8 @@ func (r *remoteActorRepo) snapshot(t *testing.T, a account.Account, shared strin
 		ID: id, AccountID: a.ID, PreferredUsername: "user", ProfileURL: a.URI + "/profile/" + id,
 		InboxURL: a.URI + "/inbox", SharedInboxURL: shared, OutboxURL: a.URI + "/outbox",
 		FollowersURL: a.URI + "/followers", FollowingURL: a.URI + "/following", FeaturedURL: a.URI + "/featured",
-		FollowersTotal: &followers, DocumentDigest: []byte(id), FetchedAt: r.clock.Now(),
+		FeaturedTagsURL: a.URI + "/featured-tags",
+		FollowersTotal:  &followers, DocumentDigest: []byte(id), FetchedAt: r.clock.Now(),
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Accounts.InsertRemoteSnapshot(ctx, tx, s) })
 	return s
@@ -131,7 +132,7 @@ func sameRemoteSnapshot(a, b account.RemoteSnapshot) bool {
 	return a.ID == b.ID && a.AccountID == b.AccountID && a.PreferredUsername == b.PreferredUsername &&
 		a.ProfileURL == b.ProfileURL && a.InboxURL == b.InboxURL && a.SharedInboxURL == b.SharedInboxURL &&
 		a.OutboxURL == b.OutboxURL && a.FollowersURL == b.FollowersURL && a.FollowingURL == b.FollowingURL &&
-		a.FeaturedURL == b.FeaturedURL && bytes.Equal(a.DocumentDigest, b.DocumentDigest) && a.FetchedAt.Equal(b.FetchedAt) &&
+		a.FeaturedURL == b.FeaturedURL && a.FeaturedTagsURL == b.FeaturedTagsURL && bytes.Equal(a.DocumentDigest, b.DocumentDigest) && a.FetchedAt.Equal(b.FetchedAt) &&
 		a.FollowersTotal != nil && b.FollowersTotal != nil && *a.FollowersTotal == *b.FollowersTotal &&
 		a.FollowingTotal == nil && b.FollowingTotal == nil && a.StatusesTotal == nil && b.StatusesTotal == nil
 }
@@ -204,6 +205,10 @@ func remoteActorRepoHeads(t *testing.T, r *remoteActorRepo) {
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Accounts.InsertAccount(ctx, tx, unfetched) })
 	if _, err := r.h.Accounts.FindRemoteHead(ctx, unfetched.ID); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindRemoteHead without a head = %v, want ErrNotFound", err)
+	}
+	if got, err := r.h.Accounts.FindRemoteHeads(ctx, []string{accounts[0].ID, accounts[2].ID, unfetched.ID}); err != nil || len(got) != 2 ||
+		!sameRemoteHead(got[accounts[0].ID], heads[0]) || !sameRemoteHead(got[accounts[2].ID], heads[2]) {
+		t.Errorf("FindRemoteHeads = %+v, %v; want the heads of a and c only", got, err)
 	}
 
 	// A failed fetch of b counts in its head and moves its last fetch after the others.

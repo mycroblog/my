@@ -3,9 +3,14 @@
 -- Queries of the database job queue (internal/adapter/queue/db) for SQLite.
 -- Timestamps are Unix milliseconds (see docs/architecture/data-model/README.md, section 1.2).
 
--- name: InsertJob :exec
+-- InsertJobs inserts the jobs of a JSON array, one row per element, as an INSERT of each would:
+-- the payload is hex, and an absent idempotency, ordering, or trace key is none. WHERE true
+-- keeps ON CONFLICT from reading as a join constraint.
+-- name: InsertJobs :exec
 INSERT INTO jobs (id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, created_at)
-VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
+SELECT value ->> '$.id', value ->> '$.type', unhex(value ->> '$.payload'), value ->> '$.idempotency_key',
+  value ->> '$.ordering_key', value ->> '$.trace_parent', 0, value ->> '$.run_at', value ->> '$.created_at'
+FROM json_each(CAST(sqlc.arg(jobs) AS TEXT)) WHERE true
 ON CONFLICT (idempotency_key) DO NOTHING;
 
 -- ClaimJob leases the due, unleased job with the earliest run_at that its ordering key does

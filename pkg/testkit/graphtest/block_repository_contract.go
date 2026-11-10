@@ -6,6 +6,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"sync"
@@ -23,7 +24,8 @@ import (
 // each recorded once, found by ID and by URI; the block_edges projection, paged newest first out of
 // a blocker and in block order into a blocked account, and rebuilt from the blocks; mutes replaced
 // by an upsert, hidden on read once expired, paged newest first, and deleted when expired in
-// batches; domain mutes inserted once, paged in the order of their domains, and counted; the
+// batches; domain mutes inserted once, paged in the order of their domains, and counted; private
+// notes replaced by an upsert, found by pair and by target, listed by owner, and deleted; the
 // relations among a set of accounts; and LockPair, which serializes the transactions of one pair
 // whichever order they name it in (ADR-0153 §5). The block and mute use cases on top of it are
 // BlockFlows, which internal/flowtest/graph runs once on SQLite.
@@ -42,7 +44,11 @@ func BlockRepositoryContract(t *testing.T, newHarness FollowFactory) {
 		{"PagesMutes", blockRepoMutePages},
 		{"DeletesExpiredMutesInBatches", blockRepoDeleteExpired},
 		{"KeepsDomainMutes", blockRepoDomainMutes},
+		{"KeepsPrivateNotes", blockRepoNotes},
 		{"ListsRelationsAmongAccounts", blockRepoRelations},
+		{"ReadsTheRelationshipPartsOfManyAccounts", blockRepoRelationshipParts},
+		{"ReadsTheBlocksAndNotificationRelationsOfOneWithMany", blockRepoOneWithMany},
+		{"WritesManyBlocksAndMutes", blockRepoWritesMany},
 		{"LockPairSerializesAPair", blockRepoLockPair},
 	}
 	for _, tc := range cases {
@@ -557,6 +563,16 @@ func blockRepoDomainMutes(t *testing.T, r *blockRepo) {
 			t.Errorf("MutesAnyDomain(%v) = %v, %v; want %v", tc.domains, got, err, tc.want)
 		}
 	}
+	// DomainMutersAmong tells of many accounts what MutesAnyDomain tells of one.
+	stranger := r.ids.NewID()
+	for _, tc := range []struct {
+		domains []string
+		want    map[string]bool
+	}{{[]string{"x.example", "b.example"}, map[string]bool{alice: true}}, {[]string{"a.example"}, map[string]bool{alice: true, bob: true}}, {[]string{"x.example"}, map[string]bool{}}, {nil, map[string]bool{}}} {
+		if got, err := r.repo.DomainMutersAmong(ctx, []string{alice, bob, stranger}, tc.domains); err != nil || !maps.Equal(got, tc.want) {
+			t.Errorf("DomainMutersAmong(%v) = %v, %v; want %v", tc.domains, got, err, tc.want)
+		}
+	}
 
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		for i, want := range []bool{true, false} {
@@ -654,5 +670,218 @@ func blockRepoLockPair(t *testing.T, r *blockRepo) {
 		if n != 1 {
 			t.Errorf("round %d: %d blocks of the pair, want 1", round, n)
 		}
+	}
+}
+
+// blockRepoRelationshipParts reads the relationships of one account with several others at once:
+// follows both ways in either state with the preferences of the one out, blocks both ways, a mute
+// in force and an expired one, and an account with none; each part is what the read of one pair
+// finds.
+// blockRepoOneWithMany reads, in a transaction, the blocks of one account with many others by
+// direction, and its notification relations with many sources, as NotificationRelationsTx reads
+// those of many recipients with one source.
+func blockRepoOneWithMany(t *testing.T, r *blockRepo) {
+	ids := r.accounts(5)
+	me, bob, carol, dave, erin := ids[0], ids[1], ids[2], ids[3], ids[4]
+	now := r.clock.Now()
+	r.block(t, me, carol)
+	r.block(t, dave, me)
+	r.mute(t, graph.Mute{AccountID: me, TargetAccountID: bob, HideNotifications: true, CreatedAt: now})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, err := r.repo.InsertEdge(ctx, tx, graph.Edge{FollowerAccountID: me, FolloweeAccountID: erin, FollowID: r.ids.NewID(), State: graph.StateActive, Since: now})
+		return err
+	})
+	// The mutes of one target by many accounts, and the preferences of many follows, outside a
+	// transaction.
+	if got, err := r.repo.FindMutesOn(t.Context(), bob, []string{me, carol}, now); err != nil || len(got) != 1 || !got[me].HideNotifications {
+		t.Errorf("FindMutesOn(bob) = %+v, %v; want my mute", got, err)
+	}
+	if got, err := r.repo.FindPreferencesOf(t.Context(), []string{r.ids.NewID()}); err != nil || len(got) != 0 {
+		t.Errorf("FindPreferencesOf(unknown) = %+v, %v; want none", got, err)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		blocking, blockedBy, err := r.repo.BlockEdgesWithTx(ctx, tx, me, []string{bob, carol, dave, erin})
+		if err != nil || !maps.Equal(blocking, map[string]bool{carol: true}) || !maps.Equal(blockedBy, map[string]bool{dave: true}) {
+			t.Errorf("BlockEdgesWithTx = %v, %v, %v; want carol blocked, by dave", blocking, blockedBy, err)
+		}
+		got, err := r.repo.NotificationRelationsFromTx(ctx, tx, me, []string{bob, carol, dave, erin}, now)
+		if err != nil {
+			return err
+		}
+		if !maps.Equal(got.Blocked, map[string]bool{carol: true, dave: true}) {
+			t.Errorf("NotificationRelationsFromTx blocked = %v, want carol and dave", got.Blocked)
+		}
+		if len(got.Mutes) != 1 || !got.Mutes[bob].HideNotifications {
+			t.Errorf("NotificationRelationsFromTx mutes = %+v, want my mute of bob", got.Mutes)
+		}
+		if len(got.Follows) != 1 || got.Follows[erin].State != graph.StateActive {
+			t.Errorf("NotificationRelationsFromTx follows = %+v, want my follow of erin", got.Follows)
+		}
+		// One source seen from the other side reads as NotificationRelationsTx reads it.
+		for _, source := range []string{bob, carol, dave, erin} {
+			one, err := r.repo.NotificationRelationsTx(ctx, tx, source, []string{me}, now)
+			if err != nil {
+				return err
+			}
+			if one.Blocked[me] != got.Blocked[source] || one.Mutes[me] != got.Mutes[source] || one.Follows[me] != got.Follows[source] {
+				t.Errorf("the relations of me with %s = %+v, want %+v as NotificationRelationsTx reads them", source, got, one)
+			}
+		}
+		return nil
+	})
+}
+
+// blockRepoWritesMany inserts many blocks and their edges, and upserts many mutes of one target,
+// each read as the writes of one record it.
+func blockRepoWritesMany(t *testing.T, r *blockRepo) {
+	ids := r.accounts(4)
+	target, a, b, c := ids[0], ids[1], ids[2], ids[3]
+	now := r.clock.Now()
+	var bs []graph.Block
+	for _, blocker := range []string{a, b} {
+		id := r.ids.NewID()
+		bs = append(bs, graph.Block{ID: id, URI: graph.BlockURI(testkit.ContractHost, id), BlockerAccountID: blocker, BlockedAccountID: target, CreatedAt: now})
+	}
+	later := now.Add(time.Hour)
+	ms := []graph.Mute{
+		{AccountID: a, TargetAccountID: target, HideNotifications: true, CreatedAt: now},
+		{AccountID: c, TargetAccountID: target, ExpiresAt: &later, CreatedAt: now},
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := errors.Join(r.repo.InsertBlocks(ctx, tx, bs), r.repo.InsertBlocks(ctx, tx, nil)); err != nil {
+			return err
+		}
+		if n, err := r.repo.InsertBlockEdges(ctx, tx, bs); err != nil || n != 2 {
+			t.Errorf("InsertBlockEdges = %d, %v; want 2", n, err)
+		}
+		if n, err := r.repo.InsertBlockEdges(ctx, tx, bs[:1]); err != nil || n != 0 {
+			t.Errorf("InsertBlockEdges of a pair with an edge = %d, %v; want 0", n, err)
+		}
+		for _, want := range bs {
+			if got, err := r.repo.Block(ctx, tx, want.ID); err != nil || got.URI != want.URI || got.BlockerAccountID != want.BlockerAccountID || !got.CreatedAt.Equal(now) {
+				t.Errorf("Block(%s) = %+v, %v; want %+v", want.ID, got, err, want)
+			}
+			if e, err := r.repo.BlockEdge(ctx, tx, want.BlockerAccountID, target); err != nil || e.BlockID != want.ID {
+				t.Errorf("BlockEdge(%s) = %+v, %v", want.BlockerAccountID, e, err)
+			}
+		}
+		if err := errors.Join(r.repo.UpsertMutes(ctx, tx, ms), r.repo.UpsertMutes(ctx, tx, nil)); err != nil {
+			return err
+		}
+		got, err := r.repo.ActiveMutesOfTargetTx(ctx, tx, target, []string{a, b, c}, now)
+		if err != nil || len(got) != 2 {
+			t.Errorf("ActiveMutesOfTargetTx = %+v, %v; want the mutes of a and c", got, err)
+		}
+		for _, want := range ms {
+			one, err := r.repo.Mute(ctx, tx, want.AccountID, target, now)
+			if err != nil || one.HideNotifications != want.HideNotifications || (one.ExpiresAt == nil) != (want.ExpiresAt == nil) ||
+				(want.ExpiresAt != nil && !one.ExpiresAt.Equal(*want.ExpiresAt)) || !reflect.DeepEqual(got[want.AccountID], one) {
+				t.Errorf("the mute of %s = %+v / %+v, %v; want %+v", want.AccountID, one, got[want.AccountID], err, want)
+			}
+		}
+		if got, err := r.repo.ActiveMutesOfTargetTx(ctx, tx, target, []string{c}, later.Add(time.Second)); err != nil || len(got) != 0 {
+			t.Errorf("ActiveMutesOfTargetTx after the expiry = %+v, %v; want none", got, err)
+		}
+		return nil
+	})
+}
+
+func blockRepoRelationshipParts(t *testing.T, r *blockRepo) {
+	ctx := t.Context()
+	ids := r.accounts(5)
+	me, bob, carol, dave, erin := ids[0], ids[1], ids[2], ids[3], ids[4]
+	now := r.clock.Now()
+	past := now.Add(-time.Hour)
+	edges := []graph.Edge{
+		{FollowerAccountID: me, FolloweeAccountID: bob, FollowID: r.ids.NewID(), State: graph.StateActive, Since: now},
+		{FollowerAccountID: me, FolloweeAccountID: carol, FollowID: r.ids.NewID(), State: graph.StatePending, Since: now},
+		{FollowerAccountID: bob, FolloweeAccountID: me, FollowID: r.ids.NewID(), State: graph.StateActive, Since: now},
+		{FollowerAccountID: carol, FolloweeAccountID: bob, FollowID: r.ids.NewID(), State: graph.StateActive, Since: now}, // not mine
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		for _, e := range edges {
+			if _, err := r.repo.InsertEdge(ctx, tx, e); err != nil {
+				return err
+			}
+		}
+		return r.repo.UpsertPreferences(ctx, tx, graph.Preferences{FollowID: edges[0].FollowID, ShowBoosts: false})
+	})
+	r.block(t, me, carol)
+	r.block(t, dave, me)
+	r.mute(t, graph.Mute{AccountID: me, TargetAccountID: bob, HideNotifications: true, CreatedAt: now})
+	r.mute(t, graph.Mute{AccountID: me, TargetAccountID: dave, ExpiresAt: &past, CreatedAt: past.Add(-time.Hour)})
+	r.mute(t, graph.Mute{AccountID: bob, TargetAccountID: me, HideNotifications: true, CreatedAt: now})
+
+	parts, err := r.repo.FindRelationshipParts(ctx, me, []string{bob, carol, dave, erin}, now)
+	if err != nil {
+		t.Fatalf("FindRelationshipParts = %v", err)
+	}
+	for _, other := range []string{bob, carol, dave, erin} {
+		check := func(part string, got any, ok bool, want any, err error) {
+			t.Helper()
+			switch {
+			case errors.Is(err, appgraph.ErrNotFound):
+				if ok {
+					t.Errorf("FindRelationshipParts: %s with %s = %+v, want none", part, other, got)
+				}
+			case err != nil:
+				t.Fatal(err)
+			case !ok || !reflect.DeepEqual(got, want):
+				t.Errorf("FindRelationshipParts: %s with %s = %+v (%t), want %+v", part, other, got, ok, want)
+			}
+		}
+		e, ok := parts.Following[other]
+		want, err := r.repo.FindEdge(ctx, me, other)
+		check("follow out", e, ok, want, err)
+		if err == nil {
+			p, ok := parts.Preferences[want.FollowID]
+			wantP, err := r.repo.FindPreferences(ctx, want.FollowID)
+			check("preferences", p, ok, wantP, err)
+		}
+		e, ok = parts.FollowedBy[other]
+		want, err = r.repo.FindEdge(ctx, other, me)
+		check("follow in", e, ok, want, err)
+		b, ok := parts.Blocking[other]
+		wantB, err := r.repo.FindBlockEdge(ctx, me, other)
+		check("block out", b, ok, wantB, err)
+		b, ok = parts.BlockedBy[other]
+		wantB, err = r.repo.FindBlockEdge(ctx, other, me)
+		check("block in", b, ok, wantB, err)
+		m, ok := parts.Mutes[other]
+		wantM, err := r.repo.FindMute(ctx, me, other, now)
+		check("mute", m, ok, wantM, err)
+	}
+	if _, ok := parts.Mutes[dave]; ok {
+		t.Errorf("FindRelationshipParts: the expired mute of dave is in force")
+	}
+	if empty, err := r.repo.FindRelationshipParts(ctx, me, nil, now); err != nil || len(empty.Following) != 0 {
+		t.Errorf("FindRelationshipParts(none) = %+v, %v; want nothing", empty, err)
+	}
+
+	// The relations of the recipients of a notification from me, read in a transaction.
+	var rels appgraph.NotificationRelations
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		rels, err = r.repo.NotificationRelationsTx(ctx, tx, me, []string{bob, carol, dave, erin}, now)
+		return err
+	})
+	for _, other := range []string{bob, carol, dave, erin} {
+		_, out := r.repo.FindBlockEdge(ctx, me, other)
+		_, in := r.repo.FindBlockEdge(ctx, other, me)
+		if blocked := out == nil || in == nil; rels.Blocked[other] != blocked {
+			t.Errorf("NotificationRelationsTx: blocked with %s = %v, want %v", other, rels.Blocked[other], blocked)
+		}
+		m, ok := rels.Mutes[other]
+		wantM, err := r.repo.FindMute(ctx, other, me, now)
+		if (err == nil) != ok || ok && !reflect.DeepEqual(m, wantM) {
+			t.Errorf("NotificationRelationsTx: mute of %s = %+v (%t), want %+v (%v)", other, m, ok, wantM, err)
+		}
+		e, ok := rels.Follows[other]
+		wantE, err := r.repo.FindEdge(ctx, other, me)
+		if (err == nil) != ok || ok && e != wantE {
+			t.Errorf("NotificationRelationsTx: follow of %s = %+v (%t), want %+v (%v)", other, e, ok, wantE, err)
+		}
+	}
+	if !rels.Blocked[carol] || !rels.Blocked[dave] || rels.Mutes[bob].AccountID != bob || rels.Follows[bob].State != graph.StateActive {
+		t.Errorf("NotificationRelationsTx = %+v; want carol and dave blocked, bob muting and following me", rels)
 	}
 }

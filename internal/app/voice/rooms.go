@@ -70,14 +70,9 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 				return err
 			}
 		}
-		if limit := s.d.Config.MaxOpenRooms; limit > 0 {
-			open, err := s.d.Repository.OpenRooms(ctx, tx, "")
-			if err != nil {
-				return err
-			}
-			if len(open) >= limit {
-				return ErrTooManyRooms
-			}
+		// A host of a scheduled room that waits for them is in none of its participations.
+		if err := s.checkOpeningTx(ctx, tx, accountID); err != nil {
+			return err
 		}
 		if err := s.moveTx(ctx, tx, accountID, "", prev, now); err != nil {
 			return err
@@ -192,25 +187,25 @@ func (s *Service) List(ctx context.Context, accountID string, q ListQuery) ([]Li
 	if err != nil {
 		return nil, false, err
 	}
+	views, err := s.evaluatedViews(ctx, open)
+	if err != nil {
+		return nil, false, err
+	}
+	// Who sees which room, and how the viewer relates to their hosts and speakers, read together.
+	sees, err := s.visibleAmongRooms(ctx, accountID, views)
+	if err != nil {
+		return nil, false, err
+	}
+	keys, err := s.listKeys(ctx, accountID, views)
+	if err != nil {
+		return nil, false, err
+	}
 	var out []ListedRoom
-	for _, r := range open {
-		if err := s.evaluate(ctx, r.ID, false); err != nil {
-			return nil, false, err
-		}
-		v, err := s.visibleRoom(ctx, accountID, r.ID)
-		switch {
-		case errors.Is(err, ErrNotFound):
-			continue
-		case err != nil:
-			return nil, false, err
-		}
-		if v.Head.State != voice.StateOpen {
+	for _, v := range views {
+		if !sees[v.ID] {
 			continue
 		}
-		key, err := s.listKey(ctx, accountID, v)
-		if err != nil {
-			return nil, false, err
-		}
+		key := keys[v.ID]
 		if q.After != nil && !q.After.before(key) {
 			continue
 		}
@@ -231,21 +226,99 @@ func (s *Service) List(ctx context.Context, accountID string, q ListQuery) ([]Li
 	return out, false, nil
 }
 
-// listKey returns the position of a room in the list of accountID.
-func (s *Service) listKey(ctx context.Context, accountID string, v RoomView) (ListKey, error) {
-	ids := []string{v.Head.HostAccountID}
-	for _, p := range v.Participants {
-		if p.Role == voice.RoleSpeaker && p.AccountID != v.Head.HostAccountID {
-			ids = append(ids, p.AccountID)
+// evaluatedViews returns the views of the rooms of open that are still open once their expiry is
+// evaluated, as evaluate and view would leave them one by one. It reads the participants, the
+// heartbeats, and the host graces of every room together, and evaluates on its own, then views
+// again, only a room that the evaluation would change.
+func (s *Service) evaluatedViews(ctx context.Context, open []RoomRecord) ([]RoomView, error) {
+	ids := make([]string, len(open))
+	for i, r := range open {
+		ids[i] = r.ID
+	}
+	participants, err := s.d.Repository.ParticipantsOfRooms(ctx, nil, ids)
+	if err != nil {
+		return nil, err
+	}
+	var all []Participant
+	for _, id := range ids {
+		all = append(all, participants[id]...)
+	}
+	live, err := s.d.Heartbeats.read(ctx, all)
+	if err != nil {
+		return nil, err
+	}
+	graces, err := s.d.Repository.HostGraces(ctx, nil, ids)
+	if err != nil {
+		return nil, err
+	}
+	var out []RoomView
+	for _, r := range open {
+		v := RoomView{RoomRecord: r, Participants: participants[r.ID]}
+		if r.Head.State == voice.StateOpen && evaluationChanges(v, live, graces) {
+			if err := s.evaluate(ctx, r.ID, false); err != nil {
+				return nil, err
+			}
+			switch v, err = s.view(ctx, r.ID); {
+			case errors.Is(err, ErrNotFound):
+				continue
+			case err != nil:
+				return nil, err
+			}
+		}
+		if v.Head.State == voice.StateOpen {
+			out = append(out, v)
 		}
 	}
-	ids = slices.DeleteFunc(ids, func(id string) bool { return id == accountID })
-	following, err := s.d.Relations.Following(ctx, accountID, ids)
-	if err != nil {
-		return ListKey{}, err
+	return out, nil
+}
+
+// evaluationChanges reports whether evaluate, without a sweep, would change the open room of v,
+// from the liveness of its participants and the host graces read: a room with nobody, a host
+// who is in no participation, a participation whose session expired, or a host in its grace.
+func evaluationChanges(v RoomView, live liveness, graces map[string]HostGrace) bool {
+	host := v.Head.HostAccountID
+	if len(v.Participants) == 0 || !slices.ContainsFunc(v.Participants, func(p Participant) bool { return p.AccountID == host }) {
+		return true
 	}
-	followed := slices.ContainsFunc(ids, func(id string) bool { return following[id] })
-	return ListKey{Followed: followed, Participants: len(v.Participants), RoomID: v.ID}, nil
+	if _, inGrace := graces[v.ID]; inGrace {
+		return true
+	}
+	return slices.ContainsFunc(v.Participants, func(p Participant) bool { return live.expired(p.ParticipationID) })
+}
+
+// listKeys returns the position of each room of views in the list of accountID, by room: whether
+// the viewer follows its host or a speaker, with one read of the viewer's follows for every room.
+func (s *Service) listKeys(ctx context.Context, accountID string, views []RoomView) (map[string]ListKey, error) {
+	idsOf := map[string][]string{}
+	var all []string
+	for _, v := range views {
+		ids := []string{v.Head.HostAccountID}
+		for _, p := range v.Participants {
+			if p.Role == voice.RoleSpeaker && p.AccountID != v.Head.HostAccountID {
+				ids = append(ids, p.AccountID)
+			}
+		}
+		ids = slices.DeleteFunc(ids, func(id string) bool { return id == accountID })
+		idsOf[v.ID] = ids
+		for _, id := range ids {
+			if !slices.Contains(all, id) {
+				all = append(all, id)
+			}
+		}
+	}
+	following := map[string]bool{}
+	if len(all) > 0 {
+		var err error
+		if following, err = s.d.Relations.Following(ctx, accountID, all); err != nil {
+			return nil, err
+		}
+	}
+	out := make(map[string]ListKey, len(views))
+	for _, v := range views {
+		followed := slices.ContainsFunc(idsOf[v.ID], func(id string) bool { return following[id] })
+		out[v.ID] = ListKey{Followed: followed, Participants: len(v.Participants), RoomID: v.ID}
+	}
+	return out, nil
 }
 
 // hostRoom returns a room that accountID hosts, after evaluating its expiry: ErrNotFound when

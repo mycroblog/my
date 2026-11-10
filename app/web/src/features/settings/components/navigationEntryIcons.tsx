@@ -8,6 +8,7 @@ import {
   ProfileIcon,
   SearchIcon,
   SettingsIcon,
+  VisibilityIcon,
 } from "@my/ui";
 import type { ReactNode } from "react";
 import type { NavigationEntryId } from "../hooks/useNavigationSettings";
@@ -19,6 +20,8 @@ export const navigationEntryIcons: Record<NavigationEntryId, ReactNode> = {
   public: <FederatedIcon />,
   notifications: <NotificationsIcon />,
   search: <SearchIcon />,
+  // The direct messages are the posts of the `direct` visibility: its at sign, the same as on those posts.
+  direct: <VisibilityIcon visibility="direct" />,
   profile: <ProfileIcon />,
   bookmarks: <BookmarkIcon />,
   settings: <SettingsIcon />,

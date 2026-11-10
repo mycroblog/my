@@ -7,8 +7,8 @@ post:
     Reads a CSV file as `startDataImport` would and tells what importing it would do,
     changing nothing. The header row is optional, a leading `@` of an address is dropped,
     and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-    `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-    `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+    `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+    `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
     new posts, notifications of a muted account hidden. The `Languages` column of a follow
     is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
   tags: [accounts]

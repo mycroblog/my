@@ -27,6 +27,8 @@ type MoveRepository interface {
 	LatestMove(ctx context.Context, tx uow.Tx, accountID string) (account.Move, error)
 	// FindMove returns a move by ID.
 	FindMove(ctx context.Context, id string) (account.Move, error)
+	// FindMoves returns the moves of ids that exist, by ID, as FindMove returns one, with one query.
+	FindMoves(ctx context.Context, ids []string) (map[string]account.Move, error)
 	// FindMoveTx is FindMove inside tx.
 	FindMoveTx(ctx context.Context, tx uow.Tx, id string) (account.Move, error)
 	// UpsertMoveState and DeleteAllMoveStates write account_move_states, for this module's
@@ -263,6 +265,11 @@ func (s *Service) MoveState(ctx context.Context, accountID string) (account.Move
 }
 
 // FindMove returns a move by ID; ErrNotFound means there is none.
+// FindMoves returns the moves of ids that exist, by ID, as FindMove returns one, with one query.
+func (s *Service) FindMoves(ctx context.Context, ids []string) (map[string]account.Move, error) {
+	return s.d.Repository.FindMoves(ctx, ids)
+}
+
 func (s *Service) FindMove(ctx context.Context, id string) (account.Move, error) {
 	return s.d.Repository.FindMove(ctx, id)
 }

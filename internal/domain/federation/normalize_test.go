@@ -300,7 +300,7 @@ func TestNormalizeActor(t *testing.T) {
 	d := normalize(t, `{`+ctx+`,"type":"Service","id":"https://a.example/u/alice","preferredUsername":"alice","name":"Alice :blob:",
 		"summary":"<p>bio</p>","url":"https://a.example/@alice","inbox":"https://a.example/u/alice/inbox","outbox":"https://a.example/u/alice/outbox",
 		"followers":"https://a.example/u/alice/followers","following":"https://a.example/u/alice/following","featured":"https://a.example/u/alice/featured",
-		"endpoints":{"sharedInbox":"https://a.example/inbox"},"icon":{"type":"Image","url":"https://a.example/a.png"},"image":"https://a.example/h.png",
+		"featuredTags":"https://a.example/u/alice/tags","endpoints":{"sharedInbox":"https://a.example/inbox"},"icon":{"type":"Image","url":"https://a.example/a.png"},"image":"https://a.example/h.png",
 		"manuallyApprovesFollowers":true,"discoverable":true,"indexable":true,"published":"2020-01-01T00:00:00Z","isCat":true,
 		"alsoKnownAs":["https://old.example/users/alice","https://a.example/u/alice"],"movedTo":"https://new.example/users/alice",
 		"publicKey":{"id":"https://a.example/u/alice#main-key","owner":"https://a.example/u/alice","publicKeyPem":"-----BEGIN PUBLIC KEY-----"},
@@ -314,8 +314,8 @@ func TestNormalizeActor(t *testing.T) {
 		ID: "https://a.example/u/alice", Type: federation.ActorService, PreferredUsername: "alice", Name: "Alice :blob:", Summary: "<p>bio</p>",
 		URL: "https://a.example/@alice", Inbox: "https://a.example/u/alice/inbox", Outbox: "https://a.example/u/alice/outbox",
 		SharedInbox: "https://a.example/inbox", Followers: "https://a.example/u/alice/followers", Following: "https://a.example/u/alice/following",
-		Featured: "https://a.example/u/alice/featured", Icon: "https://a.example/a.png", Image: "https://a.example/h.png",
-		ManuallyApprovesFollowers: true, Discoverable: true, Indexable: true, Published: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
+		Featured: "https://a.example/u/alice/featured", FeaturedTags: "https://a.example/u/alice/tags",
+		Icon: "https://a.example/a.png", Image: "https://a.example/h.png", ManuallyApprovesFollowers: true, Discoverable: true, Indexable: true, Published: time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC),
 		AlsoKnownAs: []federation.IRI{"https://old.example/users/alice", "https://a.example/u/alice"}, MovedTo: "https://new.example/users/alice",
 		PublicKeys: []federation.PublicKey{{ID: "https://a.example/u/alice#main-key", Owner: "https://a.example/u/alice", PEM: "-----BEGIN PUBLIC KEY-----"}},
 		Fields:     []federation.Field{{Name: "Site", Value: `<a href="https://alice.example">alice.example</a>`}},
@@ -407,6 +407,22 @@ func TestNormalizeQuote(t *testing.T) {
 	})
 }
 
+func TestNormalizeInteractionPolicy(t *testing.T) {
+	public, author, followers := federation.PublicIRI, federation.IRI("https://a.example/u/a"), federation.IRI("https://a.example/u/a/followers")
+	o := object(t, `{"type":"Note","id":"https://a.example/n/1","attributedTo":"https://a.example/u/a","interactionPolicy":{
+		"canQuote":{"automaticApproval":["https://a.example/u/a"],"manualApproval":["https://www.w3.org/ns/activitystreams#Public"]},
+		"canReply":{"always":["https://a.example/u/a/followers"],"approvalRequired":"https://www.w3.org/ns/activitystreams#Public"},
+		"canAnnounce":{},"canLike":{"automaticApproval":["https://www.w3.org/ns/activitystreams#Public"]}}}`)
+	equal(t, "CanQuote", o.CanQuote, &federation.CanInteract{AutomaticApproval: []federation.IRI{author}, ManualApproval: []federation.IRI{public}})
+	equal(t, "CanReply (GoToSocial before 0.20)", o.CanReply, &federation.CanInteract{AutomaticApproval: []federation.IRI{followers}, ManualApproval: []federation.IRI{public}})
+	equal(t, "CanAnnounce of {}", o.CanAnnounce, (*federation.CanInteract)(nil))
+
+	o = object(t, `{"type":"Note","id":"https://a.example/n/1","attributedTo":"https://a.example/u/a","interactionPolicy":{
+		"canQuote":{"automaticApproval":[]},"canReply":null}}`)
+	equal(t, "CanQuote of an empty list", o.CanQuote, &federation.CanInteract{})
+	equal(t, "CanReply of null", o.CanReply, (*federation.CanInteract)(nil))
+}
+
 func TestNormalizeUnknown(t *testing.T) {
 	a := activity(t, `{"type":"Arrive","actor":"https://a.example/u/a","object":"https://a.example/place"}`)
 	equal(t, "unknown activity", [2]any{a.Type, a.RawType}, [2]any{federation.ActivityUnknown, "Arrive"})
@@ -457,6 +473,32 @@ func TestNormalizeRepliesAndCollections(t *testing.T) {
 	o = object(t, `{`+ctx+`, "id": "https://a.example/notes/1", "type": "Note", "replies": "https://a.example/notes/1/replies"}`)
 	if o.Replies.ID != "https://a.example/notes/1/replies" || o.Replies.Untrusted() != nil {
 		t.Errorf("replies = %+v, want the bare link", o.Replies)
+	}
+}
+
+// A featuredTags collection (Mastodon's ActivityPub::HashtagSerializer of FeaturedTag) holds
+// Hashtag items without an id, whose names the collection keeps apart from its items; a Hashtag
+// without a name is left out.
+func TestNormalizeFeaturedTags(t *testing.T) {
+	d := normalize(t, `{"@context":["https://www.w3.org/ns/activitystreams",{"Hashtag":"as:Hashtag"}],
+		"id":"https://a.example/users/alice/collections/tags","type":"Collection","totalItems":3,
+		"items":[{"type":"Hashtag","href":"https://a.example/@alice/tagged/cats","name":"#Cats"},
+			{"type":"Hashtag","name":"dogs"},{"type":"Hashtag","href":"https://a.example/@alice/tagged/x"},
+			"https://a.example/notes/1"]}`)
+	if d.Collection == nil {
+		t.Fatalf("Normalize = %+v, want a collection", d)
+	}
+	equal(t, "Hashtags", d.Collection.Hashtags, []string{"Cats", "dogs"})
+	if len(d.Collection.Items) != 1 || d.Collection.Items[0].ID != "https://a.example/notes/1" {
+		t.Errorf("Items = %+v, want the note alone", d.Collection.Items)
+	}
+	tags := make([]string, 0, federation.MaxItems+5)
+	for i := range federation.MaxItems + 5 {
+		tags = append(tags, fmt.Sprintf(`{"type":"Hashtag","name":"#t%d"}`, i))
+	}
+	d = normalize(t, `{"id":"https://a.example/c","type":"OrderedCollectionPage","orderedItems":[`+strings.Join(tags, ",")+`]}`)
+	if len(d.Collection.Hashtags) != federation.MaxItems || d.Collection.Hashtags[0] != "t0" {
+		t.Errorf("Hashtags = %d, want the first %d", len(d.Collection.Hashtags), federation.MaxItems)
 	}
 }
 

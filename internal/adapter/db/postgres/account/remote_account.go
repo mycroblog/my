@@ -40,6 +40,22 @@ func (r *Repository) FindRemoteHead(ctx context.Context, accountID string) (acco
 	return remoteHeadFrom(row), nil
 }
 
+// FindRemoteHeads implements appaccount.Repository.
+func (r *Repository) FindRemoteHeads(ctx context.Context, accountIDs []string) (map[string]account.RemoteHead, error) {
+	out := map[string]account.RemoteHead{}
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListRemoteAccountHeadsByIDs(ctx, accountIDs)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list remote heads")
+	}
+	for _, row := range rows {
+		out[row.AccountID] = remoteHeadFrom(row)
+	}
+	return out, nil
+}
+
 func keyFrom(row accountgen.AccountKey) account.Key {
 	return account.Key{
 		ID: row.ID, AccountID: row.AccountID, KeyID: row.KeyID, Algorithm: account.KeyAlgorithm(row.Algorithm),
@@ -134,7 +150,7 @@ func remoteSnapshotFrom(row accountgen.RemoteAccountSnapshot) account.RemoteSnap
 		ID: row.ID, AccountID: row.AccountID, PreferredUsername: row.PreferredUsername,
 		ProfileURL: postgres.FromNullString(row.ProfileUrl), InboxURL: row.InboxUrl, SharedInboxURL: postgres.FromNullString(row.SharedInboxUrl),
 		OutboxURL: postgres.FromNullString(row.OutboxUrl), FollowersURL: postgres.FromNullString(row.FollowersUrl), FollowingURL: postgres.FromNullString(row.FollowingUrl),
-		FeaturedURL: postgres.FromNullString(row.FeaturedUrl), FollowersTotal: row.FollowersTotal,
+		FeaturedURL: postgres.FromNullString(row.FeaturedUrl), FeaturedTagsURL: postgres.FromNullString(row.FeaturedTagsUrl), FollowersTotal: row.FollowersTotal,
 		FollowingTotal: row.FollowingTotal, StatusesTotal: row.StatusesTotal,
 		DocumentDigest: row.DocumentDigest, FetchedAt: postgres.UTC(row.FetchedAt),
 	}
@@ -169,7 +185,8 @@ func (r *Repository) InsertRemoteSnapshot(ctx context.Context, tx uow.Tx, s acco
 		ProfileUrl: postgres.ToNullString(s.ProfileURL), InboxUrl: s.InboxURL, SharedInboxUrl: postgres.ToNullString(s.SharedInboxURL),
 		OutboxUrl: postgres.ToNullString(s.OutboxURL), FollowersUrl: postgres.ToNullString(s.FollowersURL),
 		FollowingUrl: postgres.ToNullString(s.FollowingURL), FeaturedUrl: postgres.ToNullString(s.FeaturedURL),
-		FollowersTotal: s.FollowersTotal, FollowingTotal: s.FollowingTotal,
+		FeaturedTagsUrl: postgres.ToNullString(s.FeaturedTagsURL),
+		FollowersTotal:  s.FollowersTotal, FollowingTotal: s.FollowingTotal,
 		StatusesTotal: s.StatusesTotal, DocumentDigest: s.DocumentDigest, FetchedAt: s.FetchedAt,
 	})
 	return postgres.Wrap(err, "insert remote account snapshot")

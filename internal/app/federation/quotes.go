@@ -24,8 +24,8 @@ import (
 // quote (ADR-0069 §2).
 const JobVerifyQuote = "federation.verify_quote"
 
-// ErrQuoteUnauthorized reports a QuoteAuthorization that does not approve the quote that names
-// it.
+// ErrQuoteUnauthorized reports an authorization (a QuoteAuthorization, ReplyAuthorization, or
+// AnnounceAuthorization) that does not approve the interaction that names it.
 var ErrQuoteUnauthorized = errors.New("federation: the QuoteAuthorization does not approve the quote")
 
 // RemoteQuotes is the part of the content module's public API that records the approvals of the
@@ -60,23 +60,54 @@ func quoteInput(q *federation.Quote) *appcontent.RemoteQuoteInput {
 	return &appcontent.RemoteQuoteInput{URI: string(q.Target), Form: form}
 }
 
-// quotePolicyInput maps the canQuote of a post by an author whose followers collection is
-// followers to who may quote it (ADR-0069 §3): everyone when it names Public, the followers when
-// it names their collection, and else the author alone. A quote approved by hand counts as one
-// approved, since this server's QuoteRequest waits for the answer either way. A post without
-// canQuote declares nobody (nil).
-func quotePolicyInput(c *federation.CanQuote, followers federation.IRI) *appcontent.RemoteQuotePolicyInput {
-	if c == nil {
-		return nil
+// interactionPolicyInput maps the interactionPolicy of a post by the author actor, whose
+// collections are cols, to the rules the content module stores (ADR-0155 §2): as:Public is
+// everyone, the author's followers and following collections are followers and following, the
+// author is author, and another IRI is the account of that actor, which an IRI of any other
+// collection matches no account of. A kind whose automaticApproval keeps nothing is the author's alone, and a kind the post
+// does not declare has no rules.
+func interactionPolicyInput(obj *federation.Object, actor federation.IRI, cols authorCollections) appcontent.InteractionPolicy {
+	var out appcontent.InteractionPolicy
+	for _, c := range []struct {
+		kind appcontent.InteractionKind
+		can  *federation.CanInteract
+	}{{appcontent.InteractionReply, obj.CanReply}, {appcontent.InteractionAnnounce, obj.CanAnnounce}, {appcontent.InteractionQuote, obj.CanQuote}} {
+		if c.can == nil {
+			continue
+		}
+		auto := approvalRules(c.kind, appcontent.ApprovalAutomatic, c.can.AutomaticApproval, actor, cols)
+		if len(auto) == 0 {
+			auto = appcontent.InteractionPolicy{{Kind: c.kind, Approval: appcontent.ApprovalAutomatic, Audience: appcontent.AudienceAuthor}}
+		}
+		out = append(out, auto...)
+		out = append(out, approvalRules(c.kind, appcontent.ApprovalManual, c.can.ManualApproval, actor, cols)...)
 	}
-	approved := append(slices.Clone(c.AutomaticApproval), c.ManualApproval...)
-	switch {
-	case slices.Contains(approved, federation.PublicIRI):
-		return &appcontent.RemoteQuotePolicyInput{Policy: appcontent.QuotePolicyPublic}
-	case followers != "" && slices.Contains(approved, followers):
-		return &appcontent.RemoteQuotePolicyInput{Policy: appcontent.QuotePolicyFollowers}
+	return out
+}
+
+// approvalRules maps the IRIs of one approval of a kind to rules, as interactionPolicyInput does.
+func approvalRules(kind appcontent.InteractionKind, approval appcontent.InteractionApproval, iris []federation.IRI, actor federation.IRI, cols authorCollections) appcontent.InteractionPolicy {
+	var out appcontent.InteractionPolicy
+	for _, iri := range iris {
+		r := appcontent.InteractionRule{Kind: kind, Approval: approval}
+		switch {
+		case iri == federation.PublicIRI:
+			r.Audience = appcontent.AudienceEveryone
+		case cols.followers != "" && iri == cols.followers:
+			r.Audience = appcontent.AudienceFollowers
+		case cols.following != "" && iri == cols.following:
+			r.Audience = appcontent.AudienceFollowing
+		case iri == actor:
+			r.Audience = appcontent.AudienceAuthor
+		default:
+			// Another actor, or a collection that is not known, which no account's IRI matches.
+			r.Audience, r.ActorURI = appcontent.AudienceAccount, string(iri)
+		}
+		if !slices.Contains(out, r) {
+			out = append(out, r)
+		}
 	}
-	return &appcontent.RemoteQuotePolicyInput{Policy: appcontent.QuotePolicyNobody}
+	return out
 }
 
 // verifyQuoteTx enqueues in tx the JobVerifyQuote of the post uri, which quotes q; a post without
@@ -203,6 +234,14 @@ func lastSegment(uri string) string { return uri[strings.LastIndexByte(uri, '/')
 // issued it for the quote of quoted by quoting (FEP-044f): it is attributed to author, on the
 // author's host, and names the two posts.
 func checkQuoteAuthorization(ctx context.Context, fetcher DocumentFetcher, uri, author, quoting, quotedURI federation.IRI) error {
+	return checkAuthorization(ctx, fetcher, federation.ObjectQuoteAuthorization, uri, author, quoting, quotedURI)
+}
+
+// checkAuthorization fetches the authorization uri of type typ and checks that author issued it
+// for the interaction interacting with target (FEP-044f, ADR-0155 §7): it is attributed to
+// author, on the author's host, and names the two. One that does not fails with
+// ErrQuoteUnauthorized.
+func checkAuthorization(ctx context.Context, fetcher DocumentFetcher, typ federation.ObjectType, uri, author, interacting, target federation.IRI) error {
 	if uri.Host() == "" || uri.Host() != author.Host() {
 		return fmt.Errorf("%w: %s is not on the host of %s", ErrQuoteUnauthorized, uri, author)
 	}
@@ -212,12 +251,12 @@ func checkQuoteAuthorization(ctx context.Context, fetcher DocumentFetcher, uri, 
 	}
 	obj := got.Document.Object
 	switch {
-	case obj == nil || obj.Type != federation.ObjectQuoteAuthorization || obj.ID != uri:
-		return fmt.Errorf("%w: %s is not a QuoteAuthorization", ErrQuoteUnauthorized, uri)
+	case obj == nil || obj.Type != typ || obj.ID != uri:
+		return fmt.Errorf("%w: %s is not a %s", ErrQuoteUnauthorized, uri, typ)
 	case obj.AttributedTo != author:
 		return fmt.Errorf("%w: %s is attributed to %q, not to %s", ErrQuoteUnauthorized, uri, obj.AttributedTo, author)
-	case obj.InteractingObject != quoting || obj.InteractionTarget != quotedURI:
-		return fmt.Errorf("%w: %s approves %q quoting %q", ErrQuoteUnauthorized, uri, obj.InteractingObject, obj.InteractionTarget)
+	case obj.InteractingObject != interacting || obj.InteractionTarget != target:
+		return fmt.Errorf("%w: %s approves %q with %q", ErrQuoteUnauthorized, uri, obj.InteractingObject, obj.InteractionTarget)
 	}
 	return nil
 }

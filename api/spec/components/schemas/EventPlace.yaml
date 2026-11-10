@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A place of an event. A `physical` place has a `name`, an `address`, and an optional map link in
+  `url`; a `url` place has a `name` and a `url`; a `voice` place has `speakers`, who may speak
+  without asking in the voice chat room that opens when the event starts. A URL is an `http` or
+  `https` URL of up to 2,000 characters, which the server never fetches. The fields that a kind
+  does not have are omitted.
+type: object
+required: [kind]
+properties:
+  kind:
+    $ref: ./EventPlaceKind.yaml
+  name:
+    description: Up to 100 characters on one line.
+    type: string
+  address:
+    description: Up to 500 characters; line breaks are kept.
+    type: string
+  url:
+    type: string
+  speakers:
+    description: Who may speak without asking in the room; `manual` when omitted.
+    allOf:
+      - $ref: ./VoiceRoomSpeakers.yaml

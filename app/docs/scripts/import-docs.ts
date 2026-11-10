@@ -22,6 +22,9 @@
 // written in the source (to the pages of the locale), and the frontmatter's `translation` naming the English page and
 // the sections that are stale or untranslated, which the Banner lists. A page with no translation file gets none, and
 // Starlight serves the English page in its place with a notice. The translations have no plain Markdown form.
+//
+// It also writes the copy of api/openapi.yaml that the client API reference renders, with the schemas that other
+// schemas hold linked to their own pages instead of expanded (src/api-schemas.ts), to the git-ignored generated/.
 import {
   copyFileSync,
   existsSync,
@@ -33,6 +36,8 @@ import {
   readFileSync,
 } from "node:fs";
 import { dirname, join, posix } from "node:path";
+import { referenceSpec, referenceSpecPath, schemaSidebarGroup, schemaSidebarPath } from "../src/api-schemas";
+import { docsSidebar } from "../src/sidebar";
 import {
   base,
   githubURL,
@@ -341,6 +346,18 @@ for (const locale of translationLocales) {
     translated++;
   }
 }
+// Bun's YAML parser (the copy step runs on Bun); the workspace declares the types of Node.js only.
+const { YAML } = (globalThis as unknown as { Bun: { YAML: { parse(text: string): unknown } } }).Bun;
+const referenceFile = join(repoRoot, "app/docs", referenceSpecPath);
+const apiSpec = YAML.parse(readFileSync(join(repoRoot, "api/openapi.yaml"), "utf8")) as Parameters<
+  typeof referenceSpec
+>[0];
+mkdirSync(dirname(referenceFile), { recursive: true });
+writeFileSync(referenceFile, JSON.stringify(referenceSpec(apiSpec)));
+writeFileSync(
+  join(repoRoot, "app/docs", schemaSidebarPath),
+  JSON.stringify(docsSidebar({ Developers: [schemaSidebarGroup] })),
+);
 console.log(
-  `import-docs: copied ${published.length} documents, ${images.length} images and ${translated} translations into src/content/docs/ and public/`,
+  `import-docs: copied ${published.length} documents, ${images.length} images and ${translated} translations into src/content/docs/ and public/, and the client API spec into ${referenceSpecPath}`,
 );

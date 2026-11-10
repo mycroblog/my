@@ -25,7 +25,8 @@ import (
 
 // TestInstancePreviewImage checks end to end that profiles and posts without images get the
 // built-in preview image, then the image of the preview_image setting with its localized alt
-// text as soon as it is set, without a restart (ADR-0028).
+// text as soon as it is set, without a restart, and the thumbnail when preview_image is unset
+// (ADR-0028 §2).
 func TestInstancePreviewImage(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
@@ -70,8 +71,8 @@ func TestInstancePreviewImage(t *testing.T) {
 	profile, status := "/@alice", "/@alice/status/"+post.Status.ID
 	builtIn := "https://" + cfg.Host + web.PathDefaultImage
 	for path, wantAlt := range map[string]string{
-		profile: "A speech bubble with three dots on a blue gradient",
-		status:  "青いグラデーションの上に、点が 3 つ並んだ吹き出し",
+		profile: "The mycroblog logo",
+		status:  "mycroblog のロゴ",
 	} {
 		if url, alt, w, ht := image(path); url != builtIn || alt != wantAlt || w != "1200" || ht != "630" {
 			t.Errorf("GET %s before the setting: image %q %q %sx%s, want the built-in one", path, url, alt, w, ht)
@@ -118,6 +119,38 @@ func TestInstancePreviewImage(t *testing.T) {
 	}
 	if url, _, _, _ := image(status); url != builtIn {
 		t.Errorf("image after clearing = %q, want the built-in one", url)
+	}
+
+	// The thumbnail stands in for an unset preview_image, with its own alt text.
+	thumb, err := app.Media.Upload(ctx, appcontent.UploadInput{OwnerAccountID: reg.AccountID, Content: bytes.NewReader(testkit.FixturePNG(1600, 900, false))})
+	if err != nil {
+		t.Fatalf("Upload: %v", err)
+	}
+	if r := app.Media.Process(ctx, thumb.File.ID, ""); r.Err() != nil {
+		t.Fatalf("Process: %v", r.Err())
+	}
+	if _, err := app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingThumbnail, Value: thumb.File.ID}); err != nil {
+		t.Fatalf("SetSetting(thumbnail): %v", err)
+	}
+	if _, err := app.Instance.SetText(ctx, appinstance.SetTextInput{Key: instance.TextThumbnailAlt, Body: "庭の写真"}); err != nil {
+		t.Fatalf("SetText(thumbnail_alt): %v", err)
+	}
+	thumbProcessed, err := app.Media.Media(ctx, thumb.File.ID)
+	if err != nil || !thumbProcessed.Ready() {
+		t.Fatalf("Media = %+v, %v", thumbProcessed.Result, err)
+	}
+	wantThumb := "https://" + cfg.Host + "/media/" + thumb.File.ID + "/" + thumbProcessed.Result.ID + "/large.jpg"
+	for _, path := range []string{"/", profile, status} {
+		if url, alt, _, _ := image(path); url != wantThumb || alt != "庭の写真" {
+			t.Errorf("GET %s with a thumbnail: image %q %q, want %q 庭の写真", path, url, alt, wantThumb)
+		}
+	}
+	// preview_image still comes first.
+	if _, err := app.Instance.SetSetting(ctx, appinstance.SetSettingInput{Key: instance.SettingPreviewImage, Value: m.File.ID}); err != nil {
+		t.Fatalf("SetSetting(preview_image): %v", err)
+	}
+	if url, _, _, _ := image(profile); url != want {
+		t.Errorf("image with both = %q, want preview_image's %q", url, want)
 	}
 
 	// Only media files that are images are accepted.

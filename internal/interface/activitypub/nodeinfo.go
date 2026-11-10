@@ -42,6 +42,9 @@ type NodeMetadata struct {
 	// SingleUser is whether the instance is a one-person server (singleUser, present only when
 	// true).
 	SingleUser bool
+	// FederationScope is which servers the instance federates with, open or allowlist
+	// (federationScope); "" is open.
+	FederationScope string
 }
 
 // NodeClosure is the closure of the service as NodeInfo's metadata states it (ADR-0088 §2).
@@ -88,7 +91,14 @@ type nodeThumbnail struct {
 func metadata(name, sourceURL string, m NodeMetadata, mode federation.Mode) map[string]any {
 	// federationMode tells other servers and their users the direction this server federates
 	// in (ADR-0006); serviceClosure tells them whether and when it closes (ADR-0088 §2).
-	out := map[string]any{"nodeName": name, "federationMode": mode, "serviceClosure": newNodeServiceClosure(m.Closure)}
+	// federationScope tells them whether it federates only with the servers it allows (ADR-0159 §2).
+	scope := m.FederationScope
+	if scope == "" {
+		scope = "open"
+	}
+	out := map[string]any{
+		"nodeName": name, "federationMode": mode, "federationScope": scope, "serviceClosure": newNodeServiceClosure(m.Closure),
+	}
 	if sourceURL != "" {
 		// Where users get the source (AGPL-3.0 section 13, ADR-0011), also when it is a mailto: address, which
 		// software.repository cannot hold.

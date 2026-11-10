@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: retireSupporterPlan
+  x-permission: manage_supporters
   summary: Retire a supporter plan
   description: |
     Retires a supporter plan for good: it takes no subscriptions any more, and

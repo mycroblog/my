@@ -16,7 +16,6 @@ CREATE TABLE statuses (
   is_local boolean NOT NULL,
   visibility text NOT NULL CHECK (visibility IN ('public', 'local', 'unlisted', 'private', 'direct')),
   in_reply_to_uri text,
-  conversation_uri text,
   published_at timestamptz NOT NULL,
   -- local statuses are never federated, so only this instance has them (ADR-0017).
   CONSTRAINT statuses_local_check CHECK (visibility <> 'local' OR is_local)
@@ -24,7 +23,34 @@ CREATE TABLE statuses (
 CREATE UNIQUE INDEX statuses_uri ON statuses (uri);
 CREATE INDEX statuses_author_account_id_id ON statuses (author_account_id, id);
 CREATE INDEX statuses_in_reply_to_uri ON statuses (in_reply_to_uri);
-CREATE INDEX statuses_conversation_uri_id ON statuses (conversation_uri, id);
+
+-- Resource: a conversation (ADR-0154 §1), with the IRI that a remote post declared or that this
+-- server made (https://{host}/ap/contexts/{id}); is_local tells which. A row stays when its
+-- statuses go, so that its IRI never names another conversation.
+CREATE TABLE conversations (
+  id uuid NOT NULL PRIMARY KEY,
+  uri text NOT NULL,
+  is_local boolean NOT NULL
+);
+CREATE UNIQUE INDEX conversations_uri ON conversations (uri);
+
+-- Current value: the conversation each status belongs to now; a merge moves the rows of the
+-- merged conversation to the one it is merged into, so a row never names a merged conversation.
+CREATE TABLE status_conversations (
+  status_id uuid NOT NULL PRIMARY KEY,
+  conversation_id uuid NOT NULL
+);
+CREATE INDEX status_conversations_conversation_id_status_id ON status_conversations (conversation_id, status_id);
+
+-- Event: a conversation merged into another once a reply showed both to be one thread
+-- (ADR-0154 §3), with the status whose storing showed it. A conversation is merged once.
+CREATE TABLE conversation_merges (
+  merged_conversation_id uuid NOT NULL PRIMARY KEY,
+  into_conversation_id uuid NOT NULL,
+  status_id uuid NOT NULL,
+  merged_at timestamptz NOT NULL
+);
+CREATE INDEX conversation_merges_into_conversation_id ON conversation_merges (into_conversation_id);
 
 -- Resource (subtype): a status posted on this instance, with the client API's Idempotency-Key.
 CREATE TABLE local_statuses (
@@ -59,8 +85,45 @@ CREATE TABLE status_revision_bodies (
 CREATE TABLE status_revision_sources (
   revision_id uuid NOT NULL PRIMARY KEY,
   source_text text NOT NULL,
-  source_format text NOT NULL CHECK (source_format IN ('text_plain'))
+  source_format text NOT NULL CHECK (source_format IN ('text_plain', 'text_markdown'))
 );
+
+-- Resource (subtype of a status): a status that is an article, a long post written in Markdown
+-- (ADR-0160 §1). Every revision of an article has a status_revision_articles row.
+CREATE TABLE status_articles (
+  status_id uuid NOT NULL PRIMARY KEY,
+  author_account_id uuid NOT NULL
+);
+-- The articles of a profile, newest first.
+CREATE INDEX status_articles_author_account_id_status_id ON status_articles (author_account_id, status_id);
+
+-- Event (child of a revision): the title and summary of an article's revision. summary_origin body
+-- is a summary made from the body because the author left it empty (ADR-0160 §6).
+CREATE TABLE status_revision_articles (
+  revision_id uuid NOT NULL PRIMARY KEY,
+  title text NOT NULL,
+  summary text NOT NULL,
+  summary_origin text NOT NULL CHECK (summary_origin IN ('author', 'body'))
+);
+
+-- Event (child of a revision): the cover image of an article's revision.
+CREATE TABLE status_revision_article_covers (
+  revision_id uuid NOT NULL PRIMARY KEY,
+  media_id uuid NOT NULL,
+  description text NOT NULL
+);
+CREATE INDEX status_revision_article_covers_media_id ON status_revision_article_covers (media_id);
+
+-- Event (child of a revision): the images in the body of an article's revision, in order of
+-- their first use.
+CREATE TABLE status_revision_article_images (
+  revision_id uuid NOT NULL,
+  position integer NOT NULL CHECK (position >= 0),
+  media_id uuid NOT NULL,
+  description text NOT NULL,
+  PRIMARY KEY (revision_id, position)
+);
+CREATE INDEX status_revision_article_images_media_id ON status_revision_article_images (media_id);
 
 -- Event (child of a revision): the attached media, with per-revision alt text (FR-105).
 CREATE TABLE status_revision_attachments (
@@ -357,7 +420,8 @@ CREATE TABLE status_auto_delete_policies (
   keep_polls boolean NOT NULL,
   keep_min_boosts integer NOT NULL CHECK (keep_min_boosts BETWEEN 0 AND 1000000),
   keep_min_favourites integer NOT NULL CHECK (keep_min_favourites BETWEEN 0 AND 1000000),
-  updated_at timestamptz NOT NULL
+  updated_at timestamptz NOT NULL,
+  keep_articles boolean NOT NULL DEFAULT true
 );
 -- The hourly job walks the enabled policies in account order.
 CREATE INDEX status_auto_delete_policies_enabled ON status_auto_delete_policies (account_id) WHERE enabled;
@@ -506,52 +570,101 @@ CREATE TABLE status_quotes (
 );
 CREATE INDEX status_quotes_quoted_uri ON status_quotes (quoted_uri);
 
--- Event: a change of the approval of a quote (ADR-0069 §1). authorization_uri is the
--- QuoteAuthorization that an accepted event verified or a revoked event deleted.
-CREATE TABLE status_quote_events (
-  id uuid NOT NULL PRIMARY KEY,
+-- Current value: who may reply to, boost, and quote a status (ADR-0155 §4), one row per kind,
+-- approval, and audience: what the author of a local status chose, which has rows of every kind,
+-- or what a remote status declares in its interactionPolicy, which has rows of the kinds it
+-- declares and is replaced by every Create and Update. actor_uri is the one actor of the account
+-- audience, '' for the others.
+CREATE TABLE status_interaction_policies (
   status_id uuid NOT NULL,
-  kind text NOT NULL CHECK (kind IN ('accepted', 'rejected', 'revoked', 'detached')),
-  authorization_uri text,
-  occurred_at timestamptz NOT NULL,
-  CONSTRAINT status_quote_events_authorization_uri_check CHECK (authorization_uri IS NULL OR kind IN ('accepted', 'revoked'))
+  kind text NOT NULL CHECK (kind IN ('reply', 'announce', 'quote')),
+  approval text NOT NULL CHECK (approval IN ('automatic', 'manual')),
+  audience text NOT NULL CHECK (audience IN ('everyone', 'followers', 'mentioned', 'nobody', 'following', 'author', 'account')),
+  actor_uri text NOT NULL DEFAULT '',
+  CHECK ((audience = 'account') = (actor_uri <> '')),
+  PRIMARY KEY (status_id, kind, approval, audience, actor_uri)
 );
-CREATE INDEX status_quote_events_status_id_id ON status_quote_events (status_id, id);
 
--- Projection: the current approval of each quote, derived from its form and events
--- (content.QuoteStateOf). authorization_uri is the QuoteAuthorization of an accepted quote.
-CREATE TABLE status_quote_states (
+-- Event: the author of a quoting status took its quote away (ADR-0069 §3): an edit without it.
+-- The quote is shown no more, whatever its approval (content.QuoteStateOf).
+CREATE TABLE status_quote_detachments (
   status_id uuid NOT NULL PRIMARY KEY,
-  state text NOT NULL CHECK (state IN ('pending', 'accepted', 'rejected', 'revoked', 'legacy', 'detached')),
-  authorization_uri text,
-  CONSTRAINT status_quote_states_authorization_uri_check CHECK (authorization_uri IS NULL OR state = 'accepted')
-);
-CREATE INDEX status_quote_states_authorization_uri ON status_quote_states (authorization_uri);
-
--- Current value: who may quote a status (ADR-0069 §1): what the author of a local status chose,
--- or what a remote status declares in interactionPolicy.canQuote. A remote status without a row
--- declares none; every local status has one.
-CREATE TABLE status_quote_policies (
-  status_id uuid NOT NULL PRIMARY KEY,
-  policy text NOT NULL CHECK (policy IN ('public', 'followers', 'nobody')),
-  updated_at timestamptz NOT NULL
+  detached_at timestamptz NOT NULL
 );
 
--- Resource: this server's approval of a quote of a local status (FEP-044f's QuoteAuthorization,
--- ADR-0069 §1). quoting_uri is the quoting status, local or remote; its id is the IRI's last
--- segment. A quoting status has one per quoted status.
-CREATE TABLE quote_authorizations (
+-- Resource: an interaction that its target's author approves (ADR-0155 §8): a reply, a boost, or
+-- a quote (kind) of the status target_uri by the account interacting_account_id, whose reply,
+-- Announce, or quoting status is interacting_uri. direction says where the two are: inbound (a
+-- remote interaction with a local status), outbound (a local one with a remote status), local
+-- (both here), remote (both elsewhere, kept for the approval that a third server verified).
+-- activity_uri is the ReplyRequest, AnnounceRequest, or QuoteRequest that asked, '' for an
+-- interaction that came without one. visibility is the boost's, for a boost that is recorded only
+-- once it is approved; '' for the others. target_account_id is the target's author, NULL while the
+-- target is not stored.
+CREATE TABLE interaction_requests (
   id uuid NOT NULL PRIMARY KEY,
-  quoting_uri text NOT NULL,
-  quoting_account_id uuid NOT NULL,
-  quoted_status_id uuid NOT NULL,
+  kind text NOT NULL CHECK (kind IN ('reply', 'announce', 'quote')),
+  direction text NOT NULL CHECK (direction IN ('inbound', 'outbound', 'local', 'remote')),
+  target_uri text NOT NULL,
+  target_account_id uuid,
+  interacting_uri text NOT NULL,
+  interacting_account_id uuid NOT NULL,
+  activity_uri text NOT NULL DEFAULT '',
+  visibility text NOT NULL DEFAULT '' CHECK (visibility IN ('', 'public', 'unlisted', 'private')),
   created_at timestamptz NOT NULL
 );
-CREATE UNIQUE INDEX quote_authorizations_quoting_uri_quoted_status_id ON quote_authorizations (quoting_uri, quoted_status_id);
-CREATE INDEX quote_authorizations_quoted_status_id_id ON quote_authorizations (quoted_status_id, id);
+CREATE UNIQUE INDEX interaction_requests_kind_interacting_uri_target_uri ON interaction_requests (kind, interacting_uri, target_uri);
+CREATE INDEX interaction_requests_target_uri ON interaction_requests (target_uri);
+CREATE INDEX interaction_requests_interacting_uri ON interaction_requests (interacting_uri);
+CREATE INDEX interaction_requests_interacting_account_id_kind ON interaction_requests (interacting_account_id, kind);
 
--- Event: the quoted author revoked a QuoteAuthorization; its IRI answers 410 from then on.
-CREATE TABLE quote_authorization_revocations (
+-- Event: the answer to an interaction request (ADR-0155 §8): approved, refused, or the approval
+-- taken back; or the request withdrawn by the account that interacts, which undid its boost or
+-- deleted its reply while it waited. authorization_uri is the ReplyAuthorization, AnnounceAuthorization, or
+-- QuoteAuthorization that an accepted event verified or gave, or that a revoked event deleted;
+-- NULL for the others and for the approval of an interaction with the author's own status.
+CREATE TABLE interaction_request_events (
+  id uuid NOT NULL PRIMARY KEY,
+  request_id uuid NOT NULL,
+  kind text NOT NULL CHECK (kind IN ('accepted', 'rejected', 'revoked', 'withdrawn')),
+  authorization_uri text,
+  occurred_at timestamptz NOT NULL,
+  CONSTRAINT interaction_request_events_authorization_uri_check CHECK (authorization_uri IS NULL OR kind IN ('accepted', 'revoked'))
+);
+CREATE INDEX interaction_request_events_request_id_id ON interaction_request_events (request_id, id);
+
+-- Projection: the current state of each interaction request, derived from its events
+-- (content.InteractionStateOf). target_account_id and kind are the request's, so that the
+-- pending requests of an author are paged without a join.
+CREATE TABLE interaction_request_states (
+  request_id uuid NOT NULL PRIMARY KEY,
+  kind text NOT NULL CHECK (kind IN ('reply', 'announce', 'quote')),
+  target_account_id uuid,
+  state text NOT NULL CHECK (state IN ('pending', 'accepted', 'rejected', 'revoked', 'withdrawn')),
+  authorization_uri text,
+  CONSTRAINT interaction_request_states_authorization_uri_check CHECK (authorization_uri IS NULL OR state = 'accepted')
+);
+CREATE INDEX interaction_request_states_target_account_id_state_request_id ON interaction_request_states (target_account_id, state, request_id);
+CREATE INDEX interaction_request_states_authorization_uri ON interaction_request_states (authorization_uri);
+
+-- Resource: this server's approval of an interaction with a local status (GoToSocial's
+-- ReplyAuthorization and AnnounceAuthorization, FEP-044f's QuoteAuthorization; ADR-0155 §8).
+-- interacting_uri is the reply, Announce, or quoting status, local or remote; its IRI is
+-- /ap/{kind}_authorizations/{id}. An interaction has one per target status.
+CREATE TABLE interaction_authorizations (
+  id uuid NOT NULL PRIMARY KEY,
+  kind text NOT NULL CHECK (kind IN ('reply', 'announce', 'quote')),
+  interacting_uri text NOT NULL,
+  interacting_account_id uuid NOT NULL,
+  target_status_id uuid NOT NULL,
+  created_at timestamptz NOT NULL
+);
+CREATE UNIQUE INDEX interaction_authorizations_kind_interacting_uri_target_status_id ON interaction_authorizations (kind, interacting_uri, target_status_id);
+CREATE INDEX interaction_authorizations_target_status_id_id ON interaction_authorizations (target_status_id, id);
+
+-- Event: the target's author revoked an approval (only of quotes, ADR-0155 §8); its IRI answers
+-- 410 from then on.
+CREATE TABLE interaction_authorization_revocations (
   authorization_id uuid NOT NULL PRIMARY KEY,
   revoked_at timestamptz NOT NULL
 );
@@ -759,3 +872,102 @@ CREATE TABLE local_post_counters (
   account_id uuid NOT NULL PRIMARY KEY,
   posts_count bigint NOT NULL CHECK (posts_count > 0)
 );
+
+-- ---------------------------------------------------------------------------------------------
+-- content: drafts and scheduled posts (data-model §4.4, ADR-0156). Owned by internal/app/content.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: a draft of a local post, which only its author reads and writes. Publishing it, and
+-- deleting it, delete every row of the draft.
+CREATE TABLE drafts (
+  id uuid NOT NULL PRIMARY KEY,
+  account_id uuid NOT NULL,
+  created_at timestamptz NOT NULL
+);
+CREATE INDEX drafts_account_id_id ON drafts (account_id, id);
+
+-- Current value: the content of a draft, replaced by every save. language is NULL for the
+-- author's default post language; in_reply_to_status_id and quoted_status_id are NULL for none.
+-- updated_at is the source of the API's ETag.
+CREATE TABLE draft_contents (
+  draft_id uuid NOT NULL PRIMARY KEY,
+  source_text text NOT NULL,
+  spoiler_text text NOT NULL,
+  sensitive boolean NOT NULL,
+  language text,
+  visibility text NOT NULL CHECK (visibility IN ('public', 'local', 'unlisted', 'private', 'direct')),
+  in_reply_to_status_id uuid,
+  quoted_status_id uuid,
+  updated_at timestamptz NOT NULL
+);
+
+-- Current value: who may reply to, boost, and quote the post of a draft, as a local author
+-- chooses it (status_interaction_policies of the status it becomes): the audience admitted at
+-- once (automatic) and the wider one admitted after approval (manual). A kind without rows takes
+-- the author's default when the draft is published.
+CREATE TABLE draft_interaction_policies (
+  draft_id uuid NOT NULL,
+  kind text NOT NULL CHECK (kind IN ('reply', 'announce', 'quote')),
+  approval text NOT NULL CHECK (approval IN ('automatic', 'manual')),
+  audience text NOT NULL CHECK (audience IN ('everyone', 'followers', 'mentioned', 'nobody')),
+  PRIMARY KEY (draft_id, kind, approval)
+);
+
+-- Current value: the media files a draft attaches, with their alt text. The cleanup of
+-- unattached uploads counts them as attached.
+CREATE TABLE draft_attachments (
+  draft_id uuid NOT NULL,
+  position integer NOT NULL CHECK (position BETWEEN 0 AND 3),
+  media_id uuid NOT NULL,
+  description text,
+  PRIMARY KEY (draft_id, position)
+);
+CREATE INDEX draft_attachments_media_id ON draft_attachments (media_id);
+
+-- Current value: the poll of a draft; its end is set when the draft is published.
+CREATE TABLE draft_polls (
+  draft_id uuid NOT NULL PRIMARY KEY,
+  multiple boolean NOT NULL,
+  hide_totals boolean NOT NULL,
+  duration_seconds integer NOT NULL CHECK (duration_seconds BETWEEN 300 AND 2592000)
+);
+
+-- Current value: one choice of the poll of a draft.
+CREATE TABLE draft_poll_options (
+  draft_id uuid NOT NULL,
+  position integer NOT NULL CHECK (position BETWEEN 0 AND 3),
+  title text NOT NULL,
+  PRIMARY KEY (draft_id, position)
+);
+
+-- Resource: one schedule of a draft, to publish it at publish_at. A new time is a new schedule
+-- after the outcome cancelled of the one before.
+CREATE TABLE draft_schedules (
+  id uuid NOT NULL PRIMARY KEY,
+  draft_id uuid NOT NULL,
+  publish_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL
+);
+CREATE INDEX draft_schedules_draft_id_id ON draft_schedules (draft_id, id);
+
+-- Event: the end of a schedule, at most one. failure_reason says why a failed schedule did not
+-- publish, for the author's screens and notification.
+CREATE TABLE draft_schedule_outcomes (
+  schedule_id uuid NOT NULL PRIMARY KEY,
+  outcome text NOT NULL CHECK (outcome IN ('published', 'failed', 'cancelled')),
+  failure_reason text CHECK (failure_reason IN ('restricted', 'reply_unavailable', 'quote_unavailable', 'media_unavailable', 'invalid', 'rejected')),
+  occurred_at timestamptz NOT NULL,
+  CONSTRAINT draft_schedule_outcomes_failed_check CHECK ((outcome = 'failed') = (failure_reason IS NOT NULL))
+);
+
+-- Projection: the schedule in effect of each scheduled draft, written with the schedule and
+-- deleted with its outcome in the same transaction; rebuilt from the draft_schedules without an
+-- outcome. It keeps one schedule per draft and counts the limits of scheduled posts.
+CREATE TABLE scheduled_drafts (
+  draft_id uuid NOT NULL PRIMARY KEY,
+  schedule_id uuid NOT NULL,
+  account_id uuid NOT NULL,
+  publish_at timestamptz NOT NULL
+);
+CREATE UNIQUE INDEX scheduled_drafts_schedule_id ON scheduled_drafts (schedule_id);
+CREATE INDEX scheduled_drafts_account_id_publish_at ON scheduled_drafts (account_id, publish_at);

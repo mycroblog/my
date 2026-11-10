@@ -138,12 +138,42 @@ func (e *followEnv) follow(t *testing.T, follower, followee string) appgraph.Rel
 	return rel
 }
 
+// sameRelationships checks that Relationships, which reads the parts of many relationships
+// together, finds rel as Relationship found it, beside the relationship with an account that has
+// none.
+func sameRelationships(t *testing.T, e *followEnv, account, target string, rel appgraph.Relationship) {
+	t.Helper()
+	stranger := e.IDs.NewID()
+	got, err := e.graph.Relationships(t.Context(), account, []string{target, stranger})
+	if err != nil {
+		t.Fatalf("Relationships = %v", err)
+	}
+	if !reflect.DeepEqual(got[target], rel) {
+		t.Errorf("Relationships(%s)[%s] = %+v, want %+v as Relationship", account, target, got[target], rel)
+	}
+	if want, err := e.graph.Relationship(t.Context(), account, stranger); err != nil || !reflect.DeepEqual(got[stranger], want) {
+		t.Errorf("Relationships(%s)[%s] = %+v, want %+v (%v)", account, stranger, got[stranger], want, err)
+	}
+	// And RelationshipsWith, which reads the relationships of many accounts with one target.
+	with, err := e.graph.RelationshipsWith(t.Context(), target, []string{account, stranger})
+	if err != nil {
+		t.Fatalf("RelationshipsWith = %v", err)
+	}
+	if !reflect.DeepEqual(with[account], rel) {
+		t.Errorf("RelationshipsWith(%s)[%s] = %+v, want %+v as Relationship", target, account, with[account], rel)
+	}
+	if want, err := e.graph.Relationship(t.Context(), stranger, target); err != nil || !reflect.DeepEqual(with[stranger], want) {
+		t.Errorf("RelationshipsWith(%s)[%s] = %+v, want %+v (%v)", target, stranger, with[stranger], want, err)
+	}
+}
+
 func checkRelationship(t *testing.T, e *followEnv, account, target string, following, followedBy graph.State) {
 	t.Helper()
 	rel, err := e.graph.Relationship(t.Context(), account, target)
 	if err != nil {
 		t.Fatalf("Relationship = %v", err)
 	}
+	sameRelationships(t, e, account, target, rel)
 	if rel.Following != following || rel.FollowedBy != followedBy {
 		t.Errorf("Relationship(%s, %s) = following %s, followed by %s; want %s, %s",
 			account, target, rel.Following, rel.FollowedBy, following, followedBy)

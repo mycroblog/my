@@ -517,6 +517,37 @@ describe("the costs screen", () => {
       }
     },
   );
+
+  test("says that the Cloudflare figures are usage charges alone", async () => {
+    totalsServer();
+    itemsServer([]);
+    server.use(
+      http.get(`${apiBase}/admin/billing_imports`, () =>
+        HttpResponse.json({
+          items: [
+            {
+              source: "cloudflare",
+              provider: "Cloudflare",
+              time_zone: "UTC",
+              method: "billable_usage",
+              requests_today: 4,
+              requests_this_month: 40,
+              bytes_billed_this_month: 0,
+              months: [{ month: "2026-11", kind: "estimate", totals: [{ amount: "0.25", currency: "USD" }] }],
+            },
+          ],
+        } satisfies Schemas["BillingImportList"]),
+      ),
+    );
+    await renderApp({ path: "/admin/finance/imports" });
+    const region = await screen.findByRole("region", { name: "Billing imports" });
+
+    expect(within(region).getByRole("heading", { level: 3, name: "Cloudflare" })).toBeInTheDocument();
+    expect(region).toHaveTextContent(
+      "Usage charges only, by product. Plans, add-ons, taxes, and credits aren't imported: add them as costs yourself.",
+    );
+    expect(region).not.toHaveTextContent("An approximation from the budget notifications");
+  });
 });
 
 describe("what the costs screen says of their publication", () => {

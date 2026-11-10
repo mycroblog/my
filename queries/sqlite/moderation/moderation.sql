@@ -102,12 +102,14 @@ INSERT INTO reports (id, uri, reporter_account_id, target_account_id, category, 
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (uri) DO NOTHING;
 
--- name: InsertReportStatus :exec
-INSERT INTO report_statuses (report_id, status_id) VALUES (?, ?)
+-- name: InsertReportStatuses :exec
+INSERT INTO report_statuses (report_id, status_id)
+SELECT CAST(sqlc.arg(report_id) AS TEXT), value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)) WHERE true
 ON CONFLICT (report_id, status_id) DO NOTHING;
 
--- name: InsertReportRuleCitation :exec
-INSERT INTO report_rule_citations (report_id, rule_id) VALUES (?, ?)
+-- name: InsertReportRuleCitations :exec
+INSERT INTO report_rule_citations (report_id, rule_id)
+SELECT CAST(sqlc.arg(report_id) AS TEXT), value FROM json_each(CAST(sqlc.arg(rule_ids) AS TEXT)) WHERE true
 ON CONFLICT (report_id, rule_id) DO NOTHING;
 
 -- name: UpsertReportState :exec
@@ -224,9 +226,11 @@ LIMIT sqlc.arg(lim);
 -- (empty for the first page).
 -- name: ListDomainModerationActions :many
 SELECT a.id, a.domain, a.kind, a.public_comment, a.private_note, a.obfuscate, a.issued_by_user_id,
-  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at
+  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at,
+  sa.subscription_id
 FROM domain_moderation_actions a
 LEFT JOIN domain_moderation_action_lifts l ON l.action_id = a.id
+LEFT JOIN subscription_domain_actions sa ON sa.action_id = a.id
 WHERE (CAST(sqlc.arg(domain) AS TEXT) = '' OR a.domain = sqlc.arg(domain))
   AND (CAST(sqlc.arg(kinds) AS TEXT) = ''
     OR a.kind IN (SELECT value FROM json_each(CAST(sqlc.arg(kinds) AS TEXT))))
@@ -238,9 +242,11 @@ LIMIT sqlc.arg(lim);
 
 -- name: GetDomainModerationActionRecord :one
 SELECT a.id, a.domain, a.kind, a.public_comment, a.private_note, a.obfuscate, a.issued_by_user_id,
-  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at
+  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at,
+  sa.subscription_id
 FROM domain_moderation_actions a
 LEFT JOIN domain_moderation_action_lifts l ON l.action_id = a.id
+LEFT JOIN subscription_domain_actions sa ON sa.action_id = a.id
 WHERE a.id = ?;
 
 -- ListModerationActions returns the actions on accounts with their lifts, newest first: those
@@ -307,3 +313,9 @@ WHERE target_account_id = sqlc.arg(target_account_id) AND id <> sqlc.arg(report_
 -- CountModerationActionsOfTarget counts the actions on an account, ended ones included.
 -- name: CountModerationActionsOfTarget :one
 SELECT COUNT(*) FROM moderation_actions WHERE target_account_id = ?;
+
+-- ListAccountRestrictionRowsOf is ListAccountRestrictionRows of many accounts, a JSON array.
+-- name: ListAccountRestrictionRowsOf :many
+SELECT account_id, restriction, source_action_id, effective_until
+FROM account_restrictions WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)))
+ORDER BY account_id, restriction, source_action_id;

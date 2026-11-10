@@ -71,6 +71,7 @@ The line is in the form Google Cloud Error Reporting reads: on Cloud Run, the re
 | `my.error.where` | Where it happened: `<surface> <method> <route>` for a request (such as `client_api GET /api/v1/statuses/{id}`), the job type for a job, the task name for a background task, `startup` for a failure to start |
 | `my.role`, `deployment.environment.name` | The `role` of the process and `errors_environment` |
 | `request_id`, `job_id`, `attempt`, `trace_id`, `span_id` | The IDs to find the request or job lines of the same error, when it has them |
+| `context.httpRequest` | For an error of a request: `method`, `url` (the route, such as `/api/v1/statuses/{id}`, never the path the client asked for), and `responseStatusCode`, the status answered (500) |
 | `message` | Last on the line: `<type>: <message>`, a newline, and the Go stack |
 
 Before a report leaves the process, the message has URLs, email addresses, `@user@host` handles, IP addresses, UUIDs and ULIDs, and numbers of 10 digits or more replaced with `<url>`, `<email>`, `<acct>`, `<ip>`, `<id>` and `<n>`, and is cut to 1 KiB.
@@ -142,6 +143,7 @@ The server image is `ghcr.io/mycroblog/my`, public, for `linux/amd64` and `linux
 | `0.1.0` | That version, for good | Naming a version |
 | `0.1` | The latest patch of `v0.1` | Docker Compose, which applies the schema on every `up` |
 | `0.1.0-rc.1` | That prerelease | Trying a release before it comes out |
+| `nightly` | The latest commit of `main` that passed the nightly tests, moved every night it changes | Trying changes before a prerelease, on an instance you can throw away |
 
 There is no `latest` and no `0`: both would cross a minor version, and each upgrade to a new minor version has to go [through the previous one](database.md#skipping-releases). Name a version in every command; `docker pull ghcr.io/mycroblog/my` alone fails with `manifest unknown`.
 A patch release can need `my schema apply` and `my db upgrade` too, so outside Docker Compose follow [Upgrading](database.md#upgrading) for each version. In production, pin the digest that the release's notes give:
@@ -149,6 +151,13 @@ A patch release can need `my schema apply` and `my db upgrade` too, so outside D
 ```text
 ghcr.io/mycroblog/my:0.1.0@sha256:...
 ```
+
+**`nightly` has no upgrade path.** Upgrades are promised only between released versions: from one `nightly` image to
+the next, or from `nightly` to a release, the schema and the data steps of `my db upgrade` can change in ways that no
+release goes through, so expect to recreate its database. Never run it in production. `my version` prints which commit it is, as in
+`v0.1.0-rc.5.0.20261109182600.g7a789720a1b2`: a version after the latest release (`v0.1.0-rc.5`), the commit's time in UTC, and the
+first 12 characters of the commit after `g`. To keep one build, pin its digest (`ghcr.io/mycroblog/my:nightly@sha256:...`): an older build loses
+the tag but stays pullable by its digest.
 
 Where to run it:
 
@@ -168,7 +177,8 @@ gh attestation verify oci://ghcr.io/mycroblog/my@sha256:... -R mycroblog/my \
 docker buildx imagetools inspect ghcr.io/mycroblog/my@sha256:... --format '{{ json .SBOM }}'
 ```
 
-The first command fails unless the image was built by the release workflow of this repository. It prints the commit, which is the commit of the version's tag; the image's label `org.opencontainers.image.revision` names the same one.
+The first command fails unless the image was built by the release workflow of this repository. For a `nightly` image, verify it with
+`--signer-workflow mycroblog/my/.github/workflows/nightly.yml` instead. It prints the commit, which is the commit of the version's tag; the image's label `org.opencontainers.image.revision` names the same one.
 
 ## Publish the source code (AGPL-3.0)
 
@@ -211,7 +221,7 @@ The setting `metrics_exporter` (default `none`) exports service metrics. Its rel
 
 | `metrics_exporter` | Path | Suited to |
 | --- | --- | --- |
-| `none` | Nothing is exported. Instrumentation costs almost nothing | Cloud Run (use the platform's metrics and log-based metrics instead) |
+| `none` | Nothing is exported. Instrumentation costs almost nothing. The instance-wide values still go to one `metrics snapshot` log line every 15 minutes | Cloud Run (use the platform's metrics and log-based metrics instead) |
 | `prometheus` | `GET /metrics` on `metrics_listen` (default `127.0.0.1:9464`). It is a listener separate from the public `listen`, with no authentication, and runs for every `role` | Self-hosted (scraped by a Prometheus-compatible server or KEDA) |
 | `otlp` | Sent to an OpenTelemetry Collector over OTLP/HTTP. The destination comes from the standard OTel environment variables such as `OTEL_EXPORTER_OTLP_ENDPOINT` | Setups where you can run a collector |
 | `emf` | CloudWatch Embedded Metric Format JSON lines. Request and job metrics ride on the closing log lines above; the others are written to standard output, one line per label set, when a request or job finishes | AWS ECS |
@@ -281,7 +291,7 @@ Do not use them to trigger scaling; use them for alerts and for estimating the i
 | `my.adapter.operation.duration` | Histogram, seconds | `my.adapter` (`queue.db` / `kv.db` / `kv.memory` / `kv.valkey` / `stream.<stream>` / `blob.fs`), `my.operation`, `my.outcome` (`success` / `error`) |
 | `my.adapter.connections` | UpDownCounter | `my.adapter` (`valkey` connections, and `stream.<stream>` subscribers) |
 | `my.adapter.reconnects` | Counter | `my.adapter` |
-| `http.client.request.duration` | Histogram, seconds | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots`), `http.request.method`, `my.http.status_class` (`2xx` and so on), `error.type` (`forbidden_destination` is a refusal by the SSRF guard) |
+| `http.client.request.duration` | Histogram, seconds | `my.http.purpose` (`json` / `html` / `image` / `video` / `human_check` / `web_push` / `webhook` / `client_metadata` / `login_provider` / `robots` / `domain_list`), `http.request.method`, `my.http.status_class` (`2xx` and so on), `error.type` (`forbidden_destination` is a refusal by the SSRF guard) |
 | `http.client.open_connections` | UpDownCounter | None |
 | `my.readiness.failures` | Counter | None |
 | `my.http.origin_refused` | Counter | None. One per request refused because it did not come through the CDN ([`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)). Probes of the origin's address raise it slowly; a jump while the traffic stops means the CDN no longer sends the header. The maintenance mode measures nothing, so only its access log shows them |
@@ -309,7 +319,7 @@ The setting `traces_exporter` (default `none`) exports distributed traces. Its r
 | HTTP request (server) | `<method> <http.route>` (`<method>` for a request that did not reach a route) | `http.request.method`, `http.route`, `http.response.status_code`, `my.surface`. A 5xx is a failure |
 | Job execution (consumer) | The job type (`my.job.type`) | `my.job.type`, `my.job.attempt`, `my.outcome`. Each retry is a separate span |
 | Transaction | `my.db.transaction` | `db.system.name`. Each retry is a separate span |
-| Query (client) | The sqlc query name (such as `InsertJob`; otherwise the first word of the SQL, such as `BEGIN`) | `db.system.name`, `db.operation.name` |
+| Query (client) | The sqlc query name (such as `InsertJobs`; otherwise the first word of the SQL, such as `BEGIN`) | `db.system.name`, `db.operation.name` |
 | Delivery (`my.delivery`) | `my.delivery` | `activity.type`, `my.outcome` |
 | Outgoing HTTP (client) | `<method>` | `http.request.method`, `server.address` (the destination host name only), `http.response.status_code`. A 4xx or 5xx is a failure |
 
@@ -507,7 +517,7 @@ With `queue = cloudtasks` the jobs stay in the database (`database = postgres`),
   `queue_cloudtasks_audience`, when set). Each tick enqueues the periodic jobs whose period came, once for the whole instance (the periods are claimed in the KV,
   so `kv` must be `db` or `valkey`), and signals again the jobs that have been due for over 2 minutes without running, which recovers a lost signal.
 - `/_internal/jobs` and `/_internal/tick` are served by the processes with `role = all` or `worker`, and accept only a token signed by Google for
-  `queue_cloudtasks_service_account` with a verified email, whose audience is `queue_cloudtasks_audience` or, by default, the URL called. Any other request is a `401`.
+  `queue_cloudtasks_service_account` with a verified email, whose only audience is `queue_cloudtasks_audience` or, by default, the URL called. Any other request is a `401`.
 - A delivery runs one job, for at most the 5-minute lease. Keep `queue_cloudtasks_dispatch_deadline` (default 10 minutes) and the request timeout of
   the Cloud Run service longer than that.
 - The server's own service account needs `roles/cloudtasks.enqueuer` on the queue and `roles/iam.serviceAccountUser` on `queue_cloudtasks_service_account`.

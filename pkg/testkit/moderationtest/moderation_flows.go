@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -51,6 +52,8 @@ type ModerationFactory func(t *testing.T, opts uow.Options) ModerationHarness
 // filed report tells whether it is the target's only open one, and the open reports are counted.
 // Moderators also write notes on a report, reopen a resolved one, see its target's other reports
 // and actions, and an action that follows from a report resolves it as actioned once, each audited.
+// The allowlist of federation cuts off the domains it does not allow while federation_scope is
+// allowlist (moderationAllowlist).
 // The accounts are in-memory stand-ins. These are the flows of ADR-0153 §1, which
 // internal/flowtest/moderation runs once on SQLite; ModerationContract checks the repository's
 // methods on every adapter.
@@ -81,6 +84,7 @@ func ModerationFlows(t *testing.T, newHarness ModerationFactory) {
 		{"NotesReopensAndResolvesByAction", moderationNotesAndReopenings},
 		{"RebuildAgreesWithTheCommands", moderationProjectionEqualsRebuild},
 		{"ReadsInTheTransactionsOfItsEvents", moderationReadsInTransaction},
+		{"AllowlistCutsOffTheDomainsItDoesNotAllow", moderationAllowlist},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newModerationEnv(t, newHarness)) })
@@ -160,7 +164,16 @@ func (e *moderationEnv) checkDomain(t *testing.T, domain string, suspended, medi
 		want bool
 	}{
 		{"FederationSuspended", func() (bool, error) { return e.policy.FederationSuspended(ctx, domain) }, suspended},
-		{"RejectsMedia", func() (bool, error) { return e.policy.RejectsMedia(ctx, domain) }, media},
+		{"FederationSuspendedAmong", func() (bool, error) {
+			among, err := e.policy.FederationSuspendedAmong(ctx, []string{domain, "unrelated.example"})
+			return among[domain], err
+		}, suspended},
+		// A suspension stops fetching media too.
+		{"RejectsMedia", func() (bool, error) { return e.policy.RejectsMedia(ctx, domain) }, media || suspended},
+		{"RejectsMedia among", func() (bool, error) {
+			among, err := e.policy.DomainRestrictionsAmong(ctx, []string{domain, "unrelated.example"})
+			return slices.Contains(among[domain], moderation.RestrictMediaFetch), err
+		}, media},
 		{"RejectsReports", func() (bool, error) { return e.policy.RejectsReports(ctx, domain) }, reports},
 	} {
 		got, err := c.f()
@@ -295,6 +308,13 @@ func moderationLocalAccountActions(t *testing.T, e *moderationEnv) {
 		got, err := e.accounts.Content().Restrictions(ctx, e.local)
 		if err != nil || got != content {
 			t.Errorf("%s: content restrictions = %+v, %v; want %+v", when, got, err, content)
+		}
+		if b, ok := e.accounts.Content().(interface {
+			RestrictionsOf(ctx context.Context, ids []string) (map[string]appcontent.Restrictions, error)
+		}); !ok {
+			t.Error("the content policy cannot read many accounts' restrictions at once")
+		} else if all, err := b.RestrictionsOf(ctx, []string{e.local}); err != nil || all[e.local] != content {
+			t.Errorf("%s: content restrictions of many = %+v, %v; want %+v as of one", when, all, err, content)
 		}
 	}
 	issue := func(kind moderation.ActionKind, d time.Duration) moderation.Action {

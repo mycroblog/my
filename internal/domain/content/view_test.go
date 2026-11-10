@@ -174,6 +174,21 @@ var localAuthorPolicy = []block{
 		"remote mentioned         | -   -   -   -   -",
 		"remote blocked by author | -   -   -   -   -",
 	}},
+	{content.ContextDirectMessages, []string{
+		"anonymous                | -   -   -   -   -",
+		"author                   | -   -   -   -   Y",
+		"local stranger           | -   -   -   -   -",
+		"local pending follower   | -   -   -   -   -",
+		"local follower           | -   -   -   -   -",
+		"local mentioned          | -   -   -   -   Y",
+		"local blocking author    | -   -   -   -   -",
+		"local blocked by author  | -   -   -   -   -",
+		"moderator                | -   -   -   -   -",
+		"remote stranger          | -   -   -   -   -",
+		"remote follower          | -   -   -   -   -",
+		"remote mentioned         | -   -   -   -   -",
+		"remote blocked by author | -   -   -   -   -",
+	}},
 	{content.ContextHashtag, []string{
 		"anonymous                | Y   -   -   -   -",
 		"author                   | Y   Y   -   -   -",
@@ -310,6 +325,21 @@ var remoteAuthorPolicy = []block{
 		"local blocking author    | -   -   -   -   -",
 		"local blocked by author  | -   -   -   -   -",
 		"moderator                | Y   -   -   -   -",
+		"remote stranger          | -   -   -   -   -",
+		"remote follower          | -   -   -   -   -",
+		"remote mentioned         | -   -   -   -   -",
+		"remote blocked by author | -   -   -   -   -",
+	}},
+	{content.ContextDirectMessages, []string{
+		"anonymous                | -   -   -   -   -",
+		"author                   | -   -   -   -   -",
+		"local stranger           | -   -   -   -   -",
+		"local pending follower   | -   -   -   -   -",
+		"local follower           | -   -   -   -   -",
+		"local mentioned          | -   -   -   -   Y",
+		"local blocking author    | -   -   -   -   -",
+		"local blocked by author  | -   -   -   -   -",
+		"moderator                | -   -   -   -   -",
 		"remote stranger          | -   -   -   -   -",
 		"remote follower          | -   -   -   -   -",
 		"remote mentioned         | -   -   -   -   -",
@@ -571,5 +601,29 @@ func TestCanViewFailsClosed(t *testing.T) {
 	}
 	if content.CanView(content.ContextStatus, content.Viewer{Moderator: true}, public, content.AuthorRestrictions{ProfileView: true}, content.Relation{}) {
 		t.Error("the moderator flag is honored for an anonymous viewer")
+	}
+}
+
+// TestCanViewUnpublished checks that a held local reply (ADR-0155 §7) is its author's alone,
+// whatever the context and the visibility, and even for a moderator.
+func TestCanViewUnpublished(t *testing.T) {
+	st := content.StatusFacts{AuthorAccountID: "author", AuthorIsLocal: true, Visibility: content.VisibilityPublic, Unpublished: true}
+	author := content.Viewer{Kind: content.ViewerLocal, AccountID: "author"}
+	for _, ctx := range []content.ViewContext{content.ContextStatus, content.ContextProfile, content.ContextHome} {
+		if !content.CanView(ctx, author, st, content.AuthorRestrictions{}, content.Relation{}) {
+			t.Errorf("%v: the author does not see the held reply", ctx)
+		}
+	}
+	for _, v := range []content.Viewer{
+		{Kind: content.ViewerAnonymous},
+		{Kind: content.ViewerLocal, AccountID: "follower"},
+		{Kind: content.ViewerLocal, AccountID: "moderator", Moderator: true},
+	} {
+		if content.CanView(content.ContextStatus, v, st, content.AuthorRestrictions{}, content.Relation{Follow: content.FollowActive}) {
+			t.Errorf("%+v sees the held reply", v)
+		}
+	}
+	if content.CanView(content.ContextObjectFetch, content.Viewer{Kind: content.ViewerRemote, AccountID: "remote"}, st, content.AuthorRestrictions{}, content.Relation{}) {
+		t.Error("a remote fetch sees the held reply")
 	}
 }

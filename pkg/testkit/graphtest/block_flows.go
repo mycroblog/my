@@ -29,7 +29,8 @@ import (
 // accounts received from their servers and a local account's block of a remote one, muting with
 // and without expiry (an expired mute no longer applies on read), paging mutes, rejecting invalid
 // mutes, deleting expired mutes with an Unmuted each, muting domains (once each, in the order of
-// their domains, with their events and replay), and the property that follow_edges,
+// their domains, with their events and replay), private notes (read by their writers alone, and
+// exported), and the property that follow_edges,
 // follow_counters, and block_edges equal a rebuild from the follows, the blocks, and their events.
 func BlockFlows(t *testing.T, newHarness FollowFactory) {
 	t.Helper()
@@ -51,6 +52,8 @@ func BlockFlows(t *testing.T, newHarness FollowFactory) {
 		{"RejectsInvalidMutes", muteRejectsInvalid},
 		{"DeletesExpiredMutes", muteDeletesExpired},
 		{"MutesDomains", muteDomains},
+		{"KeepsPrivateNotes", noteKeepsPrivateNotes},
+		{"RejectsInvalidNotes", noteRejectsInvalid},
 		{"IncrementalProjectionEqualsRebuild", blockProjectionEqualsRebuild},
 	}
 	for _, tc := range cases {
@@ -113,6 +116,7 @@ func checkBlocks(t *testing.T, e *followEnv, account, target string, blocking, b
 	if err != nil {
 		t.Fatalf("Relationship = %v", err)
 	}
+	sameRelationships(t, e, account, target, rel)
 	if rel.Blocking != blocking || rel.BlockedBy != blockedBy {
 		t.Errorf("Relationship(%s, %s) = blocking %v, blocked by %v; want %v, %v",
 			account, target, rel.Blocking, rel.BlockedBy, blocking, blockedBy)
@@ -421,6 +425,7 @@ func checkMute(t *testing.T, e *followEnv, account, target string, muting, notif
 	if err != nil {
 		t.Fatalf("Relationship = %v", err)
 	}
+	sameRelationships(t, e, account, target, rel)
 	if rel.Muting != muting || rel.MutingNotifications != notifications {
 		t.Errorf("Relationship(%s, %s) = muting %v (notifications %v); want %v (%v)",
 			account, target, rel.Muting, rel.MutingNotifications, muting, notifications)

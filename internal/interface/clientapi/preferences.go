@@ -51,9 +51,9 @@ func newPreferences(p appidentity.UserPreferences) Preferences {
 	return Preferences{
 		Locale: p.Locale, TimeZone: p.TimeZone, TimeZoneChosen: p.TimeZoneChosen,
 		LocaleFollowsBrowser: p.LocaleFollowsBrowser, TimeZoneFollowsBrowser: p.TimeZoneFollowsBrowser,
-		DefaultVisibility:   Visibility(p.DefaultVisibility),
-		DefaultQuotePolicy:  QuotePolicy(p.DefaultQuotePolicy),
-		DefaultPostLanguage: p.DefaultPostLanguage, RequireMediaDescription: p.RequireMediaDescription,
+		DefaultVisibility:        Visibility(p.DefaultVisibility),
+		DefaultInteractionPolicy: newDefaultInteractionPolicy(p.DefaultInteractionPolicy),
+		DefaultPostLanguage:      p.DefaultPostLanguage, RequireMediaDescription: p.RequireMediaDescription,
 		TimelineAutoInsert: p.TimelineAutoInsert, LinkCardSize: LinkCardSize(p.LinkCardSize), TimelineLanguages: langs,
 	}
 }
@@ -88,15 +88,11 @@ func (s *Server) UpdatePreferences(ctx context.Context, req UpdatePreferencesReq
 			Locale: b.Locale, TimeZone: b.TimeZone, DefaultPostLanguage: b.DefaultPostLanguage,
 			LocaleFollowsBrowser: b.LocaleFollowsBrowser, TimeZoneFollowsBrowser: b.TimeZoneFollowsBrowser,
 			RequireMediaDescription: b.RequireMediaDescription, TimelineLanguages: b.TimelineLanguages,
-			TimelineAutoInsert: b.TimelineAutoInsert,
+			TimelineAutoInsert: b.TimelineAutoInsert, DefaultInteractionPolicy: interactionDefaultsChange(b.DefaultInteractionPolicy),
 		}
 		if b.DefaultVisibility != nil {
 			vis := identity.Visibility(*b.DefaultVisibility)
 			in.DefaultVisibility = &vis
-		}
-		if b.DefaultQuotePolicy != nil {
-			policy := identity.QuotePolicy(*b.DefaultQuotePolicy)
-			in.DefaultQuotePolicy = &policy
 		}
 		if b.LinkCardSize != nil {
 			size := identity.LinkCardSize(*b.LinkCardSize)

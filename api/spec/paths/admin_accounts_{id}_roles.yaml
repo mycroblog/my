@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAccountRoles
+  x-permission: manage_roles
   summary: List the roles of a local account
   description: |
     The roles that the user of a local account holds, highest position first. An unknown

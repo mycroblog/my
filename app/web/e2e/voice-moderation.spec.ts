@@ -9,6 +9,7 @@ import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 type Schemas = components["schemas"];
 
@@ -59,6 +60,8 @@ const credentials = {
   discoverable: true,
   indexable: true,
   ai_opt_out: false,
+  feed_enabled: true,
+  feed_follows_indexable: true,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: ["manage_settings", "manage_reports"],
@@ -207,14 +210,7 @@ async function serveApi(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, credentials);
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "en",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale, default_post_language: "en" }));
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (key === "GET /voice/rooms") return json(route, { items: ended ? [] : [room] });

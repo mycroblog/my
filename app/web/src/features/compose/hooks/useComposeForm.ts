@@ -19,19 +19,28 @@ import {
   instanceQueryOptions,
   type PostingLimits,
   preferencesQueryOptions,
-  type QuotePolicy,
   type Status,
   statusQueryOptions,
   statusRejection,
   type Visibility,
 } from "../api/compose";
-import { type Draft, isEmptyDraft, type Rejection } from "./draftStore";
+import { cacheDraftChange, isDraftConflict, publishDraft, updateDraft } from "../api/drafts";
+import { type Draft, isEmptyDraft, type Rejection, type SavedDraft } from "./draftStore";
+import {
+  type InteractionKind,
+  type InteractionPolicy,
+  type InteractionRule,
+  isOpenRule,
+  withChange,
+} from "./interactionPolicy";
 import { newPoll, type PollDraft, pollProblem, pollRequest, withOption, withoutOption } from "./poll";
 import { type LanguageOption, languageOptions } from "./languages";
-import { countCharacters, defaultVisibility, domainMentions, postedVisibility } from "./policy";
+import { countCharacters, chosenVisibility, domainMentions, postedVisibility } from "./policy";
 import { rememberTags } from "./recentTags";
+import { draftRequest, draftRequestOfPost } from "./serverDraft";
 import { type Attachments, descriptionFieldId, useAttachments } from "./useAttachments";
 import { type ComposeController, composeTextId, useComposeState } from "./useCompose";
+import { type ServerDraftForm, useServerDraft } from "./useServerDraft";
 import { useUnreachedMentions } from "./useUnreachedMentions";
 import { offeredVisibilities } from "./useOfferedVisibilities";
 import { visibilityLabel } from "./visibilityMessages";
@@ -76,6 +85,8 @@ export type ReadyComposeForm = {
   visibility: Visibility;
   /** What the account's restrictions let it post (data-model/05-states-and-policies.md §5.4), or null while they keep every visibility. */
   limits: PostingLimits | null;
+  /** Whether the post replies to a direct message, and so is direct whatever is chosen (chosenVisibility). */
+  directReply: boolean;
   /**
    * The accounts of other servers that the text mentions and that will not receive the post because it is
    * `local` and they do not follow the viewer (ADR-0017); empty for the other visibilities.
@@ -93,8 +104,15 @@ export type ReadyComposeForm = {
   /** The post quoted (FR-114). */
   quoteOf: ReplyTarget;
   cancelQuote: () => void;
-  /** Who may quote the post: the chosen policy, or the preference. */
-  quotePolicy: QuotePolicy;
+  /**
+   * Who may reply to, boost, and quote the post (ADR-0155 §10): the rules chosen in the form over the defaults of the
+   * preferences, as the server gives the post.
+   */
+  interactionPolicy: InteractionPolicy;
+  /** Whether a rule of the post admits less than everyone at once: the form then says who may interact. */
+  isPolicyRestricted: boolean;
+  /** Chooses the rule of one kind for this post, in place of the default. */
+  setInteractionRule: (kind: InteractionKind, rule: InteractionRule) => void;
   attachments: Attachments;
   /** Whether files can be attached: not to a post with a poll (FR-112), and up to the limit. */
   canAttach: boolean;
@@ -117,6 +135,18 @@ export type ReadyComposeForm = {
    * never disabled by the input): shown beside the button until the reason is gone. Null otherwise.
    */
   blocked: ComposeBlocker | null;
+  /**
+   * The draft on the server the form continues (ADR-0156): opened from the drafts page, or kept after a schedule that
+   * failed; null for a draft only in this tab.
+   */
+  saved: SavedDraft | null;
+  /** Saving the draft on the server and scheduling it (useServerDraft). */
+  serverDraft: ServerDraftForm;
+  /**
+   * What keeps the draft from being scheduled, as from being sent, except media still being processed, which the
+   * server publishes once they are ready (ADR-0156 §5); null when it can be scheduled.
+   */
+  scheduleBlocker: ComposeBlocker | null;
   /**
    * Sends the draft, or asks first when images lack a description that the preferences ask for. While the draft cannot
    * be sent it shows why (`blocked`) and moves the focus to the text when the text is the reason.
@@ -186,7 +216,7 @@ function requestBody(draft: Draft, visibility: Visibility, language: string): Cr
     ...(draft.poll === null ? {} : { poll: pollRequest(draft.poll) }),
     ...(draft.replyToId === null ? {} : { in_reply_to_id: draft.replyToId }),
     ...(draft.quoteId === null ? {} : { quoted_status_id: draft.quoteId }),
-    ...(draft.quotePolicy === null ? {} : { quote_policy: draft.quotePolicy }),
+    ...(Object.keys(draft.interactionPolicy).length === 0 ? {} : { interaction_policy: draft.interactionPolicy }),
   };
 }
 
@@ -241,7 +271,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     preferredVisibility === undefined
       ? undefined
       : postedVisibility(
-          draft.visibility ?? defaultVisibility(preferredVisibility, replyPost),
+          chosenVisibility(draft.visibility, preferredVisibility, replyPost),
           limits,
           isSingleUser(instance.data),
         );
@@ -252,17 +282,33 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const [isConfirming, setIsConfirming] = useState(false);
   // Whether the person pressed the submit button while the draft could not be sent; the reason shows until it is gone.
   const [triedBlocked, setTriedBlocked] = useState(false);
+  // The request is made only once the form is ready, when the visibility and the language are known.
+  const serverDraft = useServerDraft(store, draft, attachments, () =>
+    draftRequest(draft, visibility ?? "public", draft.language ?? preferences.data?.default_post_language ?? "und"),
+  );
 
   const send = useMutation({
     mutationKey: createStatusMutationKey,
-    mutationFn: ({ idempotencyKey, body }: SendVariables) => createStatus(api, body, idempotencyKey),
+    // A draft opened from the server is published by the server (ADR-0156 §9): its content is saved first, over the
+    // version the form opened (If-Match), and the publish deletes it in the same transaction as the post, so it is
+    // posted once and never left behind. The newer ETag is kept with the outbox post, for a retry.
+    mutationFn: async ({ idempotencyKey, body }: SendVariables) => {
+      const saved = store.getSnapshot().outbox.find((o) => o.idempotencyKey === idempotencyKey)?.draft.saved ?? null;
+      if (saved === null) return createStatus(api, body, idempotencyKey);
+      const version = await updateDraft(api, saved.id, saved.etag, draftRequestOfPost(body));
+      store.setOutboxSaved(idempotencyKey, { ...saved, etag: version.etag });
+      return publishDraft(api, saved.id);
+    },
     onSuccess: async (status, { idempotencyKey, body }) => {
       // The post is done once the lists it appears in are fetched again (it stays in the outbox as sending
       // until then), so that a list opened next shows it at once (web-client/README.md S1). A failed refetch does
       // not fail the post: that list fetches again when it is shown.
       const isFirstPost = countPostedStatus(api, queryClient) === 1;
       await cachePostedStatus(api, queryClient, status);
+      const published = store.getSnapshot().outbox.find((o) => o.idempotencyKey === idempotencyKey)?.draft.saved;
       store.remove(idempotencyKey);
+      // A published draft has left the server, with its schedule: the lists of the drafts page lose it.
+      if (published != null) await cacheDraftChange(queryClient);
       // The server narrows the visibility of a restricted account (data-model/05-states-and-policies.md §5.4); say so.
       const narrowed = status.visibility !== body.visibility;
       if (narrowed) {
@@ -293,7 +339,12 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
         notice.inPlace([rejection.title, rejection.detail].filter((part) => part !== null).join(" "), "assertive");
         return;
       }
-      const message = t("client:compose.failed", { reason: errorMessage(error) });
+      // Another device saved the draft since the form opened it: nothing was published or overwritten. The post
+      // leaves the draft, so that sending it again posts this version as a new post.
+      if (isDraftConflict(error)) store.setOutboxSaved(idempotencyKey, null);
+      const message = isDraftConflict(error)
+        ? t("client:drafts.publish.conflict")
+        : t("client:compose.failed", { reason: errorMessage(error) });
       store.restore(idempotencyKey, message);
       notice.inPlace(message, "assertive");
     },
@@ -324,7 +375,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const { default_post_language: preferredLanguage, require_media_description: requireDescriptions } = preferences.data;
   const replyTo = targetOf(draft.replyToId, replyPost, replyQuery.isError);
   const quoteOf = targetOf(draft.quoteId, draft.quoteId === null ? undefined : quoteQuery.data, quoteQuery.isError);
-  const quotePolicy = draft.quotePolicy ?? preferences.data.default_quote_policy;
+  const interactionPolicy = withChange(preferences.data.default_interaction_policy, draft.interactionPolicy);
   const ownDomain = accountDomain.toLowerCase();
   const staysLocal =
     !reachesRemote &&
@@ -343,6 +394,16 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     targetsLoading: replyTo.status === "loading" || quoteOf.status === "loading",
   });
   const canSubmit = blocker === null;
+  const scheduleBlocker = blockerOf({
+    text: draft.text,
+    textLimit,
+    attachments: {
+      isBusy: attachments.items.some((item) => item.status === "uploading"),
+      hasFailed: attachments.hasFailed,
+    },
+    pollProblem: problem,
+    targetsLoading: replyTo.status === "loading" || quoteOf.status === "loading",
+  });
   const editPoll = (change: (poll: PollDraft) => PollDraft) => {
     if (draft.poll !== null) store.edit({ poll: change(draft.poll) });
   };
@@ -403,6 +464,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
       limits === undefined || limits.visibilities.length === offeredVisibilities(isSingleUser(instance.data)).length
         ? null
         : limits,
+    directReply: replyPost?.visibility === "direct",
     unreachedMentions,
     staysLocal,
     language,
@@ -415,7 +477,15 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     cancelQuote: () => {
       store.edit({ quoteId: null });
     },
-    quotePolicy,
+    interactionPolicy,
+    isPolicyRestricted: !(
+      isOpenRule(interactionPolicy.reply) &&
+      isOpenRule(interactionPolicy.announce) &&
+      isOpenRule(interactionPolicy.quote)
+    ),
+    setInteractionRule: (kind, rule) => {
+      store.edit({ interactionPolicy: { ...draft.interactionPolicy, [kind]: rule } });
+    },
     attachments,
     canAttach: attachments.canAdd && draft.poll === null,
     takesFiles: draft.poll === null,
@@ -424,7 +494,17 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     isDescriptionRequired,
     canSubmit,
     blocked: triedBlocked ? blocker : null,
+    saved: draft.saved,
+    serverDraft: {
+      ...serverDraft,
+      save: () => {
+        setTriedBlocked(false);
+        serverDraft.save();
+      },
+    },
+    scheduleBlocker,
     submit: () => {
+      serverDraft.clearMessage();
       if (blocker !== null) {
         setTriedBlocked(true);
         // The text is what to fix: the focus goes there (G23). The other reasons are fixed elsewhere or pass by themselves.

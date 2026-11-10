@@ -237,6 +237,13 @@ const fromServer: Notification[] = [
   notification(14, "auto_delete_limit", {
     auto_delete_limit: { max_age_days: 90, enforce_from: "2026-11-27T12:00:00Z" },
   }),
+  notification(15, "scheduled_status_failed", {
+    scheduled_status_failure: {
+      draft_id: "0192f0c4-7a8e-7000-8000-0000000000d1",
+      reason: "reply_unavailable",
+      publish_at: "2026-11-20T08:30:00Z",
+    },
+  }),
 ];
 
 /** The notifications from the server to its staff. */
@@ -309,6 +316,15 @@ export const MentionsOnly: Story = { parameters: { screen: { path: "/notificatio
 
 /** Only the new posts of the accounts the viewer subscribes to. */
 export const NewPostsOnly: Story = { parameters: { screen: { path: "/notifications?filter=posts" } } };
+
+/** The notification policy held the notifications of three people: the row of the requests is above the tabs. */
+export const WithRequests: Story = answering(
+  http.get(`${apiBase}/notifications/requests/summary`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json({ accounts_count: 3, notifications_count: 7 } satisfies Schemas["NotificationRequestSummary"]),
+    ),
+  ),
+);
 
 /** Nothing yet. */
 export const Empty: Story = answering(...notifications([], 0));

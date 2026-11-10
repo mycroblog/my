@@ -44,3 +44,12 @@ func (v *VoiceNotifier) RoomInvitedTx(ctx context.Context, tx uow.Tx, invitation
 		DedupeKey: notification.VoiceRoomInvitedKey(invitationID), CreatedAt: at,
 	})
 }
+
+// RoomStartedAllTx tells each of recipientIDs inside tx that hostID opened the room roomID at at,
+// as RoomStartedTx tells one, with a number of queries that does not grow with them.
+func (v *VoiceNotifier) RoomStartedAllTx(ctx context.Context, tx uow.Tx, roomID, hostID string, recipientIDs []string, at time.Time) error {
+	return v.p.notifyAll(ctx, tx, notification.Notification{
+		SourceAccountID: hostID, Type: notification.TypeVoiceRoomStarted, VoiceRoomID: roomID,
+		DedupeKey: notification.VoiceRoomStartedKey(roomID), CreatedAt: at,
+	}, recipientIDs)
+}

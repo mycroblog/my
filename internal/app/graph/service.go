@@ -93,11 +93,18 @@ type Relationship struct {
 	// MutingNotifications that the mute also hides the target's notifications.
 	Muting              bool
 	MutingNotifications bool
+	// Note is the account's private note on the target (FR-310), "" without one. Only
+	// Relationship and Relationships read it: RelationshipsWith, whose accounts are not the
+	// reader, leaves it empty.
+	Note string
 }
 
 // ActivelyFollowing reports whether the account's follow of the target is active; a pending
 // follow request does not count.
 func (r Relationship) ActivelyFollowing() bool { return r.Following == graph.StateActive }
+
+// ActivelyFollowedBy reports whether the target's follow of the account is active.
+func (r Relationship) ActivelyFollowedBy() bool { return r.FollowedBy == graph.StateActive }
 
 // RequestedFollow reports whether the account's follow of the target awaits approval.
 func (r Relationship) RequestedFollow() bool { return r.Following == graph.StatePending }
@@ -392,7 +399,161 @@ func (s *Service) changePreferencesIn(ctx context.Context, tx uow.Tx, edge graph
 
 // Relationship returns the follow, block, and mute relationship between accountID and targetID.
 func (s *Service) Relationship(ctx context.Context, accountID, targetID string) (Relationship, error) {
-	repo := s.d.Repository
+	r, err := relationshipOf(ctx, repoRelationshipReads{s.d.Repository}, accountID, targetID, s.d.Clock.Now())
+	if err != nil {
+		return Relationship{}, err
+	}
+	r.Note, err = s.noteOf(ctx, accountID, targetID)
+	if err != nil {
+		return Relationship{}, err
+	}
+	return r, nil
+}
+
+// Relationships returns the relationship of accountID with each of targetIDs, by target, as
+// Relationship returns one, with one query per part whatever the number of targets
+// (Repository.FindRelationshipParts).
+func (s *Service) Relationships(ctx context.Context, accountID string, targetIDs []string) (map[string]Relationship, error) {
+	out := make(map[string]Relationship, len(targetIDs))
+	if len(targetIDs) == 0 {
+		return out, nil
+	}
+	now := s.d.Clock.Now()
+	parts, err := s.d.Repository.FindRelationshipParts(ctx, accountID, targetIDs, now)
+	if err != nil {
+		return nil, err
+	}
+	notes, err := s.d.Repository.FindNotesOn(ctx, accountID, targetIDs)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range targetIDs {
+		r, err := relationshipOf(ctx, partRelationshipReads(parts), accountID, id, now)
+		if err != nil {
+			return nil, err
+		}
+		r.Note = notes[id].Text
+		out[id] = r
+	}
+	return out, nil
+}
+
+// RelationshipsWith returns the relationship of each of accountIDs with targetID, by account, as
+// Relationship returns one, with one query per part: what Relationships reads of one account with
+// many targets, of many accounts with one target.
+func (s *Service) RelationshipsWith(ctx context.Context, targetID string, accountIDs []string) (map[string]Relationship, error) {
+	out := make(map[string]Relationship, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	now := s.d.Clock.Now()
+	parts, err := s.d.Repository.FindRelationshipParts(ctx, targetID, accountIDs, now)
+	if err != nil {
+		return nil, err
+	}
+	// The accounts' follows of the target and their mutes of it, which the target's parts lack.
+	var followIDs []string
+	for _, e := range parts.FollowedBy {
+		followIDs = append(followIDs, e.FollowID)
+	}
+	prefs, err := s.d.Repository.FindPreferencesOf(ctx, followIDs)
+	if err != nil {
+		return nil, err
+	}
+	mutes, err := s.d.Repository.FindMutesOn(ctx, targetID, accountIDs, now)
+	if err != nil {
+		return nil, err
+	}
+	reads := withRelationshipReads{parts: partRelationshipReads(parts), prefs: prefs, mutes: mutes}
+	for _, id := range accountIDs {
+		if out[id], err = relationshipOf(ctx, reads, id, targetID, now); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// withRelationshipReads answers the reads of the relationships of many accounts with one target
+// from the target's parts, the preferences of the accounts' follows, and their mutes.
+type withRelationshipReads struct {
+	parts partRelationshipReads
+	prefs map[string]graph.Preferences
+	mutes map[string]graph.Mute
+}
+
+func (w withRelationshipReads) FindEdge(ctx context.Context, follower, followee string) (graph.Edge, error) {
+	return w.parts.FindEdge(ctx, follower, followee)
+}
+
+func (w withRelationshipReads) FindPreferences(ctx context.Context, followID string) (graph.Preferences, error) {
+	if p, ok := w.prefs[followID]; ok {
+		return p, nil
+	}
+	return w.parts.FindPreferences(ctx, followID)
+}
+
+func (w withRelationshipReads) FindBlockEdge(ctx context.Context, blocker, blocked string) (graph.BlockEdge, error) {
+	return w.parts.FindBlockEdge(ctx, blocker, blocked)
+}
+
+func (w withRelationshipReads) FindMute(ctx context.Context, accountID, target string, now time.Time) (graph.Mute, error) {
+	if m, ok := w.mutes[accountID]; ok && m.TargetAccountID == target {
+		return m, nil
+	}
+	return w.parts.FindMute(ctx, accountID, target, now)
+}
+
+// relationshipReads are the reads of a relationship: the repository's, or those of the parts
+// that FindRelationshipParts read.
+type relationshipReads interface {
+	FindEdge(ctx context.Context, followerAccountID, followeeAccountID string) (graph.Edge, error)
+	FindPreferences(ctx context.Context, followID string) (graph.Preferences, error)
+	FindBlockEdge(ctx context.Context, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error)
+	FindMute(ctx context.Context, accountID, targetAccountID string, now time.Time) (graph.Mute, error)
+}
+
+type repoRelationshipReads struct{ Repository }
+
+// partRelationshipReads answers the reads of the relationships of one account from their parts; a
+// pair that has no part fails with ErrNotFound, as a read of one pair does.
+type partRelationshipReads RelationshipParts
+
+func (p partRelationshipReads) FindEdge(_ context.Context, follower, followee string) (graph.Edge, error) {
+	if e, ok := p.Following[followee]; ok && e.FollowerAccountID == follower {
+		return e, nil
+	}
+	if e, ok := p.FollowedBy[follower]; ok && e.FolloweeAccountID == followee {
+		return e, nil
+	}
+	return graph.Edge{}, fmt.Errorf("follow edge %s -> %s: %w", follower, followee, ErrNotFound)
+}
+
+func (p partRelationshipReads) FindPreferences(_ context.Context, followID string) (graph.Preferences, error) {
+	if pr, ok := p.Preferences[followID]; ok {
+		return pr, nil
+	}
+	return graph.Preferences{}, fmt.Errorf("follow preferences %s: %w", followID, ErrNotFound)
+}
+
+func (p partRelationshipReads) FindBlockEdge(_ context.Context, blocker, blocked string) (graph.BlockEdge, error) {
+	if e, ok := p.Blocking[blocked]; ok && e.BlockerAccountID == blocker {
+		return e, nil
+	}
+	if e, ok := p.BlockedBy[blocker]; ok && e.BlockedAccountID == blocked {
+		return e, nil
+	}
+	return graph.BlockEdge{}, fmt.Errorf("block edge %s -> %s: %w", blocker, blocked, ErrNotFound)
+}
+
+func (p partRelationshipReads) FindMute(_ context.Context, accountID, target string, _ time.Time) (graph.Mute, error) {
+	if m, ok := p.Mutes[target]; ok && m.AccountID == accountID {
+		return m, nil
+	}
+	return graph.Mute{}, fmt.Errorf("mute %s -> %s: %w", accountID, target, ErrNotFound)
+}
+
+// relationshipOf builds the relationship of accountID with targetID through repo, at now.
+func relationshipOf(ctx context.Context, repo relationshipReads, accountID, targetID string, now time.Time) (Relationship, error) {
 	out := Relationship{AccountID: accountID, TargetAccountID: targetID, Following: graph.StateNone, FollowedBy: graph.StateNone}
 	out.ShowBoosts = graph.DefaultPreferences("").ShowBoosts
 
@@ -423,7 +584,7 @@ func (s *Service) Relationship(ctx context.Context, accountID, targetID string) 
 	if out.BlockedBy, err = found(repo.FindBlockEdge(ctx, targetID, accountID)); err != nil {
 		return Relationship{}, err
 	}
-	m, err := repo.FindMute(ctx, accountID, targetID, s.d.Clock.Now())
+	m, err := repo.FindMute(ctx, accountID, targetID, now)
 	switch {
 	case err == nil:
 		out.Muting, out.MutingNotifications = true, m.HideNotifications
@@ -491,6 +652,33 @@ func (s *Service) ActiveFollowerIDs(ctx context.Context, accountID, before strin
 		next = edges[len(edges)-1].FollowID
 	}
 	return ids, next, nil
+}
+
+// ActiveFollowersAmong returns those of ids that actively follow accountID, as Relationship tells
+// of one (ActivelyFollowing), with one query.
+func (s *Service) ActiveFollowersAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(ids))
+	edges, err := s.d.Repository.ListFollowEdgesFromAmong(ctx, accountID, ids)
+	for _, e := range edges {
+		if e.State == graph.StateActive {
+			out[e.FollowerAccountID] = true
+		}
+	}
+	return out, err
+}
+
+// FollowedAmong returns those of accountIDs with an active follower, with one query: the stale
+// remote actors of a batch that local accounts still follow (federation's refresh of actors).
+func (s *Service) FollowedAmong(ctx context.Context, accountIDs []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	ids, err := s.d.Repository.ListFolloweesAmong(ctx, accountIDs, graph.StateActive)
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, err
 }
 
 // Following returns the accounts accountID actively follows, newest follow first.

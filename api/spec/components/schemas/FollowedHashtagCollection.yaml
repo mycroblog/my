@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The hashtags that the user follows, at most 100, the latest followed first.
+type: object
+required: [items]
+properties:
+  items:
+    type: array
+    items:
+      $ref: ./FollowedHashtag.yaml

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+name: id
+in: path
+required: true
+description: |
+  The ID of the conversation. The ID of a conversation that was merged into another, once a
+  reply showed both to be one thread, names the conversation it was merged into.
+schema:
+  $ref: ../schemas/Id.yaml

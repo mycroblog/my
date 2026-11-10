@@ -27,13 +27,17 @@ type AutoDeletePolicies interface {
 	LimitNotices(ctx context.Context, accountID string, ids []string) (map[string]content.AutoDeleteLimitNotice, error)
 }
 
-// autoDeletePolicyFrom is the policy of a request body.
-func autoDeletePolicyFrom(b AutoDeletePolicy) content.AutoDeletePolicy {
+// autoDeletePolicyFrom is the policy of a request body; saved gives keep_articles when the body
+// leaves it out.
+func autoDeletePolicyFrom(b AutoDeletePolicy, saved content.AutoDeletePolicy) content.AutoDeletePolicy {
 	in := content.AutoDeletePolicy{
 		Enabled: b.Enabled, MinAgeDays: b.MinAgeDays,
 		KeepPinned: b.KeepPinned, KeepBookmarked: b.KeepBookmarked, KeepFavourited: b.KeepFavourited,
-		KeepMedia: b.KeepMedia, KeepPolls: b.KeepPolls,
+		KeepMedia: b.KeepMedia, KeepPolls: b.KeepPolls, KeepArticles: saved.KeepArticles,
 		KeepMinBoosts: b.KeepMinBoosts, KeepMinFavourites: b.KeepMinFavourites,
+	}
+	if b.KeepArticles != nil {
+		in.KeepArticles = *b.KeepArticles
 	}
 	for _, vis := range b.KeepVisibilities {
 		in.KeepVisibilities = append(in.KeepVisibilities, content.Visibility(vis))
@@ -61,7 +65,7 @@ func newAutoDeletePolicy(p content.AutoDeletePolicy) AutoDeletePolicy {
 	return AutoDeletePolicy{
 		Enabled: p.Enabled, MinAgeDays: p.MinAgeDays,
 		KeepPinned: p.KeepPinned, KeepBookmarked: p.KeepBookmarked, KeepFavourited: p.KeepFavourited,
-		KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls, KeepVisibilities: kept,
+		KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls, KeepArticles: &p.KeepArticles, KeepVisibilities: kept,
 		KeepMinBoosts: p.KeepMinBoosts, KeepMinFavourites: p.KeepMinFavourites,
 	}
 }
@@ -71,7 +75,7 @@ func newAutoDeleteLimit(l content.AutoDeleteLimit) AutoDeleteLimit {
 	return AutoDeleteLimit{
 		MaxAgeDays: l.MaxAgeDays, AllowPinned: l.AllowPinned, KeptPins: l.KeptPins,
 		AllowBookmarked: l.AllowBookmarked, AllowFavourited: l.AllowFavourited, AllowMedia: l.AllowMedia,
-		AllowPolls: l.AllowPolls, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
+		AllowPolls: l.AllowPolls, AllowArticles: &l.AllowArticles, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
 	}
 }
 
@@ -81,7 +85,7 @@ func newAutoDeleteSettings(v appcontent.AutoDeleteView) AutoDeleteSettings {
 	out := AutoDeleteSettings{
 		Enabled: p.Enabled, MinAgeDays: p.MinAgeDays,
 		KeepPinned: p.KeepPinned, KeepBookmarked: p.KeepBookmarked, KeepFavourited: p.KeepFavourited,
-		KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls, KeepVisibilities: p.KeepVisibilities,
+		KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls, KeepArticles: p.KeepArticles, KeepVisibilities: p.KeepVisibilities,
 		KeepMinBoosts: p.KeepMinBoosts, KeepMinFavourites: p.KeepMinFavourites,
 	}
 	if v.Limit != nil {
@@ -89,7 +93,7 @@ func newAutoDeleteSettings(v appcontent.AutoDeleteView) AutoDeleteSettings {
 		sl := AutoDeleteServerLimit{
 			MaxAgeDays: l.MaxAgeDays, AllowPinned: l.AllowPinned, KeptPins: l.KeptPins,
 			AllowBookmarked: l.AllowBookmarked, AllowFavourited: l.AllowFavourited, AllowMedia: l.AllowMedia,
-			AllowPolls: l.AllowPolls, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
+			AllowPolls: l.AllowPolls, AllowArticles: l.AllowArticles, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
 			Effective: newAutoDeletePolicy(v.Limit.Effective), Bound: v.Limit.Bound,
 		}
 		if !v.Limit.EnforceFrom.IsZero() {
@@ -132,7 +136,11 @@ func (s *Server) UpdateAutoDeletePolicy(ctx context.Context, req UpdateAutoDelet
 	if req.Body == nil {
 		return UpdateAutoDeletePolicydefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
 	}
-	p, err := s.o.AutoDelete.UpdateAutoDeletePolicy(ctx, v.AccountID, autoDeletePolicyFrom(*req.Body))
+	saved, err := s.o.AutoDelete.AutoDeletePolicy(ctx, v.AccountID)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the auto delete policy of %s: %w", v.AccountID, err)
+	}
+	p, err := s.o.AutoDelete.UpdateAutoDeletePolicy(ctx, v.AccountID, autoDeletePolicyFrom(*req.Body, saved.Policy))
 	if pr, ok := s.autoDeletePolicyProblem(ctx, err); ok {
 		return UpdateAutoDeletePolicydefaultApplicationProblemPlusJSONResponse(pr), nil
 	}
@@ -157,7 +165,11 @@ func (s *Server) PreviewAutoDeletePolicy(ctx context.Context, req PreviewAutoDel
 	if req.Body == nil {
 		return PreviewAutoDeletePolicydefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
 	}
-	preview, err := s.o.AutoDelete.PreviewAutoDeletePolicy(ctx, v.AccountID, autoDeletePolicyFrom(*req.Body))
+	saved, err := s.o.AutoDelete.AutoDeletePolicy(ctx, v.AccountID)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the auto delete policy of %s: %w", v.AccountID, err)
+	}
+	preview, err := s.o.AutoDelete.PreviewAutoDeletePolicy(ctx, v.AccountID, autoDeletePolicyFrom(*req.Body, saved.Policy))
 	if pr, ok := s.autoDeletePolicyProblem(ctx, err); ok {
 		return PreviewAutoDeletePolicydefaultApplicationProblemPlusJSONResponse(pr), nil
 	}
@@ -168,7 +180,7 @@ func (s *Server) PreviewAutoDeletePolicy(ctx context.Context, req PreviewAutoDel
 	for _, st := range preview.Examples {
 		items = append(items, statusItem{StatusID: st.ID})
 	}
-	examples, err := s.statuses(ctx, contentViewer(ctx), items)
+	examples, err := s.statuses(ctx, contentViewer(ctx), noFilter, items)
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: the auto delete examples of %s: %w", v.AccountID, err)
 	}

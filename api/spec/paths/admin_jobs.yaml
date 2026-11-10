@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminJobs
+  x-permission: manage_jobs
   summary: List the jobs of the job queue
   description: |
     The jobs in one state, or the pending jobs of every state when `state` is omitted.

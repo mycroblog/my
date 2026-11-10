@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A hashtag and whether the user follows it. The posts of the hashtags the user follows appear
+  on the home timeline.
+type: object
+required: [name, url, following]
+properties:
+  name:
+    description: |
+      The hashtag without `#`, as first written on the server, or as the request wrote it when
+      no post has used it and nobody follows it.
+    type: string
+  url:
+    description: The hashtag's page.
+    type: string
+    format: uri
+  following:
+    description: Whether the user follows the hashtag; false for a visitor who is not logged in.
+    type: boolean

@@ -89,7 +89,7 @@ CREATE TABLE cost_item_heads (
 -- and UTC month of occurred_at.
 CREATE TABLE billing_import_runs (
   id TEXT NOT NULL PRIMARY KEY,
-  source TEXT NOT NULL CHECK (source IN ('aws', 'gcp', 'plugin')),
+  source TEXT NOT NULL CHECK (source IN ('aws', 'gcp', 'cloudflare', 'plugin')),
   run_key TEXT NOT NULL,
   outcome TEXT NOT NULL CHECK (outcome IN ('succeeded', 'failed')),
   error_kind TEXT NOT NULL CHECK (error_kind IN (
@@ -110,7 +110,7 @@ CREATE INDEX billing_import_runs_run_key ON billing_import_runs (run_key);
 -- requests, so that attempts running at the same time cannot together exceed the caps.
 CREATE TABLE billing_import_reservations (
   id TEXT NOT NULL PRIMARY KEY,
-  source TEXT NOT NULL CHECK (source IN ('aws', 'gcp', 'plugin')),
+  source TEXT NOT NULL CHECK (source IN ('aws', 'gcp', 'cloudflare', 'plugin')),
   requests INTEGER NOT NULL CHECK (requests >= 0),
   reserved_at INTEGER NOT NULL
 ) STRICT;
@@ -122,7 +122,7 @@ CREATE INDEX billing_import_reservations_source_reserved_at ON billing_import_re
 -- The attempts of one job write a key once (the unique run_key).
 CREATE TABLE imported_cost_revisions (
   id TEXT NOT NULL PRIMARY KEY,
-  source TEXT NOT NULL CHECK (source IN ('aws', 'gcp', 'plugin')),
+  source TEXT NOT NULL CHECK (source IN ('aws', 'gcp', 'cloudflare', 'plugin')),
   billing_month TEXT NOT NULL CHECK (billing_month GLOB '[0-9][0-9][0-9][0-9]-[0-1][0-9]'),
   service TEXT NOT NULL CHECK (length(service) BETWEEN 1 AND 200),
   charge_type TEXT NOT NULL CHECK (charge_type IN (
@@ -146,7 +146,7 @@ CREATE UNIQUE INDEX imported_cost_revisions_key_run_key ON imported_cost_revisio
 -- Projection of imported_cost_revisions: the newest revision of each key, updated in the
 -- transaction that adds the revision.
 CREATE TABLE imported_cost_heads (
-  source TEXT NOT NULL CHECK (source IN ('aws', 'gcp', 'plugin')),
+  source TEXT NOT NULL CHECK (source IN ('aws', 'gcp', 'cloudflare', 'plugin')),
   billing_month TEXT NOT NULL,
   service TEXT NOT NULL,
   charge_type TEXT NOT NULL CHECK (charge_type IN (

@@ -5,17 +5,61 @@
 -- InsertNotification inserts nothing when the recipient already has a notification with the
 -- dedupe key.
 -- name: InsertNotification :execrows
-INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING;
 
+-- InsertNotificationsFor inserts one notification for each element of a JSON array of
+-- {"id", "recipient"}, with every other column the same, as InsertNotification inserts one, and
+-- returns the recipients it inserted one for. WHERE true keeps ON CONFLICT from reading as a join
+-- constraint.
+-- name: InsertNotificationsFor :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at)
+SELECT value ->> '$.id', value ->> '$.recipient', CAST(sqlc.arg(type) AS TEXT),
+  CAST(sqlc.narg(source_account_id) AS TEXT), CAST(sqlc.narg(source_domain) AS TEXT), CAST(sqlc.narg(status_id) AS TEXT), CAST(sqlc.narg(moderation_action_id) AS TEXT), CAST(sqlc.narg(report_id) AS TEXT), CAST(sqlc.narg(subject_user_id) AS TEXT), CAST(sqlc.narg(severance_id) AS TEXT), CAST(sqlc.narg(appeal_id) AS TEXT), CAST(sqlc.narg(custom_emoji_request_id) AS TEXT), CAST(sqlc.narg(supporter_subscription_id) AS TEXT), CAST(sqlc.narg(reaction_emoji) AS TEXT), CAST(sqlc.narg(reaction_custom_emoji_id) AS TEXT), CAST(sqlc.narg(account_move_id) AS TEXT), CAST(sqlc.narg(account_move_outcome) AS TEXT), CAST(sqlc.narg(service_closure_event_id) AS TEXT), CAST(sqlc.narg(service_closure_change) AS TEXT), CAST(sqlc.narg(voice_room_id) AS TEXT), CAST(sqlc.narg(error_group_change) AS TEXT), CAST(sqlc.narg(error_group_id) AS TEXT), CAST(sqlc.narg(error_group_hour) AS INTEGER), CAST(sqlc.narg(announcement_id) AS TEXT), CAST(sqlc.narg(hook_appeal_id) AS TEXT), CAST(sqlc.narg(auto_delete_limit_notice_id) AS TEXT), CAST(sqlc.narg(draft_schedule_id) AS TEXT),
+  CAST(sqlc.arg(dedupe_key) AS TEXT), CAST(sqlc.arg(created_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(recipients) AS TEXT)) WHERE true
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING recipient_account_id;
+
+-- InsertNotificationsForEach is InsertNotificationsFor whose rows differ by their source, its
+-- domain, severance, dedupe key, and time too, an empty source, domain, or severance standing
+-- for none. It returns the IDs it inserted.
+-- name: InsertNotificationsForEach :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at)
+SELECT value ->> '$.id', value ->> '$.recipient', CAST(sqlc.arg(type) AS TEXT),
+  NULLIF(value ->> '$.source_account_id', ''), NULLIF(value ->> '$.source_domain', ''), CAST(sqlc.narg(status_id) AS TEXT), CAST(sqlc.narg(moderation_action_id) AS TEXT), CAST(sqlc.narg(report_id) AS TEXT), CAST(sqlc.narg(subject_user_id) AS TEXT), NULLIF(value ->> '$.severance_id', ''), CAST(sqlc.narg(appeal_id) AS TEXT), CAST(sqlc.narg(custom_emoji_request_id) AS TEXT), CAST(sqlc.narg(supporter_subscription_id) AS TEXT), CAST(sqlc.narg(reaction_emoji) AS TEXT), CAST(sqlc.narg(reaction_custom_emoji_id) AS TEXT), CAST(sqlc.narg(account_move_id) AS TEXT), CAST(sqlc.narg(account_move_outcome) AS TEXT), CAST(sqlc.narg(service_closure_event_id) AS TEXT), CAST(sqlc.narg(service_closure_change) AS TEXT), CAST(sqlc.narg(voice_room_id) AS TEXT), CAST(sqlc.narg(error_group_change) AS TEXT), CAST(sqlc.narg(error_group_id) AS TEXT), CAST(sqlc.narg(error_group_hour) AS INTEGER), CAST(sqlc.narg(announcement_id) AS TEXT), CAST(sqlc.narg(hook_appeal_id) AS TEXT), CAST(sqlc.narg(auto_delete_limit_notice_id) AS TEXT), CAST(sqlc.narg(draft_schedule_id) AS TEXT),
+  value ->> '$.dedupe_key', value ->> '$.created_at'
+FROM json_each(CAST(sqlc.arg(recipients) AS TEXT)) WHERE true
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING id;
+
+-- DomainsExcludedAmong returns the viewers among a JSON array that exclude the domain or one of
+-- its parents, as DomainExcluded checks one.
+-- name: DomainsExcludedAmong :many
+SELECT DISTINCT dx.viewer_account_id FROM notification_domain_exclusions dx
+WHERE dx.viewer_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewer_account_ids) AS TEXT)))
+  AND (dx.domain = CAST(sqlc.arg(domain) AS TEXT) OR substr(CAST(sqlc.arg(domain) AS TEXT), -(length(dx.domain) + 1)) = '.' || dx.domain);
+
+-- name: ListNotificationSettingsOf :many
+SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
+WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT))) ORDER BY account_id, notification_group, channel;
+
 -- name: GetNotification :one
-SELECT id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at
+SELECT id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at
 FROM notifications WHERE id = ?;
 
 -- InsertNotificationDismissal inserts nothing when the notification is already dismissed.
 -- name: InsertNotificationDismissal :execrows
 INSERT INTO notification_dismissals (notification_id, dismissed_at) VALUES (?, ?)
+ON CONFLICT (notification_id) DO NOTHING;
+
+-- DismissNotificationByDedupeKey dismisses the notification of a recipient with a dedupe key, if
+-- there is one that is not dismissed yet (a request of an interaction that was withdrawn).
+-- name: DismissNotificationByDedupeKey :execrows
+INSERT INTO notification_dismissals (notification_id, dismissed_at)
+SELECT n.id, sqlc.arg(dismissed_at) FROM notifications n
+WHERE true AND n.recipient_account_id = sqlc.arg(recipient_account_id) AND n.dedupe_key = sqlc.arg(dedupe_key)
 ON CONFLICT (notification_id) DO NOTHING;
 
 -- ListNotifications pages the notifications of a recipient that are not dismissed, whose
@@ -26,7 +70,7 @@ ON CONFLICT (notification_id) DO NOTHING;
 -- types it lists; shown_announcements is a list of IDs in the same form.
 -- name: ListNotifications :many
 SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
-  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.dedupe_key, n.created_at
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at
 FROM notifications n
 WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
   AND (CAST(sqlc.arg(before) AS TEXT) = '' OR n.id < CAST(sqlc.arg(before) AS TEXT))
@@ -40,6 +84,11 @@ WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR instr(CAST(sqlc.arg(shown_announcements) AS TEXT), ',' || n.announcement_id || ',') > 0)
 ORDER BY n.id DESC
 LIMIT sqlc.arg(page_limit);
@@ -48,7 +97,7 @@ LIMIT sqlc.arg(page_limit);
 -- ID is greater than after, oldest first.
 -- name: ListNotificationsAfter :many
 SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
-  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.dedupe_key, n.created_at
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at
 FROM notifications n
 WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
   AND n.id > CAST(sqlc.arg(after) AS TEXT)
@@ -62,6 +111,11 @@ WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR instr(CAST(sqlc.arg(shown_announcements) AS TEXT), ',' || n.announcement_id || ',') > 0)
 ORDER BY n.id ASC
 LIMIT sqlc.arg(page_limit);
@@ -80,6 +134,11 @@ WHERE n.id = sqlc.arg(id) AND n.recipient_account_id = sqlc.arg(recipient_accoun
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR instr(CAST(sqlc.arg(shown_announcements) AS TEXT), ',' || n.announcement_id || ',') > 0));
 
 -- CountNotificationsAfter counts the notifications of a recipient after the ID after that
@@ -98,6 +157,11 @@ WHERE n.recipient_account_id = sqlc.arg(recipient_account_id)
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR instr(CAST(sqlc.arg(shown_announcements) AS TEXT), ',' || n.announcement_id || ',') > 0);
 
 -- Read markers (current value).
@@ -181,3 +245,21 @@ WHERE account_id = ? ORDER BY notification_group, channel;
 -- name: UpsertNotificationSetting :exec
 INSERT INTO notification_settings (account_id, notification_group, channel, enabled, updated_at) VALUES (?, ?, ?, ?, ?)
 ON CONFLICT (account_id, notification_group, channel) DO UPDATE SET enabled = excluded.enabled, updated_at = excluded.updated_at;
+
+-- InsertNotificationDeletedStatuses is InsertNotificationDeletedStatus of many statuses, a JSON
+-- array; WHERE true keeps ON CONFLICT from reading as a join constraint.
+-- name: InsertNotificationDeletedStatuses :exec
+INSERT INTO notification_deleted_statuses (status_id) SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)) WHERE true
+ON CONFLICT (status_id) DO NOTHING;
+
+-- UpsertNotificationExclusions and DeleteNotificationExclusionsOf are UpsertNotificationExclusion
+-- and DeleteNotificationExclusion of many pairs, JSON arrays.
+-- name: UpsertNotificationExclusions :exec
+INSERT INTO notification_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(sqlc.arg(exclusions) AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;
+
+-- name: DeleteNotificationExclusionsOf :exec
+DELETE FROM notification_exclusions WHERE reason = CAST(sqlc.arg(reason) AS TEXT) AND (viewer_account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));

@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What switching the instance setting `federation_scope` to `allowlist` with the current
+  allowlist would end now: the accepted follows, in both directions, between the local accounts
+  and the accounts of the servers that the allowlist does not allow. The switch ends them for
+  good, and each local user who loses one is notified. While the setting is already
+  `allowlist`, it counts what is left to end, which is nothing once the switch has run.
+type: object
+required: [scope, follows, local_accounts, domains, top_domains]
+properties:
+  scope:
+    description: The current value of `federation_scope`.
+    type: string
+    enum: [open, allowlist]
+  follows:
+    description: How many follows would end.
+    type: integer
+    minimum: 0
+  local_accounts:
+    description: How many local accounts would lose a follow.
+    type: integer
+    minimum: 0
+  domains:
+    description: How many servers those follows are with.
+    type: integer
+    minimum: 0
+  top_domains:
+    description: The servers with the most follows that would end, at most 10, the most first.
+    type: array
+    items:
+      $ref: ./FederationScopeImpactDomain.yaml

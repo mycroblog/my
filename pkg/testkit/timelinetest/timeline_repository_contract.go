@@ -6,6 +6,7 @@ import (
 	"cmp"
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"testing"
@@ -24,8 +25,9 @@ import (
 // reads their latest revision; the follow edges, exclusions, domain mutes, and restrictions, with
 // their expiry and the subdomains of a domain; the home, local, federated, hashtag, profile, and
 // list timelines with their filters, languages, read window, and keyset paging; the facts of a
-// page and the muted domains; the lists with their members; and the projections emptied for a
-// rebuild. The timeline use cases and projectors on top of it are TimelineFlows, which
+// page and the muted domains; the lists with their members; the followed hashtags with the
+// hashtag branch of home; the featured hashtags with their usage; the keyword filters; and the
+// projections emptied for a rebuild. The timeline use cases and projectors on top of it are TimelineFlows, which
 // internal/flowtest/timeline runs once on SQLite.
 func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 	t.Helper()
@@ -42,8 +44,14 @@ func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 		{"FiltersLanguagesAndPages", timelineRepoLanguagesAndPages},
 		{"AnswersFactsAndMutedDomains", timelineRepoFacts},
 		{"KeepsListsAndMembers", timelineRepoLists},
+		{"EndsManyFollows", timelineRepoEndMany},
 		{"ListsTheListTimeline", timelineRepoListTimeline},
 		{"EmptiesTheProjectionsForARebuild", timelineRepoRebuild},
+		{"KeepsConversations", timelineRepoConversations},
+		{"KeepsFollowedTags", timelineRepoTagFollows},
+		{"ListsTheHashtagBranchOfHome", timelineRepoHomeTags},
+		{"KeepsKeywordFilters", timelineRepoKeywordFilters},
+		{"KeepsFeaturedTags", timelineRepoFeaturedTags},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -193,7 +201,7 @@ func timelineRepoEntries(t *testing.T, r *timelineRepo) {
 		if inserted, err := r.repo.InsertEntry(ctx, tx, p); err != nil || inserted {
 			t.Errorf("InsertEntry(again) = %v, %v; want false", inserted, err)
 		}
-		if got, err := r.repo.Entry(ctx, tx, b.ID); err != nil || got != b {
+		if got, err := r.repo.Entry(ctx, tx, b.ID); err != nil || !reflect.DeepEqual(got, b) {
 			t.Errorf("Entry(boost) = %+v, %v; want %+v", got, err, b)
 		}
 		if _, err := r.repo.Entry(ctx, tx, r.ids.NewID()); !errors.Is(err, apptimeline.ErrNotFound) {
@@ -301,13 +309,17 @@ func timelineRepoTagUsage(t *testing.T, r *timelineRepo) {
 		t.Errorf("the tags of the revised post = %v, want %v", secondTags, []string{tagC})
 	}
 
-	// Deleting the posts takes their tags out; a tag that drops to zero has no usage.
+	// Deleting the posts takes their tags out; a tag that drops to zero has no usage. The second
+	// goes with DeleteStatusEntriesOf, as DeleteStatusEntries deletes one status's entries.
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if err := r.repo.DeleteEntry(ctx, tx, first.ID); err != nil {
 			return err
 		}
-		return r.repo.DeleteStatusEntries(ctx, tx, second.StatusID)
+		return errors.Join(r.repo.DeleteStatusEntriesOf(ctx, tx, []string{second.StatusID, r.ids.NewID()}), r.repo.DeleteStatusEntriesOf(ctx, tx, nil))
 	})
+	if snap, err := r.repo.Snapshot(ctx); err != nil || slices.ContainsFunc(snap.Entries, func(e apptimeline.Entry) bool { return e.StatusID == second.StatusID }) {
+		t.Errorf("entries after DeleteStatusEntriesOf = %+v, %v; want none of the second post", snap.Entries, err)
+	}
 	if got := usage(); len(got) != 0 {
 		t.Errorf("TagUsageOf after the deletions = %+v, want none", got)
 	}
@@ -319,6 +331,13 @@ func timelineRepoHome(t *testing.T, r *timelineRepo) {
 	r.follow(t, viewer, followed, true)
 	r.follow(t, viewer, quiet, false)
 	r.follow(t, viewer, far, true)
+	// The followers of followed among some accounts: the edges of the feed, whatever show_boosts.
+	if got, err := r.repo.FeedFollowersAmong(ctx, followed.id, []string{viewer.id, stranger.id, quiet.id}); err != nil || !maps.Equal(got, map[string]bool{viewer.id: true}) {
+		t.Errorf("FeedFollowersAmong(followed) = %v, %v; want the viewer alone", got, err)
+	}
+	if got, err := r.repo.FeedFollowersAmong(ctx, quiet.id, []string{viewer.id}); err != nil || !got[viewer.id] {
+		t.Errorf("FeedFollowersAmong(quiet) = %v, %v; want the viewer", got, err)
+	}
 
 	own := r.post(t, viewer, appcontent.VisibilityPrivate, entryOpts{})
 	fromFollowed := r.post(t, followed, appcontent.VisibilityUnlisted, entryOpts{})
@@ -473,21 +492,25 @@ func timelineRepoTag(t *testing.T, r *timelineRepo) {
 	r.post(t, alice, appcontent.VisibilityUnlisted, entryOpts{tags: []string{tag}})
 	r.post(t, alice, appcontent.VisibilityPublic, entryOpts{tags: []string{other}})
 	farPub := r.post(t, far, appcontent.VisibilityPublic, entryOpts{tags: []string{tag}})
+	reply := r.post(t, alice, appcontent.VisibilityPublic, entryOpts{tags: []string{tag}, reply: true})
 	list := func(v timelineAuthor, includeLocal bool) ([]apptimeline.Entry, error) {
 		return r.repo.ListTag(ctx, apptimeline.TagQuery{Window: r.window(v), TagID: tag, IncludeLocal: includeLocal})
 	}
 	got, err := list(viewer, true)
-	checkTimeline(t, "ListTag", got, err, pub, loc, farPub)
+	checkTimeline(t, "ListTag", got, err, reply, pub, loc, farPub)
 	got, err = list(viewer, false)
-	checkTimeline(t, "ListTag(public only)", got, err, pub, farPub)
+	checkTimeline(t, "ListTag(public only)", got, err, reply, pub, farPub)
 	page, err := r.repo.ListTag(ctx, apptimeline.TagQuery{Window: apptimeline.Window{ViewerAccountID: viewer.id, Limit: 1, Before: farPub.ID, Now: r.clock.Now()}, TagID: tag, IncludeLocal: true})
 	checkTimeline(t, "ListTag(page)", page, err, loc)
+	// The Atom feed of a hashtag keeps the public posts of local authors that are not replies.
+	got, err = r.repo.ListTag(ctx, apptimeline.TagQuery{Window: r.window(timelineAuthor{}), TagID: tag, LocalOnly: true, ExcludeReplies: true})
+	checkTimeline(t, "ListTag(local only, no replies)", got, err, pub)
 
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		return r.repo.InsertDomainMute(ctx, tx, apptimeline.DomainMute{ViewerAccountID: viewer.id, Domain: timelineRepoRemote})
 	})
 	got, err = list(viewer, true)
-	checkTimeline(t, "ListTag(domain mute)", got, err, pub, loc)
+	checkTimeline(t, "ListTag(domain mute)", got, err, reply, pub, loc)
 	r.exclude(t, viewer, alice, timeline.ExcludedBlock, nil)
 	got, err = list(viewer, true)
 	checkTimeline(t, "ListTag(block)", got, err)
@@ -622,6 +645,29 @@ func timelineRepoFacts(t *testing.T, r *timelineRepo) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// The facts of many viewers, each as Facts reads it of one.
+	stranger := r.local()
+	many, err := r.repo.FactsOfViewers(ctx, []string{viewer.id, stranger.id}, q)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range []string{viewer.id, stranger.id} {
+		one := q
+		one.ViewerAccountID = v
+		want, err := r.repo.Facts(ctx, one)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got := many[v]
+		for _, m := range []map[string][]timeline.ExclusionReason{got.Exclusions, want.Exclusions} {
+			for k := range m {
+				slices.Sort(m[k])
+			}
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("FactsOfViewers[%s] = %+v, want %+v as Facts", v, got, want)
+		}
+	}
 	slices.Sort(f.Exclusions[muted.id])
 	if !reflect.DeepEqual(f.Followed, map[string]bool{followed.id: true}) ||
 		!reflect.DeepEqual(f.Exclusions, map[string][]timeline.ExclusionReason{muted.id: {timeline.ExcludedBlock, timeline.ExcludedMute}}) ||
@@ -646,6 +692,10 @@ func timelineRepoFacts(t *testing.T, r *timelineRepo) {
 		t.Errorf("Facts after DeleteExclusion = %+v, %v", f.Exclusions, err)
 	}
 
+	if of, err := r.repo.MutedDomainsOf(ctx, []string{viewer.id, muted.id}, []string{"a." + timelineRepoRemote, timelineRepoRemote, "example"}); err != nil ||
+		!reflect.DeepEqual(of, map[string][]string{viewer.id: {timelineRepoRemote}}) {
+		t.Errorf("MutedDomainsOf = %v, %v; want the viewer's %v alone, as MutedDomains", of, err, timelineRepoRemote)
+	}
 	got, err := r.repo.MutedDomains(ctx, viewer.id, []string{"a." + timelineRepoRemote, timelineRepoRemote, "example"})
 	if err != nil || !slices.Equal(got, []string{timelineRepoRemote}) {
 		t.Errorf("MutedDomains = %v, %v; want %v", got, err, []string{timelineRepoRemote})
@@ -783,6 +833,65 @@ func timelineRepoLists(t *testing.T, r *timelineRepo) {
 	})
 	if _, err := r.repo.List(ctx, first.ID); !errors.Is(err, apptimeline.ErrNotFound) {
 		t.Errorf("List after DeleteList = %v, want ErrNotFound", err)
+	}
+}
+
+// timelineRepoEndMany deletes the edges and the list memberships of many follows together, as
+// DeleteFollowEdge and DeleteListMembersOfFollow delete those of one, and nothing else.
+func timelineRepoEndMany(t *testing.T, r *timelineRepo) {
+	ctx := t.Context()
+	owner, a, b, c := r.local(), r.local(), r.local(), r.local()
+	// Many edges upserted together, as UpsertFollowEdge upserts each: inserted, then replaced.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(
+			r.repo.UpsertFollowEdges(ctx, tx, []apptimeline.FollowEdge{
+				{FollowerAccountID: owner.id, FolloweeAccountID: a.id}, {FollowerAccountID: owner.id, FolloweeAccountID: b.id}, {FollowerAccountID: c.id, FolloweeAccountID: owner.id, ShowBoosts: true},
+			}),
+			r.repo.UpsertFollowEdges(ctx, tx, []apptimeline.FollowEdge{{FollowerAccountID: owner.id, FolloweeAccountID: a.id, ShowBoosts: true}, {FollowerAccountID: owner.id, FolloweeAccountID: b.id, ShowBoosts: true}}),
+			r.repo.UpsertFollowEdges(ctx, tx, nil))
+	})
+	l := apptimeline.List{ID: r.ids.NewID(), OwnerAccountID: owner.id, Name: "Friends", CreatedAt: r.clock.Now()}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.repo.InsertList(ctx, tx, l); err != nil {
+			return err
+		}
+		for _, m := range []timelineAuthor{a, b} {
+			if _, err := r.repo.InsertListMember(ctx, tx, apptimeline.ListMember{ListID: l.ID, MemberAccountID: m.id, OwnerAccountID: owner.id, AddedAt: r.clock.Now()}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.repo.DeleteListMembersOfFollows(ctx, tx, []string{owner.id, c.id}, []string{a.id, owner.id}); err != nil {
+			return err
+		}
+		if err := r.repo.DeleteFollowEdges(ctx, tx, []string{owner.id, c.id}, []string{a.id, owner.id}); err != nil {
+			return err
+		}
+		return errors.Join(r.repo.DeleteFollowEdges(ctx, tx, nil, nil), r.repo.DeleteListMembersOfFollows(ctx, tx, nil, nil))
+	})
+	soon := r.clock.Now().Add(time.Hour).Truncate(time.Millisecond).UTC()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.repo.UpsertExclusions(ctx, tx, []apptimeline.Exclusion{
+			{ViewerAccountID: owner.id, TargetAccountID: c.id, Reason: timeline.ExcludedBlock},
+			{ViewerAccountID: c.id, TargetAccountID: owner.id, Reason: timeline.ExcludedMute, ExpiresAt: &soon},
+		}), r.repo.UpsertExclusions(ctx, tx, nil))
+	})
+	snap, err := r.repo.Snapshot(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(snap.FollowEdges, []apptimeline.FollowEdge{{FollowerAccountID: owner.id, FolloweeAccountID: b.id, ShowBoosts: true}}) {
+		t.Errorf("follow edges after DeleteFollowEdges = %+v; want owner's of b alone", snap.FollowEdges)
+	}
+	if got, err := r.repo.AllListMembers(ctx); err != nil || len(got) != 1 || got[0].MemberAccountID != b.id {
+		t.Errorf("AllListMembers after DeleteListMembersOfFollows = %+v, %v; want b's membership", got, err)
+	}
+	if len(snap.Exclusions) != 2 || !slices.ContainsFunc(snap.Exclusions, func(x apptimeline.Exclusion) bool {
+		return x.ViewerAccountID == c.id && x.Reason == timeline.ExcludedMute && x.ExpiresAt != nil && x.ExpiresAt.Equal(soon)
+	}) {
+		t.Errorf("exclusions after UpsertExclusions = %+v; want the block and the mute with its expiry", snap.Exclusions)
 	}
 }
 

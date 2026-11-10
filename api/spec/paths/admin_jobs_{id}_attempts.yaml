@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminJobAttempts
+  x-permission: manage_jobs
   summary: List the attempts of a job that did not succeed
   description: |
     The records of the runs of the job that did not succeed (a retry, or the run that made

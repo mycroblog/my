@@ -5,6 +5,7 @@ package platform
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"slices"
 	"sync"
 	"time"
@@ -127,6 +128,12 @@ func (r *ErrorReporter) fill(ctx context.Context, ev *kernel.ErrorEvent) {
 	}
 	if ev.Where == "" {
 		ev.Where = requestWhere(ctx)
+		if rr, ok := ctx.Value(requestRouteKey{}).(*requestRoute); ok && rr.route != "" && ev.Source == kernel.ErrorSourceServer {
+			ev.HTTPMethod, ev.HTTPRoute = rr.method, rr.route
+			if ev.HTTPStatus == 0 {
+				ev.HTTPStatus = http.StatusInternalServerError
+			}
+		}
 	}
 	if ev.RequestID == "" {
 		ev.RequestID = RequestID(ctx)

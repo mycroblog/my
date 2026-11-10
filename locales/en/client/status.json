@@ -527,34 +527,6 @@
     "defaultMessage": "Quote",
     "description": "Accessible name of the button in a post's action bar that starts a new post quoting it."
   },
-  "status.quote_policy.action": {
-    "defaultMessage": "Change who can quote",
-    "description": "Item of the menu of the user's own post that opens the dialog choosing who may quote it."
-  },
-  "status.quote_policy.title": {
-    "defaultMessage": "Who can quote this post",
-    "description": "Title of the dialog that chooses who may quote one of the user's posts."
-  },
-  "status.quote_policy.close": {
-    "defaultMessage": "Close",
-    "description": "Accessible name of the close button of the dialog that chooses who may quote a post."
-  },
-  "status.quote_policy.label": {
-    "defaultMessage": "Who can quote",
-    "description": "Label of the choices of who may quote a post, in its dialog."
-  },
-  "status.quote_policy.description": {
-    "defaultMessage": "Quotes approved before stay. To take your post out of one, use the menu of the post that quotes it.",
-    "description": "Description of the choices of who may quote a post."
-  },
-  "status.quote_policy.done": {
-    "defaultMessage": "Changed who can quote the post",
-    "description": "Toast after the user changed who may quote one of their posts."
-  },
-  "status.quote_policy.failed": {
-    "defaultMessage": "Could not change who can quote the post: {reason}",
-    "description": "Toast when the change of who may quote a post failed. {reason} is the server's reason."
-  },
   "status.quotes.action": {
     "defaultMessage": "Posts that quote this",
     "description": "Item of the menu of the user's own post that opens the list of the posts that quote it."
@@ -602,5 +574,49 @@
   "status.focused.replies": {
     "defaultMessage": "{count, plural, one {# reply} other {# replies}}",
     "description": "Under the body of the post a page is about: how many replies it has. Shown only when it has any."
+  },
+  "status.interaction_policy.action": {
+    "defaultMessage": "Change who can reply, boost, and quote",
+    "description": "Item of the menu of the user's own post that opens the dialog choosing who may reply to, boost, and quote it."
+  },
+  "status.interaction_policy.title": {
+    "defaultMessage": "Who can reply, boost, and quote this post",
+    "description": "Title of the dialog that chooses who may reply to, boost, and quote one of the user's posts."
+  },
+  "status.interaction_policy.close": {
+    "defaultMessage": "Close",
+    "description": "Accessible name of the close button of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.description": {
+    "defaultMessage": "Each choice is saved at once. Replies, boosts, and quotes approved before stay; requests that the new choice admits are approved.",
+    "description": "Description of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.done": {
+    "defaultMessage": "Changed who can interact with the post",
+    "description": "Toast after the user changed who may reply to, boost, or quote one of their posts."
+  },
+  "status.interaction_policy.failed": {
+    "defaultMessage": "Could not change who can interact with the post: {reason}",
+    "description": "Toast when the change of who may reply to, boost, or quote a post failed. {reason} is the server's reason."
+  },
+  "status.boost.pending": {
+    "defaultMessage": "Asked the author to approve your boost",
+    "description": "Announced after the user boosted a post whose author approves boosts: the boost waits for the approval."
+  },
+  "status.boost.approval.pending": {
+    "defaultMessage": "Your boost waits for the author's approval.",
+    "description": "At the end of the actions of a post that the user boosted while its author approves boosts, until the author answers."
+  },
+  "status.boost.approval.rejected": {
+    "defaultMessage": "The author declined your boost.",
+    "description": "At the end of the actions of a post whose author refused the user's boost."
+  },
+  "status.approval.pending": {
+    "defaultMessage": "Waiting for approval: only you can see this reply",
+    "description": "Under the user's own reply while the author of the post it replies to has not approved it; nobody else sees it until then."
+  },
+  "status.approval.rejected": {
+    "defaultMessage": "Declined: only you can see this reply",
+    "description": "Under the user's own reply that the author of the post it replies to refused; nobody else sees it."
   }
 }

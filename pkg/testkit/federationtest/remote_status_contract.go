@@ -73,7 +73,7 @@ func (r *remoteStatusRepo) remoteStatus(inReplyTo string) content.Status {
 	return content.Status{
 		ID: id, URI: "https://remote.example/notes/" + id, URL: "https://remote.example/@alice/" + id,
 		AuthorAccountID: testkit.NamedID("remote-author"), Visibility: content.VisibilityPublic, InReplyToURI: inReplyTo,
-		ConversationURI: "https://remote.example/contexts/1", PublishedAt: r.clock.Now(),
+		PublishedAt: r.clock.Now(),
 	}
 }
 

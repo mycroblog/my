@@ -29,6 +29,7 @@ func (a *App) setUpPush(cfg *config.Config, repo notification.PushRepository) (*
 		Messages:      a.Messages, Host: cfg.Host, InstanceName: a.instanceName,
 		// The closure of the service stops Web Push (ADR-0088 §2).
 		Stopped: func(ctx context.Context) (bool, error) { return a.Instance.PushStopped(ctx) },
+		Filters: notificationFilters{a},
 	}
 	if cfg.VAPIDPrivateKey == "" {
 		a.Push = notification.NewPushService(deps)

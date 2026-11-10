@@ -11,6 +11,8 @@ export { badgeChoicesQueryOptions } from "./api/badges";
 export { BadgeSettings } from "./components/BadgeSettings";
 export { blocksQueryOptions, followRequestsQueryOptions, mutesQueryOptions } from "./api/relationships";
 export { BlockedAccounts, FollowRequests, MutedAccounts } from "./components/AccountLists";
+export { interactionRequestsQueryOptions } from "./api/interactionRequests";
+export { InteractionRequests } from "./components/InteractionRequests";
 // The domains the user mutes (FR-304).
 export { domainMutesQueryOptions } from "./api/domainMutes";
 export { DomainMutes } from "./components/DomainMutes";
@@ -19,6 +21,7 @@ export { DataExportsSection, OwnAccount } from "./components/OwnAccount";
 export { PreferencesForm } from "./components/PreferencesForm";
 // The notification settings: in the app, Web Push on this device, email, and the sound of this device (FR-210, ADR-0086).
 export { notificationSettingsQueryOptions } from "./api/notificationSettings";
+export { notificationPolicyQueryOptions } from "./api/notificationPolicy";
 export { instanceQueryOptions } from "./api/me";
 export { NotificationSettings } from "./components/NotificationSettings";
 // The prompt to turn on Web Push at the top of the notifications page (ADR-0086).

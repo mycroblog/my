@@ -391,41 +391,6 @@ func (q *Queries) InsertDeadJobFromClaim(ctx context.Context, arg InsertDeadJobF
 	return result.RowsAffected(), nil
 }
 
-const insertJob = `-- name: InsertJob :exec
-
-INSERT INTO jobs (id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8)
-ON CONFLICT (idempotency_key) DO NOTHING
-`
-
-type InsertJobParams struct {
-	ID             string
-	Type           string
-	Payload        []byte
-	IdempotencyKey *string
-	OrderingKey    *string
-	TraceParent    *string
-	RunAt          time.Time
-	CreatedAt      time.Time
-}
-
-// SPDX-License-Identifier: AGPL-3.0-only
-//
-// Queries of the database job queue (internal/adapter/queue/db) for PostgreSQL.
-func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) error {
-	_, err := q.db.Exec(ctx, insertJob,
-		arg.ID,
-		arg.Type,
-		arg.Payload,
-		arg.IdempotencyKey,
-		arg.OrderingKey,
-		arg.TraceParent,
-		arg.RunAt,
-		arg.CreatedAt,
-	)
-	return err
-}
-
 const insertJobAttempt = `-- name: InsertJobAttempt :exec
 INSERT INTO job_attempts (job_id, attempt, job_type, outcome, error, worker, started_at, finished_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -453,6 +418,47 @@ func (q *Queries) InsertJobAttempt(ctx context.Context, arg InsertJobAttemptPara
 		arg.Worker,
 		arg.StartedAt,
 		arg.FinishedAt,
+	)
+	return err
+}
+
+const insertJobs = `-- name: InsertJobs :exec
+
+INSERT INTO jobs (id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, created_at)
+SELECT unnest($1::uuid[]), unnest($2::text[]), unnest($3::bytea[]),
+  NULLIF(unnest($4::text[]), ''), NULLIF(unnest($5::text[]), ''),
+  NULLIF(unnest($6::text[]), ''), 0, unnest($7::timestamptz[]),
+  unnest($8::timestamptz[])
+ON CONFLICT (idempotency_key) DO NOTHING
+`
+
+type InsertJobsParams struct {
+	Ids             []string
+	Types           []string
+	Payloads        [][]byte
+	IdempotencyKeys []string
+	OrderingKeys    []string
+	TraceParents    []string
+	RunAts          []time.Time
+	CreatedAts      []time.Time
+}
+
+// SPDX-License-Identifier: AGPL-3.0-only
+//
+// Queries of the database job queue (internal/adapter/queue/db) for PostgreSQL.
+// InsertJobs inserts the jobs of the arrays, of one length, one row per index (the unnests of a
+// select list advance together), as an INSERT of each would: an empty idempotency, ordering, or
+// trace key is none.
+func (q *Queries) InsertJobs(ctx context.Context, arg InsertJobsParams) error {
+	_, err := q.db.Exec(ctx, insertJobs,
+		arg.Ids,
+		arg.Types,
+		arg.Payloads,
+		arg.IdempotencyKeys,
+		arg.OrderingKeys,
+		arg.TraceParents,
+		arg.RunAts,
+		arg.CreatedAts,
 	)
 	return err
 }

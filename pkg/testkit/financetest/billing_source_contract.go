@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"math/big"
+	"slices"
 	"testing"
 	"time"
 
@@ -41,7 +42,7 @@ type BillingScenarioMonth struct {
 	Rows    []FakeBillingRow
 }
 
-// BillingSourceFactory returns a source named aws, gcp, or plugin whose provider (a fake HTTP server,
+// BillingSourceFactory returns a source named aws, gcp, cloudflare, or plugin whose provider (a fake HTTP server,
 // an emulator, a fake plugin) serves the scenario. The factory registers the cleanup of what it creates with
 // t.Cleanup.
 type BillingSourceFactory func(t *testing.T, s BillingScenario) appfinance.BillingSource
@@ -55,7 +56,7 @@ type BillingSourceFactory func(t *testing.T, s BillingScenario) appfinance.Billi
 // context is canceled.
 func BillingSourceContract(t *testing.T, factory BillingSourceFactory) {
 	t.Helper()
-	billingContract(t, factory, false)
+	billingContract(t, factory, billingKeys)
 }
 
 // BillingTotalsSourceContract verifies a BillingSource adapter that knows only the total of each
@@ -65,14 +66,49 @@ func BillingSourceContract(t *testing.T, factory BillingSourceFactory) {
 // included.
 func BillingTotalsSourceContract(t *testing.T, factory BillingSourceFactory) {
 	t.Helper()
-	billingContract(t, factory, true)
+	billingContract(t, factory, billingTotals)
 }
 
-func billingContract(t *testing.T, factory BillingSourceFactory, totals bool) {
+// BillingUsageSourceContract verifies a BillingSource adapter whose provider reports usage charges
+// alone, without credits, refunds, or taxes, such as Cloudflare's billable usage (ADR-0068 §11):
+// what BillingSourceContract verifies, over a scenario that keeps only the rows of charge type
+// usage, so the factory's provider never has to serve another kind.
+func BillingUsageSourceContract(t *testing.T, factory BillingSourceFactory) {
+	t.Helper()
+	billingContract(t, func(t *testing.T, s BillingScenario) appfinance.BillingSource {
+		months := make([]BillingScenarioMonth, 0, len(s.Months))
+		for _, m := range s.Months {
+			var rows []FakeBillingRow
+			for _, r := range m.Rows {
+				if r.ChargeType == finance.ChargeUsage {
+					rows = append(rows, r)
+				}
+			}
+			m.Rows = rows
+			months = append(months, m)
+		}
+		s.Months = months
+		return factory(t, s)
+	}, billingUsage)
+}
+
+// billingShape is what the lines of a source hold.
+type billingShape int
+
+const (
+	// billingKeys: one line per month, service, and charge type.
+	billingKeys billingShape = iota
+	// billingTotals: one total line per month.
+	billingTotals
+	// billingUsage: one line per month and service, of charge type usage alone.
+	billingUsage
+)
+
+func billingContract(t *testing.T, factory BillingSourceFactory, shape billingShape) {
 	t.Helper()
 	cases := []struct {
 		name string
-		run  func(t *testing.T, factory BillingSourceFactory, totals bool)
+		run  func(t *testing.T, factory BillingSourceFactory, shape billingShape)
 	}{
 		{"ReturnsTheMonthsAskedFor", billingMonthsAskedFor},
 		{"SumsEachKeyOnce", billingSumsKeys},
@@ -83,21 +119,21 @@ func billingContract(t *testing.T, factory BillingSourceFactory, totals bool) {
 		{"StopsWhenCanceled", billingCanceled},
 	}
 	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) { tc.run(t, factory, totals) })
+		t.Run(tc.name, func(t *testing.T) { tc.run(t, factory, shape) })
 	}
 }
 
 // billingLines is the number of lines of the months 2026-09 and 2026-10 of billingScenario: four
-// keys, or a total for each month.
-func billingLines(totals bool) int {
-	if totals {
-		return 2
+// keys, a total for each month, or the usage of one service in each month.
+func billingLines(shape billingShape) int {
+	if shape == billingKeys {
+		return 4
 	}
-	return 4
+	return 2
 }
 
 // billingLocations are the time zones of the billing months of each source (ADR-0068 §1).
-var billingLocations = map[string]string{"aws": "UTC", "gcp": "America/Los_Angeles", appfinance.SourcePlugin: "UTC"}
+var billingLocations = map[string]string{"aws": "UTC", "gcp": "America/Los_Angeles", "cloudflare": "UTC", appfinance.SourcePlugin: "UTC"}
 
 func billingMonth(t *testing.T, s string) finance.YearMonth {
 	t.Helper()
@@ -169,17 +205,18 @@ func billingAmountIs(t *testing.T, what, got, want string) {
 	}
 }
 
-func billingMonthsAskedFor(t *testing.T, factory BillingSourceFactory, totals bool) {
+func billingMonthsAskedFor(t *testing.T, factory BillingSourceFactory, shape billingShape) {
 	s := billingScenario(t)
 	src := factory(t, s)
-	if n := src.Name(); n != "aws" && n != "gcp" && n != appfinance.SourcePlugin {
-		t.Errorf("Name() = %q, want aws, gcp, or plugin", n)
+	if _, ok := billingLocations[src.Name()]; !ok {
+		t.Errorf("Name() = %q, want aws, gcp, cloudflare, or plugin", src.Name())
 	}
 	if want := billingLocations[src.Name()]; src.Location() == nil || src.Location().String() != want {
 		t.Errorf("Location() = %v, want %s for %s", src.Location(), want, src.Name())
 	}
-	if m := src.Method(); m != appfinance.MethodCostExplorer && m != appfinance.MethodBigQuery && m != appfinance.MethodBudget && m != appfinance.MethodPlugin {
-		t.Errorf("Method() = %q, want %s, %s, %s, or %s", m, appfinance.MethodCostExplorer, appfinance.MethodBigQuery, appfinance.MethodBudget, appfinance.MethodPlugin)
+	methods := []string{appfinance.MethodCostExplorer, appfinance.MethodBigQuery, appfinance.MethodBudget, appfinance.MethodBillableUsage, appfinance.MethodPlugin}
+	if m := src.Method(); !slices.Contains(methods, m) {
+		t.Errorf("Method() = %q, want one of %v", m, methods)
 	}
 	snap, err := billingFetch(t, src, 10, "2026-09", "2026-10")
 	if err != nil {
@@ -190,7 +227,7 @@ func billingMonthsAskedFor(t *testing.T, factory BillingSourceFactory, totals bo
 			t.Errorf("a line of %s, which was not asked for", m)
 		}
 	}
-	if want := billingLines(totals); len(billingLinesByKey(t, snap)) != want {
+	if want := billingLines(shape); len(billingLinesByKey(t, snap)) != want {
 		t.Errorf("Fetch = %d lines, want %d: %+v", len(snap.Lines), want, snap.Lines)
 	}
 	if snap.Requests < 1 || snap.Requests > 10 {
@@ -209,22 +246,32 @@ func billingMonthsAskedFor(t *testing.T, factory BillingSourceFactory, totals bo
 	}
 }
 
-func billingSumsKeys(t *testing.T, factory BillingSourceFactory, totals bool) {
+func billingSumsKeys(t *testing.T, factory BillingSourceFactory, shape billingShape) {
 	snap, err := billingFetch(t, factory(t, billingScenario(t)), 10, "2026-09", "2026-10")
 	if err != nil {
 		t.Fatalf("Fetch = %v", err)
 	}
 	lines := billingLinesByKey(t, snap)
-	if totals {
+	if shape == billingTotals {
 		billingSumsTotals(t, snap)
 		return
 	}
-	for k, want := range map[string]string{
+	want := map[string]string{
 		"2026-09|Amazon Elastic Compute Cloud - Compute|usage":  "3.1415926535",
 		"2026-09|Amazon Elastic Compute Cloud - Compute|credit": "-1.75",
 		"2026-09|Tax|tax": "0.31",
 		"2026-10|Amazon Simple Storage Service|usage": "0.0049",
-	} {
+	}
+	if shape == billingUsage {
+		delete(want, "2026-09|Amazon Elastic Compute Cloud - Compute|credit")
+		delete(want, "2026-09|Tax|tax")
+		for _, l := range snap.Lines {
+			if l.ChargeType != finance.ChargeUsage {
+				t.Errorf("a line of %s from a source of usage alone: %+v", l.ChargeType, l)
+			}
+		}
+	}
+	for k, want := range want {
 		l, ok := lines[k]
 		if !ok {
 			t.Errorf("no line %s", k)
@@ -238,7 +285,7 @@ func billingSumsKeys(t *testing.T, factory BillingSourceFactory, totals bool) {
 			t.Errorf("%s: charge type %q, category %q", k, l.ChargeType, l.Category)
 		}
 	}
-	if l := lines["2026-09|Tax|tax"]; l.Category != finance.CategoryOther {
+	if l, ok := lines["2026-09|Tax|tax"]; ok && l.Category != finance.CategoryOther {
 		t.Errorf("the tax is in %q, want other", l.Category)
 	}
 }
@@ -269,7 +316,7 @@ func billingSumsTotals(t *testing.T, snap appfinance.Snapshot) {
 	}
 }
 
-func billingCovered(t *testing.T, factory BillingSourceFactory, _ bool) {
+func billingCovered(t *testing.T, factory BillingSourceFactory, _ billingShape) {
 	snap, err := billingFetch(t, factory(t, billingScenario(t)), 10, "2026-09", "2026-10")
 	if err != nil {
 		t.Fatalf("Fetch = %v", err)
@@ -293,11 +340,11 @@ func billingCovered(t *testing.T, factory BillingSourceFactory, _ bool) {
 	}
 }
 
-func billingMaxRequests(t *testing.T, factory BillingSourceFactory, totals bool) {
+func billingMaxRequests(t *testing.T, factory BillingSourceFactory, shape billingShape) {
 	s := billingScenario(t)
 	s.Pages = 3
 	snap, err := billingFetch(t, factory(t, s), 3, "2026-09", "2026-10")
-	if want := billingLines(totals); err != nil || snap.Requests < 1 || snap.Requests > 3 || len(snap.Lines) != want {
+	if want := billingLines(shape); err != nil || snap.Requests < 1 || snap.Requests > 3 || len(snap.Lines) != want {
 		t.Errorf("Fetch of 3 pages within 3 = %d lines, %d requests, %v; want %d lines", len(snap.Lines), snap.Requests, err, want)
 	}
 	snap, err = billingFetch(t, factory(t, s), 2, "2026-09", "2026-10")
@@ -309,14 +356,14 @@ func billingMaxRequests(t *testing.T, factory BillingSourceFactory, totals bool)
 	}
 }
 
-func billingZeroRequests(t *testing.T, factory BillingSourceFactory, _ bool) {
+func billingZeroRequests(t *testing.T, factory BillingSourceFactory, _ billingShape) {
 	snap, err := billingFetch(t, factory(t, billingScenario(t)), 0, "2026-09", "2026-10")
 	if !errors.Is(err, appfinance.ErrRequestCap) || snap.Requests != 0 || len(snap.Lines) != 0 {
 		t.Errorf("Fetch with MaxRequests 0 = %d requests, %d lines, %v; want ErrRequestCap and nothing", snap.Requests, len(snap.Lines), err)
 	}
 }
 
-func billingFailures(t *testing.T, factory BillingSourceFactory, _ bool) {
+func billingFailures(t *testing.T, factory BillingSourceFactory, _ billingShape) {
 	for _, kind := range []appfinance.ImportErrorKind{
 		appfinance.ImportErrorPermission, appfinance.ImportErrorNotEnabled, appfinance.ImportErrorNotFound,
 		appfinance.ImportErrorThrottled, appfinance.ImportErrorBytesCap, appfinance.ImportErrorInvalidResponse,
@@ -336,7 +383,7 @@ func billingFailures(t *testing.T, factory BillingSourceFactory, _ bool) {
 	}
 }
 
-func billingCanceled(t *testing.T, factory BillingSourceFactory, _ bool) {
+func billingCanceled(t *testing.T, factory BillingSourceFactory, _ billingShape) {
 	src := factory(t, billingScenario(t))
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()

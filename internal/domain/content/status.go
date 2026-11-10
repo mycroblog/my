@@ -20,7 +20,6 @@ type Status struct {
 	IsLocal         bool
 	Visibility      Visibility
 	InReplyToURI    string // "" unless the status is a reply
-	ConversationURI string // "" when the conversation is unknown
 	PublishedAt     time.Time
 }
 
@@ -43,8 +42,12 @@ type LocalStatus struct {
 // SourceFormat is the markup of a local status's source text.
 type SourceFormat string
 
-// Source formats (status_revision_sources.source_format).
-const SourceTextPlain SourceFormat = "text_plain"
+// Source formats (status_revision_sources.source_format): the plain text of a post, and the
+// Markdown of an article (ADR-0160 §4).
+const (
+	SourceTextPlain    SourceFormat = "text_plain"
+	SourceTextMarkdown SourceFormat = "text_markdown"
+)
 
 // MaxAttachments is the largest number of media attachments of one revision.
 const MaxAttachments = 4
@@ -74,6 +77,9 @@ type Revision struct {
 	Poll *Poll
 	// Remote is the remote subtype of a remote status's revision, nil for local statuses.
 	Remote *RemoteRevisionSource
+	// Article is the title, summary, cover, and body images of a revision of an article, nil for a
+	// revision of a post (ADR-0160 §2). Every revision of an article has it.
+	Article *ArticleRevision
 }
 
 // Body is the content of a revision in one language.

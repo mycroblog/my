@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: A keyword filter of the user with the action `warn` that a post matched, and the words it matched.
+type: object
+required: [filter, keyword_matches]
+properties:
+  filter:
+    $ref: ./MatchedKeywordFilter.yaml
+  keyword_matches:
+    description: The words of the filter that the post matched, as the user typed them.
+    type: array
+    minItems: 1
+    items:
+      type: string

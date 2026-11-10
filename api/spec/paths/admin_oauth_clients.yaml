@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminOAuthClients
+  x-permission: manage_oauth_apps
   summary: List the OAuth clients
   description: |
     Every OAuth client that is not deleted, newest first, the server's own and the clients of

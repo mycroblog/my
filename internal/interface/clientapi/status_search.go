@@ -81,7 +81,7 @@ func (s *Server) SearchStatuses(ctx context.Context, req SearchStatusesRequestOb
 	for _, id := range page.StatusIDs {
 		items = append(items, statusItem{StatusID: id})
 	}
-	res, err := s.statusPage(ctx, v, items, page.Next)
+	res, err := s.statusPage(ctx, v, noFilter, items, page.Next)
 	if err != nil {
 		return nil, err
 	}

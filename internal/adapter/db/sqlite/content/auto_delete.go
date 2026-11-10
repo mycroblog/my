@@ -36,6 +36,7 @@ func (r *StatusRepository) SaveAutoDeletePolicy(ctx context.Context, tx uow.Tx, 
 		AccountID: p.AccountID, Enabled: sqlite.BoolToInt(p.Enabled), MinAgeDays: int64(p.MinAgeDays),
 		KeepPinned: sqlite.BoolToInt(p.KeepPinned), KeepBookmarked: sqlite.BoolToInt(p.KeepBookmarked),
 		KeepFavourited: sqlite.BoolToInt(p.KeepFavourited), KeepMedia: sqlite.BoolToInt(p.KeepMedia), KeepPolls: sqlite.BoolToInt(p.KeepPolls),
+		KeepArticles:  sqlite.BoolToInt(p.KeepArticles),
 		KeepMinBoosts: int64(p.KeepMinBoosts), KeepMinFavourites: int64(p.KeepMinFavourites), UpdatedAt: sqlite.ToMillis(p.UpdatedAt),
 	})
 	if err != nil {
@@ -95,6 +96,7 @@ func (r *StatusRepository) ListStatusesToAutoDelete(ctx context.Context, tx uow.
 		AccountID: p.AccountID, IDBefore: kernel.UUIDv7Floor(before.Add(time.Millisecond)), PublishedBefore: sqlite.ToMillis(before),
 		KeptVisibilities: keptJSON, KeepPinned: sqlite.BoolToInt(p.KeepPinned), KeepBookmarked: sqlite.BoolToInt(p.KeepBookmarked),
 		KeepFavourited: sqlite.BoolToInt(p.KeepFavourited), KeepMedia: sqlite.BoolToInt(p.KeepMedia), KeepPolls: sqlite.BoolToInt(p.KeepPolls),
+		KeepArticles:  sqlite.BoolToInt(p.KeepArticles),
 		KeepMinBoosts: int64(p.KeepMinBoosts), KeepMinFavourites: int64(p.KeepMinFavourites), MaxKeptPins: int64(p.MaxKeptPins),
 		BatchLimit: int64(limit),
 	})
@@ -116,7 +118,7 @@ func autoDeletePolicyFrom(ctx context.Context, q *contentgen.Queries, row conten
 	p := content.AutoDeletePolicy{
 		AccountID: row.AccountID, Enabled: row.Enabled == 1, MinAgeDays: int(row.MinAgeDays),
 		KeepPinned: row.KeepPinned == 1, KeepBookmarked: row.KeepBookmarked == 1, KeepFavourited: row.KeepFavourited == 1,
-		KeepMedia: row.KeepMedia == 1, KeepPolls: row.KeepPolls == 1,
+		KeepMedia: row.KeepMedia == 1, KeepPolls: row.KeepPolls == 1, KeepArticles: row.KeepArticles == 1,
 		KeepMinBoosts: int(row.KeepMinBoosts), KeepMinFavourites: int(row.KeepMinFavourites), UpdatedAt: sqlite.FromMillis(row.UpdatedAt),
 		KeepVisibilities: make([]content.Visibility, 0, len(vs)),
 	}

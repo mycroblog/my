@@ -34,7 +34,8 @@ type Quote struct {
 // QuoteEventKind is what happened to the approval of a quote.
 type QuoteEventKind string
 
-// Quote event kinds (status_quote_events.kind).
+// Quote event kinds: the answers to the quote's request (interaction_request_events.kind), and
+// its detachment (status_quote_detachments).
 const (
 	// QuoteEventAccepted approves the quote: a QuoteAuthorization verified, or a quote of the
 	// author's own status.
@@ -56,7 +57,8 @@ func (k QuoteEventKind) Valid() bool {
 	return false
 }
 
-// QuoteEvent is one change of the approval of a quote (status_quote_events).
+// QuoteEvent is one change of the approval of a quote: an answer to its request, or its
+// detachment.
 type QuoteEvent struct {
 	ID       string
 	StatusID string
@@ -72,7 +74,7 @@ type QuoteEvent struct {
 // Quote.state (ADR-0069 §1).
 type QuoteApproval string
 
-// Quote approvals (status_quote_states.state).
+// Quote approvals.
 const (
 	QuoteApprovalPending  QuoteApproval = "pending"
 	QuoteApprovalAccepted QuoteApproval = "accepted"
@@ -88,7 +90,8 @@ const (
 // approved or legacy. Who may see the quoted status is decided on top of it, per viewer.
 func (a QuoteApproval) Shown() bool { return a == QuoteApprovalAccepted || a == QuoteApprovalLegacy }
 
-// QuoteState is the current approval of a quote (the status_quote_states projection).
+// QuoteState is the current approval of a quote, derived from its form, its detachment, and the
+// state of its request (QuoteStateFrom).
 type QuoteState struct {
 	StatusID string
 	Approval QuoteApproval
@@ -141,55 +144,25 @@ func QuoteStateOf(q Quote, events []QuoteEvent) QuoteState {
 	return s
 }
 
-// QuotePolicy is who may quote a status (ADR-0069 §1): everyone, the author's followers, or only
-// the author.
-type QuotePolicy string
-
-// Quote policies (status_quote_policies.policy, user_preferences.default_quote_policy).
-const (
-	QuotePolicyPublic    QuotePolicy = "public"
-	QuotePolicyFollowers QuotePolicy = "followers"
-	QuotePolicyNobody    QuotePolicy = "nobody"
-)
-
-// DefaultQuotePolicy is the quote policy of a user who never chose one.
-const DefaultQuotePolicy = QuotePolicyPublic
-
-// Valid reports whether p is a known policy.
-func (p QuotePolicy) Valid() bool {
-	return p == QuotePolicyPublic || p == QuotePolicyFollowers || p == QuotePolicyNobody
-}
-
-// StatusQuotePolicy is who may quote a status (status_quote_policies, a current value): what
-// the author of a local status chose, or what a remote status declares in its
-// interactionPolicy.canQuote. A remote status without one declares none.
-type StatusQuotePolicy struct {
-	StatusID  string
-	Policy    QuotePolicy
-	UpdatedAt time.Time
-}
-
-// QuoteAuthorization is this server's approval of a quote of a local status
-// (quote_authorizations, FEP-044f's QuoteAuthorization). One quoting status has at most one per
-// quoted status; a revocation withdraws it for good.
-type QuoteAuthorization struct {
-	ID string
-	// QuotingURI is the URI of the quoting status, which may be local or remote.
-	QuotingURI string
-	// QuotingAccountID is the author of the quoting status.
-	QuotingAccountID string
-	// QuotedStatusID is the local status quoted.
-	QuotedStatusID string
-	CreatedAt      time.Time
-	// RevokedAt is when the quoted author revoked it, nil while it stands
-	// (quote_authorization_revocations).
-	RevokedAt *time.Time
-}
-
-// QuoteAuthorizationURI returns the ActivityPub id of a QuoteAuthorization of host; it is derived
-// from the authorization's ID and never stored.
-func QuoteAuthorizationURI(host, authorizationID string) string {
-	return "https://" + host + "/ap/quote_authorizations/" + authorizationID
+// QuoteStateFrom returns the state of q from whether its author took it away and the state of
+// its request, nil while it has none: as QuoteStateOf derives it from the same events.
+func QuoteStateFrom(q Quote, detached bool, req *InteractionState) QuoteState {
+	s := InitialQuoteState(q)
+	switch {
+	case detached:
+		return QuoteState{StatusID: q.StatusID, Approval: QuoteApprovalDetached}
+	case q.Form == QuoteFormLegacy || req == nil:
+		return s
+	}
+	switch req.State {
+	case InteractionRequestAccepted:
+		s.Approval, s.AuthorizationURI = QuoteApprovalAccepted, req.AuthorizationURI
+	case InteractionRequestRejected:
+		s.Approval = QuoteApprovalRejected
+	case InteractionRequestRevoked:
+		s.Approval = QuoteApprovalRevoked
+	}
+	return s
 }
 
 // QuoteAllowance is whether an account may quote a status (MayQuote).
@@ -207,24 +180,32 @@ const (
 	QuoteRequested
 	// QuoteLegacy: a remote status that declares no policy, whose server knows no approvals.
 	QuoteLegacy
+	// QuotePending: the quote of a local status waits for its author's approval: a manual rule
+	// of its policy includes the quoter (ADR-0155 §6).
+	QuotePending
 )
 
 // QuoteFacts are what MayQuote decides by.
 type QuoteFacts struct {
-	// QuoterAccountID is the account that quotes, QuoterIsLocal whether it is local.
+	// QuoterAccountID is the account that quotes, QuoterURI its actor IRI (needed only for a
+	// policy that names actors), QuoterIsLocal whether it is local.
 	QuoterAccountID string
+	QuoterURI       string
 	QuoterIsLocal   bool
 	// QuoterVisible is whether the quoter may see the quoted status (CanView).
 	QuoterVisible bool
-	// QuoterFollows is whether the quoter actively follows the quoted author.
-	QuoterFollows bool
+	// QuoterFollows is whether the quoter actively follows the quoted author, QuoterFollowed
+	// whether the quoted author actively follows the quoter, and QuoterMentioned whether the
+	// quoted status mentions the quoter.
+	QuoterFollows   bool
+	QuoterFollowed  bool
+	QuoterMentioned bool
 	// QuotingVisibility is the visibility of the quoting status, "" when it is not known yet
 	// (whether a status may be quoted at all).
 	QuotingVisibility Visibility
-	// Quoted is the quoted status; Policy its quote policy, "" for a remote status that
-	// declares none.
+	// Quoted is the quoted status; Policy its interaction policy, whose quote rules decide.
 	Quoted Status
-	Policy QuotePolicy
+	Policy InteractionPolicy
 }
 
 // QuotesRemotePosts reports whether a local status of visibility v may quote a remote status
@@ -234,39 +215,30 @@ func QuotesRemotePosts(v Visibility) bool {
 	return v == VisibilityPublic || v == VisibilityUnlisted
 }
 
-// MayQuote decides whether an account may quote a status (ADR-0069 §3, §4). A status the quoter
-// may not see, and a direct status, may not be quoted. A followers-only status is quoted only by
-// its author, in a followers-only or direct status. A local-only status is quoted only by local
-// accounts: remote servers see it as followers-only (ADR-0017). The author may always quote
-// their own status; anyone else needs the policy to include them.
+// MayQuote decides whether an account may quote a status (ADR-0069 §3, §4, ADR-0155 §3) by
+// MayInteract: a refused quote is denied; the quote of a local status is approved at once, or
+// waits for its author when a manual rule includes the quoter; the author's quote of their own
+// status is approved; and the quote of a remote status is requested from its server, or legacy
+// when the status declares no quote rules.
 func MayQuote(f QuoteFacts) QuoteAllowance {
 	q := f.Quoted
+	decision := MayInteract(InteractionFacts{
+		Kind: InteractionQuote, ActorAccountID: f.QuoterAccountID, ActorURI: f.QuoterURI, ActorIsLocal: f.QuoterIsLocal,
+		ActorVisible: f.QuoterVisible, Follows: f.QuoterFollows, FollowedBy: f.QuoterFollowed, Mentioned: f.QuoterMentioned,
+		InteractingVisibility: f.QuotingVisibility, Status: q, Policy: f.Policy,
+	})
 	self := f.QuoterAccountID != "" && f.QuoterAccountID == q.AuthorAccountID
 	switch {
-	case !f.QuoterVisible || q.Visibility == VisibilityDirect:
-		return QuoteDenied
-	case q.Visibility == VisibilityPrivate:
-		if !self || (f.QuotingVisibility != "" && f.QuotingVisibility != VisibilityPrivate && f.QuotingVisibility != VisibilityDirect) {
-			return QuoteDenied
-		}
-		return QuoteApproved
-	case q.Visibility == VisibilityLocal && !f.QuoterIsLocal:
+	case decision == InteractionDenied:
 		return QuoteDenied
 	case self:
 		return QuoteApproved
-	}
-	policy := f.Policy
-	if policy == "" {
-		if !q.IsLocal {
-			return QuoteLegacy
-		}
-		policy = DefaultQuotePolicy
-	}
-	switch {
-	case !policy.Valid(), policy == QuotePolicyNobody, policy == QuotePolicyFollowers && !f.QuoterFollows:
-		return QuoteDenied
+	case q.IsLocal && decision == InteractionPending:
+		return QuotePending
 	case q.IsLocal:
 		return QuoteApproved
+	case !f.Policy.Declares(InteractionQuote):
+		return QuoteLegacy
 	}
 	return QuoteRequested
 }

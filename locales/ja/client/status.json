@@ -527,34 +527,6 @@
     "defaultMessage": "引用",
     "description": "Accessible name of the button in a post's action bar that starts a new post quoting it."
   },
-  "status.quote_policy.action": {
-    "defaultMessage": "引用できる人を変更",
-    "description": "Item of the menu of the user's own post that opens the dialog choosing who may quote it."
-  },
-  "status.quote_policy.title": {
-    "defaultMessage": "この投稿を引用できる人",
-    "description": "Title of the dialog that chooses who may quote one of the user's posts."
-  },
-  "status.quote_policy.close": {
-    "defaultMessage": "閉じる",
-    "description": "Accessible name of the close button of the dialog that chooses who may quote a post."
-  },
-  "status.quote_policy.label": {
-    "defaultMessage": "引用できる人",
-    "description": "Label of the choices of who may quote a post, in its dialog."
-  },
-  "status.quote_policy.description": {
-    "defaultMessage": "承認済みの引用はそのまま残ります。引用から自分の投稿を外すときは、引用した投稿のメニューから行います。",
-    "description": "Description of the choices of who may quote a post."
-  },
-  "status.quote_policy.done": {
-    "defaultMessage": "引用できる人を変更しました",
-    "description": "Toast after the user changed who may quote one of their posts."
-  },
-  "status.quote_policy.failed": {
-    "defaultMessage": "引用できる人を変更できませんでした: {reason}",
-    "description": "Toast when the change of who may quote a post failed. {reason} is the server's reason."
-  },
   "status.quotes.action": {
     "defaultMessage": "この投稿の引用",
     "description": "Item of the menu of the user's own post that opens the list of the posts that quote it."
@@ -602,5 +574,49 @@
   "status.focused.replies": {
     "defaultMessage": "{count, plural, other {返信 # 件}}",
     "description": "Under the body of the post a page is about: how many replies it has. Shown only when it has any."
+  },
+  "status.interaction_policy.action": {
+    "defaultMessage": "返信・ブースト・引用できる人を変える",
+    "description": "Item of the menu of the user's own post that opens the dialog choosing who may reply to, boost, and quote it."
+  },
+  "status.interaction_policy.title": {
+    "defaultMessage": "この投稿に返信・ブースト・引用できる人",
+    "description": "Title of the dialog that chooses who may reply to, boost, and quote one of the user's posts."
+  },
+  "status.interaction_policy.close": {
+    "defaultMessage": "閉じる",
+    "description": "Accessible name of the close button of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.description": {
+    "defaultMessage": "選ぶとすぐ保存します。承認済みの返信・ブースト・引用はそのまま残り、新しい選択で認められる依頼は承認されます。",
+    "description": "Description of the dialog that chooses who may reply to, boost, and quote a post."
+  },
+  "status.interaction_policy.done": {
+    "defaultMessage": "投稿に反応できる人を変えました",
+    "description": "Toast after the user changed who may reply to, boost, or quote one of their posts."
+  },
+  "status.interaction_policy.failed": {
+    "defaultMessage": "投稿に反応できる人を変えられませんでした: {reason}",
+    "description": "Toast when the change of who may reply to, boost, or quote a post failed. {reason} is the server's reason."
+  },
+  "status.boost.pending": {
+    "defaultMessage": "ブーストの承認を作者に求めました",
+    "description": "Announced after the user boosted a post whose author approves boosts: the boost waits for the approval."
+  },
+  "status.boost.approval.pending": {
+    "defaultMessage": "あなたのブーストは作者の承認待ちです。",
+    "description": "At the end of the actions of a post that the user boosted while its author approves boosts, until the author answers."
+  },
+  "status.boost.approval.rejected": {
+    "defaultMessage": "作者はあなたのブーストを断りました。",
+    "description": "At the end of the actions of a post whose author refused the user's boost."
+  },
+  "status.approval.pending": {
+    "defaultMessage": "承認待ち: この返信はあなたにだけ見えます",
+    "description": "Under the user's own reply while the author of the post it replies to has not approved it; nobody else sees it until then."
+  },
+  "status.approval.rejected": {
+    "defaultMessage": "断られました: この返信はあなたにだけ見えます",
+    "description": "Under the user's own reply that the author of the post it replies to refused; nobody else sees it."
   }
 }

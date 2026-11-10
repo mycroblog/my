@@ -7,7 +7,7 @@ description: |
   rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
   `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
   `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
-  `read:mutes` or `write:mutes`.
+  `read:mutes` or `write:mutes`; `note` needs `read:accounts` or `write:accounts`.
 type: object
 required: [id]
 properties:
@@ -43,3 +43,9 @@ properties:
   muting_notifications:
     description: Whether the viewer's mute also hides the account's notifications.
     type: boolean
+  note:
+    description: |
+      The viewer's private note on the account (`setAccountNote`), empty without one. Only the
+      viewer reads it.
+    type: string
+    maxLength: 2000

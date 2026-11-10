@@ -105,6 +105,13 @@ SELECT account_id, followers_count, following_count FROM follow_counters WHERE a
 SELECT count(*) FROM follow_edges
 WHERE followee_account_id = sqlc.arg(account_id) AND state = sqlc.arg(state);
 
+-- ListFolloweesAmong returns the accounts among account_ids (a JSON array) with an edge into them
+-- in one state, each once: those of a batch with an active follower (FolloweesAmong).
+-- name: ListFolloweesAmong :many
+SELECT DISTINCT followee_account_id FROM follow_edges
+WHERE followee_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT))) AND state = sqlc.arg(state)
+ORDER BY followee_account_id;
+
 -- ListFollowersPage pages the edges into an account in one state, newest follow first; an empty
 -- before starts at the newest.
 -- name: ListFollowersPage :many
@@ -133,3 +140,73 @@ ON CONFLICT (uri) DO NOTHING;
 -- name: GetFollowByResendURI :one
 SELECT f.id, f.uri, f.follower_account_id, f.followee_account_id, f.requested_at
 FROM follow_resends r JOIN follows f ON f.id = r.follow_id WHERE r.uri = ?;
+
+-- The statements that end many follows at once (Repository.EndFollows), each as the statement of
+-- one follow above does for every follow it names. The lists are JSON arrays; WHERE true keeps
+-- ON CONFLICT from reading as a join constraint.
+
+-- name: ListFollowsByIDs :many
+SELECT id, uri, follower_account_id, followee_account_id, requested_at FROM follows
+WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY id;
+
+-- name: InsertFollowTerminations :exec
+INSERT INTO follow_terminations (follow_id, reason, terminated_at)
+SELECT value, CAST(sqlc.arg(reason) AS TEXT), CAST(sqlc.arg(terminated_at) AS INTEGER) FROM json_each(CAST(sqlc.arg(follow_ids) AS TEXT)) WHERE true;
+
+-- name: DeleteFollowEdgesOfFollows :execrows
+DELETE FROM follow_edges WHERE (follow_id, state) IN (
+  SELECT value ->> '$.follow_id', value ->> '$.state' FROM json_each(CAST(sqlc.arg(edges) AS TEXT)));
+
+-- AddToManyFollowCounters is AddToFollowCounters of many accounts, a JSON array; it returns those
+-- that had a row, and AddFollowCounters creates the others. An upsert would check the counts of
+-- the row it proposes, below zero, before it adds them.
+-- name: AddToManyFollowCounters :many
+UPDATE follow_counters SET
+  followers_count = followers_count + (SELECT CAST(value ->> '$.followers' AS INTEGER) FROM json_each(CAST(sqlc.arg(deltas) AS TEXT)) WHERE value ->> '$.account_id' = follow_counters.account_id),
+  following_count = following_count + (SELECT CAST(value ->> '$.following' AS INTEGER) FROM json_each(CAST(sqlc.arg(deltas) AS TEXT)) WHERE value ->> '$.account_id' = follow_counters.account_id)
+WHERE account_id IN (SELECT value ->> '$.account_id' FROM json_each(CAST(sqlc.arg(deltas) AS TEXT)))
+RETURNING account_id;
+
+-- name: DeleteZeroFollowCountersOf :exec
+DELETE FROM follow_counters WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT))) AND followers_count = 0 AND following_count = 0;
+
+-- ListFollowEdgesOfAccounts is ListFollowEdgesOf of many accounts, each edge once.
+-- name: ListFollowEdgesOfAccounts :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges
+WHERE follower_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)))
+   OR followee_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)))
+ORDER BY follower_account_id, followee_account_id;
+
+-- ListFollowEdgesBetween returns the edges between the accounts of each pair, a JSON array of
+-- {"a": ..., "b": ...}, in either direction.
+-- name: ListFollowEdgesBetween :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges
+WHERE (follower_account_id, followee_account_id) IN (SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)))
+   OR (followee_account_id, follower_account_id) IN (SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)))
+ORDER BY follower_account_id, followee_account_id;
+
+-- The statements that start many follows at once (the migration of a moved account's followers),
+-- each as the statement of one follow above does for every follow it names. The lists are JSON
+-- arrays; WHERE true keeps ON CONFLICT from reading as a join constraint.
+
+-- name: InsertFollows :exec
+INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at)
+SELECT value ->> '$.id', value ->> '$.uri', value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.requested_at'
+FROM json_each(CAST(sqlc.arg(follows) AS TEXT));
+
+-- name: UpsertManyFollowPreferences :exec
+INSERT INTO follow_preferences (follow_id, show_boosts)
+SELECT value ->> '$.follow_id', value ->> '$.show_boosts' FROM json_each(CAST(sqlc.arg(preferences) AS TEXT)) WHERE true
+ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts;
+
+-- name: InsertAutoFollowAcceptances :exec
+INSERT INTO follow_acceptances (follow_id, accepted_by, activity_uri, accepted_at)
+SELECT value, CAST(sqlc.arg(accepted_by) AS TEXT), NULL, CAST(sqlc.arg(accepted_at) AS INTEGER) FROM json_each(CAST(sqlc.arg(follow_ids) AS TEXT));
+
+-- name: InsertFollowEdges :execrows
+INSERT INTO follow_edges (follower_account_id, followee_account_id, follow_id, state, since)
+SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.follow_id', value ->> '$.state', value ->> '$.since'
+FROM json_each(CAST(sqlc.arg(edges) AS TEXT)) WHERE true
+ON CONFLICT (follower_account_id, followee_account_id) DO NOTHING;

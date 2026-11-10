@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listAccountFeaturedTags
+  summary: List the hashtags an account features
+  description: |
+    The hashtags that the account features on its profile (at most 10), in the order it chose.
+    For a remote account they are those its server lists, as this server last fetched them
+    with the account. The counts read only the account's `public` and `unlisted` posts that
+    this server has, so a remote account's may be lower than on its server.
+
+    An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+    deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
+  tags: [accounts]
+  security:
+    - {}
+    - oauth2: ["read:accounts"]
+  parameters:
+    - name: id
+      in: path
+      required: true
+      description: The account.
+      schema:
+        $ref: ../components/schemas/Id.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/FeaturedHashtagCollection.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

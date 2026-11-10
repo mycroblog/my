@@ -24,9 +24,10 @@ get:
 post:
   operationId: startDataImport
   x-first-party-only: true
-  summary: Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+  summary: Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
   description: |
-    Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+    Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+    server (`exportCsv`). The file's
     entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
     `overwrite` also removes what the user has of `kind` that the file does not list. The
     server carries the import out in the background: it resolves remote accounts and posts

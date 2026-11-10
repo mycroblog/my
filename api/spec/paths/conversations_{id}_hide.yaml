@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: hideConversation
+  summary: Hide a conversation
+  description: |
+    Takes the conversation out of `listConversations` until a newer direct post arrives in it,
+    on every device of the user. Its posts stay, and so do they for the other accounts. Hiding
+    it again changes nothing. A conversation in which the user sent or received no direct post
+    is a 404.
+  tags: [conversations]
+  security:
+    - oauth2: ["read:direct", "write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/ConversationId.yaml
+  responses:
+    "204":
+      description: The conversation is hidden.
+    default:
+      $ref: ../components/responses/Problem.yaml

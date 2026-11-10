@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: A page of the events that the user sees and that have not ended, the nearest start first.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./Event.yaml

@@ -29,8 +29,9 @@ type InstanceTexts interface {
 }
 
 // documentURLs sets the links of out to the web client's pages of the documents that the instance has
-// published, which the web client draws (Options.TermsPath, Options.PrivacyPolicyPath, Options.CommerceDisclosurePath).
-func (s *Server) documentURLs(ctx context.Context, out *Instance) error {
+// published, among texts, which the web client draws (Options.TermsPath, Options.PrivacyPolicyPath,
+// Options.CommerceDisclosurePath).
+func (s *Server) documentURLs(texts map[instance.TextKey]instance.Text, out *Instance) {
 	for _, d := range []struct {
 		key  instance.TextKey
 		path string
@@ -40,18 +41,10 @@ func (s *Server) documentURLs(ctx context.Context, out *Instance) error {
 		{instance.TextPrivacyPolicy, s.o.PrivacyPolicyPath, func(u string) { out.PrivacyPolicyUrl = &u }},
 		{instance.TextCommerceDisclosure, s.o.CommerceDisclosurePath, func(u string) { out.CommerceDisclosureUrl = &u }},
 	} {
-		if d.path == "" {
-			continue
-		}
-		_, ok, err := s.o.Instance.Text(ctx, d.key)
-		if err != nil {
-			return fmt.Errorf("clientapi: instance text %s: %w", d.key, err)
-		}
-		if ok {
+		if _, ok := texts[d.key]; ok && d.path != "" {
 			d.set(s.origin() + d.path)
 		}
 	}
-	return nil
 }
 
 func newAdminInstanceText(key instance.TextKey, body string, revisedAt time.Time) AdminInstanceText {

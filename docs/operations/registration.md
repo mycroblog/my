@@ -140,6 +140,7 @@ my invite revoke <code>
 - Besides the CLI, you can create, list and revoke invites in the web client's Moderation screens ("Invites", `/moderation/invites`) and through the client API
   (`GET` / `POST /api/v1/admin/invites` and `POST /api/v1/admin/invites/{id}/revoke`). Both need the role permission `manage_invites`
   (the built-in `moderator` does not have it, so to delegate this, create a role with that permission and grant it).
+  A service that hands out invites by itself calls the same API with a token of the scope `admin:manage_invites` ([letting another service use the admin API](moderation.md#letting-another-service-use-the-admin-api)).
   "Create an invite" on the list opens the form (`/moderation/invites/new`), which shows the code and the sign-up link of the new invite.
   The list lets you copy the link of a usable invite and revoke it.
 - The list shows every invite, the staff's and the members', with who created it (`created_by`) and how (`creator_kind`: `staff` or `member`). The holders of `manage_invites` can revoke any of them.

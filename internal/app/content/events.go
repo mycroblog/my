@@ -14,17 +14,32 @@ import "github.com/mycroblog/my/internal/domain/content"
 //   - EventStatusCreated: a status was posted, with its first revision.
 //   - EventStatusRevised: a status was edited; the event carries the new revision (FR-109).
 //   - EventStatusDeleted: a status was deleted; the deletion is its tombstone (FR-108).
+//   - EventStatusesDeleted: many statuses were deleted together (StatusesDeleted).
 const (
-	EventStatusCreated = "content.status_created"
-	EventStatusRevised = "content.status_revised"
-	EventStatusDeleted = "content.status_deleted"
+	EventStatusCreated   = "content.status_created"
+	EventStatusRevised   = "content.status_revised"
+	EventStatusDeleted   = "content.status_deleted"
+	EventStatusesDeleted = "content.statuses_deleted"
 )
 
 // StatusCreated is emitted when a status and its first revision are inserted.
 type StatusCreated struct {
 	Status   content.Status
 	Revision content.Revision
+	// ConversationID is the conversation that the status belongs to (ADR-0154 §2), after the
+	// merges that storing it caused, whose ConversationMerged events come before this one.
+	ConversationID string
+	// HeldReply is whether the status is a reply held out of the thread of its parent until its
+	// request is approved (ADR-0155 §6, §7): it is not linked to its parent nor counted, and it
+	// notifies no one. A local one is published to no one either (Unpublished). StatusReleased
+	// releases it.
+	HeldReply bool
 }
+
+// Unpublished reports whether the status is shown to its author alone until StatusReleased: a
+// local reply that waits for its approval (ADR-0155 §7). The timelines, search, webhooks, the
+// notifications, and the federation leave it out.
+func (e StatusCreated) Unpublished() bool { return e.HeldReply && e.Status.IsLocal }
 
 // EventType implements uow.Event.
 func (StatusCreated) EventType() string { return EventStatusCreated }
@@ -34,7 +49,12 @@ func (StatusCreated) EventType() string { return EventStatusCreated }
 type StatusRevised struct {
 	Status   content.Status
 	Revision content.Revision
+	// HeldReply is whether the status is a held reply (StatusCreated.HeldReply).
+	HeldReply bool
 }
+
+// Unpublished reports whether the status is shown to its author alone (StatusCreated.Unpublished).
+func (e StatusRevised) Unpublished() bool { return e.HeldReply && e.Status.IsLocal }
 
 // EventType implements uow.Event.
 func (StatusRevised) EventType() string { return EventStatusRevised }
@@ -47,6 +67,17 @@ type StatusDeleted struct {
 
 // EventType implements uow.Event.
 func (StatusDeleted) EventType() string { return EventStatusDeleted }
+
+// StatusesDeleted is StatusDeleted of many statuses that one command deletes together (a
+// moderation action on statuses), emitted once for all of them. A module that projects
+// StatusDeleted projects it too, as it projects each of Deletions, with a number of statements
+// that does not grow with them.
+type StatusesDeleted struct {
+	Deletions []StatusDeleted
+}
+
+// EventType implements uow.Event.
+func (StatusesDeleted) EventType() string { return EventStatusesDeleted }
 
 // ByAccountErasure reports whether the erasure of the author's deleted account recorded the
 // deletion (data-model §8): the Delete of the actor stands for it, so it sends no Delete.

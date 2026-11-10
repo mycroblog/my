@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The filtered notifications of one source that wait for the authenticated user to accept or
+  dismiss them. The request is named by the ID of its source account.
+type: object
+required: [id, account, notifications_count]
+properties:
+  id:
+    description: The ID of the source account, which names the request.
+    $ref: ./Id.yaml
+  account:
+    $ref: ./Account.yaml
+  notifications_count:
+    description: The number of notifications waiting in the request.
+    type: integer
+    format: int64
+    minimum: 1
+  last_notification:
+    description: The newest notification of the request; omitted when it can no longer be shown.
+    $ref: ./Notification.yaml

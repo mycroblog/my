@@ -156,6 +156,43 @@ func TestNewErrorEventStackOfCaller(t *testing.T) {
 	}
 }
 
+// firstFrame returns the function of the first frame of a debug.Stack() stack, without its
+// arguments.
+func firstFrame(t *testing.T, stack string) string {
+	t.Helper()
+	lines := strings.Split(stack, "\n")
+	if len(lines) < 2 || !strings.HasPrefix(lines[0], "goroutine ") {
+		t.Fatalf("not a goroutine's stack:\n%s", stack)
+	}
+	fn, _, _ := strings.Cut(lines[1], "(0x")
+	return strings.TrimSuffix(strings.TrimSuffix(fn, "(...)"), "()")
+}
+
+//go:noinline
+func reportForCaller(err error) kernel.ErrorEvent { return kernel.NewErrorEventSkip(err, "x", 1) }
+
+//go:noinline
+func wrapForCaller(err error) error { return kernel.WithStackSkip(err, 1) }
+
+// The stack starts with the function that reports or wraps, or, through a helper that skips
+// itself, with the helper's caller: never with the functions that take it.
+func TestStacksStartWithTheCaller(t *testing.T) {
+	const test = "kernel_test.TestStacksStartWithTheCaller"
+	cases := map[string]string{
+		"NewErrorEvent":     kernel.NewErrorEvent(errSentinel, "x").Stack,
+		"NewErrorEventSkip": reportForCaller(errSentinel).Stack,
+		"WithStackSkip":     kernel.NewErrorEvent(wrapForCaller(errSentinel), "x").Stack,
+	}
+	for name, stack := range cases {
+		if got := firstFrame(t, stack); !strings.HasSuffix(got, test) {
+			t.Errorf("%s: first frame %q, want %s:\n%s", name, got, test, stack)
+		}
+	}
+	if got := firstFrame(t, kernel.NewErrorEvent(makeStackErr(), "x").Stack); !strings.HasSuffix(got, "kernel_test.makeStackErr") {
+		t.Errorf("WithStack: first frame %q, want makeStackErr", got)
+	}
+}
+
 func TestErrorTypesJoin(t *testing.T) {
 	if got, want := kernel.ErrorTypes(fmt.Errorf("a: %w", errors.Join(errSentinel))), "*fmt.wrapError > *errors.joinError"; got != want {
 		t.Errorf("ErrorTypes = %q, want %q", got, want)

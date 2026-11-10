@@ -62,7 +62,19 @@ export {
 } from "./api/staff";
 export { AuditLog } from "./components/AuditLog";
 export { DomainActionDetail, DomainActionTitle } from "./components/DomainActionDetail";
-export { DomainActions, DomainActionsNav } from "./components/DomainActions";
+export { DomainActions } from "./components/DomainActions";
+export { DomainActionsNav } from "./components/domainListParts";
+// The allowlist of federation and the blocklist subscriptions beside the domain actions (ADR-0159), for manage_domains.
+export {
+  domainAllowsQueryOptions,
+  domainListDraftsQueryOptions,
+  domainListFetchesQueryOptions,
+  domainListSubscriptionQueryOptions,
+  domainListSubscriptionsQueryOptions,
+} from "./api/domainLists";
+export { DomainAllows } from "./components/DomainAllows";
+export { DomainListSubscriptions, NewDomainListSubscription } from "./components/DomainListSubscriptions";
+export { DomainListSubscriptionDetail, DomainListSubscriptionTitle } from "./components/DomainListSubscriptionDetail";
 export { DomainBlockCsvPage } from "./components/DomainBlockCsv";
 export { NewDomainAction } from "./components/NewDomainAction";
 export { InstanceDetail } from "./components/InstanceDetail";

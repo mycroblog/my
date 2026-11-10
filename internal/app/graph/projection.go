@@ -40,6 +40,31 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventFollowRequested, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return insertEdge(ctx, tx, repo, graph.PendingEdge(e.(FollowRequested).Follow))
 	})
+	r.Register(EventFollowsCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(FollowsCreated)
+		edges := make([]graph.Edge, 0, len(ev.Followed)+len(ev.Requested))
+		deltas := map[string]CounterDelta{}
+		for _, f := range ev.Followed {
+			edges = append(edges, graph.ActiveEdge(f.Follow, f.Acceptance))
+			d := deltas[f.Follow.FollowerAccountID]
+			d.Following++
+			deltas[f.Follow.FollowerAccountID] = d
+			d = deltas[f.Follow.FolloweeAccountID]
+			d.Followers++
+			deltas[f.Follow.FolloweeAccountID] = d
+		}
+		for _, f := range ev.Requested {
+			edges = append(edges, graph.PendingEdge(f.Follow))
+		}
+		inserted, err := repo.InsertEdges(ctx, tx, edges)
+		if err != nil {
+			return err
+		}
+		if inserted != len(edges) {
+			return uow.MarkRetryable(errEdgeExists)
+		}
+		return repo.AddManyCounters(ctx, tx, deltas)
+	})
 	r.Register(EventFollowAccepted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(FollowAccepted)
 		updated, err := repo.UpdateEdge(ctx, tx, graph.ActiveEdge(ev.Follow, ev.Acceptance), graph.StatePending)
@@ -79,12 +104,52 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		}
 		return countFollow(ctx, tx, repo, f, -1)
 	})
+	r.Register(EventFollowsTerminated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ts := e.(FollowsTerminated).Terminations
+		edges := make([]graph.Edge, len(ts))
+		deltas := map[string]CounterDelta{}
+		for i, t := range ts {
+			f := t.Follow
+			edges[i] = graph.Edge{FollowerAccountID: f.FollowerAccountID, FolloweeAccountID: f.FolloweeAccountID, FollowID: f.ID, State: t.PreviousState}
+			if t.PreviousState == graph.StateActive {
+				d := deltas[f.FollowerAccountID]
+				d.Following--
+				deltas[f.FollowerAccountID] = d
+				d = deltas[f.FolloweeAccountID]
+				d.Followers--
+				deltas[f.FolloweeAccountID] = d
+			}
+		}
+		deleted, err := repo.DeleteEdgesOfFollows(ctx, tx, edges)
+		if err != nil {
+			return err
+		}
+		if deleted != len(edges) {
+			return uow.MarkRetryable(errEdgeChanged)
+		}
+		return repo.AddManyCounters(ctx, tx, deltas)
+	})
 	r.Register(EventBlocked, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		inserted, err := repo.InsertBlockEdge(ctx, tx, graph.EdgeOf(e.(Blocked).Block))
 		if err != nil {
 			return err
 		}
 		if !inserted {
+			return uow.MarkRetryable(errBlockEdgeExists)
+		}
+		return nil
+	})
+	r.Register(EventBlocksCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(BlocksCreated)
+		bs := make([]graph.Block, len(ev.Blocks))
+		for i, b := range ev.Blocks {
+			bs[i] = b.Block
+		}
+		inserted, err := repo.InsertBlockEdges(ctx, tx, bs)
+		if err != nil {
+			return err
+		}
+		if inserted != len(bs) {
 			return uow.MarkRetryable(errBlockEdgeExists)
 		}
 		return nil

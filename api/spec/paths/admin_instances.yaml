@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listInstanceHealth
+  x-permission: manage_domains
   summary: List the remote servers with delivery failures or marked unavailable
   description: |
     The health of the remote servers that deliveries failed to reach on some days, or that

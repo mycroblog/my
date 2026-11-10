@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAppeals
+  x-permission: manage_accounts
   summary: List the appeals of moderation actions
   description: |
     The appeals that local users made of the actions on their accounts, newest

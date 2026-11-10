@@ -12,6 +12,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
+	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
@@ -42,8 +43,11 @@ type fanOutPayload struct {
 	// Inbox is the only recipient of an activity of the relay membership (ADR-0006), "" for
 	// other activities.
 	Inbox string `json:"inbox,omitempty"`
-	Phase string `json:"phase,omitempty"`
-	After string `json:"after,omitempty"`
+	// Followers sends an activity of the approval of an interaction to the actor's followers
+	// after Inbox: the Accept of a reply without a request (ADR-0155 §6). false for others.
+	Followers bool   `json:"followers,omitempty"`
+	Phase     string `json:"phase,omitempty"`
+	After     string `json:"after,omitempty"`
 }
 
 // job returns the JobFanOut of p, a batch of a. Its ordering key is that of a (orderingKey), so
@@ -131,11 +135,14 @@ type ActorHiding interface {
 // delivers it, so that an activity is recorded exactly when the command commits.
 //
 //   - content.status_created / status_revised / status_deleted of a local status: Create,
-//     Update, and Delete.
+//     Update, and Delete; a held local reply has neither Create nor Update until
+//     content.status_released, which records its Create (ADR-0155 §7).
 //   - content.boosted / boost_retracted of a boost that federates: Announce and Undo Announce.
 //     A boost of a local status (Boost.Federates is false) is not recorded (ADR-0017).
 //   - account.profile_revised of a local profile (ProfileRevised.Federates): Update of the
 //     actor.
+//   - timeline.featured_tags_changed of a local account: Update of the actor, whose featuredTags
+//     collection the remote servers fetch again (ADR-0006 §17).
 //   - account.aliases_changed of a local account: Update of the actor, recorded only when the
 //     federation mode publishes (ADR-0089).
 //   - account.lifecycle_event_recorded of a local account's deletion: Delete of the actor. Of a
@@ -164,20 +171,31 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 	registerFavouriteProjectors(r, rec)
 	registerReactionProjectors(r, rec)
 	registerPollVoteProjectors(r, rec)
+	recordCreate := func(ctx context.Context, tx uow.Tx, st appcontent.Status, rev appcontent.Revision) error {
+		return rec.record(ctx, tx, federation.OutboundActivity{
+			ActivityURI: federation.IRI(st.URI + "/activity"), Type: federation.ActivityCreate,
+			ActorAccountID: st.AuthorAccountID, ObjectKind: federation.OutboundStatus, ObjectID: st.ID,
+			CreatedAt: rev.RevisedAt,
+		}, rev.ID)
+	}
 	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.StatusCreated)
-		if !ok || !ev.Status.IsLocal {
+		// A held local reply goes out once it is approved (ADR-0155 §7).
+		if !ok || !ev.Status.IsLocal || ev.Unpublished() {
 			return nil
 		}
-		return rec.record(ctx, tx, federation.OutboundActivity{
-			ActivityURI: federation.IRI(ev.Status.URI + "/activity"), Type: federation.ActivityCreate,
-			ActorAccountID: ev.Status.AuthorAccountID, ObjectKind: federation.OutboundStatus, ObjectID: ev.Status.ID,
-			CreatedAt: ev.Revision.RevisedAt,
-		}, ev.Revision.ID)
+		return recordCreate(ctx, tx, ev.Status, ev.Revision)
+	})
+	r.Register(appcontent.EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appcontent.StatusReleased)
+		if !ok || !ev.Published() {
+			return nil
+		}
+		return recordCreate(ctx, tx, ev.Status, ev.Revision)
 	})
 	r.Register(appcontent.EventStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.StatusRevised)
-		if !ok || !ev.Status.IsLocal {
+		if !ok || !ev.Status.IsLocal || ev.Unpublished() {
 			return nil
 		}
 		return rec.record(ctx, tx, federation.OutboundActivity{
@@ -189,6 +207,11 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 		ev, ok := e.(appcontent.StatusDeleted)
 		if !ok || !ev.Status.IsLocal || ev.ByAccountErasure() {
 			return nil
+		}
+		if unsent, err := neverPublished(ctx, d.Repository, ev.Status); err != nil || unsent {
+			// A reply that waited for its approval went out only in its ReplyRequest, whose
+			// withdrawal takes it back (ADR-0155 §7).
+			return err
 		}
 		act, err := rec.insert(ctx, tx, federation.OutboundActivity{
 			Type: federation.ActivityDelete, ActorAccountID: ev.Status.AuthorAccountID,
@@ -207,6 +230,55 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 			return err
 		}
 		return rec.enqueue(ctx, tx, act, fanOutPayload{})
+	})
+	r.Register(appcontent.EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appcontent.StatusesDeleted)
+		if !ok {
+			return nil
+		}
+		// The Delete of each local status, as StatusDeleted records one, with one statement for
+		// the activities, one for their documents, and one for their fan-outs.
+		var as []federation.OutboundActivity
+		var sts []appcontent.Status
+		for _, d := range ev.Deletions {
+			if d.Status.IsLocal && !d.ByAccountErasure() {
+				as = append(as, federation.OutboundActivity{
+					Type: federation.ActivityDelete, ActorAccountID: d.Status.AuthorAccountID,
+					ObjectKind: federation.OutboundStatus, ObjectID: d.Status.ID, CreatedAt: d.Deletion.DeletedAt,
+				})
+				sts = append(sts, d.Status)
+			}
+		}
+		if len(as) == 0 {
+			return nil
+		}
+		docs := make(map[string][]byte, len(as))
+		var builtAt time.Time
+		for i := range as {
+			a, err := rec.prepare(as[i])
+			if err != nil {
+				return err
+			}
+			as[i], builtAt = a, a.CreatedAt
+			if docs[a.ID], err = deleteDocument(a, d.Host, sts[i]); err != nil {
+				return err
+			}
+		}
+		if err := d.Repository.InsertOutboundActivities(ctx, tx, as); err != nil {
+			return fmt.Errorf("record %d Deletes: %w", len(as), err)
+		}
+		if err := d.Repository.InsertOutboundDocuments(ctx, tx, docs, builtAt); err != nil {
+			return err
+		}
+		jobs := make([]queue.NewJob, len(as))
+		for i, a := range as {
+			job, err := (fanOutPayload{OutboundActivityID: a.ID}).job(a)
+			if err != nil {
+				return err
+			}
+			jobs[i] = job
+		}
+		return rec.d.Outbox.EnqueueTx(ctx, tx, jobs...)
 	})
 	r.Register(appcontent.EventBoosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.Boosted)
@@ -237,6 +309,16 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 		return rec.record(ctx, tx, federation.OutboundActivity{
 			Type: federation.ActivityUpdate, ActorAccountID: ev.Revision.AccountID,
 			ObjectKind: federation.OutboundAccount, ObjectID: ev.Revision.AccountID, CreatedAt: ev.Revision.RevisedAt,
+		}, "")
+	})
+	r.Register(apptimeline.EventFeaturedTagsChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(apptimeline.FeaturedTagsChanged)
+		if !ok {
+			return nil
+		}
+		return rec.record(ctx, tx, federation.OutboundActivity{
+			Type: federation.ActivityUpdate, ActorAccountID: ev.AccountID,
+			ObjectKind: federation.OutboundAccount, ObjectID: ev.AccountID, CreatedAt: ev.ChangedAt,
 		}, "")
 	})
 	r.Register(appaccount.EventAliasesChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -335,8 +417,48 @@ func (r recorder) recordWith(ctx context.Context, tx uow.Tx, a federation.Outbou
 	return r.enqueue(ctx, tx, a, p)
 }
 
-// insert gives a its ID, unless it has one, and its URI, and inserts it in tx.
-func (r recorder) insert(ctx context.Context, tx uow.Tx, a federation.OutboundActivity) (federation.OutboundActivity, error) {
+// recordAll is recordWith of many activities, each with an empty payload, with one statement
+// for the activities and one for their jobs.
+func (r recorder) recordAll(ctx context.Context, tx uow.Tx, as []federation.OutboundActivity) error {
+	if len(as) == 0 {
+		return nil
+	}
+	jobs := make([]queue.NewJob, len(as))
+	for i, a := range as {
+		a, err := r.prepare(a)
+		if err != nil {
+			return err
+		}
+		as[i] = a
+		if jobs[i], err = (fanOutPayload{OutboundActivityID: a.ID}).job(a); err != nil {
+			return err
+		}
+	}
+	if err := r.d.Repository.InsertOutboundActivities(ctx, tx, as); err != nil {
+		return fmt.Errorf("record %d outbound activities: %w", len(as), err)
+	}
+	return r.d.Outbox.EnqueueTx(ctx, tx, jobs...)
+}
+
+// localAmong reports, inside tx, which of ids are local accounts: with one read when Accounts
+// can, one by one otherwise.
+func (r recorder) localAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	if b, ok := r.d.Accounts.(localityBatch); ok {
+		return b.LocalAmong(ctx, tx, ids)
+	}
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		local, err := r.d.Accounts.IsLocal(ctx, tx, id)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = local
+	}
+	return out, nil
+}
+
+// prepare gives a its ID, unless it has one, and its URI, and validates it.
+func (r recorder) prepare(a federation.OutboundActivity) (federation.OutboundActivity, error) {
 	if a.ID == "" {
 		a.ID = r.d.IDs.NewID()
 	}
@@ -344,7 +466,13 @@ func (r recorder) insert(ctx context.Context, tx uow.Tx, a federation.OutboundAc
 		a.ActivityURI = federation.IRI(appcontent.ActivityURI(r.d.Host, a.ID))
 	}
 	a.CreatedAt = kernel.Normalize(a.CreatedAt)
-	if err := a.Validate(); err != nil {
+	return a, a.Validate()
+}
+
+// insert gives a its ID, unless it has one, and its URI, and inserts it in tx.
+func (r recorder) insert(ctx context.Context, tx uow.Tx, a federation.OutboundActivity) (federation.OutboundActivity, error) {
+	a, err := r.prepare(a)
+	if err != nil {
 		return federation.OutboundActivity{}, err
 	}
 	if err := r.d.Repository.InsertOutboundActivity(ctx, tx, a); err != nil {
@@ -372,4 +500,26 @@ func (r recorder) enqueue(ctx context.Context, tx uow.Tx, a federation.OutboundA
 		return err
 	}
 	return r.d.Outbox.EnqueueTx(ctx, tx, job)
+}
+
+// neverPublished reports whether the local reply st went out only in a ReplyRequest: it was
+// held, and its Create was never recorded.
+func neverPublished(ctx context.Context, repo Repository, st appcontent.Status) (bool, error) {
+	if st.InReplyToURI == "" {
+		return false, nil
+	}
+	acts, err := repo.ListOutboundActivitiesOf(ctx, federation.OutboundStatus, st.ID)
+	if err != nil {
+		return false, err
+	}
+	requested := false
+	for _, a := range acts {
+		switch a.Type {
+		case federation.ActivityCreate:
+			return false, nil
+		case federation.ActivityReplyRequest:
+			requested = true
+		}
+	}
+	return requested, nil
 }

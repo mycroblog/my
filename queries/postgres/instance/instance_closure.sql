@@ -36,3 +36,15 @@ SELECT e.id, e.kind, e.changed_by_user_id, e.occurred_at, s.closes_at, s.export_
 FROM service_closure_events e
 LEFT JOIN service_closure_schedules s ON s.event_id = e.id
 WHERE e.id = $1;
+
+-- GetFederationGate returns the setting federation_mode ('' when unset) and the closure of the
+-- service as GetCurrentServiceClosure reads it (NULL columns without one), with one query, for
+-- the deliveries that ask both.
+-- name: GetFederationGate :one
+SELECT COALESCE((SELECT st.value FROM instance_settings st WHERE st.key = 'federation_mode'), '')::text AS federation_mode,
+  h.state, h.announcement_event_id, e.occurred_at AS changed_at, a.occurred_at AS announced_at, s.closes_at, s.export_until, s.message
+FROM (SELECT 1 AS one) one
+LEFT JOIN service_closure_heads h ON h.id = 1
+LEFT JOIN service_closure_events e ON e.id = h.event_id
+LEFT JOIN service_closure_events a ON a.id = h.announcement_event_id
+LEFT JOIN service_closure_schedules s ON s.event_id = h.announcement_event_id;

@@ -64,6 +64,23 @@ func (s *Service) RegisterProjectors(r *uow.Projectors) {
 		}
 		return syncStatus(ctx, tx, ev.Status)
 	})
+	r.Register(appcontent.EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		var jobs []queue.NewJob
+		for _, d := range e.(appcontent.StatusesDeleted).Deletions {
+			if d.ByAccountErasure() || !mayEverQualify(d.Status.Visibility) {
+				continue
+			}
+			b, err := json.Marshal(syncStatusPayload{StatusID: d.Status.ID})
+			if err != nil {
+				return err
+			}
+			jobs = append(jobs, queue.NewJob{Type: JobSyncStatus, Payload: b})
+		}
+		if len(jobs) == 0 {
+			return nil
+		}
+		return s.d.Outbox.EnqueueTx(ctx, tx, jobs...)
+	})
 
 	r.Register(appaccount.EventProfileRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appaccount.ProfileRevised)

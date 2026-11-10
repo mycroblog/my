@@ -16,11 +16,22 @@ export type DataImportRequest = Schemas["DataImportRequest"];
 export type DataImportSkipped = Schemas["DataImportSkipped"];
 
 /** The kinds, in the order of the page. */
-export const dataImportKinds: readonly DataImportKind[] = ["following", "blocks", "mutes", "domain_mutes", "bookmarks"];
+export const dataImportKinds: readonly DataImportKind[] = [
+  "following",
+  "followed_tags",
+  "blocks",
+  "mutes",
+  "domain_mutes",
+  "bookmarks",
+];
 
-/** The names Mastodon gives the files, which the server's Content-Disposition also names. */
+/**
+ * The names Mastodon gives the files, which the server's Content-Disposition also names; Mastodon
+ * has no file of followed hashtags, whose name is the server's.
+ */
 export const csvFileNames: Readonly<Record<DataImportKind, string>> = {
   following: "following_accounts.csv",
+  followed_tags: "followed_hashtags.csv",
   blocks: "blocked_accounts.csv",
   mutes: "muted_accounts.csv",
   domain_mutes: "blocked_domains.csv",

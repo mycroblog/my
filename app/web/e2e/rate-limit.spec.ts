@@ -7,6 +7,7 @@ import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 type Schemas = components["schemas"];
 /** The project's locale, which the fixture writes into <html lang> as the instance's. */
@@ -51,6 +52,8 @@ const alice: Schemas["CredentialAccount"] = {
   discoverable: true,
   indexable: true,
   ai_opt_out: false,
+  feed_enabled: true,
+  feed_follows_indexable: true,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: [],
@@ -77,6 +80,7 @@ const post: Schemas["Status"] = {
   boosts_count: 0,
   favourites_count: 0,
   reactions: [],
+  filtered: [],
 };
 
 const instance: Schemas["Instance"] = {
@@ -135,20 +139,10 @@ async function serveApi(page: Page, limited: () => boolean) {
   await page.route("**/api/v1/preferences", (route) => {
     counts.preferences++;
     if (limited()) return tooMany(route);
-    const preferences: Schemas["Preferences"] = {
+    const preferences = preferencesOf({
       locale: projectLocale(),
-      time_zone: "UTC",
-      time_zone_chosen: true,
-      locale_follows_browser: false,
-      time_zone_follows_browser: false,
-      default_visibility: "public",
-      default_quote_policy: "public",
       default_post_language: "en",
-      require_media_description: false,
-      timeline_auto_insert: false,
-      link_card_size: "large",
-      timeline_languages: [],
-    };
+    });
     return json(route, preferences);
   });
   await page.route("**/api/v1/notifications/marker", (route) =>

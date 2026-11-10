@@ -11,6 +11,8 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
+	appgraph "github.com/mycroblog/my/internal/app/graph"
+	appnotification "github.com/mycroblog/my/internal/app/notification"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -28,7 +30,7 @@ import (
 // revisions and head; a user loses its email addresses and password credentials; the statuses of
 // an author are listed in pages with whether they are deleted, and erased with their interactions,
 // keeping their deletions; an account's favourites and bookmarks go in bounded batches; its follows,
-// blocks, mutes, and counters go in bounded batches; its feed entries go; and its notifications go,
+// blocks, mutes, private notes, and counters go in bounded batches; its feed entries go; and its notifications go,
 // as do the notifications about erased statuses. Each method leaves the rows of other accounts.
 // The erasure on top of it is AccountErasureFlows, which internal/flowtest/federation runs once on
 // SQLite.
@@ -283,6 +285,7 @@ func erasureRepoGraph(t *testing.T, r *erasureRepo) {
 		}
 		for _, pair := range [][2]string{{erased, a}, {erased, b}, {c, erased}, {a, b}} {
 			errs = append(errs, r.h.Graph.UpsertMute(ctx, tx, graph.Mute{AccountID: pair[0], TargetAccountID: pair[1], CreatedAt: r.clock.Now()}))
+			errs = append(errs, r.h.Graph.UpsertNote(ctx, tx, graph.Note{AccountID: pair[0], TargetAccountID: pair[1], Text: "note", UpdatedAt: r.clock.Now()}))
 		}
 		errs = append(errs,
 			r.h.Graph.UpsertCounters(ctx, tx, graph.Counters{AccountID: erased, FollowersCount: 1, FollowingCount: 1}),
@@ -309,6 +312,8 @@ func erasureRepoGraph(t *testing.T, r *erasureRepo) {
 		{"EraseBlocksOf", r.h.GraphErasure.EraseBlocksOf, []int64{1, 1, 0}},
 		// Two mutes by the account and one of it: the more of the two counts per call.
 		{"EraseMutesOf", r.h.GraphErasure.EraseMutesOf, []int64{1, 1, 0}},
+		// Two notes by the account and one on it: the more of the two counts per call.
+		{"EraseNotesOf", r.h.GraphErasure.EraseNotesOf, []int64{1, 1, 0}},
 	} {
 		for i, want := range e.want {
 			r.tx(t, func(ctx context.Context, tx uow.Tx) error {
@@ -338,6 +343,14 @@ func erasureRepoGraph(t *testing.T, r *erasureRepo) {
 	})
 	if len(mutes) != 1 || mutes[0].AccountID != a {
 		t.Errorf("ListAllMutes after the erasure = %+v; want only the mute by %s", mutes, a)
+	}
+	for _, pair := range [][2]string{{erased, a}, {erased, b}, {c, erased}} {
+		if _, err := r.h.Graph.FindNote(ctx, pair[0], pair[1]); !errors.Is(err, appgraph.ErrNotFound) {
+			t.Errorf("FindNote(%s, %s) after the erasure = %v, want ErrNotFound", pair[0], pair[1], err)
+		}
+	}
+	if _, err := r.h.Graph.FindNote(ctx, a, b); err != nil {
+		t.Errorf("FindNote(%s, %s) after the erasure = %v, want the note kept", a, b, err)
 	}
 	counters, err := r.h.Graph.ListCounters(ctx)
 	if err != nil || len(counters) != 1 || counters[0].AccountID != a {
@@ -373,22 +386,52 @@ func erasureRepoFeeds(t *testing.T, r *erasureRepo) {
 	r.rows(t, "feed_entries", "author_account_id", erased, 0)
 	r.rows(t, "feed_entries", "author_account_id", other, 1)
 
-	notify := func(recipient, source, statusID string) {
-		n := notification.Notification{ID: r.ids.NewID(), RecipientAccountID: recipient, Type: notification.TypeFavourite, SourceAccountID: source, StatusID: statusID, CreatedAt: r.clock.Now()}
+	notify := func(recipient, source, statusID string, filtered bool) {
+		id := r.ids.NewID()
+		n := notification.Notification{ID: id, RecipientAccountID: recipient, Type: notification.TypeFavourite, SourceAccountID: source, StatusID: statusID, DedupeKey: id, CreatedAt: r.clock.Now()}
 		if statusID == "" {
 			n.Type = notification.TypeFollow
 		}
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-			_, err := r.h.Notifications.InsertNotification(ctx, tx, n)
-			return err
+			inserted, err := r.h.Notifications.InsertNotification(ctx, tx, n)
+			if err != nil || !inserted {
+				if err == nil {
+					err = errors.New("the notification was not inserted")
+				}
+				return err
+			}
+			if !filtered {
+				return nil
+			}
+			// The policy of the recipient filtered it into the source's request (ADR-0158 §7).
+			if err := r.h.Notifications.InsertFilterings(ctx, tx, []notification.Notification{n}); err != nil {
+				return err
+			}
+			return r.h.Notifications.RefreshRequests(ctx, tx, []appnotification.RequestPair{{RecipientAccountID: recipient, SourceAccountID: source}})
 		})
 	}
 	third := r.account(t)
 	erasedStatus := r.ids.NewID()
-	notify(erased, other, "")
-	notify(other, erased, "")
-	notify(other, third, erasedStatus)
-	notify(third, other, "")
+	notify(erased, other, "", false)
+	notify(other, erased, "", true)
+	notify(other, third, erasedStatus, true)
+	notify(third, other, "", false)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		err := r.h.Notifications.SavePolicyChoices(ctx, tx, []notification.PolicyChoice{
+			{AccountID: erased, Condition: notification.ConditionNotFollowing, Action: notification.ActionFilter, UpdatedAt: r.clock.Now()},
+		})
+		if err != nil {
+			return err
+		}
+		return r.h.Notifications.InsertAcceptedSource(ctx, tx, notification.AcceptedSource{RecipientAccountID: third, SourceAccountID: erased, CreatedAt: r.clock.Now()})
+	})
+	conversation := r.ids.NewID()
+	for _, account := range []string{erased, other} {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			_, err := r.h.Notifications.InsertConversationMute(ctx, tx, notification.ConversationMute{AccountID: account, ConversationID: conversation, CreatedAt: r.clock.Now()})
+			return err
+		})
+	}
 	for i, want := range []int64{1, 1, 0} {
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 			n, err := r.h.NotificationErasure.EraseNotificationsOf(ctx, tx, erased, "", 1)
@@ -400,9 +443,19 @@ func erasureRepoFeeds(t *testing.T, r *erasureRepo) {
 	}
 	r.rows(t, "notifications", "recipient_account_id", erased, 0)
 	r.rows(t, "notifications", "source_account_id", erased, 0)
+	r.rows(t, "conversation_mutes", "account_id", erased, 0)
+	r.rows(t, "conversation_mutes", "account_id", other, 1)
+	r.rows(t, "notification_filterings", "source_account_id", erased, 0)
+	r.rows(t, "notification_requests", "source_account_id", erased, 0)
+	r.rows(t, "notification_policies", "account_id", erased, 0)
+	r.rows(t, "notification_accepted_sources", "source_account_id", erased, 0)
+	r.rows(t, "notification_requests", "source_account_id", third, 1)
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		return r.h.NotificationErasure.EraseStatusNotifications(ctx, tx, []string{erasedStatus})
 	})
 	r.rows(t, "notifications", "status_id", erasedStatus, 0)
 	r.rows(t, "notifications", "recipient_account_id", third, 1)
+	r.rows(t, "notification_filterings", "source_account_id", third, 0)
+	// The request held only the erased notification.
+	r.rows(t, "notification_requests", "source_account_id", third, 0)
 }

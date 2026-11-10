@@ -8,6 +8,15 @@ export {
   type NotificationFilter,
 } from "./api/notifications";
 export { catchUpNotifications, receiveNotification } from "./api/live";
+export {
+  notificationRequestNotificationsQueryOptions,
+  notificationRequestQueryOptions,
+  notificationRequestSummaryQueryOptions,
+  notificationRequestsQueryOptions,
+  receiveRequestSummary,
+} from "./api/requests";
+export { NotificationRequest } from "./components/NotificationRequest";
+export { NotificationRequests } from "./components/NotificationRequests";
 export { NotificationsPanel } from "./components/NotificationsPanel";
 export { NotificationsSkeleton } from "./components/NotificationsSkeleton";
 export { NotificationsView } from "./components/NotificationsView";

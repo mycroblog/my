@@ -16,6 +16,7 @@ export type NotificationAccount = components["schemas"]["Account"];
 export type NotificationStatus = components["schemas"]["Status"];
 export type ModerationAction = components["schemas"]["ModerationAction"];
 export type SupporterEndReason = components["schemas"]["SupporterEndReason"];
+export type DraftFailureReason = components["schemas"]["DraftFailureReason"];
 
 /** The filters of the notifications page, in the order of its tabs; `all` sends no `types`. */
 export const notificationFilters = ["all", "mentions", "follows", "boosts", "favourites", "posts"] as const;

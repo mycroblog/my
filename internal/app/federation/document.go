@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -26,14 +27,68 @@ type NoteParts interface {
 // implements it.
 type NoteQuotes interface {
 	FindQuote(ctx context.Context, statusID string) (appcontent.Quote, appcontent.QuoteState, error)
-	FindQuotePolicy(ctx context.Context, statusID string) (appcontent.StatusQuotePolicy, error)
+	FindInteractionPolicy(ctx context.Context, statusID string) (appcontent.InteractionPolicy, error)
 	FederatedQuotePage(ctx context.Context, uri string) (string, bool, error)
+	// ReplyAuthorization returns the authorization of an approved reply, "" for none
+	// (ADR-0155 §7).
+	ReplyAuthorization(ctx context.Context, statusID string) (string, error)
+	// InteractionAuthorizationOf returns the authorization of the approved request of an
+	// interaction, "" for none: that of an approved boost (ADR-0155 §7).
+	InteractionAuthorizationOf(ctx context.Context, kind appcontent.InteractionKind, interactingURI, targetURI string) (string, error)
+}
+
+// announceAuthorization returns the AnnounceAuthorization of the local boost b of the remote
+// status st that its author approved (ADR-0155 §7), "" for none.
+func (n notes) announceAuthorization(ctx context.Context, b appcontent.Boost, st appcontent.Status) (federation.IRI, error) {
+	if n.quotes == nil || st.IsLocal {
+		return "", nil
+	}
+	auth, err := n.quotes.InteractionAuthorizationOf(ctx, appcontent.InteractionAnnounce, b.URI, st.URI)
+	return federation.IRI(auth), err
+}
+
+// NoteConversations reads the conversations of statuses, whose IRI a Note carries as its context
+// and conversation (ADR-0154 §5). *appcontent.Service implements it.
+type NoteConversations interface {
+	ConversationsOf(ctx context.Context, statusIDs []string) (map[string]appcontent.Conversation, error)
 }
 
 // Relationships reads the relationship of an account with another; *appgraph.Service
 // implements it.
 type Relationships interface {
 	Relationship(ctx context.Context, accountID, targetID string) (appgraph.Relationship, error)
+}
+
+// followersBatch is a Relationships that reads the active followers of an account among many at
+// once, as *appgraph.Service does.
+type followersBatch interface {
+	ActiveFollowersAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
+}
+
+// followersAmong returns the remote accounts of mentions that actively follow authorID: with one
+// read when Relationships can, one by one otherwise.
+func (n notes) followersAmong(ctx context.Context, authorID string, mentions []appaccount.Actor) (map[string]bool, error) {
+	var remote []string
+	for _, m := range mentions {
+		if !m.Account.IsLocal() {
+			remote = append(remote, m.Account.ID)
+		}
+	}
+	if len(remote) == 0 {
+		return map[string]bool{}, nil
+	}
+	if b, ok := n.graph.(followersBatch); ok {
+		return b.ActiveFollowersAmong(ctx, authorID, remote)
+	}
+	out := make(map[string]bool, len(remote))
+	for _, id := range remote {
+		r, err := n.graph.Relationship(ctx, id, authorID)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = r.ActivelyFollowing()
+	}
+	return out, nil
 }
 
 // notes builds the Note of a local status, the one place that the fan-out (the object of Create
@@ -44,6 +99,8 @@ type notes struct {
 	graph Relationships
 	// quotes reads the quotes of statuses; nil leaves quotes and interactionPolicy out.
 	quotes NoteQuotes
+	// conversations reads the conversations of statuses; nil leaves context and conversation out.
+	conversations NoteConversations
 	// host serves the hashtag pages; accountDomain is the domain of local handles.
 	host, accountDomain string
 }
@@ -61,29 +118,50 @@ func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Re
 		return federation.NoteDocument{}, err
 	}
 	if vis == appcontent.VisibilityLocal {
+		follows, err := n.followersAmong(ctx, st.AuthorAccountID, parts.Mentions)
+		if err != nil {
+			return federation.NoteDocument{}, err
+		}
 		kept := parts.Mentions[:0:0]
 		for _, m := range parts.Mentions {
-			if !m.Account.IsLocal() {
-				r, err := n.graph.Relationship(ctx, m.Account.ID, st.AuthorAccountID)
-				if err != nil {
-					return federation.NoteDocument{}, err
-				}
-				if !r.ActivelyFollowing() {
-					continue
-				}
+			if m.Account.IsLocal() || follows[m.Account.ID] {
+				kept = append(kept, m)
 			}
-			kept = append(kept, m)
 		}
 		parts.Mentions = kept
 	}
-	return n.withQuotes(ctx, statusNote(st, rev, author, vis, parts, updated, n.host, n.accountDomain), st, author, vis)
+	note, err := n.inConversation(ctx, statusNote(st, rev, author, vis, parts, updated, n.host, n.accountDomain), st)
+	if err != nil {
+		return federation.NoteDocument{}, err
+	}
+	return n.withQuotes(ctx, note, st, author, vis, parts.Mentions)
 }
 
-// withQuotes adds to the Note of the local status st its quote, unless the author took it away or
-// the quoted status is local-visibility (ADR-0018 §15), and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
-// the author alone for the others, which remote servers see as followers-only. Without quotes it
-// returns note as it is.
-func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility) (federation.NoteDocument, error) {
+// inConversation adds to the Note of st the IRI of the conversation it belongs to now, the one
+// a merge kept (ADR-0154 §5). The IRI is opaque and names neither the author nor the text, so a
+// Note carries it whatever the visibility of the conversation's other statuses.
+func (n notes) inConversation(ctx context.Context, note federation.NoteDocument, st appcontent.Status) (federation.NoteDocument, error) {
+	if n.conversations == nil {
+		return note, nil
+	}
+	convs, err := n.conversations.ConversationsOf(ctx, []string{st.ID})
+	if err != nil {
+		return federation.NoteDocument{}, err
+	}
+	if c, ok := convs[st.ID]; ok {
+		note = note.InConversation(c.URI)
+	}
+	return note, nil
+}
+
+// withQuotes adds to the Note of the local status st the authorization of an approved reply
+// (replyAuthorization, ADR-0155 §7), its quote, unless the author took it away or
+// the quoted status is local-visibility (ADR-0018 §15), and its interactionPolicy (ADR-0069 §3,
+// ADR-0155 §9): canReply, canAnnounce, and canQuote with the rules of each kind, except that the
+// author alone may boost or quote a followers-only or direct status, and may reply to, boost, or
+// quote a local-visibility one, which remote servers see as followers-only. mentioned are the
+// accounts the Note mentions. Without quotes it returns note as it is.
+func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility, mentioned []appaccount.Actor) (federation.NoteDocument, error) {
 	if n.quotes == nil {
 		return note, nil
 	}
@@ -105,25 +183,61 @@ func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st 
 		}
 		note = note.WithQuote(federation.IRI(q.QuotedURI), federation.IRI(auth), page)
 	}
-	actor := federation.IRI(author.Account.URI)
-	approved := []federation.IRI{actor}
-	if vis == appcontent.VisibilityPublic || vis == appcontent.VisibilityUnlisted {
-		policy := appcontent.QuotePolicyPublic
-		switch p, err := n.quotes.FindQuotePolicy(ctx, st.ID); {
-		case err == nil:
-			policy = p.Policy
-		case !errors.Is(err, appcontent.ErrNotFound):
+	if st.InReplyToURI != "" {
+		auth, err := n.quotes.ReplyAuthorization(ctx, st.ID)
+		if err != nil {
 			return federation.NoteDocument{}, err
 		}
-		switch policy {
-		case appcontent.QuotePolicyPublic:
-			approved = []federation.IRI{federation.PublicIRI}
-		case appcontent.QuotePolicyFollowers:
-			approved = []federation.IRI{federation.FollowersOf(actor)}
+		note.ReplyAuthorization = federation.IRI(auth)
+	}
+	actor := federation.IRI(author.Account.URI)
+	alone := federation.ApprovalPolicy{AutomaticApproval: []federation.IRI{actor}}
+	policy := federation.InteractionPolicy{CanReply: alone, CanAnnounce: alone, CanQuote: alone}
+	if vis != appcontent.VisibilityLocal {
+		rules, err := n.quotes.FindInteractionPolicy(ctx, st.ID)
+		if err != nil {
+			return federation.NoteDocument{}, err
+		}
+		settings := appcontent.SettingsOf(rules)
+		policy.CanReply = approvalPolicy(settings.Reply, actor, mentioned)
+		if vis == appcontent.VisibilityPublic || vis == appcontent.VisibilityUnlisted {
+			policy.CanAnnounce = approvalPolicy(settings.Announce, actor, mentioned)
+			policy.CanQuote = approvalPolicy(settings.Quote, actor, mentioned)
 		}
 	}
-	note.InteractionPolicy = &federation.InteractionPolicy{CanQuote: federation.QuoteApprovalPolicy{AutomaticApproval: approved}}
+	note.InteractionPolicy = &policy
 	return note, nil
+}
+
+// approvalPolicy returns the can* of the setting set of a status by actor that mentions
+// mentioned: its automatic audience, and its manual one when it has one.
+func approvalPolicy(set appcontent.InteractionSetting, actor federation.IRI, mentioned []appaccount.Actor) federation.ApprovalPolicy {
+	can := federation.ApprovalPolicy{AutomaticApproval: approvalIRIs(set.Automatic, actor, mentioned)}
+	if set.Manual != "" {
+		can.ManualApproval = approvalIRIs(set.Manual, actor, mentioned)
+	}
+	return can
+}
+
+// approvalIRIs returns the IRIs of the audience a of a status by actor that mentions mentioned
+// (ADR-0155 §2): as:Public for everyone, and else the author with, for followers, the author's
+// followers collection, and for followers and mentioned, the mentioned actors.
+func approvalIRIs(a appcontent.InteractionAudience, actor federation.IRI, mentioned []appaccount.Actor) []federation.IRI {
+	if a == appcontent.AudienceEveryone {
+		return []federation.IRI{federation.PublicIRI}
+	}
+	var out []federation.IRI
+	if a == appcontent.AudienceFollowers {
+		out = append(out, federation.FollowersOf(actor))
+	}
+	if a == appcontent.AudienceFollowers || a == appcontent.AudienceMentioned {
+		for _, m := range mentioned {
+			if iri := federation.IRI(m.Account.URI); iri != "" && iri != actor && !slices.Contains(out, iri) {
+				out = append(out, iri)
+			}
+		}
+	}
+	return append(out, actor)
 }
 
 // statusNote returns the Note of a local status st as of rev by author, addressed by the
@@ -285,7 +399,7 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 		return moveDocument(act, s.actor, s.movedTo)
 	}
 	if act.ObjectKind == federation.OutboundFavourite || act.ObjectKind == federation.OutboundPollVote ||
-		act.ObjectKind == federation.OutboundRelay || act.ObjectKind == federation.OutboundQuote || act.ObjectKind == federation.OutboundRefusal ||
+		act.ObjectKind == federation.OutboundRelay || act.ObjectKind.Approval() || act.ObjectKind == federation.OutboundRefusal ||
 		(act.ObjectKind == federation.OutboundStatus && act.Type == federation.ActivityDelete) {
 		return nil, nil
 	}
@@ -309,6 +423,13 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 		if err != nil {
 			return nil, err
 		}
+		if act.Type == federation.ActivityReplyRequest {
+			// The request of a held reply embeds it (ADR-0155 §7): object is its parent.
+			doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, federation.Audience{To: note.To, Cc: note.Cc},
+				federation.IRI(s.status.InReplyToURI))
+			doc.Instrument = note
+			break
+		}
 		doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, published, federation.Audience{To: note.To, Cc: note.Cc}, note)
 	case federation.OutboundBoost:
 		mentioned, err := f.actorIRIs(ctx, s.mentioned)
@@ -316,6 +437,9 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 			return nil, err
 		}
 		announce := announceDocument(s.boost, s.status, actor, s.visibility, mentioned)
+		if announce.AnnounceAuthorization, err = f.notes.announceAuthorization(ctx, s.boost, s.status); err != nil {
+			return nil, err
+		}
 		doc = announce
 		if act.Type == federation.ActivityUndo {
 			doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, federation.Audience{To: announce.To, Cc: announce.Cc}, announce.Embedded())

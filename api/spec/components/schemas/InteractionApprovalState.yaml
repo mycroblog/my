@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The approval of the authenticated user's interaction (a reply, a boost, or a quote) by the
+  author of the status it is with, while it is not given:
+
+  - `pending`: it waits for the author's answer. A reply that waits is shown to its author
+    alone, and goes out once it is approved; a boost that waits is recorded once it is approved.
+  - `rejected`: the author refused it.
+type: string
+enum:
+  - pending
+  - rejected

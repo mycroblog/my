@@ -21,6 +21,20 @@ func (r *StatusRepository) InsertSensitivityOverride(ctx context.Context, tx uow
 	}), "insert status sensitivity override")
 }
 
+// InsertSensitivityOverrides implements content.Repository.
+func (r *StatusRepository) InsertSensitivityOverrides(ctx context.Context, tx uow.Tx, statusIDs []string, actionID string) error {
+	if len(statusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return postgres.Wrap(q.InsertStatusSensitivityOverrides(ctx, contentgen.InsertStatusSensitivityOverridesParams{
+		StatusIds: statusIDs, SourceID: actionID,
+	}), "insert status sensitivity overrides")
+}
+
 // DeleteSensitivityOverridesOf implements content.Repository.
 func (r *StatusRepository) DeleteSensitivityOverridesOf(ctx context.Context, tx uow.Tx, actionID string) error {
 	q, err := r.db.queries(tx)

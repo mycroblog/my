@@ -25,6 +25,7 @@
                 "https://www.w3.org/ns/activitystreams#Public"
               ]
             },
+            "Conversation": "https://mastodon.example/contexts/117454922805771612-117454925496168351",
             "ID": "https://mastodon.example/ap/users/117454922805771612/statuses/117454925496168351",
             "Published": "2026-10-17T06:52:12Z",
             "RawType": "Note",
@@ -79,6 +80,7 @@
                 "https://www.w3.org/ns/activitystreams#Public"
               ]
             },
+            "Conversation": "https://mastodon.example/contexts/117454922805771612-117454936765897454",
             "ID": "https://mastodon.example/ap/users/117454922805771612/statuses/117454936765897454",
             "Published": "2026-10-17T06:55:04Z",
             "RawType": "Note",

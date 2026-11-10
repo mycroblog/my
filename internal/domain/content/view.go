@@ -71,6 +71,9 @@ type StatusFacts struct {
 	AuthorAccountID string
 	AuthorIsLocal   bool
 	Visibility      Visibility // the stored, original visibility
+	// Unpublished is whether the status is a local reply held until the author of its parent
+	// approves it (ADR-0155 §7): its author alone sees it.
+	Unpublished bool
 }
 
 // ViewContext is where the status would be shown.
@@ -99,13 +102,17 @@ const (
 	// ContextSearch is a result of the full-text search of statuses (FR-309, ADR-0149 §8). It admits
 	// only signed-in viewers, and nothing but public and local, not even for the author.
 	ContextSearch
+	// ContextDirectMessages is the viewer's direct messages by conversation (FR-212, ADR-0154
+	// §6). It admits only signed-in viewers and only direct posts, whether or not the viewer
+	// follows the author: the direct posts of others that the home timeline leaves out.
+	ContextDirectMessages
 )
 
 // ViewContexts lists every view context.
 func ViewContexts() []ViewContext {
 	return []ViewContext{
 		ContextStatus, ContextHome, ContextLocalTimeline, ContextFederatedTimeline,
-		ContextHashtag, ContextProfile, ContextObjectFetch, ContextDelivery, ContextSearch,
+		ContextHashtag, ContextProfile, ContextObjectFetch, ContextDelivery, ContextSearch, ContextDirectMessages,
 	}
 }
 
@@ -130,13 +137,16 @@ func (c ViewContext) String() string {
 		return "delivery"
 	case ContextSearch:
 		return "search"
+	case ContextDirectMessages:
+		return "direct messages"
 	default:
 		return "invalid"
 	}
 }
 
 // CanView reports whether viewer may see status in context. It fails closed: an invalid
-// visibility, viewer kind, or context, or a local visibility on a remote status, is denied.
+// visibility, viewer kind, or context, or a local visibility on a remote status, is denied. An
+// unpublished status (a held local reply) is its author's alone.
 func CanView(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRestrictions, rel Relation) bool {
 	if !status.Visibility.Valid() || (status.Visibility == VisibilityLocal && !status.AuthorIsLocal) {
 		return false
@@ -149,6 +159,9 @@ func CanView(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRe
 	}
 	isAuthor := viewer.Kind == ViewerLocal && viewer.AccountID != "" && viewer.AccountID == status.AuthorAccountID
 	moderator := viewer.Kind == ViewerLocal && viewer.Moderator
+	if status.Unpublished && !isAuthor {
+		return false
+	}
 
 	// profile_view (suspension, deletion) hides everything except from the author and
 	// moderators, and even they see it only on the status and profile pages.
@@ -178,7 +191,7 @@ func contextAdmits(ctx ViewContext, kind ViewerKind, status StatusFacts) bool {
 		return kind == ViewerAnonymous || kind == ViewerLocal
 	case ContextLocalTimeline:
 		return (kind == ViewerAnonymous || kind == ViewerLocal) && status.AuthorIsLocal
-	case ContextHome, ContextSearch:
+	case ContextHome, ContextSearch, ContextDirectMessages:
 		return kind == ViewerLocal
 	case ContextObjectFetch:
 		// This server serves only its own objects.
@@ -201,6 +214,8 @@ func contextShows(ctx ViewContext, vis Visibility, isAuthor bool, author AuthorR
 		return !author.PublicDiscovery && (vis == VisibilityPublic || vis == VisibilityLocal)
 	case ContextFederatedTimeline:
 		return !author.PublicDiscovery && vis == VisibilityPublic
+	case ContextDirectMessages:
+		return vis == VisibilityDirect
 	default:
 		return true
 	}

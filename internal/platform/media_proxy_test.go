@@ -12,9 +12,11 @@ import (
 
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/instance"
+	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/uow"
 	domain "github.com/mycroblog/my/internal/domain/content"
 	domaininstance "github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/pkg/testkit"
 )
@@ -185,5 +187,48 @@ func TestMediaProxyCache(t *testing.T) {
 	get()
 	if n := hits.Load(); n != 3 {
 		t.Errorf("all: the remote server got %d requests in total, want 3", n)
+	}
+}
+
+// The media proxy fetches nothing from a suspended domain, nor, under federation_scope allowlist,
+// from a domain without an allow, and still fetches from an allowed one (ADR-0159 §2).
+func TestMediaProxyRefusesSuspendedAndUnallowedDomains(t *testing.T) {
+	t.Parallel()
+	png := testkit.FixturePNG(4, 3, false)
+	web := &pageWeb{hits: map[string]int{}, pages: map[string]webPage{}}
+	for _, host := range []string{"friend.example", "stranger.example", "spam.example"} {
+		web.pages["https://"+host+"/a.png"] = webPage{http.StatusOK, "image/png", png}
+	}
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
+	s := startApp(t, cfg, platform.AppOptions{HTTPClient: web}, platform.ServeOptions{}, nil)
+	ctx := t.Context()
+	get := func(t *testing.T, host string) int {
+		t.Helper()
+		resp, _ := s.do(t, http.MethodGet, recordRemote(t, s.app, "https://"+host+"/a.png"), nil)
+		return resp.StatusCode
+	}
+
+	if _, err := s.app.Moderation.IssueDomainAction(ctx, appmoderation.DomainActionInput{Domain: "spam.example", Kind: moderation.DomainSuspend}); err != nil {
+		t.Fatal(err)
+	}
+	if got := get(t, "spam.example"); got != http.StatusNotFound || web.count("https://spam.example/a.png") != 0 {
+		t.Errorf("GET proxy of a suspended domain = %d after %d fetches, want 404 and none", got, web.count("https://spam.example/a.png"))
+	}
+	if got := get(t, "stranger.example"); got != http.StatusOK {
+		t.Errorf("GET proxy under open = %d, want 200", got)
+	}
+
+	if _, _, err := s.app.Moderation.AllowDomain(ctx, appmoderation.AllowDomainInput{Domain: "friend.example"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.app.Instance.SetSetting(ctx, instance.SetSettingInput{Key: domaininstance.SettingFederationScope, Value: string(domaininstance.FederationScopeAllowlist)}); err != nil {
+		t.Fatal(err)
+	}
+	before := web.count("https://stranger.example/a.png")
+	if got := get(t, "stranger.example"); got != http.StatusNotFound || web.count("https://stranger.example/a.png") != before {
+		t.Errorf("GET proxy of a domain without an allow = %d, fetched %d times, want 404 and no fetch", got, web.count("https://stranger.example/a.png")-before)
+	}
+	if got := get(t, "friend.example"); got != http.StatusOK {
+		t.Errorf("GET proxy of an allowed domain = %d, want 200", got)
 	}
 }

@@ -56,6 +56,23 @@ func (l LocalObjectsOf) FindStatus(ctx context.Context, id string) (appcontent.S
 	return l.Content.FindStatus(ctx, id)
 }
 
+// FindByURIs implements the batch read of the local accounts of a Flag.
+func (l LocalObjectsOf) FindByURIs(ctx context.Context, uris []string) (map[string]appaccount.Actor, error) {
+	return l.Accounts.FindByURIs(ctx, uris)
+}
+
+// FindStatuses implements the batch read of the local statuses of a Flag.
+func (l LocalObjectsOf) FindStatuses(ctx context.Context, ids []string) (map[string]appcontent.Status, error) {
+	return l.Content.FindStatuses(ctx, ids)
+}
+
+// localObjectsBatch is a LocalObjects that reads many accounts and statuses at once, as
+// LocalObjectsOf does.
+type localObjectsBatch interface {
+	FindByURIs(ctx context.Context, uris []string) (map[string]appaccount.Actor, error)
+	FindStatuses(ctx context.Context, ids []string) (map[string]appcontent.Status, error)
+}
+
 // ModerationHandlerDeps are the ports and settings of the handlers of received Block, Undo
 // Block, and Flag activities.
 type ModerationHandlerDeps struct {
@@ -100,10 +117,78 @@ func (h moderationHandlers) localAccount(ctx context.Context, iri federation.IRI
 	return a, a.Account.IsLocal() && a.Local != nil, nil
 }
 
+// localObjects returns, in the order of refs, the local accounts and the local statuses that
+// refs name, as localAccount and then localStatus find each: with one read of the accounts and
+// one of the statuses when Objects can, one by one otherwise.
+func (h moderationHandlers) localObjects(ctx context.Context, refs []federation.Ref) (accounts []string, statuses []appcontent.Status, err error) {
+	b, ok := h.d.Objects.(localObjectsBatch)
+	if !ok {
+		for _, ref := range refs {
+			acc, ok, err := h.localAccount(ctx, ref.ID)
+			if err != nil {
+				return nil, nil, err
+			}
+			if ok {
+				accounts = append(accounts, acc.Account.ID)
+				continue
+			}
+			st, ok, err := h.localStatus(ctx, ref.ID)
+			if err != nil {
+				return nil, nil, err
+			}
+			if ok {
+				statuses = append(statuses, st)
+			}
+		}
+		return accounts, statuses, nil
+	}
+	var uris, ids []string
+	for _, ref := range refs {
+		if ref.ID.Host() == h.d.Host {
+			uris = append(uris, string(ref.ID))
+		}
+		if id, ok := localStatusID(h.d.Host, ref.ID); ok {
+			ids = append(ids, id)
+		}
+	}
+	actors, err := b.FindByURIs(ctx, uris)
+	if err != nil {
+		return nil, nil, err
+	}
+	sts, err := b.FindStatuses(ctx, ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, ref := range refs {
+		if ref.ID.Host() == h.d.Host {
+			if a, found := actors[string(ref.ID)]; found && a.Account.IsLocal() && a.Local != nil {
+				accounts = append(accounts, a.Account.ID)
+				continue
+			}
+		}
+		if id, ok := localStatusID(h.d.Host, ref.ID); ok {
+			if st, found := sts[id]; found && st.IsLocal && st.URI == string(ref.ID) {
+				statuses = append(statuses, st)
+			}
+		}
+	}
+	return accounts, statuses, nil
+}
+
+// localStatusID returns the ID of the local status that iri would name, false for an IRI that
+// is not of a local status.
+func localStatusID(host string, iri federation.IRI) (string, bool) {
+	id, ok := strings.CutPrefix(string(iri), appcontent.StatusURI(host, ""))
+	if !ok || id == "" || strings.ContainsAny(id, "/?#") {
+		return "", false
+	}
+	return id, true
+}
+
 // localStatus returns the local status with the object URI iri, false when there is none.
 func (h moderationHandlers) localStatus(ctx context.Context, iri federation.IRI) (appcontent.Status, bool, error) {
-	id, ok := strings.CutPrefix(string(iri), appcontent.StatusURI(h.d.Host, ""))
-	if !ok || id == "" || strings.ContainsAny(id, "/?#") {
+	id, ok := localStatusID(h.d.Host, iri)
+	if !ok {
 		return appcontent.Status{}, false, nil
 	}
 	st, err := h.d.Objects.FindStatus(ctx, id)
@@ -179,22 +264,9 @@ func (h moderationHandlers) flag(ctx context.Context, a *InboxActivity) error {
 		accounts []string
 		statuses []appcontent.Status
 	)
-	for _, ref := range a.Activity.Objects {
-		acc, ok, err := h.localAccount(ctx, ref.ID)
-		if err != nil {
-			return err
-		}
-		if ok {
-			accounts = append(accounts, acc.Account.ID)
-			continue
-		}
-		st, ok, err := h.localStatus(ctx, ref.ID)
-		if err != nil {
-			return err
-		}
-		if ok {
-			statuses = append(statuses, st)
-		}
+	accounts, statuses, err = h.localObjects(ctx, a.Activity.Objects)
+	if err != nil {
+		return err
 	}
 	// The report is of the first local account named, or else of the author of the first local
 	// status; it keeps that account's statuses.

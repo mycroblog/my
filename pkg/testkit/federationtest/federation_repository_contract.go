@@ -5,6 +5,8 @@ package federationtest
 import (
 	"context"
 	"errors"
+	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"testing"
@@ -33,7 +35,9 @@ func FederationRepositoryContract(t *testing.T, newHarness FederationFactory) {
 		run  func(t *testing.T, r *fedRepo)
 	}{
 		{"FindsAndListsOutboundActivities", fedRepoOutboundActivities},
+		{"InsertsManyOutboundActivities", fedRepoManyOutboundActivities},
 		{"KeepsTheFirstDocument", fedRepoDocuments},
+		{"FindsTheContextOfADelivery", fedRepoDeliveryContext},
 		{"AddsAnInboxOnceAndPagesDeliveries", fedRepoDeliveries},
 		{"ListsTheAttemptsOfADelivery", fedRepoAttempts},
 		{"ReplacesReadsAndListsTheHealthOfServers", fedRepoHealth},
@@ -144,6 +148,28 @@ func fedRepoOutboundActivities(t *testing.T, r *fedRepo) {
 	}
 }
 
+// fedRepoManyOutboundActivities inserts many activities with one statement, each found as
+// InsertOutboundActivity records one.
+func fedRepoManyOutboundActivities(t *testing.T, r *fedRepo) {
+	var as []federation.OutboundActivity
+	for i, typ := range []federation.ActivityType{federation.ActivityUndo, federation.ActivityReject} {
+		id := r.ids.NewID()
+		as = append(as, federation.OutboundActivity{
+			ID: id, ActivityURI: federation.IRI("https://" + testkit.ContractHost + "/ap/activities/" + id), Type: typ,
+			ActorAccountID: testkit.NamedID(fmt.Sprintf("actor %d", i)), ObjectKind: federation.OutboundFollow, ObjectID: testkit.NamedID(fmt.Sprintf("follow %d", i)),
+			CreatedAt: r.clock.Now(),
+		})
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.h.Federation.InsertOutboundActivities(ctx, tx, as), r.h.Federation.InsertOutboundActivities(ctx, tx, nil))
+	})
+	for _, a := range as {
+		if got, err := r.h.Federation.FindOutboundActivity(t.Context(), a.ID); err != nil || got != a {
+			t.Errorf("FindOutboundActivity(%s) = %+v, %v; want %+v", a.ID, got, err, a)
+		}
+	}
+}
+
 func fedRepoDocuments(t *testing.T, r *fedRepo) {
 	a := r.activity(t, federation.ActivityCreate, federation.OutboundStatus, testkit.NamedID("status"))
 	if _, err := r.h.Federation.FindOutboundDocument(t.Context(), a.ID); !errors.Is(err, appfederation.ErrNotFound) {
@@ -165,6 +191,47 @@ func fedRepoDocuments(t *testing.T, r *fedRepo) {
 	if got, err := r.h.Federation.FindOutboundDocument(t.Context(), a.ID); err != nil || string(got) != string(first) {
 		t.Errorf("FindOutboundDocument = %s, %v; want the first document", got, err)
 	}
+	// The documents of many activities together, the first of each kept, bytes as they are.
+	b, c := r.activity(t, federation.ActivityDelete, federation.OutboundStatus, testkit.NamedID("b")), r.activity(t, federation.ActivityDelete, federation.OutboundStatus, testkit.NamedID("c"))
+	docs := map[string][]byte{a.ID: []byte(`{"id":"not kept"}`), b.ID: []byte("{\"id\":\"b\",\"x\":\"\u00e9\"}"), c.ID: {0x7b, 0x7d}}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.h.Federation.InsertOutboundDocuments(ctx, tx, docs, r.clock.Now()), r.h.Federation.InsertOutboundDocuments(ctx, tx, nil, r.clock.Now()))
+	})
+	for id, want := range map[string][]byte{a.ID: first, b.ID: docs[b.ID], c.ID: docs[c.ID]} {
+		if got, err := r.h.Federation.FindOutboundDocument(t.Context(), id); err != nil || string(got) != string(want) {
+			t.Errorf("FindOutboundDocument(%s) after InsertOutboundDocuments = %q, %v; want %q", id, got, err, want)
+		}
+	}
+}
+
+// fedRepoDeliveryContext reads a delivery with its activity, document, and server's health, as
+// the reads of each find them, without a document or a health row as with them.
+func fedRepoDeliveryContext(t *testing.T, r *fedRepo) {
+	ctx := t.Context()
+	a := r.activity(t, federation.ActivityCreate, federation.OutboundStatus, testkit.NamedID("status"))
+	d := r.delivery(t, a.ID, "a.example")
+	want := func(name string, doc []byte, health federation.InstanceState, row bool) {
+		t.Helper()
+		got, err := r.h.Federation.FindDeliveryContext(ctx, d.ID)
+		del, derr := r.h.Federation.FindDelivery(ctx, d.ID)
+		if err != nil || derr != nil || got.Delivery != del || got.Activity != a || string(got.Document) != string(doc) ||
+			(doc == nil) != (got.Document == nil) || got.Health != health || got.HealthRow != row {
+			t.Errorf("FindDeliveryContext %s = %+v, %v; want %+v of %+v, document %s, health %q (row %v)", name, got, errors.Join(err, derr), del, a, doc, health, row)
+		}
+	}
+	want("without a document or health", nil, federation.InstanceAvailable, false)
+	doc := []byte(`{"id":"doc"}`)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		_, err := r.h.Federation.InsertOutboundDocument(ctx, tx, a.ID, doc, r.clock.Now())
+		return err
+	})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Federation.UpsertInstanceHealth(ctx, tx, federation.InstanceHealth{Domain: "a.example", State: federation.InstanceUnavailable, Since: r.clock.Now(), FailureDays: 7})
+	})
+	want("with both", doc, federation.InstanceUnavailable, true)
+	if _, err := r.h.Federation.FindDeliveryContext(ctx, testkit.NamedID("unknown")); !errors.Is(err, appfederation.ErrNotFound) {
+		t.Errorf("FindDeliveryContext(unknown) = %v, want ErrNotFound", err)
+	}
 }
 
 func fedRepoDeliveries(t *testing.T, r *fedRepo) {
@@ -185,6 +252,26 @@ func fedRepoDeliveries(t *testing.T, r *fedRepo) {
 		}
 		return err
 	})
+
+	// Many deliveries at once: those of the inboxes the activity has, a second time or twice in
+	// the batch, are not inserted.
+	batch := r.activity(t, federation.ActivityCreate, federation.OutboundStatus, testkit.NamedID("a third status"))
+	had := r.delivery(t, batch.ID, "a.example")
+	newOf := func(host string) federation.Delivery {
+		return federation.Delivery{ID: r.ids.NewID(), OutboundActivityID: batch.ID, InboxURL: federation.IRI("https://" + host + "/inbox"), Domain: host, CreatedAt: r.clock.Now()}
+	}
+	d, e, hadAgain, dAgain := newOf("d.example"), newOf("e.example"), newOf("a.example"), newOf("d.example")
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		got, err := r.h.Federation.InsertDeliveries(ctx, tx, []federation.Delivery{d, hadAgain, e, dAgain})
+		if err == nil && !maps.Equal(got, map[string]bool{d.ID: true, e.ID: true}) {
+			t.Errorf("InsertDeliveries = %v; want the new inboxes d and e only", got)
+		}
+		return err
+	})
+	if got, err := r.h.Federation.ListDeliveries(t.Context(), batch.ID, "", 10); err != nil || len(got) != 3 ||
+		!slices.Contains(got, had) || !slices.Contains(got, d) || !slices.Contains(got, e) {
+		t.Errorf("ListDeliveries of the batch = %+v, %v; want the first and the two new ones", got, err)
+	}
 
 	first, err := r.h.Federation.ListDeliveries(t.Context(), a.ID, "", 2)
 	if err != nil || !slices.Equal(first, want[:2]) {
@@ -252,6 +339,11 @@ func fedRepoHealth(t *testing.T, r *fedRepo) {
 	}
 	if got, err := r.h.Federation.InstanceState(ctx, "c.example"); err != nil || got != federation.InstanceUnavailable {
 		t.Errorf("InstanceState(unavailable) = %q, %v", got, err)
+	}
+	states := map[string]federation.InstanceState{"a.example": federation.InstanceAvailable, "b.example": federation.InstanceAvailable,
+		"c.example": federation.InstanceUnavailable, "unknown.example": federation.InstanceAvailable}
+	if got, err := r.h.Federation.InstanceStatesOf(ctx, []string{"a.example", "b.example", "c.example", "unknown.example"}); err != nil || !maps.Equal(got, states) {
+		t.Errorf("InstanceStatesOf = %v, %v; want %v", got, err, states)
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		if got, err := r.h.Federation.LockInstanceHealth(ctx, tx, "c.example"); err != nil || got != down {

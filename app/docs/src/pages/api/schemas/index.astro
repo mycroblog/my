@@ -1,0 +1,32 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-only
+// The list of the schemas of the client API reference that have a page (src/api-schemas.ts), which the overview of
+// the reference links.
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import { schemaPages, schemaSidebar, schemaSummary, schemaURL } from "../../../api-schemas";
+
+const pages = schemaPages().toSorted((a, b) => a.name.localeCompare(b.name, "en"));
+---
+
+<StarlightPage
+  frontmatter={{
+    title: "Schemas",
+    description: "The schemas of the requests and responses of the client API, each with its fields and an example.",
+  }}
+  headings={[]}
+  sidebar={schemaSidebar()}
+>
+  <p>The schemas of the requests and responses of the client API, each with its fields and an example.</p>
+  <ul>
+    {
+      pages.map((page) => (
+        <li>
+          <a href={schemaURL(page.name)}>
+            <code>{page.name}</code>
+          </a>
+          {schemaSummary(page) !== undefined && <>: {schemaSummary(page)}</>}
+        </li>
+      ))
+    }
+  </ul>
+</StarlightPage>

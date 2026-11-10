@@ -32,6 +32,11 @@ type presentReads interface {
 	Images(ctx context.Context, refs []appcontent.ImageRef) (map[appcontent.ImageRef]appcontent.Image, error)
 	CustomEmojis(ctx context.Context, ids []string) (map[string]appcontent.CustomEmojiView, error)
 	RemoteProfileURLs(ctx context.Context, accountIDs []string) (map[string]string, error)
+	// FindByIDs returns the actors of ids that exist, by ID, as FindByID returns each.
+	FindByIDs(ctx context.Context, ids []string) (map[string]appaccount.Actor, error)
+	// LocalAccountsOfUsers returns the local accounts of the users of userIDs that have one, by
+	// user, as LocalAccountOfUser returns each.
+	LocalAccountsOfUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error)
 }
 
 // serverReads reads through the server's use cases; those it was built without read nothing.
@@ -41,6 +46,17 @@ func (s *Server) reads() presentReads { return serverReads{o: &s.o} }
 
 func (r serverReads) FindByID(ctx context.Context, id string) (appaccount.Actor, error) {
 	return r.o.Accounts.FindByID(ctx, id)
+}
+
+func (r serverReads) FindByIDs(ctx context.Context, ids []string) (map[string]appaccount.Actor, error) {
+	return r.o.Accounts.FindByIDs(ctx, ids)
+}
+
+func (r serverReads) LocalAccountsOfUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error) {
+	if r.o.UserAccounts == nil {
+		return map[string]account.LocalAccount{}, nil
+	}
+	return (&Server{o: *r.o}).localAccountsOfUsers(ctx, userIDs)
 }
 
 func (r serverReads) LocalAccountOfUser(ctx context.Context, userID string) (account.LocalAccount, error) {
@@ -97,6 +113,16 @@ type txReads struct {
 
 func (r txReads) FindByID(ctx context.Context, id string) (appaccount.Actor, error) {
 	return r.w.FindByIDTx(ctx, r.tx, id)
+}
+
+// FindByIDs reads each account in the transaction: the webhook data present one entity at a time.
+func (r txReads) FindByIDs(ctx context.Context, ids []string) (map[string]appaccount.Actor, error) {
+	return byOne(ids, func(id string) (appaccount.Actor, error) { return r.w.FindByIDTx(ctx, r.tx, id) }, appaccount.ErrNotFound)
+}
+
+// LocalAccountsOfUsers reads each local account in the transaction, as FindByIDs.
+func (r txReads) LocalAccountsOfUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error) {
+	return byOne(userIDs, func(id string) (account.LocalAccount, error) { return r.w.LocalAccountOfUserTx(ctx, r.tx, id) }, appaccount.ErrNotFound)
 }
 
 func (r txReads) LocalAccountOfUser(ctx context.Context, userID string) (account.LocalAccount, error) {

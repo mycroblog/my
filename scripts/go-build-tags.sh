@@ -23,6 +23,8 @@ sets=(
   "no_sqlite,no_valkey,no_gcs,no_pubsub,no_gcpkms,no_cloudtasks,no_otel,no_billing_gcp,no_payments_payjp,no_voice_sora,no_translator_google"
   # Google Cloud: PostgreSQL, the Pub/Sub broker, Cloud KMS, Cloud Tasks, without the LiveKit voice chat, Amazon Translate, or Meilisearch.
   "no_sqlite,no_valkey,no_sns,no_ses,no_awskms,no_billing_aws,no_voice_livekit,no_translator_aws,no_search_meilisearch"
+  # Without the Cloudflare billing import, which instances on every platform may use, so none of the sets above has it.
+  "no_billing_cloudflare"
   # The test build of the end-to-end tests and the demonstration.
   "e2e_fakes"
 )
@@ -53,6 +55,7 @@ excluded_packages() {
     no_awskms) echo "$m/keymanager/awskms github.com/aws/aws-sdk-go-v2/service/kms" ;;
     no_billing_aws) echo "$m/billing/aws github.com/aws/aws-sdk-go-v2/service/costexplorer" ;;
     no_billing_gcp) echo "$m/billing/gcp google.golang.org/api/bigquery/v2" ;;
+    no_billing_cloudflare) echo "$m/billing/cloudflare github.com/cloudflare/cloudflare-go/v7" ;;
     no_translator_google) echo "$m/translator/google cloud.google.com/go/translate/apiv3" ;;
     no_payments_stripe) echo "$m/payment/stripe github.com/stripe/stripe-go/v87" ;;
     no_payments_payjp) echo "$m/payment/payjp" ;;

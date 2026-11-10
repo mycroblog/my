@@ -117,6 +117,14 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   link_card_domain_images_stopped: "client:admin.audit_log.action.link_card_domain_images_stopped",
   link_card_domain_rule_removed: "client:admin.audit_log.action.link_card_domain_rule_removed",
   instance_marked_available: "client:admin.audit_log.action.instance_marked_available",
+  domain_allow_added: "client:admin.audit_log.action.domain_allow_added",
+  domain_allow_removed: "client:admin.audit_log.action.domain_allow_removed",
+  domain_list_subscription_created: "client:admin.audit_log.action.domain_list_subscription_created",
+  domain_list_subscription_updated: "client:admin.audit_log.action.domain_list_subscription_updated",
+  domain_list_subscription_deleted: "client:admin.audit_log.action.domain_list_subscription_deleted",
+  domain_list_draft_accepted: "client:admin.audit_log.action.domain_list_draft_accepted",
+  domain_list_draft_rejected: "client:admin.audit_log.action.domain_list_draft_rejected",
+  domain_list_fetch_queued: "client:admin.audit_log.action.domain_list_fetch_queued",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
@@ -149,6 +157,8 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   voice_room: "client:admin.audit_log.target_kind.voice_room",
   login_provider: "client:admin.audit_log.target_kind.login_provider",
   link_card_domain: "client:admin.audit_log.target_kind.link_card_domain",
+  domain_allow: "client:admin.audit_log.target_kind.domain_allow",
+  domain_list_subscription: "client:admin.audit_log.target_kind.domain_list_subscription",
 };
 
 /** Who performed an operation without a user's account to show. */
@@ -161,7 +171,8 @@ export const auditActorKindLabels: Readonly<Record<AuditActorKind, ClientMessage
 
 /**
  * The admin screen of an operation's target, where it has one; an account, a report, a domain, a sign-up block, a
- * role, a custom emoji, a webhook, an announcement, an invite, a relay, a billing source or a cost item.
+ * role, a custom emoji, a webhook, an announcement, an invite, a relay, a billing source, a cost item, an allowed
+ * domain or a blocklist subscription.
  * The other kinds of target (settings, rules, registrations) have no screen of their own, and a target that is
  * gone (erased past its retention, or deleted) has nothing left to show, so their entries show the label only.
  */
@@ -218,6 +229,11 @@ export function auditTargetHref(
     case "link_card_domain":
       // A rule has no screen of its own: the list of rules, which a removed rule has left.
       return "/admin/link-card-domains";
+    case "domain_allow":
+      // An allow has no screen of its own: the allowlist, which a removed allow has left.
+      return "/moderation/domain-actions/allowed";
+    case "domain_list_subscription":
+      return `/moderation/domain-actions/subscriptions/${id}`;
     case "custom_emoji_request":
       // A request has no screen of its own: the requests page of the custom emoji screen, in every state.
       return "/admin/custom-emojis/requests";

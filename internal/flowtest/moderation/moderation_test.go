@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package moderation_test runs the moderation flows (moderationtest.ModerationFlows, AuditLogFlows,
-// AppealFlows, ModerationRetentionFlows, and SignupBlockFlows) once, on SQLite (ADR-0153 §1).
+// AppealFlows, ModerationRetentionFlows, SignupBlockFlows, and DomainListFlows) once, on SQLite
+// (ADR-0153 §1).
 package moderation_test
 
 import (
@@ -41,4 +42,9 @@ func TestModerationRetentionFlows(t *testing.T) {
 func TestSignupBlockFlows(t *testing.T) {
 	t.Parallel()
 	moderationtest.SignupBlockFlows(t, harness)
+}
+
+func TestDomainListFlows(t *testing.T) {
+	t.Parallel()
+	moderationtest.DomainListFlows(t, harness)
 }

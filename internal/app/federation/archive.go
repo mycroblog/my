@@ -89,12 +89,12 @@ func (o *Objects) ArchiveOutbox(ctx context.Context, accountID string, w io.Writ
 		if err != nil {
 			return err
 		}
+		parts, err := o.pageParts(ctx, views)
+		if err != nil {
+			return err
+		}
 		for _, v := range views {
-			parts, err := o.viewParts(ctx, v)
-			if err != nil {
-				return err
-			}
-			note := statusNote(v.Status, v.Revision, v.Author, v.Status.Visibility, parts, updatedOf(v.Revision), o.d.Host, o.d.AccountDomain)
+			note := statusNote(v.Status, v.Revision, v.Author, v.Status.Visibility, parts[v.Status.ID], updatedOf(v.Revision), o.d.Host, o.d.AccountDomain)
 			item, err := marshalNoEscape(createOf(v.Status, actor, note).Embedded())
 			if err != nil {
 				return err

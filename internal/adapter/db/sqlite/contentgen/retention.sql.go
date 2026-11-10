@@ -63,8 +63,7 @@ func (q *Queries) InsertRelayedStatus(ctx context.Context, arg InsertRelayedStat
 }
 
 const listRelayedStatusesToPurge = `-- name: ListRelayedStatusesToPurge :many
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM relayed_statuses rs JOIN statuses s ON s.id = rs.status_id
 WHERE rs.status_id > CAST(?1 AS TEXT) AND rs.status_id < CAST(?2 AS TEXT)
   AND s.is_local = 0
@@ -73,9 +72,12 @@ WHERE rs.status_id > CAST(?1 AS TEXT) AND rs.status_id < CAST(?2 AS TEXT)
   AND NOT EXISTS (
     SELECT 1 FROM statuses r WHERE r.in_reply_to_uri = s.uri AND r.is_local = 1
       AND NOT EXISTS (SELECT 1 FROM status_deletions rd WHERE rd.status_id = r.id))
-  AND (s.conversation_uri IS NULL OR NOT EXISTS (
-    SELECT 1 FROM statuses l WHERE l.conversation_uri = s.conversation_uri AND l.is_local = 1
-      AND NOT EXISTS (SELECT 1 FROM status_deletions ld WHERE ld.status_id = l.id)))
+  AND NOT EXISTS (
+    SELECT 1 FROM status_conversations sc
+      JOIN status_conversations lc ON lc.conversation_id = sc.conversation_id
+      JOIN statuses l ON l.id = lc.status_id
+    WHERE sc.status_id = s.id AND l.is_local = 1
+      AND NOT EXISTS (SELECT 1 FROM status_deletions ld WHERE ld.status_id = l.id))
   AND NOT EXISTS (
     SELECT 1 FROM boosts b WHERE b.status_id = s.id AND b.is_local = 1
       AND NOT EXISTS (SELECT 1 FROM boost_retractions br WHERE br.boost_id = b.id))
@@ -119,7 +121,6 @@ func (q *Queries) ListRelayedStatusesToPurge(ctx context.Context, arg ListRelaye
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 		); err != nil {
 			return nil, err
@@ -138,8 +139,7 @@ func (q *Queries) ListRelayedStatusesToPurge(ctx context.Context, arg ListRelaye
 const listRemoteStatusesToPurge = `-- name: ListRemoteStatusesToPurge :many
 
 
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.id > CAST(?1 AS TEXT) AND s.id < CAST(?2 AS TEXT)
   AND s.is_local = 0
@@ -149,9 +149,12 @@ WHERE s.id > CAST(?1 AS TEXT) AND s.id < CAST(?2 AS TEXT)
     AND NOT EXISTS (
       SELECT 1 FROM statuses r WHERE r.in_reply_to_uri = s.uri AND r.is_local = 1
         AND NOT EXISTS (SELECT 1 FROM status_deletions rd WHERE rd.status_id = r.id))
-    AND (s.conversation_uri IS NULL OR NOT EXISTS (
-      SELECT 1 FROM statuses l WHERE l.conversation_uri = s.conversation_uri AND l.is_local = 1
-        AND NOT EXISTS (SELECT 1 FROM status_deletions ld WHERE ld.status_id = l.id)))
+    AND NOT EXISTS (
+      SELECT 1 FROM status_conversations sc
+        JOIN status_conversations lc ON lc.conversation_id = sc.conversation_id
+        JOIN statuses l ON l.id = lc.status_id
+      WHERE sc.status_id = s.id AND l.is_local = 1
+        AND NOT EXISTS (SELECT 1 FROM status_deletions ld WHERE ld.status_id = l.id))
     AND NOT EXISTS (
       SELECT 1 FROM boosts b WHERE b.status_id = s.id AND b.is_local = 1
         AND NOT EXISTS (SELECT 1 FROM boost_retractions br WHERE br.boost_id = b.id))
@@ -203,7 +206,6 @@ func (q *Queries) ListRemoteStatusesToPurge(ctx context.Context, arg ListRemoteS
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 		); err != nil {
 			return nil, err
@@ -321,6 +323,15 @@ DELETE FROM remote_status_revisions WHERE revision_id IN (
 
 func (q *Queries) PurgeRemoteStatusRevisions(ctx context.Context, ids string) error {
 	_, err := q.db.ExecContext(ctx, purgeRemoteStatusRevisions, ids)
+	return err
+}
+
+const purgeStatusConversations = `-- name: PurgeStatusConversations :exec
+DELETE FROM status_conversations WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) PurgeStatusConversations(ctx context.Context, ids string) error {
+	_, err := q.db.ExecContext(ctx, purgeStatusConversations, ids)
 	return err
 }
 

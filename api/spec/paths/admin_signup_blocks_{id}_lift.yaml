@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: liftSignupBlock
+  x-permission: manage_accounts
   summary: Lift a sign-up block
   description: |
     The block stops matching sign-ups at once; the lift is audited. Lifting a lifted block

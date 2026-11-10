@@ -12,6 +12,35 @@ import (
 	"database/sql"
 )
 
+const notifiedStatusesAmong = `-- name: NotifiedStatusesAmong :many
+SELECT DISTINCT status_id FROM notifications WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY status_id
+`
+
+// NotifiedStatusesAmong returns the statuses among status_ids (a JSON array) that a notification
+// is about, as StatusHasNotifications tells of one.
+func (q *Queries) NotifiedStatusesAmong(ctx context.Context, statusIds string) ([]sql.NullString, error) {
+	rows, err := q.db.QueryContext(ctx, notifiedStatusesAmong, statusIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []sql.NullString{}
+	for rows.Next() {
+		var status_id sql.NullString
+		if err := rows.Scan(&status_id); err != nil {
+			return nil, err
+		}
+		items = append(items, status_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const statusHasNotifications = `-- name: StatusHasNotifications :one
 
 

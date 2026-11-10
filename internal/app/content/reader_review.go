@@ -14,7 +14,7 @@ import (
 // ReviewedStatus is a status as the moderators review it as the evidence of a report.
 type ReviewedStatus struct {
 	// StatusView is the status as it was last; its Relation is nil, so its Poll has no own votes
-	// and it is not Quotable. A deleted status has left the projections, so its Counters are zero
+	// and it has no Permissions. A deleted status has left the projections, so its Counters are zero
 	// and it has no Reactions and no Card; its Poll and Quote stay.
 	StatusView
 	// DeletedAt is when the status was deleted, the zero time when it is not.
@@ -74,18 +74,18 @@ func (r *Reader) Review(ctx context.Context, statusID string) (ReviewedStatus, e
 			out.InReplyTo = &parent
 		}
 	}
-	parts, err := r.Parts(ctx, rev)
+	parts, err := r.viewParts(ctx, rev)
 	if err != nil {
 		return ReviewedStatus{}, err
 	}
-	out.Attachments, out.Mentions, out.Tags = parts.Attachments, parts.Mentions, parts.Tags
+	out.Attachments, out.Cover, out.Mentions, out.Tags = parts.Attachments, parts.Cover, parts.Mentions, parts.Tags
 	if r.d.LinkCards != nil {
 		if out.Card, err = r.d.LinkCards.View(ctx, st, rev); err != nil {
 			return ReviewedStatus{}, err
 		}
 	}
 	// The image of a card is shown as sensitive as the attachments are (ADR-0062 §7).
-	if (len(out.Attachments) > 0 || out.Card != nil && out.Card.Image != nil) && !out.Revision.Sensitive {
+	if (len(out.Attachments) > 0 || out.Cover != nil || out.Card != nil && out.Card.Image != nil) && !out.Revision.Sensitive {
 		if out.Revision.Sensitive, err = r.forcedSensitive(ctx, st); err != nil {
 			return ReviewedStatus{}, err
 		}
@@ -105,6 +105,27 @@ func (r *Reader) Review(ctx context.Context, statusID string) (ReviewedStatus, e
 	}
 	if out.Quote, err = r.reviewedQuote(ctx, st); err != nil {
 		return ReviewedStatus{}, err
+	}
+	return out, nil
+}
+
+// Reviews returns the statuses of ids that are not gone, in order, as Review returns each,
+// reading their parts together as a page does; the moderator has no relation to them.
+func (r *Reader) Reviews(ctx context.Context, ids []string) ([]ReviewedStatus, error) {
+	page, err := r.page(ctx, reviewer, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ReviewedStatus, 0, len(ids))
+	for _, id := range ids {
+		st, err := page.Review(ctx, id)
+		if errors.Is(err, ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, st)
 	}
 	return out, nil
 }

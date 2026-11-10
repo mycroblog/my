@@ -9,8 +9,8 @@ INSERT INTO local_accounts (account_id, user_id, username, username_normalized) 
 -- name: InsertProfileRevision :exec
 INSERT INTO account_profile_revisions (
   id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+  avatar_media_id, header_media_id, revised_at, feed
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: InsertProfileField :exec
 INSERT INTO account_profile_fields (revision_id, position, name, value_html) VALUES (?, ?, ?, ?);
@@ -142,7 +142,7 @@ SELECT account_id, username, username_normalized, domain FROM account_handles WH
 
 -- name: GetProfileRevision :one
 SELECT id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at
+  avatar_media_id, header_media_id, revised_at, feed
 FROM account_profile_revisions WHERE id = ?;
 
 -- name: ListProfileFields :many
@@ -155,6 +155,13 @@ SELECT emoji_id FROM account_profile_revision_emojis WHERE revision_id = ? ORDER
 -- name: ListAccountKeys :many
 SELECT id, account_id, key_id, algorithm, public_key_pem, fingerprint, created_at FROM account_keys
 WHERE account_id = ? ORDER BY id;
+
+-- The keys of an account, as ListAccountKeys reads them, with their sealed private keys (NULL
+-- for a key without one), as GetLocalAccountPrivateKey reads each.
+-- name: ListAccountKeysWithPrivate :many
+SELECT k.id, k.account_id, k.key_id, k.algorithm, k.public_key_pem, k.fingerprint, k.created_at, p.private_key_enc
+FROM account_keys k LEFT JOIN local_account_private_keys p ON p.account_key_id = k.id
+WHERE k.account_id = ? ORDER BY k.id;
 
 -- name: GetLocalAccountPrivateKey :one
 SELECT private_key_enc FROM local_account_private_keys WHERE account_key_id = ?;

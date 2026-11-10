@@ -76,6 +76,14 @@ type previewMeta struct {
 	// Creator (fediverse:creator) and ActivityPubID (the ActivityPub alternate) are for profiles
 	// and posts; the landing page has neither.
 	Card, Creator, ActivityPubID string
+	// Feed is the Atom feed of the page (FR-213): of a profile, or of the hashtag in the generic
+	// shell of its page; nil for none.
+	Feed *feedLink
+}
+
+// feedLink is the <link rel="alternate"> of an Atom feed.
+type feedLink struct {
+	Title, URL string
 }
 
 // uuidPattern matches the canonical form of a UUIDv7, the only form of a status ID in a post
@@ -197,7 +205,10 @@ func (h *Handler) renderProfile(ctx context.Context, p appcontent.ProfilePreview
 	}
 	meta.Image = img
 	meta.Card = card(meta.Image)
-	version = append(version, "profile", imageVersion(meta.Image))
+	if p.Feed {
+		meta.Feed = &feedLink{Title: meta.Title, URL: meta.URL + feedSuffix}
+	}
+	version = append(version, "profile", imageVersion(meta.Image), strconv.FormatBool(p.Feed))
 	policy, err := h.ownerPolicy(ctx, p)
 	if err != nil {
 		return document{}, err
@@ -388,17 +399,16 @@ func (h *Handler) renderPreview(ctx context.Context, lang string, meta previewMe
 	return d, nil
 }
 
-// ogLocale formats a BCP 47 tag as og:locale (language_TERRITORY): "ja" -> "ja",
-// "en-US" -> "en_US". Script and other subtags are dropped.
+// ogLocale formats a BCP 47 tag as og:locale, the Open Graph protocol's language_TERRITORY
+// (ADR-0028 §2): the tag's own region, or the likely one of a tag without ("ja" -> "ja_JP",
+// "en-US" -> "en_US", "zh-Hant" -> "zh_TW"). Script and other subtags are dropped; a tag without
+// a known region keeps its language alone.
 func ogLocale(tag string) string {
-	parts := strings.Split(i18n.Canonicalize(tag), "-")
-	out := parts[0]
-	for _, p := range parts[1:] {
-		if len(p) == 2 {
-			return out + "_" + p
-		}
+	lang, _, _ := strings.Cut(i18n.Canonicalize(tag), "-")
+	if r := i18n.Region(tag); r != "" {
+		return lang + "_" + r
 	}
-	return out
+	return lang
 }
 
 func profileURL(host, username string) string { return "https://" + host + "/@" + username }
@@ -452,14 +462,18 @@ func plainText(s string) string {
 
 // description truncates text for og:description to descriptionLength grapheme clusters, so
 // that no emoji or combining sequence is cut, ending a truncated text with an ellipsis.
-func description(text string) string {
+func description(text string) string { return truncate(text, descriptionLength) }
+
+// truncate shortens text, its runs of white space made one space, to length grapheme clusters, so
+// that no emoji or combining sequence is cut, ending a shortened text with an ellipsis.
+func truncate(text string, length int) string {
 	text = strings.Join(strings.Fields(text), " ")
-	if uniseg.GraphemeClusterCount(text) <= descriptionLength {
+	if uniseg.GraphemeClusterCount(text) <= length {
 		return text
 	}
 	var b strings.Builder
 	g := uniseg.NewGraphemes(text)
-	for n := 0; n < descriptionLength-1 && g.Next(); n++ {
+	for n := 0; n < length-1 && g.Next(); n++ {
 		b.WriteString(g.Str())
 	}
 	return strings.TrimRightFunc(b.String(), unicode.IsSpace) + "…"

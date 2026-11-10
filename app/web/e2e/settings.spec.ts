@@ -4,9 +4,11 @@
 // scrolling sideways. `vite preview` has no API, so each test plays a signed-in user's server with
 // page.route; names change with the locale, so elements are found by role, structure, autocomplete tokens and,
 // where a role is not unique, by their names in the project's catalog.
+import type { components } from "@mycroblog/mykit";
 import type { Page, Route } from "@playwright/test";
 import { escapeRegExp, expect, expectNoAxeViolations, expectNoHorizontalScroll, localeDir, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 /** The signed-in user's account, as GET /accounts/verify_credentials answers. */
 const viewer = {
@@ -24,6 +26,8 @@ const viewer = {
   discoverable: true,
   indexable: true,
   ai_opt_out: false,
+  feed_enabled: true,
+  feed_follows_indexable: true,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: [],
@@ -40,6 +44,57 @@ const bob = {
   acct: "bob@remote.example",
   display_name: "Bob",
 };
+
+/** A post of `account`, as the approval requests show the posts. */
+function postOf(account: typeof viewer, n: number, text: string) {
+  const id = `0192f0c4-7a8e-7000-8000-${String(n).padStart(12, "0")}`;
+  return {
+    id,
+    uri: `https://my.example/ap/statuses/${id}`,
+    url: `https://my.example/@${account.username}/status/${id}`,
+    account,
+    content: `<p>${text}</p>`,
+    spoiler_text: "",
+    sensitive: false,
+    visibility: "public",
+    language: "en",
+    created_at: "2026-10-17T10:00:00Z",
+    media_attachments: [],
+    mentions: [],
+    tags: [],
+    emojis: [],
+    replies_count: 0,
+    boosts_count: 0,
+    favourites_count: 0,
+    reactions: [],
+    filtered: [],
+  };
+}
+
+/** A reply and a boost of the viewer's post that wait for the viewer's approval. */
+const interactionRequests = [
+  {
+    id: "0192f0c4-7a8e-7000-8000-0000000009a1",
+    kind: "reply",
+    state: "pending",
+    created_at: "2026-10-17T11:00:00Z",
+    account: bob,
+    status: postOf(viewer, 0x9a2, "A post whose replies the author approves."),
+    interacting_status: postOf(
+      bob,
+      0x9a3,
+      "A reply that waits for the approval, long enough to wrap on a narrow phone.",
+    ),
+  },
+  {
+    id: "0192f0c4-7a8e-7000-8000-0000000009a4",
+    kind: "announce",
+    state: "pending",
+    created_at: "2026-10-17T10:30:00Z",
+    account: bob,
+    status: postOf(viewer, 0x9a2, "A post whose replies the author approves."),
+  },
+];
 
 /** A cell of the notification settings (NotificationSettingCell). */
 type Cell = { enabled: boolean; fixed: boolean };
@@ -61,7 +116,7 @@ type ServerOptions = {
   permissions?: string[];
   sendsEmail?: boolean;
   timeZoneChosen?: boolean;
-  emailSuppression?: { kind: string; state_changed_at: string };
+  emailSuppression?: components["schemas"]["EmailSuppression"];
   /**
    * The server maximum of the automatic deletion that applies to the viewer (AutoDeleteLimit): GET answers the saved
    * policy with it, bound from `enforceFrom` while the policy goes beyond it, and the preview counts four posts.
@@ -78,19 +133,11 @@ async function signedInServer(
   locale: string,
   { permissions = [], sendsEmail = true, timeZoneChosen = true, emailSuppression, autoDeleteLimit }: ServerOptions = {},
 ) {
-  let preferences = {
+  let preferences = preferencesOf({
     locale,
-    time_zone: "UTC",
     time_zone_chosen: timeZoneChosen,
-    locale_follows_browser: false,
-    time_zone_follows_browser: false,
-    default_visibility: "public",
-    default_post_language: "und",
-    require_media_description: false,
     ...(emailSuppression === undefined ? {} : { email_suppression: emailSuppression }),
-    timeline_auto_insert: false,
-    timeline_languages: [] as string[],
-  };
+  });
   let autoDeletePolicy = {
     enabled: false,
     min_age_days: 30,
@@ -204,6 +251,14 @@ async function signedInServer(
   const on: Cell = { enabled: true, fixed: false };
   const off: Cell = { enabled: false, fixed: false };
   const fixed: Cell = { enabled: true, fixed: true };
+  // The notification policy (ADR-0158): every condition accepts until a change.
+  let notificationPolicy: Record<string, string> = {
+    not_following: "accept",
+    not_follower: "accept",
+    new_account: "accept",
+    unsolicited_private_mention: "accept",
+    limited_account: "accept",
+  };
   let notificationRows = [
     ...["mention", "follow", "follow_request", "follow_accepted", "boost", "favourite", "reaction", "quote"].map(
       (group) => row(group, "ordinary", [group], on, off),
@@ -284,6 +339,10 @@ async function signedInServer(
         preferences = {
           ...preferences,
           ...change,
+          default_interaction_policy: {
+            ...preferences.default_interaction_policy,
+            ...change.default_interaction_policy,
+          },
           time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined,
           locale_follows_browser:
             change.locale_follows_browser ?? (change.locale === undefined && preferences.locale_follows_browser),
@@ -311,6 +370,19 @@ async function signedInServer(
         );
         return json(route, { rows: notificationRows });
       }
+      case "GET /preferences/notification_policy":
+        return json(route, notificationPolicy);
+      case "PATCH /preferences/notification_policy": {
+        const change = request.postDataJSON() as Record<string, string>;
+        changes.push(change);
+        notificationPolicy = { ...notificationPolicy, ...change };
+        return json(route, notificationPolicy);
+      }
+      case "GET /featured_tags":
+        // The profile form lists the hashtags the user features with the other fields.
+        return json(route, {
+          items: [{ name: "bread", url: "https://my.example/tags/bread", statuses_count: 3 }],
+        });
       case "GET /blocks":
         return json(route, { items: [bob] });
       case "GET /mutes":
@@ -328,6 +400,8 @@ async function signedInServer(
         });
       case "GET /follow_requests":
         return json(route, { items: [bob] });
+      case "GET /interaction_requests":
+        return json(route, { items: interactionRequests });
       case "GET /exports":
         return json(route, {
           items: [
@@ -478,6 +552,7 @@ const pages = [
   "/settings/preferences",
   "/settings/notifications",
   "/settings/follow-requests",
+  "/settings/interaction-requests",
   "/settings/blocks",
   "/settings/mutes",
   "/settings/domain-mutes",
@@ -875,8 +950,8 @@ test.describe("display language", () => {
 
     // The note that changes save at once, then the sections: Display (the display language and time zone selects,
     // the theme radio group, the autoplay switch), Navigation (the tab bar preview, the items, and the button that
-    // restores them), New posts (the visibility and quote radio groups, the default post language select, the switch
-    // that asks for descriptions), and Timelines (the languages group and the switch that shows new posts at once).
+    // restores them), New posts (the visibility radio group, the group of who may reply, boost, and quote with a select and a
+    // checkbox of each, the default post language select, the switch that asks for descriptions), and Timelines (the languages group and the switch that shows new posts at once).
     await expect(page.getByRole("main")).toMatchAriaSnapshot(`
       - heading [level=1]
       - link
@@ -906,10 +981,15 @@ test.describe("display language", () => {
           - radio
           - radio
           - radio
-        - radiogroup:
-          - radio
-          - radio
-          - radio
+        - group:
+          - paragraph
+          - paragraph
+          - button
+          - checkbox
+          - button
+          - checkbox
+          - button
+          - checkbox
         - button
         - switch
       - region:
@@ -990,7 +1070,7 @@ test.describe("navigation", () => {
         .getByRole("list")
         .locator("a")
         .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
-    await expect(section.getByRole("checkbox")).toHaveCount(8);
+    await expect(section.getByRole("checkbox")).toHaveCount(9);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -1006,6 +1086,7 @@ test.describe("navigation", () => {
         "/public",
         "/search",
         "/notifications",
+        "/direct-messages",
         "/profile",
         "/bookmarks",
         "/settings",
@@ -1025,6 +1106,7 @@ test.describe("navigation", () => {
         "/public",
         "/search",
         "/notifications",
+        "/direct-messages",
         "/bookmarks",
         "/settings",
         "/announcements",
@@ -1043,6 +1125,7 @@ test.describe("navigation", () => {
         "/public",
         "/search",
         "/notifications",
+        "/direct-messages",
         "/bookmarks",
         "/settings",
         "/announcements",
@@ -1356,5 +1439,32 @@ test.describe("time zone of the device", () => {
     await expect(select).toContainText("+09:00");
     await expect(select).toBeFocused();
     await expect(useDevice).toHaveCount(0);
+  });
+});
+
+test.describe("notification policy", () => {
+  test("explains each action, and saves the action chosen with the keyboard for a condition", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const changes = await signedInServer(page, projectLocale());
+    await page.goto("/settings/notifications");
+    const section = page
+      .getByRole("main")
+      .getByRole("region", { name: message("notification_policy.title"), exact: true });
+    await expect(section).toContainText(message("notification_policy.action.filter.description"));
+    const group = section.getByRole("radiogroup", {
+      name: message("notification_policy.condition.new_account"),
+      exact: true,
+    });
+    await expect(group.getByRole("radio", { name: message("notification_policy.action.accept") })).toBeChecked();
+
+    // The APG radio group: the arrow keys move and choose (Down in either writing direction), which saves at once.
+    await group.getByRole("radio", { name: message("notification_policy.action.accept") }).focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(group.getByRole("radio", { name: message("notification_policy.action.filter") })).toBeChecked();
+    await expect.poll(() => changes).toContainEqual({ new_account: "filter" });
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
   });
 });

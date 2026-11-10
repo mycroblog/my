@@ -236,6 +236,41 @@ func (r *Repository) FindAccessTokenByAccessHash(ctx context.Context, hash []byt
 	return accessTokenFromRow(row), state, nil
 }
 
+// FindAccessTokensByAccessHashes implements identity.Repository.
+func (r *Repository) FindAccessTokensByAccessHashes(ctx context.Context, hashes [][]byte) (map[string]appidentity.TokenWithState, error) {
+	out := map[string]appidentity.TokenWithState{}
+	if len(hashes) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListAccessTokensByAccessHashes(ctx, hashes)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list access tokens")
+	}
+	for _, row := range rows {
+		state := identity.TokenState{
+			Revoked: row.Revoked, Client: identity.OAuthClientState{Disabled: row.ClientDisabled, Deleted: row.ClientDeleted},
+		}
+		out[string(row.AccessTokenHash)] = appidentity.TokenWithState{Token: accessTokenFromRow(identitygen.GetAccessTokenByAccessHashRow(row)), State: state}
+	}
+	return out, nil
+}
+
+// ExistingOAuthClients implements identity.Repository.
+func (r *Repository) ExistingOAuthClients(ctx context.Context, clientIDs []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(clientIDs) == 0 {
+		return out, nil
+	}
+	ids, err := r.db.reader().ListOAuthClientIDsAmong(ctx, clientIDs)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list oauth clients")
+	}
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, nil
+}
+
 // FindAccessTokenByRefreshHash implements identity.Repository.
 func (r *Repository) FindAccessTokenByRefreshHash(ctx context.Context, hash []byte) (identity.AccessToken, identity.TokenState, error) {
 	row, err := r.db.reader().GetAccessTokenByRefreshHash(ctx, hash)

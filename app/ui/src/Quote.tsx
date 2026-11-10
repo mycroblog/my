@@ -22,13 +22,16 @@ export type PostExcerptProps = {
   href: string;
   /** The excerpt: a `PostExcerptText`, or a sentence for a post that has no text to quote. */
   children: ReactNode;
+  /** Runs as the link is followed, before the navigation (a direct message's conversation is marked read). */
+  onPress?: () => void;
 };
 
 /** The excerpt of a post as a quote that links to the post, in the color of the text and underlined on hover. */
-export function PostExcerpt({ href, children }: PostExcerptProps) {
+export function PostExcerpt({ href, children, onPress }: PostExcerptProps) {
   return (
     <Link
       href={href}
+      {...(onPress !== undefined && { onPress })}
       className="block rounded-md bg-surface-sunken px-3 py-2 wrap-anywhere text-fg-muted no-underline data-hovered:text-fg data-hovered:underline"
     >
       {children}

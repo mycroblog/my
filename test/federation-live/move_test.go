@@ -201,7 +201,7 @@ func (e *env) moveIn(ctx context.Context, t *testing.T, p *peerClient, m peerMov
 func (e *env) peerMovers(ctx context.Context) (map[string]peerMover, error) {
 	gts := map[string]*mastodonAPI{}
 	for _, user := range []string{moveArrival, moveLeaver} {
-		token, err := signInGoToSocial(ctx, e.http.Transport, user, os.Getenv("FEDERATION_LIVE_GTS_PASSWORD"))
+		token, err := signInGoToSocial(ctx, e.http.Transport, gtsHost, user, os.Getenv("FEDERATION_LIVE_GTS_PASSWORD"))
 		if err != nil {
 			return nil, fmt.Errorf("signing in to %s as %s: %w", gtsHost, user, err)
 		}

@@ -128,8 +128,10 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 			"event: list_update\ndata: {\"list_id\":\"l1\"}\n\n",
 			"event: notification\ndata: {\"id\":\"n1\",\"type\":\"follow\"}\n\n",
 			": heartbeat\n\n",
+			"event: conversation\ndata: {\"id\":\"c1\",\"unread\":true}\n\n",
 			"event: announcement\ndata: {\"id\":\"a1\"}\n\n",
 			"event: announcement_removed\ndata: {\"id\":\"a2\"}\n\n",
+			"event: notification_requests\ndata: {\"accounts_count\":1,\"notifications_count\":3}\n\n",
 			"event: poll\ndata: {\"id\":\"p1\"}\ndata: more\n\n",
 			"event: update\ndata: not json\n\n",
 		),
@@ -146,8 +148,8 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 	if !slices.Equal(rec.opens, []bool{false, true}) {
 		t.Errorf("opens = %v, want [false true]", rec.opens)
 	}
-	if len(rec.events) != 6 {
-		t.Fatalf("events = %#v, want 6", rec.events)
+	if len(rec.events) != 8 {
+		t.Fatalf("events = %#v, want 8", rec.events)
 	}
 	if e, ok := rec.events[0].(*UpdateEvent); !ok || e.Status.Id != "s1" {
 		t.Errorf("events[0] = %#v, want the update of s1", rec.events[0])
@@ -159,14 +161,21 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 	if e, ok := rec.events[1].(*NotificationEvent); !ok || e.Notification.Id != "n1" {
 		t.Errorf("events[1] = %#v, want the notification n1", rec.events[1])
 	}
+	if e, ok := rec.events[2].(*ConversationEvent); !ok || e.Conversation.Id != "c1" || !e.Conversation.Unread || e.EventName() != "conversation" {
+		t.Errorf("events[2] = %#v, want the conversation c1", rec.events[2])
+	}
+	rec.events = slices.Delete(rec.events, 2, 3)
 	if e, ok := rec.events[2].(*AnnouncementEvent); !ok || e.Announcement.Id != "a1" {
 		t.Errorf("events[2] = %#v, want the announcement a1", rec.events[2])
 	}
 	if e, ok := rec.events[3].(*AnnouncementRemovedEvent); !ok || e.ID != "a2" {
 		t.Errorf("events[3] = %#v, want the removal of a2", rec.events[3])
 	}
-	if e, ok := rec.events[4].(*UnknownEvent); !ok || e.Name != "poll" || e.Data != "{\"id\":\"p1\"}\nmore" || e.EventName() != "poll" {
-		t.Errorf("events[4] = %#v, want the unknown event poll", rec.events[4])
+	if e, ok := rec.events[4].(*NotificationRequestsEvent); !ok || e.Summary.AccountsCount != 1 || e.Summary.NotificationsCount != 3 || e.EventName() != "notification_requests" {
+		t.Errorf("events[4] = %#v, want the counts of the requests", rec.events[4])
+	}
+	if e, ok := rec.events[5].(*UnknownEvent); !ok || e.Name != "poll" || e.Data != "{\"id\":\"p1\"}\nmore" || e.EventName() != "poll" {
+		t.Errorf("events[5] = %#v, want the unknown event poll", rec.events[5])
 	}
 	// The list update without a status and the update whose data is no Status are skipped and reported, and
 	// the stream goes on.

@@ -7,6 +7,7 @@ import { delay, http, HttpResponse } from "msw";
 import { describe, expect, test } from "vitest";
 import type { Preferences, PreferencesChange } from "./api/me";
 import {
+  changedPreferences,
   otherAccountFixture,
   preferencesFixture,
   relationshipFixture,
@@ -43,7 +44,7 @@ describe("a change of the timeline languages", () => {
       http.get(`${apiBase}/preferences`, () => HttpResponse.json(preferences)),
       http.patch(`${apiBase}/preferences`, async ({ request }) => {
         const change = (await request.json()) as PreferencesChange;
-        preferences = { ...preferences, ...change };
+        preferences = changedPreferences(preferences, change);
         return HttpResponse.json(preferences);
       }),
       http.get(`${apiBase}/timelines/local`, async () => {

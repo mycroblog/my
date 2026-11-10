@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: What a `silence` of the list issues on this server; `ignore` issues nothing.
+type: string
+enum: [limit, ignore]

@@ -144,3 +144,9 @@ DELETE FROM webhook_messages WHERE id = ANY(sqlc.arg(ids)::uuid[]);
 -- name: ListExistingWebhookEndpointIDs :many
 SELECT endpoint_id FROM webhook_endpoint_heads WHERE endpoint_id = ANY(sqlc.arg(ids)::uuid[]) AND state <> 'deleted'
 ORDER BY endpoint_id;
+
+-- InsertWebhookDeliveries is InsertWebhookDelivery of the deliveries of one message to many
+-- endpoints (the unnests of a select list advance together).
+-- name: InsertWebhookDeliveries :exec
+INSERT INTO webhook_deliveries (id, message_id, endpoint_id, created_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), sqlc.arg(message_id)::uuid, unnest(sqlc.arg(endpoint_ids)::uuid[]), sqlc.arg(created_at)::timestamptz;

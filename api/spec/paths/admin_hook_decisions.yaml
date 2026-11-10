@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listHookDecisions
+  x-permission: manage_reports
   summary: List the decisions of the decision hooks
   description: |
     What the external reviews said, the newest first. Without `outcome` the list leaves out

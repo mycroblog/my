@@ -207,6 +207,11 @@ run "console_on" {
   }
 
   assert {
+    condition     = !google_cloud_run_v2_job.one_off["console"].deletion_protection && google_cloud_run_v2_job.one_off["migrate"].deletion_protection
+    error_message = "deletion protection must hold the migration job and never the console, which console_enabled turns off"
+  }
+
+  assert {
     condition     = output.console.platform == "gcp-cloud-run" && output.console.project == "p" && output.console.region == "asia-northeast1"
     error_message = "the console output does not say how to run it"
   }

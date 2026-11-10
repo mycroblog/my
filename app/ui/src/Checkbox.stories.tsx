@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, waitFor } from "storybook/test";
 import { Checkbox } from "./Checkbox";
 
 const meta = {
@@ -22,6 +23,24 @@ export const Invalid: Story = {
 
 export const InvalidChecked: Story = {
   args: { children: "I accept the server rules", isInvalid: true, defaultSelected: true },
+};
+
+/**
+ * What the pointer meets (web-client/16-look-states-and-wording.md G26, G27): the hand over the checkbox and its label,
+ * and a halo of the selection tint around the box under the pointer.
+ */
+export const PointerStates: Story = {
+  tags: ["no-screenshot"],
+  play: async ({ canvas, userEvent }) => {
+    // The control is a label: the visually hidden input, the box, then the text.
+    const label = canvas.getByText("Mark media as sensitive");
+    const box = [...label.children].find((child) => child.querySelector("input") === null);
+    if (!(box instanceof HTMLElement)) throw new Error("the checkbox has no box");
+    await expect(getComputedStyle(label).cursor).toBe("pointer");
+    const resting = getComputedStyle(box).boxShadow;
+    await userEvent.hover(label);
+    await waitFor(() => expect(getComputedStyle(box).boxShadow).not.toBe(resting));
+  },
 };
 
 export const Disabled: Story = {

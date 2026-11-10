@@ -5,6 +5,7 @@ package federation
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -63,6 +64,41 @@ func (r *Repository) InsertDelivery(ctx context.Context, tx uow.Tx, d federation
 		CreatedAt: sqlite.ToMillis(d.CreatedAt),
 	})
 	return n == 1, sqlite.Wrap(err, "insert delivery")
+}
+
+// InsertDeliveries implements federation.Repository.
+func (r *Repository) InsertDeliveries(ctx context.Context, tx uow.Tx, ds []federation.Delivery) (map[string]bool, error) {
+	out := make(map[string]bool, len(ds))
+	if len(ds) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	type row struct {
+		ID                 string `json:"id"`
+		OutboundActivityID string `json:"outbound_activity_id"`
+		InboxURL           string `json:"inbox_url"`
+		Domain             string `json:"domain"`
+		CreatedAt          int64  `json:"created_at"`
+	}
+	rows := make([]row, len(ds))
+	for i, d := range ds {
+		rows[i] = row{ID: d.ID, OutboundActivityID: d.OutboundActivityID, InboxURL: string(d.InboxURL), Domain: d.Domain, CreatedAt: sqlite.ToMillis(d.CreatedAt)}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return nil, err
+	}
+	inserted, err := q.InsertDeliveries(ctx, string(list))
+	if err != nil {
+		return nil, sqlite.Wrap(err, "insert deliveries")
+	}
+	for _, id := range inserted {
+		out[id] = true
+	}
+	return out, nil
 }
 
 // UpsertInstanceHealth implements federation.Repository.
@@ -147,4 +183,27 @@ func (r *Repository) InstanceState(ctx context.Context, domain string) (federati
 		return "", sqlite.Wrap(err, "get instance health")
 	}
 	return federation.InstanceState(row.State), nil
+}
+
+// InstanceStatesOf implements appfederation.Repository.
+func (r *Repository) InstanceStatesOf(ctx context.Context, domains []string) (map[string]federation.InstanceState, error) {
+	out := make(map[string]federation.InstanceState, len(domains))
+	if len(domains) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(domains)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListInstanceHealthOf(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list instance health")
+	}
+	for _, d := range domains {
+		out[d] = federation.InstanceAvailable
+	}
+	for _, row := range rows {
+		out[row.Domain] = federation.InstanceState(row.State)
+	}
+	return out, nil
 }

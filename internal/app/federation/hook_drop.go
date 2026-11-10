@@ -40,6 +40,24 @@ func RequeueDropped(repo InboxRepository, outbox queue.Outbox) apphook.OverrideE
 	}
 }
 
+// RestorableUntilOf is RestorableUntil of each of activityURIs whose record is left, by URI,
+// with one query.
+func (i *Inbox) RestorableUntilOf(ctx context.Context, activityURIs []string) (map[string]time.Time, error) {
+	iris := make([]federation.IRI, len(activityURIs))
+	for k, u := range activityURIs {
+		iris[k] = federation.IRI(u)
+	}
+	received, err := i.d.Repository.FindReceivedActivities(ctx, iris)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]time.Time, len(received))
+	for uri, r := range received {
+		out[string(uri)] = r.ReceivedAt.Add(ReceivedDocumentRetention)
+	}
+	return out, nil
+}
+
 // RestorableUntil returns until when cancelling the drop of the received activity activityURI runs
 // it again: ReceivedDocumentRetention after the activity was received, when the purge removes its
 // document. A decision can come long after the activity arrived (a job retried, or re-run by hand),

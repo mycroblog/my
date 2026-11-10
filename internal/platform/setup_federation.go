@@ -40,7 +40,7 @@ func (a *App) setUpFederation(cfg *config.Config, repo federation.Repository) qu
 	a.QuoteHandlers = federation.NewQuoteHandlers(federation.QuoteHandlersDeps{
 		UnitOfWork: a.UnitOfWork,
 		Recorder:   federation.RecorderDeps{Repository: repo, Outbox: outbox, IDs: a.IDs, Host: cfg.Host},
-		Approvals:  a.Interactions, Quotes: a.Content, Statuses: a.Content, Accounts: a.Accounts,
+		Approvals:  a.Interactions, Interactions: a.Interactions, Quotes: a.Content, Statuses: a.Content, Accounts: a.Accounts,
 		Fetcher: remoteDocuments{a}, // reads a.RemoteActors, built by setUpRemoteActors
 		Clock:   a.Clock, Logger: a.Logger,
 	})
@@ -79,7 +79,7 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 		UnitOfWork: a.UnitOfWork, Repository: repo, Outbox: outbox,
 		Statuses: federation.ContentStatuses{Service: a.Content, Interactions: a.Interactions},
 		Accounts: a.Accounts, Graph: a.Graph, Parts: a.Statuses, Follows: a.Graph, Images: a.Media.Images, Moves: a.Accounts,
-		EmojiTags: a.Media.EmojiTags, Quotes: a.Content, Aliases: a.Accounts,
+		EmojiTags: a.Media.EmojiTags, Quotes: a.Content, Conversations: a.Content, Aliases: a.Accounts,
 		Blocks:  a.Graph,
 		Reports: a.Moderation,
 		Relays:  a.Relays,
@@ -98,14 +98,16 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 // the keys that RemoteActors resolves, so setUpRemoteActors runs first.
 func (a *App) newObjects(cfg *config.Config) *federation.Objects {
 	return federation.NewObjects(federation.ObjectsDeps{
-		Statuses: a.Content, Accounts: a.Accounts, Graph: a.Graph, Timeline: a.Timeline, Reader: a.Statuses, Images: a.Media.Images,
-		Aliases:    a.Accounts,
-		Quotes:     federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
-		Boosts:     a.Interactions,
-		Signatures: federation.NewSignatureVerifier(httpsig.New(), a.RemoteActors, a.KV, a.Clock),
-		Domains:    a.ModerationPolicy,
-		// Authorized fetch (FR-408) is the instance setting, read per request.
-		Settings: a.Instance,
+		Statuses: a.Content, Accounts: a.Accounts, Graph: a.Graph, Timeline: a.Timeline, FeaturedTags: a.Timeline, Reader: a.Statuses, Images: a.Media.Images,
+		Aliases:       a.Accounts,
+		Quotes:        federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
+		Conversations: a.Content,
+		Boosts:        a.Interactions,
+		Signatures:    federation.NewSignatureVerifier(httpsig.New(), a.RemoteActors, a.KV, a.Clock),
+		Domains:       a.ModerationPolicy,
+		// Authorized fetch (FR-408) is the instance setting, or the allowlist, which requires it
+		// (ADR-0159 §2), read per request.
+		Settings: authorizedFetch{a},
 		Host:     cfg.Host, AccountDomain: cfg.AccountDomain, Logger: a.Logger,
 	})
 }

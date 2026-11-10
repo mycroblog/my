@@ -10,6 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
+	domaccount "github.com/mycroblog/my/internal/domain/account"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
@@ -69,6 +70,25 @@ func (r announcementRecipients) Notifiable(ctx context.Context, tx uow.Tx, accou
 	}
 	suspended, err := r.a.AccountPolicy.SuspendedTx(ctx, tx, accountID)
 	return !suspended, err
+}
+
+// NotifiableAmong implements the batch read of notification.AnnouncementRecipients: Notifiable of
+// each of ids, with one read of their lifecycle states and one of their restrictions.
+func (r announcementRecipients) NotifiableAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	states, err := r.a.Accounts.LifecycleStatesTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	suspended, err := r.a.AccountPolicy.SuspendedAmongTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		st, ok := states[id]
+		out[id] = (!ok || (st.State != domaccount.StateDeleted && !st.Deactivated())) && !suspended[id]
+	}
+	return out, nil
 }
 
 // closureRecipients pages the local accounts of users for the service closure notifications.

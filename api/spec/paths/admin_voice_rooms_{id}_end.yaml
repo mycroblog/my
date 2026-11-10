@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: endVoiceRoomAsModerator
+  x-permission: manage_reports
   summary: End a voice chat room as a moderator
   description: |
     Ends an open voice chat room for every participant, with an optional reason for the

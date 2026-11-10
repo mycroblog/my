@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/CustomEmojiRequestId.yaml
 post:
   operationId: rejectCustomEmojiRequest
+  x-permission: manage_custom_emojis
   summary: Reject a custom emoji request
   description: |
     Rejects a pending request, with an optional reason that the requester sees, which frees

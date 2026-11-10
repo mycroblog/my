@@ -71,7 +71,7 @@ A [retention hold](moderation.md#holds) stops erasure for one account, so every 
 The server removes these only when an account is erased, or never. A law may ask you to justify keeping them, or to remove them by other means, so decide what your policy says about each.
 
 - The rows of an active account: email addresses, past profile versions, past post versions, notifications, follows, and the registration application of a rejected user. An account that nobody deletes stays.
-- What stays after erasure: the account's URI and username (so that neither can be reused), its lifecycle events, the record that a post was deleted, moderation records until their own period ends, invites and role grants, account moves, voice chat rooms without their names and descriptions.
+- What stays after erasure: the account's URI and username (so that neither can be reused), its lifecycle events, the record that a post was deleted, moderation records until their own period ends, invites and role grants, account moves, voice chat rooms without their names and descriptions, events without the titles, descriptions, and places their authors wrote, and the invitations and answers to events.
 - Supporter records (subscriptions, state changes, payments, refunds, chargebacks), kept for accounting and for reconciling with the provider. The server does not delete a customer at the payment provider: do that in the provider's dashboard if your obligations allow it.
 - An action with no end (a `ban`, or a `suspend` without an end time), until it is lifted. Open reports.
 - Remote accounts, until their server deletes them.
@@ -148,16 +148,16 @@ This policy covers people with an account here, people who read pages here witho
 | --- | --- | --- |
 | Email addresses | Signing in, confirming the address, resetting the password, and the email you choose to get | Until your account is erased |
 | Password hash, two-factor secret (encrypted) and recovery codes (hashed), passkeys, the identifier of an account you linked at a login provider | Signing you in | Until your account is erased |
-| Language, time zone, default post settings, notification settings, and other preferences | Running the service the way you asked | Until your account is erased |
+| Language, time zone, default post settings, notification settings and notification filters, and other preferences | Running the service the way you asked | Until your account is erased |
 | Registration application: the reason you gave, the invite you used, and the decision | Deciding who joins | Until your account is erased |
 | IP address at registration | Preventing abuse | {{180 days}} from registration |
 | IP address and browser name (User-Agent) at each sign-in | Security and preventing abuse | {{180 days}} from the sign-in |
 | Sessions and app access (stored as hashes) | Keeping you signed in | 30 days after they expire. A session lasts 30 days |
 | IP address, and for password-reset requests the email address, in rate limit counters | Protecting the service | Removed automatically, within twice the window of the limit |
-| Profile: display name, bio, extra fields, avatar, header, aliases, and earlier versions of them | Showing your profile, which is public | Until your account is erased |
+| Profile: display name, bio, extra fields, avatar, header, aliases, featured hashtags, and earlier versions of them | Showing your profile, which is public | Until your account is erased |
 | Posts, their earlier versions, and attached media | Publishing what you write | Until you delete them, your automatic deletion policy deletes them, or your account is erased. {{IF you set a maximum for keeping posts}} At most {{N days}} after you publish them, unless your account may keep them longer. Uploads attached to nothing go after {{24 hours}} |
-| Favourites, reactions, boosts, bookmarks, pins, poll votes, follows, blocks, mutes, lists | Running the features you use | Until you undo them, or your account is erased |
-| Notifications and what you have read | Telling you what happened | Until your account is erased or the post they are about is removed |
+| Favourites, reactions, boosts, bookmarks, pins, poll votes, follows, followed hashtags, blocks, mutes, lists, keyword filters, private notes on accounts | Running the features you use | Until you undo them, or your account is erased |
+| Notifications and what you have read, the notification requests you accepted or dismissed | Telling you what happened, and holding back the notifications you chose to filter | Until your account is erased or the post they are about is removed |
 | Web Push subscription: your browser's push address and keys | Sending you push notifications | Until you turn it off, the push service ends it, or your account is erased |
 | Records that an email bounced or was reported as spam | Not sending mail that is unwanted or cannot arrive | Until your account is erased |
 | Data export archives and data imports | Giving you your data, and bringing it in | 7 days |
@@ -168,6 +168,8 @@ This policy covers people with an account here, people who read pages here witho
 | Sign-up blocks: an email domain, a hashed email address, or an IP range | Preventing repeat abuse | While in effect, and 30 days after the lift or expiry |
 | {{IF voice}} Voice chat rooms: name, description, hosts, and how they ended | Showing and moderating rooms | Kept. The name and description you wrote are emptied when your account is erased |
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
+| Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
+| Invitations to events, your answers, and their approval | Showing who comes, and showing the address and link to the approved | Kept |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
 | Copies of activities sent to and received from other servers | Delivering, retrying, and rejecting duplicates | 30 days. The first delivery of a post stays until 30 days after the post or its author is deleted |
@@ -291,7 +293,7 @@ Passwords are stored as Argon2id hashes. Two-factor secrets and the keys that si
 
 {{ADJUST TO THE RIGHTS OF YOUR JURISDICTION. Under the GDPR these are access, rectification, erasure, restriction, objection, and portability, and the right to withdraw consent.}}
 
-- **See and take your data:** your settings offer a data export (your profile, your posts, and your moderation records) and CSV files of follows, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
+- **See and take your data:** your settings offer a data export (your profile, your posts, your keyword filters, your private notes on accounts, and your moderation records) and CSV files of follows, followed hashtags, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
 - **Correct it:** edit your profile and account settings, or write to us.
 - **Delete it:** delete your account in your settings, or deactivate it first. This is what section 3 and section 5 describe.
 - **Move:** you can move your followers to an account on another server.

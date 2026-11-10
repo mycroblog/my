@@ -124,6 +124,15 @@ SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raise
 WHERE room_id = $1
 ORDER BY participation_id;
 
+-- The participants of the rooms of room_ids, as ListVoiceRoomParticipants lists those of one.
+-- name: ListVoiceRoomParticipantsOf :many
+SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raised FROM voice_room_participants
+WHERE room_id = ANY(sqlc.arg(room_ids)::uuid[])
+ORDER BY room_id, participation_id;
+
+-- name: ListVoiceRoomHostGraces :many
+SELECT room_id, ends_at FROM voice_room_host_graces WHERE room_id = ANY(sqlc.arg(room_ids)::uuid[]);
+
 -- name: GetVoiceRoomParticipant :one
 SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raised FROM voice_room_participants
 WHERE account_id = $1;
@@ -144,6 +153,35 @@ WHERE i.room_id = sqlc.arg(room_id) AND i.id::text > sqlc.arg(id)::text
   AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)
 ORDER BY i.id
 LIMIT sqlc.arg(row_limit);
+
+-- ListVoiceRoomViewerFacts returns, for each of account_ids, what IsVoiceRoomBanned,
+-- GetVoiceRoomInvitation (an invitation that is not revoked), and IsVoiceRoomSpeakGranted read of
+-- the account in the room.
+-- name: ListVoiceRoomViewerFacts :many
+SELECT v.account_id::uuid AS account_id,
+  EXISTS (SELECT 1 FROM voice_room_bans b WHERE b.room_id = sqlc.arg(room_id)::uuid AND b.account_id = v.account_id) AS banned,
+  EXISTS (SELECT 1 FROM voice_room_invitations i WHERE i.room_id = sqlc.arg(room_id)::uuid AND i.invitee_account_id = v.account_id
+    AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
+  COALESCE((
+    SELECT g.change = 'granted' FROM voice_room_speak_grants g
+    WHERE g.room_id = sqlc.arg(room_id)::uuid AND g.account_id = v.account_id
+    ORDER BY g.id DESC LIMIT 1
+  ), false)::boolean AS speak_granted
+FROM (SELECT unnest(sqlc.arg(account_ids)::uuid[]) AS account_id) v;
+
+-- ListVoiceRoomFactsOfViewer returns, for each room of room_ids, what ListVoiceRoomViewerFacts
+-- returns of the account.
+-- name: ListVoiceRoomFactsOfViewer :many
+SELECT v.room_id::uuid AS room_id,
+  EXISTS (SELECT 1 FROM voice_room_bans b WHERE b.room_id = v.room_id AND b.account_id = sqlc.arg(account_id)::uuid) AS banned,
+  EXISTS (SELECT 1 FROM voice_room_invitations i WHERE i.room_id = v.room_id AND i.invitee_account_id = sqlc.arg(account_id)::uuid
+    AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
+  COALESCE((
+    SELECT g.change = 'granted' FROM voice_room_speak_grants g
+    WHERE g.room_id = v.room_id AND g.account_id = sqlc.arg(account_id)::uuid
+    ORDER BY g.id DESC LIMIT 1
+  ), false)::boolean AS speak_granted
+FROM (SELECT unnest(sqlc.arg(room_ids)::uuid[]) AS room_id) v;
 
 -- name: IsVoiceRoomBanned :one
 SELECT EXISTS (SELECT 1 FROM voice_room_bans WHERE room_id = $1 AND account_id = $2) AS banned;
@@ -258,3 +296,34 @@ WHERE NOT EXISTS (SELECT 1 FROM voice_room_participation_ends e WHERE e.particip
 -- the opening of rooms), so that the commands of one room serialize under READ COMMITTED.
 -- name: LockVoice :exec
 SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
+
+-- ListVoiceRoomParticipantsAmong returns the participants among account_ids.
+-- name: ListVoiceRoomParticipantsAmong :many
+SELECT account_id FROM voice_room_participants WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) ORDER BY account_id;
+
+-- Scheduled rooms (ADR-0100 section 16) ------------------------------------------------------
+
+-- name: InsertVoiceRoomSchedule :exec
+INSERT INTO voice_room_schedules (room_id, schedule_key, wait_ends_at) VALUES ($1, $2, $3);
+
+-- name: GetVoiceRoomSchedule :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE room_id = $1;
+
+-- name: GetVoiceRoomScheduleByKey :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE schedule_key = $1;
+
+-- name: InsertVoiceRoomCohostCandidate :exec
+INSERT INTO voice_room_cohost_candidates (room_id, account_id, position) VALUES ($1, $2, $3)
+ON CONFLICT (room_id, account_id) DO NOTHING;
+
+-- GetVoiceRoomCohostCandidate returns the position of a co-host candidate of a room and whether
+-- the account was ever removed as a co-host of it.
+-- name: GetVoiceRoomCohostCandidate :one
+SELECT c.position,
+  EXISTS (SELECT 1 FROM voice_room_cohost_changes x WHERE x.room_id = c.room_id AND x.account_id = c.account_id AND x.change = 'removed') AS removed
+FROM voice_room_cohost_candidates c
+WHERE c.room_id = $1 AND c.account_id = $2;
+
+-- IsVoiceRoomAttended reports whether anybody ever joined a room.
+-- name: IsVoiceRoomAttended :one
+SELECT EXISTS (SELECT 1 FROM voice_room_participations WHERE room_id = $1) AS attended;

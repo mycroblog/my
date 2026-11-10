@@ -211,6 +211,12 @@ type OAuthRepository interface {
 	// access or refresh token hashes to hash, with whether it has a revocation and the state of
 	// its client. Expiry is the caller's to check.
 	FindAccessTokenByAccessHash(ctx context.Context, hash []byte) (identity.AccessToken, identity.TokenState, error)
+	// FindAccessTokensByAccessHashes returns the tokens of the access hashes of hashes that
+	// exist, by hash (as a string of its bytes), as FindAccessTokenByAccessHash returns each, with
+	// one query.
+	FindAccessTokensByAccessHashes(ctx context.Context, hashes [][]byte) (map[string]TokenWithState, error)
+	// ExistingOAuthClients returns the clients among clientIDs that exist, with one query.
+	ExistingOAuthClients(ctx context.Context, clientIDs []string) (map[string]bool, error)
 	FindAccessTokenByRefreshHash(ctx context.Context, hash []byte) (identity.AccessToken, identity.TokenState, error)
 }
 
@@ -489,13 +495,17 @@ func (s *Service) ValidateAuthorization(ctx context.Context, req AuthorizationRe
 		return a, oauthError(OAuthInvalidScope, "unknown scope")
 	}
 	if scope == "" {
-		scope = client.Scope
+		// The permission scopes of a client's registration are for self-issued tokens only.
+		scope = client.Scope.WithoutSelfIssuedOnly()
 	}
 	if !scope.Within(client.Scope) {
 		return a, oauthError(OAuthInvalidScope, "the client may not request this scope")
 	}
 	if scope.HasFirstPartyOnly() && !client.FirstParty() {
 		return a, oauthError(OAuthInvalidScope, "the scope is for first-party clients only")
+	}
+	if scope.HasSelfIssuedOnly() && !client.FirstParty() {
+		return a, oauthError(OAuthInvalidScope, "a permission scope is for self-issued tokens only")
 	}
 	a.Scope = scope
 	if client.OwnerUserID != "" {
@@ -859,4 +869,10 @@ func (s *Service) AuthenticateAccessToken(ctx context.Context, accessToken strin
 	}
 	s.recordTokenUse(ctx, tok.FamilyID)
 	return tok, nil
+}
+
+// TokenWithState is an access token with its state, as FindAccessTokenByAccessHash returns them.
+type TokenWithState struct {
+	Token identity.AccessToken
+	State identity.TokenState
 }

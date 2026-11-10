@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A new subscription to a domain block list. The settings that are omitted take their
+  defaults: `draft`, `suspend` as `suspend`, `silence` as `limit`, the rejections applied, and
+  no public comment copied.
+type: object
+required: [url, format, title]
+properties:
+  url:
+    description: The https URL of the list.
+    type: string
+    minLength: 1
+    maxLength: 2048
+  format:
+    $ref: ./AdminDomainListFormat.yaml
+  title:
+    type: string
+    minLength: 1
+    maxLength: 200
+  mode:
+    $ref: ./AdminDomainListMode.yaml
+  suspend_as:
+    $ref: ./AdminDomainListSuspendAs.yaml
+  silence_as:
+    $ref: ./AdminDomainListSilenceAs.yaml
+  apply_reject_media:
+    type: boolean
+  apply_reject_reports:
+    type: boolean
+  public_comment_from_list:
+    type: boolean

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The hashtags that the user follows, the latest followed first.
+headers:
+  Cache-Control:
+    $ref: ../headers/CacheControl.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/FollowedHashtagCollection.yaml

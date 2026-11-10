@@ -6,7 +6,7 @@ properties:
   id:
     $ref: ./Id.yaml
   text:
-    description: The plain text.
+    description: The plain text; for an article, its Markdown body.
     type: string
   spoiler_text:
     description: The content warning; empty when there is none.
@@ -14,3 +14,7 @@ properties:
   language:
     description: The BCP 47 language tag; `und` when it is unknown.
     type: string
+  article:
+    description: The rest of what the author wrote of an article; omitted for a post.
+    allOf:
+      - $ref: ./ArticleSource.yaml

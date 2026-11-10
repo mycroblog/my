@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: When to publish a draft.
+type: object
+required: [publish_at]
+properties:
+  publish_at:
+    description: |
+      The time to publish the draft: at least `scheduled_post_min_lead_minutes` and at most
+      `scheduled_post_max_lead_days` from now (`limits` of `GET /instance`). The post is
+      published at that time or soon after.
+    type: string
+    format: date-time

@@ -5,6 +5,8 @@ package identity
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
+	"encoding/json"
 	"slices"
 	"time"
 
@@ -225,6 +227,53 @@ func (r *Repository) FindAccessTokenByAccessHash(ctx context.Context, hash []byt
 		Revoked: row.Revoked, Client: identity.OAuthClientState{Disabled: row.ClientDisabled, Deleted: row.ClientDeleted},
 	}
 	return accessTokenFromRow(row), state, nil
+}
+
+// FindAccessTokensByAccessHashes implements identity.Repository.
+func (r *Repository) FindAccessTokensByAccessHashes(ctx context.Context, hashes [][]byte) (map[string]appidentity.TokenWithState, error) {
+	out := map[string]appidentity.TokenWithState{}
+	if len(hashes) == 0 {
+		return out, nil
+	}
+	hexes := make([]string, len(hashes))
+	for i, h := range hashes {
+		hexes[i] = hex.EncodeToString(h)
+	}
+	list, err := json.Marshal(hexes)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListAccessTokensByAccessHashes(ctx, string(list))
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list access tokens")
+	}
+	for _, row := range rows {
+		state := identity.TokenState{
+			Revoked: row.Revoked, Client: identity.OAuthClientState{Disabled: row.ClientDisabled, Deleted: row.ClientDeleted},
+		}
+		out[string(row.AccessTokenHash)] = appidentity.TokenWithState{Token: accessTokenFromRow(identitygen.GetAccessTokenByAccessHashRow(row)), State: state}
+	}
+	return out, nil
+}
+
+// ExistingOAuthClients implements identity.Repository.
+func (r *Repository) ExistingOAuthClients(ctx context.Context, clientIDs []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(clientIDs) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(clientIDs)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := r.db.reader().ListOAuthClientIDsAmong(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list oauth clients")
+	}
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, nil
 }
 
 // FindAccessTokenByRefreshHash implements identity.Repository.

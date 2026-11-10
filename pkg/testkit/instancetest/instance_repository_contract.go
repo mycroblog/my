@@ -310,6 +310,17 @@ func instanceRepoLinkCards(t *testing.T, r *instanceRepo) {
 			t.Errorf("LinkCardDomainModes(%v) = %v, %v; want %v", q.domains, got, err, q.want)
 		}
 	}
+	// The modes of each domain, as those of the domain alone.
+	of, err := r.i.LinkCardDomainModesOf(ctx, []string{"a.example", "b.example", "c.example", "d.example"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, d := range []string{"a.example", "b.example", "c.example", "d.example"} {
+		one, err := r.i.LinkCardDomainModes(ctx, []string{d})
+		if err != nil || !slices.Equal(of[d], one) {
+			t.Errorf("LinkCardDomainModesOf[%s] = %v; want %v, as LinkCardDomainModes (%v)", d, of[d], one, err)
+		}
+	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		deleted, err := r.i.DeleteLinkCardDomainRule(ctx, tx, "b.example")
 		if err != nil {
@@ -475,6 +486,10 @@ func instanceRepoAnnouncements(t *testing.T, r *instanceRepo) {
 	}
 	_, err := r.i.FindAnnouncement(ctx, r.ids.NewID())
 	wantNotFound(t, "FindAnnouncement(unknown)", err)
+	if got, err := r.i.FindAnnouncements(ctx, []string{showing.ID, withdrawn.ID, r.ids.NewID()}); err != nil ||
+		!reflect.DeepEqual(got, map[string]instance.Announcement{showing.ID: showing, withdrawn.ID: withdrawn}) {
+		t.Errorf("FindAnnouncements = %+v, %v; want the two that exist", got, err)
+	}
 	ids := func(as []instance.Announcement) []string {
 		var out []string
 		for _, a := range as {
@@ -549,6 +564,18 @@ func instanceRepoClosure(t *testing.T, r *instanceRepo) {
 	ctx := t.Context()
 	_, err := r.i.CurrentClosure(ctx)
 	wantNotFound(t, "CurrentClosure before an announcement", err)
+	gate := func(name string, want instance.Closure, ok bool, mode string) {
+		t.Helper()
+		if got, gok, gmode, err := r.i.FederationGate(ctx); err != nil || gok != ok || gmode != mode || (ok && got != want) {
+			t.Errorf("FederationGate %s = %+v, %v, %q, %v; want %+v, %v, %q", name, got, gok, gmode, err, want, ok, mode)
+		}
+	}
+	gate("before an announcement or a mode", instance.Closure{}, false, "")
+	rev := instance.SettingRevision{ID: r.ids.NewID(), Key: instance.SettingFederationMode, Value: "outbound", RevisedByUserID: testkit.NamedID("admin"), RevisedAt: r.now()}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.i.InsertSettingRevision(ctx, tx, rev), r.i.UpsertCurrentSetting(ctx, tx, instance.CurrentSetting{Key: rev.Key, RevisionID: rev.ID, Value: rev.Value}))
+	})
+	gate("with a mode alone", instance.Closure{}, false, "outbound")
 	announced := instance.ClosureEvent{ID: r.ids.NewID(), Kind: instance.ClosureEventAnnounced, ByUserID: testkit.NamedID("admin"), OccurredAt: r.now(),
 		Schedule: instance.ClosureSchedule{ClosesAt: r.clock.Now().Add(30 * 24 * time.Hour), ExportUntil: r.clock.Now().Add(60 * 24 * time.Hour), Message: "Thank you"}}
 	closed := instance.ClosureEvent{ID: r.ids.NewID(), Kind: instance.ClosureEventClosed, OccurredAt: r.now()}
@@ -560,6 +587,7 @@ func instanceRepoClosure(t *testing.T, r *instanceRepo) {
 	if got, err := r.i.CurrentClosure(ctx); err != nil || got != want {
 		t.Errorf("CurrentClosure = %+v, %v; want %+v", got, err, want)
 	}
+	gate("with a closure and a mode", want, true, "outbound")
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		return errors.Join(r.i.InsertClosureEvent(ctx, tx, closed),
 			r.i.UpsertClosureHead(ctx, tx, instance.ClosureHead{State: instance.ClosureClosed, EventID: closed.ID, AnnouncementID: announced.ID}))
@@ -585,6 +613,10 @@ func instanceRepoClosure(t *testing.T, r *instanceRepo) {
 	}
 	_, err = r.i.FindClosureEvent(ctx, r.ids.NewID())
 	wantNotFound(t, "FindClosureEvent(unknown)", err)
+	if got, err := r.i.FindClosureEvents(ctx, []string{announced.ID, closed.ID, r.ids.NewID()}); err != nil || len(got) != 2 ||
+		!sameClosureEvent(got[announced.ID], announced) || !sameClosureEvent(got[closed.ID], closed) {
+		t.Errorf("FindClosureEvents = %+v, %v; want the two that exist", got, err)
+	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.i.DeleteClosureHead(ctx, tx) })
 	_, err = r.i.CurrentClosure(ctx)
 	wantNotFound(t, "CurrentClosure after DeleteClosureHead", err)

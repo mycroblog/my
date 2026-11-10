@@ -34,10 +34,12 @@ import {
   PiHandHeart,
   PiMonitor,
   PiClockCountdown,
+  PiClock,
   PiUserCheck,
   PiProhibit,
   PiSpeakerSimpleSlash,
   PiGlobeX,
+  PiFunnel,
   PiPassword,
   PiLockKey,
   PiFingerprint,
@@ -115,6 +117,7 @@ import {
   PiPlayFill,
   PiPlus,
   PiPushPinSimple,
+  PiHash,
   PiChatCircle,
   PiQuotes,
   PiRepeat,
@@ -174,6 +177,8 @@ export const iconTable = {
   // A speech bubble: the conversation under a post, which the reader opens to read the replies.
   RepliesIcon: { off: glyph(PiChatCircle, "PiChatCircle") },
   PinIcon: { off: glyph(PiPushPinSimple, "PiPushPinSimple") },
+  // A hashtag: the mark of a post that a followed hashtag brought to the home timeline.
+  HashtagIcon: { off: glyph(PiHash, "PiHash") },
   // Up is where the new items wait (above the feed) in any writing direction, so it does not mirror.
   NewItemsIcon: { off: glyph(PiArrowUp, "PiArrowUp") },
   HideMediaIcon: { off: glyph(PiEyeSlash, "PiEyeSlash") },
@@ -254,6 +259,8 @@ export const iconTable = {
   BlockIcon: { off: glyph(PiProhibit, "PiProhibit") },
   MuteIcon: { off: glyph(PiSpeakerSimpleSlash, "PiSpeakerSimpleSlash") },
   DomainMuteIcon: { off: glyph(PiGlobeX, "PiGlobeX") },
+  // The user's keyword filters (ADR-0157), and the mark of a post they fold.
+  FilterIcon: { off: glyph(PiFunnel, "PiFunnel") },
   PasswordIcon: { off: glyph(PiPassword, "PiPassword") },
   TwoFactorIcon: { off: glyph(PiLockKey, "PiLockKey") },
   PasskeyIcon: { off: glyph(PiFingerprint, "PiFingerprint") },
@@ -319,6 +326,8 @@ export const iconTable = {
   DecreaseIcon: { off: glyph(PiArrowDown, "PiArrowDown") },
   // How long something has waited in a queue (`AgeBadge`); an hourglass has no direction.
   WaitingIcon: { off: glyph(PiHourglassMedium, "PiHourglassMedium") },
+  // When a post is published (the schedule of a draft, ADR-0156); a clock has no direction.
+  ScheduleIcon: { off: glyph(PiClock, "PiClock") },
   // The categories of a report, beside their names (`StatusBadge`): unwanted mail, a gavel for the law.
   SpamIcon: { off: glyph(PiEnvelopeSimple, "PiEnvelopeSimple") },
   LegalIcon: { off: glyph(PiGavel, "PiGavel") },
@@ -394,6 +403,11 @@ export function RepliesIcon() {
 /** A pin, for a post pinned to the top of a profile. */
 export function PinIcon() {
   return renderIcon(iconTable.PinIcon);
+}
+
+/** A number sign, for a hashtag: a post on the home timeline only for a hashtag the viewer follows. */
+export function HashtagIcon() {
+  return renderIcon(iconTable.HashtagIcon);
 }
 
 /** An arrow up, for the button that shows the new posts waiting above a feed. */
@@ -683,6 +697,11 @@ export function DomainMuteIcon() {
   return renderIcon(iconTable.DomainMuteIcon);
 }
 
+/** A funnel, for the user's keyword filters and the posts they fold. */
+export function FilterIcon() {
+  return renderIcon(iconTable.FilterIcon);
+}
+
 /** A row of hidden characters, for the password. */
 export function PasswordIcon() {
   return renderIcon(iconTable.PasswordIcon);
@@ -938,6 +957,11 @@ export function DecreaseIcon() {
 /** An hourglass, beside how long something has waited in a queue (`AgeBadge`). */
 export function WaitingIcon() {
   return renderIcon(iconTable.WaitingIcon);
+}
+
+/** A clock, for scheduling a post to be published at a chosen time. */
+export function ScheduleIcon() {
+  return renderIcon(iconTable.ScheduleIcon);
 }
 
 /** An envelope, beside the spam category of a report. */

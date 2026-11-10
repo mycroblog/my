@@ -130,6 +130,39 @@ func (q *Queries) DeleteMute(ctx context.Context, arg DeleteMuteParams) (int64, 
 	return result.RowsAffected(), nil
 }
 
+const domainMutersAmong = `-- name: DomainMutersAmong :many
+SELECT DISTINCT account_id FROM account_domain_mutes
+WHERE account_id = ANY($1::uuid[]) AND domain = ANY($2::text[])
+ORDER BY account_id
+`
+
+type DomainMutersAmongParams struct {
+	AccountIds []string
+	Domains    []string
+}
+
+// DomainMutersAmong returns the accounts among account_ids that mute any of domains, as
+// MutesAnyDomain checks one.
+func (q *Queries) DomainMutersAmong(ctx context.Context, arg DomainMutersAmongParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, domainMutersAmong, arg.AccountIds, arg.Domains)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getActiveMute = `-- name: GetActiveMute :one
 SELECT account_id, target_account_id, hide_notifications, expires_at, created_at
 FROM mutes
@@ -265,6 +298,26 @@ func (q *Queries) InsertBlockEdge(ctx context.Context, arg InsertBlockEdgeParams
 	return result.RowsAffected(), nil
 }
 
+const insertBlockEdges = `-- name: InsertBlockEdges :execrows
+INSERT INTO block_edges (blocker_account_id, blocked_account_id, block_id)
+SELECT unnest($1::uuid[]), unnest($2::uuid[]), unnest($3::uuid[])
+ON CONFLICT (blocker_account_id, blocked_account_id) DO NOTHING
+`
+
+type InsertBlockEdgesParams struct {
+	BlockerAccountIds []string
+	BlockedAccountIds []string
+	BlockIds          []string
+}
+
+func (q *Queries) InsertBlockEdges(ctx context.Context, arg InsertBlockEdgesParams) (int64, error) {
+	result, err := q.db.Exec(ctx, insertBlockEdges, arg.BlockerAccountIds, arg.BlockedAccountIds, arg.BlockIds)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const insertBlockRetraction = `-- name: InsertBlockRetraction :exec
 INSERT INTO block_retractions (block_id, retracted_at) VALUES ($1, $2)
 `
@@ -276,6 +329,34 @@ type InsertBlockRetractionParams struct {
 
 func (q *Queries) InsertBlockRetraction(ctx context.Context, arg InsertBlockRetractionParams) error {
 	_, err := q.db.Exec(ctx, insertBlockRetraction, arg.BlockID, arg.RetractedAt)
+	return err
+}
+
+const insertBlocks = `-- name: InsertBlocks :exec
+
+INSERT INTO blocks (id, uri, blocker_account_id, blocked_account_id, created_at)
+SELECT unnest($1::uuid[]), unnest($2::text[]), unnest($3::uuid[]),
+  unnest($4::uuid[]), $5::timestamptz
+`
+
+type InsertBlocksParams struct {
+	Ids               []string
+	Uris              []string
+	BlockerAccountIds []string
+	BlockedAccountIds []string
+	CreatedAt         time.Time
+}
+
+// The blocks and mutes of a page of a migration (the unnests of a select list advance together),
+// each as the statement of one above does for every row it names.
+func (q *Queries) InsertBlocks(ctx context.Context, arg InsertBlocksParams) error {
+	_, err := q.db.Exec(ctx, insertBlocks,
+		arg.Ids,
+		arg.Uris,
+		arg.BlockerAccountIds,
+		arg.BlockedAccountIds,
+		arg.CreatedAt,
+	)
 	return err
 }
 
@@ -654,6 +735,16 @@ func (q *Queries) LockAccountPair(ctx context.Context, pairKey string) error {
 	return err
 }
 
+const lockAccountPairs = `-- name: LockAccountPairs :exec
+SELECT pg_advisory_xact_lock(hashtextextended(k, 0)) FROM unnest($1::text[]) AS k ORDER BY k
+`
+
+// LockAccountPairs is LockAccountPair of many pairs, in the order of their keys.
+func (q *Queries) LockAccountPairs(ctx context.Context, pairKeys []string) error {
+	_, err := q.db.Exec(ctx, lockAccountPairs, pairKeys)
+	return err
+}
+
 const mutesAnyDomain = `-- name: MutesAnyDomain :one
 SELECT EXISTS (
   SELECT 1 FROM account_domain_mutes
@@ -696,6 +787,35 @@ func (q *Queries) UpsertMute(ctx context.Context, arg UpsertMuteParams) error {
 		arg.TargetAccountID,
 		arg.HideNotifications,
 		arg.ExpiresAt,
+		arg.CreatedAt,
+	)
+	return err
+}
+
+const upsertMutes = `-- name: UpsertMutes :exec
+INSERT INTO mutes (account_id, target_account_id, hide_notifications, expires_at, created_at)
+SELECT unnest($1::uuid[]), $2::uuid, unnest($3::boolean[]),
+  NULLIF(unnest($4::text[]), '')::timestamptz, $5::timestamptz
+ON CONFLICT (account_id, target_account_id) DO UPDATE SET
+  hide_notifications = excluded.hide_notifications,
+  expires_at = excluded.expires_at,
+  created_at = excluded.created_at
+`
+
+type UpsertMutesParams struct {
+	AccountIds        []string
+	TargetAccountID   string
+	HideNotifications []bool
+	ExpiresAts        []string
+	CreatedAt         time.Time
+}
+
+func (q *Queries) UpsertMutes(ctx context.Context, arg UpsertMutesParams) error {
+	_, err := q.db.Exec(ctx, upsertMutes,
+		arg.AccountIds,
+		arg.TargetAccountID,
+		arg.HideNotifications,
+		arg.ExpiresAts,
 		arg.CreatedAt,
 	)
 	return err

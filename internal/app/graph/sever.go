@@ -4,6 +4,7 @@ package graph
 
 import (
 	"context"
+	"maps"
 	"slices"
 	"time"
 
@@ -69,36 +70,136 @@ var SeverBoth = SeverDirection{Followers: true, Following: true}
 
 // SeverDirected is SeverByModeration of the follows in the direction dir only.
 func (s *Service) SeverDirected(ctx context.Context, tx uow.Tx, accountID string, others []string, dir SeverDirection, announce bool, now time.Time) (Severed, error) {
-	ev := FollowTerminated{
-		Termination: graph.Termination{Reason: graph.TerminatedModeration, TerminatedAt: now},
-		Unannounced: !announce,
+	lost, err := s.SeverAmong(ctx, tx, map[string][]string{accountID: others}, dir, announce, now)
+	return lost[accountID], err
+}
+
+// CounterpartsOf is Counterparts of each of ids, by account, with one query.
+func (s *Service) CounterpartsOf(ctx context.Context, tx uow.Tx, ids []string) (map[string][]string, error) {
+	edges, err := s.d.Repository.ListEdgesOfAccounts(ctx, tx, ids)
+	if err != nil {
+		return nil, err
 	}
-	var out Severed
-	for _, other := range slices.Compact(slices.Sorted(slices.Values(others))) {
-		if other == accountID {
-			continue
+	out := make(map[string][]string, len(ids))
+	for _, id := range ids {
+		out[id] = []string{}
+	}
+	for _, e := range edges {
+		if _, ok := out[e.FollowerAccountID]; ok {
+			out[e.FollowerAccountID] = append(out[e.FollowerAccountID], e.FolloweeAccountID)
 		}
-		if err := s.d.Repository.LockPair(ctx, tx, accountID, other); err != nil {
-			return Severed{}, err
+		if _, ok := out[e.FolloweeAccountID]; ok {
+			out[e.FolloweeAccountID] = append(out[e.FolloweeAccountID], e.FollowerAccountID)
 		}
-		var followed, following graph.State
-		var err error
-		if dir.Followers {
-			if followed, err = s.endIn(ctx, tx, ev, other, accountID, false); err != nil {
-				return Severed{}, err
-			}
-		}
-		if dir.Following {
-			if following, err = s.endIn(ctx, tx, ev, accountID, other, false); err != nil {
-				return Severed{}, err
-			}
-		}
-		if followed == graph.StateActive {
-			out.Followers++
-		}
-		if following == graph.StateActive {
-			out.Following++
+	}
+	for id, others := range out {
+		slices.Sort(others)
+		out[id] = slices.Compact(others)
+	}
+	return out, nil
+}
+
+// ActiveFollow is an accepted follow of FolloweeAccountID by FollowerAccountID.
+type ActiveFollow struct{ FollowerAccountID, FolloweeAccountID string }
+
+// ActiveFollowsOf returns, inside tx, the accepted follows into and out of each of ids, each once,
+// for the counts of what a severance would end before it does (ADR-0159 §3).
+func (s *Service) ActiveFollowsOf(ctx context.Context, tx uow.Tx, ids []string) ([]ActiveFollow, error) {
+	edges, err := s.d.Repository.ListEdgesOfAccounts(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ActiveFollow, 0, len(edges))
+	for _, e := range edges {
+		if e.State == graph.StateActive {
+			out = append(out, ActiveFollow{FollowerAccountID: e.FollowerAccountID, FolloweeAccountID: e.FolloweeAccountID})
 		}
 	}
 	return out, nil
+}
+
+// SeverAmong is SeverDirected of each account of others with its others, by account, in dir as
+// seen from the account: the follows of all the pairs end together, with a number of statements
+// that does not grow with them, and one FollowsTerminated tells the projectors. A follow between
+// two accounts that are both keys of others ends once and counts for both.
+func (s *Service) SeverAmong(ctx context.Context, tx uow.Tx, others map[string][]string, dir SeverDirection, announce bool, now time.Time) (map[string]Severed, error) {
+	return s.endAmong(ctx, tx, others, dir, graph.TerminatedModeration, announce, now)
+}
+
+// endAmong is SeverAmong with the reason of the ends.
+func (s *Service) endAmong(ctx context.Context, tx uow.Tx, others map[string][]string, dir SeverDirection, reason graph.TerminationReason, announce bool, now time.Time) (map[string]Severed, error) {
+	out := map[string]Severed{}
+	var as, bs []string
+	for _, account := range slices.Sorted(maps.Keys(others)) {
+		for _, other := range slices.Compact(slices.Sorted(slices.Values(others[account]))) {
+			if other != account {
+				as, bs = append(as, account), append(bs, other)
+			}
+		}
+	}
+	if len(as) == 0 {
+		return out, nil
+	}
+	repo := s.d.Repository
+	if err := repo.LockPairs(ctx, tx, as, bs); err != nil {
+		return nil, err
+	}
+	edges, err := repo.ListEdgesBetween(ctx, tx, as, bs)
+	if err != nil {
+		return nil, err
+	}
+	named := make(map[[2]string]bool, len(as))
+	for i := range as {
+		named[[2]string{as[i], bs[i]}] = true
+	}
+	// An edge ends when one of its accounts names the other in a direction of dir: as a follower
+	// (Following) or as a followee (Followers).
+	var ending []graph.Edge
+	var ids []string
+	for _, e := range edges {
+		if (dir.Following && named[[2]string{e.FollowerAccountID, e.FolloweeAccountID}]) ||
+			(dir.Followers && named[[2]string{e.FolloweeAccountID, e.FollowerAccountID}]) {
+			ending, ids = append(ending, e), append(ids, e.FollowID)
+		}
+	}
+	if len(ending) == 0 {
+		return out, nil
+	}
+	follows, err := repo.FollowsByIDs(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	ev := FollowsTerminated{}
+	ids = ids[:0]
+	for _, e := range ending {
+		f, ok := follows[e.FollowID]
+		if !ok {
+			continue // an edge without its follow ends nothing, as liveFollow finds none
+		}
+		ids = append(ids, f.ID)
+		ev.Terminations = append(ev.Terminations, FollowTerminated{
+			Follow: f, PreviousState: e.State, Unannounced: !announce,
+			Termination: graph.Termination{FollowID: f.ID, Reason: reason, TerminatedAt: now},
+		})
+		if e.State != graph.StateActive {
+			continue
+		}
+		if _, ok := others[e.FollowerAccountID]; ok && dir.Following && named[[2]string{e.FollowerAccountID, e.FolloweeAccountID}] {
+			sv := out[e.FollowerAccountID]
+			sv.Following++
+			out[e.FollowerAccountID] = sv
+		}
+		if _, ok := others[e.FolloweeAccountID]; ok && dir.Followers && named[[2]string{e.FolloweeAccountID, e.FollowerAccountID}] {
+			sv := out[e.FolloweeAccountID]
+			sv.Followers++
+			out[e.FolloweeAccountID] = sv
+		}
+	}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	if err := repo.InsertTerminations(ctx, tx, ids, reason, now); err != nil {
+		return nil, err
+	}
+	return out, tx.Emit(ctx, ev)
 }

@@ -528,42 +528,6 @@ func (q *Queries) InsertDeadJobFromClaim(ctx context.Context, arg InsertDeadJobF
 	return result.RowsAffected()
 }
 
-const insertJob = `-- name: InsertJob :exec
-
-INSERT INTO jobs (id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, created_at)
-VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)
-ON CONFLICT (idempotency_key) DO NOTHING
-`
-
-type InsertJobParams struct {
-	ID             string
-	Type           string
-	Payload        []byte
-	IdempotencyKey sql.NullString
-	OrderingKey    sql.NullString
-	TraceParent    sql.NullString
-	RunAt          int64
-	CreatedAt      int64
-}
-
-// SPDX-License-Identifier: AGPL-3.0-only
-//
-// Queries of the database job queue (internal/adapter/queue/db) for SQLite.
-// Timestamps are Unix milliseconds (see docs/architecture/data-model/README.md, section 1.2).
-func (q *Queries) InsertJob(ctx context.Context, arg InsertJobParams) error {
-	_, err := q.db.ExecContext(ctx, insertJob,
-		arg.ID,
-		arg.Type,
-		arg.Payload,
-		arg.IdempotencyKey,
-		arg.OrderingKey,
-		arg.TraceParent,
-		arg.RunAt,
-		arg.CreatedAt,
-	)
-	return err
-}
-
 const insertJobAttempt = `-- name: InsertJobAttempt :exec
 INSERT INTO job_attempts (job_id, attempt, job_type, outcome, error, worker, started_at, finished_at)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -592,6 +556,27 @@ func (q *Queries) InsertJobAttempt(ctx context.Context, arg InsertJobAttemptPara
 		arg.StartedAt,
 		arg.FinishedAt,
 	)
+	return err
+}
+
+const insertJobs = `-- name: InsertJobs :exec
+
+INSERT INTO jobs (id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, created_at)
+SELECT value ->> '$.id', value ->> '$.type', unhex(value ->> '$.payload'), value ->> '$.idempotency_key',
+  value ->> '$.ordering_key', value ->> '$.trace_parent', 0, value ->> '$.run_at', value ->> '$.created_at'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (idempotency_key) DO NOTHING
+`
+
+// SPDX-License-Identifier: AGPL-3.0-only
+//
+// Queries of the database job queue (internal/adapter/queue/db) for SQLite.
+// Timestamps are Unix milliseconds (see docs/architecture/data-model/README.md, section 1.2).
+// InsertJobs inserts the jobs of a JSON array, one row per element, as an INSERT of each would:
+// the payload is hex, and an absent idempotency, ordering, or trace key is none. WHERE true
+// keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertJobs(ctx context.Context, jobs string) error {
+	_, err := q.db.ExecContext(ctx, insertJobs, jobs)
 	return err
 }
 

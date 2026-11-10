@@ -66,10 +66,11 @@ func oauthRegistersDynamicClients(t *testing.T, e *AccountEnv) {
 	userID := e.Register(t, "alice").User.ID
 	s := e.dynamicService(true)
 
-	// The scope is the requested one without the first-party-only scopes and unknown ones.
+	// The scope is the requested one without the first-party-only scopes, the permission scopes,
+	// and unknown ones.
 	reg, err := s.RegisterDynamicClient(ctx, appidentity.DynamicRegistrationRequest{
 		RedirectURIs: []string{dynamicRedirect, dynamicRedirect, "http://127.0.0.1/cb"}, ClientName: "Dynamic app",
-		ClientURI: "https://dynamic.example/", Scope: "write read admin write:supporters bogus",
+		ClientURI: "https://dynamic.example/", Scope: "write read admin write:supporters admin:manage_invites bogus",
 		GrantTypes: []string{"refresh_token", "authorization_code"},
 	})
 	if err != nil {

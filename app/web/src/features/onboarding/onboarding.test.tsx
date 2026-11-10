@@ -99,7 +99,8 @@ describe("the first run on the home timeline", () => {
       "0 of 3 done",
     );
     const suggestions = await screen.findByRole("region", { name: "Suggested accounts" });
-    expect(within(suggestions).getByText("Featured by the server")).toBeInTheDocument();
+    // The region shows its loading rows first; wait for the suggestions themselves.
+    expect(await within(suggestions).findByText("Featured by the server")).toBeInTheDocument();
     expect(within(suggestions).getByText("Posted recently")).toBeInTheDocument();
     expect(within(suggestions).getByRole("link", { name: "Find more people" })).toHaveAttribute("href", "/search");
 

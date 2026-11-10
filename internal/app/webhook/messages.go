@@ -193,22 +193,15 @@ var sources = map[string]func(e uow.Event) source{
 	},
 	appcontent.EventStatusCreated: func(e uow.Event) source {
 		ev := e.(appcontent.StatusCreated)
-		st, rev := ev.Status, ev.Revision
-		// Only the public posts of local accounts (ADR-0060, ADR-0017).
-		if !st.IsLocal || st.Visibility != appcontent.VisibilityPublic {
+		// A held local reply is created when it is released (ADR-0155 §7).
+		if ev.Unpublished() {
 			return source{}
 		}
-		d := statusData{
-			ID: st.ID, URI: st.URI, AccountID: st.AuthorAccountID, Visibility: string(st.Visibility),
-			InReplyToURI: optString(st.InReplyToURI), SpoilerText: rev.SpoilerText, Sensitive: rev.Sensitive,
-			Language: rev.Language, CreatedAt: timestamp(st.PublishedAt),
-		}
-		for _, b := range rev.Bodies {
-			if b.Language == rev.Language || d.Content == "" {
-				d.Content = b.ContentHTML
-			}
-		}
-		return source{Type: webhook.EventStatusCreated, At: st.PublishedAt, Data: d}
+		return statusCreated(ev.Status, ev.Revision)
+	},
+	appcontent.EventStatusReleased: func(e uow.Event) source {
+		ev := e.(appcontent.StatusReleased)
+		return statusCreated(ev.Status, ev.Revision)
 	},
 	// The error groups (ADR-0103 §8) follow the rule of their notifications: a group that only
 	// web reports without a session have seen is sent when a report with one confirms it, unless
@@ -326,17 +319,37 @@ func (s *Service) send(ctx context.Context, tx uow.Tx, t webhook.EventType, data
 		return webhook.Delivery{}, err
 	}
 	var last webhook.Delivery
+	ds := make([]webhook.Delivery, 0, len(endpoints))
 	jobs := make([]queue.NewJob, 0, len(endpoints))
 	for _, id := range endpoints {
 		last = webhook.Delivery{ID: s.d.IDs.NewID(), MessageID: m.ID, EndpointID: id, CreatedAt: now}
-		if err := s.d.Repository.InsertDelivery(ctx, tx, last); err != nil {
-			return webhook.Delivery{}, err
-		}
 		job, err := deliverJob(last.ID, "")
 		if err != nil {
 			return webhook.Delivery{}, err
 		}
-		jobs = append(jobs, job)
+		ds, jobs = append(ds, last), append(jobs, job)
+	}
+	if err := s.d.Repository.InsertDeliveries(ctx, tx, ds); err != nil {
+		return webhook.Delivery{}, err
 	}
 	return last, s.d.Outbox.EnqueueTx(ctx, tx, jobs...)
+}
+
+// statusCreated is the source of the status.created of the local status st with its revision
+// rev: only the public posts of local accounts (ADR-0060, ADR-0017).
+func statusCreated(st appcontent.Status, rev appcontent.Revision) source {
+	if !st.IsLocal || st.Visibility != appcontent.VisibilityPublic {
+		return source{}
+	}
+	d := statusData{
+		ID: st.ID, URI: st.URI, AccountID: st.AuthorAccountID, Visibility: string(st.Visibility),
+		InReplyToURI: optString(st.InReplyToURI), SpoilerText: rev.SpoilerText, Sensitive: rev.Sensitive,
+		Language: rev.Language, CreatedAt: timestamp(st.PublishedAt),
+	}
+	for _, b := range rev.Bodies {
+		if b.Language == rev.Language || d.Content == "" {
+			d.Content = b.ContentHTML
+		}
+	}
+	return source{Type: webhook.EventStatusCreated, At: st.PublishedAt, Data: d}
 }

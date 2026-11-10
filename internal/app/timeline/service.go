@@ -10,6 +10,7 @@ import (
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
@@ -23,12 +24,24 @@ const (
 // ErrLoginRequired reports a timeline that only a logged-in local account has: the home timeline.
 var ErrLoginRequired = errors.New("timeline: the timeline needs a logged-in account")
 
-// Deps are the ports a Service uses. UnitOfWork and IDs serve the commands of lists.
+// Deps are the ports a Service uses. UnitOfWork and IDs serve the commands of lists and of the
+// direct messages by conversation.
 type Deps struct {
 	UnitOfWork uow.UnitOfWork
 	Repository Repository
 	Clock      kernel.Clock
 	IDs        kernel.IDGenerator
+	// Conversations resolves the conversations that the direct messages name (nil takes every
+	// ID as it is), and Stream signals the viewer's streams after a command on one (nil for
+	// none).
+	Conversations ConversationResolver
+	Stream        stream.Publisher
+	// Tags finds and stores the hashtags that accounts follow (ADR-0013 §27); the followed
+	// hashtags need it.
+	Tags Tags
+	// Statuses presents the statuses that the notification module asks to judge by ID against
+	// keyword filters (Service.JudgeStatuses); nil fails those.
+	Statuses StatusViews
 }
 
 // Service reads the home, local, hashtag, and profile timelines (FR-201 to FR-204, FR-208) from
@@ -74,8 +87,10 @@ type Page struct {
 // Home returns the home timeline of a logged-in viewer (FR-201): the viewer's own posts and
 // boosts and those of the accounts the viewer follows, except the boosts of follows that hide
 // them, the direct posts not addressed to the viewer, and the entries of accounts the viewer
-// blocks, is blocked by, or mutes. The query first reads only the entries within
-// timeline.HomeWindow before the cursor and widens the window when that does not fill the page.
+// blocks, is blocked by, or mutes; and the public and local posts of the hashtags the viewer
+// follows (ADR-0013 §24, §25), which CanView judges as on the hashtag timeline and which carry
+// the names of those tags. The query first reads only the entries within timeline.HomeWindow
+// before the cursor and widens the window of both when that does not fill the page.
 func (s *Service) Home(ctx context.Context, viewer appcontent.Viewer, q Query) (Page, error) {
 	if viewer.Kind != appcontent.ViewerLocal || viewer.AccountID == "" {
 		return Page{}, ErrLoginRequired
@@ -93,7 +108,7 @@ func (s *Service) Home(ctx context.Context, viewer appcontent.Viewer, q Query) (
 			hq.Floor = kernel.UUIDv7Floor(base.Add(-windows[i]))
 		}
 		var err error
-		if rows, err = s.d.Repository.ListHome(ctx, hq); err != nil {
+		if rows, err = s.homeRows(ctx, hq); err != nil {
 			return Page{}, err
 		}
 		if len(rows) >= w.Limit || hq.Floor == "" {
@@ -139,12 +154,35 @@ func (s *Service) Hashtag(ctx context.Context, viewer appcontent.Viewer, tagID s
 	return s.page(ctx, appcontent.ContextHashtag, viewer, w, rows)
 }
 
+// HashtagFeed returns the entries of the Atom feed of the hashtag tagID (FR-213): the public posts
+// with the tag of local authors, without the replies, as an anonymous visitor sees them on the
+// hashtag timeline. Whether each author lets their posts into feeds is the caller's to decide.
+func (s *Service) HashtagFeed(ctx context.Context, tagID string, q Query) (Page, error) {
+	viewer := appcontent.Viewer{Kind: appcontent.ViewerAnonymous}
+	w := s.window(viewer, q)
+	rows, err := s.d.Repository.ListTag(ctx, TagQuery{Window: w, TagID: tagID, LocalOnly: true, ExcludeReplies: true})
+	if err != nil {
+		return Page{}, err
+	}
+	return s.page(ctx, appcontent.ContextHashtag, viewer, w, rows)
+}
+
+// ProfileFeed returns the entries of the Atom feed of a local author (FR-213): the author's
+// public posts, without the replies and the boosts, as an anonymous visitor sees them on the
+// profile. Whether the author has a feed is the caller's to decide.
+func (s *Service) ProfileFeed(ctx context.Context, authorAccountID string, q Query) (Page, error) {
+	return s.Profile(ctx, appcontent.Viewer{Kind: appcontent.ViewerAnonymous}, authorAccountID,
+		ProfileFilter{ExcludeReplies: true, ExcludeBoosts: true, PublicOnly: true}, q)
+}
+
 // ProfileFilter narrows a profile timeline.
 type ProfileFilter struct {
 	// ExcludeReplies leaves out the author's posts that reply to a status.
 	ExcludeReplies bool
 	// ExcludeBoosts leaves out the author's boosts.
 	ExcludeBoosts bool
+	// PublicOnly keeps only the posts and boosts of visibility public.
+	PublicOnly bool
 }
 
 // Profile returns the profile timeline of an author (FR-204): the author's posts and boosts in
@@ -163,18 +201,24 @@ func (s *Service) Profile(ctx context.Context, viewer appcontent.Viewer, authorA
 	// author has no local posts, and CanView below judges each entry by its real facts.
 	restrictions := facts.restrictions(authorAccountID, "")
 	rel := facts.relation(authorAccountID, "")
-	for _, v := range []appcontent.Visibility{
+	visibilities := []appcontent.Visibility{
 		appcontent.VisibilityPublic, appcontent.VisibilityLocal, appcontent.VisibilityUnlisted, appcontent.VisibilityPrivate,
-	} {
+	}
+	if f.PublicOnly {
+		visibilities = visibilities[:1]
+	}
+	for _, v := range visibilities {
 		st := appcontent.StatusFacts{AuthorAccountID: authorAccountID, AuthorIsLocal: true, Visibility: v}
 		if appcontent.CanView(appcontent.ContextProfile, viewer, st, restrictions, rel) {
 			pq.Visibilities = append(pq.Visibilities, v)
 		}
 	}
-	direct := appcontent.StatusFacts{AuthorAccountID: authorAccountID, AuthorIsLocal: true, Visibility: appcontent.VisibilityDirect}
-	mentioned := rel
-	mentioned.Mentioned = true
-	pq.IncludeDirect = appcontent.CanView(appcontent.ContextProfile, viewer, direct, restrictions, mentioned)
+	if !f.PublicOnly {
+		direct := appcontent.StatusFacts{AuthorAccountID: authorAccountID, AuthorIsLocal: true, Visibility: appcontent.VisibilityDirect}
+		mentioned := rel
+		mentioned.Mentioned = true
+		pq.IncludeDirect = appcontent.CanView(appcontent.ContextProfile, viewer, direct, restrictions, mentioned)
+	}
 	if len(pq.Visibilities) == 0 && !pq.IncludeDirect {
 		return Page{}, nil
 	}
@@ -199,7 +243,9 @@ func (s *Service) window(viewer appcontent.Viewer, q Query) Window {
 
 func loggedIn(v appcontent.Viewer) bool { return v.Kind == appcontent.ViewerLocal && v.AccountID != "" }
 
-// page cuts rows to the page and keeps the entries that CanView lets the viewer see in vctx.
+// page cuts rows to the page and keeps the entries that CanView lets the viewer see in vctx; an
+// entry of the hashtag branch of home (FollowedTagIDs) is judged as on the hashtag timeline,
+// since the viewer need not follow its author, and gets the names of its tags.
 func (s *Service) page(ctx context.Context, vctx appcontent.ViewContext, viewer appcontent.Viewer, w Window, rows []Entry) (Page, error) {
 	var p Page
 	if len(rows) >= w.Limit {
@@ -214,9 +260,16 @@ func (s *Service) page(ctx context.Context, vctx appcontent.ViewContext, viewer 
 		return Page{}, err
 	}
 	for _, e := range rows {
-		if facts.canView(vctx, viewer, e) {
+		ectx := vctx
+		if vctx == appcontent.ContextHome && len(e.FollowedTagIDs) > 0 {
+			ectx = appcontent.ContextHashtag
+		}
+		if facts.canView(ectx, viewer, e) {
 			p.Entries = append(p.Entries, e)
 		}
+	}
+	if err := s.tagNames(ctx, p.Entries); err != nil {
+		return Page{}, err
 	}
 	return p, nil
 }

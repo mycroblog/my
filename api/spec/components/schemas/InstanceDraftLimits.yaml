@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The limits of drafts and scheduled posts (the instance settings of the same names). A save or a
+  schedule past one is a 422 that names it; lowering a limit deletes no draft and cancels no
+  schedule.
+type: object
+required: [max_drafts, max_scheduled_posts, max_scheduled_posts_per_day, scheduled_post_min_lead_minutes, scheduled_post_max_lead_days]
+properties:
+  max_drafts:
+    description: How many drafts without a schedule a user may keep.
+    type: integer
+    minimum: 1
+  max_scheduled_posts:
+    description: How many scheduled posts a user may have waiting.
+    type: integer
+    minimum: 1
+  max_scheduled_posts_per_day:
+    description: How many scheduled posts of a user may wait for one UTC day.
+    type: integer
+    minimum: 1
+  scheduled_post_min_lead_minutes:
+    description: How many minutes ahead, at least, a post may be scheduled.
+    type: integer
+    minimum: 1
+  scheduled_post_max_lead_days:
+    description: How many days ahead, at most, a post may be scheduled.
+    type: integer
+    minimum: 1

@@ -24,8 +24,9 @@ import {
 import { type TimeView, useTimeView } from "../../../lib/time";
 import { announcementPath } from "../../announcements";
 import { useViewer } from "../../session";
-import { statusPath } from "../../status";
+import { statusPath, useFilteredLabel } from "../../status";
 import type {
+  DraftFailureReason,
   ModerationAction,
   Notification,
   NotificationAccount,
@@ -126,7 +127,14 @@ export type NotificationView = {
    * a link and cannot hold the post's own links), or only the author's content warning, which the post's
    * page asks to open; null for the types that are not about a post, and when the user may not see it.
    */
-  post: { href: string; text: string; lang: string | undefined; contentWarning: string | null } | null;
+  post: {
+    href: string;
+    text: string;
+    lang: string | undefined;
+    contentWarning: string | null;
+    /** What the post matched of the viewer's keyword filters that fold ("Filtered: Spoilers"), or null for none. */
+    filtered: string | null;
+  } | null;
   /** The account to offer a follow back to: the follower of a follow notification, else null. */
   followBack: NotificationAccount | null;
   /**
@@ -163,6 +171,11 @@ export type NotificationView = {
    */
   autoDeleteLimit: { days: number; from: { dateTime: string; text: string } } | null;
   /**
+   * What a `scheduled_status_failed` tells of the scheduled post (ADR-0156 §8): why it was not published, and when it
+   * was to be; null for the other types and once its draft is gone.
+   */
+  scheduledFailure: { reason: DraftFailureReason; at: { dateTime: string; text: string } } | null;
+  /**
    * The pages the row leads to besides the actor's profile and the post, where the user follows up what it
    * tells: the account status, the report, the registrations, or the user's follow lists.
    */
@@ -189,6 +202,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   admin_appeal: "staff",
   admin_webhook_disabled: "staff",
   admin_hook_failing: "staff",
+  admin_domain_list_failing: "staff",
   admin_hook_appeal: "staff",
   hook_appeal_decided: "staff",
   admin_custom_emoji_request: "staff",
@@ -207,6 +221,12 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   status: "status",
   announcement: "announcement",
   auto_delete_limit: "notice",
+  scheduled_status_failed: "notice",
+  reply_request: "mention",
+  boost_request: "boost",
+  quote_request: "quote",
+  interaction_accepted: "notice",
+  interaction_rejected: "notice",
 };
 
 const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
@@ -228,6 +248,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   admin_appeal: "client:notifications.type.admin_appeal",
   admin_webhook_disabled: "client:notifications.type.admin_webhook_disabled",
   admin_hook_failing: "client:notifications.type.admin_hook_failing",
+  admin_domain_list_failing: "client:notifications.type.admin_domain_list_failing",
   admin_hook_appeal: "client:notifications.type.admin_hook_appeal",
   hook_appeal_decided: "client:notifications.type.hook_appeal_decided",
   admin_custom_emoji_request: "client:notifications.type.admin_custom_emoji_request",
@@ -242,10 +263,16 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   supporter_service_closure: "client:notifications.type.supporter_service_closure",
   announcement: "client:notifications.type.announcement",
   auto_delete_limit: "client:notifications.type.auto_delete_limit",
+  scheduled_status_failed: "client:notifications.type.scheduled_status_failed",
   voice_room_started: "client:notifications.type.voice_room_started",
   voice_room_invited: "client:notifications.type.voice_room_invited",
   admin_error_group: "client:notifications.type.admin_error_group",
   status: "client:notifications.type.status",
+  reply_request: "client:notifications.type.reply_request",
+  boost_request: "client:notifications.type.boost_request",
+  quote_request: "client:notifications.type.quote_request",
+  interaction_accepted: "client:notifications.type.interaction_accepted",
+  interaction_rejected: "client:notifications.type.interaction_rejected",
 };
 
 /** The sentences of a `service_closure` that tells of a change of the dates or of a withdrawal. */
@@ -402,21 +429,24 @@ function actorOf(account: NotificationAccount): NotificationActor {
   };
 }
 
-function postOf(status: NotificationStatus): NonNullable<NotificationView["post"]> {
+function postOf(status: NotificationStatus, filtered: string | null): NonNullable<NotificationView["post"]> {
   const contentWarning = status.spoiler_text === "" ? null : status.spoiler_text;
   return {
     href: statusPath(status),
-    // Behind a content warning, the text stays on the post's page. Status.content is the server-sanitized
-    // HTML of the post (api/openapi.yaml), parsed by @my/ui under the app's Trusted Types.
-    text: contentWarning === null ? sanitizedHtmlText(serverSanitizedHtml(status.content)) : "",
+    // Behind a content warning or a keyword filter that folds it (ADR-0157 §7), the text stays on the post's page.
+    // Status.content is the server-sanitized HTML of the post (api/openapi.yaml), parsed by @my/ui under the app's
+    // Trusted Types.
+    text: contentWarning === null && filtered === null ? sanitizedHtmlText(serverSanitizedHtml(status.content)) : "",
     lang: status.language === "und" ? undefined : status.language,
     contentWarning,
+    filtered,
   };
 }
 
 /**
  * The sentence and the values of a `relationships_severed`: the server or the account that the moderators
- * suspended, with the counts; without its severance, the sentence that says only that follows ended.
+ * suspended, or the servers that the allowlist cut off, with the counts; without its severance, the sentence that
+ * says only that follows ended.
  */
 function severanceOf(notification: Notification): Pick<NotificationView, "sentence" | "severance"> {
   const severance = notification.relationship_severance;
@@ -428,6 +458,15 @@ function severanceOf(notification: Notification): Pick<NotificationView, "senten
       sentence: "client:notifications.severed.domain",
       severance: { domain: severance.domain ?? "", ...counts },
     };
+  }
+  if (severance.kind === "allowlist_cutoff") {
+    // The server whose allow was removed, or none when the server switched to its allowlist.
+    return severance.domain === undefined
+      ? { sentence: "client:notifications.severed.allowlist", severance: { domain: null, ...counts } }
+      : {
+          sentence: "client:notifications.severed.allowlist_domain",
+          severance: { domain: severance.domain, ...counts },
+        };
   }
   if (notification.account === undefined) return fallback;
   return { sentence: "client:notifications.severed.account", severance: { domain: null, ...counts } };
@@ -482,6 +521,13 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return [{ href: "/admin/webhooks", label: "client:notifications.link.webhooks" }];
     case "admin_hook_failing":
       return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_decisions" }];
+    case "admin_domain_list_failing":
+      return [
+        {
+          href: "/moderation/domain-actions/subscriptions",
+          label: "client:notifications.link.domain_list_subscriptions",
+        },
+      ];
     // An appeal of a refused post leads to its page; without its ID, to the appeals awaiting a moderator.
     case "admin_hook_appeal":
       return [
@@ -527,6 +573,14 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
     // The settings show the maximum in effect now and preview what goes (ADR-0151 §7).
     case "auto_delete_limit":
       return [{ href: "/settings/auto-delete", label: "client:notifications.link.auto_delete" }];
+    // The requests are answered on their own page (ADR-0155 §10).
+    case "reply_request":
+    case "boost_request":
+    case "quote_request":
+      return [{ href: "/settings/interaction-requests", label: "client:notifications.link.interaction_requests" }];
+    // The draft of a scheduled post that failed stays, with the failure, on the drafts page (ADR-0156 §8).
+    case "scheduled_status_failed":
+      return [{ href: "/drafts", label: "client:drafts.notification_link" }];
     case "relationships_severed":
       return ownAcct === null
         ? []
@@ -563,6 +617,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
   const viewer = useViewer();
   const time = useTimeView(notification.created_at);
   const { account, status } = notification;
+  const filtered = useFilteredLabel(status?.filtered ?? []);
   const severed = notification.type === "relationships_severed" ? severanceOf(notification) : null;
   const requested = emojiRequestOf(notification);
   // The same account can favourite a post again after taking it back: it counts once.
@@ -600,7 +655,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
     subject: target === undefined ? null : actorOf(target),
     others,
     time,
-    post: status === undefined ? null : postOf(status),
+    post: status === undefined ? null : postOf(status, filtered),
     followBack: notification.type === "follow" && account !== undefined ? account : null,
     severance: severed?.severance ?? null,
     notice: action === undefined ? null : noticeOf(action, formatDate),
@@ -616,6 +671,16 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
             from: {
               dateTime: notification.auto_delete_limit.enforce_from,
               text: intl.formatDate(notification.auto_delete_limit.enforce_from, { dateStyle: "long" }),
+            },
+          }
+        : null,
+    scheduledFailure:
+      notification.type === "scheduled_status_failed" && notification.scheduled_status_failure !== undefined
+        ? {
+            reason: notification.scheduled_status_failure.reason,
+            at: {
+              dateTime: notification.scheduled_status_failure.publish_at,
+              text: formatDate(notification.scheduled_status_failure.publish_at),
             },
           }
         : null,

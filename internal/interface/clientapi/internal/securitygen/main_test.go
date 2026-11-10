@@ -115,3 +115,46 @@ func TestRender(t *testing.T) {
 		t.Errorf("render =\n%s\nwant the sorted entries\n%s", src, want)
 	}
 }
+
+func TestPermissionExtension(t *testing.T) {
+	if got, err := parsePermission(json.RawMessage(`"manage_invites"`)); err != nil || got != "manage_invites" {
+		t.Errorf("parsePermission(manage_invites) = %q, %v", got, err)
+	}
+	for _, raw := range []json.RawMessage{json.RawMessage(`"manage_nothing"`), json.RawMessage(`true`)} {
+		if got, err := parsePermission(raw); err == nil {
+			t.Errorf("parsePermission(%s) = %q; want an error", raw, got)
+		}
+	}
+	src, err := render(map[string]access{"GET /api/v1/admin/p": {operation: "getP", scopes: []string{"admin:read"}, permission: "manage_invites"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := `{Operation: "getP", Permission: "manage_invites", Scopes: []string{"admin:read"}}`; !strings.Contains(string(src), want) {
+		t.Errorf("render =\n%s\nwant %s", src, want)
+	}
+}
+
+// TestPermissionNeedsAnAdminScope checks that only an operation of admin:read or admin:write
+// declares x-permission.
+func TestPermissionNeedsAnAdminScope(t *testing.T) {
+	spec := func(scope string) string {
+		return `{"openapi": "3.1.0", "info": {"title": "t", "version": "1"}, "servers": [{"url": "/api/v1"}],
+"paths": {"/p": {"get": {"operationId": "getP", "x-permission": "manage_invites", "security": [{"oauth2": ["` + scope + `"]}],
+  "responses": {"200": {"description": "ok"}}}}},
+"components": {"securitySchemes": {"oauth2": {"type": "oauth2", "flows": {"authorizationCode": {
+  "authorizationUrl": "/oauth/authorize", "tokenUrl": "/oauth/token", "scopes": {"admin:read": "a", "read": "r"}}}}}}}`
+	}
+	for scope, wantErr := range map[string]bool{"admin:read": false, "read": true} {
+		doc, err := openapi3.NewLoader().LoadFromData([]byte(spec(scope)))
+		if err != nil {
+			t.Fatal(err)
+		}
+		ops, err := operations(doc)
+		if (err != nil) != wantErr {
+			t.Errorf("x-permission on %s: err = %v, want an error %v", scope, err, wantErr)
+		}
+		if !wantErr && ops["GET /api/v1/p"].permission != "manage_invites" {
+			t.Errorf("x-permission on %s: ops = %+v", scope, ops)
+		}
+	}
+}

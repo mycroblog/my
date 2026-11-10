@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: The title and summary of one revision of an article.
+type: object
+required: [title, summary]
+properties:
+  title:
+    description: The title of the revision.
+    type: string
+  summary:
+    description: The summary of the revision.
+    type: string

@@ -17,9 +17,11 @@ import (
 // part of the visibility policy would, so that the tests see what CanView removes.
 type leakyRepository struct {
 	apptimeline.Repository
-	rows  []apptimeline.Entry
-	facts apptimeline.Facts
-	homes []apptimeline.HomeQuery
+	rows []apptimeline.Entry
+	// tagged answers ListHomeTags, the hashtag branch of home.
+	tagged []apptimeline.Entry
+	facts  apptimeline.Facts
+	homes  []apptimeline.HomeQuery
 	// mutedDomains answers MutedDomains.
 	mutedDomains []string
 }
@@ -31,6 +33,10 @@ func (r *leakyRepository) ListLocal(context.Context, apptimeline.LocalQuery) ([]
 func (r *leakyRepository) ListHome(_ context.Context, q apptimeline.HomeQuery) ([]apptimeline.Entry, error) {
 	r.homes = append(r.homes, q)
 	return r.rows, nil
+}
+
+func (r *leakyRepository) ListHomeTags(context.Context, apptimeline.HomeQuery) ([]apptimeline.Entry, error) {
+	return r.tagged, nil
 }
 
 func (r *leakyRepository) Facts(context.Context, apptimeline.FactsQuery) (apptimeline.Facts, error) {

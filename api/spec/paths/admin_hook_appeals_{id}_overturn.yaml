@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: overturnHookAppeal
+  x-permission: manage_reports
   summary: Overturn an appeal of a refused post
   description: |
     Cancels the decision, which goes in the audit log as `hook_decision_overridden`, and stops

@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A conversation of the user's direct messages: the `direct` posts that the user sent or
+  received in one thread, whether or not the user follows their authors.
+type: object
+required: [id, accounts, last_status, unread]
+properties:
+  id:
+    $ref: ./Id.yaml
+  accounts:
+    description: |
+      The other accounts of the direct posts that the user sent or received in the
+      conversation: their authors and the accounts they mention.
+    type: array
+    items:
+      $ref: ./Account.yaml
+  last_status:
+    description: |
+      The newest direct post of the conversation that the user may see. A post of an
+      account that the user blocks, is blocked by, or mutes, or of a suspended account, is
+      skipped for the one before it.
+    allOf:
+      - $ref: ./Status.yaml
+  unread:
+    description: |
+      Whether a direct post by another account is newer than the point up to which the user
+      read the conversation (`markConversationRead`), on any device.
+    type: boolean

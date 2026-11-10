@@ -9,11 +9,33 @@ characters are left. Besides text you can:
 - "Add a poll", with options and a duration, and the choices "Allow choosing several options" and "Hide the votes until the poll ends".
 - "Add a content warning". Readers see the warning first and choose "Show content".
 - Choose "Hide the images until readers show them" to mark the media as sensitive.
-- Set the language of the post, and "Who can quote" it: "Anyone", "Followers", or "Only you".
+- Set the language of the post, and who can reply to, boost, and quote it (see [Who can reply, boost, and quote](#who-can-reply-boost-and-quote)).
 - Reply to a post ("Reply") or quote one ("Quote").
 
 A post that could not be sent stays under "Posts being sent", where you can "Send again", "Edit", or "Discard" it.
 A server can refuse a post after an automated review. When the refusal can be appealed, the post offers "Appeal".
+
+## Drafts and scheduled posts
+
+Choose "Save draft" to keep what you are writing on the server and empty the form. A saved draft opens on any device
+you sign in on: the link "Drafts and scheduled posts" under the form leads to the page that lists them, where "Edit"
+opens a draft in the form again. When the form already holds something else, you are asked before it is replaced.
+Saving a draft you opened from that page replaces it; posting it publishes it and removes it from your drafts. If the
+same draft was saved on another device since you opened it, nothing is overwritten or posted: save again to keep your
+version as a new draft, or post again to publish your version as a new post.
+
+To publish a post later, choose "Schedule the post" (the clock among the form's tools), pick a date and a time, and
+choose "Schedule". The date and time are in your time zone, the one in your preferences, and the form names it. A time
+in the past, too soon, or too far ahead is refused before anything is sent; the server sets how soon and how far
+ahead you can schedule. The post is published at that time, or soon after.
+
+The page "Drafts and scheduled posts" lists your scheduled posts first, with the time each is published, then your
+drafts. A scheduled post can be moved with "Change time" or turned back into a draft with "Cancel schedule", and any
+draft can be deleted. Only you see your drafts.
+
+When a scheduled post cannot be published at its time, for example because the post it replies to is gone, it stays
+among your drafts with the reason, and you get a notification that leads to your drafts, so you can fix it and
+schedule it again.
 
 ## Who can see a post
 
@@ -60,7 +82,25 @@ show it to those followers as a post for followers only.
 - You cannot change the visibility of a post after posting it. When you edit a post, the visibility and the post it replies to stay as they are.
 - A moderator can limit how widely an account posts. The form then says "Your account can post at most as ..." and a wider choice is posted at the widest level allowed.
 - Anyone who can see a public, "This server", or unlisted post can boost it. Only you can boost your own "Followers" posts, and only your followers see that boost. "Mentioned people" posts cannot be boosted.
+- The author of a post can choose who may reply to it and who may boost it; posts from some other servers carry such a choice too. A reply or a boost outside it is refused, with a message such as "The author of this post does not let you reply to it." The author, the people the post mentions, and the author of the post it replies to can always reply.
+- The author may also let some people reply or boost only once they approve it. Such a reply or boost waits: you are notified ("... asked to reply to your post"), and it stays off your post until you approve it. A waiting reply from another server is not in the conversation under your post or in its count of replies; it still appears on its author's profile and on its own page. A waiting boost is not counted. Approving it adds it to your post; declining it keeps it off, and the other server is told either way.
+- A reply or a boost from another server that is outside your choice altogether is kept off your post in the same way, and notifies you of nothing.
+- When you reply to or boost a post whose author approves replies or boosts by hand, yours waits for that approval. Until then, only you see your reply, under the post and on its own page, marked as waiting; others see nothing of it, and nothing is sent to other servers. Your boost is not made until it is approved. You are notified when the author approves or declines it ("... approved your reply, boost, or quote"). Deleting a waiting reply, or undoing a waiting boost, takes the request back.
 - You can pin up to five of your posts to your profile with "Pin to profile". A "Mentioned people" post cannot be pinned.
+
+## Who can reply, boost, and quote
+
+The button "Who can reply, boost, and quote" among the tools of the form opens the choices for that post. For each of
+replies, boosts, and quotes, choose who can do it at once: "Anyone", "Followers and people you mention", "People you
+mention", or "Only you". Below each, "Others can reply with your approval" (and the same for boosts and quotes) lets
+everyone else ask instead of being refused. Once a choice admits less than anyone, the form shows the result above its
+tools, for example "Replies: Anyone. Boosts: Only you. Quotes: Anyone.", before you post.
+
+- The people a post mentions can always reply to it. A "Followers" post can be boosted and quoted only by you, and a "Mentioned people" post by no one, whatever you choose.
+- The defaults for new posts are under "Who can reply to, boost, and quote your new posts" in "Display, posting, and timelines" in the settings.
+- To change them for a post you already sent, choose "Change who can reply, boost, and quote" in its "More actions" menu. Each choice is saved at once. Replies, boosts, and quotes you approved before stay, and requests that the new choice admits are approved.
+- Requests that wait for you are listed under "Approval requests" in the settings, next to "Follow requests"; the notification of each one links there with "Review the requests". "Approve" adds the reply, boost, or quote to your post, and the conversation under it shows an approved reply at once; "Decline" keeps it off.
+- On someone else's post, "Reply" is not shown and "Boost" cannot be pressed when its author does not let you. When the author approves them by hand, the form says so before you reply, and after you boost, the post says "Your boost waits for the author's approval."
 
 ## After posting
 
@@ -76,6 +116,18 @@ their actions, and in the "More actions" menu, which holds it when the post is t
 post shows its translation, a line under the text says which language it was translated from and by whom, with "Show
 original" to go back. If the server sends the text of posts to a translation service, the visibility picker tells you
 for which choices.
+
+## Direct messages
+
+"Direct messages" in the navigation gathers your "Mentioned people" posts and those you receive, one row per
+conversation, the one with the newest post first. Each row shows who is in the conversation, when its newest post was
+written, and the start of that post. The number beside "Direct messages" is how many conversations have a post you
+have not read yet; each of them has a dot before its names.
+
+Choose the start of a post to open the conversation's thread; this marks the conversation read on all your devices. A
+reply to a "Mentioned people" post is always "Mentioned people" too, so it reaches no one the conversation did not. On
+phones, "Direct messages" is in "Menu" unless you move it into the tab bar under "Display, posting, and timelines" in
+the settings.
 
 ## Deleting old posts automatically
 

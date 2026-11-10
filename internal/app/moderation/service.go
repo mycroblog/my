@@ -261,6 +261,11 @@ type Deps struct {
 	// AuditTargets tells which roles, custom emoji, and webhooks named by the audit log still
 	// exist (GoneAuditTargets); nil reports none of them gone.
 	AuditTargets AuditTargets
+	// Scopes reads the instance setting federation_scope (allowlist.go); nil is open.
+	Scopes FederationScopes
+	// HTTP fetches the subscribed domain block lists through the SSRF guard (ADR-0159 §4); nil
+	// fails every fetch.
+	HTTP kernel.HTTPClient
 }
 
 // AuditTargets looks up the targets of the audit log that other modules own and delete: roles
@@ -337,6 +342,12 @@ func (s *Service) IssueDomainAction(ctx context.Context, in DomainActionInput) (
 // describes: its restrictions, the events, the severance of a suspension, and its audit log
 // entry auditID.
 func (s *Service) insertDomainAction(ctx context.Context, tx uow.Tx, a moderation.DomainAction, auditID string) error {
+	return s.insertDomainActionAs(ctx, tx, a, auditID, false)
+}
+
+// insertDomainActionAs is insertDomainAction, audited as the server itself when system (a
+// subscription in the automatic mode) and as a.IssuedByUserID otherwise.
+func (s *Service) insertDomainActionAs(ctx context.Context, tx uow.Tx, a moderation.DomainAction, auditID string, system bool) error {
 	repo := s.d.Repository
 	if err := repo.LockDomainRestrictions(ctx, tx, a.Domain); err != nil {
 		return err
@@ -358,50 +369,64 @@ func (s *Service) insertDomainAction(ctx context.Context, tx uow.Tx, a moderatio
 	if err := tx.Emit(ctx, DomainActionIssued{Action: a}); err != nil {
 		return err
 	}
-	return s.emitAudit(ctx, tx, moderation.AuditEntry{
+	return s.emitAuditAs(ctx, tx, moderation.AuditEntry{
 		ID: auditID, Action: moderation.AuditDomainActionIssued, TargetKind: moderation.AuditTargetDomain,
 		TargetID: a.Domain, TargetLabel: a.Domain, SourceEventID: a.ID, OccurredAt: a.IssuedAt,
-	}, a.IssuedByUserID)
+	}, a.IssuedByUserID, system)
 }
 
 // LiftDomainAction lifts an action on a domain: its restrictions end, while those of other
 // actions on the domain stay, and the lift is audited. Lifting an action that is already lifted
-// changes nothing.
+// changes nothing. When a subscription to a domain block list issued the action, the
+// subscription does not issue it again while its list lists the domain alike.
 func (s *Service) LiftDomainAction(ctx context.Context, actionID, liftedByUserID string) error {
 	now := kernel.Normalize(s.d.Clock.Now())
-	repo := s.d.Repository
-	auditID := s.d.IDs.NewID()
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		a, err := repo.DomainAction(ctx, tx, actionID)
+		a, err := s.d.Repository.DomainAction(ctx, tx, actionID)
 		if err != nil {
 			return err
 		}
-		if err := repo.LockDomainRestrictions(ctx, tx, a.Domain); err != nil {
-			return err
-		}
-		lift := moderation.DomainLift{ActionID: a.ID, LiftedByUserID: liftedByUserID, LiftedAt: now}
-		err = repo.InsertDomainActionLift(ctx, tx, lift)
-		if errors.Is(err, ErrAlreadyRecorded) {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
-		if err := repo.DeleteDomainRestrictionsOf(ctx, tx, a.ID); err != nil {
-			return err
-		}
-		if err := s.emitDomain(ctx, tx, a.Domain, now); err != nil {
-			return err
-		}
-		if err := tx.Emit(ctx, DomainActionLifted{Action: a, Lift: lift}); err != nil {
-			return err
-		}
-		// The lift's row is keyed by the action's ID.
-		return s.emitAudit(ctx, tx, moderation.AuditEntry{
-			ID: auditID, Action: moderation.AuditDomainActionLifted, TargetKind: moderation.AuditTargetDomain,
-			TargetID: a.Domain, TargetLabel: a.Domain, SourceEventID: a.ID, OccurredAt: now,
-		}, liftedByUserID)
+		_, err = s.liftDomainAction(ctx, tx, a, liftedByUserID, false, true, now)
+		return err
 	})
+}
+
+// liftDomainAction lifts a inside tx as LiftDomainAction does, audited as the server itself
+// when system, and reports whether a was in effect. With rejectReissue, a lift of a
+// subscription's action is also recorded as a rejection of its entry
+// (rejectLiftOfSubscriptionAction): a person lifted it.
+func (s *Service) liftDomainAction(ctx context.Context, tx uow.Tx, a moderation.DomainAction, liftedByUserID string, system, rejectReissue bool, now time.Time) (bool, error) {
+	repo := s.d.Repository
+	if err := repo.LockDomainRestrictions(ctx, tx, a.Domain); err != nil {
+		return false, err
+	}
+	lift := moderation.DomainLift{ActionID: a.ID, LiftedByUserID: liftedByUserID, LiftedAt: now}
+	err := repo.InsertDomainActionLift(ctx, tx, lift)
+	if errors.Is(err, ErrAlreadyRecorded) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if err := repo.DeleteDomainRestrictionsOf(ctx, tx, a.ID); err != nil {
+		return false, err
+	}
+	if err := s.emitDomain(ctx, tx, a.Domain, now); err != nil {
+		return false, err
+	}
+	if err := tx.Emit(ctx, DomainActionLifted{Action: a, Lift: lift}); err != nil {
+		return false, err
+	}
+	if rejectReissue {
+		if err := s.rejectLiftOfSubscriptionAction(ctx, tx, a, liftedByUserID, now); err != nil {
+			return false, err
+		}
+	}
+	// The lift's row is keyed by the action's ID.
+	return true, s.emitAuditAs(ctx, tx, moderation.AuditEntry{
+		ID: s.d.IDs.NewID(), Action: moderation.AuditDomainActionLifted, TargetKind: moderation.AuditTargetDomain,
+		TargetID: a.Domain, TargetLabel: a.Domain, SourceEventID: a.ID, OccurredAt: now,
+	}, liftedByUserID, system)
 }
 
 func (s *Service) emitDomain(ctx context.Context, tx uow.Tx, domain string, now time.Time) error {
@@ -613,13 +638,31 @@ func (s *Service) IssueAccountAction(ctx context.Context, in AccountActionInput)
 // transaction: each must be a status of the target that is not deleted.
 func (s *Service) actionStatuses(ctx context.Context, a moderation.Action) ([]appcontent.Status, error) {
 	out := make([]appcontent.Status, 0, len(a.StatusIDs))
+	b, ok := s.d.Statuses.(statusesBatch)
+	if !ok {
+		for _, id := range a.StatusIDs {
+			p, err := s.d.Statuses.Find(ctx, id)
+			switch {
+			case errors.Is(err, appcontent.ErrNotFound):
+				return nil, fmt.Errorf("%w: no status %s", ErrInvalidStatusReference, id)
+			case err != nil:
+				return nil, err
+			case p.Status.AuthorAccountID != a.TargetAccountID:
+				return nil, fmt.Errorf("%w: status %s is of another account", ErrInvalidStatusReference, id)
+			}
+			out = append(out, p.Status)
+		}
+		return out, nil
+	}
+	posts, err := b.FindMany(ctx, a.StatusIDs)
+	if err != nil {
+		return nil, err
+	}
 	for _, id := range a.StatusIDs {
-		p, err := s.d.Statuses.Find(ctx, id)
+		p, found := posts[id]
 		switch {
-		case errors.Is(err, appcontent.ErrNotFound):
+		case !found:
 			return nil, fmt.Errorf("%w: no status %s", ErrInvalidStatusReference, id)
-		case err != nil:
-			return nil, err
 		case p.Status.AuthorAccountID != a.TargetAccountID:
 			return nil, fmt.Errorf("%w: status %s is of another account", ErrInvalidStatusReference, id)
 		}
@@ -628,17 +671,35 @@ func (s *Service) actionStatuses(ctx context.Context, a moderation.Action) ([]ap
 	return out, nil
 }
 
+// statusesBatch is a Statuses that reads and changes many statuses at once, as
+// *appcontent.Service does.
+type statusesBatch interface {
+	FindMany(ctx context.Context, ids []string) (map[string]appcontent.Post, error)
+	DeleteManyByModeration(ctx context.Context, tx uow.Tx, sts []appcontent.Status, actionID string, at time.Time) error
+	MarkManySensitiveByModeration(ctx context.Context, tx uow.Tx, statusIDs []string, actionID string) error
+}
+
 // carryOut records inside tx the effects of a beyond its restrictions (data-model §5.2): the
 // deletion or the sensitivity of its statuses, and the scheduled deletion of a banned account.
 func (s *Service) carryOut(ctx context.Context, tx uow.Tx, a moderation.Action, statuses []appcontent.Status) error {
 	switch a.Kind {
 	case moderation.ActionDeleteStatuses:
+		if b, ok := s.d.Statuses.(statusesBatch); ok {
+			return b.DeleteManyByModeration(ctx, tx, statuses, a.ID, a.IssuedAt)
+		}
 		for _, st := range statuses {
 			if err := s.d.Statuses.DeleteByModeration(ctx, tx, st, a.ID, a.IssuedAt); err != nil {
 				return err
 			}
 		}
 	case moderation.ActionMarkStatusesSensitive:
+		if b, ok := s.d.Statuses.(statusesBatch); ok {
+			ids := make([]string, len(statuses))
+			for i, st := range statuses {
+				ids[i] = st.ID
+			}
+			return b.MarkManySensitiveByModeration(ctx, tx, ids, a.ID)
+		}
 		for _, st := range statuses {
 			if err := s.d.Statuses.MarkSensitiveByModeration(ctx, tx, st.ID, a.ID); err != nil {
 				return err

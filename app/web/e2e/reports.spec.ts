@@ -17,6 +17,7 @@ import {
   recordTable,
   test,
 } from "./fixtures";
+import { preferencesOf } from "./preferences.ts";
 
 type Schemas = components["schemas"];
 type Report = Schemas["AdminReportDetail"];
@@ -40,6 +41,8 @@ const moderator = {
   discoverable: true,
   indexable: true,
   ai_opt_out: false,
+  feed_enabled: true,
+  feed_follows_indexable: true,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: ["manage_reports", "manage_accounts", "view_audit"],
@@ -89,6 +92,7 @@ const post: Schemas["Status"] = {
   boosts_count: 0,
   favourites_count: 0,
   reactions: [],
+  filtered: [],
 };
 
 const comment =
@@ -177,14 +181,7 @@ async function moderatorServer(page: Page) {
     if (key === "GET /accounts/verify_credentials" || key === `GET /accounts/${moderator.id}`)
       return json(route, moderator);
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "und",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale }));
     }
     if (key === "GET /admin/reports") {
       const state = url.searchParams.get("state");

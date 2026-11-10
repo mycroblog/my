@@ -37,15 +37,15 @@ const severBatch = 100
 // SeverGraph is the part of the graph module's public API that severing the federation uses;
 // *appgraph.Service implements it.
 type SeverGraph interface {
-	Counterparts(ctx context.Context, tx uow.Tx, accountID string) ([]string, error)
-	SeverDirected(ctx context.Context, tx uow.Tx, accountID string, others []string, dir appgraph.SeverDirection, announce bool, now time.Time) (appgraph.Severed, error)
+	CounterpartsOf(ctx context.Context, tx uow.Tx, ids []string) (map[string][]string, error)
+	SeverAmong(ctx context.Context, tx uow.Tx, others map[string][]string, dir appgraph.SeverDirection, announce bool, now time.Time) (map[string]appgraph.Severed, error)
 }
 
 // SeverAccounts lists the local accounts and tells the local ones among the counterparts of
 // their follows; *appaccount.Service implements it.
 type SeverAccounts interface {
 	LocalAccountIDs(ctx context.Context, after string, limit int) ([]string, error)
-	IsLocal(ctx context.Context, tx uow.Tx, accountID string) (bool, error)
+	LocalAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error)
 }
 
 // SeveranceDeps are the ports of Severance.
@@ -78,8 +78,8 @@ type Severed struct {
 // as moderation ends them (follow_terminations with the reason moderation, ADR-0058). Each ended
 // follow is told to the remote side, a Reject of its Follow or an Undo of the local account's,
 // only when the federation mode at the time sends it (federation.Sends); otherwise nothing is
-// recorded to send. It runs one short transaction per local account and is safe to repeat: a
-// follow that has ended is left as it is.
+// recorded to send. It runs one short transaction per batch of local accounts, whose follows end
+// together, and is safe to repeat: a follow that has ended is left as it is.
 func (s *Severance) Sever(ctx context.Context, dir SeverDirection) (Severed, error) {
 	var in, out bool
 	switch dir {
@@ -106,32 +106,34 @@ func (s *Severance) Sever(ctx context.Context, dir SeverDirection) (Severed, err
 		if err != nil {
 			return total, err
 		}
-		for _, local := range locals {
-			err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-				remotes, err := s.remoteCounterparts(ctx, tx, local)
-				if err != nil || len(remotes) == 0 {
+		err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			remotes, err := s.remoteCounterparts(ctx, tx, locals)
+			if err != nil || len(remotes) == 0 {
+				return err
+			}
+			now := kernel.Normalize(s.d.Clock.Now())
+			if in {
+				got, err := s.d.Graph.SeverAmong(ctx, tx, remotes, appgraph.SeverDirection{Followers: true}, rejects, now)
+				if err != nil {
 					return err
 				}
-				now := kernel.Normalize(s.d.Clock.Now())
-				if in {
-					got, err := s.d.Graph.SeverDirected(ctx, tx, local, remotes, appgraph.SeverDirection{Followers: true}, rejects, now)
-					if err != nil {
-						return err
-					}
-					total.Followers += got.Followers
+				for _, sv := range got {
+					total.Followers += sv.Followers
 				}
-				if out {
-					got, err := s.d.Graph.SeverDirected(ctx, tx, local, remotes, appgraph.SeverDirection{Following: true}, undoes, now)
-					if err != nil {
-						return err
-					}
-					total.Following += got.Following
-				}
-				return nil
-			})
-			if err != nil {
-				return total, fmt.Errorf("sever the follows of %s: %w", local, err)
 			}
+			if out {
+				got, err := s.d.Graph.SeverAmong(ctx, tx, remotes, appgraph.SeverDirection{Following: true}, undoes, now)
+				if err != nil {
+					return err
+				}
+				for _, sv := range got {
+					total.Following += sv.Following
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			return total, fmt.Errorf("sever the follows of %d local accounts after %q: %w", len(locals), after, err)
 		}
 		if len(locals) < severBatch {
 			return total, nil
@@ -141,20 +143,30 @@ func (s *Severance) Sever(ctx context.Context, dir SeverDirection) (Severed, err
 }
 
 // remoteCounterparts returns, inside tx, the remote accounts with a pending or active follow to
-// or from the local account.
-func (s *Severance) remoteCounterparts(ctx context.Context, tx uow.Tx, local string) ([]string, error) {
-	others, err := s.d.Graph.Counterparts(ctx, tx, local)
+// or from each of the local accounts, by local account, with one query for the follows and one
+// for the accounts.
+func (s *Severance) remoteCounterparts(ctx context.Context, tx uow.Tx, locals []string) (map[string][]string, error) {
+	counterparts, err := s.d.Graph.CounterpartsOf(ctx, tx, locals)
 	if err != nil {
 		return nil, err
 	}
-	var out []string
-	for _, o := range others {
-		isLocal, err := s.d.Accounts.IsLocal(ctx, tx, o)
-		if err != nil {
-			return nil, err
-		}
-		if !isLocal {
-			out = append(out, o)
+	var all []string
+	for _, others := range counterparts {
+		all = append(all, others...)
+	}
+	if len(all) == 0 {
+		return nil, nil
+	}
+	local, err := s.d.Accounts.LocalAmong(ctx, tx, all)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string][]string{}
+	for account, others := range counterparts {
+		for _, o := range others {
+			if !local[o] {
+				out[account] = append(out[account], o)
+			}
 		}
 	}
 	return out, nil

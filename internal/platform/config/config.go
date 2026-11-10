@@ -212,6 +212,10 @@ type Config struct {
 	BillingGCPLabel              string
 	BillingGCPMaxBytesBilled     int64
 	BillingGCPBudgetSubscription string
+	// The Cloudflare account whose usage charges are imported and an API token of it with the
+	// permission Billing Read (ADR-0068 §11). The token is a secret.
+	BillingCloudflareAccountID string
+	BillingCloudflareAPIToken  string
 	// Search is the search engine of the full-text search of statuses (ADR-0149 §3): "none" or a
 	// backend's name.
 	Search string
@@ -487,6 +491,8 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("billing_gcp_label", c.BillingGCPLabel),
 		slog.Int64("billing_gcp_max_bytes_billed", c.BillingGCPMaxBytesBilled),
 		slog.String("billing_gcp_budget_subscription", c.BillingGCPBudgetSubscription),
+		slog.String("billing_cloudflare_account_id", c.BillingCloudflareAccountID),
+		slog.String("billing_cloudflare_api_token", redact(c.BillingCloudflareAPIToken != "")),
 		slog.String("plugin_billing_location", c.PluginBillingLocation),
 		slog.String("plugin_billing_provider", c.PluginBillingProvider),
 		slog.String("plugin_translator_name", c.PluginTranslatorName),

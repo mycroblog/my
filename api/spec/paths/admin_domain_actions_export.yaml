@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: exportDomainBlocks
+  x-permission: manage_domains
   summary: Export the domain actions as Mastodon's domain block CSV
   description: |
     The domain actions in effect as the CSV that Mastodon's moderation screens

@@ -311,8 +311,7 @@ const listAuthorStatusesToErase = `-- name: ListAuthorStatusesToErase :many
 
 
 
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at,
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at,
   CAST(EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id) AS INTEGER) AS deleted
 FROM statuses s
 WHERE s.author_account_id = ?1 AND s.id > CAST(?2 AS TEXT)
@@ -334,7 +333,6 @@ type ListAuthorStatusesToEraseRow struct {
 	IsLocal         int64
 	Visibility      string
 	InReplyToUri    sql.NullString
-	ConversationUri sql.NullString
 	PublishedAt     int64
 	Deleted         int64
 }
@@ -363,7 +361,6 @@ func (q *Queries) ListAuthorStatusesToErase(ctx context.Context, arg ListAuthorS
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 			&i.Deleted,
 		); err != nil {
@@ -385,6 +382,8 @@ const listRemoteMediaToErase = `-- name: ListRemoteMediaToErase :many
 SELECT r.media_id FROM remote_media r
 WHERE r.owner_account_id = ?1
   AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = r.media_id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = r.media_id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = r.media_id)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = r.media_id)
 ORDER BY r.media_id LIMIT ?2
 `

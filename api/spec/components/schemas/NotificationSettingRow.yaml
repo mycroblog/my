@@ -8,7 +8,7 @@ description: |
   `auto_delete_limit` are emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
   the read marker and not dismissed); the moderator notifications are emailed at once. Clients
   offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`,
-  `announcement`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+  `interaction_request`, `announcement`, `scheduled_status_failed`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
   subscription (`putPushSubscription`).
 type: object
 required: [group, section, types, in_app]
@@ -20,7 +20,7 @@ properties:
       The kind of the row: `ordinary` (what other users did; in the app on and email off by
       default), `moderator` (to the holders of the permission it needs; both on by default),
       or `instance` (the instance's notices to the user; always in the app, but for
-      `announcement` and `auto_delete_limit`, which are on by default).
+      `announcement`, `auto_delete_limit`, and `scheduled_status_failed`, which are on by default).
     type: string
     enum: [ordinary, moderator, instance]
   types:

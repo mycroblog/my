@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: upholdAppeal
+  x-permission: manage_accounts
   summary: Uphold an appeal, keeping its action
   description: |
     Rejects the appeal; the action stays as it is. The user who appealed gets an `appeal_decided` notification with

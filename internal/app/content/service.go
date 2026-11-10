@@ -3,7 +3,6 @@
 package content
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -98,6 +97,9 @@ const UndeterminedLanguage = "und"
 // *appaccount.Service implements it.
 type Accounts interface {
 	FindByID(ctx context.Context, id string) (appaccount.Actor, error)
+	// FindByIDs returns the accounts of ids that exist, by ID, as FindByID returns one, with one
+	// query per part of an actor whatever the number of ids.
+	FindByIDs(ctx context.Context, ids []string) (map[string]appaccount.Actor, error)
 	FindByHandle(ctx context.Context, username, domain string) (appaccount.Actor, error)
 }
 
@@ -144,6 +146,10 @@ type Deps struct {
 	RemoteMedia RemoteMediaRecorder
 	// Quotes stores the quotes of statuses (ADR-0069); nil records none.
 	Quotes QuoteRepository
+	// ReconsiderRequests approves the pending requests of interactions with a status that its new
+	// rules admit at once (Interactions.ReconsiderRequests, ADR-0155 §3); nil leaves them to the
+	// author.
+	ReconsiderRequests func(ctx context.Context, statusID string) error
 	// MaxStatusLength returns the current max_status_length instance setting (FR-101); it is
 	// read per command, so that changes apply at once.
 	MaxStatusLength func(ctx context.Context) (int, error)
@@ -156,9 +162,10 @@ type Deps struct {
 	// DefaultLanguage returns the default post language of a user (FR-110), used when a post
 	// names none; nil or UndeterminedLanguage leaves the language undetermined.
 	DefaultLanguage func(ctx context.Context, userID string) (string, error)
-	// DefaultQuotePolicy returns who may quote the new statuses of a user (ADR-0069 §1), used
-	// when a status names no policy; nil means content.DefaultQuotePolicy.
-	DefaultQuotePolicy func(ctx context.Context, userID string) (content.QuotePolicy, error)
+	// DefaultInteractionPolicy returns who may reply to, boost, and quote the new statuses of a
+	// user (ADR-0155 §5), used for the kinds a status names no policy of; nil means
+	// content.DefaultInteractionSettings.
+	DefaultInteractionPolicy func(ctx context.Context, userID string) (content.InteractionSettings, error)
 	// LocalEmojis returns the enabled local custom emoji that texts use as :shortcode:
 	// ((*CustomEmojiService).LocalEmojiIDs, ADR-0051 §3); nil records no custom emoji.
 	LocalEmojis func(ctx context.Context, texts ...string) ([]string, error)
@@ -168,8 +175,21 @@ type Deps struct {
 	// MediaReview acts on the decisions of the hook media.check on the files a post attaches; nil
 	// acts on none.
 	MediaReview *MediaReview
-	Clock       kernel.Clock
-	IDs         kernel.IDGenerator
+	// ArticleRenderer renders the Markdown of articles (ADR-0160 §4); nil writes no article.
+	ArticleRenderer ArticleRenderer
+	// ArticleImage returns the image that the body of an article of accountID shows for the
+	// upload mediaID ((*MediaService).ArticleImage): false unless it is an upload of accountID
+	// with a still image that finished processing. Nil shows no image.
+	ArticleImage func(ctx context.Context, accountID, mediaID string) (ArticleImageSource, bool, error)
+	// ArticleLimits returns the current max_article_bytes and max_article_images, read per
+	// command; nil means their defaults.
+	ArticleLimits func(ctx context.Context) (ArticleLimits, error)
+	// MayWriteArticles reports whether a local user may write new articles (ADR-0160 §3): every
+	// user while article_authoring is everyone, the holders of create_articles otherwise. Nil lets
+	// everyone.
+	MayWriteArticles func(ctx context.Context, userID string) (bool, error)
+	Clock            kernel.Clock
+	IDs              kernel.IDGenerator
 	// Host is the serving domain of the status URIs and pages (ADR-0018).
 	Host string
 	// AccountDomain is the domain of local handles; @user@AccountDomain and @user@Host mention a
@@ -198,6 +218,10 @@ func NewService(d Deps) *Service {
 type Post struct {
 	Status   content.Status
 	Revision content.Revision
+	// ParentStored reports, for a status just stored, that the status it replies to was stored
+	// before it (its conversation is the parent's); false for one that replies to nothing and on
+	// every read.
+	ParentStored bool
 }
 
 // TextInput is the content of a post or an edit.
@@ -213,6 +237,8 @@ type TextInput struct {
 	// Media are the media files to attach, in order (FR-105): at most MaxAttachments, each
 	// an upload of the author that finished processing.
 	Media []MediaInput
+	// allowProcessing lets Check pass an attachment whose processing has not finished.
+	allowProcessing bool
 }
 
 // MediaInput is a media file to attach.
@@ -240,8 +266,9 @@ type CreateInput struct {
 	IdempotencyKey string
 	// QuotedStatusID is the ID of the status quoted, "" for none (FR-114).
 	QuotedStatusID string
-	// QuotePolicy is who may quote the status; "" takes the author's default (ADR-0069 §1).
-	QuotePolicy content.QuotePolicy
+	// InteractionPolicy is who may reply to, boost, and quote the status; the kinds it leaves out
+	// take the author's defaults (ADR-0155 §5).
+	InteractionPolicy InteractionPolicyChange
 }
 
 // Create posts a local status. The text becomes HTML with mentions of active accounts (local
@@ -251,8 +278,8 @@ type CreateInput struct {
 // A poll (FR-112) must keep the limits of content.NewPoll (content.ErrInvalidPoll) and comes
 // without media (ErrPollWithMedia); it is posted with a tally observation of no votes. A quote
 // must name a status the author may see (ErrQuoteTargetNotFound) and may quote
-// (ErrQuoteNotAllowed, ADR-0069 §3); the status gets the quote policy asked for or the author's
-// default (ErrInvalidQuotePolicy).
+// (ErrQuoteNotAllowed, ADR-0069 §3); the status gets the interaction policy asked for, with the
+// author's defaults for the kinds it leaves out (ErrInvalidInteractionPolicy).
 //
 // Retrying with an IdempotencyKey that the author already used returns the status posted with it
 // and changes nothing; when that status is deleted, it fails with ErrAlreadyDeleted. A key that
@@ -262,6 +289,12 @@ type CreateInput struct {
 // a reject in force fails with a *RejectedByReviewError and writes nothing. On a one-person server
 // a local post fails with ErrLocalVisibilityUnavailable (ADR-0152 §5).
 func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
+	return s.create(ctx, in, nil)
+}
+
+// create is Create, running before inside the transaction that writes the status, before it:
+// an error from before writes nothing.
+func (s *Service) create(ctx context.Context, in CreateInput, before func(ctx context.Context, tx uow.Tx) error) (Post, error) {
 	if err := s.checkNewVisibility(ctx, in.Visibility); err != nil {
 		return Post{}, err
 	}
@@ -281,6 +314,13 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	if err != nil {
 		return Post{}, err
 	}
+	return s.commitCreate(ctx, author, p, in.IdempotencyKey, before)
+}
+
+// commitCreate asks the decision hook local.status about the status that p prepared and writes
+// it, running before first inside the transaction; a concurrent request with the same
+// Idempotency-Key key returns the status that it posted.
+func (s *Service) commitCreate(ctx context.Context, author appaccount.Actor, p PreparedCreate, key string, before func(ctx context.Context, tx uow.Tx) error) (Post, error) {
 	review, err := s.review(ctx, author, p)
 	if err != nil {
 		return Post{}, err
@@ -294,6 +334,11 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	}
 	var post Post
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if before != nil {
+			if err := before(ctx, tx); err != nil {
+				return err
+			}
+		}
 		var err error
 		if post, err = s.CreateTx(ctx, tx, p); err != nil {
 			return err
@@ -302,7 +347,7 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	})
 	if errors.Is(err, ErrIdempotencyKeyUsed) {
 		// A concurrent request with the same key won.
-		return s.replay(ctx, in.AuthorAccountID, in.IdempotencyKey)
+		return s.replay(ctx, author.Account.ID, key)
 	}
 	if err != nil {
 		return Post{}, err
@@ -342,15 +387,35 @@ func (s *Service) singleUser(ctx context.Context) (bool, error) {
 	return on, nil
 }
 
+// Check runs the checks of Create on in without writing anything or asking the decision hook
+// local.status: the checks that scheduling a draft makes (ADR-0156 §2). An attachment still being
+// processed passes, since it may be ready by the time the draft is published.
+func (s *Service) Check(ctx context.Context, in CreateInput) error {
+	if err := s.checkNewVisibility(ctx, in.Visibility); err != nil {
+		return err
+	}
+	in.IdempotencyKey = ""
+	author, err := s.localActive(ctx, in.AuthorAccountID)
+	if err != nil {
+		return err
+	}
+	in.allowProcessing = true
+	_, err = s.prepareCreate(ctx, author, in)
+	return err
+}
+
 // PreparedCreate is a new local status that PrepareCreate checked and built and CreateTx writes.
 type PreparedCreate struct {
 	st          content.Status
 	local       content.LocalStatus
 	rev         content.Revision
 	tags        []content.Tag
-	quotePolicy content.QuotePolicy
+	interaction content.InteractionSettings
 	quote       *localQuote
-	tally       *content.PollTallyObservation
+	// reply is the status replied to when the reply goes through a request (ADR-0155 §7), nil
+	// for none: the reply is held, shown to its author alone, until the request is approved.
+	reply *content.Status
+	tally *content.PollTallyObservation
 	// media are the decisions of media.check on the attachments that CreateTx acts on.
 	media []mediaVerdict
 	now   time.Time
@@ -377,28 +442,38 @@ func (s *Service) PrepareCreate(ctx context.Context, in CreateInput) (PreparedCr
 // StatusCreated, and returns it.
 func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Post, error) {
 	repo := s.d.Repository
-	if err := repo.InsertStatus(ctx, tx, p.st); err != nil {
+	ins, err := s.insertStatus(ctx, tx, p.st, "")
+	if err != nil {
 		return Post{}, err
 	}
 	if err := repo.InsertLocalStatus(ctx, tx, p.local); err != nil {
 		return Post{}, err
 	}
+	if p.rev.Article != nil {
+		if err := repo.InsertArticle(ctx, tx, content.Article{StatusID: p.st.ID, AuthorAccountID: p.st.AuthorAccountID}); err != nil {
+			return Post{}, err
+		}
+	}
 	rev := p.rev
-	var err error
 	if rev.TagIDs, err = ensureTags(ctx, tx, repo, p.tags); err != nil {
 		return Post{}, err
 	}
 	if err := repo.InsertRevision(ctx, tx, rev); err != nil {
 		return Post{}, err
 	}
-	if err := tx.Emit(ctx, StatusCreated{Status: p.st, Revision: rev}); err != nil {
+	if err := tx.Emit(ctx, StatusCreated{Status: p.st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: p.reply != nil}); err != nil {
 		return Post{}, err
+	}
+	if p.reply != nil {
+		if err := s.requestReply(ctx, tx, p.st, *p.reply); err != nil {
+			return Post{}, err
+		}
 	}
 	if err := s.applyAttachmentVerdicts(ctx, tx, p.st.ID, p.media); err != nil {
 		return Post{}, err
 	}
 	if s.d.Quotes != nil {
-		if err := s.d.Quotes.UpsertQuotePolicy(ctx, tx, content.StatusQuotePolicy{StatusID: p.st.ID, Policy: p.quotePolicy, UpdatedAt: p.now}); err != nil {
+		if err := s.d.Quotes.ReplaceInteractionPolicy(ctx, tx, p.st.ID, nil, p.interaction.Policy()); err != nil {
 			return Post{}, err
 		}
 	}
@@ -415,7 +490,7 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 			return Post{}, err
 		}
 	}
-	return Post{Status: p.st, Revision: rev}, nil
+	return Post{Status: p.st, Revision: rev, ParentStored: ins.ParentStored}, nil
 }
 
 // prepareCreate checks and builds the status of in by author, outside any transaction.
@@ -450,19 +525,21 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 		Visibility:      content.EffectiveVisibility(in.Visibility, restrictions.Author),
 		PublishedAt:     now,
 	}
-	st.ConversationURI = st.URI
+	var reply *content.Status
 	if in.InReplyToID != "" {
 		if !restrictions.CanInteract() {
 			return PreparedCreate{}, fmt.Errorf("account %s: %w", in.AuthorAccountID, ErrInteractionRestricted)
 		}
-		parent, err := s.replyTarget(ctx, in.AuthorAccountID, in.InReplyToID)
+		parent, requested, err := s.replyTarget(ctx, in.AuthorAccountID, in.InReplyToID)
 		if err != nil {
 			return PreparedCreate{}, err
 		}
 		st.InReplyToURI = parent.URI
-		st.ConversationURI = cmp.Or(parent.ConversationURI, parent.URI)
+		if requested {
+			reply = &parent
+		}
 	}
-	quotePolicy, err := s.newQuotePolicy(ctx, author, in.QuotePolicy)
+	interaction, err := s.newInteractionSettings(ctx, author, in.InteractionPolicy)
 	if err != nil {
 		return PreparedCreate{}, err
 	}
@@ -491,11 +568,11 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 			ID: s.d.IDs.NewID(), PollID: poll.ID, VotersCount: &none, ObservedAt: now, Votes: make([]int64, len(poll.Options)),
 		}
 	}
-	verdicts, err := s.attachmentVerdicts(ctx, in.AuthorAccountID, rev.Attachments, nil)
+	verdicts, err := s.attachmentVerdicts(ctx, in.AuthorAccountID, reviewedMedia(rev), nil)
 	if err != nil {
 		return PreparedCreate{}, err
 	}
-	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, quotePolicy: quotePolicy, quote: quote, tally: tally, media: verdicts, now: now}, nil
+	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, interaction: interaction, quote: quote, reply: reply, tally: tally, media: verdicts, now: now}, nil
 }
 
 // Replay returns the post that an author posted with an Idempotency-Key, so that a retry is
@@ -528,12 +605,39 @@ func (s *Service) replay(ctx context.Context, authorID, key string) (Post, error
 	return post, err
 }
 
-// replyTarget returns the status that authorID replies to, provided that authorID may see it.
-// A status that does not exist, is deleted, or is hidden from the author fails alike with
-// ErrReplyTargetNotFound, so that a reply does not reveal it.
-func (s *Service) replyTarget(ctx context.Context, authorID, statusID string) (content.Status, error) {
-	st, _, err := s.visibleTo(ctx, authorID, statusID)
-	return st, err
+// replyTarget returns the status that authorID replies to, provided that authorID may see it,
+// and whether the reply goes through a request (ADR-0155 §7): one that waits for the author's
+// approval, or one with a remote status that its server must approve. A status that does not
+// exist, is deleted, or is hidden from the author fails alike with ErrReplyTargetNotFound, so
+// that a reply does not reveal it; one whose reply rules do not admit the author at all with
+// ErrReplyNotAllowed (content.MayInteract, ADR-0155 §3).
+func (s *Service) replyTarget(ctx context.Context, authorID, statusID string) (content.Status, bool, error) {
+	st, in, err := s.visibleTo(ctx, authorID, statusID)
+	if err != nil {
+		return content.Status{}, false, err
+	}
+	v, err := s.interactionReaders().localVerdict(ctx, content.InteractionReply, authorID, &in, st, ErrReplyNotAllowed)
+	if err != nil {
+		return content.Status{}, false, err
+	}
+	return st, s.d.Quotes != nil && v.requested(st), nil
+}
+
+// requestReply records in tx the request of the local reply st to parent, pending: the reply is
+// held, and shown to its author alone, until the request is approved (ADR-0155 §7).
+func (s *Service) requestReply(ctx context.Context, tx uow.Tx, st, parent content.Status) error {
+	r := content.InteractionRequest{
+		Kind: content.InteractionReply, Direction: content.DirectionOf(parent.IsLocal, true), TargetURI: parent.URI,
+		TargetAccountID: parent.AuthorAccountID, InteractingURI: st.URI, InteractingAccountID: st.AuthorAccountID,
+	}
+	ref := RefOf(parent)
+	_, _, _, err := s.approvals().request(ctx, tx, r, answer{}, &ref)
+	return err
+}
+
+// interactionReaders returns the ports that decide who may interact with a status.
+func (s *Service) interactionReaders() interactionReaders {
+	return interactionReaders{statuses: s.d.Repository, policies: s.d.Quotes, relationships: s.d.Relationships, accounts: s.d.Accounts}
 }
 
 // EditInput describes an edit of a local status.
@@ -570,6 +674,10 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 		// The votes are of the poll of the current revision; a new revision would leave them.
 		return Post{}, fmt.Errorf("status %s: %w", st.ID, ErrPollNotEditable)
 	}
+	if current.Article != nil {
+		// An article stays an article: it is edited as one (EditArticle).
+		return Post{}, fmt.Errorf("status %s: %w", st.ID, ErrArticleEditedAsPost)
+	}
 	if _, err := s.postingRestrictions(ctx, in.AccountID); err != nil {
 		return Post{}, err
 	}
@@ -577,15 +685,21 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 	if err != nil {
 		return Post{}, err
 	}
+	return s.commitEdit(ctx, author, st, current, body, in.DetachQuote)
+}
+
+// commitEdit asks local.status about the edit of st, whose current revision is current, to the
+// content body, and records it as the new head.
+func (s *Service) commitEdit(ctx context.Context, author appaccount.Actor, st content.Status, current content.Revision, body preparedText, detachQuote bool) (Post, error) {
 	now := s.d.Clock.Now()
 	rev := body.revision(s.d.IDs.NewID(), st.ID, 0, now)
 	tags := body.tags(s.d.IDs, now)
 	// The files the current revision attaches were acted on when it was stored.
-	verdicts, err := s.attachmentVerdicts(ctx, in.AccountID, rev.Attachments, current.Attachments)
+	verdicts, err := s.attachmentVerdicts(ctx, st.AuthorAccountID, reviewedMedia(rev), reviewedMedia(current))
 	if err != nil {
 		return Post{}, err
 	}
-	review, err := s.reviewEdit(ctx, author, st, rev, tags, in.DetachQuote)
+	review, err := s.reviewEdit(ctx, author, st, rev, tags, detachQuote)
 	if err != nil {
 		return Post{}, err
 	}
@@ -622,7 +736,13 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 		if err := repo.InsertRevision(ctx, tx, rev); err != nil {
 			return err
 		}
-		if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev}); err != nil {
+		held := false
+		if st.InReplyToURI != "" {
+			if held, err = repo.IsHeldReply(ctx, tx, st.ID); err != nil {
+				return err
+			}
+		}
+		if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev, HeldReply: held}); err != nil {
 			return err
 		}
 		if err := s.applyAttachmentVerdicts(ctx, tx, st.ID, verdicts); err != nil {
@@ -631,7 +751,7 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 		if err := s.reviewed(ctx, tx, verdict, Post{Status: st, Revision: rev}); err != nil {
 			return err
 		}
-		if in.DetachQuote {
+		if detachQuote {
 			return s.detachQuote(ctx, tx, st)
 		}
 		return nil
@@ -681,6 +801,34 @@ func (s *Service) Find(ctx context.Context, statusID string) (Post, error) {
 		return Post{}, err
 	}
 	return Post{Status: st, Revision: rev}, nil
+}
+
+// FindMany is Find of each of ids, by ID, with one query for the statuses and one for their
+// current revisions; the missing and deleted ones are left out.
+func (s *Service) FindMany(ctx context.Context, ids []string) (map[string]Post, error) {
+	out := make(map[string]Post, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	sts, err := s.d.Repository.FindStatuses(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	revs, err := s.d.Repository.FindCurrentRevisions(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for id, st := range sts {
+		if rev, ok := revs[id]; ok {
+			out[id] = Post{Status: st, Revision: rev}
+		}
+	}
+	return out, nil
+}
+
+// FindStatuses is FindStatus of each of ids that exists, by ID, with one query.
+func (s *Service) FindStatuses(ctx context.Context, ids []string) (map[string]Status, error) {
+	return s.d.Repository.FindStatuses(ctx, ids)
 }
 
 // Revisions returns the revisions of a status, oldest first, without their children: the edit
@@ -760,6 +908,10 @@ type preparedText struct {
 	mentions    []string // account IDs, sorted
 	hashtags    []Hashtag
 	emojis      []string // custom emoji IDs, sorted
+	// format is the markup of in.Text, SourceTextPlain unless it is the Markdown of an article.
+	format content.SourceFormat
+	// article is the article child of the revision, nil for a post.
+	article *content.ArticleRevision
 }
 
 // CountCharacters returns the length of a post as max_status_length counts it: the characters
@@ -791,7 +943,7 @@ func (s *Service) prepareText(ctx context.Context, author appaccount.Actor, in T
 	if err != nil {
 		return preparedText{}, err
 	}
-	attachments, err := s.attachments(ctx, author.Account.ID, in.Media)
+	attachments, err := s.attachments(ctx, author.Account.ID, in.Media, in.allowProcessing)
 	if err != nil {
 		return preparedText{}, err
 	}
@@ -815,6 +967,7 @@ func (s *Service) prepareText(ctx context.Context, author appaccount.Actor, in T
 		mentions:    mentions,
 		hashtags:    parsed.Hashtags(),
 		emojis:      emojis,
+		format:      content.SourceTextPlain,
 	}, nil
 }
 
@@ -822,14 +975,28 @@ func (s *Service) prepareText(ctx context.Context, author appaccount.Actor, in T
 // the HTML and the IDs of the mentioned accounts, sorted. It may do network I/O through
 // RemoteMentions, so it never runs inside a transaction.
 func (s *Service) render(ctx context.Context, parsed ParsedText) (string, []string, error) {
+	targets, mentions, err := s.resolveMentions(ctx, parsed.Mentions())
+	if err != nil {
+		return "", nil, err
+	}
+	return parsed.HTML(RenderOptions{Host: s.d.Host, Mentions: targets}), mentions, nil
+}
+
+// resolveMentions resolves handles to active accounts: the target of each handle that resolves,
+// and the IDs of their accounts, sorted. It may do network I/O through RemoteMentions, so it
+// never runs inside a transaction.
+func (s *Service) resolveMentions(ctx context.Context, handles []MentionHandle) (map[MentionHandle]MentionTarget, []string, error) {
 	targets := map[MentionHandle]MentionTarget{}
 	var mentions []string
 	r := &mentionResolver{s: s}
 	defer r.close()
-	for _, h := range parsed.Mentions() {
+	if err := r.preload(ctx, handles); err != nil {
+		return nil, nil, err
+	}
+	for _, h := range handles {
 		target, id, ok, err := r.resolve(ctx, h)
 		if err != nil {
-			return "", nil, err
+			return nil, nil, err
 		}
 		if !ok {
 			continue
@@ -840,7 +1007,7 @@ func (s *Service) render(ctx context.Context, parsed ParsedText) (string, []stri
 		}
 	}
 	slices.Sort(mentions)
-	return parsed.HTML(RenderOptions{Host: s.d.Host, Mentions: targets}), mentions, nil
+	return targets, mentions, nil
 }
 
 // RenderProfileText renders the typed note or field value of a local profile to HTML through
@@ -855,7 +1022,7 @@ func (s *Service) RenderProfileText(ctx context.Context, text string) (string, e
 // attachments checks the media files that authorID attaches (FR-105): at most MaxAttachments
 // distinct files, each an upload of authorID whose newest processing result is ready, with a
 // valid alt text, which must not be blank while the instance requires alt text.
-func (s *Service) attachments(ctx context.Context, authorID string, in []MediaInput) ([]content.Attachment, error) {
+func (s *Service) attachments(ctx context.Context, authorID string, in []MediaInput, allowProcessing bool) ([]content.Attachment, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
@@ -881,7 +1048,7 @@ func (s *Service) attachments(ctx context.Context, authorID string, in []MediaIn
 		if requireDescription && strings.TrimSpace(d) == "" {
 			return nil, fmt.Errorf("media %s: %w", m.MediaID, ErrMissingMediaDescription)
 		}
-		if err := s.checkMedia(ctx, authorID, m.MediaID); err != nil {
+		if err := s.checkMedia(ctx, authorID, m.MediaID, allowProcessing); err != nil {
 			return nil, err
 		}
 		out = append(out, content.Attachment{Position: i, MediaID: m.MediaID, Description: d})
@@ -889,8 +1056,9 @@ func (s *Service) attachments(ctx context.Context, authorID string, in []MediaIn
 	return out, nil
 }
 
-// checkMedia fails unless mediaID is an upload of authorID that was processed successfully.
-func (s *Service) checkMedia(ctx context.Context, authorID, mediaID string) error {
+// checkMedia fails unless mediaID is an upload of authorID that was processed successfully, or,
+// with allowProcessing, one whose processing has not finished.
+func (s *Service) checkMedia(ctx context.Context, authorID, mediaID string, allowProcessing bool) error {
 	notFound := fmt.Errorf("media %s: %w", mediaID, ErrMediaNotFound)
 	if s.d.Media == nil {
 		return notFound
@@ -907,6 +1075,9 @@ func (s *Service) checkMedia(ctx context.Context, authorID, mediaID string) erro
 	}
 	result, err := s.d.Media.FindLatestProcessingResult(ctx, mediaID)
 	if errors.Is(err, ErrNotFound) {
+		if allowProcessing {
+			return nil
+		}
 		return fmt.Errorf("media %s: %w", mediaID, ErrMediaNotReady)
 	}
 	if err != nil {
@@ -949,10 +1120,11 @@ func (p preparedText) revision(id, statusID string, seq int, at time.Time) conte
 		Language:            p.language,
 		RevisedAt:           at,
 		Bodies:              []content.Body{{Language: p.language, ContentHTML: p.html}},
-		Source:              &content.Source{Text: p.in.Text, Format: content.SourceTextPlain},
+		Source:              &content.Source{Text: p.in.Text, Format: p.format},
 		Attachments:         p.attachments,
 		MentionedAccountIDs: p.mentions,
 		EmojiIDs:            p.emojis,
+		Article:             p.article,
 	}
 }
 
@@ -967,13 +1139,20 @@ func (p preparedText) tags(ids kernel.IDGenerator, at time.Time) []content.Tag {
 
 // ensureTags stores the tags that do not exist yet and returns the IDs of all of them, sorted.
 func ensureTags(ctx context.Context, tx uow.Tx, repo Repository, tags []content.Tag) ([]string, error) {
-	var ids []string
+	if len(tags) == 0 {
+		return nil, nil
+	}
+	stored, err := repo.EnsureTags(ctx, tx, tags)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(tags))
 	for _, t := range tags {
-		stored, err := repo.EnsureTag(ctx, tx, t)
-		if err != nil {
-			return nil, err
+		st, ok := stored[t.NameNormalized]
+		if !ok {
+			return nil, fmt.Errorf("tag %q after ensuring it: %w", t.NameNormalized, ErrNotFound)
 		}
-		ids = append(ids, stored.ID)
+		ids = append(ids, st.ID)
 	}
 	slices.Sort(ids)
 	return ids, nil

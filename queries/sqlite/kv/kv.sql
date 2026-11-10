@@ -8,6 +8,10 @@
 SELECT value FROM kv_entries
 WHERE namespace = @namespace AND key = @key AND (expires_at IS NULL OR expires_at > @now);
 
+-- name: ListEntries :many
+SELECT key, value FROM kv_entries
+WHERE namespace = @namespace AND key IN (SELECT value FROM json_each(CAST(@keys AS TEXT))) AND (expires_at IS NULL OR expires_at > @now);
+
 -- name: SetEntry :exec
 INSERT INTO kv_entries (namespace, key, value, expires_at) VALUES (@namespace, @key, @value, @expires_at)
 ON CONFLICT (namespace, key) DO UPDATE SET value = excluded.value, expires_at = excluded.expires_at;

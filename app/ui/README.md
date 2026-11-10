@@ -231,6 +231,12 @@ The utility is not named `text-*` because `tailwind-variants` would read that as
   initials. All other UI is sans in heavy weights; the serif stays light.
 - States: hover is a `surface-sunken` fill or `accent-hover`; selected is `accent` plus a change of shape; invalid is a `danger` border plus a
   message with a warning icon; disabled is half opacity; pending is a `Spinner` while the control keeps its focus.
+- Pressable controls ([web-client G26, G27](../../docs/architecture/web-client/16-look-states-and-wording.md#166-押せるものの手がかり)):
+  the pointer is the hand (`cursor-pointer`) over every enabled one, `cursor-not-allowed` while disabled, `cursor-wait` while pending,
+  and `cursor-zoom-in` over a picture that opens the viewer; never the arrow (`cursor-default`). Each answers the pointer with a hover
+  state and a press with a pressed one (`data-hovered:` / `data-pressed:`; `hover:` on native elements). A checkbox, radio or switch
+  rings its box with a `soft` halo; the round buttons over a picture (`MediaViewer`) take a light ring, and the system's
+  `Highlight` in forced-colors mode. Oxlint (`restrict/pressable`) rejects the arrow and a recipe with the hand but no hover state.
 - Status messages, `RegionError` and `OfflineBanner` are tinted boxes with an icon, not a start-edge bar; `Toast` and `Tooltip` are dark pills.
 
 ## Focus
@@ -770,8 +776,8 @@ The test procedure is in [web-client/README.md §7](../../docs/architecture/web-
 | `PostCardAuthorLink` | `author` | The profile link around a `PostCardAuthor` (`href`, `name`, `handle`). |
 | `PostCardTimeLink` | `time`, `details` | The muted link on a `<time>` or on the mark of an edited post; `dense` drops the 24 px minimum height (QuoteCard's header). |
 | `PostCardAvatarLink` | `avatar` | The avatar as a second link to the profile: out of the tab order, `aria-hidden`. |
-| `PostCardNameLink` | `context`, a sentence | A name inside a sentence ("Bob boosted"), in a `<bdi>`; notification rows use it too. |
-| `PostCardContext` | `context` | The icon of its kind (`boost`, `pin`) and the sentence; every context line uses it. |
+| `PostCardNameLink` | `context`, a sentence | A name or a hashtag inside a sentence ("Bob boosted", "Followed hashtag #cats"), in a `<bdi>`; notification rows use it too. |
+| `PostCardContext` | `context` | The icon of its kind (`boost`, `pin`, `hashtag`) and the sentence; every context line uses it. |
 | `PostCardOrigin` | `actions` | The link from a post of another server to its own page (`href`, `host`, `label`). |
 
 Counts in `details` are `<Text numeric>`; several parts under a body are a `<Stack gap="3" shrink>`; `PostContent` takes `size="lg"` for the post a page is about.

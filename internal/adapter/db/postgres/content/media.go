@@ -152,9 +152,7 @@ func (r *MediaRepository) FindMediaFile(ctx context.Context, id string) (content
 	if err != nil {
 		return content.MediaFile{}, postgres.NotFound(err, appcontent.ErrNotFound, "media file "+id)
 	}
-	return content.MediaFile{
-		ID: row.ID, OwnerAccountID: postgres.FromNullString(row.OwnerAccountID), Origin: content.MediaOrigin(row.Origin), CreatedAt: postgres.UTC(row.CreatedAt),
-	}, nil
+	return mediaFileFrom(row), nil
 }
 
 // FindUploadedMedia implements content.MediaRepository.
@@ -163,7 +161,7 @@ func (r *MediaRepository) FindUploadedMedia(ctx context.Context, mediaID string)
 	if err != nil {
 		return content.UploadedMedia{}, postgres.NotFound(err, appcontent.ErrNotFound, "uploaded media "+mediaID)
 	}
-	return content.UploadedMedia{MediaID: row.MediaID, BlobKey: row.BlobKey, ContentType: row.ContentType, FileSize: row.FileSize}, nil
+	return uploadedMediaFrom(row), nil
 }
 
 // FindLatestProcessingResult implements content.MediaRepository.
@@ -188,24 +186,7 @@ func (r *MediaRepository) ListProcessingResults(ctx context.Context, mediaID str
 	if err != nil {
 		return nil, postgres.Wrap(err, "list media variants")
 	}
-	results := make([]content.MediaProcessingResult, 0, len(rows))
-	for _, row := range rows {
-		res := content.MediaProcessingResult{
-			ID: row.ID, MediaID: row.MediaID, Purpose: content.MediaPurpose(row.Purpose), Outcome: content.MediaOutcome(row.Outcome), MediaType: content.MediaType(row.MediaType),
-			Width: fromNullInt32(row.Width), Height: fromNullInt32(row.Height), DurationMS: fromNullInt32(row.DurationMs),
-			Blurhash: postgres.FromNullString(row.Blurhash), ProcessedAt: postgres.UTC(row.ProcessedAt),
-		}
-		for _, v := range variants {
-			if v.ResultID == row.ID {
-				res.Variants = append(res.Variants, content.MediaVariant{
-					ResultID: v.ResultID, Size: content.MediaSize(v.Size), Motion: content.MediaMotion(v.Motion), BlobKey: v.BlobKey, ContentType: v.ContentType,
-					FileSize: v.FileSize, Width: int(v.Width), Height: int(v.Height),
-				})
-			}
-		}
-		results = append(results, res)
-	}
-	return results, nil
+	return processingResultsFrom(rows, variants), nil
 }
 
 // ListReadyVariants implements content.MediaRepository.
@@ -238,7 +219,7 @@ func (r *MediaRepository) FindFocus(ctx context.Context, mediaID string) (conten
 	if err != nil {
 		return content.MediaFocus{}, postgres.NotFound(err, appcontent.ErrNotFound, "media focus of "+mediaID)
 	}
-	return content.MediaFocus{MediaID: row.MediaID, X: row.FocusX, Y: row.FocusY}, nil
+	return mediaFocusFrom(row), nil
 }
 
 // ListUnattachedUploads implements content.MediaRepository.
@@ -306,7 +287,7 @@ func (r *MediaRepository) FindDescription(ctx context.Context, mediaID string) (
 	if err != nil {
 		return content.MediaDescription{}, postgres.NotFound(err, appcontent.ErrNotFound, "media description of "+mediaID)
 	}
-	return content.MediaDescription{MediaID: row.MediaID, Text: row.Description}, nil
+	return mediaDescriptionFrom(row), nil
 }
 
 // HasNewerProcessingResult implements content.MediaRepository.
@@ -354,4 +335,45 @@ func (r *MediaRepository) ListReprocessableUploads(ctx context.Context, afterID 
 		AfterID: postgres.ToNullString(afterID), ProcessedBefore: processedBefore, RowLimit: n,
 	})
 	return ids, postgres.Wrap(err, "list reprocessable uploads")
+}
+
+func mediaFileFrom(row contentgen.MediaFile) content.MediaFile {
+	return content.MediaFile{
+		ID: row.ID, OwnerAccountID: postgres.FromNullString(row.OwnerAccountID), Origin: content.MediaOrigin(row.Origin), CreatedAt: postgres.UTC(row.CreatedAt),
+	}
+}
+
+func uploadedMediaFrom(row contentgen.UploadedMedium) content.UploadedMedia {
+	return content.UploadedMedia{MediaID: row.MediaID, BlobKey: row.BlobKey, ContentType: row.ContentType, FileSize: row.FileSize}
+}
+
+func mediaFocusFrom(row contentgen.MediaFocu) content.MediaFocus {
+	return content.MediaFocus{MediaID: row.MediaID, X: row.FocusX, Y: row.FocusY}
+}
+
+func mediaDescriptionFrom(row contentgen.MediaDescription) content.MediaDescription {
+	return content.MediaDescription{MediaID: row.MediaID, Text: row.Description}
+}
+
+// processingResultsFrom builds the processing results of rows with their variants, in the order of
+// rows; variants of other results are skipped.
+func processingResultsFrom(rows []contentgen.MediaProcessingResult, variants []contentgen.MediaVariant) []content.MediaProcessingResult {
+	results := make([]content.MediaProcessingResult, 0, len(rows))
+	for _, row := range rows {
+		res := content.MediaProcessingResult{
+			ID: row.ID, MediaID: row.MediaID, Purpose: content.MediaPurpose(row.Purpose), Outcome: content.MediaOutcome(row.Outcome), MediaType: content.MediaType(row.MediaType),
+			Width: fromNullInt32(row.Width), Height: fromNullInt32(row.Height), DurationMS: fromNullInt32(row.DurationMs),
+			Blurhash: postgres.FromNullString(row.Blurhash), ProcessedAt: postgres.UTC(row.ProcessedAt),
+		}
+		for _, v := range variants {
+			if v.ResultID == row.ID {
+				res.Variants = append(res.Variants, content.MediaVariant{
+					ResultID: v.ResultID, Size: content.MediaSize(v.Size), Motion: content.MediaMotion(v.Motion), BlobKey: v.BlobKey, ContentType: v.ContentType,
+					FileSize: v.FileSize, Width: int(v.Width), Height: int(v.Height),
+				})
+			}
+		}
+		results = append(results, res)
+	}
+	return results
 }

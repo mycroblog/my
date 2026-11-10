@@ -101,6 +101,12 @@ properties:
       Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
       they are off, and clients then show no entry to them.
     type: boolean
+  article_authoring:
+    description: |
+      Who may write new articles (`createArticle`): `everyone` (every local user who is not
+      limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+    type: string
+    enum: [everyone, permission]
   voice_room_starters:
     description: |
       Who may open voice chat rooms: `everyone` (every local user who is not limited) or

@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: The hashtags to feature on the user's profile, in the order to show them.
+type: object
+required: [names]
+properties:
+  names:
+    description: |
+      The hashtags, with or without `#`, at most 10; a hashtag given twice counts once. An
+      empty list features none.
+    type: array
+    items:
+      type: string
+      minLength: 1
+      maxLength: 257

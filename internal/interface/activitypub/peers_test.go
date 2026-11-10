@@ -10,6 +10,9 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/mycroblog/my/internal/domain/federation"
 )
 
 // The documents under testdata/peers are what Mastodon, GoToSocial, and Misskey themselves
@@ -19,7 +22,9 @@ import (
 // The create-note.json documents are the Create of a public Note with a content warning, a
 // mention, a hashtag, and an image, written after each implementation's serializer
 // (Mastodon's ActivityPub::NoteSerializer, GoToSocial's internal/typeutils/internaltoas.go,
-// Misskey's ApRendererService.renderNote). They show the shape each implementation publishes and
+// Misskey's ApRendererService.renderNote). mastodon/featured-tags.json is the featuredTags
+// collection of an actor, written after Mastodon's ActivityPub::CollectionsController and
+// ActivityPub::HashtagSerializer of a FeaturedTag. They show the shape each implementation publishes and
 // therefore parses; the tests below check that our documents have the same shape where they
 // carry the same properties.
 
@@ -154,6 +159,30 @@ func TestNodeInfoMatchesPeers(t *testing.T) {
 	}
 	if ours["version"] != "2.1" || !regexp.MustCompile(`^[a-z0-9-]+$`).MatchString(ours["software"].(map[string]any)["name"].(string)) {
 		t.Errorf("version / software.name = %v / %v, want 2.1 and a NodeInfo name", ours["version"], ours["software"])
+	}
+}
+
+// TestFeaturedTagsMatchPeers checks the featured-tags collection against Mastodon's, which
+// publishes and reads featured hashtags (FetchFeaturedTagsCollectionService reads the names of
+// the Hashtag items), and that ours reads Mastodon's.
+func TestFeaturedTagsMatchPeers(t *testing.T) {
+	s := newServer(t, accountDomain)
+	s.objects.featuredTags = []federation.TagDocument{
+		{Type: federation.TagHashtag, Href: "https://" + host + "/@alice/tagged/cats", Name: "#cats"},
+	}
+	ours := decode(t, s.get(t, "/ap/actors/"+aliceID+"/featured-tags", acceptMastodon).Body.Bytes())
+	checkShape(t, "mastodon", ours, readPeer(t, "mastodon", "featured-tags.json"),
+		[]string{"@context", "id", "type", "totalItems", "items[].type", "items[].href", "items[].name"})
+	if ours["type"] != "Collection" {
+		t.Errorf("type = %v, want Collection, as Mastodon's", ours["type"])
+	}
+
+	doc, err := federation.Normalize([]byte(readFile(t, "peers/mastodon/featured-tags.json")), time.Now(), func(h string) (string, error) { return strings.ToLower(h), nil })
+	if err != nil || doc.Collection == nil {
+		t.Fatalf("Normalize(Mastodon's featured-tags) = %+v, %v", doc, err)
+	}
+	if !slices.Equal(doc.Collection.Hashtags, []string{"cats", "Photography"}) {
+		t.Errorf("Hashtags = %v, want cats and Photography", doc.Collection.Hashtags)
 	}
 }
 

@@ -16,6 +16,7 @@ const idempotencyKeyHeader = "Idempotency-Key"
 // to the operations of api.gen.go that send the header.
 var idempotencyKeyOperations = []struct{ method, path string }{
 	{http.MethodPost, "/statuses"},
+	{http.MethodPost, "/articles"},
 }
 
 // acceptsIdempotencyKey reports whether the request to path (under basePath) is one of idempotencyKeyOperations.

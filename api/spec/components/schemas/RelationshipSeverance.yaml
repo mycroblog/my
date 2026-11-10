@@ -2,9 +2,11 @@
 description: |
   The follows that a `relationships_severed` tells of: the user lost them when the
   moderators suspended a server (`domain_suspension`, `domain` is the server) or a remote
-  account (`account_suspension`, the notification's `account` is the account). Both
-  directions end, follow requests too, and lifting the suspension does not restore them;
-  the counts are of the accepted follows.
+  account (`account_suspension`, the notification's `account` is the account), or when the
+  server began to federate only with the servers it allows (`allowlist_cutoff`: `domain` is the
+  server whose allow was removed, and is omitted when the server switched to its allowlist).
+  Both directions end, follow requests too, and lifting the suspension or allowing the server
+  again does not restore them; the counts are of the accepted follows.
 type: object
 required: [kind, followers_lost, following_lost]
 properties:
@@ -13,8 +15,11 @@ properties:
     enum:
       - domain_suspension
       - account_suspension
+      - allowlist_cutoff
   domain:
-    description: The suspended server of a `domain_suspension`; omitted otherwise.
+    description: |
+      The suspended server of a `domain_suspension`, or the server whose allow was removed of an
+      `allowlist_cutoff`; omitted otherwise.
     type: string
   followers_lost:
     description: The accounts that followed the user and no longer do.

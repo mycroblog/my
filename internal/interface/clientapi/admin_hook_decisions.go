@@ -84,13 +84,54 @@ func newHookDecision(r hook.Record) AdminHookDecision {
 // nothing left to run, and takes the time of its decision, which has passed. Without
 // DroppedActivities the decision's time stands in for the time it was received.
 func (s *Server) restorableUntil(ctx context.Context, r hook.Record, out *AdminHookDecision) error {
+	return s.restorableUntilWith(ctx, r, out, nil)
+}
+
+// droppedBatch is a DroppedActivities that reads many activities at once, as
+// *appfederation.Inbox does.
+type droppedBatch interface {
+	RestorableUntilOf(ctx context.Context, activityURIs []string) (map[string]time.Time, error)
+}
+
+// isDrop reports whether r is the drop of an inbound hook, which RestorableUntil tells of.
+func isDrop(r hook.Record) bool {
 	d := r.Decision
-	if (d.Hook != hook.InboundStatus && d.Hook != hook.InboundFollow) || d.Outcome != hook.Drop {
+	return (d.Hook == hook.InboundStatus || d.Hook == hook.InboundFollow) && d.Outcome == hook.Drop
+}
+
+// restorableOf reads the restorable periods of the drops among records with one query when
+// DroppedActivities can; nil leaves restorableUntilWith to read each.
+func (s *Server) restorableOf(ctx context.Context, records []hook.Record) (map[string]time.Time, error) {
+	b, ok := s.o.DroppedActivities.(droppedBatch)
+	if !ok {
+		return nil, nil
+	}
+	var uris []string
+	for _, r := range records {
+		if isDrop(r) {
+			uris = append(uris, r.Decision.SubjectKey)
+		}
+	}
+	if len(uris) == 0 {
+		return map[string]time.Time{}, nil
+	}
+	out, err := b.RestorableUntilOf(ctx, uris)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: read %d dropped activities: %w", len(uris), err)
+	}
+	return out, nil
+}
+
+// restorableUntilWith is restorableUntil with the periods that restorableOf read (nil reads the
+// activity of r).
+func (s *Server) restorableUntilWith(ctx context.Context, r hook.Record, out *AdminHookDecision, read map[string]time.Time) error {
+	if !isDrop(r) {
 		return nil
 	}
+	d := r.Decision
 	until := d.DecidedAt.Add(appfederation.ReceivedDocumentRetention)
 	if s.o.DroppedActivities != nil {
-		at, ok, err := s.o.DroppedActivities.RestorableUntil(ctx, d.SubjectKey)
+		at, ok, err := s.restorableAt(ctx, d.SubjectKey, read)
 		switch {
 		case err != nil:
 			return fmt.Errorf("clientapi: read the dropped activity %s: %w", d.SubjectKey, err)
@@ -102,6 +143,15 @@ func (s *Server) restorableUntil(ctx context.Context, r hook.Record, out *AdminH
 	}
 	out.RestorableUntil = &until
 	return nil
+}
+
+// restorableAt is RestorableUntil of the activity uri, from read when it was read.
+func (s *Server) restorableAt(ctx context.Context, uri string, read map[string]time.Time) (time.Time, bool, error) {
+	if read != nil {
+		at, ok := read[uri]
+		return at, ok, nil
+	}
+	return s.o.DroppedActivities.RestorableUntil(ctx, uri)
 }
 
 // ListHookDecisions serves GET /api/v1/admin/hook_decisions.
@@ -141,9 +191,13 @@ func (s *Server) ListHookDecisions(ctx context.Context, req ListHookDecisionsReq
 	}
 	records, last := trim(records, pq.limit)
 	page := AdminHookDecisionPage{Items: make([]AdminHookDecision, len(records))}
+	restorable, err := s.restorableOf(ctx, records)
+	if err != nil {
+		return nil, err
+	}
 	for i, r := range records {
 		page.Items[i] = newHookDecision(r)
-		if err := s.restorableUntil(ctx, r, &page.Items[i]); err != nil {
+		if err := s.restorableUntilWith(ctx, r, &page.Items[i], restorable); err != nil {
 			return nil, err
 		}
 	}

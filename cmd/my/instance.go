@@ -322,10 +322,10 @@ privacy_policy, preview_image_alt, thumbnail_alt) hold one text each, written
 in any language and shown as it is in every locale. An empty value clears a
 text. A value of "-" is read from standard input.
 
-preview_image is the media ID of the image of link previews for profiles and
-posts without images (empty: the built-in image), and the text
-preview_image_alt is its alt text; thumbnail and thumbnail_alt are the image
-that represents the instance and its alt text. With -owner, the value of a
+preview_image is the media ID of the image of link previews for the pages
+without an image of their own (empty: the thumbnail, then the logo, then the
+built-in image), and the text preview_image_alt is its alt text; thumbnail and
+thumbnail_alt are the image that represents the instance and its alt text. With -owner, the value of a
 media key is an image file instead: it is uploaded as a media file of that
 local account and used once the worker has processed it.
 

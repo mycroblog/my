@@ -29,6 +29,7 @@ import (
 // expiresAt is nil for an entry that never expires.
 type store interface {
 	get(ctx context.Context, tx uow.Tx, namespace, key string, now time.Time) ([]byte, bool, error)
+	getMany(ctx context.Context, tx uow.Tx, namespace string, keys []string, now time.Time) (map[string][]byte, error)
 	set(ctx context.Context, tx uow.Tx, namespace, key string, value []byte, expiresAt *time.Time) error
 	del(ctx context.Context, tx uow.Tx, namespace, key string) error
 	incr(ctx context.Context, tx uow.Tx, namespace, key string, initial []byte, expiresAt *time.Time, now time.Time) ([]byte, error)
@@ -82,6 +83,29 @@ func (s *Store) Get(ctx context.Context, namespace, key string) ([]byte, error) 
 		value = []byte{}
 	}
 	return value, nil
+}
+
+// GetMany implements kernel.KeyValueBatch with one query in one transaction.
+func (s *Store) GetMany(ctx context.Context, namespace string, keys []string) (map[string][]byte, error) {
+	out := map[string][]byte{}
+	if len(keys) == 0 {
+		return out, nil
+	}
+	now := s.clock.Now()
+	err := s.db.Tx(ctx, func(tx uow.Tx) error {
+		var err error
+		out, err = s.st.getMany(ctx, tx, namespace, keys, now)
+		return err
+	})
+	if err != nil {
+		return nil, fmt.Errorf("kv/db: get %d keys of %s: %w", len(keys), namespace, err)
+	}
+	for k, v := range out {
+		if v == nil {
+			out[k] = []byte{}
+		}
+	}
+	return out, nil
 }
 
 // Set implements kernel.KeyValueStore.

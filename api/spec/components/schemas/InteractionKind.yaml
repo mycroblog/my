@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: An interaction that an interaction policy governs (a reply, a boost, or a quote).
+type: string
+enum:
+  - reply
+  - announce
+  - quote

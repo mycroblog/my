@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+name: hashtag
+in: path
+required: true
+description: |
+  The hashtag, with or without a leading `#` (`%23`), matched under NFKC and lowercase: letters,
+  marks, digits, and underscores with at least one letter or mark. Anything else is a 422
+  naming `hashtag`. The hashtag `search` is written `%23search`, since `/tags/search` is the
+  search of hashtags.
+schema:
+  type: string
+  minLength: 1
+  maxLength: 257

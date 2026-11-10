@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+  article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+type: array
+maxItems: 10
+items:
+  type: string
+  minLength: 1
+  maxLength: 257

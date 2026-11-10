@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -391,5 +392,177 @@ func TestRetryAfterALostAnswer(t *testing.T) {
 	}
 	if other := post(t, api, "once"); other.Id == first.Id {
 		t.Error("a post without the key answered the earlier status")
+	}
+}
+
+// TestDrafts saves a draft, replaces it with the ETag of the version read, is refused a save with an older
+// ETag, and publishes the draft as a post, after which the draft is gone.
+func TestDrafts(t *testing.T) {
+	t.Parallel()
+	srv := platformtest.Start(t, platformtest.Options{})
+	api := signIn(t, srv, srv.User(t, "alice"), mykit.Config{})
+	ctx := t.Context()
+
+	text := "a first line"
+	created, err := api.CreateDraftWithResponse(ctx, mykit.DraftRequest{Text: &text, Visibility: mykit.VisibilityPublic})
+	if err != nil {
+		t.Fatalf("create a draft: %v", err)
+	}
+	if created.JSON201 == nil || created.HTTPResponse.Header.Get("ETag") == "" {
+		t.Fatalf("create a draft = %d %s, want 201 with the draft and its ETag", created.StatusCode(), created.Body)
+	}
+	id, first := created.JSON201.Id, created.HTTPResponse.Header.Get("ETag")
+
+	text = "a first line, and a second"
+	updated, err := api.UpdateDraftWithResponse(ctx, id, &mykit.UpdateDraftParams{IfMatch: &first}, mykit.DraftRequest{Text: &text, Visibility: mykit.VisibilityPublic})
+	if err != nil {
+		t.Fatalf("update the draft: %v", err)
+	}
+	if updated.JSON200 == nil || updated.JSON200.Text != text || updated.HTTPResponse.Header.Get("ETag") == first {
+		t.Fatalf("update the draft = %d %s, want 200 with the new text and a new ETag", updated.StatusCode(), updated.Body)
+	}
+
+	stale := "overwritten"
+	_, err = api.UpdateDraftWithResponse(ctx, id, &mykit.UpdateDraftParams{IfMatch: &first}, mykit.DraftRequest{Text: &stale, Visibility: mykit.VisibilityPublic})
+	var problem *mykit.Problem
+	if !errors.As(err, &problem) || problem.Status != http.StatusPreconditionFailed {
+		t.Fatalf("update with an older ETag = %v, want a 412 problem", err)
+	}
+
+	published, err := api.PublishDraftWithResponse(ctx, id)
+	if err != nil {
+		t.Fatalf("publish the draft: %v", err)
+	}
+	if published.JSON201 == nil || !strings.Contains(published.JSON201.Content, "a second") {
+		t.Fatalf("publish the draft = %d %s, want 201 with a post of the saved text", published.StatusCode(), published.Body)
+	}
+	_, err = api.GetDraftWithResponse(ctx, id)
+	if !errors.As(err, &problem) || problem.Status != http.StatusNotFound {
+		t.Errorf("get the published draft = %v, want a 404 problem", err)
+	}
+}
+
+// TestThreadMutes mutes the thread of a post: a reply that mentions its author notifies nobody while it is
+// muted, the post tells it with muted, the home timeline still shows the reply, and after the unmute the next
+// reply notifies again.
+func TestThreadMutes(t *testing.T) {
+	t.Parallel()
+	srv := platformtest.Start(t, platformtest.Options{})
+	alice, bob := srv.User(t, "alice"), srv.User(t, "bob")
+	aliceAPI, bobAPI := signIn(t, srv, alice, mykit.Config{}), signIn(t, srv, bob, mykit.Config{})
+	ctx := t.Context()
+
+	if _, err := aliceAPI.FollowAccountWithResponse(ctx, bob.AccountID, mykit.FollowAccountRequest{}); err != nil {
+		t.Fatalf("alice follows bob: %v", err)
+	}
+	thread := post(t, aliceAPI, "a thread that spreads")
+	muted, err := aliceAPI.MuteStatusThreadWithResponse(ctx, thread.Id)
+	if err != nil {
+		t.Fatalf("mute the thread: %v", err)
+	}
+	if muted.JSON200 == nil || muted.JSON200.Muted == nil || !*muted.JSON200.Muted {
+		t.Fatalf("mute the thread = %d %s, want 200 with muted", muted.StatusCode(), muted.Body)
+	}
+	reply := func(text string) mykit.Status {
+		t.Helper()
+		resp, err := bobAPI.CreateStatusWithResponse(ctx, &mykit.CreateStatusParams{}, mykit.CreateStatusRequest{
+			Text: text, Visibility: mykit.VisibilityPublic, InReplyToId: &thread.Id,
+		})
+		if err != nil || resp.JSON201 == nil {
+			t.Fatalf("bob replies %q = %v %s", text, err, resp.Body)
+		}
+		return *resp.JSON201
+	}
+	mentions := func() []string {
+		t.Helper()
+		resp, err := aliceAPI.ListNotificationsWithResponse(ctx, &mykit.ListNotificationsParams{})
+		if err != nil || resp.JSON200 == nil {
+			t.Fatalf("alice's notifications = %v %s", err, resp.Body)
+		}
+		var ids []string
+		for _, n := range resp.JSON200.Items {
+			if n.Status != nil {
+				ids = append(ids, n.Status.Id)
+			}
+		}
+		return ids
+	}
+
+	first := reply("@alice what a thread")
+	if got := mentions(); len(got) != 0 {
+		t.Errorf("alice's notifications of a muted thread = %v, want none", got)
+	}
+	home, err := aliceAPI.GetHomeTimelineWithResponse(ctx, &mykit.GetHomeTimelineParams{})
+	if err != nil || home.JSON200 == nil {
+		t.Fatalf("alice's home timeline = %v %s", err, home.Body)
+	}
+	if !slices.ContainsFunc(home.JSON200.Items, func(s mykit.Status) bool { return s.Id == first.Id }) {
+		t.Errorf("alice's home timeline lacks bob's reply %s in the muted thread", first.Id)
+	}
+
+	unmuted, err := aliceAPI.UnmuteStatusThreadWithResponse(ctx, first.Id)
+	if err != nil || unmuted.JSON200 == nil || unmuted.JSON200.Muted == nil || *unmuted.JSON200.Muted {
+		t.Fatalf("unmute the thread by the reply = %v %s, want 200 without muted", err, unmuted.Body)
+	}
+	second := reply("@alice and again")
+	if got := mentions(); !slices.Equal(got, []string{second.Id}) {
+		t.Errorf("alice's notifications after the unmute = %v, want the mention of %s", got, second.Id)
+	}
+}
+
+// TestNotificationRequests filters the mentions of an account that alice does not follow into its request, and
+// accepts the request, which lists them.
+func TestNotificationRequests(t *testing.T) {
+	t.Parallel()
+	srv := platformtest.Start(t, platformtest.Options{})
+	alice := signIn(t, srv, srv.User(t, "alice"), mykit.Config{})
+	bob := signIn(t, srv, srv.User(t, "bob"), mykit.Config{})
+	ctx := t.Context()
+
+	filter := mykit.NotificationPolicyActionFilter
+	policy, err := alice.UpdateNotificationPolicyWithResponse(ctx, mykit.NotificationPolicyUpdate{NotFollowing: &filter})
+	if err != nil {
+		t.Fatalf("update the notification policy: %v", err)
+	}
+	if policy.JSON200 == nil || policy.JSON200.NotFollowing != filter || policy.JSON200.NotFollower != mykit.NotificationPolicyActionAccept {
+		t.Fatalf("update the notification policy = %d %s, want not_following filtered and the rest accepted", policy.StatusCode(), policy.Body)
+	}
+	mention := post(t, bob, "hi @alice")
+
+	listed := func() []string {
+		t.Helper()
+		resp, err := alice.ListNotificationsWithResponse(ctx, &mykit.ListNotificationsParams{})
+		if err != nil || resp.JSON200 == nil {
+			t.Fatalf("list the notifications = %v %v", resp, err)
+		}
+		var out []string
+		for _, n := range resp.JSON200.Items {
+			if n.Status != nil {
+				out = append(out, n.Status.Id)
+			}
+		}
+		return out
+	}
+	if got := listed(); len(got) != 0 {
+		t.Fatalf("notifications about posts = %v, want none before the acceptance", got)
+	}
+	summary, err := alice.GetNotificationRequestSummaryWithResponse(ctx)
+	if err != nil || summary.JSON200 == nil || summary.JSON200.AccountsCount != 1 || summary.JSON200.NotificationsCount != 1 {
+		t.Fatalf("the request summary = %v %v, want one request of one notification", summary, err)
+	}
+	requests, err := alice.ListNotificationRequestsWithResponse(ctx, &mykit.ListNotificationRequestsParams{})
+	if err != nil || requests.JSON200 == nil || len(requests.JSON200.Items) != 1 {
+		t.Fatalf("list the requests = %v %v, want bob's", requests, err)
+	}
+	req := requests.JSON200.Items[0]
+	if req.Account.Username != "bob" || req.LastNotification == nil || req.LastNotification.Status == nil || req.LastNotification.Status.Id != mention.Id {
+		t.Fatalf("request = %+v, want bob's with the mention", req)
+	}
+	accepted, err := alice.AcceptNotificationRequestWithResponse(ctx, req.Id)
+	if err != nil || accepted.StatusCode() != http.StatusNoContent {
+		t.Fatalf("accept the request = %v %v, want 204", accepted, err)
+	}
+	if got := listed(); !slices.Equal(got, []string{mention.Id}) {
+		t.Errorf("notifications about posts after the acceptance = %v, want the mention", got)
 	}
 }

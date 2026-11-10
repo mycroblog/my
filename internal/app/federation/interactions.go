@@ -216,7 +216,8 @@ type InteractionHandlersDeps struct {
 //   - Announce of a post: content.RecordRemoteBoost. The post is found by its id; a remote post
 //     that is not stored is taken from the Announce when it is embedded from the actor's origin,
 //     fetched from its origin otherwise, and stored only when a local account follows the
-//     booster (ADR-0006). A local post must be one the booster may see and boost.
+//     booster (ADR-0006). A local post must be one the booster may see and boost, whose boost
+//     rules admit the booster (ADR-0155 §6); an Announce outside them is dropped, uncounted.
 //   - EmojiReact of a local post whose content is an emoji (reactionOf):
 //     content.RecordRemoteReaction; one with anything else is dropped.
 //   - Like of a local post: content.RecordRemoteReaction when its _misskey_reaction, or else its
@@ -241,10 +242,12 @@ type interactionHandlers struct{ d InteractionHandlersDeps }
 
 // interactionError turns the refusals of the content module's remote interaction commands into
 // what the processor makes of them: a post that is missing, deleted, or hidden from the actor,
-// or that the actor may not boost, has nothing to do (federation.md §3.3).
+// or that the actor may not boost (by its visibility or its boost rules), has nothing to do
+// (federation.md §3.3).
 func interactionError(err error) error {
 	switch {
-	case errors.Is(err, appcontent.ErrNotFound), errors.Is(err, appcontent.ErrNotBoostable),
+	case errors.Is(err, appcontent.ErrNotFound), errors.Is(err, appcontent.ErrNotBoostable), errors.Is(err, appcontent.ErrBoostNotAllowed),
+		errors.Is(err, appcontent.ErrInteractionAwaitsApproval), errors.Is(err, ErrQuoteUnauthorized),
 		errors.Is(err, appcontent.ErrActorUnavailable), errors.Is(err, appcontent.ErrNotAuthor),
 		errors.Is(err, appcontent.ErrInvalidReaction), errors.Is(err, appcontent.ErrInteractionRestricted):
 		return fmt.Errorf("%w: %w", ErrDropActivity, err)
@@ -269,14 +272,22 @@ func (h interactionHandlers) announce(ctx context.Context, in *InboxActivity) er
 	if err != nil {
 		return err
 	}
-	followers, err := h.d.Statuses.followers(ctx, in.Actor)
+	cols, err := h.d.Statuses.collections(ctx, in.Actor)
 	if err != nil {
 		return err
 	}
-	_, err = h.d.Interactions.RecordRemoteBoost(ctx, appcontent.RemoteBoostInput{
+	boost := appcontent.RemoteBoostInput{
 		URI: activityURI(in), BoosterAccountID: in.Actor.Account.ID, StatusID: st.ID,
-		Visibility: appcontent.Visibility(in.Activity.Audience.Visibility(followers)), BoostedAt: in.Activity.Published,
-	})
+		Visibility: appcontent.Visibility(in.Activity.Audience.Visibility(cols.followers)), BoostedAt: in.Activity.Published,
+	}
+	_, err = h.d.Interactions.RecordRemoteBoost(ctx, boost)
+	if errors.Is(err, appcontent.ErrInteractionAwaitsApproval) && !st.IsLocal && in.Activity.Authorization != "" {
+		// A boost of a remote status that its author's server approved (ADR-0155 §6).
+		if err = h.d.Statuses.verifyAnnounce(ctx, in, st); err == nil {
+			boost.Authorized = true
+			_, err = h.d.Interactions.RecordRemoteBoost(ctx, boost)
+		}
+	}
 	return interactionError(err)
 }
 

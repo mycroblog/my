@@ -39,6 +39,8 @@ type Repository interface {
 	// InsertLocalStatus inserts the local subtype of a status. An Idempotency-Key that the
 	// author already used fails with ErrIdempotencyKeyUsed.
 	InsertLocalStatus(ctx context.Context, tx uow.Tx, ls content.LocalStatus) error
+	// InsertArticle inserts the article subtype of a status (ADR-0160 §2).
+	InsertArticle(ctx context.Context, tx uow.Tx, a content.Article) error
 	// InsertRevision inserts a revision with its bodies, source, attachments, mentions, tags, and
 	// emoji. On PostgreSQL, a Seq that a concurrent revision took fails with an error for which
 	// errors.Is(err, uow.ErrRetryable) holds, so that a new attempt reads the new head.
@@ -46,8 +48,43 @@ type Repository interface {
 	// InsertDeletion records the deletion of a status. A status or URI that is already deleted
 	// fails with ErrAlreadyDeleted.
 	InsertDeletion(ctx context.Context, tx uow.Tx, d content.Deletion) error
+	// InsertDeletions is InsertDeletion of ds, which share their origin, moderation action, and
+	// time, with one statement.
+	InsertDeletions(ctx context.Context, tx uow.Tx, ds []content.Deletion) error
 	// EnsureTag inserts t unless a tag with its NameNormalized exists, and returns the stored tag.
 	EnsureTag(ctx context.Context, tx uow.Tx, t content.Tag) (content.Tag, error)
+	// EnsureTags is EnsureTag of each of tags, which share their CreatedAt, with one insert and one
+	// read; it returns the stored tags by NameNormalized.
+	EnsureTags(ctx context.Context, tx uow.Tx, tags []content.Tag) (map[string]content.Tag, error)
+
+	// Conversations (ADR-0154): the resource, the conversation of each status (a current value
+	// written with the status), and the merges.
+
+	// EnsureConversation inserts c unless a conversation has its URI, and returns the stored one.
+	EnsureConversation(ctx context.Context, tx uow.Tx, c content.Conversation) (content.Conversation, error)
+	// FindConversationTx returns a conversation by ID inside tx.
+	FindConversationTx(ctx context.Context, tx uow.Tx, id string) (content.Conversation, error)
+	// ConversationMergeTargetTx returns, inside tx, the conversation that a merged conversation
+	// was merged into; ErrNotFound means that it is not merged.
+	ConversationMergeTargetTx(ctx context.Context, tx uow.Tx, id string) (string, error)
+	// StatusConversationsTx is StatusConversations inside tx.
+	StatusConversationsTx(ctx context.Context, tx uow.Tx, statusIDs []string) (map[string]content.Conversation, error)
+	// InsertStatusConversation records the conversation that a status belongs to.
+	InsertStatusConversation(ctx context.Context, tx uow.Tx, statusID, conversationID string) error
+	// MergeConversation records m and moves every status of the merged conversation to the one
+	// it is merged into. A conversation that is merged already fails.
+	MergeConversation(ctx context.Context, tx uow.Tx, m content.ConversationMerge) error
+	FindConversation(ctx context.Context, id string) (content.Conversation, error)
+	FindConversationByURI(ctx context.Context, uri string) (content.Conversation, error)
+	// FindConversationMerge returns the merge of a merged conversation.
+	FindConversationMerge(ctx context.Context, id string) (content.ConversationMerge, error)
+	// StatusConversations returns the conversation that each of statusIDs belongs to, by status,
+	// with one query; a status without one is left out.
+	StatusConversations(ctx context.Context, statusIDs []string) (map[string]content.Conversation, error)
+	// ListLiveConversationStatuses returns up to limit statuses of a conversation that are neither
+	// deleted nor held (a reply request of theirs is not accepted), in ID order after the ID after
+	// ("" for the first page); the held replies of viewerAccountID are among them ("" for none).
+	ListLiveConversationStatuses(ctx context.Context, conversationID, viewerAccountID, after string, limit int) ([]content.Status, error)
 
 	// Projections, written only by this module's projectors and rebuild.
 
@@ -63,33 +100,58 @@ type Repository interface {
 	LockStatusKeys(ctx context.Context, tx uow.Tx, keys []string) error
 	// IsDeleted reports whether a status has a deletion.
 	IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bool, error)
+	// PrivateMentionTx reports whether a status is direct, and whether its conversation holds
+	// a direct status of recipientID that mentions sourceID, inside tx.
+	PrivateMentionTx(ctx context.Context, tx uow.Tx, statusID, recipientID, sourceID string) (direct, solicited bool, err error)
 	// FindLiveStatusByURI returns the status with uri unless it is deleted.
 	FindLiveStatusByURI(ctx context.Context, tx uow.Tx, uri string) (content.Status, error)
-	// ListLiveRepliesTo returns the statuses that reply to uri and are not deleted, ordered by ID.
+	// ListLiveRepliesTo returns the statuses that reply to uri and are neither deleted nor held
+	// (a reply request of theirs is not accepted, ADR-0155 §6), ordered by ID.
 	ListLiveRepliesTo(ctx context.Context, tx uow.Tx, uri string) ([]content.Status, error)
+	// IsHeldReply reports whether a status is a reply held out of the thread of its parent.
+	IsHeldReply(ctx context.Context, tx uow.Tx, statusID string) (bool, error)
+	// HeldRepliesAmong returns, of the statuses ids, those that are replies held out of the
+	// thread of their parent: they have a reply request that is not accepted. One query; it
+	// reads in tx, or outside any transaction when tx is nil.
+	HeldRepliesAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error)
+	// ListHeldReplyIDs returns every held reply, ordered by ID.
+	ListHeldReplyIDs(ctx context.Context, tx uow.Tx) ([]string, error)
 	UpsertReplyLink(ctx context.Context, tx uow.Tx, l content.ReplyLink) error
 	// ReplyLink returns the link from a reply to its parent.
 	ReplyLink(ctx context.Context, tx uow.Tx, statusID string) (content.ReplyLink, error)
+	// ReplyLinksOf is ReplyLink of each of statusIDs that has one, by status.
+	ReplyLinksOf(ctx context.Context, tx uow.Tx, statusIDs []string) (map[string]content.ReplyLink, error)
 	// InsertCounters inserts the counters of a status unless it has them.
 	InsertCounters(ctx context.Context, tx uow.Tx, c content.Counters) error
 	// AddReplies adds delta to the replies count of a status that has counters.
 	AddReplies(ctx context.Context, tx uow.Tx, statusID string, delta int64) error
+	// AddManyReplies is AddReplies of each status of deltas, with one statement.
+	AddManyReplies(ctx context.Context, tx uow.Tx, deltas map[string]int64) error
 	// AddPost counts one more status of an account, published at publishedAt.
 	AddPost(ctx context.Context, tx uow.Tx, accountID string, publishedAt time.Time) error
 	// RemovePost counts one status of an account less. It runs after the deletion is inserted
 	// and takes LastStatusAt again from the account's statuses that are not deleted; the
 	// counter goes away with the last of them.
 	RemovePost(ctx context.Context, tx uow.Tx, accountID string) error
+	// RemovePosts is RemovePost n times.
+	RemovePosts(ctx context.Context, tx uow.Tx, accountID string, n int64) error
+	// SubtractLocalPostsOf is AddLocalPosts of -removed[id] for each account id.
+	SubtractLocalPostsOf(ctx context.Context, tx uow.Tx, removed map[string]int64) error
 	// AddLocalPosts adds delta to the local posts of an account (local_post_counters); the
 	// counter goes away when it reaches zero.
 	AddLocalPosts(ctx context.Context, tx uow.Tx, accountID string, delta int64) error
 	// DeleteStatusProjections removes a status from every status projection: its head, its
 	// mentions, its counters, its link to its parent, and the links of its replies to it.
 	DeleteStatusProjections(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusProjectionsOf is DeleteStatusProjections of each of statusIDs, with one
+	// statement per projection.
+	DeleteStatusProjectionsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// InsertSensitivityOverride records that a mark_statuses_sensitive action shows a status as
 	// sensitive (status_sensitivity_overrides); recording it again does nothing. A status can have
 	// rows of several sources, and each source ends only its own.
 	InsertSensitivityOverride(ctx context.Context, tx uow.Tx, statusID, actionID string) error
+	// InsertSensitivityOverrides is InsertSensitivityOverride of each of statusIDs.
+	InsertSensitivityOverrides(ctx context.Context, tx uow.Tx, statusIDs []string, actionID string) error
 	// DeleteSensitivityOverridesOf deletes the overrides of a lifted action.
 	DeleteSensitivityOverridesOf(ctx context.Context, tx uow.Tx, actionID string) error
 	// InsertSensitivityOverrideOfHookDecision records that a mark_sensitive decision of a hook shows a
@@ -137,6 +199,16 @@ type Repository interface {
 	// Lookups.
 
 	FindStatus(ctx context.Context, id string) (content.Status, error)
+	// FindStatuses returns the statuses of ids that exist, by ID, as FindStatus returns one, with
+	// one query whatever the number of ids.
+	FindStatuses(ctx context.Context, ids []string) (map[string]content.Status, error)
+	// FindStatusesByURIs returns the statuses of uris that exist, by URI, as FindStatusByURI
+	// returns one, with one query whatever the number of URIs.
+	FindStatusesByURIs(ctx context.Context, uris []string) (map[string]content.Status, error)
+	// FindCurrentRevisions returns the current revisions of the statuses of ids that have one,
+	// by status ID, as FindCurrentRevision returns one, with one query per part of a revision
+	// whatever the number of ids.
+	FindCurrentRevisions(ctx context.Context, statusIDs []string) (map[string]content.Revision, error)
 	// ListSearchableStatusIDs returns up to limit IDs of the public and local statuses of the server
 	// in ID order after the ID after ("" for the first page), deleted ones included.
 	ListSearchableStatusIDs(ctx context.Context, after string, limit int) ([]string, error)
@@ -160,23 +232,35 @@ type Repository interface {
 	// (the edit history, FR-109).
 	ListRevisions(ctx context.Context, statusID string) ([]content.Revision, error)
 	FindDeletion(ctx context.Context, statusID string) (content.Deletion, error)
+	// FindDeletions returns the deletions of the statuses of ids that are deleted, by status ID,
+	// as FindDeletion returns one, with one query whatever the number of ids.
+	FindDeletions(ctx context.Context, statusIDs []string) (map[string]content.Deletion, error)
 	// FindDeletionByURI returns the tombstone of a URI.
 	FindDeletionByURI(ctx context.Context, uri string) (content.Deletion, error)
 	// FindDeletionByURITx is FindDeletionByURI inside tx.
 	FindDeletionByURITx(ctx context.Context, tx uow.Tx, uri string) (content.Deletion, error)
 	FindTagByName(ctx context.Context, nameNormalized string) (content.Tag, error)
 	FindTag(ctx context.Context, id string) (content.Tag, error)
+	// FindTags returns the tags of ids that exist, by ID, as FindTag returns one, with one query.
+	FindTags(ctx context.Context, ids []string) (map[string]content.Tag, error)
 	// ListTagsByPrefix returns up to limit tags whose NameNormalized is at least low and less
 	// than high, compared byte by byte, in that order (the prefix search of hashtags, ADR-0092 §1).
 	ListTagsByPrefix(ctx context.Context, low, high string, limit int) ([]content.Tag, error)
-	// ListReplies returns the statuses that reply to uri and are not deleted, ordered by ID.
+	// ListReplies returns the statuses that reply to uri and are neither deleted nor held, ordered
+	// by ID.
 	ListReplies(ctx context.Context, uri string) ([]content.Status, error)
 	// ListLiveRemoteStatusIDs returns up to limit remote statuses of an author that are not
 	// deleted, newest first, by ID, whose ID is below before ("" for the first page).
 	ListLiveRemoteStatusIDs(ctx context.Context, authorAccountID, before string, limit int) ([]string, error)
 	FindCounters(ctx context.Context, statusID string) (content.Counters, error)
+	// FindCountersOf returns the counters of the statuses of ids that have them, by status ID, as
+	// FindCounters returns one, with one query whatever the number of ids.
+	FindCountersOf(ctx context.Context, statusIDs []string) (map[string]content.Counters, error)
 	// SensitivityOverridden reports whether an action shows a status as sensitive.
 	SensitivityOverridden(ctx context.Context, statusID string) (bool, error)
+	// SensitivitiesOverridden returns the statuses among statusIDs that moderation marked
+	// sensitive, as SensitivityOverridden tells of one, with one query.
+	SensitivitiesOverridden(ctx context.Context, statusIDs []string) (map[string]bool, error)
 	// FindPostCounter returns the post counter of an account; ErrNotFound means it has no
 	// statuses.
 	FindPostCounter(ctx context.Context, accountID string) (content.PostCounter, error)
@@ -192,9 +276,9 @@ type Repository interface {
 	// Remote statuses: custom emoji, poll tallies, and the scope of ingestion (ADR-0006).
 	// InsertRevision also writes a revision's Poll and Remote, and FindRevision reads them.
 
-	// LocalStatusInConversation reports whether a local status that is not deleted belongs to
-	// the conversation conversationURI.
-	LocalStatusInConversation(ctx context.Context, conversationURI string) (bool, error)
+	// LocalStatusInConversationOf reports whether a local status that is not deleted belongs to
+	// the conversation of the status statusID.
+	LocalStatusInConversationOf(ctx context.Context, statusID string) (bool, error)
 	// EnsureCustomEmoji inserts e unless an emoji with its Shortcode and Domain exists, and
 	// returns the stored emoji. A URI that another emoji has is not stored again.
 	EnsureCustomEmoji(ctx context.Context, tx uow.Tx, e content.CustomEmoji) (content.CustomEmoji, error)
@@ -209,6 +293,9 @@ type Repository interface {
 	ReplacePollTallies(ctx context.Context, tx uow.Tx, pollID string, tallies []content.PollTally) error
 
 	FindCustomEmoji(ctx context.Context, id string) (content.CustomEmoji, error)
+	// FindCustomEmojis returns the custom emoji of ids that exist, by ID, as FindCustomEmoji returns
+	// one, with one query.
+	FindCustomEmojis(ctx context.Context, ids []string) (map[string]content.CustomEmoji, error)
 	// FindCustomEmojiByShortcode returns the emoji with a shortcode on a domain ("" for this
 	// instance).
 	FindCustomEmojiByShortcode(ctx context.Context, shortcode, domain string) (content.CustomEmoji, error)
@@ -219,6 +306,9 @@ type Repository interface {
 	// FindPollTallies returns the tallies of a poll ordered by position; a poll without an
 	// observation has none.
 	FindPollTallies(ctx context.Context, pollID string) ([]content.PollTally, error)
+	// FindPollTalliesOf returns the tallies of each of pollIDs that has some, by poll ID, as
+	// FindPollTallies returns those of one, with one query.
+	FindPollTalliesOf(ctx context.Context, pollIDs []string) (map[string][]content.PollTally, error)
 
 	// Votes in polls (FR-112).
 
@@ -227,6 +317,12 @@ type Repository interface {
 	InsertPollVote(ctx context.Context, tx uow.Tx, v content.PollVote) (bool, error)
 	// ListPollVotes returns the votes of accountID in pollID ordered by position.
 	ListPollVotes(ctx context.Context, pollID, accountID string) ([]content.PollVote, error)
+	// ListPollVotesIn returns accountID's votes in each of pollIDs where it voted, by poll ID, as
+	// ListPollVotes returns those of one, with one query.
+	ListPollVotesIn(ctx context.Context, pollIDs []string, accountID string) (map[string][]content.PollVote, error)
+	// ListPollVotesOfAccountsIn is ListPollVotesIn of each of accountIDs, by account, with one
+	// query.
+	ListPollVotesOfAccountsIn(ctx context.Context, pollIDs, accountIDs []string) (map[string]map[string][]content.PollVote, error)
 	// ListPollVotesTx is ListPollVotes in tx.
 	ListPollVotesTx(ctx context.Context, tx uow.Tx, pollID, accountID string) ([]content.PollVote, error)
 	// PollStatusID returns the ID of the status whose revision has the poll.

@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+description: How the newest schedule of a draft that is over ended.
+type: object
+required: [publish_at, outcome, occurred_at]
+properties:
+  publish_at:
+    description: The time the post was scheduled for.
+    type: string
+    format: date-time
+  outcome:
+    description: |
+      `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+      could not be published at its time, for `reason`.
+    type: string
+    enum: [cancelled, failed]
+  reason:
+    $ref: ./DraftFailureReason.yaml
+  occurred_at:
+    description: When the schedule ended.
+    type: string
+    format: date-time

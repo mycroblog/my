@@ -46,6 +46,7 @@ const (
 	ContextHashtag           = content.ContextHashtag
 	ContextProfile           = content.ContextProfile
 	ContextSearch            = content.ContextSearch
+	ContextDirectMessages    = content.ContextDirectMessages
 
 	FollowNone   = content.FollowNone
 	FollowActive = content.FollowActive

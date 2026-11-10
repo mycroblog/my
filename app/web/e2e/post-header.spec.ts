@@ -35,6 +35,7 @@ function status(n: number, account: Account, overrides: Partial<Status> = {}): S
     boosts_count: 0,
     favourites_count: 0,
     reactions: [],
+    filtered: [],
     ...overrides,
   };
 }

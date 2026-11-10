@@ -860,6 +860,16 @@ var inboxOrderCases = []inboxOrderCase{
 		want:       inboxStatusRows{Live: []inboxLiveStatus{}, Gone: []federation.IRI{inboxAlice + "/notes/1"}},
 	},
 	{
+		// A thread whose posts arrive in any order, more than once, ends up in one conversation:
+		// the root's declared one, into which the nested reply's declared one is merged
+		// (ADR-0154 §3).
+		name:       "RemoteThreadConversations",
+		activities: remoteThreadActivities,
+		wire:       wireStatusHandlers,
+		rows:       remoteThreadConversationRows,
+		want:       inboxThreadConversation{Conversations: 1, URI: remoteThreadRootContext, NestedMergedIntoIt: true},
+	},
+	{
 		name:       "RemoteStatusCreateAndUpdates",
 		activities: remoteStatusActivities("create", "update-1", "update-2"),
 		wire:       wireStatusHandlers,

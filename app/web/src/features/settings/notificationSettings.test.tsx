@@ -302,7 +302,12 @@ describe("the table", () => {
     settingsServer();
     await openSettings();
     // docs/architecture/web-client/screens/settings-notifications.md §3 (no Web Push in jsdom, emails reach the address)
-    expect(sectionHeadings()).toEqual(["Notification sound", "From other people", "From this server"]);
+    expect(sectionHeadings()).toEqual([
+      "Notification sound",
+      "From other people",
+      "From this server",
+      "Notification policy",
+    ]);
   });
 
   test("says why a change was not saved, and shows the saved value again", async () => {

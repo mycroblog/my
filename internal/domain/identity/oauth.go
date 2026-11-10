@@ -239,7 +239,8 @@ const (
 )
 
 // Fine-grained scopes. "read:x" is granted by read and "write:x" by write; follow grants the
-// scopes of follows, blocks, and mutes; admin grants "admin:read" and "admin:write".
+// scopes of follows, blocks, and mutes; admin grants "admin:read", "admin:write", and the
+// permission scopes (PermissionScope).
 const (
 	ScopeAdminRead          = "admin:read"
 	ScopeAdminWrite         = "admin:write"
@@ -248,6 +249,8 @@ const (
 	ScopeReadBookmarks      = "read:bookmarks"
 	ScopeReadCustomEmojis   = "read:custom_emojis"
 	ScopeReadDirect         = "read:direct"
+	ScopeReadEvents         = "read:events"
+	ScopeReadFilters        = "read:filters"
 	ScopeReadFinance        = "read:finance"
 	ScopeReadFollows        = "read:follows"
 	ScopeReadMutes          = "read:mutes"
@@ -260,7 +263,9 @@ const (
 	ScopeWriteBlocks        = "write:blocks"
 	ScopeWriteBookmarks     = "write:bookmarks"
 	ScopeWriteCustomEmojis  = "write:custom_emojis"
+	ScopeWriteEvents        = "write:events"
 	ScopeWriteFavourites    = "write:favourites"
+	ScopeWriteFilters       = "write:filters"
 	ScopeWriteFollows       = "write:follows"
 	ScopeWriteMedia         = "write:media"
 	ScopeWriteMutes         = "write:mutes"
@@ -274,16 +279,26 @@ const (
 // broadScopes are the scopes that AllScopes holds; together they grant every scope.
 var broadScopes = []string{ScopeAdmin, ScopeFollow, ScopePush, ScopeRead, ScopeWrite}
 
-// knownScopes lists every scope, sorted.
-var knownScopes = []string{
+// fixedScopes lists every scope but the permission scopes, sorted.
+var fixedScopes = []string{
 	ScopeAdmin, ScopeAdminRead, ScopeAdminWrite,
 	ScopeFollow, ScopePush, ScopeRead,
-	ScopeReadAccounts, ScopeReadBlocks, ScopeReadBookmarks, ScopeReadCustomEmojis, ScopeReadDirect, ScopeReadFinance,
+	ScopeReadAccounts, ScopeReadBlocks, ScopeReadBookmarks, ScopeReadCustomEmojis, ScopeReadDirect, ScopeReadEvents, ScopeReadFilters, ScopeReadFinance,
 	ScopeReadFollows, ScopeReadMutes, ScopeReadNotifications, ScopeReadReports, ScopeReadStatuses, ScopeReadSupporters, ScopeReadVoice,
 	ScopeWrite,
-	ScopeWriteAccounts, ScopeWriteBlocks, ScopeWriteBookmarks, ScopeWriteCustomEmojis, ScopeWriteFavourites, ScopeWriteFollows,
+	ScopeWriteAccounts, ScopeWriteBlocks, ScopeWriteBookmarks, ScopeWriteCustomEmojis, ScopeWriteEvents, ScopeWriteFavourites, ScopeWriteFilters, ScopeWriteFollows,
 	ScopeWriteMedia, ScopeWriteMutes, ScopeWriteNotifications, ScopeWriteReports, ScopeWriteStatuses, ScopeWriteSupporters, ScopeWriteVoice,
 }
+
+// knownScopes lists every scope, the permission scopes included, sorted.
+var knownScopes = func() []string {
+	all := slices.Clone(fixedScopes)
+	for _, p := range ScopedPermissions() {
+		all = append(all, permissionScopePrefix+string(p))
+	}
+	slices.Sort(all)
+	return all
+}()
 
 // followScopes are the fine-grained scopes that follow grants.
 var followScopes = []string{ScopeReadBlocks, ScopeReadFollows, ScopeReadMutes, ScopeWriteBlocks, ScopeWriteFollows, ScopeWriteMutes}
@@ -295,6 +310,71 @@ var firstPartyOnlyScopes = []string{ScopeAdmin, ScopeAdminRead, ScopeAdminWrite,
 // broad scope that grants one of them, write over write:supporters, does not give a third
 // party the operations behind it: the client API checks the scopes of an operation with this.
 func FirstPartyOnlyScope(t string) bool { return slices.Contains(firstPartyOnlyScopes, t) }
+
+// permissionScopePrefix starts the permission scopes: "admin:" and a permission's name
+// (ADR-0090 §17). The broad scope admin grants them.
+const permissionScopePrefix = ScopeAdmin + ":"
+
+// unscopedPermissions are the moderation and server administration permissions that have no
+// permission scope (ADR-0090 §17): manage_roles can give the account more than the token
+// holds, the sign-in permissions decide over the sign-in of others, and closing the service
+// cannot be undone.
+var unscopedPermissions = []Permission{
+	PermManageRoles, PermManageOAuthApps, PermManageLoginRecovery, PermManageLoginProviders, PermManageServiceClosure,
+}
+
+// ScopedPermissions returns the permissions that have a permission scope: those of moderation
+// and of server administration, except unscopedPermissions. Member permissions have none.
+func ScopedPermissions() []Permission {
+	var out []Permission
+	for _, p := range AllPermissions() {
+		if p.Category() != CategoryMember && !slices.Contains(unscopedPermissions, p) {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// PermissionScope returns the permission scope of p, "admin:" and its name, and false when p
+// has none.
+func PermissionScope(p Permission) (string, bool) {
+	if !slices.Contains(ScopedPermissions(), p) {
+		return "", false
+	}
+	return permissionScopePrefix + string(p), true
+}
+
+// ScopePermission returns the permission of the permission scope t, and false when t is not
+// one.
+func ScopePermission(t string) (Permission, bool) {
+	name, ok := strings.CutPrefix(t, permissionScopePrefix)
+	if !ok {
+		return "", false
+	}
+	p := Permission(name)
+	if _, ok := PermissionScope(p); !ok {
+		return "", false
+	}
+	return p, true
+}
+
+// SelfIssuedOnlyScope reports whether t is a permission scope, which only a token that the
+// owner of a user-registered client issues to themselves may hold (ADR-0090 §17): no
+// authorization request of a third-party client may ask for one.
+func SelfIssuedOnlyScope(t string) bool {
+	_, ok := ScopePermission(t)
+	return ok
+}
+
+// HasSelfIssuedOnly reports whether s names a permission scope itself.
+func (s Scope) HasSelfIssuedOnly() bool {
+	return slices.ContainsFunc(s.Tokens(), SelfIssuedOnlyScope)
+}
+
+// WithoutSelfIssuedOnly returns s without its permission scopes.
+func (s Scope) WithoutSelfIssuedOnly() Scope {
+	return Scope(strings.Join(slices.DeleteFunc(s.Tokens(), SelfIssuedOnlyScope), " "))
+}
 
 // KnownScopes returns every scope the server knows, sorted.
 func KnownScopes() []string { return slices.Clone(knownScopes) }

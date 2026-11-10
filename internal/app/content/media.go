@@ -441,6 +441,28 @@ func (s *MediaService) OwnMedia(ctx context.Context, accountID, id string) (Medi
 	return m, nil
 }
 
+// ArticleImage returns the image that the body of an article of accountID shows for the media
+// file id (ADR-0160 §4): the large still variant of an upload of accountID that finished
+// processing as an image. Any other file, an unknown one included, reports false.
+func (s *MediaService) ArticleImage(ctx context.Context, accountID, id string) (ArticleImageSource, bool, error) {
+	m, err := s.OwnMedia(ctx, accountID, id)
+	if errors.Is(err, ErrNotFound) {
+		return ArticleImageSource{}, false, nil
+	}
+	if err != nil {
+		return ArticleImageSource{}, false, err
+	}
+	if m.File.Origin != content.MediaOriginUpload {
+		return ArticleImageSource{}, false, nil
+	}
+	img, ok := s.Image(m)
+	if !ok || img.Media != nil || !img.HasStill() {
+		return ArticleImageSource{}, false, nil
+	}
+	large := img.Still.Large
+	return ArticleImageSource{MediaID: id, URL: large.URL, Width: large.Width, Height: large.Height}, true, nil
+}
+
 // ErrMediaAttached reports a change to a media file that a status revision attaches: the
 // revision has its own copy of the description, so the file can no longer change on its own.
 var ErrMediaAttached = errors.New("content: the media file is attached to a status")
@@ -629,7 +651,7 @@ func (s *MediaService) images(ctx context.Context, reads mediaReads, refs []Imag
 			if img, ok := s.image(byID[ref.MediaID]); ok && f.OwnerAccountID == ref.AccountID {
 				out[ref] = img
 			}
-		} else if !slices.Contains(rest, ref.MediaID) {
+		} else if ref.MediaID != "" && !slices.Contains(rest, ref.MediaID) {
 			rest = append(rest, ref.MediaID)
 		}
 	}

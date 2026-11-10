@@ -218,18 +218,21 @@ func (s *Server) RemoveVoiceCohost(ctx context.Context, req RemoveVoiceCohostReq
 
 // newVoiceInvitations presents invitations, reading the invited accounts together.
 func (s *Server) newVoiceInvitations(ctx context.Context, invs []appvoice.Invitation) ([]VoiceRoomInvitation, error) {
+	ids := make([]string, len(invs))
+	for i, inv := range invs {
+		ids[i] = inv.InviteeAccountID
+	}
+	found, err := s.o.Accounts.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	actors := make([]appaccount.Actor, 0, len(invs))
 	kept := make([]appvoice.Invitation, 0, len(invs))
 	for _, inv := range invs {
-		a, err := s.o.Accounts.FindByID(ctx, inv.InviteeAccountID)
-		if errors.Is(err, appaccount.ErrNotFound) {
-			continue
+		if a, ok := found[inv.InviteeAccountID]; ok {
+			actors = append(actors, a)
+			kept = append(kept, inv)
 		}
-		if err != nil {
-			return nil, err
-		}
-		actors = append(actors, a)
-		kept = append(kept, inv)
 	}
 	accounts, err := s.newAccounts(ctx, actors)
 	if err != nil {

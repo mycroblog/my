@@ -4,6 +4,8 @@ package notification
 
 import (
 	"context"
+	"fmt"
+	"slices"
 	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -54,7 +56,14 @@ type ProjectorDeps struct {
 	// Reach keeps the notifications of a source with unsolicited_reach from the recipients
 	// that do not follow it; nil restricts no source.
 	Reach ReachPolicy
-	IDs   kernel.IDGenerator
+	// Conversations reads the conversations of the statuses that the thread mutes are checked
+	// against (ADR-0158 §8); nil mutes no thread.
+	Conversations Conversations
+	// Ages and Mentions read the facts of the conditions new_account and
+	// unsolicited_private_mention of the notification policy (ADR-0158 §6); nil meets neither.
+	Ages     AccountAges
+	Mentions PrivateMentions
+	IDs      kernel.IDGenerator
 	// Push enqueues the Web Push messages of the new notifications; nil pushes none.
 	Push *Pusher
 	// Email enqueues the emails of the new notifications whose recipients get them by email;
@@ -100,6 +109,9 @@ type ProjectorDeps struct {
 //   - content.auto_delete_limit_noticed: auto_delete_limit, to the account that the server maximum
 //     of the automatic deletion newly binds (ADR-0151 §7), once per notice
 //     (notification.AutoDeleteLimitKey). It comes from the instance and has no source account.
+//   - content.draft_schedule_failed: scheduled_status_failed, to the author of a scheduled post
+//     that could not be published (ADR-0156 §8), once per schedule
+//     (notification.ScheduledStatusFailedKey). It comes from the instance and has no source account.
 //   - hook.appeal_decided: hook_appeal_decided, to the author who appealed a post that local.status
 //     refused, upheld or overturned (ADR-0147 §9). It comes from the instance and has no source
 //     account; its dedupe key is the appeal's (notification.HookAppealDecidedKey).
@@ -111,12 +123,17 @@ type ProjectorDeps struct {
 // A notification goes only to a local recipient other than its source, and not to a deactivated
 // recipient (ADR-0089 §16), or when either blocks the other, the recipient mutes the source with hide_notifications or mutes its domain
 // (FR-304), the source has unsolicited_reach (a limit on it or its domain) and the recipient
-// does not follow it, or the recipient turned the type's group off in the app (FR-210). Each notification
+// does not follow it, the recipient mutes the conversation of the status of a
+// notification.ThreadMuted type (the quoted status for a quote; ADR-0158 §8), or the recipient
+// turned the type's group off in the app (FR-210). Each notification
 // has a dedupe key unique per recipient (notification.FollowKey, MentionKey, InteractionKey,
 // ModerationNoticeKey),
-// so projecting an event again, or a repeated boost or favourite, creates nothing more. Each new
-// notification enqueues its Web Push messages through d.Push, and its email through d.Email when
-// the recipient gets its group by email, in the same transaction.
+// so projecting an event again, or a repeated boost or favourite, creates nothing more. Then the
+// recipient's notification policy (ADR-0158, notification.Classify) accepts, filters, or drops a
+// notification of the types it applies to: a dropped one is not created, and a filtered one waits
+// in its source's request and is delivered nowhere. Each new accepted notification enqueues its
+// Web Push messages through d.Push, and its email through d.Email when the recipient gets its group
+// by email, in the same transaction.
 //
 // The exclusion projectors keep notification_exclusions, which the list and the unread count
 // apply at read time, so that a later block or mute also hides the notifications that came
@@ -137,6 +154,9 @@ type ProjectorDeps struct {
 // deleted status gets no notifications later, so one without them needs no row. Notifications
 // are events and stay until the erasure job deletes them.
 //
+// The projector of content.conversation_merged moves the thread mutes of the merged conversation
+// to the one it was merged into (registerThreadMuteProjector).
+//
 // The subscription projectors (registerSubscriptionProjectors) keep the subscriptions to new
 // posts in step with the follows and blocks, and enqueue the status notifications of a new post.
 //
@@ -145,6 +165,7 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 	p := &projector{d: d}
 	registerSubscriptionProjectors(r, d)
 	registerAutoDeleteProjector(r, p)
+	registerScheduledStatusProjector(r, p)
 	r.Register(appgraph.EventFollowed, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.Followed)
 		f := ev.Follow
@@ -160,6 +181,38 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 			DedupeKey: notification.FollowKey(notification.TypeFollowRequest, f.ID), CreatedAt: f.RequestedAt,
 		})
 	})
+	r.Register(appgraph.EventFollowsCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appgraph.FollowsCreated)
+		// As the projectors of Followed and FollowRequested notify each followee, grouped by
+		// followee and type.
+		groups := map[[2]string][]notification.Notification{}
+		var keys [][2]string
+		add := func(n notification.Notification) {
+			k := [2]string{n.RecipientAccountID, string(n.Type)}
+			if _, ok := groups[k]; !ok {
+				keys = append(keys, k)
+			}
+			groups[k] = append(groups[k], n)
+		}
+		for _, f := range ev.Followed {
+			add(notification.Notification{
+				RecipientAccountID: f.Follow.FolloweeAccountID, SourceAccountID: f.Follow.FollowerAccountID, Type: notification.TypeFollow,
+				DedupeKey: notification.FollowKey(notification.TypeFollow, f.Follow.ID), CreatedAt: f.Acceptance.AcceptedAt,
+			})
+		}
+		for _, f := range ev.Requested {
+			add(notification.Notification{
+				RecipientAccountID: f.Follow.FolloweeAccountID, SourceAccountID: f.Follow.FollowerAccountID, Type: notification.TypeFollowRequest,
+				DedupeKey: notification.FollowKey(notification.TypeFollowRequest, f.Follow.ID), CreatedAt: f.Follow.RequestedAt,
+			})
+		}
+		for _, k := range keys {
+			if err := p.notifyFromMany(ctx, tx, groups[k]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	r.Register(appgraph.EventFollowAccepted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.FollowAccepted)
 		f := ev.Follow
@@ -169,13 +222,34 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 		})
 	})
 	registerExclusionProjectors(r, d.Repository)
+	registerThreadMuteProjector(r, d.Repository)
+	// A reply held out of its thread mentions no one (ADR-0155 §6).
 	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.StatusCreated)
+		if ev.HeldReply {
+			return nil
+		}
 		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.Revision.MentionedAccountIDs, ev.Revision.RevisedAt)
 	})
 	r.Register(appcontent.EventStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.StatusRevised)
+		if ev.HeldReply {
+			return nil
+		}
 		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.Revision.MentionedAccountIDs, ev.Revision.RevisedAt)
+	})
+	// An approved reply mentions its accounts when it is released into its thread.
+	r.Register(appcontent.EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.StatusReleased)
+		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.Revision.MentionedAccountIDs, ev.Revision.RevisedAt)
+	})
+	r.Register(appcontent.EventInteractionRequested, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.InteractionRequested)
+		return p.interactionRequested(ctx, tx, ev)
+	})
+	r.Register(appcontent.EventInteractionAnswered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.InteractionAnswered)
+		return p.interactionAnswered(ctx, tx, ev)
 	})
 	registerDeletedStatusProjector(r, d.Repository)
 	r.Register(appcontent.EventBoosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -248,12 +322,50 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 			DedupeKey: notification.AccountMovedKey(ev.MoveID), CreatedAt: ev.At,
 		})
 	})
+	r.Register(appgraph.EventFollowsMigrated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		// As the projector of FollowMigrated notifies each follower, with one notifyAll per
+		// outcome, the notifications of one outcome differing only by their recipient.
+		byOutcome := map[appgraph.MigrationOutcome][]string{}
+		var outcomes []appgraph.MigrationOutcome
+		var first appgraph.FollowMigrated
+		for i, m := range e.(appgraph.FollowsMigrated).Migrations {
+			if i == 0 {
+				first = m
+			}
+			if _, ok := byOutcome[m.Outcome]; !ok {
+				outcomes = append(outcomes, m.Outcome)
+			}
+			byOutcome[m.Outcome] = append(byOutcome[m.Outcome], m.AccountID)
+		}
+		for _, o := range outcomes {
+			n := notification.Notification{
+				SourceAccountID: first.SourceAccountID, Type: notification.TypeAccountMoved,
+				AccountMoveID: first.MoveID, AccountMoveOutcome: notification.MoveOutcome(o),
+				DedupeKey: notification.AccountMovedKey(first.MoveID), CreatedAt: first.At,
+			}
+			if err := p.notifyAll(ctx, tx, n, byOutcome[o]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 	r.Register(appmoderation.EventRelationshipsSevered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		sv := e.(appmoderation.RelationshipsSevered).Severance
 		return p.notify(ctx, tx, notification.Notification{
 			RecipientAccountID: sv.AccountID, Type: notification.TypeRelationshipsSevered, SeveranceID: sv.ID,
 			DedupeKey: notification.RelationshipsSeveredKey(sv.ID), CreatedAt: sv.OccurredAt,
 		})
+	})
+	r.Register(appmoderation.EventManyRelationshipsSevered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		svs := e.(appmoderation.ManyRelationshipsSevered).Severances
+		ns := make([]notification.Notification, len(svs))
+		for i, sv := range svs {
+			ns[i] = notification.Notification{
+				RecipientAccountID: sv.AccountID, Type: notification.TypeRelationshipsSevered, SeveranceID: sv.ID,
+				DedupeKey: notification.RelationshipsSeveredKey(sv.ID), CreatedAt: sv.OccurredAt,
+			}
+		}
+		return p.notifyEach(ctx, tx, ns)
 	})
 	r.Register(appmoderation.EventAppealDecided, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appmoderation.AppealDecided)
@@ -312,6 +424,30 @@ func registerExclusionProjectors(r *uow.Projectors, repo Repository) {
 			ViewerAccountID: m.AccountID, TargetAccountID: m.TargetAccountID, Reason: notification.ExcludedMute, ExpiresAt: m.ExpiresAt,
 		})
 	})
+	r.Register(appgraph.EventBlocksCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		var xs []notification.Exclusion
+		for _, b := range e.(appgraph.BlocksCreated).Blocks {
+			xs = append(xs, blockExclusions(b.Block.BlockerAccountID, b.Block.BlockedAccountID)...)
+		}
+		return repo.UpsertExclusions(ctx, tx, xs)
+	})
+	r.Register(appgraph.EventMutesCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		// As the projector of Muted: a mute that hides notifications excludes, another does not.
+		var xs []notification.Exclusion
+		var viewers, targets []string
+		for _, mu := range e.(appgraph.MutesCreated).Mutes {
+			m := mu.Mute
+			if m.HideNotifications {
+				xs = append(xs, notification.Exclusion{ViewerAccountID: m.AccountID, TargetAccountID: m.TargetAccountID, Reason: notification.ExcludedMute, ExpiresAt: m.ExpiresAt})
+			} else {
+				viewers, targets = append(viewers, m.AccountID), append(targets, m.TargetAccountID)
+			}
+		}
+		if err := repo.DeleteExclusionsOf(ctx, tx, viewers, targets, notification.ExcludedMute); err != nil {
+			return err
+		}
+		return repo.UpsertExclusions(ctx, tx, xs)
+	})
 	r.Register(appgraph.EventUnmuted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appgraph.Unmuted)
 		return repo.DeleteExclusion(ctx, tx, ev.AccountID, ev.TargetAccountID, notification.ExcludedMute)
@@ -331,6 +467,14 @@ func registerExclusionProjectors(r *uow.Projectors, repo Repository) {
 func registerDeletedStatusProjector(r *uow.Projectors, repo Repository) {
 	r.Register(appcontent.EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return recordDeletedStatus(ctx, tx, repo, e.(appcontent.StatusDeleted).Deletion.StatusID)
+	})
+	r.Register(appcontent.EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ds := e.(appcontent.StatusesDeleted).Deletions
+		ids := make([]string, len(ds))
+		for i, d := range ds {
+			ids[i] = d.Deletion.StatusID
+		}
+		return repo.RecordDeletedStatuses(ctx, tx, ids)
 	})
 }
 
@@ -359,16 +503,10 @@ type projector struct {
 }
 
 func (p *projector) mentions(ctx context.Context, tx uow.Tx, statusID, authorID string, mentioned []string, at time.Time) error {
-	for _, id := range mentioned {
-		err := p.notify(ctx, tx, notification.Notification{
-			RecipientAccountID: id, SourceAccountID: authorID, Type: notification.TypeMention, StatusID: statusID,
-			DedupeKey: notification.MentionKey(statusID), CreatedAt: at,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	return p.notifyAll(ctx, tx, notification.Notification{
+		SourceAccountID: authorID, Type: notification.TypeMention, StatusID: statusID,
+		DedupeKey: notification.MentionKey(statusID), CreatedAt: at,
+	}, mentioned)
 }
 
 // pollClosed notifies the author of a poll that has ended, without a source, and each voter,
@@ -383,19 +521,10 @@ func (p *projector) pollClosed(ctx context.Context, tx uow.Tx, ev appcontent.Pol
 	if err != nil {
 		return err
 	}
-	for _, id := range ev.VoterAccountIDs {
-		if id == st.AuthorAccountID {
-			continue
-		}
-		err := p.notify(ctx, tx, notification.Notification{
-			RecipientAccountID: id, SourceAccountID: st.AuthorAccountID, Type: notification.TypePollClosed, StatusID: st.ID,
-			DedupeKey: key, CreatedAt: at,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+	// The author is the source of the voters' notifications, which leaves the author out of them.
+	return p.notifyAll(ctx, tx, notification.Notification{
+		SourceAccountID: st.AuthorAccountID, Type: notification.TypePollClosed, StatusID: st.ID, DedupeKey: key, CreatedAt: at,
+	}, ev.VoterAccountIDs)
 }
 
 // quote notifies the local author of the status quoted of the quote quoting.
@@ -403,10 +532,67 @@ func (p *projector) quote(ctx context.Context, tx uow.Tx, quoting appcontent.Sta
 	if quoted == nil || !quoted.IsLocal {
 		return nil // a remote author is notified by its own server
 	}
+	// The thread of a quote is that of the status quoted (ADR-0158 §8).
+	if muted, err := p.threadMuted(ctx, tx, quoted.AuthorAccountID, quoted.ID); err != nil || muted {
+		return err
+	}
 	return p.notify(ctx, tx, notification.Notification{
 		RecipientAccountID: quoted.AuthorAccountID, SourceAccountID: quoting.AuthorAccountID, Type: notification.TypeQuote,
 		StatusID: quoting.ID, DedupeKey: notification.InteractionKey(notification.TypeQuote, quoting.ID, quoting.AuthorAccountID),
 		CreatedAt: at,
+	})
+}
+
+// requestTypes are the notifications of the requests of each kind.
+var requestTypes = map[appcontent.InteractionKind]notification.Type{
+	appcontent.InteractionReply:    notification.TypeReplyRequest,
+	appcontent.InteractionAnnounce: notification.TypeBoostRequest,
+	appcontent.InteractionQuote:    notification.TypeQuoteRequest,
+}
+
+// interactionRequested notifies the local author of the status of a request that waits for the
+// author's approval (ADR-0155 §10): of its kind, from the account that interacts.
+func (p *projector) interactionRequested(ctx context.Context, tx uow.Tx, ev appcontent.InteractionRequested) error {
+	r, target := ev.Request, ev.Target
+	if ev.State.State != appcontent.InteractionRequestPending || target == nil || !target.IsLocal {
+		return nil
+	}
+	t := requestTypes[r.Kind]
+	return p.notify(ctx, tx, notification.Notification{
+		RecipientAccountID: target.AuthorAccountID, SourceAccountID: r.InteractingAccountID, Type: t, StatusID: target.ID,
+		DedupeKey: notification.ApprovalKey(t, r.ID), CreatedAt: r.CreatedAt,
+	})
+}
+
+// interactionAnswered notifies the local account whose interaction the author of its target
+// answered (ADR-0155 §10): accepted or rejected, from the author, about the status interacted
+// with. That is the answer of a remote server, and the answer of a local author (Deferred); the
+// approval of a local interaction that the rules gave at once notifies no one.
+func (p *projector) interactionAnswered(ctx context.Context, tx uow.Tx, ev appcontent.InteractionAnswered) error {
+	r, target := ev.Request, ev.Target
+	if ev.Event.Kind == appcontent.InteractionEventWithdrawn {
+		// A withdrawn request asks the author nothing any more.
+		if target == nil || !target.IsLocal {
+			return nil
+		}
+		t := requestTypes[r.Kind]
+		return p.d.Repository.DismissByDedupeKey(ctx, tx, target.AuthorAccountID, notification.ApprovalKey(t, r.ID), ev.Event.OccurredAt)
+	}
+	told := r.Direction == appcontent.DirectionOutbound || r.Direction == appcontent.DirectionLocal && ev.Deferred
+	if target == nil || !told {
+		return nil
+	}
+	t := notification.TypeInteractionAccepted
+	switch ev.State.State {
+	case appcontent.InteractionRequestAccepted:
+	case appcontent.InteractionRequestRejected:
+		t = notification.TypeInteractionRejected
+	default:
+		return nil
+	}
+	return p.notify(ctx, tx, notification.Notification{
+		RecipientAccountID: r.InteractingAccountID, SourceAccountID: target.AuthorAccountID, Type: t, StatusID: target.ID,
+		DedupeKey: notification.ApprovalKey(t, r.ID), CreatedAt: ev.Event.OccurredAt,
 	})
 }
 
@@ -422,8 +608,8 @@ func (p *projector) interaction(ctx context.Context, tx uow.Tx, t notification.T
 
 // notify inserts n, with its source's domain, unless its recipient is its source, not local, or
 // deactivated, the relationship between them hides it, the source may reach only its followers and the
-// recipient is none, the recipient mutes the source's domain, or the recipient turned its group
-// off in the app. A notification with the same dedupe key leaves n out.
+// recipient is none, the recipient mutes the source's domain or the conversation of its status
+// (threadOf), or the recipient turned its group off in the app. A notification with the same dedupe key leaves n out.
 func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notification) error {
 	return p.notifyWith(ctx, tx, n, nil)
 }
@@ -462,12 +648,21 @@ func (p *projector) notifyWith(ctx context.Context, tx uow.Tx, n notification.No
 			}
 		}
 	}
+	if threadOf(n) != "" {
+		if muted, err := p.threadMuted(ctx, tx, n.RecipientAccountID, threadOf(n)); err != nil || muted {
+			return err
+		}
+	}
 	choices, err := choicesTx(ctx, p.d.Repository, tx, n.RecipientAccountID)
 	if err != nil {
 		return err
 	}
 	if !choices.TypeEnabled(n.Type, notification.ChannelInApp) {
 		return nil // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
+	}
+	actions, err := p.classifyEach(ctx, tx, []notification.Notification{n}, nil)
+	if err != nil || actions[0] == notification.ActionDrop {
+		return err // the recipient's policy drops it (ADR-0158 §2)
 	}
 	n.ID = p.d.IDs.NewID()
 	if err := n.Validate(); err != nil {
@@ -477,10 +672,377 @@ func (p *projector) notifyWith(ctx context.Context, tx uow.Tx, n notification.No
 	if err != nil || !created {
 		return err
 	}
+	if actions[0] == notification.ActionFilter {
+		return p.filter(ctx, tx, []notification.Notification{n})
+	}
 	if err := p.d.Push.enqueueWith(ctx, tx, n, complete); err != nil {
 		return err
 	}
 	return p.d.Email.enqueueWith(ctx, tx, n, choices, complete)
+}
+
+// notifiableBatch is an Accounts that reads many recipients at once, as *appaccount.Service does.
+type notifiableBatch interface {
+	NotifiableAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error)
+}
+
+// relationBatch is a Relationships that reads many recipients at once, as *appgraph.Service does.
+type relationBatch interface {
+	NotificationRelations(ctx context.Context, tx uow.Tx, recipientIDs []string, sourceID string) (map[string]appgraph.NotificationRelation, error)
+}
+
+// notifyAll notifies each of recipients of n, a notification that differs between them only by
+// its ID and recipient, as notify notifies each, with a number of queries that does not grow with
+// recipients: it reads the recipients' accounts, their relations with the source, their domain
+// exclusions, and their settings together, the source's reach restriction and domain once, and
+// inserts the notifications and enqueues their messages with one statement each. Without the
+// batch reads of Accounts and Relationships it notifies them one by one.
+func (p *projector) notifyAll(ctx context.Context, tx uow.Tx, n notification.Notification, recipients []string) error {
+	accounts, okA := p.d.Accounts.(notifiableBatch)
+	relations, okR := p.d.Relationships.(relationBatch)
+	if !okA || !okR {
+		for _, id := range recipients {
+			one := n
+			one.RecipientAccountID = id
+			if err := p.notify(ctx, tx, one); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	var ids []string
+	for _, id := range recipients {
+		if id != n.SourceAccountID && !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	notifiable, err := accounts.NotifiableAmong(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+	ids = slices.DeleteFunc(ids, func(id string) bool { return !notifiable[id] })
+	var rels map[string]appgraph.NotificationRelation
+	if n.SourceAccountID != "" && len(ids) > 0 {
+		rels, err = relations.NotificationRelations(ctx, tx, ids, n.SourceAccountID)
+		if err != nil {
+			return err
+		}
+		ids = slices.DeleteFunc(ids, func(id string) bool { return rels[id].Hidden })
+		if n.Type != notification.TypeAccountMoved && p.d.Reach != nil && len(ids) > 0 {
+			restricted, err := p.d.Reach.UnsolicitedReachRestrictedTx(ctx, tx, n.SourceAccountID)
+			if err != nil {
+				return err
+			}
+			if restricted {
+				ids = slices.DeleteFunc(ids, func(id string) bool { return !rels[id].Follows })
+			}
+		}
+		if len(ids) == 0 {
+			return nil
+		}
+		if n.SourceDomain, err = p.d.Accounts.DomainOf(ctx, tx, n.SourceAccountID); err != nil {
+			return err
+		}
+		if n.SourceDomain != "" {
+			excluded, err := p.d.Repository.DomainExcludedAmong(ctx, tx, ids, n.SourceDomain)
+			if err != nil {
+				return err
+			}
+			ids = slices.DeleteFunc(ids, func(id string) bool { return excluded[id] })
+		}
+	}
+	if threadOf(n) != "" && len(ids) > 0 {
+		muters, err := p.threadMuters(ctx, tx, threadOf(n), ids)
+		if err != nil {
+			return err
+		}
+		ids = slices.DeleteFunc(ids, func(id string) bool { return muters[id] })
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	saved, err := p.d.Repository.NotificationSettingsOfTx(ctx, tx, ids)
+	if err != nil {
+		return fmt.Errorf("notification: the settings of %d recipients: %w", len(ids), err)
+	}
+	choices := make(map[string]notification.Choices, len(ids))
+	var enabled []notification.Notification
+	for _, id := range ids {
+		c := notification.NewChoices(saved[id])
+		if !c.TypeEnabled(n.Type, notification.ChannelInApp) {
+			continue // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
+		}
+		one := n
+		one.RecipientAccountID = id
+		choices[id] = c
+		enabled = append(enabled, one)
+	}
+	actions, err := p.classifyEach(ctx, tx, enabled, func(i int) *bool {
+		if rels == nil {
+			return nil
+		}
+		f := rels[enabled[i].RecipientAccountID].Follows
+		return &f
+	})
+	if err != nil {
+		return err
+	}
+	filtered := map[string]bool{}
+	var kept, newIDs []string
+	for i, one := range enabled {
+		if actions[i] == notification.ActionDrop {
+			continue // the recipient's policy drops it (ADR-0158 §2)
+		}
+		one.ID = p.d.IDs.NewID()
+		if err := one.Validate(); err != nil {
+			return err
+		}
+		filtered[one.RecipientAccountID] = actions[i] == notification.ActionFilter
+		kept, newIDs = append(kept, one.RecipientAccountID), append(newIDs, one.ID)
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	inserted, err := p.d.Repository.InsertNotificationsFor(ctx, tx, n, newIDs, kept)
+	if err != nil {
+		return err
+	}
+	var created, held []notification.Notification
+	for i, id := range kept {
+		if inserted[id] {
+			one := n
+			one.ID, one.RecipientAccountID = newIDs[i], id
+			if filtered[id] {
+				held = append(held, one)
+			} else {
+				created = append(created, one)
+			}
+		}
+	}
+	if err := p.filter(ctx, tx, held); err != nil {
+		return err
+	}
+	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
+		return err
+	}
+	return p.d.Email.enqueueAll(ctx, tx, created, choices, nil)
+}
+
+// notifyEach notifies each of ns, notifications without a source that differ only by their ID,
+// recipient, severance, and dedupe key, as notify notifies each, with a number of queries that
+// does not grow with them: it reads the recipients' accounts and settings together and inserts
+// the notifications and enqueues their messages with one statement each. Without the batch read
+// of Accounts it notifies them one by one.
+func (p *projector) notifyEach(ctx context.Context, tx uow.Tx, ns []notification.Notification) error {
+	accounts, ok := p.d.Accounts.(notifiableBatch)
+	if !ok {
+		for _, n := range ns {
+			if err := p.notify(ctx, tx, n); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if len(ns) == 0 {
+		return nil
+	}
+	ids := make([]string, len(ns))
+	for i, n := range ns {
+		ids[i] = n.RecipientAccountID
+	}
+	notifiable, err := accounts.NotifiableAmong(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+	ns = slices.DeleteFunc(slices.Clone(ns), func(n notification.Notification) bool { return !notifiable[n.RecipientAccountID] })
+	if len(ns) == 0 {
+		return nil
+	}
+	ids = ids[:0]
+	for _, n := range ns {
+		ids = append(ids, n.RecipientAccountID)
+	}
+	saved, err := p.d.Repository.NotificationSettingsOfTx(ctx, tx, ids)
+	if err != nil {
+		return fmt.Errorf("notification: the settings of %d recipients: %w", len(ids), err)
+	}
+	choices := make(map[string]notification.Choices, len(ns))
+	var kept []notification.Notification
+	for _, n := range ns {
+		c := notification.NewChoices(saved[n.RecipientAccountID])
+		if !c.TypeEnabled(n.Type, notification.ChannelInApp) {
+			continue // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
+		}
+		n.ID = p.d.IDs.NewID()
+		if err := n.Validate(); err != nil {
+			return err
+		}
+		choices[n.RecipientAccountID] = c
+		kept = append(kept, n)
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	inserted, err := p.d.Repository.InsertNotificationsForEach(ctx, tx, kept)
+	if err != nil {
+		return err
+	}
+	created := slices.DeleteFunc(kept, func(n notification.Notification) bool { return !inserted[n.ID] })
+	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
+		return err
+	}
+	return p.d.Email.enqueueAll(ctx, tx, created, choices, nil)
+}
+
+// relationFromBatch is a Relationships that reads the relations of one recipient with many
+// sources at once, as *appgraph.Service does.
+type relationFromBatch interface {
+	NotificationRelationsFrom(ctx context.Context, tx uow.Tx, recipientID string, sourceIDs []string) (map[string]appgraph.NotificationRelation, error)
+}
+
+// reachBatch is a ReachPolicy that reads the reach restriction of many sources at once, as
+// *appmoderation.AccountPolicy does.
+type reachBatch interface {
+	UnsolicitedReachRestrictedAmongTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error)
+}
+
+// domainsBatch is an Accounts that reads the domains of many accounts at once, as
+// *appaccount.Service does.
+type domainsBatch interface {
+	AccountDomainsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]string, error)
+}
+
+// notifyFromMany notifies the one recipient of ns, notifications of one type that differ by
+// their ID, source, dedupe key, and time, as notify notifies each, with a number of queries that
+// does not grow with them: it reads the recipient once, its relations with the sources, their
+// reach restrictions, and their domains together, the recipient's exclusion of each distinct
+// domain, and inserts the notifications and enqueues their messages with one statement each.
+// Without the batch reads it notifies them one by one.
+func (p *projector) notifyFromMany(ctx context.Context, tx uow.Tx, ns []notification.Notification) error {
+	accounts, okA := p.d.Accounts.(notifiableBatch)
+	relations, okR := p.d.Relationships.(relationFromBatch)
+	domains, okD := p.d.Accounts.(domainsBatch)
+	reach, okReach := p.d.Reach.(reachBatch)
+	if !okA || !okR || !okD || (p.d.Reach != nil && !okReach) {
+		for _, n := range ns {
+			if err := p.notify(ctx, tx, n); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	ns = slices.DeleteFunc(slices.Clone(ns), func(n notification.Notification) bool { return n.RecipientAccountID == n.SourceAccountID })
+	if len(ns) == 0 {
+		return nil
+	}
+	recipient := ns[0].RecipientAccountID
+	notifiable, err := accounts.NotifiableAmong(ctx, tx, []string{recipient})
+	if err != nil || !notifiable[recipient] {
+		return err
+	}
+	var sources []string
+	for _, n := range ns {
+		if n.SourceAccountID != "" && !slices.Contains(sources, n.SourceAccountID) {
+			sources = append(sources, n.SourceAccountID)
+		}
+	}
+	var rels map[string]appgraph.NotificationRelation
+	if len(sources) > 0 {
+		rels, err = relations.NotificationRelationsFrom(ctx, tx, recipient, sources)
+		if err != nil {
+			return err
+		}
+		ns = slices.DeleteFunc(ns, func(n notification.Notification) bool {
+			return n.SourceAccountID != "" && rels[n.SourceAccountID].Hidden
+		})
+		if p.d.Reach != nil && ns[0].Type != notification.TypeAccountMoved && len(ns) > 0 {
+			restricted, err := reach.UnsolicitedReachRestrictedAmongTx(ctx, tx, sources)
+			if err != nil {
+				return err
+			}
+			ns = slices.DeleteFunc(ns, func(n notification.Notification) bool {
+				return n.SourceAccountID != "" && restricted[n.SourceAccountID] && !rels[n.SourceAccountID].Follows
+			})
+		}
+		if len(ns) == 0 {
+			return nil
+		}
+		ds, err := domains.AccountDomainsTx(ctx, tx, sources)
+		if err != nil {
+			return err
+		}
+		excluded := map[string]bool{}
+		for i := range ns {
+			d := ds[ns[i].SourceAccountID]
+			ns[i].SourceDomain = d
+			if _, seen := excluded[d]; d != "" && !seen {
+				if excluded[d], err = p.d.Repository.DomainExcluded(ctx, tx, recipient, d); err != nil {
+					return err
+				}
+			}
+		}
+		ns = slices.DeleteFunc(ns, func(n notification.Notification) bool { return excluded[n.SourceDomain] })
+	}
+	if len(ns) == 0 {
+		return nil
+	}
+	choices, err := choicesTx(ctx, p.d.Repository, tx, recipient)
+	if err != nil {
+		return err
+	}
+	if !choices.TypeEnabled(ns[0].Type, notification.ChannelInApp) {
+		return nil // turned off in the app: not created, so delivered nowhere (ADR-0086 §10)
+	}
+	actions, err := p.classifyEach(ctx, tx, ns, func(i int) *bool {
+		if rels == nil || ns[i].SourceAccountID == "" {
+			return nil
+		}
+		f := rels[ns[i].SourceAccountID].Follows
+		return &f
+	})
+	if err != nil {
+		return err
+	}
+	filtered := map[string]bool{}
+	kept := ns[:0:0]
+	for i := range ns {
+		if actions[i] == notification.ActionDrop {
+			continue // the recipient's policy drops it (ADR-0158 §2)
+		}
+		ns[i].ID = p.d.IDs.NewID()
+		if err := ns[i].Validate(); err != nil {
+			return err
+		}
+		filtered[ns[i].ID] = actions[i] == notification.ActionFilter
+		kept = append(kept, ns[i])
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	inserted, err := p.d.Repository.InsertNotificationsForEach(ctx, tx, kept)
+	if err != nil {
+		return err
+	}
+	var created, held []notification.Notification
+	for _, n := range kept {
+		switch {
+		case !inserted[n.ID]:
+		case filtered[n.ID]:
+			held = append(held, n)
+		default:
+			created = append(created, n)
+		}
+	}
+	if err := p.filter(ctx, tx, held); err != nil {
+		return err
+	}
+	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
+		return err
+	}
+	return p.d.Email.enqueueAll(ctx, tx, created, map[string]notification.Choices{recipient: choices}, nil)
 }
 
 // reaches reports whether sourceID may notify recipientID: always, unless the source has

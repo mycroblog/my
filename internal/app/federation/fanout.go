@@ -45,6 +45,9 @@ type FanOutDeps struct {
 	// Quotes reads the quotes and quote policies that Notes present (ADR-0069); nil presents
 	// none.
 	Quotes NoteQuotes
+	// Conversations reads the conversations whose IRIs Notes carry (ADR-0154 §5); nil leaves
+	// context and conversation out.
+	Conversations NoteConversations
 	// Images reads the avatars and headers of the actors that Updates carry; nil sends none.
 	Images ProfileImages
 	// EmojiTags reads the custom emoji of the profiles of the actors that Updates carry; nil
@@ -133,7 +136,7 @@ func NewFanOut(d FanOutDeps) *FanOut {
 	if d.AccountDomain == "" {
 		d.AccountDomain = d.Host
 	}
-	return &FanOut{d: d, notes: notes{parts: d.Parts, graph: d.Graph, quotes: d.Quotes, host: d.Host, accountDomain: d.AccountDomain}}
+	return &FanOut{d: d, notes: notes{parts: d.Parts, graph: d.Graph, quotes: d.Quotes, conversations: d.Conversations, host: d.Host, accountDomain: d.AccountDomain}}
 }
 
 // RegisterJobs registers the JobFanOut handler.
@@ -220,13 +223,13 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 	var nextJob *queue.NewJob
 	switch {
 	case next != "":
-		j, err := fanOutPayload{OutboundActivityID: act.ID, RevisionID: p.RevisionID, FollowURI: p.FollowURI, SharedInboxes: p.SharedInboxes, Phase: string(phases[idx]), After: next}.job(act)
+		j, err := fanOutPayload{OutboundActivityID: act.ID, RevisionID: p.RevisionID, FollowURI: p.FollowURI, SharedInboxes: p.SharedInboxes, Followers: p.Followers, Phase: string(phases[idx]), After: next}.job(act)
 		if err != nil {
 			return err
 		}
 		nextJob = &j
 	case idx+1 < len(phases):
-		j, err := fanOutPayload{OutboundActivityID: act.ID, RevisionID: p.RevisionID, FollowURI: p.FollowURI, SharedInboxes: p.SharedInboxes, Phase: string(phases[idx+1])}.job(act)
+		j, err := fanOutPayload{OutboundActivityID: act.ID, RevisionID: p.RevisionID, FollowURI: p.FollowURI, SharedInboxes: p.SharedInboxes, Followers: p.Followers, Phase: string(phases[idx+1])}.job(act)
 		if err != nil {
 			return err
 		}
@@ -246,13 +249,14 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 				return err
 			}
 		}
+		inserted, err := f.d.Repository.InsertDeliveries(ctx, tx, deliveries)
+		if err != nil {
+			return err
+		}
 		var jobs []queue.NewJob
 		for _, d := range deliveries {
-			inserted, err := f.d.Repository.InsertDelivery(ctx, tx, d)
-			if err != nil {
-				return err
-			}
-			if !inserted {
+			// A delivery that a run before this one recorded has its job already.
+			if !inserted[d.ID] {
 				continue
 			}
 			j, err := deliverJob(act, d)
@@ -387,6 +391,9 @@ type subject struct {
 	report appmoderation.Report
 	// inbox is the only recipient of an activity of the relay membership.
 	inbox federation.IRI
+	// followersToo sends an activity of the approval of an interaction to the actor's followers
+	// after its inbox (fanOutPayload.Followers).
+	followersToo bool
 }
 
 // retracting reports whether the Update of an actor takes something back rather than publishing
@@ -410,15 +417,16 @@ func (s subject) retracting() bool { return s.suspended || s.movedTo != "" }
 //   - Like and Undo Like: the author of the favourited status.
 //   - Create of a vote: the author of the poll's status.
 //   - Flag: the reported account.
-//   - Follow, Undo, Accept, and Reject of the relay membership, and the activities of the
-//     approval of a quote: the inbox of the payload; the Delete of a revoked QuoteAuthorization
-//     then goes to the quoted author's followers too (ADR-0069 §3).
+//   - Follow, Undo, Accept, and Reject of the relay membership, the activities of the approval of
+//     an interaction, and the ReplyRequest of a local reply: the inbox of the payload; the Delete
+//     of a revoked QuoteAuthorization, and the Accept of a reply without a request, then go to
+//     the actor's followers too (ADR-0069 §3, ADR-0155 §6).
 func (s subject) phases() []phase {
 	switch s.act.ObjectKind {
 	case federation.OutboundRelay, federation.OutboundRefusal:
 		return []phase{phaseRelay}
-	case federation.OutboundQuote:
-		if s.act.Type == federation.ActivityDelete {
+	case federation.OutboundReply, federation.OutboundAnnounce, federation.OutboundQuote:
+		if s.followersToo || s.act.ObjectKind == federation.OutboundQuote && s.act.Type == federation.ActivityDelete {
 			return []phase{phaseRelay, phaseFollowers}
 		}
 		return []phase{phaseRelay}
@@ -438,6 +446,9 @@ func (s subject) phases() []phase {
 	case federation.OutboundFavourite, federation.OutboundPollVote:
 		return []phase{phaseStatusAuthor}
 	case federation.OutboundStatus:
+		if s.act.Type == federation.ActivityReplyRequest {
+			return []phase{phaseRelay}
+		}
 		if s.act.Type == federation.ActivityCreate {
 			if s.visibility == appcontent.VisibilityPublic {
 				return []phase{phaseMentions, phaseFollowers, phaseRelays}
@@ -470,7 +481,7 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 	if act.ObjectKind == federation.OutboundRelay || act.ObjectKind == federation.OutboundRefusal {
 		return relaySubject(s, p)
 	}
-	if act.ObjectKind == federation.OutboundQuote {
+	if act.ObjectKind.Approval() {
 		return f.quoteSubject(ctx, s, p)
 	}
 	if act.ObjectKind == federation.OutboundFollow {
@@ -490,6 +501,17 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 	}
 	var err error
 	switch {
+	case act.ObjectKind == federation.OutboundStatus && act.Type == federation.ActivityReplyRequest:
+		// The ReplyRequest of a held local reply goes to the inbox of the author of its parent
+		// alone (ADR-0155 §7), with the reply's current revision.
+		if p.Inbox == "" {
+			return subject{}, fmt.Errorf("%w: ReplyRequest of %s without an inbox", federation.ErrInvalidOutbound, act.ObjectID)
+		}
+		s.inbox = federation.IRI(p.Inbox)
+		s.status, s.revision, err = f.d.Statuses.LiveRevision(ctx, act.ObjectID, "")
+		if errors.Is(err, appcontent.ErrNotFound) {
+			return subject{}, fmt.Errorf("%w: status %s", errGone, act.ObjectID)
+		}
 	case act.ObjectKind == federation.OutboundStatus && (act.Type == federation.ActivityCreate || act.Type == federation.ActivityUpdate):
 		s.status, s.revision, err = f.d.Statuses.LiveRevision(ctx, act.ObjectID, revisionID)
 		if errors.Is(err, appcontent.ErrNotFound) {
@@ -720,26 +742,37 @@ func (f *FanOut) resolve(ctx context.Context, act federation.OutboundActivity, s
 // without being among the accounts that a delivery pushes it to.
 func (f *FanOut) resolveIn(ctx context.Context, act federation.OutboundActivity, s subject, accountIDs []string, followers bool, view appcontent.ViewContext) ([]target, error) {
 	judged := act.Type != federation.ActivityDelete && act.ObjectKind != federation.OutboundAccount && act.ObjectKind != federation.OutboundMove
-	var out []target
+	var ids []string
 	for _, id := range accountIDs {
-		if id == s.actorID {
-			continue
+		if id != s.actorID {
+			ids = append(ids, id)
 		}
-		inbox, err := f.d.Accounts.RemoteInbox(ctx, id)
-		if errors.Is(err, appaccount.ErrNotFound) {
-			continue // a local account, or a remote one never fetched
+	}
+	// A local account, or a remote one never fetched, has no inbox.
+	inboxes, err := f.remoteInboxes(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var rels map[string]appcontent.Relation
+	if judged && !followers {
+		var remote []string
+		for _, id := range ids {
+			if _, ok := inboxes[id]; ok && !slices.Contains(remote, id) {
+				remote = append(remote, id)
+			}
 		}
-		if err != nil {
+		if rels, err = f.relationsWith(ctx, s.actorID, remote); err != nil {
 			return nil, err
 		}
-		if judged {
-			ok, err := f.admits(ctx, s, id, followers, view)
-			if err != nil {
-				return nil, err
-			}
-			if !ok {
-				continue
-			}
+	}
+	var out []target
+	for _, id := range ids {
+		inbox, ok := inboxes[id]
+		if !ok {
+			continue
+		}
+		if judged && !f.admits(s, id, followers, rels[id], view) {
+			continue
 		}
 		t, ok := targetOf(federation.InboxFor(federation.IRI(inbox.InboxURL), federation.IRI(inbox.SharedInboxURL)))
 		if ok && !slices.Contains(out, t) {
@@ -750,28 +783,95 @@ func (f *FanOut) resolveIn(ctx context.Context, act federation.OutboundActivity,
 }
 
 // admits reports whether content.CanView lets the remote account recipient see the object in
-// the context view (ContextDelivery but for the voters of a poll). An active follower is not blocked by either side: a block ends the follows
-// between the two accounts in its transaction (data-model §2.1). Any other recipient's
-// relationship with the actor is read from the graph module.
-func (f *FanOut) admits(ctx context.Context, s subject, recipient string, follower bool, view appcontent.ViewContext) (bool, error) {
-	rel := appcontent.Relation{Mentioned: slices.Contains(s.mentioned, recipient)}
+// the context view (ContextDelivery but for the voters of a poll). An active follower is not
+// blocked by either side: a block ends the follows between the two accounts in its transaction
+// (data-model §2.1). Any other recipient's relationship with the actor is rel, which
+// relationsWith read from the graph module.
+func (f *FanOut) admits(s subject, recipient string, follower bool, rel appcontent.Relation, view appcontent.ViewContext) bool {
 	if follower {
-		rel.Follow = appcontent.FollowActive
-	} else {
-		r, err := f.d.Graph.Relationship(ctx, recipient, s.actorID)
-		if err != nil {
-			return false, err
-		}
-		switch {
-		case r.ActivelyFollowing():
-			rel.Follow = appcontent.FollowActive
-		case r.RequestedFollow():
-			rel.Follow = appcontent.FollowPending
-		}
-		rel.Blocking, rel.BlockedBy = r.Blocking, r.BlockedBy
+		rel = appcontent.Relation{Follow: appcontent.FollowActive}
 	}
+	rel.Mentioned = slices.Contains(s.mentioned, recipient)
 	viewer := appcontent.Viewer{Kind: appcontent.ViewerRemote, AccountID: recipient}
-	return appcontent.CanView(view, viewer, s.facts, s.restrictions, rel), nil
+	return appcontent.CanView(view, viewer, s.facts, s.restrictions, rel)
+}
+
+// relationBatch is a Graph that reads the relationships of an account with many at once, as
+// *appgraph.Service does.
+type relationBatch interface {
+	Relationships(ctx context.Context, accountID string, targetIDs []string) (map[string]appgraph.Relationship, error)
+}
+
+// relationsWith returns the relations of each of recipients with the actor, by recipient, as
+// content.CanView takes them: whether the recipient follows the actor or asked to, and the blocks
+// between them. It reads them together when Graph can, as the actor's relationships with the
+// recipients seen from the actor's side, and one by one otherwise.
+func (f *FanOut) relationsWith(ctx context.Context, actorID string, recipients []string) (map[string]appcontent.Relation, error) {
+	out := make(map[string]appcontent.Relation, len(recipients))
+	if len(recipients) == 0 {
+		return out, nil
+	}
+	if b, ok := f.d.Graph.(relationBatch); ok {
+		rs, err := b.Relationships(ctx, actorID, recipients)
+		if err != nil {
+			return nil, err
+		}
+		for _, id := range recipients {
+			r := rs[id]
+			// The mirror of the recipient's relationship with the actor.
+			out[id] = relationOf(appgraph.Relationship{Following: r.FollowedBy, Blocking: r.BlockedBy, BlockedBy: r.Blocking})
+		}
+		return out, nil
+	}
+	for _, id := range recipients {
+		r, err := f.d.Graph.Relationship(ctx, id, actorID)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = relationOf(r)
+	}
+	return out, nil
+}
+
+// relationOf is the relation of an account with a target, from its relationship with the target.
+func relationOf(r appgraph.Relationship) appcontent.Relation {
+	var rel appcontent.Relation
+	switch {
+	case r.ActivelyFollowing():
+		rel.Follow = appcontent.FollowActive
+	case r.RequestedFollow():
+		rel.Follow = appcontent.FollowPending
+	}
+	rel.Blocking, rel.BlockedBy = r.Blocking, r.BlockedBy
+	return rel
+}
+
+// inboxBatch is an Accounts that reads many inboxes at once, as *appaccount.Service does.
+type inboxBatch interface {
+	RemoteInboxes(ctx context.Context, accountIDs []string) (map[string]appaccount.RemoteInbox, error)
+}
+
+// remoteInboxes returns the inboxes of the remote accounts of ids that have one: together when
+// Accounts can, one by one otherwise.
+func (f *FanOut) remoteInboxes(ctx context.Context, ids []string) (map[string]appaccount.RemoteInbox, error) {
+	if len(ids) == 0 {
+		return map[string]appaccount.RemoteInbox{}, nil
+	}
+	if b, ok := f.d.Accounts.(inboxBatch); ok {
+		return b.RemoteInboxes(ctx, ids)
+	}
+	out := make(map[string]appaccount.RemoteInbox, len(ids))
+	for _, id := range ids {
+		inbox, err := f.d.Accounts.RemoteInbox(ctx, id)
+		switch {
+		case errors.Is(err, appaccount.ErrNotFound):
+		case err != nil:
+			return nil, err
+		default:
+			out[id] = inbox
+		}
+	}
+	return out, nil
 }
 
 // targetOf returns the target of an inbox, false when the inbox is not an https IRI with a host.
@@ -783,27 +883,54 @@ func targetOf(inbox federation.IRI) (target, bool) {
 	return target{inbox: inbox, domain: host}, true
 }
 
-// deliverable drops the targets on servers that do not get activities of type t.
+// deliverable drops the targets on servers that do not get activities of type t, reading the
+// suspensions and the health of the targets' servers together.
 func (f *FanOut) deliverable(ctx context.Context, t federation.ActivityType, targets []target) ([]target, error) {
-	statuses := map[string]bool{}
+	var domains []string
+	for _, tg := range targets {
+		if !slices.Contains(domains, tg.domain) {
+			domains = append(domains, tg.domain)
+		}
+	}
+	if len(domains) == 0 {
+		return nil, nil
+	}
+	suspended, err := f.suspendedAmong(ctx, domains)
+	if err != nil {
+		return nil, err
+	}
+	states, err := f.d.Repository.InstanceStatesOf(ctx, domains)
+	if err != nil {
+		return nil, err
+	}
 	var out []target
 	for _, tg := range targets {
-		ok, seen := statuses[tg.domain]
-		if !seen {
-			var st federation.DomainStatus
-			var err error
-			if st.Suspended, err = f.d.Domains.FederationSuspended(ctx, tg.domain); err != nil {
-				return nil, err
-			}
-			if st.State, err = f.d.Repository.InstanceState(ctx, tg.domain); err != nil {
-				return nil, err
-			}
-			ok = federation.Deliverable(t, st)
-			statuses[tg.domain] = ok
-		}
-		if ok {
+		if federation.Deliverable(t, federation.DomainStatus{Suspended: suspended[tg.domain], State: states[tg.domain]}) {
 			out = append(out, tg)
 		}
+	}
+	return out, nil
+}
+
+// suspensionBatch is a DomainPolicy that reads many domains at once, as
+// *appmoderation.FederationPolicy does.
+type suspensionBatch interface {
+	FederationSuspendedAmong(ctx context.Context, domains []string) (map[string]bool, error)
+}
+
+// suspendedAmong reports, by domain, whether each of domains is suspended: together when Domains
+// can, one by one otherwise.
+func (f *FanOut) suspendedAmong(ctx context.Context, domains []string) (map[string]bool, error) {
+	if b, ok := f.d.Domains.(suspensionBatch); ok {
+		return b.FederationSuspendedAmong(ctx, domains)
+	}
+	out := make(map[string]bool, len(domains))
+	for _, d := range domains {
+		suspended, err := f.d.Domains.FederationSuspended(ctx, d)
+		if err != nil {
+			return nil, err
+		}
+		out[d] = suspended
 	}
 	return out, nil
 }

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: upholdHookAppeal
+  x-permission: manage_reports
   summary: Uphold an appeal of a refused post
   description: |
     Rejects the appeal; the decision stays as it is and the author's posts are reviewed as

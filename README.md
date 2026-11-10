@@ -51,7 +51,7 @@
     <td width="50%" valign="top">
       <strong>Supporters and open books</strong><br>
       Paid plans through Stripe or PAY.JP that grant roles, badges and the right to add custom emoji. Record what the
-      server costs, import AWS and Google Cloud bills automatically, and publish costs and income to your community.
+      server costs, import AWS, Google Cloud, and Cloudflare charges automatically, and publish costs and income to your community.
     </td>
     <td width="50%" valign="top">
       <strong>Voice rooms</strong><br>
@@ -99,6 +99,15 @@ the newest, `/v0.1/` and the like) and `/next/` for the development version.
 
 > **Status: in development, before the first release (v0).** Data may not survive an upgrade before `v0.1.0`: the
 > database may have to be recreated. From `v0.1.0` on, every upgrade between releases keeps your data.
+
+## Sponsors
+
+mycroblog is supported by its sponsors. Thank you! To join them, see
+[GitHub Sponsors](https://github.com/sponsors/mycroblog).
+
+<p align="center">
+  <a href="https://github.com/sponsors/mycroblog"><img src="https://sponsors.mycroblog.dev/sponsors.svg" alt="Sponsors of mycroblog"></a>
+</p>
 
 ## Contributing
 

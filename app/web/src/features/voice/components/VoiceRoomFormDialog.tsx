@@ -37,6 +37,7 @@ import { RoomIcon } from "./RoomName";
 export const visibilityLabels: Readonly<Record<VoiceRoomVisibility, ClientMessageKey>> = {
   local: "client:voice.visibility.local",
   followers: "client:voice.visibility.followers",
+  following: "client:voice.visibility.following",
   mutuals: "client:voice.visibility.mutuals",
   invited: "client:voice.visibility.invited",
 };
@@ -45,6 +46,7 @@ export const visibilityLabels: Readonly<Record<VoiceRoomVisibility, ClientMessag
 export const speakerLabels: Readonly<Record<VoiceRoomSpeakers, ClientMessageKey>> = {
   everyone: "client:voice.speakers.everyone",
   followers: "client:voice.speakers.followers",
+  following: "client:voice.speakers.following",
   mutuals: "client:voice.speakers.mutuals",
   manual: "client:voice.speakers.manual",
 };

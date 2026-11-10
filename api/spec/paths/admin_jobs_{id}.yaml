@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getAdminJob
+  x-permission: manage_jobs
   summary: Get a job of the job queue
   description: |
     One job, pending or dead, with its state at the time of the request. A completed job, an

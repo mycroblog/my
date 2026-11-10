@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: A hashtag that the user follows.
+type: object
+required: [name, url, followed_at]
+properties:
+  name:
+    description: The hashtag without `#`, as first written on the server.
+    type: string
+  url:
+    description: The hashtag's page.
+    type: string
+    format: uri
+  followed_at:
+    description: When the user followed the hashtag.
+    type: string
+    format: date-time

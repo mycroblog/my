@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: retireInstanceRule
+  x-permission: manage_rules
   summary: Retire an instance rule
   description: |
     Removes the rule from the rules in effect, at once and for good; reports that cite it

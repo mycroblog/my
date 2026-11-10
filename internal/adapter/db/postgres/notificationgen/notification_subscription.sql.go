@@ -71,6 +71,38 @@ func (q *Queries) DeletePostSubscriptionRequest(ctx context.Context, arg DeleteP
 	return result.RowsAffected(), nil
 }
 
+const deletePostSubscriptionRequests = `-- name: DeletePostSubscriptionRequests :exec
+DELETE FROM post_subscription_requests WHERE (account_id, target_account_id) IN (
+  SELECT unnest($1::uuid[]), unnest($2::uuid[]))
+`
+
+type DeletePostSubscriptionRequestsParams struct {
+	AccountIds []string
+	TargetIds  []string
+}
+
+// DeletePostSubscriptionRequests and DeletePostSubscriptions are DeletePostSubscriptionRequest
+// and DeletePostSubscription of many pairs (the unnests of a select list advance together).
+func (q *Queries) DeletePostSubscriptionRequests(ctx context.Context, arg DeletePostSubscriptionRequestsParams) error {
+	_, err := q.db.Exec(ctx, deletePostSubscriptionRequests, arg.AccountIds, arg.TargetIds)
+	return err
+}
+
+const deletePostSubscriptions = `-- name: DeletePostSubscriptions :exec
+DELETE FROM post_subscriptions WHERE (account_id, target_account_id) IN (
+  SELECT unnest($1::uuid[]), unnest($2::uuid[]))
+`
+
+type DeletePostSubscriptionsParams struct {
+	AccountIds []string
+	TargetIds  []string
+}
+
+func (q *Queries) DeletePostSubscriptions(ctx context.Context, arg DeletePostSubscriptionsParams) error {
+	_, err := q.db.Exec(ctx, deletePostSubscriptions, arg.AccountIds, arg.TargetIds)
+	return err
+}
+
 const hasPostSubscribers = `-- name: HasPostSubscribers :one
 SELECT EXISTS (SELECT 1 FROM post_subscriptions WHERE target_account_id = $1)
 `
@@ -181,6 +213,36 @@ func (q *Queries) ListPostSubscriptionsPage(ctx context.Context, arg ListPostSub
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSubscribedTargets = `-- name: ListSubscribedTargets :many
+SELECT target_account_id FROM post_subscriptions WHERE account_id = $1 AND target_account_id = ANY($2::uuid[])
+`
+
+type ListSubscribedTargetsParams struct {
+	AccountID string
+	TargetIds []string
+}
+
+// The targets among target_ids that the account subscribes to.
+func (q *Queries) ListSubscribedTargets(ctx context.Context, arg ListSubscribedTargetsParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listSubscribedTargets, arg.AccountID, arg.TargetIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var target_account_id string
+		if err := rows.Scan(&target_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, target_account_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

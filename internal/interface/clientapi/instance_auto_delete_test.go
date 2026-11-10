@@ -26,7 +26,7 @@ func TestInstanceAutoDeleteLimit(t *testing.T) {
 	setSetting(t, e, "auto_delete_max_age_days", "90")
 	setSetting(t, e, "auto_delete_max_kept_pins", "2")
 	setSetting(t, e, "auto_delete_max_allow_media", "true")
-	want := &clientapi.AutoDeleteLimit{MaxAgeDays: 90, AllowPinned: true, KeptPins: 2, AllowMedia: true}
+	want := &clientapi.AutoDeleteLimit{MaxAgeDays: 90, AllowPinned: true, KeptPins: 2, AllowMedia: true, AllowArticles: new(true)}
 	if got := read(); !reflect.DeepEqual(got.AutoDeleteLimit, want) {
 		t.Errorf("auto_delete_limit = %+v, want %+v", got.AutoDeleteLimit, want)
 	}

@@ -80,11 +80,10 @@ func TestRunningGuideLayoutNamesRealJobTypes(t *testing.T) {
 }
 
 // TestJobTypesAreTheRegisteredOnes keeps the static list equal to the handlers, on a server with
-// the settings that add types and on one without them. Only stream.sweep and metrics.snapshot need
-// an outside service.
+// the settings that add types and on one without them. Only stream.sweep needs an outside service.
 func TestJobTypesAreTheRegisteredOnes(t *testing.T) {
 	full := everyJobType(t)
-	want := append(slices.Clone(full), "stream.sweep", "metrics.snapshot")
+	want := append(slices.Clone(full), "stream.sweep")
 	slices.Sort(want)
 	got := platform.JobTypes()
 	for _, typ := range got {

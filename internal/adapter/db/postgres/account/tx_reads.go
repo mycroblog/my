@@ -128,3 +128,21 @@ func (r *Repository) CountLocalAccountsTx(ctx context.Context, tx uow.Tx) (int, 
 	}
 	return (&Repository{db: db}).CountLocalAccounts(ctx)
 }
+
+// FindAccountsTx implements the reads in a transaction.
+func (r *Repository) FindAccountsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]account.Account, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&Repository{db: db}).FindAccounts(ctx, ids)
+}
+
+// FindLifecycleStatesTx implements the reads in a transaction.
+func (r *Repository) FindLifecycleStatesTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]account.LifecycleState, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&Repository{db: db}).FindLifecycleStates(ctx, ids)
+}

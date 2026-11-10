@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: importDomainBlocks
+  x-permission: manage_domains
   summary: Import the chosen rows of a Mastodon domain block CSV
   description: |
     Issues the domain actions of each block, as the preview names them: the kinds

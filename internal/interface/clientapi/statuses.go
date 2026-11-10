@@ -16,6 +16,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/timeline"
 	"github.com/mycroblog/my/internal/i18n"
 )
 
@@ -26,7 +27,7 @@ type Statuses interface {
 	Replay(ctx context.Context, authorAccountID, key string) (appcontent.Post, error)
 	Edit(ctx context.Context, in appcontent.EditInput) (appcontent.Post, error)
 	Delete(ctx context.Context, accountID, statusID string) (content.Deletion, error)
-	SetQuotePolicy(ctx context.Context, accountID, statusID string, policy content.QuotePolicy) (content.StatusQuotePolicy, error)
+	SetInteractionPolicy(ctx context.Context, accountID, statusID string, change appcontent.InteractionPolicyChange) (content.InteractionSettings, error)
 }
 
 // OutboxFetcher starts fetching the recent posts of a remote account whose profile a viewer
@@ -49,10 +50,13 @@ type StatusReader interface {
 	History(ctx context.Context, viewer appcontent.Viewer, statusID string) ([]appcontent.RevisionView, error)
 	Visible(ctx context.Context, viewer appcontent.Viewer, statusID string) (content.Status, error)
 	Live(ctx context.Context, statusID string) error
-	Source(ctx context.Context, viewer appcontent.Viewer, statusID string) (content.Revision, error)
+	Source(ctx context.Context, viewer appcontent.Viewer, statusID string) (appcontent.StatusView, error)
 	Bookmarks(ctx context.Context, viewer appcontent.Viewer, before string, limit int) (appcontent.BookmarkPage, error)
 	Reactions(ctx context.Context, viewer appcontent.Viewer, statusID, emoji, before string, limit int) (appcontent.ReactedPage, error)
 	ReactionEmoji(ctx context.Context, e appcontent.ReactionEmoji) (appcontent.EmojiView, error)
+	// ReactionEmojis returns many reactions' emoji, by key, as ReactionEmoji returns one, reading
+	// the custom emoji together; one whose custom emoji is gone is left out.
+	ReactionEmojis(ctx context.Context, emojis []appcontent.ReactionEmoji) (map[string]appcontent.EmojiView, error)
 	Quotes(ctx context.Context, viewer appcontent.Viewer, statusID, before string, limit int) (appcontent.QuotesPage, error)
 }
 
@@ -151,14 +155,16 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 		return unprocessable(l.ServerErrorsStatusLocalUnavailable())
 	case errors.Is(err, appcontent.ErrReplyTargetNotFound):
 		return unprocessable(l.ServerErrorsStatusReplyNotFound())
+	case errors.Is(err, appcontent.ErrReplyNotAllowed):
+		return unprocessable(l.ServerErrorsStatusReplyNotAllowed())
 	case errors.Is(err, appcontent.ErrQuoteTargetNotFound):
 		return unprocessable(l.ServerErrorsStatusQuoteNotFound())
 	case errors.Is(err, appcontent.ErrQuoteNotAllowed):
 		return unprocessable(l.ServerErrorsStatusQuoteNotAllowed())
 	case errors.Is(err, appcontent.ErrQuoteRemoteAudience):
 		return unprocessable(l.ServerErrorsStatusQuoteRemoteAudience())
-	case errors.Is(err, appcontent.ErrInvalidQuotePolicy):
-		return unprocessable(l.ServerErrorsInvalidValue("quote_policy"))
+	case errors.Is(err, appcontent.ErrInvalidInteractionPolicy):
+		return unprocessable(l.ServerErrorsInvalidValue("interaction_policy"))
 	case errors.Is(err, appcontent.ErrTooManyMedia):
 		return unprocessable(l.ServerErrorsStatusTooManyMedia(appcontent.MaxAttachments))
 	case errors.Is(err, appcontent.ErrMediaNotFound):
@@ -171,6 +177,8 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 		return unprocessable(l.ServerErrorsStatusMissingMediaDescription())
 	case errors.Is(err, content.ErrNotBoostable):
 		return unprocessable(l.ServerErrorsStatusNotBoostable())
+	case errors.Is(err, appcontent.ErrBoostNotAllowed):
+		return unprocessable(l.ServerErrorsStatusBoostNotAllowed())
 	case errors.Is(err, content.ErrNotPinnable):
 		return unprocessable(l.ServerErrorsStatusNotPinnable())
 	case errors.Is(err, content.ErrPinLimit):
@@ -194,7 +202,7 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, appcontent.ErrPollNotEditable):
 		return unprocessable(l.ServerErrorsStatusPollNotEditable())
 	}
-	return problem{}, false
+	return s.articleProblem(ctx, err)
 }
 
 // authorProblem returns the problem of an edit or deletion that failed with err. Another
@@ -258,12 +266,16 @@ func (s *Server) presentStatuses(ctx context.Context, views []appcontent.StatusV
 
 // statusParts reads the parts of the authors of views, of the statuses they quote, and of more
 // accounts, and the profile pages of the accounts that they mention, together
-// (Server.accountParts).
+// (Server.accountParts), and the threads that the viewers of views mute (Server.threadMuted).
 func (s *Server) statusParts(ctx context.Context, views []appcontent.StatusView, more ...appaccount.Actor) (accountParts, error) {
 	actors := slices.Clone(more)
 	var mentioned []appaccount.Actor
 	var emojis []string
+	var seen []statusViewRef
 	add := func(v appcontent.StatusView) {
+		if v.Relation != nil {
+			seen = append(seen, statusViewRef{accountID: v.Relation.AccountID, statusID: v.Status.ID})
+		}
 		actors = append(actors, v.Author)
 		if v.Card != nil && v.Card.Author != nil {
 			actors = append(actors, *v.Card.Author)
@@ -277,7 +289,14 @@ func (s *Server) statusParts(ctx context.Context, views []appcontent.StatusView,
 			add(*v.Quote.Status)
 		}
 	}
-	return s.readAccountParts(ctx, actors, mentioned, emojis)
+	parts, err := s.readAccountParts(ctx, actors, mentioned, emojis)
+	if err != nil {
+		return accountParts{}, err
+	}
+	if parts.threadMuted, err = s.threadMuted(ctx, seen); err != nil {
+		return accountParts{}, err
+	}
+	return parts, nil
 }
 
 // newStatus presents a status as the Status schema; parts holds its author's images and the
@@ -295,6 +314,7 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		RepliesCount:     int(v.Counters.RepliesCount), BoostsCount: int(v.Counters.BoostsCount),
 		FavouritesCount: int(v.Counters.FavouritesCount),
 		Reactions:       newStatusReactions(v.Reactions, v.Relation != nil),
+		Filtered:        []FilterResult{},
 	}
 	// A local status's page is derived from its author's current username (ADR-0018) and served
 	// by the web client's origin.
@@ -308,8 +328,16 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		n := r.OmittedAttachments
 		out.OmittedMediaCount = &n
 	}
-	if len(rev.Bodies) > 0 {
+	if len(rev.Bodies) > 0 && rev.Article == nil {
+		// The body of an article is given only where one article is asked for (withArticleBody).
 		out.Content = rev.Bodies[0].ContentHTML
+	}
+	if a := rev.Article; a != nil {
+		out.Article = &StatusArticle{Title: a.Title, Summary: a.Summary}
+		if v.Cover != nil {
+			cover := newMediaAttachments([]appcontent.MediaView{*v.Cover})[0]
+			out.Article.Cover = &cover
+		}
 	}
 	if out.Language == "" {
 		out.Language = appcontent.UndeterminedLanguage
@@ -330,8 +358,18 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 	}
 	if r := v.Relation; r != nil {
 		out.Favourited, out.Boosted, out.Bookmarked = &r.Favourited, &r.Boosted, &r.Bookmarked
+		muted := parts.threadMuted[r.AccountID][st.ID]
+		out.Muted = &muted
 		if r.Author {
 			out.Pinned = &r.Pinned
+		}
+		if r.Approval != "" {
+			a := InteractionApprovalState(r.Approval)
+			out.Approval = &a
+		}
+		if r.BoostApproval != "" && !r.Boosted {
+			a := InteractionApprovalState(r.BoostApproval)
+			out.BoostApproval = &a
 		}
 	}
 	if v.Card != nil {
@@ -341,12 +379,13 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		p := newPoll(*v.Poll, v.Relation != nil)
 		out.Poll = &p
 	}
-	if v.Relation != nil {
-		out.Quotable = &v.Quotable
+	if v.Permissions != nil {
+		p := newInteractionPermissions(*v.Permissions)
+		out.Permissions = &p
 	}
-	if v.QuotePolicy != "" {
-		policy := QuotePolicy(v.QuotePolicy)
-		out.QuotePolicy = &policy
+	if v.InteractionPolicy != nil {
+		policy := newInteractionPolicy(*v.InteractionPolicy)
+		out.InteractionPolicy = &policy
 	}
 	if q := v.Quote; q != nil {
 		out.Quote = &StatusQuote{State: QuoteState(q.State)}
@@ -509,7 +548,7 @@ func (s *Server) CreateStatus(ctx context.Context, req CreateStatusRequestObject
 		},
 		AuthorAccountID: v.AccountID, Visibility: content.Visibility(body.Visibility), InReplyToID: knownID(deref(body.InReplyToId)),
 		ClientID: v.ClientID, IdempotencyKey: deref(req.Params.IdempotencyKey), Poll: pollInput(body.Poll),
-		QuotedStatusID: knownID(deref(body.QuotedStatusId)), QuotePolicy: content.QuotePolicy(deref(body.QuotePolicy)),
+		QuotedStatusID: knownID(deref(body.QuotedStatusId)), InteractionPolicy: interactionPolicyChange(body.InteractionPolicy),
 	})
 	if err != nil {
 		if r, ok, err := s.statusRejected(ctx, err); ok {
@@ -587,6 +626,14 @@ func (s *Server) GetStatus(ctx context.Context, req GetStatusRequestObject) (Get
 	if err != nil {
 		return nil, err
 	}
+	withArticleBody(&body, view)
+	// The status the viewer opened is folded even for a hide filter of threads: a link that
+	// shows nothing reads as a broken one (ADR-0157 §6).
+	f, err := s.statusFilter(ctx, contentViewer(ctx), timeline.FilterContextThread)
+	if err != nil {
+		return nil, err
+	}
+	applyJudgement(&body, f.Judge(view, ""), true)
 	return GetStatus200JSONResponse{
 		Body:    body,
 		Headers: GetStatus200ResponseHeaders{CacheControl: statusCache(ctx)},
@@ -667,12 +714,21 @@ func (s *Server) GetStatusContext(ctx context.Context, req GetStatusContextReque
 	if err != nil {
 		return nil, err
 	}
+	// The statuses around the one opened leave out those that a hide filter of threads matches.
+	f, err := s.statusFilter(ctx, contentViewer(ctx), timeline.FilterContextThread)
+	if err != nil {
+		return nil, err
+	}
 	out := StatusContext{Ancestors: make([]Status, 0, len(thread.Ancestors)), Descendants: make([]Status, 0, len(thread.Descendants))}
 	for _, v := range thread.Ancestors {
-		out.Ancestors = append(out.Ancestors, s.newStatus(v, parts))
+		if st := s.newStatus(v, parts); applyJudgement(&st, f.Judge(v, ""), false) {
+			out.Ancestors = append(out.Ancestors, st)
+		}
 	}
 	for _, v := range thread.Descendants {
-		out.Descendants = append(out.Descendants, s.newStatus(v, parts))
+		if st := s.newStatus(v, parts); applyJudgement(&st, f.Judge(v, ""), false) {
+			out.Descendants = append(out.Descendants, st)
+		}
 	}
 	return GetStatusContext200JSONResponse{
 		Body: out, Headers: GetStatusContext200ResponseHeaders{CacheControl: statusCache(ctx)},
@@ -706,6 +762,9 @@ func (s *Server) GetStatusHistory(ctx context.Context, req GetStatusHistoryReque
 		if len(r.Revision.Bodies) > 0 {
 			e.Content = r.Revision.Bodies[0].ContentHTML
 		}
+		if a := r.Revision.Article; a != nil {
+			e.Article = &StatusEditArticle{Title: a.Title, Summary: a.Summary}
+		}
 		out.Items = append(out.Items, e)
 	}
 	return GetStatusHistory200JSONResponse{
@@ -719,14 +778,15 @@ func (s *Server) GetStatusSource(ctx context.Context, req GetStatusSourceRequest
 	if err != nil {
 		return nil, err
 	}
-	rev, err := s.o.StatusReader.Source(ctx, localContentViewer(v), req.Id)
+	view, err := s.o.StatusReader.Source(ctx, localContentViewer(v), req.Id)
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return GetStatusSourcedefaultApplicationProblemPlusJSONResponse(p), nil
 		}
 		return nil, err
 	}
-	out := StatusSource{Id: req.Id, Text: rev.Source.Text, SpoilerText: rev.SpoilerText, Language: rev.Language}
+	rev := view.Revision
+	out := StatusSource{Id: req.Id, Text: rev.Source.Text, SpoilerText: rev.SpoilerText, Language: rev.Language, Article: newArticleSource(view)}
 	if out.Language == "" {
 		out.Language = appcontent.UndeterminedLanguage
 	}
@@ -831,7 +891,13 @@ func ignoreResult[T any](_ T, err error) error { return err }
 
 // BoostStatus serves POST /api/v1/statuses/{id}/boost.
 func (s *Server) BoostStatus(ctx context.Context, req BoostStatusRequestObject) (BoostStatusResponseObject, error) {
-	res, p, err := s.actUnmoved(ctx, req.Id, func(a string) error { return ignoreResult(s.o.Interactions.Boost(ctx, a, req.Id)) })
+	res, p, err := s.actUnmoved(ctx, req.Id, func(a string) error {
+		err := ignoreResult(s.o.Interactions.Boost(ctx, a, req.Id))
+		if errors.Is(err, appcontent.ErrInteractionAwaitsApproval) {
+			return nil // the status says boost_approval: pending
+		}
+		return err
+	})
 	if p != nil {
 		return BoostStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
@@ -917,24 +983,24 @@ func (s *Server) UnpinStatus(ctx context.Context, req UnpinStatusRequestObject) 
 	return UnpinStatus200JSONResponse{res}, err
 }
 
-// SetStatusQuotePolicy serves PUT /api/v1/statuses/{id}/quote_policy.
-func (s *Server) SetStatusQuotePolicy(ctx context.Context, req SetStatusQuotePolicyRequestObject) (SetStatusQuotePolicyResponseObject, error) {
+// SetStatusInteractionPolicy serves PUT /api/v1/statuses/{id}/interaction_policy.
+func (s *Server) SetStatusInteractionPolicy(ctx context.Context, req SetStatusInteractionPolicyRequestObject) (SetStatusInteractionPolicyResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, err
 	}
 	err = s.refuseUnseenDirect(ctx, v, req.Id)
 	if err == nil {
-		_, err = s.o.Statuses.SetQuotePolicy(ctx, v.AccountID, req.Id, content.QuotePolicy(req.Body.QuotePolicy))
+		_, err = s.o.Statuses.SetInteractionPolicy(ctx, v.AccountID, req.Id, interactionPolicyChange(req.Body))
 	}
 	if err == nil {
 		var out Status
 		if out, err = s.viewStatus(ctx, req.Id); err == nil {
-			return SetStatusQuotePolicy200JSONResponse{StatusAfterActionJSONResponse{Body: out, Headers: StatusAfterActionResponseHeaders{CacheControl: statusCache(ctx)}}}, nil
+			return SetStatusInteractionPolicy200JSONResponse{StatusAfterActionJSONResponse{Body: out, Headers: StatusAfterActionResponseHeaders{CacheControl: statusCache(ctx)}}}, nil
 		}
 	}
 	if p, ok := s.authorProblem(ctx, v, req.Id, err); ok {
-		return SetStatusQuotePolicydefaultApplicationProblemPlusJSONResponse(p), nil
+		return SetStatusInteractionPolicydefaultApplicationProblemPlusJSONResponse(p), nil
 	}
 	return nil, err
 }

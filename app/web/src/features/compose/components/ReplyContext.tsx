@@ -16,17 +16,21 @@ const messages = {
     label: "client:compose.reply.label",
     unavailable: "client:compose.reply.unavailable",
     cancel: "client:compose.reply.cancel",
+    pending: "client:compose.reply.pending",
   },
   quote: {
     label: "client:compose.quote.label",
     unavailable: "client:compose.quote.unavailable",
     cancel: "client:compose.quote.cancel",
+    pending: "client:compose.quote.pending",
   },
 } as const;
 
 /**
  * The post being replied to or quoted, above the form: its author and the start of its text (or only its
- * content warning, which the reply does not open), and a button that drops it from the draft.
+ * content warning, which the reply does not open), and a button that drops it from the draft. When the post's
+ * policy has the reply or the quote wait for its author's approval (`Status.permissions`, ADR-0155 §10), it says so
+ * before it is sent.
  */
 export function ReplyContext({ replyTo, onCancel, isDisabled = false, kind = "reply" }: ReplyContextProps) {
   const t = useT();
@@ -51,6 +55,9 @@ export function ReplyContext({ replyTo, onCancel, isDisabled = false, kind = "re
             <Text as="p" dir="auto" lang={replyTo.post.language} size="sm" wrap="anywhere">
               {replyTo.post.spoiler_text}
             </Text>
+          )}
+          {replyTo.post.permissions?.[kind] === "pending" && (
+            <Hint>{t(m.pending, { name: replyTo.post.account.display_name || `@${replyTo.post.account.acct}` })}</Hint>
           )}
         </>
       )}

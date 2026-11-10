@@ -43,7 +43,6 @@ func (r *StatusRepository) InsertStatus(ctx context.Context, tx uow.Tx, s conten
 		IsLocal:         s.IsLocal,
 		Visibility:      string(s.Visibility),
 		InReplyToUri:    postgres.ToNullString(s.InReplyToURI),
-		ConversationUri: postgres.ToNullString(s.ConversationURI),
 		PublishedAt:     s.PublishedAt,
 	})
 	if postgres.IsUniqueViolation(err, "statuses_uri") {
@@ -113,33 +112,37 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 			return postgres.Wrap(err, "insert status revision source")
 		}
 	}
-	for _, a := range rev.Attachments {
-		pos, err := postgres.ToInt32(a.Position, "attachment position")
-		if err != nil {
-			return err
+	if len(rev.Attachments) > 0 {
+		arg := contentgen.InsertStatusRevisionAttachmentsParams{RevisionID: rev.ID}
+		for _, a := range rev.Attachments {
+			pos, err := postgres.ToInt32(a.Position, "attachment position")
+			if err != nil {
+				return err
+			}
+			arg.Positions, arg.MediaIds, arg.Descriptions = append(arg.Positions, pos), append(arg.MediaIds, a.MediaID), append(arg.Descriptions, a.Description)
 		}
-		err = q.InsertStatusRevisionAttachment(ctx, contentgen.InsertStatusRevisionAttachmentParams{
-			RevisionID: rev.ID, Position: pos, MediaID: a.MediaID, Description: postgres.ToNullString(a.Description),
-		})
-		if err != nil {
-			return postgres.Wrap(err, "insert status revision attachment")
-		}
-	}
-	for _, id := range rev.MentionedAccountIDs {
-		err := q.InsertStatusRevisionMention(ctx, contentgen.InsertStatusRevisionMentionParams{RevisionID: rev.ID, AccountID: id})
-		if err != nil {
-			return postgres.Wrap(err, "insert status revision mention")
+		if err := q.InsertStatusRevisionAttachments(ctx, arg); err != nil {
+			return postgres.Wrap(err, "insert status revision attachments")
 		}
 	}
-	for _, id := range rev.TagIDs {
-		if err := q.InsertStatusRevisionTag(ctx, contentgen.InsertStatusRevisionTagParams{RevisionID: rev.ID, TagID: id}); err != nil {
-			return postgres.Wrap(err, "insert status revision tag")
+	if len(rev.MentionedAccountIDs) > 0 {
+		err := q.InsertStatusRevisionMentions(ctx, contentgen.InsertStatusRevisionMentionsParams{RevisionID: rev.ID, AccountIds: rev.MentionedAccountIDs})
+		if err != nil {
+			return postgres.Wrap(err, "insert status revision mentions")
 		}
 	}
-	for _, id := range rev.EmojiIDs {
-		if err := q.InsertStatusRevisionEmoji(ctx, contentgen.InsertStatusRevisionEmojiParams{RevisionID: rev.ID, EmojiID: id}); err != nil {
+	if len(rev.TagIDs) > 0 {
+		if err := q.InsertStatusRevisionTags(ctx, contentgen.InsertStatusRevisionTagsParams{RevisionID: rev.ID, TagIds: rev.TagIDs}); err != nil {
+			return postgres.Wrap(err, "insert status revision tags")
+		}
+	}
+	if len(rev.EmojiIDs) > 0 {
+		if err := q.InsertStatusRevisionEmojis(ctx, contentgen.InsertStatusRevisionEmojisParams{RevisionID: rev.ID, EmojiIds: rev.EmojiIDs}); err != nil {
 			return postgres.Wrap(err, "insert status revision emoji")
 		}
+	}
+	if err := insertRevisionArticle(ctx, q, rev); err != nil {
+		return err
 	}
 	return insertRemoteRevisionParts(ctx, q, rev)
 }
@@ -164,6 +167,28 @@ func (r *StatusRepository) InsertDeletion(ctx context.Context, tx uow.Tx, d cont
 	return postgres.Wrap(err, "insert status deletion")
 }
 
+// InsertDeletions implements content.Repository.
+func (r *StatusRepository) InsertDeletions(ctx context.Context, tx uow.Tx, ds []content.Deletion) error {
+	if len(ds) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	arg := contentgen.InsertStatusDeletionsParams{
+		Origin: string(ds[0].Origin), ModerationActionID: postgres.ToNullString(ds[0].ModerationActionID), DeletedAt: ds[0].DeletedAt,
+	}
+	for _, d := range ds {
+		arg.StatusIds, arg.Uris, arg.AuthorAccountIds = append(arg.StatusIds, d.StatusID), append(arg.Uris, d.URI), append(arg.AuthorAccountIds, d.AuthorAccountID)
+	}
+	err = q.InsertStatusDeletions(ctx, arg)
+	if postgres.IsUniqueViolation(err, "status_deletions_pkey") || postgres.IsUniqueViolation(err, "status_deletions_tombstone_uri") {
+		return fmt.Errorf("delete %d statuses: %w", len(ds), appcontent.ErrAlreadyDeleted)
+	}
+	return postgres.Wrap(err, "insert status deletions")
+}
+
 // EnsureTag implements content.Repository.
 func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.Tag) (content.Tag, error) {
 	q, err := r.db.queries(tx)
@@ -181,6 +206,34 @@ func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.T
 		return content.Tag{}, postgres.Wrap(err, "get tag")
 	}
 	return tagFrom(row), nil
+}
+
+// EnsureTags implements content.Repository.
+func (r *StatusRepository) EnsureTags(ctx context.Context, tx uow.Tx, tags []content.Tag) (map[string]content.Tag, error) {
+	out := make(map[string]content.Tag, len(tags))
+	if len(tags) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	arg := contentgen.InsertTagsIfAbsentParams{CreatedAt: tags[0].CreatedAt}
+	for _, t := range tags {
+		arg.Ids, arg.Names, arg.NamesNormalized = append(arg.Ids, t.ID), append(arg.Names, t.Name), append(arg.NamesNormalized, t.NameNormalized)
+	}
+	if err := q.InsertTagsIfAbsent(ctx, arg); err != nil {
+		return nil, postgres.Wrap(err, "insert tags")
+	}
+	rows, err := q.ListTagsByNames(ctx, arg.NamesNormalized)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list tags by names")
+	}
+	for _, row := range rows {
+		t := tagFrom(row)
+		out[t.NameNormalized] = t
+	}
+	return out, nil
 }
 
 // Head implements content.Repository.
@@ -221,12 +274,10 @@ func (r *StatusRepository) ReplaceMentions(ctx context.Context, tx uow.Tx, statu
 	if err := q.DeleteStatusMentions(ctx, statusID); err != nil {
 		return postgres.Wrap(err, "delete status mentions")
 	}
-	for _, id := range accountIDs {
-		if err := q.InsertStatusMention(ctx, contentgen.InsertStatusMentionParams{AccountID: id, StatusID: statusID}); err != nil {
-			return postgres.Wrap(err, "insert status mention")
-		}
+	if len(accountIDs) == 0 {
+		return nil
 	}
-	return nil
+	return postgres.Wrap(q.InsertStatusMentions(ctx, contentgen.InsertStatusMentionsParams{AccountIds: accountIDs, StatusID: statusID}), "insert status mentions")
 }
 
 // LockStatusKeys implements content.Repository with transaction-scoped advisory locks.
@@ -515,6 +566,22 @@ func (r *StatusRepository) FindStatus(ctx context.Context, id string) (content.S
 	return statusFrom(row), nil
 }
 
+// FindStatuses implements content.Repository.
+func (r *StatusRepository) FindStatuses(ctx context.Context, ids []string) (map[string]content.Status, error) {
+	out := make(map[string]content.Status, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListStatusesByIDs(ctx, ids)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list statuses")
+	}
+	for _, row := range rows {
+		out[row.ID] = statusFrom(row)
+	}
+	return out, nil
+}
+
 // FindStatusByURI implements content.Repository.
 func (r *StatusRepository) FindStatusByURI(ctx context.Context, uri string) (content.Status, error) {
 	row, err := r.db.reader().GetStatusByURI(ctx, uri)
@@ -563,7 +630,7 @@ func (r *StatusRepository) ListCurrentPosts(ctx context.Context, tx uow.Tx) ([]a
 	for i, row := range rows {
 		out[i].Status = statusFrom(contentgen.Status{
 			ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
-			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri, ConversationUri: row.ConversationUri,
+			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri,
 			PublishedAt: row.PublishedAt,
 		})
 		if out[i].Revision, err = findRevision(ctx, q, row.RevisionID); err != nil {
@@ -579,13 +646,9 @@ func findRevision(ctx context.Context, q *contentgen.Queries, id string) (conten
 	if err != nil {
 		return content.Revision{}, postgres.NotFound(err, appcontent.ErrNotFound, "status revision "+id)
 	}
-	rev := revisionFrom(row)
-	bodies, err := q.ListStatusRevisionBodies(ctx, id)
-	if err != nil {
+	rr := revisionRows{row: row}
+	if rr.bodies, err = q.ListStatusRevisionBodies(ctx, id); err != nil {
 		return content.Revision{}, postgres.Wrap(err, "list status revision bodies")
-	}
-	for _, b := range bodies {
-		rev.Bodies = append(rev.Bodies, content.Body{Language: b.Language, ContentHTML: b.ContentHtml})
 	}
 	src, err := q.GetStatusRevisionSource(ctx, id)
 	switch {
@@ -593,27 +656,91 @@ func findRevision(ctx context.Context, q *contentgen.Queries, id string) (conten
 	case err != nil:
 		return content.Revision{}, postgres.Wrap(err, "get status revision source")
 	default:
-		rev.Source = &content.Source{Text: src.SourceText, Format: content.SourceFormat(src.SourceFormat)}
+		rr.source = &src
 	}
-	attachments, err := q.ListStatusRevisionAttachments(ctx, id)
-	if err != nil {
+	if rr.attachments, err = q.ListStatusRevisionAttachments(ctx, id); err != nil {
 		return content.Revision{}, postgres.Wrap(err, "list status revision attachments")
 	}
-	for _, a := range attachments {
+	if rr.mentions, err = q.ListStatusRevisionMentions(ctx, id); err != nil {
+		return content.Revision{}, postgres.Wrap(err, "list status revision mentions")
+	}
+	if rr.tags, err = q.ListStatusRevisionTags(ctx, id); err != nil {
+		return content.Revision{}, postgres.Wrap(err, "list status revision tags")
+	}
+	if rr.emojis, err = q.ListStatusRevisionEmojis(ctx, id); err != nil {
+		return content.Revision{}, postgres.Wrap(err, "list status revision emoji")
+	}
+	poll, err := q.GetPollByRevision(ctx, id)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+	case err != nil:
+		return content.Revision{}, postgres.Wrap(err, "get poll")
+	default:
+		rr.poll = &poll
+		if rr.options, err = q.ListPollOptions(ctx, poll.ID); err != nil {
+			return content.Revision{}, postgres.Wrap(err, "list poll options")
+		}
+	}
+	remote, err := q.GetRemoteStatusRevision(ctx, id)
+	switch {
+	case errors.Is(err, pgx.ErrNoRows):
+	case err != nil:
+		return content.Revision{}, postgres.Wrap(err, "get remote status revision")
+	default:
+		rr.remote = &remote
+	}
+	if err := readRevisionArticle(ctx, q, &rr); err != nil {
+		return content.Revision{}, err
+	}
+	return rr.revision(), nil
+}
+
+// revisionRows are the rows of a revision and its parts, read for one revision (findRevision) or
+// for many together (FindCurrentRevisions); revision builds the revision from them alike.
+type revisionRows struct {
+	row                    contentgen.StatusRevision
+	bodies                 []contentgen.StatusRevisionBody
+	source                 *contentgen.StatusRevisionSource
+	attachments            []contentgen.StatusRevisionAttachment
+	mentions, tags, emojis []string
+	poll                   *contentgen.Poll
+	options                []contentgen.PollOption
+	remote                 *contentgen.RemoteStatusRevision
+	article                *contentgen.StatusRevisionArticle
+	cover                  *contentgen.StatusRevisionArticleCover
+	images                 []contentgen.StatusRevisionArticleImage
+}
+
+func (rr revisionRows) revision() content.Revision {
+	rev := revisionFrom(rr.row)
+	for _, b := range rr.bodies {
+		rev.Bodies = append(rev.Bodies, content.Body{Language: b.Language, ContentHTML: b.ContentHtml})
+	}
+	if src := rr.source; src != nil {
+		rev.Source = &content.Source{Text: src.SourceText, Format: content.SourceFormat(src.SourceFormat)}
+	}
+	for _, a := range rr.attachments {
 		rev.Attachments = append(rev.Attachments, content.Attachment{
 			Position: int(a.Position), MediaID: a.MediaID, Description: postgres.FromNullString(a.Description),
 		})
 	}
-	if rev.MentionedAccountIDs, err = nonEmpty(q.ListStatusRevisionMentions(ctx, id)); err != nil {
-		return content.Revision{}, postgres.Wrap(err, "list status revision mentions")
+	rev.MentionedAccountIDs, _ = nonEmpty(rr.mentions, nil)
+	rev.TagIDs, _ = nonEmpty(rr.tags, nil)
+	rev.EmojiIDs, _ = nonEmpty(rr.emojis, nil)
+	if rr.poll != nil {
+		p := &content.Poll{ID: rr.poll.ID, Multiple: rr.poll.Multiple, HideTotals: rr.poll.HideTotals, ClosesAt: postgres.UTCPtr(rr.poll.ClosesAt)}
+		for _, o := range rr.options {
+			p.Options = append(p.Options, content.PollOption{Position: int(o.Position), Title: o.Title})
+		}
+		rev.Poll = p
 	}
-	if rev.TagIDs, err = nonEmpty(q.ListStatusRevisionTags(ctx, id)); err != nil {
-		return content.Revision{}, postgres.Wrap(err, "list status revision tags")
+	if rr.remote != nil {
+		rev.Remote = &content.RemoteRevisionSource{ActivityURI: postgres.FromNullString(rr.remote.ActivityUri), HTMLPolicyVersion: int(rr.remote.HtmlPolicyVersion),
+			OmittedAttachments: int(rr.remote.OmittedAttachmentCount),
+		}
 	}
-	if rev.EmojiIDs, err = nonEmpty(q.ListStatusRevisionEmojis(ctx, id)); err != nil {
-		return content.Revision{}, postgres.Wrap(err, "list status revision emoji")
-	}
-	return rev, findRemoteRevisionParts(ctx, q, &rev)
+	rev.Article = rr.articleRevision()
+	return rev
 }
 
 // nonEmpty turns an empty list into nil, as the domain leaves absent children nil.
@@ -754,7 +881,6 @@ func statusFrom(row contentgen.Status) content.Status {
 		IsLocal:         row.IsLocal,
 		Visibility:      content.Visibility(row.Visibility),
 		InReplyToURI:    postgres.FromNullString(row.InReplyToUri),
-		ConversationURI: postgres.FromNullString(row.ConversationUri),
 		PublishedAt:     postgres.UTC(row.PublishedAt),
 	}
 }

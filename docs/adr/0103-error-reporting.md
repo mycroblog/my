@@ -21,9 +21,11 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
   - `Kind`: `panic` / `error`
   - `Type`: エラーの型の連鎖（`errors.Unwrap` でたどった Go の型名。例 `*fmt.wrapError > *pgconn.PgError`）と、panic の値の型
   - `Message`: エラーの文字列（§3 で除去してから外へ出す）
-  - `Stack`: panic は `debug.Stack()`。エラーは報告した地点のスタック。境界（アダプタの戻り値など）で `kernel.WithStack(err)` を使うと、作った地点のスタックを持たせられる
+  - `Stack`: panic は `debug.Stack()`。エラーは報告した地点のスタック。境界（アダプタの戻り値など）で `kernel.WithStack(err)` を使うと、作った地点のスタックを持たせられる。DB のアダプタの `Wrap`・`NotFound` は、それを呼んだリポジトリのメソッドから始まるスタックを付ける（`kernel.WithStackSkip`）。
+    取ったスタックは、取る仕組み自身（`debug.Stack`・`NewErrorEvent`・`WithStack`）のフレームを含めず、呼び出し元から始める。面のエラーをまとめて報告するヘルパー（`activitypub` の `report`、クライアント API の `responseError` など）は `kernel.NewErrorEventSkip` で自分も除き、ヘルパーを呼んだ地点から始める。Error Reporting も §1 の指紋もスタックの先頭を読むので、先頭が報告の仕組みだと起きた場所の違うエラーが 1 つのグループに入る
   - `Where`: 起きた場所の有限の名前。HTTP は `my.surface` と `http.route`（パターン）、ジョブは `my.job.type`、goroutine は起動したときの名前（例 `stream.valkey.subscribe`）
   - 相関: `request_id`・`job_id`・`attempt`・`trace_id`・`span_id`（ADR-0055 §18）
+  - HTTP の要求: サーバーのエラーを要求の中で報告し、報告の仕組みが `Where` を要求から付けたときだけ、その method・ルートのパターン（パスではない）・返した状態（報告する地点はどれも 500 を返す）
   - 版と役割: `service.version`・`my.role`・設定 `errors_environment`（既定 `production`）
 - 指紋（fingerprint）: `Source`・`Where`・`Type` の最後の型・スタックのうち本リポジトリ（`github.com/mycroblog/my/`）の関数名の上位 5 つ（行番号は含めない）から SHA-256 を作り、16 進の先頭 32 文字にする。
   本リポジトリの関数がスタックにないときは、§3 で正規化した `Message` を代わりに使う。行番号を含めないので、無関係な行の追加では指紋が変わらない
@@ -60,11 +62,13 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
  "serviceContext":{"service":"my","version":"<service.version>"},
  "my.error.fingerprint":"…","my.error.source":"server","my.error.kind":"panic","my.error.where":"client_api GET /api/v1/statuses/{id}",
  "request_id":"…","trace_id":"…","span_id":"…",
+ "context":{"httpRequest":{"method":"GET","url":"/api/v1/statuses/{id}","responseStatusCode":500}},
  "message":"<Type>: <除去した Message>\ngoroutine 1 [running]:\ngithub.com/mycroblog/my/internal/app/status.(*Service).Get(...)\n\tgithub.com/mycroblog/my/internal/app/status/get.go:42 +0x32\n…"}
 ```
 
 - `message` は Google の Go のライブラリと同じく、ヘッダーとスタックを改行 1 つでつなぐ。短いフィールドを前に、`message` を最後に置く（CloudWatch Logs の異常検知が行の先頭 1,500 文字だけを見るため）
-- `serviceContext.version` には版だけを入れる（service と版の組はグループの数の上限に効く）。`context.httpRequest`・`context.user` は個人情報になるので出さない。
+- `serviceContext.version` には版だけを入れる（service と版の組はグループの数の上限に効く）。
+- `context.httpRequest` は要求のエラーの行だけに置き、`method`・`url`・`responseStatusCode` だけを入れる。`url` は要求のパスではなくルートのパターン（`Where` と同じ）にして、ID や個人情報を出さない。これがないと Error Reporting は応答コードを `0` と表示する。`context.user` は個人情報になるので出さない。
   `logging.googleapis.com/trace` の形（`projects/<id>/traces/<trace_id>`）は ADR-0055 §18 の未決の点と同じくデプロイのテンプレートで決める
 - Error Reporting は `jsonPayload` の全フィールドからスタックを探すので、ほかのログの行にはスタックを書かない
 - すべてのログの行に、slog の `ReplaceAttr` で Cloud Logging の `severity` を足す（`DEBUG`・`INFO`・`WARN`→`WARNING`・`ERROR`、`ERROR` より上→`CRITICAL`）。
@@ -175,6 +179,10 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
 - ブラウザ: React 19 の `onUncaughtError` の既定は `reportError`、`onCaughtError` は `console.error` だけ（[createRoot](https://react.dev/reference/react-dom/client/createRoot)）。`sendBeacon` はヘッダーを付けられず、keepalive の本文は同じ fetch group で合計 64 KiB まで（[Beacon](https://w3c.github.io/beacon/)、[Fetch](https://fetch.spec.whatwg.org/)）。
 - 他の実装: Misskey は設定 `sentryForBackend`・`sentryForFrontend` で Sentry へ直接送り、Mastodon と GoToSocial は OTLP のトレースだけでエラーの報告はない。
 
+Cloud Run の実機の確認（#1449）で、Error Reporting が 47 件の出来事を、報告するヘルパーのフレーム（`activitypub` の `report`）を場所とする 1 つのグループにまとめていた。中身は起きた場所の違う DB のエラーだった。DB のアダプタはスタックを付けず、スタックは報告した地点で取られ、取る仕組みとヘルパーのフレームから始まっていた。スタックを起きた場所から始めることにした（§1、#2659）。
+
+同じ確認で、Error Reporting が行に `context.httpRequest` がないために応答コードを `0` と表示した。要求のパスは個人情報を含みうるので出さないとしていたが、決定者は、ルートのパターン・method・状態だけを `context.httpRequest` に置くことにした（§4 (1)、#2660）。
+
 ## 採らなかった案
 
 - コアから `sentry-go` を直接呼び、グルーピングと通知を Sentry に任せる: グルーピング・再発の検知・画面・ソースマップ・通知の規則が完成していて Datadog も同じ SDK と DSN で受けられるが、外部のサービスを使わない運営者には何も届かず、コアが SDK を import して ADR-0002 に例外を作る。Sentry 互換の転送で利点の多くを含められる。
@@ -192,10 +200,10 @@ ADR-0055 §16（span に `RecordError` とエラーの文字列を出さない�
   - 指紋は関数名から作るので、関数の名前の変更やリファクタリングで別のグループになる。
   - Sentry の envelope のクライアントを自前で保守する。Sentry・GlitchTip・Datadog の取り込みの違いは、spike の模擬のサーバーでの契約テストと、利用する運営者の確認に頼る。
   - Cloud Error Reporting のグループ（指紋を指定できない）と DB のグループ（§1 の指紋）は、同じエラーを別の単位でまとめることがある。
-- 後続: Cloud Run の実機で、§3 の引数を `(...)` にしたスタックを Error Reporting が読み、グループにすることを確かめる（#1449）。
+- Cloud Run の実機（`v0.1.0-rc.5`）で、§4 (1) の行を Error Reporting が読むことを確かめた（#1449）。`@type`・`severity`・`serviceContext`（service `my` とその版）を読み、`goroutine N [running]:` の見出しと引数を `(...)` にしたフレームのスタックを解析し、メッセージが違っても同じスタックの行を 1 つのグループにする。新しいグループは通知される。
+- 後続: 報告した場所で取ったスタックは報告する側の関数から始まり、起きた場所の違うエラーが Error Reporting でもアプリ内の指紋でも同じグループに入る。スタックを起きた場所から取るようにする（#2659）。Error Reporting は `context.httpRequest` がないと応答コードを `0` と表示するので、HTTP のエラーの行に足す（#2660）。
 
 ## Open Questions / 要検証
 
-- 引数を `(...)` にしたスタックを Cloud Error Reporting が読むか（#1449 で Cloud Run の実機で確かめる）
 - Datadog の Sentry 用の DSN の提供の段階（preview か GA か）、Sentry の `fingerprint` とタグ `error.fingerprint` のどちらがグルーピングに効くか、ログの取り込みの料金が別にかかるか
 - GlitchTip の通知が「新しい issue」「再発」だけを対象にできるか（しきい値の通知だけか）

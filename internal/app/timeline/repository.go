@@ -37,6 +37,11 @@ type Entry struct {
 	RevisionSeq int
 	// IsReply is true for a post that replies to a status; a boost never is one.
 	IsReply bool
+	// FollowedTagIDs are, for a post that the home timeline lists only for the hashtags the
+	// viewer follows (ADR-0013 §28), those of its hashtags, sorted; nil for every other entry.
+	// FollowedTags are their names, sorted, which Service fills in.
+	FollowedTagIDs []string
+	FollowedTags   []string
 }
 
 // DirectRecipient is an account that a direct post is addressed to (feed_direct_recipients).
@@ -123,6 +128,10 @@ type Projection struct {
 	FollowEdges      []FollowEdge
 	Exclusions       []Exclusion
 	DomainMutes      []DomainMute
+	// ConversationParticipants and ConversationHeads are the direct messages by conversation,
+	// ordered by account, conversation, and entry.
+	ConversationParticipants []ConversationParticipant
+	ConversationHeads        []ConversationHead
 }
 
 // Window selects a page of a timeline, newest first.
@@ -168,6 +177,10 @@ type TagQuery struct {
 	Window
 	TagID        string
 	IncludeLocal bool
+	// LocalOnly keeps only the posts of local authors, and ExcludeReplies leaves out the posts
+	// that reply to a status (the Atom feed of a hashtag, FR-213).
+	LocalOnly      bool
+	ExcludeReplies bool
 }
 
 // ProfileQuery selects a page of the profile timeline of an author.
@@ -207,7 +220,8 @@ type Facts struct {
 }
 
 // Repository is the persistence port of the timeline module (data-model §4.6). It reads and
-// writes only the feed_* tables, tag_usage, and the tables of lists. The database adapters implement it and pass
+// writes only the feed_* tables (those of the direct messages by conversation and the followed
+// hashtags included), tag_usage, and the tables of lists. The database adapters implement it and pass
 // timelinetest.TimelineContract; timelinetest.TimelineFlows (internal/flowtest/timeline) drives the timeline use
 // cases and projectors on them.
 //
@@ -229,6 +243,9 @@ type Repository interface {
 	// DeleteStatusEntries deletes the entries of a status (its post and its boosts) with their
 	// direct recipients and tags, taking the tags out of tag_usage.
 	DeleteStatusEntries(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusEntriesOf is DeleteStatusEntries of each of statusIDs, with one statement per
+	// part.
+	DeleteStatusEntriesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// ReplaceDirectRecipients makes accountIDs the direct recipients of an entry.
 	ReplaceDirectRecipients(ctx context.Context, tx uow.Tx, entryID string, accountIDs []string) error
 	// ReplaceTags makes tagIDs the tags of entry e, whose current revision is from revisedAt,
@@ -238,9 +255,15 @@ type Repository interface {
 	ReplaceTags(ctx context.Context, tx uow.Tx, e Entry, tagIDs []string, revisedAt time.Time) error
 	// UpsertFollowEdge stores e, replacing the pair's edge.
 	UpsertFollowEdge(ctx context.Context, tx uow.Tx, e FollowEdge) error
+	// UpsertFollowEdges is UpsertFollowEdge of each of es.
+	UpsertFollowEdges(ctx context.Context, tx uow.Tx, es []FollowEdge) error
 	DeleteFollowEdge(ctx context.Context, tx uow.Tx, followerAccountID, followeeAccountID string) error
+	// DeleteFollowEdges is DeleteFollowEdge of the pairs (followerIDs[i], followeeIDs[i]).
+	DeleteFollowEdges(ctx context.Context, tx uow.Tx, followerIDs, followeeIDs []string) error
 	// UpsertExclusion stores x, replacing the expiry of the same exclusion.
 	UpsertExclusion(ctx context.Context, tx uow.Tx, x Exclusion) error
+	// UpsertExclusions is UpsertExclusion of each of xs, with one statement.
+	UpsertExclusions(ctx context.Context, tx uow.Tx, xs []Exclusion) error
 	DeleteExclusion(ctx context.Context, tx uow.Tx, viewerAccountID, targetAccountID string, reason timeline.ExclusionReason) error
 	// InsertDomainMute stores m; storing it again changes nothing.
 	InsertDomainMute(ctx context.Context, tx uow.Tx, m DomainMute) error
@@ -283,6 +306,9 @@ type Repository interface {
 	CountListMembers(ctx context.Context, tx uow.Tx, listID string) (int, error)
 	// DeleteListMembersOfFollow takes memberAccountID out of every list of ownerAccountID.
 	DeleteListMembersOfFollow(ctx context.Context, tx uow.Tx, ownerAccountID, memberAccountID string) error
+	// DeleteListMembersOfFollows is DeleteListMembersOfFollow of the pairs (followerIDs[i],
+	// followeeIDs[i]).
+	DeleteListMembersOfFollows(ctx context.Context, tx uow.Tx, followerIDs, followeeIDs []string) error
 	// DeleteListMembersWithoutFollow takes out of every list each member that its owner does not
 	// actively follow (feed_follow_edges), for a rebuild.
 	DeleteListMembersWithoutFollow(ctx context.Context, tx uow.Tx) error
@@ -302,6 +328,9 @@ type Repository interface {
 	// Timelines (data-model §6), newest first, at most Limit entries each.
 
 	ListHome(ctx context.Context, q HomeQuery) ([]Entry, error)
+	// FeedFollowersAmong returns the accounts among followerIDs whose home timelines follow
+	// followeeID (feed_follow_edges), with one query.
+	FeedFollowersAmong(ctx context.Context, followeeID string, followerIDs []string) (map[string]bool, error)
 	ListLocal(ctx context.Context, q LocalQuery) ([]Entry, error)
 	ListPublic(ctx context.Context, q PublicQuery) ([]Entry, error)
 	ListTag(ctx context.Context, q TagQuery) ([]Entry, error)
@@ -313,9 +342,22 @@ type Repository interface {
 	// MutedDomains returns those of domains that the viewer mutes. A mute covers its subdomains,
 	// so a caller passes a domain and its parents.
 	MutedDomains(ctx context.Context, viewerAccountID string, domains []string) ([]string, error)
+	// MutedDomainsOf is MutedDomains of each of viewers, by viewer, with one query.
+	MutedDomainsOf(ctx context.Context, viewers, domains []string) (map[string][]string, error)
+	// FactsOfViewers is Facts of fq for each of viewers, by viewer: the restrictions read once,
+	// and the follows, exclusions, and direct entries of all the viewers with one query each.
+	FactsOfViewers(ctx context.Context, viewers []string, fq FactsQuery) (map[string]Facts, error)
 	// TagUsageOf returns the usage of the tags among tagIDs that have one, ordered by tag ID.
 	TagUsageOf(ctx context.Context, tagIDs []string) ([]TagUsage, error)
 
 	// Snapshot returns the content of the projections, for verifying them.
 	Snapshot(ctx context.Context) (Projection, error)
+
+	// The direct messages by conversation (FR-212).
+	ConversationRepository
+	// The followed hashtags (ADR-0013 §24 to §28).
+	TagFollowRepository
+	KeywordFilterRepository
+	// The featured hashtags of profiles (ADR-0006 §17).
+	FeaturedTagRepository
 }

@@ -352,7 +352,7 @@ func (h *Handler) fail(w http.ResponseWriter, r *http.Request, err error, basic 
 	var oe *appidentity.OAuthError
 	if !errors.As(err, &oe) {
 		h.o.Logger.ErrorContext(r.Context(), "oauth endpoint failed", slog.String("path", r.URL.Path), slog.Any("error", err))
-		h.o.Errors.Report(r.Context(), kernel.NewErrorEvent(err, "")) // the reporter names the route
+		h.o.Errors.Report(r.Context(), kernel.NewErrorEventSkip(err, "", 1)) // the reporter names the route; the stack starts with the caller
 		writeError(w, http.StatusInternalServerError, &appidentity.OAuthError{Code: "server_error"})
 		return
 	}

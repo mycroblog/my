@@ -511,34 +511,6 @@
     "defaultMessage": "引用",
     "description": "Accessible name of the button in a post's action bar that starts a new post quoting it."
   },
-  "status.quote_policy.action": {
-    "defaultMessage": "變更誰可以引用",
-    "description": "Item of the menu of the user's own post that opens the dialog choosing who may quote it."
-  },
-  "status.quote_policy.title": {
-    "defaultMessage": "誰可以引用這則貼文",
-    "description": "Title of the dialog that chooses who may quote one of the user's posts."
-  },
-  "status.quote_policy.close": {
-    "defaultMessage": "關閉",
-    "description": "Accessible name of the close button of the dialog that chooses who may quote a post."
-  },
-  "status.quote_policy.label": {
-    "defaultMessage": "誰可以引用",
-    "description": "Label of the choices of who may quote a post, in its dialog."
-  },
-  "status.quote_policy.description": {
-    "defaultMessage": "先前已核准的引用會保留。若要將你的貼文從某則引用中移除，請使用引用它的貼文的選單。",
-    "description": "Description of the choices of who may quote a post."
-  },
-  "status.quote_policy.done": {
-    "defaultMessage": "已變更誰可以引用這則貼文",
-    "description": "Toast after the user changed who may quote one of their posts."
-  },
-  "status.quote_policy.failed": {
-    "defaultMessage": "無法變更誰可以引用這則貼文：{reason}",
-    "description": "Toast when the change of who may quote a post failed. {reason} is the server's reason."
-  },
   "status.quotes.action": {
     "defaultMessage": "引用這則貼文的貼文",
     "description": "Item of the menu of the user's own post that opens the list of the posts that quote it."

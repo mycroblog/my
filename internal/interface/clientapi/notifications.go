@@ -7,17 +7,19 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appinstance "github.com/mycroblog/my/internal/app/instance"
-	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/domain/notification"
+	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
 // Notifications runs the use cases of the viewer's own notifications (FR-205).
@@ -116,7 +118,9 @@ func (s *Server) ListNotifications(ctx context.Context, req ListNotificationsReq
 
 // newNotifications presents accountID's notifications ns, in order, as the Notification schema.
 // The posts that they are about are read together through the content module, which applies the
-// visibility policy: a post that the user may not see is left out of its notification. The source
+// visibility policy: a post that the user may not see is left out of its notification. A
+// notification whose post a hide filter of the notifications matches is left out, so the result
+// may be shorter than ns. The source
 // accounts are read once each; a source account that no longer exists is left out. A moderation
 // notice carries its action as the user sees it (moderation.go), and a report_resolved the
 // user's report, which tells only that it is resolved. The account of an
@@ -137,6 +141,10 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		return nil, err
 	}
 	limitNotices, err := s.notifiedAutoDeleteLimits(ctx, accountID, ns)
+	if err != nil {
+		return nil, err
+	}
+	schedules, err := s.notifiedDraftSchedules(ctx, ns)
 	if err != nil {
 		return nil, err
 	}
@@ -161,23 +169,25 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 			return nil, fmt.Errorf("clientapi: the statuses of the notifications of %s: %w", accountID, err)
 		}
 	}
-	// The source accounts, read once each; nil for one that no longer exists.
-	sources := map[string]*appaccount.Actor{}
-	var found []appaccount.Actor
-	for i, n := range ns {
-		id := presented[i]
-		if _, ok := sources[id]; ok || id == "" {
-			continue
+	// The source accounts, read together; nil for one that no longer exists.
+	var sourceIDs []string
+	for _, id := range presented {
+		if id != "" && !slices.Contains(sourceIDs, id) {
+			sourceIDs = append(sourceIDs, id)
 		}
-		actor, err := s.o.Accounts.FindByID(ctx, id)
-		switch {
-		case err == nil:
-			sources[id] = &actor
-			found = append(found, actor)
-		case errors.Is(err, appaccount.ErrNotFound):
+	}
+	actors, err := s.o.Accounts.FindByIDs(ctx, sourceIDs)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the accounts of the notifications of %s: %w", accountID, err)
+	}
+	sources := make(map[string]*appaccount.Actor, len(sourceIDs))
+	var found []appaccount.Actor
+	for _, id := range sourceIDs {
+		if a, ok := actors[id]; ok {
+			sources[id] = &a
+			found = append(found, a)
+		} else {
 			sources[id] = nil
-		default:
-			return nil, fmt.Errorf("clientapi: the account %s of notification %s: %w", id, n.ID, err)
 		}
 	}
 	var reports map[string]Report
@@ -221,13 +231,37 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 	if err != nil {
 		return nil, err
 	}
+	reactionEmojis, err := s.reactionEmojis(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
+	announcements, err := s.notifiedAnnouncements(ctx, viewer.UserID, ns)
+	if err != nil {
+		return nil, err
+	}
+	errorGroupOthers, err := s.errorGroupOthers(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
 	parts, err := s.statusParts(ctx, views, found...)
 	if err != nil {
 		return nil, err
 	}
+	// The keyword filters of the notifications: a hide filter leaves the notification of a status
+	// out, a warn filter marks its status (ADR-0157 §7).
+	filter, err := s.statusFilter(ctx, localContentViewer(viewer), timeline.FilterContextNotifications)
+	if err != nil {
+		return nil, err
+	}
 	statuses := make(map[string]Status, len(views))
+	hidden := map[string]bool{}
 	for _, v := range views {
-		statuses[v.Status.ID] = s.newStatus(v, parts)
+		st := s.newStatus(v, parts)
+		if applyJudgement(&st, filter.Judge(v, ""), false) {
+			statuses[v.Status.ID] = st
+		} else {
+			hidden[v.Status.ID] = true
+		}
 	}
 	accounts := make(map[string]Account, len(found))
 	for id, a := range sources {
@@ -237,6 +271,9 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 	}
 	out := make([]Notification, 0, len(ns))
 	for i, n := range ns {
+		if hidden[n.StatusID] {
+			continue
+		}
 		item := Notification{Id: n.ID, Type: NotificationType(n.Type), CreatedAt: n.CreatedAt}
 		if st, ok := statuses[n.StatusID]; ok {
 			item.Status = &st
@@ -291,26 +328,21 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 				item.AccountMove.Outcome = &outcome
 			}
 		}
-		if item.Reaction, err = s.reactionEmojiOf(ctx, n); err != nil {
-			return nil, err
-		}
+		item.Reaction = s.reactionEmojiOf(n, reactionEmojis)
 		if n.ErrorGroupChange != "" {
-			if item.ErrorGroup, err = s.notifiedErrorGroup(ctx, n); err != nil {
-				return nil, err
-			}
+			item.ErrorGroup = notifiedErrorGroup(n, errorGroupOthers)
 		}
 		if notice, ok := limitNotices[n.AutoDeleteLimitNoticeID]; ok && n.Type == notification.TypeAutoDeleteLimit {
 			item.AutoDeleteLimit = &NotificationAutoDeleteLimit{MaxAgeDays: notice.MaxAgeDays, EnforceFrom: notice.EnforceFrom.UTC()}
 		}
-		if n.AnnouncementID != "" && s.o.Announcements != nil {
-			a, ok, err := s.o.Announcements.ShownAnnouncement(ctx, viewer.UserID, n.AnnouncementID)
-			if err != nil {
-				return nil, fmt.Errorf("clientapi: the announcement of notification %s: %w", n.ID, err)
+		if r, ok := schedules[n.DraftScheduleID]; ok && n.Type == notification.TypeScheduledStatusFailed && r.Outcome.FailureReason != "" {
+			item.ScheduledStatusFailure = &NotificationScheduledStatusFailure{
+				DraftId: r.Schedule.DraftID, Reason: DraftFailureReason(r.Outcome.FailureReason), PublishAt: r.Schedule.PublishAt.UTC(),
 			}
-			if ok {
-				view := newAnnouncement(a)
-				item.Announcement = &view
-			}
+		}
+		if a, ok := announcements[n.AnnouncementID]; ok && n.AnnouncementID != "" {
+			view := newAnnouncement(a)
+			item.Announcement = &view
 		}
 		if n.VoiceRoomID != "" {
 			id := n.VoiceRoomID
@@ -340,26 +372,51 @@ func (s *Server) notifiedClosures(ctx context.Context, ns []notification.Notific
 	if s.o.ClosureEvents == nil {
 		return out, nil
 	}
+	var ids []string
 	for _, n := range ns {
-		id := n.ServiceClosureEventID
-		if id == "" {
-			continue
+		if id := n.ServiceClosureEventID; id != "" && !slices.Contains(ids, id) {
+			ids = append(ids, id)
 		}
-		if _, ok := out[id]; ok {
-			continue
-		}
-		e, err := s.o.ClosureEvents.ClosureEvent(ctx, id)
-		switch {
-		case errors.Is(err, appinstance.ErrNotFound):
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the service closure event %s of notification %s: %w", id, n.ID, err)
-		}
+	}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	events, err := s.closureEvents(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the service closure events of the notifications: %w", err)
+	}
+	for id, e := range events {
 		var v ServiceClosureNotice
 		if e.Kind == instance.ClosureEventAnnounced {
 			v.ClosesAt, v.ExportUntil = utcPtr(e.Schedule.ClosesAt), utcPtr(e.Schedule.ExportUntil)
 		}
 		out[id] = v
+	}
+	return out, nil
+}
+
+// closureEventBatch is a ClosureEvents that reads many events at once, as *appinstance.Service
+// does.
+type closureEventBatch interface {
+	ClosureEvents(ctx context.Context, ids []string) (map[string]instance.ClosureEvent, error)
+}
+
+// closureEvents returns the events of ids that exist: together when ClosureEvents can, one by one
+// otherwise.
+func (s *Server) closureEvents(ctx context.Context, ids []string) (map[string]instance.ClosureEvent, error) {
+	if b, ok := s.o.ClosureEvents.(closureEventBatch); ok {
+		return b.ClosureEvents(ctx, ids)
+	}
+	out := make(map[string]instance.ClosureEvent, len(ids))
+	for _, id := range ids {
+		e, err := s.o.ClosureEvents.ClosureEvent(ctx, id)
+		switch {
+		case errors.Is(err, appinstance.ErrNotFound):
+		case err != nil:
+			return nil, err
+		default:
+			out[id] = e
+		}
 	}
 	return out, nil
 }
@@ -370,6 +427,7 @@ func (s *Server) notifiedClosures(ctx context.Context, ns []notification.Notific
 // admin_account_moved the account that moved; "" for none.
 func (s *Server) presentedAccounts(ctx context.Context, ns []notification.Notification, severances map[string]moderation.SeveranceRecord, moves map[string]notifiedMove) ([]string, error) {
 	out := make([]string, len(ns))
+	var users []string
 	for i, n := range ns {
 		out[i] = n.SourceAccountID
 		if sv, ok := severances[n.SeveranceID]; ok {
@@ -378,15 +436,48 @@ func (s *Server) presentedAccounts(ctx context.Context, ns []notification.Notifi
 		if m, ok := moves[n.AccountMoveID]; ok && n.Type == notification.TypeAdminAccountMoved {
 			out[i] = m.move.AccountID
 		}
-		if n.Type != notification.TypeAdminSignUp || n.SubjectUserID == "" || s.o.UserAccounts == nil {
+		if n.Type == notification.TypeAdminSignUp && n.SubjectUserID != "" && !slices.Contains(users, n.SubjectUserID) {
+			users = append(users, n.SubjectUserID)
+		}
+	}
+	if len(users) == 0 || s.o.UserAccounts == nil {
+		return out, nil
+	}
+	accounts, err := s.localAccountsOfUsers(ctx, users)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the accounts of the users of the sign-up notifications: %w", err)
+	}
+	for i, n := range ns {
+		if n.Type != notification.TypeAdminSignUp || n.SubjectUserID == "" {
 			continue
 		}
-		la, err := s.o.UserAccounts.LocalAccountOfUser(ctx, n.SubjectUserID)
+		if la, ok := accounts[n.SubjectUserID]; ok {
+			out[i] = la.AccountID
+		}
+	}
+	return out, nil
+}
+
+// userAccountBatch is a UserAccounts that reads the local accounts of many users at once, as
+// *appaccount.Service does.
+type userAccountBatch interface {
+	LocalAccountsOfUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error)
+}
+
+// localAccountsOfUsers returns the local accounts of users that have one, by user ID: together when
+// UserAccounts can, one by one otherwise.
+func (s *Server) localAccountsOfUsers(ctx context.Context, users []string) (map[string]account.LocalAccount, error) {
+	if b, ok := s.o.UserAccounts.(userAccountBatch); ok {
+		return b.LocalAccountsOfUsers(ctx, users)
+	}
+	out := make(map[string]account.LocalAccount, len(users))
+	for _, u := range users {
+		la, err := s.o.UserAccounts.LocalAccountOfUser(ctx, u)
 		switch {
 		case err == nil:
-			out[i] = la.AccountID
+			out[u] = la
 		case !errors.Is(err, appaccount.ErrNotFound):
-			return nil, fmt.Errorf("clientapi: the account of user %s of notification %s: %w", n.SubjectUserID, n.ID, err)
+			return nil, err
 		}
 	}
 	return out, nil
@@ -398,21 +489,24 @@ func (s *Server) notifiedReports(ctx context.Context, accountID string, ns []not
 	if s.o.FiledReports == nil {
 		return nil, nil
 	}
-	var recs []moderation.ReportRecord
-	seen := map[string]bool{}
+	var ids []string
 	for _, n := range ns {
-		if n.Type != notification.TypeReportResolved || n.ReportID == "" || seen[n.ReportID] {
-			continue
+		if n.Type == notification.TypeReportResolved && n.ReportID != "" && !slices.Contains(ids, n.ReportID) {
+			ids = append(ids, n.ReportID)
 		}
-		seen[n.ReportID] = true
-		rec, err := s.o.FiledReports.ReportFiledBy(ctx, accountID, n.ReportID)
-		switch {
-		case errors.Is(err, appmoderation.ErrNotFound):
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the report %s of notification %s: %w", n.ReportID, n.ID, err)
+	}
+	if len(ids) == 0 {
+		return map[string]Report{}, nil
+	}
+	found, err := s.reportsFiledByID(ctx, accountID, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the reports of the notifications of %s: %w", accountID, err)
+	}
+	recs := make([]moderation.ReportRecord, 0, len(found))
+	for _, id := range ids {
+		if rec, ok := found[id]; ok {
+			recs = append(recs, rec)
 		}
-		recs = append(recs, rec)
 	}
 	items, err := s.newReports(ctx, Viewer{AccountID: accountID}, recs)
 	if err != nil {
@@ -486,23 +580,20 @@ func (s *Server) notifiedSeverances(ctx context.Context, accountID string, ns []
 	if s.o.Severances == nil {
 		return out, nil
 	}
+	var ids []string
 	for _, n := range ns {
-		if n.Type != notification.TypeRelationshipsSevered || n.SeveranceID == "" {
-			continue
+		if n.Type == notification.TypeRelationshipsSevered && n.SeveranceID != "" {
+			ids = append(ids, n.SeveranceID)
 		}
-		if _, ok := out[n.SeveranceID]; ok {
-			continue
-		}
-		sv, err := s.o.Severances.SeveranceOf(ctx, accountID, n.SeveranceID)
-		switch {
-		case errors.Is(err, appmoderation.ErrNotFound):
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the severance %s of notification %s: %w", n.SeveranceID, n.ID, err)
-		}
-		out[n.SeveranceID] = sv
 	}
-	return out, nil
+	if len(ids) == 0 {
+		return out, nil
+	}
+	found, err := s.severancesOf(ctx, accountID, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the severances of the notifications of %s: %w", accountID, err)
+	}
+	return found, nil
 }
 
 // notifiedMove is a move that a notification tells of, with its target presented.
@@ -518,25 +609,67 @@ func (s *Server) notifiedMoves(ctx context.Context, ns []notification.Notificati
 	if s.o.Moves == nil {
 		return out, nil
 	}
+	var ids []string
 	for _, n := range ns {
-		if n.AccountMoveID == "" {
-			continue
+		if n.AccountMoveID != "" && !slices.Contains(ids, n.AccountMoveID) {
+			ids = append(ids, n.AccountMoveID)
 		}
-		if _, ok := out[n.AccountMoveID]; ok {
-			continue
+	}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	moves, err := s.findMoves(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the moves of the notifications: %w", err)
+	}
+	var targetIDs []string
+	for _, m := range moves {
+		targetIDs = append(targetIDs, m.TargetAccountID)
+	}
+	targets, err := s.presentedTargets(ctx, targetIDs)
+	if err != nil {
+		return nil, err
+	}
+	for id, m := range moves {
+		out[id] = notifiedMove{move: m, view: AccountMove{Target: targets[m.TargetAccountID]}}
+	}
+	return out, nil
+}
+
+// moveBatch is a Moves that reads many moves at once, as *appaccount.Service does.
+type moveBatch interface {
+	FindMoves(ctx context.Context, ids []string) (map[string]appaccount.Move, error)
+}
+
+// findMoves returns the moves of ids that exist: together when Moves can, one by one otherwise.
+func (s *Server) findMoves(ctx context.Context, ids []string) (map[string]appaccount.Move, error) {
+	if b, ok := s.o.Moves.(moveBatch); ok {
+		return b.FindMoves(ctx, ids)
+	}
+	return byOne(ids, func(id string) (appaccount.Move, error) { return s.o.Moves.FindMove(ctx, id) }, appaccount.ErrNotFound)
+}
+
+// presentedTargets presents the move targets of ids as presentedTarget presents one, reading the
+// accounts and their parts together; a target that is missing or not active is nil.
+func (s *Server) presentedTargets(ctx context.Context, ids []string) (map[string]*Account, error) {
+	found, err := s.o.Accounts.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the move targets: %w", err)
+	}
+	var active []appaccount.Actor
+	for _, a := range found {
+		if a.Lifecycle.Active() {
+			active = append(active, a)
 		}
-		m, err := s.o.Moves.FindMove(ctx, n.AccountMoveID)
-		switch {
-		case errors.Is(err, appaccount.ErrNotFound):
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the move %s of notification %s: %w", n.AccountMoveID, n.ID, err)
-		}
-		target, err := s.presentedTarget(ctx, m.TargetAccountID)
-		if err != nil {
-			return nil, err
-		}
-		out[n.AccountMoveID] = notifiedMove{move: m, view: AccountMove{Target: target}}
+	}
+	parts, err := s.accountParts(ctx, active...)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]*Account, len(active))
+	for _, a := range active {
+		v := s.newAccount(a, parts)
+		out[a.Account.ID] = &v
 	}
 	return out, nil
 }
@@ -546,9 +679,16 @@ func newRelationshipSeverance(sv moderation.SeveranceRecord) *RelationshipSevera
 	out := &RelationshipSeverance{
 		Kind: RelationshipSeveranceKindAccountSuspension, FollowersLost: sv.FollowersLost, FollowingLost: sv.FollowingLost,
 	}
-	if sv.DomainActionID != "" {
+	switch {
+	case sv.DomainActionID != "":
 		domain := sv.Domain
 		out.Kind, out.Domain = RelationshipSeveranceKindDomainSuspension, &domain
+	case sv.AllowlistCutoffID != "":
+		out.Kind = RelationshipSeveranceKindAllowlistCutoff
+		if sv.Domain != "" {
+			domain := sv.Domain
+			out.Domain = &domain
+		}
 	}
 	return out
 }
@@ -633,18 +773,82 @@ func (s *Server) DismissNotification(ctx context.Context, req DismissNotificatio
 
 // notifiedErrorGroup presents what an admin_error_group tells of, with the count of the groups
 // that one of the others folds.
-func (s *Server) notifiedErrorGroup(ctx context.Context, n notification.Notification) (*NotificationErrorGroup, error) {
+func notifiedErrorGroup(n notification.Notification, others map[string]int64) *NotificationErrorGroup {
 	out := &NotificationErrorGroup{Change: NotificationErrorGroupChange(n.ErrorGroupChange)}
 	if n.ErrorGroupID != "" {
 		id := n.ErrorGroupID
 		out.GroupId = &id
 	}
 	if n.ErrorGroupChange == notification.ErrorGroupOthers {
+		count := others[n.ID]
+		out.Count = &count
+	}
+	return out
+}
+
+// errorGroupOtherCounts is a Notifications that counts the other error groups of many
+// notifications at once, as *appnotification.Service does.
+type errorGroupOtherCounts interface {
+	ErrorGroupOthersOf(ctx context.Context, ns []notification.Notification) (map[string]int64, error)
+}
+
+// errorGroupOthers returns the counts of the other error groups that the notifications of ns tell
+// of, by notification ID: together when Notifications can, one by one otherwise.
+func (s *Server) errorGroupOthers(ctx context.Context, ns []notification.Notification) (map[string]int64, error) {
+	if b, ok := s.o.Notifications.(errorGroupOtherCounts); ok {
+		return b.ErrorGroupOthersOf(ctx, ns)
+	}
+	out := map[string]int64{}
+	for _, n := range ns {
+		if n.ErrorGroupChange != notification.ErrorGroupOthers {
+			continue
+		}
 		count, err := s.o.Notifications.ErrorGroupOthers(ctx, n)
 		if err != nil {
 			return nil, err
 		}
-		out.Count = &count
+		out[n.ID] = count
+	}
+	return out, nil
+}
+
+// announcementBatch is an Announcements that reads many shown announcements at once, as
+// *appinstance.Service does.
+type announcementBatch interface {
+	ShownAnnouncementsByID(ctx context.Context, userID string, ids []string) (map[string]appinstance.ReaderAnnouncement, error)
+}
+
+// notifiedAnnouncements returns the announcements that the notifications of ns tell of and the
+// user is shown, by ID: together when Announcements can, one by one otherwise.
+func (s *Server) notifiedAnnouncements(ctx context.Context, userID string, ns []notification.Notification) (map[string]appinstance.ReaderAnnouncement, error) {
+	out := map[string]appinstance.ReaderAnnouncement{}
+	if s.o.Announcements == nil {
+		return out, nil
+	}
+	var ids []string
+	for _, n := range ns {
+		if id := n.AnnouncementID; id != "" && !slices.Contains(ids, id) {
+			ids = append(ids, id)
+		}
+	}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	if b, ok := s.o.Announcements.(announcementBatch); ok {
+		found, err := b.ShownAnnouncementsByID(ctx, userID, ids)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: the announcements of the notifications: %w", err)
+		}
+		return found, nil
+	}
+	for _, id := range ids {
+		a, ok, err := s.o.Announcements.ShownAnnouncement(ctx, userID, id)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: the announcement %s of a notification: %w", id, err)
+		}
+		if ok {
+			out[id] = a
+		}
 	}
 	return out, nil
 }
@@ -666,4 +870,31 @@ func (s *Server) notifiedAutoDeleteLimits(ctx context.Context, accountID string,
 		return nil, fmt.Errorf("clientapi: the auto delete notices of %s: %w", accountID, err)
 	}
 	return notices, nil
+}
+
+// DraftScheduleReader reads the schedules of drafts with their results, by ID
+// (ADR-0156 §8); *appcontent.DraftService implements it. A schedule whose draft
+// was deleted is absent.
+type DraftScheduleReader interface {
+	DraftSchedules(ctx context.Context, ids []string) (map[string]appcontent.DraftScheduleRecord, error)
+}
+
+// notifiedDraftSchedules returns the schedules that the scheduled_status_failed notifications
+// among ns tell of, by ID. The notifications are the viewer's own, made for the author of the
+// draft, so the schedules are the viewer's.
+func (s *Server) notifiedDraftSchedules(ctx context.Context, ns []notification.Notification) (map[string]appcontent.DraftScheduleRecord, error) {
+	var ids []string
+	for _, n := range ns {
+		if n.Type == notification.TypeScheduledStatusFailed {
+			ids = append(ids, n.DraftScheduleID)
+		}
+	}
+	if len(ids) == 0 || s.o.DraftSchedules == nil {
+		return nil, nil
+	}
+	schedules, err := s.o.DraftSchedules.DraftSchedules(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the draft schedules of the notifications: %w", err)
+	}
+	return schedules, nil
 }

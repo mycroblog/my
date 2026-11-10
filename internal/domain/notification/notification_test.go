@@ -203,19 +203,36 @@ func TestValidateVoiceNotifications(t *testing.T) {
 	}
 }
 
+func TestValidateScheduledStatusFailed(t *testing.T) {
+	ok := Notification{ID: idN, RecipientAccountID: idA, Type: TypeScheduledStatusFailed, DraftScheduleID: idR, DedupeKey: ScheduledStatusFailedKey(idR)}
+	if err := ok.Validate(); err != nil {
+		t.Errorf("Validate(%+v) = %v", ok, err)
+	}
+	for _, n := range []Notification{
+		{ID: idN, RecipientAccountID: idA, Type: TypeScheduledStatusFailed, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeScheduledStatusFailed, SourceAccountID: idB, DraftScheduleID: idR, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeFollow, SourceAccountID: idB, DraftScheduleID: idR, DedupeKey: "k"},
+	} {
+		if err := n.Validate(); err == nil {
+			t.Errorf("Validate(%+v) = nil, want an error", n)
+		}
+	}
+}
+
 func TestHiddenTypes(t *testing.T) {
 	for _, tc := range []struct {
 		granted []Permission
 		want    []Type
 	}{
-		{nil, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal}},
-		{[]Permission{PermissionManageReports}, []Type{TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup}},
-		{[]Permission{PermissionManageAccounts}, []Type{TypeAdminReport, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal}},
-		{[]Permission{PermissionManageWebhooks}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal}},
-		{[]Permission{PermissionManageCustomEmojis}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal}},
-		{[]Permission{PermissionManageServiceClosure}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal}},
-		{[]Permission{PermissionManageAccounts, PermissionManageReports, PermissionManageWebhooks, PermissionManageCustomEmojis, PermissionManageServiceClosure, PermissionManageErrors, "view_audit"}, nil},
-		{[]Permission{PermissionManageErrors}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminHookFailing, TypeAdminHookAppeal}},
+		{nil, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal, TypeAdminDomainListFailing}},
+		{[]Permission{PermissionManageReports}, []Type{TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminDomainListFailing}},
+		{[]Permission{PermissionManageAccounts}, []Type{TypeAdminReport, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal, TypeAdminDomainListFailing}},
+		{[]Permission{PermissionManageWebhooks}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal, TypeAdminDomainListFailing}},
+		{[]Permission{PermissionManageCustomEmojis}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal, TypeAdminDomainListFailing}},
+		{[]Permission{PermissionManageServiceClosure}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal, TypeAdminDomainListFailing}},
+		{[]Permission{PermissionManageAccounts, PermissionManageReports, PermissionManageWebhooks, PermissionManageCustomEmojis, PermissionManageServiceClosure, PermissionManageErrors, PermissionManageDomains, "view_audit"}, nil},
+		{[]Permission{PermissionManageDomains}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminErrorGroup, TypeAdminHookFailing, TypeAdminHookAppeal}},
+		{[]Permission{PermissionManageErrors}, []Type{TypeAdminReport, TypeAdminSignUp, TypeAdminAppeal, TypeAdminWebhookDisabled, TypeAdminCustomEmojiRequest, TypeAdminAccountMoved, TypeAdminServiceClosureDue, TypeAdminHookFailing, TypeAdminHookAppeal, TypeAdminDomainListFailing}},
 	} {
 		if got := HiddenTypes(tc.granted); !slices.Equal(got, tc.want) {
 			t.Errorf("HiddenTypes(%v) = %v, want %v", tc.granted, got, tc.want)

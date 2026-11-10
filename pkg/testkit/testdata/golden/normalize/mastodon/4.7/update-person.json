@@ -12,6 +12,7 @@
         "Embedded": {
           "Actor": {
             "Featured": "https://mastodon.example/ap/users/117454922805771612/collections/featured",
+            "FeaturedTags": "https://mastodon.example/ap/users/117454922805771612/collections/tags",
             "Followers": "https://mastodon.example/ap/users/117454922805771612/followers",
             "Following": "https://mastodon.example/ap/users/117454922805771612/following",
             "ID": "https://mastodon.example/ap/users/117454922805771612",

@@ -199,7 +199,7 @@ describe("the new-post form", () => {
     expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent("Add a content warning");
   });
 
-  test("shows the name and current value of the visibility, quote policy and language as tooltips on keyboard focus, and not while the list is open", async () => {
+  test("shows the name and current value of the visibility, the interaction policy and the language as tooltips on keyboard focus, and not while the list is open", async () => {
     signedIn();
     const { user } = await renderApp();
     const sheet = await openSheet(user);
@@ -228,8 +228,13 @@ describe("the new-post form", () => {
 
     // Past images, poll and content warning.
     for (let i = 0; i < 4; i++) await user.tab();
-    expect(within(sheet).getByRole("button", { name: /Who can quote/ })).toHaveFocus();
-    expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent(/^Quote: /);
+    expect(
+      within(sheet).getByRole("button", { name: /^Who can reply, boost, and quote: Replies: Anyone/ }),
+    ).toHaveFocus();
+    // A followers-only post is boosted and quoted by its author alone, whatever the rules.
+    expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent(
+      "Replies: Anyone. Boosts: Only you. Quotes: Only you.",
+    );
     await user.tab();
     expect(within(sheet).getByRole("button", { name: "English Language" })).toHaveFocus();
     expect(await screen.findByRole("tooltip", { hidden: true })).toHaveTextContent("Language: English");

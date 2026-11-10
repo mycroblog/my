@@ -109,6 +109,8 @@ func roomsNotifications(t *testing.T, e *roomsEnv) {
 		{voice.VisibilityLocal, []string{follower, mutual}},
 		{voice.VisibilityFollowers, []string{follower, mutual}},
 		{voice.VisibilityMutuals, []string{mutual}},
+		// Of the followers, only those whom the host follows see a room of the following.
+		{voice.VisibilityFollowing, []string{mutual}},
 		{voice.VisibilityInvited, nil},
 	} {
 		j := e.open(t, host, appvoice.SettingsInput{Visibility: tc.visibility})
@@ -181,7 +183,7 @@ func roomsStartPost(t *testing.T, e *roomsEnv) {
 			t.Fatal(err)
 		}
 	}
-	for _, v := range []voice.Visibility{voice.VisibilityMutuals, voice.VisibilityInvited} {
+	for _, v := range []voice.Visibility{voice.VisibilityFollowing, voice.VisibilityMutuals, voice.VisibilityInvited} {
 		_, err := e.svc.Open(ctx, host, appvoice.SettingsInput{Name: "No post", Visibility: v, Post: &appvoice.StartPost{}})
 		if !errors.Is(err, appvoice.ErrNoStartPost) {
 			t.Errorf("Open(%s) with a start post = %v, want ErrNoStartPost", v, err)

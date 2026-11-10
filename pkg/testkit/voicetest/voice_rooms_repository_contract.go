@@ -354,4 +354,16 @@ func voiceRepoLockRoom(t *testing.T, e *voiceEnv) {
 	if ps := e.participants(t, room.ID); len(ps) != capacity {
 		t.Errorf("participants = %d, want the cap of %d", len(ps), capacity)
 	}
+	// The participants of many rooms at once, as those of each.
+	empty := e.openRoom(t, e.ids.NewID(), voiceSettings("Empty"), true)
+	of, err := e.h.Voice.ParticipantsOfRooms(ctx, nil, []string{room.ID, empty.ID, e.ids.NewID()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{room.ID, empty.ID} {
+		one, err := e.h.Voice.Participants(ctx, nil, id)
+		if err != nil || len(of[id]) != len(one) || len(one) > 0 && !reflect.DeepEqual(of[id], one) {
+			t.Errorf("ParticipantsOfRooms[%s] = %+v; want %+v, as Participants (%v)", id, of[id], one, err)
+		}
+	}
 }

@@ -15,13 +15,13 @@ import (
 func everything() content.AutoDeletePolicy {
 	return content.AutoDeletePolicy{
 		AccountID: "a", Enabled: true, MinAgeDays: 400,
-		KeepPinned: true, KeepBookmarked: true, KeepFavourited: true, KeepMedia: true, KeepPolls: true,
+		KeepPinned: true, KeepBookmarked: true, KeepFavourited: true, KeepMedia: true, KeepPolls: true, KeepArticles: true,
 		KeepVisibilities: []content.Visibility{content.VisibilityDirect}, KeepMinBoosts: 5, KeepMinFavourites: 7,
 	}
 }
 
 func TestEffectiveAutoDeletePolicy(t *testing.T) {
-	defaultLimit := content.AutoDeleteLimit{MaxAgeDays: 90, AllowPinned: true, KeptPins: content.MaxPins, GraceDays: 30}
+	defaultLimit := content.AutoDeleteLimit{MaxAgeDays: 90, AllowPinned: true, KeptPins: content.MaxPins, AllowArticles: true, GraceDays: 30}
 	disabled := content.DefaultAutoDeletePolicy("a")
 	short := everything()
 	short.MinAgeDays = 10
@@ -51,12 +51,12 @@ func TestEffectiveAutoDeletePolicy(t *testing.T) {
 		},
 		{
 			name: "shorter policy keeps its days", saved: short, bound: true,
-			limit: content.AutoDeleteLimit{MaxAgeDays: 90, AllowBookmarked: true, AllowFavourited: true, AllowMedia: true, AllowPolls: true, AllowVisibilities: true, AllowThresholds: true, KeptPins: 2},
+			limit: content.AutoDeleteLimit{MaxAgeDays: 90, AllowBookmarked: true, AllowFavourited: true, AllowMedia: true, AllowPolls: true, AllowArticles: true, AllowVisibilities: true, AllowThresholds: true, KeptPins: 2},
 			want:  func(p *content.AutoDeletePolicy) { p.KeepPinned = false },
 		},
 		{
 			name: "fewer kept pins cap the pins", saved: short, bound: false,
-			limit: content.AutoDeleteLimit{MaxAgeDays: 90, AllowPinned: true, KeptPins: 2, AllowBookmarked: true, AllowFavourited: true, AllowMedia: true, AllowPolls: true, AllowVisibilities: true, AllowThresholds: true},
+			limit: content.AutoDeleteLimit{MaxAgeDays: 90, AllowPinned: true, KeptPins: 2, AllowBookmarked: true, AllowFavourited: true, AllowMedia: true, AllowPolls: true, AllowArticles: true, AllowVisibilities: true, AllowThresholds: true},
 			want:  func(p *content.AutoDeletePolicy) { p.MaxKeptPins = 2 },
 		},
 	} {
@@ -97,6 +97,7 @@ func TestAutoDeleteLimitCheck(t *testing.T) {
 		"keep_favourited":     func(p *content.AutoDeletePolicy) { p.KeepFavourited = true },
 		"keep_media":          func(p *content.AutoDeletePolicy) { p.KeepMedia = true },
 		"keep_polls":          func(p *content.AutoDeletePolicy) { p.KeepPolls = true },
+		"keep_articles":       func(p *content.AutoDeletePolicy) { p.KeepArticles = true },
 		"keep_visibilities":   func(p *content.AutoDeletePolicy) { p.KeepVisibilities = []content.Visibility{content.VisibilityDirect} },
 		"keep_min_boosts":     func(p *content.AutoDeletePolicy) { p.KeepMinBoosts = 1 },
 		"keep_min_favourites": func(p *content.AutoDeletePolicy) { p.KeepMinFavourites = 1 },

@@ -68,6 +68,28 @@ func RegisterInteractionProjectors(r *uow.Projectors, repo InteractionRepository
 		re := e.(Unreacted).Reaction
 		return repo.AddReactions(ctx, tx, re.StatusID, re.Emoji, -1)
 	})
+	r.Register(EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ds := e.(StatusesDeleted).Deletions
+		ids := make([]string, len(ds))
+		for i, d := range ds {
+			ids[i] = d.Status.ID
+		}
+		if err := repo.DeleteStatusReactionCountsOf(ctx, tx, ids); err != nil {
+			return err
+		}
+		boosters, err := repo.ListLocalStatusBoostersOf(ctx, tx, ids)
+		if err != nil {
+			return err
+		}
+		removed := map[string]int64{}
+		for _, id := range boosters {
+			removed[id]++
+		}
+		if err := repo.SubtractLocalPostsOf(ctx, tx, removed); err != nil {
+			return err
+		}
+		return repo.DeleteStatusBoostEdgesOf(ctx, tx, ids)
+	})
 	// A deleted status leaves every status projection; its counters go with RegisterProjectors.
 	// Its local boosts no longer count as their boosters' posts.
 	r.Register(EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {

@@ -68,6 +68,9 @@ func appealRepoOnce(t *testing.T, r *modRepo) {
 		if got, err := r.h.Moderation.FindAppeal(ctx, ap.ID); err != nil || !reflect.DeepEqual(got, want) {
 			t.Errorf("%s: FindAppeal = %+v, %v; want %+v", name, got, err, want)
 		}
+		if got, err := r.h.Moderation.FindAppeals(ctx, []string{ap.ID, r.ids.NewID()}); err != nil || !reflect.DeepEqual(got, map[string]moderation.AppealRecord{ap.ID: want}) {
+			t.Errorf("%s: FindAppeals = %+v, %v; want only %+v", name, got, err, want)
+		}
 		var got moderation.AppealRecord
 		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
 			got, err = r.h.Moderation.Appeal(ctx, tx, ap.ID)

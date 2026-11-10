@@ -16,12 +16,14 @@ func TestLoadRejectsExcludedAdapters(t *testing.T) {
 	exclude("no_postgres", "stream", "postgres")
 	exclude("no_billing_aws", "billing_sources", "aws")
 	exclude("no_billing_gcp", "billing_sources", "gcp")
+	exclude("no_billing_cloudflare", "billing_sources", "cloudflare")
 
 	if _, _, err := Load(source(minimal(), nil)); err != nil {
 		t.Fatalf("Load() with database = sqlite: %v", err)
 	}
 
-	_, _, err := Load(source(with(minimal(), "MY_DATABASE", "postgres", "MY_STREAM", "postgres", "MY_BILLING_SOURCES", "gcp,aws"), nil))
+	_, _, err := Load(source(with(minimal(), "MY_DATABASE", "postgres", "MY_STREAM", "postgres", "MY_BILLING_SOURCES", "gcp,aws,cloudflare",
+		"MY_BILLING_CLOUDFLARE_ACCOUNT_ID", "023e105f4ecef8ad9ca31a8372d0c353", "MY_BILLING_CLOUDFLARE_API_TOKEN", "token"), nil))
 	var ve *ValidationError
 	if !errors.As(err, &ve) {
 		t.Fatalf("Load() error = %v, want *ValidationError", err)

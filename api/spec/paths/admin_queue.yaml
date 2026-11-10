@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getAdminQueue
+  x-permission: manage_jobs
   summary: Get the state of the job queue
   description: |
     The jobs of the job queue by state and type, when the oldest due job has been waiting

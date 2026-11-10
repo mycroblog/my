@@ -87,6 +87,11 @@ const (
 	// ActivityQuoteRequest asks the author of a post to approve a quote of it (FEP-044f,
 	// ADR-0069 §3): object is the quoted post, instrument the quoting one.
 	ActivityQuoteRequest ActivityType = "QuoteRequest"
+	// ActivityReplyRequest and ActivityAnnounceRequest ask the author of a post to approve a
+	// reply to it or a boost of it (GoToSocial's interaction policies, ADR-0155 §6): object is
+	// the post, instrument the reply or the Announce.
+	ActivityReplyRequest    ActivityType = "ReplyRequest"
+	ActivityAnnounceRequest ActivityType = "AnnounceRequest"
 	// ActivityUnknown is any other type of a document with an actor; RawType keeps the name.
 	ActivityUnknown ActivityType = ""
 )
@@ -109,6 +114,10 @@ const (
 	// ObjectQuoteAuthorization is the stamp by which the author of a post approves a quote of it
 	// (FEP-044f, ADR-0069 §2).
 	ObjectQuoteAuthorization ObjectType = "QuoteAuthorization"
+	// ObjectReplyAuthorization and ObjectAnnounceAuthorization are the stamps by which the author
+	// of a post approves a reply to it or a boost of it (GoToSocial's interaction policies).
+	ObjectReplyAuthorization    ObjectType = "ReplyAuthorization"
+	ObjectAnnounceAuthorization ObjectType = "AnnounceAuthorization"
 	// ObjectUnknown is any other type of a document without an actor; RawType keeps the name.
 	ObjectUnknown ObjectType = ""
 )
@@ -208,10 +217,15 @@ type Activity struct {
 	// EmojiReact; empty for a plain Like.
 	Reaction string
 	Emojis   []Emoji
-	// Instrument is the instrument of a QuoteRequest: the quoting post.
+	// Instrument is the instrument of a QuoteRequest, ReplyRequest, or AnnounceRequest: the
+	// quoting post, the reply, or the Announce.
 	Instrument Ref
-	// Result is the result of an Accept: the QuoteAuthorization of an accepted QuoteRequest.
+	// Result is the result of an Accept: the QuoteAuthorization, ReplyAuthorization, or
+	// AnnounceAuthorization of an accepted request.
 	Result IRI
+	// Authorization is the announceAuthorization of an Announce: the AnnounceAuthorization that
+	// approves it, "" for none.
+	Authorization IRI
 }
 
 // Object returns the first object of a, or the zero Ref.
@@ -284,6 +298,9 @@ type Object struct {
 	Converted    bool // Type is one of the converted types; Bodies holds the converted body
 	AttributedTo IRI
 	InReplyTo    IRI
+	// Conversation is the conversation that a post declares (FEP-7888's context, else
+	// ostatus:conversation; ADR-0154 §2), "" for none. It is an identifier, never fetched.
+	Conversation IRI
 	Audience     Audience
 	Published    time.Time
 	Updated      time.Time
@@ -306,17 +323,25 @@ type Object struct {
 	Replies Ref
 	// Quote is the post that the object quotes, nil for none (FR-114, ADR-0069 §2).
 	Quote *Quote
-	// CanQuote is the interactionPolicy.canQuote of a post, nil when it declares none: the
-	// actors and collections whose quotes are approved automatically or by hand.
-	CanQuote *CanQuote
-	// InteractingObject and InteractionTarget are the quote and the quoted post of a
-	// QuoteAuthorization (FEP-044f).
+	// CanReply, CanAnnounce, and CanQuote are the canReply, canAnnounce, and canQuote of the
+	// interactionPolicy of a post (GoToSocial's interaction policies, FEP-044f), nil when it
+	// declares none of the kind: the actors and collections whose interactions are approved
+	// automatically or by hand.
+	CanReply    *CanInteract
+	CanAnnounce *CanInteract
+	CanQuote    *CanInteract
+	// InteractingObject and InteractionTarget are the interaction and the post of a
+	// QuoteAuthorization (FEP-044f), ReplyAuthorization, or AnnounceAuthorization.
 	InteractingObject IRI
 	InteractionTarget IRI
+	// ReplyAuthorization is the replyAuthorization of a reply: the ReplyAuthorization that
+	// approves it, "" for none.
+	ReplyAuthorization IRI
 }
 
-// CanQuote is who may quote a post (FEP-044f, GoToSocial's interaction policies).
-type CanQuote struct {
+// CanInteract is who may interact with a post by one kind (a can* of GoToSocial's
+// interactionPolicy).
+type CanInteract struct {
 	AutomaticApproval []IRI
 	ManualApproval    []IRI
 }
@@ -341,8 +366,13 @@ type Collection struct {
 	ID IRI
 	// Page is set for a CollectionPage or OrderedCollectionPage.
 	Page bool
-	// Items are the items (or orderedItems) in document order, at most MaxItems of them.
+	// Items are the items (or orderedItems) in document order, at most MaxItems of them, but the
+	// Hashtag items.
 	Items []Ref
+	// Hashtags are the names of the Hashtag items, without their leading #, in document order and
+	// at most MaxItems of them: the items of a featuredTags collection (Mastodon's featured
+	// hashtags), which have no id.
+	Hashtags []string
 	// First is the first page of a collection; Next the page after a page.
 	First Ref
 	Next  Ref
@@ -375,6 +405,7 @@ type Actor struct {
 	Followers                 IRI
 	Following                 IRI
 	Featured                  IRI
+	FeaturedTags              IRI
 	Icon                      IRI
 	Image                     IRI
 	ManuallyApprovesFollowers bool

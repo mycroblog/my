@@ -323,6 +323,15 @@ func (q *Queries) EraseUserExternalIdentities(ctx context.Context, userID string
 	return err
 }
 
+const eraseUserInteractionPolicies = `-- name: EraseUserInteractionPolicies :exec
+DELETE FROM user_interaction_policies WHERE user_id = ?1
+`
+
+func (q *Queries) EraseUserInteractionPolicies(ctx context.Context, userID string) error {
+	_, err := q.db.ExecContext(ctx, eraseUserInteractionPolicies, userID)
+	return err
+}
+
 const eraseUserPreferences = `-- name: EraseUserPreferences :exec
 DELETE FROM user_preferences WHERE user_id = ?1
 `

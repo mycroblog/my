@@ -116,6 +116,26 @@ func Canonicalize(tag string) string {
 	return c
 }
 
+// Region returns the region of a BCP 47 tag as an ISO 3166-1 alpha-2 code: its own region subtag,
+// or else the likely one of CLDR's likely subtags ("ja" -> "JP", "en" -> "US", "zh-Hant" -> "TW",
+// "pt" -> "BR"). It returns "" for a tag that Canonicalize rejects, for "und", and when no likely
+// region is known or the region is not a country code.
+func Region(tag string) string {
+	c := Canonicalize(tag)
+	if c == "" || c == "und" {
+		return ""
+	}
+	t, err := language.Parse(c)
+	if err != nil {
+		return ""
+	}
+	r, conf := t.Region()
+	if conf == language.No || !r.IsCountry() {
+		return ""
+	}
+	return r.String()
+}
+
 // ParseAcceptLanguage returns the language tags of an Accept-Language header value,
 // highest quality first (ties keep header order). Tags with q=0, the wildcard "*",
 // and malformed entries are dropped.

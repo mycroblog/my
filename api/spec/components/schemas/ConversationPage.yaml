@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: A page of the user's direct messages by conversation.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        description: The conversations of the page, the one with the newest direct post first.
+        type: array
+        items:
+          $ref: ./Conversation.yaml

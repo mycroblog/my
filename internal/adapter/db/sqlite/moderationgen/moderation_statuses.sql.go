@@ -11,21 +11,22 @@ import (
 	"context"
 )
 
-const insertModerationActionStatus = `-- name: InsertModerationActionStatus :exec
+const insertModerationActionStatuses = `-- name: InsertModerationActionStatuses :exec
 
 
-INSERT INTO moderation_action_statuses (action_id, status_id) VALUES (?, ?)
+INSERT INTO moderation_action_statuses (action_id, status_id)
+SELECT CAST(?1 AS TEXT), value FROM json_each(CAST(?2 AS TEXT))
 `
 
-type InsertModerationActionStatusParams struct {
-	ActionID string
-	StatusID string
+type InsertModerationActionStatusesParams struct {
+	ActionID  string
+	StatusIds string
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
 // Statuses of actions on statuses (data-model section 4.3) ----------------------------------------------
-func (q *Queries) InsertModerationActionStatus(ctx context.Context, arg InsertModerationActionStatusParams) error {
-	_, err := q.db.ExecContext(ctx, insertModerationActionStatus, arg.ActionID, arg.StatusID)
+func (q *Queries) InsertModerationActionStatuses(ctx context.Context, arg InsertModerationActionStatusesParams) error {
+	_, err := q.db.ExecContext(ctx, insertModerationActionStatuses, arg.ActionID, arg.StatusIds)
 	return err
 }
 

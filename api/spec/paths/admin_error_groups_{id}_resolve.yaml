@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/ErrorGroupId.yaml
 post:
   operationId: resolveErrorGroup
+  x-permission: manage_errors
   summary: Resolve an error group
   description: |
     Marks a group resolved with the version of its last occurrence: an occurrence on another version regresses it to `open` and notifies again; an occurrence on the same version is only counted. Resolving a resolved group changes nothing. An unknown group is a 404. Needs the `manage_errors` permission.

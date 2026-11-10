@@ -94,7 +94,17 @@ function newAccount(id: string, acct: string, createdAt: number): Account {
 
 /** The account of a post of the bot's own account. */
 function accountOf(me: CredentialAccount): Account {
-  const { discoverable: _d, indexable: _i, ai_opt_out: _a, source: _s, posting: _p, permissions: _m, ...account } = me;
+  const {
+    discoverable: _d,
+    indexable: _i,
+    ai_opt_out: _a,
+    feed_enabled: _f,
+    feed_follows_indexable: _ff,
+    source: _s,
+    posting: _p,
+    permissions: _m,
+    ...account
+  } = me;
   return account;
 }
 
@@ -161,6 +171,8 @@ export class Server {
       discoverable: false,
       indexable: false,
       ai_opt_out: false,
+      feed_enabled: false,
+      feed_follows_indexable: true,
       source: { note: "", fields: [] },
       posting: { visibilities: ["public", "local", "unlisted", "private", "direct"], visibility_ceiling: "public" },
       permissions: [],
@@ -378,6 +390,7 @@ export class Server {
       boosts_count: 0,
       favourites_count: 0,
       reactions: [],
+      filtered: [],
     };
   }
 

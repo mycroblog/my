@@ -34,6 +34,7 @@
                 "https://www.w3.org/ns/activitystreams#Public"
               ]
             },
+            "Conversation": "https://mastodon.example/contexts/117454922805771612-117454925496168352",
             "Emojis": [
               {
                 "ID": "https://mastodon.example/emojis/1",

@@ -76,6 +76,9 @@ type AppealRepository interface {
 	Appeal(ctx context.Context, tx uow.Tx, id string) (moderation.AppealRecord, error)
 	// FindAppeal returns an appeal with its decision.
 	FindAppeal(ctx context.Context, id string) (moderation.AppealRecord, error)
+	// FindAppeals returns the appeals of ids that exist, by ID, as FindAppeal returns one, with one
+	// query.
+	FindAppeals(ctx context.Context, ids []string) (map[string]moderation.AppealRecord, error)
 	// AppealsOfActions returns the appeals of the actions, with their decisions, in no order.
 	AppealsOfActions(ctx context.Context, actionIDs []string) ([]moderation.AppealRecord, error)
 	// ListAppeals returns up to limit appeals with their decisions, newest first: those in
@@ -235,6 +238,32 @@ func (s *Service) accountDeleted(ctx context.Context, accountID string) (bool, e
 
 // OwnAppealAction returns the action that accountID's appeal appealID appeals, as the account
 // sees it; an unknown appeal, or one of another account, fails with ErrNotFound.
+// OwnAppealActions returns the actions that the appeals of appealIDs of accountID appeal, by
+// appeal ID, as OwnAppealAction returns one, reading them together.
+func (s *Service) OwnAppealActions(ctx context.Context, accountID string, appealIDs []string) (map[string]TargetActionView, error) {
+	appeals, err := s.d.Repository.FindAppeals(ctx, appealIDs)
+	if err != nil {
+		return nil, err
+	}
+	var actionIDs []string
+	for _, r := range appeals {
+		if r.Appeal.AccountID == accountID {
+			actionIDs = append(actionIDs, r.Appeal.ActionID)
+		}
+	}
+	actions, err := s.OwnActionsByID(ctx, accountID, actionIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]TargetActionView{}
+	for id, r := range appeals {
+		if v, ok := actions[r.Appeal.ActionID]; ok && r.Appeal.AccountID == accountID {
+			out[id] = v
+		}
+	}
+	return out, nil
+}
+
 func (s *Service) OwnAppealAction(ctx context.Context, accountID, appealID string) (TargetActionView, error) {
 	r, err := s.d.Repository.FindAppeal(ctx, appealID)
 	if err != nil {
@@ -289,11 +318,21 @@ func (s *Service) Appeals(ctx context.Context, f AppealFilter, limit int) ([]App
 	if err != nil {
 		return nil, err
 	}
+	ids := make([]string, len(rs))
+	for i, r := range rs {
+		ids[i] = r.Appeal.ActionID
+	}
+	actions, err := s.d.Repository.FindActionRecords(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]AppealView, len(rs))
 	for i, r := range rs {
-		if out[i], err = s.appealView(ctx, r); err != nil {
-			return nil, err
+		a, ok := actions[r.Appeal.ActionID]
+		if !ok {
+			return nil, fmt.Errorf("moderation: the action of appeal %s: %w", r.Appeal.ID, ErrNotFound)
 		}
+		out[i] = AppealView{AppealRecord: r, Action: s.accountView(a)}
 	}
 	return out, nil
 }

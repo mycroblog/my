@@ -423,8 +423,13 @@ func postingPosts(t *testing.T, e *postingEnv) {
 		t.Errorf("status URIs = %q, %q", st.URI, st.URL)
 	}
 	if st.AuthorAccountID != alice || !st.IsLocal || st.Visibility != content.VisibilityUnlisted || st.InReplyToURI != "" ||
-		st.ConversationURI != st.URI || !st.PublishedAt.Equal(e.Clock.Now()) {
+		!st.PublishedAt.Equal(e.Clock.Now()) || p.ParentStored {
 		t.Errorf("status = %+v", st)
+	}
+	// A post that replies to nothing starts a conversation of this server (ADR-0154 §2).
+	if convs, err := e.repo.StatusConversations(ctx, []string{st.ID}); err != nil || !convs[st.ID].IsLocal ||
+		convs[st.ID].URI != content.ConversationURI(testkit.ContractHost, convs[st.ID].ID) {
+		t.Errorf("conversation of the post = %+v, %v; want a new local one", convs[st.ID], err)
 	}
 	if rev.Seq != 1 || rev.SpoilerText != "cw" || !rev.Sensitive || rev.Language != "ja-JP" || !rev.RevisedAt.Equal(st.PublishedAt) {
 		t.Errorf("revision = %+v", rev)
@@ -671,12 +676,17 @@ func postingReplies(t *testing.T, e *postingEnv) {
 	alice, bob, carol := e.user(t, "alice"), e.user(t, "bob"), e.user(t, "carol")
 	root := e.postText(t, alice, "root", content.VisibilityPublic)
 	reply := e.post(t, appcontent.CreateInput{AuthorAccountID: bob, TextInput: appcontent.TextInput{Text: "reply"}, Visibility: content.VisibilityPublic, InReplyToID: root.Status.ID})
-	if reply.Status.InReplyToURI != root.Status.URI || reply.Status.ConversationURI != root.Status.URI {
-		t.Errorf("reply = %+v, want in reply to and in the conversation of %s", reply.Status, root.Status.URI)
+	if reply.Status.InReplyToURI != root.Status.URI || !reply.ParentStored {
+		t.Errorf("reply = %+v, want in reply to %s", reply, root.Status.URI)
 	}
 	nested := e.post(t, appcontent.CreateInput{AuthorAccountID: carol, TextInput: appcontent.TextInput{Text: "nested"}, Visibility: content.VisibilityPublic, InReplyToID: reply.Status.ID})
-	if nested.Status.InReplyToURI != reply.Status.URI || nested.Status.ConversationURI != root.Status.URI {
-		t.Errorf("nested reply = %+v, want the root's conversation", nested.Status)
+	if nested.Status.InReplyToURI != reply.Status.URI {
+		t.Errorf("nested reply = %+v", nested.Status)
+	}
+	// Replies join the conversation of what they reply to (ADR-0154 §2).
+	convs, err := e.repo.StatusConversations(ctx, []string{root.Status.ID, reply.Status.ID, nested.Status.ID})
+	if err != nil || len(convs) != 3 || convs[reply.Status.ID] != convs[root.Status.ID] || convs[nested.Status.ID] != convs[root.Status.ID] {
+		t.Errorf("conversations of the thread = %+v, %v; want the root's for all", convs, err)
 	}
 	if c, err := e.repo.FindCounters(ctx, root.Status.ID); err != nil || c.RepliesCount != 1 {
 		t.Errorf("root counters = %+v, %v; want 1 reply", c, err)

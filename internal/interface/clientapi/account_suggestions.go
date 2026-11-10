@@ -4,6 +4,7 @@ package clientapi
 
 import (
 	"context"
+	"maps"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 )
@@ -39,11 +40,36 @@ func (s *Server) ListAccountSuggestions(ctx context.Context, req ListAccountSugg
 	}
 	ids := make([]string, len(suggestions))
 	sources := make(map[string]appaccount.SuggestionSource, len(suggestions))
+	found := make(map[string]appaccount.Actor, len(suggestions))
+	var unread []string
 	for i, sg := range suggestions {
 		ids[i] = sg.AccountID
 		sources[sg.AccountID] = sg.Source
+		if sg.Actor.Account.ID != "" {
+			found[sg.AccountID] = sg.Actor
+		} else {
+			unread = append(unread, sg.AccountID)
+		}
 	}
-	accounts, err := s.presentAccounts(ctx, &v, ids, true)
+	if len(unread) > 0 {
+		read, err := s.o.Accounts.FindByIDs(ctx, unread)
+		if err != nil {
+			return nil, err
+		}
+		maps.Copy(found, read)
+	}
+	// Suggest read the accounts (a Suggestions without them leaves them to read); only moderation and the blocks of the viewer are left to check.
+	shown, err := s.presentableOf(ctx, &v, found, ids, true)
+	if err != nil {
+		return nil, err
+	}
+	var actors []appaccount.Actor
+	for _, id := range ids {
+		if a, ok := shown[id]; ok {
+			actors = append(actors, a)
+		}
+	}
+	accounts, err := s.newAccounts(ctx, actors)
 	if err != nil {
 		return nil, err
 	}

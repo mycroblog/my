@@ -37,17 +37,13 @@ func (s *Server) newAdminAccountActions(ctx context.Context, vs []appmoderation.
 
 // newAdminAccountActionsWith is newAdminAccountActions through reads.
 func (s *Server) newAdminAccountActionsWith(ctx context.Context, reads presentReads, vs []appmoderation.AccountActionView) ([]AdminAccountAction, error) {
-	moderators := map[string]string{}
-	for _, v := range vs {
-		u := v.Action.IssuedByUserID
-		if _, ok := moderators[u]; ok || u == "" {
-			continue
-		}
-		la, err := reads.LocalAccountOfUser(ctx, u)
-		if err != nil && !errors.Is(err, appaccount.ErrNotFound) {
-			return nil, fmt.Errorf("clientapi: the account of user %s: %w", u, err)
-		}
-		moderators[u] = la.AccountID
+	issuers := make([]string, len(vs))
+	for i, v := range vs {
+		issuers[i] = v.Action.IssuedByUserID
+	}
+	moderators, err := moderatorAccounts(ctx, reads, issuers)
+	if err != nil {
+		return nil, err
 	}
 	out := make([]AdminAccountAction, 0, len(vs))
 	for _, v := range vs {

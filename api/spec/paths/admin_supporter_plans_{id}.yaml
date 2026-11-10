@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 patch:
   operationId: updateSupporterPlan
+  x-permission: manage_supporters
   summary: Change a supporter plan
   description: |
     Changes a supporter plan's terms and its role's permissions and position. New prices apply to new subscriptions and changes of plan only. A change that

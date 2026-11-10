@@ -50,6 +50,11 @@ https://gts.test {
 	reverse_proxy gotosocial:8080
 }
 
+https://gts21.test {
+	import site
+	reverse_proxy gotosocial-0.21:8080
+}
+
 https://misskey.test {
 	import site
 	reverse_proxy misskey:3000
@@ -63,4 +68,9 @@ https://akkoma.test {
 https://relay.test {
 	import site
 	reverse_proxy relay-server:8080
+}
+
+https://bonfire.test {
+	import site
+	reverse_proxy bonfire:4000
 }

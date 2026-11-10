@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: liftAccountAction
+  x-permission: manage_accounts
   summary: Lift a moderation action on an account
   description: |
     Ends the action's restrictions at once; those of other actions on the account stay.

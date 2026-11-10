@@ -28,8 +28,14 @@ for (const path of paths) {
     const response = await page.goto(path);
 
     // The shell as the server sent it, before the app adds tags of its own: every asset is a root path.
+    // An alternate link (the Atom feed of a profile or a hashtag) names a document for other readers, by its
+    // absolute address, and is not an asset of the build.
     const html = (await response?.text()) ?? "";
-    const urls = [...html.matchAll(/<(?:script|link)\b[^>]*\b(?:src|href)="([^"]+)"/g)].map((match) => match[1] ?? "");
+    const urls = [...html.matchAll(/<(?:script|link)\b[^>]*>/g)]
+      .map((match) => match[0])
+      .filter((tag) => !/\brel="alternate"/.test(tag))
+      .map((tag) => /\b(?:src|href)="([^"]+)"/.exec(tag)?.[1])
+      .filter((url): url is string => url !== undefined);
     expect(urls.filter((url) => url.startsWith("/assets/")).length).toBeGreaterThan(0);
     for (const url of urls) expect(url, "a shell tag of `my serve`").toMatch(/^\/[^/]/);
 

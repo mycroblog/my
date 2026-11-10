@@ -30,7 +30,7 @@ func (r *StatusRepository) ListAuthorStatusesToErase(ctx context.Context, tx uow
 		out[i] = appcontent.ErasableStatus{
 			Status: statusFrom(contentgen.Status{
 				ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
-				Visibility: row.Visibility, InReplyToUri: row.InReplyToUri, ConversationUri: row.ConversationUri,
+				Visibility: row.Visibility, InReplyToUri: row.InReplyToUri,
 				PublishedAt: row.PublishedAt,
 			}),
 			Deleted: row.Deleted,
@@ -106,6 +106,9 @@ func (r *StatusRepository) EraseInteractionsBy(ctx context.Context, tx uow.Tx, a
 			most = max(most, int64(len(ids)))
 			return nil
 		},
+		// The drafts (ADR-0156) go whole, with their schedules, before the media eraser counts
+		// their uploads as attached.
+		func() error { return appcontent.EraseDrafts(ctx, tx, r, accountID) },
 		// The automatic deletion policy (FR-118) is a setting of the account; its notices of the
 		// server maximum (ADR-0151 §5) go with it.
 		func() error { return q.EraseAutoDeleteKeptVisibilitiesBy(ctx, accountID) },

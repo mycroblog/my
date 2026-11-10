@@ -52,25 +52,38 @@ type EmailScheduler struct {
 // complete (nil completes nothing): what words the email that the notification row does not hold.
 // The idempotency key is the notification's, so that a retried transaction enqueues the job once.
 func (m *EmailScheduler) enqueueWith(ctx context.Context, tx uow.Tx, n notification.Notification, c notification.Choices, complete func(*pushJob)) error {
+	return m.enqueueAll(ctx, tx, []notification.Notification{n}, map[string]notification.Choices{n.RecipientAccountID: c}, complete)
+}
+
+// enqueueAll enqueues the emails of ns as enqueueWith enqueues that of each, with the choices of
+// their recipients by recipient, with one EnqueueTx.
+func (m *EmailScheduler) enqueueAll(ctx context.Context, tx uow.Tx, ns []notification.Notification, choices map[string]notification.Choices, complete func(*pushJob)) error {
 	if m == nil || m.Outbox == nil {
 		return nil
 	}
-	g, ok := notification.GroupOf(n.Type)
-	if !ok || !g.DelayedEmail() || !c.Enabled(g.Group, notification.ChannelEmail) {
+	var jobs []queue.NewJob
+	for _, n := range ns {
+		g, ok := notification.GroupOf(n.Type)
+		if !ok || !g.DelayedEmail() || !choices[n.RecipientAccountID].Enabled(g.Group, notification.ChannelEmail) {
+			continue
+		}
+		job := jobOf(n, "")
+		if complete != nil {
+			complete(&job)
+		}
+		payload, err := json.Marshal(job)
+		if err != nil {
+			return err
+		}
+		jobs = append(jobs, queue.NewJob{
+			Type: JobNotificationEmail, Payload: payload, IdempotencyKey: JobNotificationEmail + ":" + n.ID,
+			RunAt: m.Clock.Now().Add(notification.EmailDelay),
+		})
+	}
+	if len(jobs) == 0 {
 		return nil
 	}
-	job := jobOf(n, "")
-	if complete != nil {
-		complete(&job)
-	}
-	payload, err := json.Marshal(job)
-	if err != nil {
-		return err
-	}
-	return m.Outbox.EnqueueTx(ctx, tx, queue.NewJob{
-		Type: JobNotificationEmail, Payload: payload, IdempotencyKey: JobNotificationEmail + ":" + n.ID,
-		RunAt: m.Clock.Now().Add(notification.EmailDelay),
-	})
+	return m.Outbox.EnqueueTx(ctx, tx, jobs...)
 }
 
 // EmailNotifications is what the email job reads of the recipient's notifications and settings.
@@ -105,6 +118,8 @@ type EmailDeps struct {
 	// WebOrigin is the origin of the web client, whose page of the notification the emails link
 	// to.
 	WebOrigin string
+	// Filters judges the status of an email as for Web Push (PushDeps.Filters); nil judges none.
+	Filters StatusFilters
 }
 
 // RegisterEmailJobs registers the handler of JobNotificationEmail on reg. The handler sends
@@ -138,6 +153,10 @@ func sendNotificationEmail(ctx context.Context, d EmailDeps, run queue.Job, job 
 	if err != nil || !shown {
 		return err
 	}
+	verdict, err := filterVerdict(ctx, d.Filters, job)
+	if err != nil || verdict.Hidden {
+		return err // a keyword filter of the recipient hides its status
+	}
 	box, ok, err := d.Mailboxes.Mailbox(ctx, job.AccountID)
 	if err != nil || !ok {
 		return err
@@ -150,7 +169,7 @@ func sendNotificationEmail(ctx context.Context, d EmailDeps, run queue.Job, job 
 		return err
 	}
 	site := mailSite(ctx, d.Host, d.MailSite)
-	draft, ok := UnreadEmailDraft(l, site.Name, box.Address, p, d.WebOrigin, "")
+	draft, ok := UnreadEmailDraft(l, site.Name, box.Address, warned(l, p, verdict), d.WebOrigin, "")
 	if !ok {
 		return nil
 	}

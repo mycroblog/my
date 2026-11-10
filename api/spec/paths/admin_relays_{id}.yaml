@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/RelayId.yaml
 delete:
   operationId: deleteRelay
+  x-permission: manage_settings
   summary: Delete a relay
   description: |
     Deletes the registration of a relay that the instance left or that rejected it, with the

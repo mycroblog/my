@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 
 	"github.com/mycroblog/my/internal/app/uow"
@@ -16,8 +17,9 @@ import (
 // (data-model §9). Every status projection covers only statuses that are not deleted:
 //   - status_heads points at the revision with the highest Seq;
 //   - status_mention_index holds the mentions of that revision;
-//   - status_reply_links links a reply to its parent once both are known;
-//   - status_counters counts the replies whose visibility CountsAsReply (the boosts and
+//   - status_reply_links links a reply to its parent once both are known, unless the reply is
+//     held (a reply request of its is not accepted, ADR-0155 §6) until StatusReleased;
+//   - status_counters counts the replies, not held, whose visibility CountsAsReply (the boosts and
 //     favourites are counted by RegisterInteractionProjectors);
 //   - account_post_counters counts each account's statuses and their latest PublishedAt;
 //   - local_post_counters counts each local account's statuses that CountAsLocalPost (its
@@ -31,7 +33,14 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(ev.Status, false)); err != nil {
 			return err
 		}
-		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision)
+		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision, ev.HeldReply)
+	})
+	r.Register(EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(StatusReleased)
+		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(ev.Status, false)); err != nil {
+			return err
+		}
+		return linkReply(ctx, tx, repo, ev.Status)
 	})
 	r.Register(EventStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		rev := e.(StatusRevised).Revision
@@ -50,6 +59,22 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 			return err
 		}
 		return projectDeleted(ctx, tx, repo, ev.Status)
+	})
+	r.Register(EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ds := e.(StatusesDeleted).Deletions
+		var keys []string
+		for _, d := range ds {
+			for _, k := range statusLockKeys(d.Status, true) {
+				if !slices.Contains(keys, k) {
+					keys = append(keys, k)
+				}
+			}
+		}
+		slices.Sort(keys)
+		if err := repo.LockStatusKeys(ctx, tx, keys); err != nil {
+			return err
+		}
+		return projectDeletedMany(ctx, tx, repo, ds)
 	})
 	// poll_tallies holds the counts of the newest observation of each remote poll.
 	r.Register(EventPollTallyObserved, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -95,7 +120,9 @@ func projectRevision(ctx context.Context, tx uow.Tx, repo Repository, rev conten
 	return repo.ReplaceMentions(ctx, tx, rev.StatusID, rev.MentionedAccountIDs)
 }
 
-func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.Status, rev content.Revision) error {
+// projectCreated projects the new status s with its first revision rev. A held reply is not
+// linked to its parent nor counted among its replies.
+func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.Status, rev content.Revision, held bool) error {
 	if err := projectRevision(ctx, tx, repo, rev); err != nil {
 		return err
 	}
@@ -119,22 +146,9 @@ func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 	if err := repo.InsertCounters(ctx, tx, counters); err != nil {
 		return err
 	}
-	if s.InReplyToURI != "" {
-		parent, err := repo.FindLiveStatusByURI(ctx, tx, s.InReplyToURI)
-		switch {
-		case errors.Is(err, ErrNotFound):
-			// The parent is unknown or deleted; a parent that arrives later links this reply.
-		case err != nil:
+	if !held {
+		if err := linkReply(ctx, tx, repo, s); err != nil {
 			return err
-		default:
-			if err := repo.UpsertReplyLink(ctx, tx, linkTo(s, parent)); err != nil {
-				return err
-			}
-			if s.Visibility.CountsAsReply() {
-				if err := repo.AddReplies(ctx, tx, parent.ID, 1); err != nil {
-					return err
-				}
-			}
 		}
 	}
 	if err := repo.AddPost(ctx, tx, s.AuthorAccountID, s.PublishedAt); err != nil {
@@ -142,6 +156,33 @@ func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 	}
 	if s.CountsAsLocalPost() {
 		return repo.AddLocalPosts(ctx, tx, s.AuthorAccountID, 1)
+	}
+	return nil
+}
+
+// linkReply links the reply s to its parent and counts it among the parent's replies, when the
+// parent is known and live; a parent that arrives later links it.
+func linkReply(ctx context.Context, tx uow.Tx, repo Repository, s content.Status) error {
+	if s.InReplyToURI == "" {
+		return nil
+	}
+	parent, err := repo.FindLiveStatusByURI(ctx, tx, s.InReplyToURI)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return nil
+	case err != nil:
+		return err
+	}
+	if _, err := repo.ReplyLink(ctx, tx, s.ID); err == nil {
+		return nil // linked already
+	} else if !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	if err := repo.UpsertReplyLink(ctx, tx, linkTo(s, parent)); err != nil {
+		return err
+	}
+	if s.Visibility.CountsAsReply() {
+		return repo.AddReplies(ctx, tx, parent.ID, 1)
 	}
 	return nil
 }
@@ -167,6 +208,43 @@ func projectDeleted(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 		return repo.AddLocalPosts(ctx, tx, s.AuthorAccountID, -1)
 	}
 	return nil
+}
+
+// projectDeletedMany is projectDeleted of the statuses of ds, together.
+func projectDeletedMany(ctx context.Context, tx uow.Tx, repo Repository, ds []StatusDeleted) error {
+	ids := make([]string, len(ds))
+	for i, d := range ds {
+		ids[i] = d.Status.ID
+	}
+	links, err := repo.ReplyLinksOf(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+	replies := map[string]int64{}
+	posts := map[string]int64{}
+	localPosts := map[string]int64{}
+	for _, d := range ds {
+		s := d.Status
+		if link, ok := links[s.ID]; ok && link.ParentStatusID != s.ID && s.Visibility.CountsAsReply() && !slices.Contains(ids, link.ParentStatusID) {
+			replies[link.ParentStatusID]--
+		}
+		posts[s.AuthorAccountID]++
+		if s.CountsAsLocalPost() {
+			localPosts[s.AuthorAccountID]++
+		}
+	}
+	if err := repo.AddManyReplies(ctx, tx, replies); err != nil {
+		return err
+	}
+	if err := repo.DeleteStatusProjectionsOf(ctx, tx, ids); err != nil {
+		return err
+	}
+	for _, author := range slices.Sorted(maps.Keys(posts)) {
+		if err := repo.RemovePosts(ctx, tx, author, posts[author]); err != nil {
+			return err
+		}
+	}
+	return repo.SubtractLocalPostsOf(ctx, tx, localPosts)
 }
 
 func linkTo(reply, parent content.Status) content.ReplyLink {

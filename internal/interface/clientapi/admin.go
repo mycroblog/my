@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -60,11 +61,17 @@ type InstanceHealth interface {
 }
 
 // requirePermission returns the 403 problem of a viewer whose roles do not grant p, or nil when
-// they do.
+// they do. A request that a permission scope admitted gets the 403 of an insufficient scope for
+// a p outside the token's permission scopes, so that a handler checking more than its
+// x-permission names refuses such a token instead of serving it.
 func (s *Server) requirePermission(ctx context.Context, p identity.Permission) (*problem, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if granted, ok := permissionScopeGrants(ctx, v); ok && !slices.Contains(granted, p) {
+		pr := s.missingPermissionScope(ctx, p)
+		return &pr, nil
 	}
 	ok := false
 	if s.o.Permissions != nil {
@@ -79,6 +86,33 @@ func (s *Server) requirePermission(ctx context.Context, p identity.Permission) (
 	l := s.Localizer(ctx)
 	pr := s.problem(ctx, http.StatusForbidden, ProblemTypeMissingPermission, l.ServerErrorsForbidden(), l.ServerErrorsMissingPermissionDetail(string(p)))
 	return &pr, nil
+}
+
+// permissionScopeGrants returns the permissions of the permission scopes of v's token, for a
+// request that a permission scope admitted, and false for a request that the admin scopes
+// admitted or that needs none (ADR-0090 §17).
+func permissionScopeGrants(ctx context.Context, v Viewer) ([]identity.Permission, bool) {
+	if _, ok := ctx.Value(permissionGrantKey{}).(identity.Permission); !ok {
+		return nil, false
+	}
+	var out []identity.Permission
+	for _, t := range v.Scope.Tokens() {
+		if p, ok := identity.ScopePermission(t); ok {
+			out = append(out, p)
+		}
+	}
+	return out, true
+}
+
+// missingPermissionScope is the 403 of a token whose scopes do not reach the permission p: the
+// scope it names is p's permission scope, or admin for a permission that has none.
+func (s *Server) missingPermissionScope(ctx context.Context, p identity.Permission) problem {
+	scope, ok := identity.PermissionScope(p)
+	if !ok {
+		scope = identity.ScopeAdmin
+	}
+	l := s.Localizer(ctx)
+	return s.problem(ctx, http.StatusForbidden, ProblemTypeInsufficientScope, l.ServerErrorsInsufficientScope(), l.ServerErrorsInsufficientScopeDetail(scope))
 }
 
 // instanceDomain returns the canonical host of the domain of a path, the form in which the

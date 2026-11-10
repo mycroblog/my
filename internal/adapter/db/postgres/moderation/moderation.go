@@ -41,12 +41,10 @@ func (r *Repository) InsertAction(ctx context.Context, tx uow.Tx, a moderation.A
 	if err != nil {
 		return postgres.Wrap(err, "insert moderation action")
 	}
-	for _, id := range a.StatusIDs {
-		if err := q.InsertModerationActionStatus(ctx, moderationgen.InsertModerationActionStatusParams{ActionID: a.ID, StatusID: id}); err != nil {
-			return postgres.Wrap(err, "insert moderation action status")
-		}
+	if len(a.StatusIDs) == 0 {
+		return nil
 	}
-	return nil
+	return postgres.Wrap(q.InsertModerationActionStatuses(ctx, moderationgen.InsertModerationActionStatusesParams{ActionID: a.ID, StatusIds: a.StatusIDs}), "insert moderation action statuses")
 }
 
 // actionStatusIDs returns the statuses of an action on statuses, nil for none.
@@ -174,14 +172,14 @@ func (r *Repository) InsertReport(ctx context.Context, tx uow.Tx, rep moderation
 	if err != nil || n == 0 {
 		return false, postgres.Wrap(err, "insert report")
 	}
-	for _, id := range rep.StatusIDs {
-		if err := q.InsertReportStatus(ctx, moderationgen.InsertReportStatusParams{ReportID: rep.ID, StatusID: id}); err != nil {
-			return false, postgres.Wrap(err, "insert report status")
+	if len(rep.StatusIDs) > 0 {
+		if err := q.InsertReportStatuses(ctx, moderationgen.InsertReportStatusesParams{ReportID: rep.ID, StatusIds: rep.StatusIDs}); err != nil {
+			return false, postgres.Wrap(err, "insert report statuses")
 		}
 	}
-	for _, id := range rep.RuleIDs {
-		if err := q.InsertReportRuleCitation(ctx, moderationgen.InsertReportRuleCitationParams{ReportID: rep.ID, RuleID: id}); err != nil {
-			return false, postgres.Wrap(err, "insert report rule citation")
+	if len(rep.RuleIDs) > 0 {
+		if err := q.InsertReportRuleCitations(ctx, moderationgen.InsertReportRuleCitationsParams{ReportID: rep.ID, RuleIds: rep.RuleIDs}); err != nil {
+			return false, postgres.Wrap(err, "insert report rule citations")
 		}
 	}
 	if v := rep.VoiceRoom; v != nil {
@@ -253,6 +251,27 @@ func (r *Repository) AccountRestrictionRows(ctx context.Context, tx uow.Tx, acco
 	out := make([]moderation.RestrictionRow, len(rows))
 	for i, row := range rows {
 		out[i] = restrictionRowsFrom(row.AccountID, row.Restriction, row.SourceActionID, row.EffectiveUntil)
+	}
+	return out, nil
+}
+
+// AccountRestrictionRowsOf implements moderation.Repository.
+func (r *Repository) AccountRestrictionRowsOf(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string][]moderation.RestrictionRow, error) {
+	out := make(map[string][]moderation.RestrictionRow, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	ids := accountIDs
+	rows, err := q.ListAccountRestrictionRowsOf(ctx, ids)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list account restrictions of accounts")
+	}
+	for _, row := range rows {
+		out[row.AccountID] = append(out[row.AccountID], restrictionRowsFrom(row.AccountID, row.Restriction, row.SourceActionID, row.EffectiveUntil))
 	}
 	return out, nil
 }
@@ -408,11 +427,7 @@ func (r *Repository) reportFrom(ctx context.Context, row moderationgen.Report) (
 	if err != nil {
 		return moderation.Report{}, err
 	}
-	return moderation.Report{
-		ID: row.ID, URI: postgres.FromNullString(row.Uri), ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
-		Category: moderation.Category(row.Category), Comment: row.Comment, Forwarded: row.Forwarded,
-		FiledAt: postgres.UTC(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin, Forward: forward,
-	}, nil
+	return reportOf(row, ids, rules, room, origin, forward), nil
 }
 
 // FindReport implements moderation.Repository.
@@ -455,11 +470,13 @@ func (r *Repository) ListReportsOf(ctx context.Context, targetAccountID string) 
 	if err != nil {
 		return nil, postgres.Wrap(err, "list reports")
 	}
+	reports, err := r.reportsWithParts(ctx, rows)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]moderation.Report, len(rows))
 	for i, row := range rows {
-		if out[i], err = r.reportFrom(ctx, row); err != nil {
-			return nil, err
-		}
+		out[i] = reports[row.ID]
 	}
 	return out, nil
 }
@@ -527,27 +544,30 @@ func (r *Repository) ListReports(ctx context.Context, q appmoderation.ReportQuer
 	if err != nil {
 		return nil, postgres.Wrap(err, "list reports")
 	}
-	out := make([]moderation.ReportRecord, len(rows))
-	for i, row := range rows {
-		if out[i], err = r.reportRecordFrom(ctx, row); err != nil {
-			return nil, err
-		}
-	}
-	return out, nil
+	return r.reportRecordsFrom(ctx, rows)
 }
 
-// reportRecordFrom reads the statuses and rules of the report of row.
-func (r *Repository) reportRecordFrom(ctx context.Context, row moderationgen.ListReportsRow) (moderation.ReportRecord, error) {
-	rep, err := r.reportFrom(ctx, moderationgen.Report{
-		ID: row.ID, Uri: row.Uri, ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
-		Category: row.Category, Comment: row.Comment, Forwarded: row.Forwarded, FiledAt: row.FiledAt,
-	})
-	if err != nil {
-		return moderation.ReportRecord{}, err
+// reportRecordsFrom returns the reports of rows with their parts and their states, reading each
+// part of all of them with one query (reportsWithParts).
+func (r *Repository) reportRecordsFrom(ctx context.Context, rows []moderationgen.ListReportsRow) ([]moderation.ReportRecord, error) {
+	reports := make([]moderationgen.Report, len(rows))
+	for i, row := range rows {
+		reports[i] = moderationgen.Report{
+			ID: row.ID, Uri: row.Uri, ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
+			Category: row.Category, Comment: row.Comment, Forwarded: row.Forwarded, FiledAt: row.FiledAt,
+		}
 	}
-	return moderation.ReportRecord{Report: rep, Status: reportStatusFrom(moderationgen.ReportState{
-		ReportID: row.ID, State: row.State, Outcome: row.Outcome, AssigneeUserID: row.AssigneeUserID, Since: row.Since,
-	})}, nil
+	parts, err := r.reportsWithParts(ctx, reports)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]moderation.ReportRecord, len(rows))
+	for i, row := range rows {
+		out[i] = moderation.ReportRecord{Report: parts[row.ID], Status: reportStatusFrom(moderationgen.ReportState{
+			ReportID: row.ID, State: row.State, Outcome: row.Outcome, AssigneeUserID: row.AssigneeUserID, Since: row.Since,
+		})}
+	}
+	return out, nil
 }
 
 // ListReportsByReporter implements moderation.Repository.
@@ -562,13 +582,11 @@ func (r *Repository) ListReportsByReporter(ctx context.Context, reporterAccountI
 	if err != nil {
 		return nil, postgres.Wrap(err, "list reports by reporter")
 	}
-	out := make([]moderation.ReportRecord, len(rows))
+	records := make([]moderationgen.ListReportsRow, len(rows))
 	for i, row := range rows {
-		if out[i], err = r.reportRecordFrom(ctx, moderationgen.ListReportsRow(row)); err != nil {
-			return nil, err
-		}
+		records[i] = moderationgen.ListReportsRow(row)
 	}
-	return out, nil
+	return r.reportRecordsFrom(ctx, records)
 }
 
 func domainActionRecordFrom(row moderationgen.ListDomainModerationActionsRow) moderation.DomainActionRecord {
@@ -580,6 +598,7 @@ func domainActionRecordFrom(row moderationgen.ListDomainModerationActionsRow) mo
 	if row.LiftActionID != nil && row.LiftedAt != nil {
 		rec.Lift = &moderation.DomainLift{ActionID: row.ID, LiftedByUserID: postgres.FromNullString(row.LiftedByUserID), LiftedAt: postgres.UTC(*row.LiftedAt)}
 	}
+	rec.SubscriptionID = postgres.FromNullString(row.SubscriptionID)
 	return rec
 }
 
@@ -653,12 +672,23 @@ func (r *Repository) ListActions(ctx context.Context, q appmoderation.ActionQuer
 	if err != nil {
 		return nil, postgres.Wrap(err, "list moderation actions")
 	}
+	ids := make([]string, len(rows))
+	for i, row := range rows {
+		ids[i] = row.ID
+	}
+	list := ids
+	statuses, err := r.db.reader().ListModerationActionStatusIDsOf(ctx, list)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list moderation action statuses")
+	}
+	statusesOf := map[string][]string{}
+	for _, st := range statuses {
+		statusesOf[st.ActionID] = append(statusesOf[st.ActionID], st.StatusID)
+	}
 	out := make([]moderation.ActionRecord, len(rows))
 	for i, row := range rows {
 		out[i] = actionRecordFrom(row)
-		if out[i].Action.StatusIDs, err = actionStatusIDs(ctx, r.db.reader(), row.ID); err != nil {
-			return nil, err
-		}
+		out[i].Action.StatusIDs = statusesOf[row.ID]
 	}
 	return out, nil
 }
@@ -670,4 +700,13 @@ func domainActionKindStrings(kinds []moderation.DomainActionKind) []string {
 		out[i] = string(k)
 	}
 	return out
+}
+
+// reportOf returns the report of row with its parts.
+func reportOf(row moderationgen.Report, ids, rules []string, room *moderation.ReportVoiceRoom, origin *moderation.ReportHookOrigin, forward *moderation.ReportForward) moderation.Report {
+	return moderation.Report{
+		ID: row.ID, URI: postgres.FromNullString(row.Uri), ReporterAccountID: row.ReporterAccountID, TargetAccountID: row.TargetAccountID,
+		Category: moderation.Category(row.Category), Comment: row.Comment, Forwarded: row.Forwarded,
+		FiledAt: postgres.UTC(row.FiledAt), StatusIDs: ids, RuleIDs: rules, VoiceRoom: room, HookOrigin: origin, Forward: forward,
+	}
 }

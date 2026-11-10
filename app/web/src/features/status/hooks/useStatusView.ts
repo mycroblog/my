@@ -13,7 +13,7 @@ import { useIntl } from "react-intl";
 import { useContentLinkClick } from "../../../lib/contentLinks";
 import { handleOf, isRemoteAcct } from "../../../lib/handle";
 import { hostOf } from "../../../lib/host";
-import { profilePath } from "../../../lib/paths";
+import { profilePath, tagPath } from "../../../lib/paths";
 import { type TimeView, useTimeView } from "../../../lib/time";
 import { useT } from "../../../lib/i18n";
 import { visibilityLabel } from "../../compose";
@@ -31,6 +31,11 @@ import { imageSources, originalImage } from "../../../lib/images";
 export type StatusView = {
   /** The display name of the account that boosted the post and its profile page, or null for a post of its own. */
   boostedBy: { name: string; emojis: readonly CustomEmojiImage[]; href: string } | null;
+  /**
+   * The hashtags the viewer follows that brought the post to the home timeline, each with its page: only for a post
+   * there for them alone, from an author the viewer does not follow (ADR-0013 §28). Empty everywhere else.
+   */
+  followedTags: readonly { name: string; href: string }[];
   /**
    * The author's display name (the username when there is none), handle (`@alice` for a local account, `@bob@example.com` for a remote one),
    * profile page, and avatar URL (undefined when the account has none, and the avatar shows its fallback),
@@ -205,6 +210,8 @@ export function useStatusView(status: Status): StatusView {
             emojis: status.account.emojis,
             href: profilePath(status.account.acct),
           },
+    // A boost never comes for a hashtag (ADR-0013 §25), so only a post of its own carries them.
+    followedTags: (status.followed_tags ?? []).map((name) => ({ name, href: tagPath(name) })),
     author: {
       id: post.account.id,
       name: post.account.display_name || post.account.username,

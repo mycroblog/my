@@ -15,6 +15,7 @@
         "Language": "ja"
       }
     ],
+    "Conversation": "tag:mastodon.example,2023-01-11:objectId=376794415:objectType=Conversation",
     "ID": "https://mastodon.example/users/alice/statuses/109671288784583764",
     "Published": "2023-01-11T15:31:01Z",
     "RawType": "Note",

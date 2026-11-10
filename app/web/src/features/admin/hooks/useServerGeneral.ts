@@ -2,10 +2,11 @@
 // The general page of the server settings (FR-705, #663): the instance's display name, which names the instance to
 // people in place of its domain (the navigation, the tab title, the sign-in pages, emails, link previews); its
 // descriptions, the short one that the about page and other servers' directories show and the full one; how people
-// reach its operators (the contact account, a user of this server, and the contact email address); and the thumbnail
-// with its alt text. The administrator writes each text once, in any language, and every language shows it as it is;
-// with no name the domain shows, and handles and links keep the domain. A new image is uploaded as soon as it is
-// chosen and becomes the thumbnail when the form is saved. Saving sends only what changed: the settings together
+// reach its operators (the contact account, a user of this server, and the contact email address); the thumbnail
+// with its alt text; and the image of link previews with its alt text (preview_image, ADR-0028 §2), which comes before
+// the thumbnail in og:image. The administrator writes each text once, in any language, and every language shows it as
+// it is; with no name the domain shows, and handles and links keep the domain. A new image is uploaded as soon as it
+// is chosen and becomes the setting when the form is saved. Saving sends only what changed: the settings together
 // (PATCH /admin/settings), then each text that changed, each an audited change.
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { type SyntheticEvent, useState } from "react";
@@ -23,19 +24,25 @@ import {
   type InstanceTextChange,
   instanceNameLimit,
   instanceSettingsQueryOptions,
+  imageAltLimit,
   saveGeneralMutation,
   shortDescriptionLimit,
-  thumbnailAltLimit,
 } from "../api/settings";
 import { characterCount } from "./languages";
 
 /** The texts of the form. */
-type TextKey = Extract<InstanceTextChange["key"], "name" | "short_description" | "description" | "thumbnail_alt">;
+type TextKey = Extract<
+  InstanceTextChange["key"],
+  "name" | "short_description" | "description" | "thumbnail_alt" | "preview_image_alt"
+>;
 
 type DescriptionKey = Extract<TextKey, "short_description" | "description">;
 
 /** The settings of the form. */
-type ContactKey = Extract<InstanceSettingKey, "contact_account" | "contact_email" | "thumbnail">;
+type ContactKey = Extract<InstanceSettingKey, "contact_account" | "contact_email" | ImageKey>;
+
+/** The image settings of the form. */
+type ImageKey = Extract<InstanceSettingKey, "thumbnail" | "preview_image">;
 
 /** The most characters of each description. */
 export const descriptionLimits: Readonly<Record<DescriptionKey, number>> = {
@@ -50,10 +57,69 @@ export type DescriptionField = {
   onChange: (value: string) => void;
 };
 
-/** What saving does to the thumbnail: keep the saved one, use a new upload, or remove it. */
-type ThumbnailChange = { kind: "keep" } | { kind: "new"; media: MediaAttachment } | { kind: "remove" };
+/** What saving does to an image setting: keep the saved one, use a new upload, or remove it. */
+type ImageChange = { kind: "keep" } | { kind: "new"; media: MediaAttachment } | { kind: "remove" };
 
-const textKeys = ["name", "short_description", "description", "thumbnail_alt"] as const satisfies readonly TextKey[];
+const textKeys = [
+  "name",
+  "short_description",
+  "description",
+  "thumbnail_alt",
+  "preview_image_alt",
+] as const satisfies readonly TextKey[];
+
+/** One image setting of the form: the image it shows and how to change it. */
+export type ImageField = {
+  /** The image the form shows: the new upload, the saved image, or none. */
+  url: string | undefined;
+  choose: (file: File) => void;
+  remove: () => void;
+  isUploading: boolean;
+  /** Why the upload failed, localized; undefined when it did not. */
+  error: string | undefined;
+};
+
+/**
+ * The state of one image setting: a new image is uploaded as soon as it is chosen, and the form sends it, or its
+ * removal, when it is saved. savedUrl is the saved image, which the form shows until the image changes.
+ */
+function useImageSetting(savedUrl: string | undefined) {
+  const api = useApi();
+  const t = useT();
+  const [change, setChange] = useState<ImageChange>({ kind: "keep" });
+  const upload = useMutation({
+    mutationFn: (file: File) => uploadImage(api, file, "attachment"),
+    onSuccess: (media) => {
+      setChange({ kind: "new", media });
+    },
+  });
+  // The medium rendition of a new upload fills the preview.
+  const url = change.kind === "new" ? change.media.variants?.medium.url : change.kind === "keep" ? savedUrl : undefined;
+  const uploadError =
+    upload.error instanceof MediaProcessingError
+      ? t("client:admin.settings.contact.thumbnail.failed")
+      : errorMessage(upload.error);
+  const field: ImageField = {
+    url,
+    choose: (file: File) => {
+      upload.mutate(file);
+    },
+    remove: () => {
+      upload.reset();
+      setChange({ kind: "remove" });
+    },
+    isUploading: upload.isPending,
+    error: upload.isError ? uploadError : undefined,
+  };
+  return {
+    field,
+    change,
+    reset: () => {
+      setChange({ kind: "keep" });
+      upload.reset();
+    },
+  };
+}
 
 /** A username as the server takes it: without the `@` that people may type before it, and without spaces. */
 function username(value: string): string {
@@ -73,15 +139,14 @@ export function useServerGeneral() {
   const [textDrafts, setTextDrafts] = useState<Readonly<Partial<Record<TextKey, string>>>>({});
   const [account, setAccount] = useState<string | undefined>(undefined);
   const [email, setEmail] = useState<string | undefined>(undefined);
-  const [thumbnail, setThumbnail] = useState<ThumbnailChange>({ kind: "keep" });
   const [status, setStatus] = useState<string | undefined>(undefined);
-
-  const upload = useMutation({
-    mutationFn: (file: File) => uploadImage(api, file, "attachment"),
-    onSuccess: (media) => {
-      setThumbnail({ kind: "new", media });
-    },
-  });
+  // The saved thumbnail comes from GET /instance; the saved preview image from its setting, which carries its image.
+  const thumbnail = useImageSetting(instance.thumbnail?.url);
+  const previewImage = useImageSetting(settings.items.find((setting) => setting.key === "preview_image")?.image?.url);
+  const images = { thumbnail, preview_image: previewImage } as const satisfies Record<
+    ImageKey,
+    ReturnType<typeof useImageSetting>
+  >;
 
   const textValue = (key: TextKey) => textDrafts[key] ?? savedText(key);
   const changeText = (key: TextKey) => (value: string) => {
@@ -97,15 +162,19 @@ export function useServerGeneral() {
   const tooLong =
     characterCount(textValue("short_description")) > shortDescriptionLimit ||
     characterCount(textValue("description")) > descriptionLimit ||
-    characterCount(textValue("thumbnail_alt")) > thumbnailAltLimit;
+    characterCount(textValue("thumbnail_alt")) > imageAltLimit ||
+    characterCount(textValue("preview_image_alt")) > imageAltLimit;
 
   const accountValue = account ?? savedSetting("contact_account");
   const emailValue = email ?? savedSetting("contact_email");
   const values: Partial<Record<ContactKey, string>> = {};
   if (username(accountValue) !== savedSetting("contact_account")) values.contact_account = username(accountValue);
   if (emailValue.trim() !== savedSetting("contact_email")) values.contact_email = emailValue.trim();
-  if (thumbnail.kind === "new") values.thumbnail = thumbnail.media.id;
-  if (thumbnail.kind === "remove" && savedSetting("thumbnail") !== "") values.thumbnail = "";
+  for (const key of ["thumbnail", "preview_image"] as const) {
+    const { change } = images[key];
+    if (change.kind === "new") values[key] = change.media.id;
+    if (change.kind === "remove" && savedSetting(key) !== "") values[key] = "";
+  }
   const textChanges: InstanceTextChange[] = textKeys
     .filter((key) => textValue(key) !== savedText(key))
     .map((key) => ({ key, body: textValue(key) }));
@@ -126,8 +195,8 @@ export function useServerGeneral() {
       setTextDrafts({});
       setAccount(undefined);
       setEmail(undefined);
-      setThumbnail({ kind: "keep" });
-      upload.reset();
+      thumbnail.reset();
+      previewImage.reset();
       setStatus(t("client:admin.settings.general.saved"));
     },
     // The settings and some texts may have been saved before a text failed: the form compares with what is saved now,
@@ -141,18 +210,6 @@ export function useServerGeneral() {
     onChange: changeText(key),
   });
 
-  // The medium rendition of a new upload fills the preview; the saved thumbnail comes from GET /instance.
-  const previewUrl =
-    thumbnail.kind === "new"
-      ? thumbnail.media.variants?.medium.url
-      : thumbnail.kind === "keep"
-        ? instance.thumbnail?.url
-        : undefined;
-  const uploadError =
-    upload.error instanceof MediaProcessingError
-      ? t("client:admin.settings.contact.thumbnail.failed")
-      : errorMessage(upload.error);
-
   return {
     /** The domain that names the instance without a name, and that handles and links use. */
     domain: instance.domain,
@@ -162,26 +219,24 @@ export function useServerGeneral() {
     full: description("description"),
     account: { value: accountValue, onChange: setAccount },
     email: { value: emailValue, onChange: setEmail },
-    thumbnail: {
-      /** The image the form shows: the new upload, the saved thumbnail, or none. */
-      url: previewUrl,
-      choose: (file: File) => {
-        upload.mutate(file);
-      },
-      remove: () => {
-        upload.reset();
-        setThumbnail({ kind: "remove" });
-      },
-      isUploading: upload.isPending,
-      /** Why the upload failed, localized; undefined when it did not. */
-      error: upload.isError ? uploadError : undefined,
-    },
+    thumbnail: thumbnail.field,
     /** The alt text of the thumbnail. */
     alt: { value: textValue("thumbnail_alt"), onChange: changeText("thumbnail_alt") },
+    /** The image of link previews (preview_image). */
+    previewImage: previewImage.field,
+    /** The alt text of the image of link previews. */
+    previewAlt: { value: textValue("preview_image_alt"), onChange: changeText("preview_image_alt") },
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
       // A field that cannot be saved shows why under it (its error or its count); the server would refuse it.
-      if (nameError !== undefined || tooLong || save.isPending || upload.isPending) return;
+      if (
+        nameError !== undefined ||
+        tooLong ||
+        save.isPending ||
+        thumbnail.field.isUploading ||
+        previewImage.field.isUploading
+      )
+        return;
       if (Object.keys(values).length === 0 && textChanges.length === 0) {
         setStatus(t("client:admin.settings.general.unchanged"));
         return;

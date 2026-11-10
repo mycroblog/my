@@ -6,6 +6,7 @@
 // what the server sends (the kinds, the explanations, the appeal).
 import type { Page, Route } from "@playwright/test";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { preferencesOf } from "./preferences.ts";
 
 /** The signed-in user's account, as GET /accounts/verify_credentials answers. */
 const viewer = {
@@ -23,6 +24,8 @@ const viewer = {
   discoverable: true,
   indexable: true,
   ai_opt_out: false,
+  feed_enabled: true,
+  feed_follows_indexable: true,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: [],
@@ -115,14 +118,7 @@ async function userServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, viewer);
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "und",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale }));
     }
     if (key === "GET /moderation/actions") {
       const active = url.searchParams.get("active") === "true";

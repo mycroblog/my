@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MIT
+description: How many notification requests wait for the authenticated user.
+type: object
+required: [accounts_count, notifications_count]
+properties:
+  accounts_count:
+    description: The number of requests, one per source account.
+    type: integer
+    format: int64
+    minimum: 0
+  notifications_count:
+    description: The number of notifications in them.
+    type: integer
+    format: int64
+    minimum: 0

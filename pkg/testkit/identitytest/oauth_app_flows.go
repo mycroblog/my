@@ -242,6 +242,58 @@ func oauthAppsIssueTokensToTheirOwner(t *testing.T, e *AccountEnv) {
 	}
 }
 
+// oauthAppsIssuePermissionScopes checks the permission scopes (ADR-0090 §17): the owner issues
+// one to themselves only while their roles hold the permission, the broad admin scopes stay
+// first-party only, and no authorization request of the app may ask for one.
+func oauthAppsIssuePermissionScopes(t *testing.T, e *AccountEnv) {
+	ctx := t.Context()
+	alice := e.Register(t, "alice").User.ID
+	if _, err := e.Identity.CreateRole(ctx, appidentity.CreateRoleInput{Key: "inviter", Position: 10, Permissions: []identity.Permission{identity.PermManageInvites}}); err != nil {
+		t.Fatalf("CreateRole = %v", err)
+	}
+	if _, err := e.Identity.GrantRole(ctx, appidentity.RoleChangeInput{UserID: alice, RoleKey: "inviter"}); err != nil {
+		t.Fatalf("GrantRole = %v", err)
+	}
+	in := ownAppInput(true)
+	in.Scope = "read admin:manage_invites admin:manage_finance"
+	reg, err := e.Identity.RegisterOAuthApp(ctx, alice, in)
+	if err != nil {
+		t.Fatalf("RegisterOAuthApp(permission scopes) = %v", err)
+	}
+	id := reg.Client.ID
+
+	got, err := e.Identity.IssueOAuthAppTokens(ctx, alice, id, "admin:manage_invites")
+	if err != nil || got.Token.Scope != "admin:manage_invites" {
+		t.Fatalf("IssueOAuthAppTokens(admin:manage_invites) = %+v, %v; want the permission scope", got.Token, err)
+	}
+	_, err = e.Identity.IssueOAuthAppTokens(ctx, alice, id, "admin:manage_finance")
+	wantOAuthError(t, err, appidentity.OAuthInvalidScope, "a permission scope without the permission")
+	_, err = e.Identity.IssueOAuthAppTokens(ctx, alice, id, "")
+	wantOAuthError(t, err, appidentity.OAuthInvalidScope, "the whole scope with a permission the owner lacks")
+
+	// The broad admin scopes stay out of a user's app.
+	for _, scope := range []string{"read admin", "read admin:read", "read admin:write"} {
+		bad := ownAppInput(true)
+		bad.Scope = scope
+		if _, err := e.Identity.RegisterOAuthApp(ctx, alice, bad); !errors.Is(err, identity.ErrInvalidOAuthClientScope) {
+			t.Errorf("RegisterOAuthApp(%q) = %v, want ErrInvalidOAuthClientScope", scope, err)
+		}
+	}
+
+	// An authorization request may not ask for a permission scope, and asking for nothing gets
+	// the app's scope without them.
+	req := appidentity.AuthorizationRequest{
+		ResponseType: "code", ClientID: reg.Client.ClientID, RedirectURI: contractOwnAppRedirect, Scope: "admin:manage_invites",
+		CodeChallenge: identity.S256Challenge(ContractCodeVerifier), CodeChallengeMethod: "S256",
+	}
+	_, err = e.Identity.ValidateAuthorization(ctx, req)
+	wantOAuthError(t, err, appidentity.OAuthInvalidScope, "an authorization request for a permission scope")
+	req.Scope = ""
+	if a, err := e.Identity.ValidateAuthorization(ctx, req); err != nil || a.Scope != "read" {
+		t.Errorf("ValidateAuthorization(no scope) = %q, %v; want read", a.Scope, err)
+	}
+}
+
 func oauthAppsLimitRegistrations(t *testing.T, e *AccountEnv) {
 	ctx := t.Context()
 	alice := e.Register(t, "alice").User.ID

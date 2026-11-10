@@ -136,6 +136,10 @@ func TestSignUpSignsTheNewUserIn(t *testing.T) {
 		`<form class="form" method="post" action="/auth/sign_out">`,
 	)
 	wantLacks(t, body, "Continue")
+	// Cloudflare's Email Address Obfuscation leaves the address alone between these comments.
+	if off, on, at := strings.Index(body, "<!--email_off-->"), strings.Index(body, "<!--/email_off-->"), strings.Index(body, "alice@example.com"); off < 0 || on < off || at < off || at > on {
+		t.Errorf("the address is not between <!--email_off--> and <!--/email_off-->:\n%s", body)
+	}
 
 	// The registration page sends a signed-in browser to that page too.
 	if w := b.do(http.MethodGet, authpages.PathSignUp, nil, nil); w.Code != http.StatusSeeOther || w.Header().Get("Location") != authpages.PathSignIn {

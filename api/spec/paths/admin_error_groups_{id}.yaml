@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/ErrorGroupId.yaml
 get:
   operationId: getErrorGroup
+  x-permission: manage_errors
   summary: Get an error group
   description: |
     An error group with its latest occurrence (the scrubbed stack, `request_id`, and

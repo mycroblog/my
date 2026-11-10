@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminRelays
+  x-permission: manage_settings
   summary: List the relays
   description: |
     The relays that the instance joins or joined, in registration order, with
@@ -23,6 +24,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createRelay
+  x-permission: manage_settings
   summary: Register a relay and join it
   description: |
     Registers a relay and sends the instance actor's `Follow`; the relay is `pending` until

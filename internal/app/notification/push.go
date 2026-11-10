@@ -38,6 +38,9 @@ type PushRepository interface {
 	// PushSubscriptionIDs returns inside tx the subscriptions of the account that take
 	// notifications of type t, in order.
 	PushSubscriptionIDs(ctx context.Context, tx uow.Tx, accountID string, t notification.Type) ([]string, error)
+	// PushSubscriptionIDsOf returns inside tx the subscriptions of each of accountIDs that take
+	// notifications of type t, by account, in order, with one query.
+	PushSubscriptionIDsOf(ctx context.Context, tx uow.Tx, accountIDs []string, t notification.Type) (map[string][]string, error)
 	// FindPushSubscription returns a subscription by ID, and FindPushSubscriptionOfFamily the
 	// subscription of a token family. They fail with an error wrapping ErrNotFound when there is
 	// none.
@@ -162,6 +165,8 @@ type pushJob struct {
 	// of and the days of its grace period, as of the notice.
 	AutoDeleteMaxAgeDays int `json:"auto_delete_max_age_days,omitempty"`
 	AutoDeleteDaysLeft   int `json:"auto_delete_days_left,omitempty"`
+	// DraftFailureReason is why the scheduled post of a scheduled_status_failed was not published.
+	DraftFailureReason string `json:"draft_failure_reason,omitempty"`
 }
 
 // jobOf returns the payload of a job about n: JobPush to the subscription subscriptionID, or
@@ -217,6 +222,41 @@ func (p *Pusher) enqueueWith(ctx context.Context, tx uow.Tx, n notification.Noti
 	return p.Outbox.EnqueueTx(ctx, tx, jobs...)
 }
 
+// enqueueAll enqueues the messages of ns, notifications of one type, as enqueueWith enqueues
+// those of each, reading the subscriptions of their recipients together and enqueueing every
+// message with one EnqueueTx.
+func (p *Pusher) enqueueAll(ctx context.Context, tx uow.Tx, ns []notification.Notification, complete func(*pushJob)) error {
+	if p == nil || p.Repository == nil || p.Outbox == nil || len(ns) == 0 {
+		return nil
+	}
+	recipients := make([]string, len(ns))
+	for i, n := range ns {
+		recipients[i] = n.RecipientAccountID
+	}
+	subs, err := p.Repository.PushSubscriptionIDsOf(ctx, tx, recipients, ns[0].Type)
+	if err != nil {
+		return err
+	}
+	var jobs []queue.NewJob
+	for _, n := range ns {
+		for _, id := range subs[n.RecipientAccountID] {
+			job := jobOf(n, id)
+			if complete != nil {
+				complete(&job)
+			}
+			payload, err := json.Marshal(job)
+			if err != nil {
+				return err
+			}
+			jobs = append(jobs, queue.NewJob{Type: JobPush, Payload: payload, IdempotencyKey: JobPush + ":" + n.ID + ":" + id})
+		}
+	}
+	if len(jobs) == 0 {
+		return nil
+	}
+	return p.Outbox.EnqueueTx(ctx, tx, jobs...)
+}
+
 // PushDeps are the ports of the Web Push use cases and job.
 type PushDeps struct {
 	UnitOfWork uow.UnitOfWork
@@ -242,6 +282,10 @@ type PushDeps struct {
 	// Stopped reports whether the closure of the service stops Web Push (ADR-0088 §2), read
 	// per message; nil never stops it.
 	Stopped func(ctx context.Context) (bool, error)
+	// Filters judges the status of a message against the recipient's keyword filters: a hide
+	// filter drops the message, and a warn filter words it by the filter's title (ADR-0157 §7).
+	// nil judges none.
+	Filters StatusFilters
 }
 
 // PushService runs the Web Push use cases of the client API (FR-206): reading, registering, and
@@ -385,7 +429,14 @@ func (s *PushService) push(ctx context.Context, job pushJob) queue.Result {
 	case !shown:
 		return queue.Done() // the recipient no longer sees the notification or its status
 	}
-	payload, err := s.message(ctx, job)
+	verdict, err := filterVerdict(ctx, s.d.Filters, job)
+	switch {
+	case err != nil:
+		return queue.Retry(0, err)
+	case verdict.Hidden:
+		return queue.Done() // a keyword filter of the recipient hides its status
+	}
+	payload, err := s.message(ctx, job, verdict)
 	if errors.Is(err, ErrNotFound) {
 		return queue.Done() // the account the message names is gone
 	}
@@ -459,15 +510,16 @@ type PushPayload struct {
 	Path string `json:"path"`
 }
 
-// message returns the payload of job's message, worded in the recipient's locale.
-func (s *PushService) message(ctx context.Context, job pushJob) ([]byte, error) {
-	p, _, err := describer{
+// message returns the payload of job's message, worded in the recipient's locale, and by the
+// filters of verdict when warn filters matched its status.
+func (s *PushService) message(ctx context.Context, job pushJob, verdict StatusVerdict) ([]byte, error) {
+	p, l, err := describer{
 		audience: s.d.Audience, messages: s.d.Messages, host: s.d.Host, instanceName: s.d.InstanceName,
 	}.describe(ctx, job)
 	if err != nil {
 		return nil, err
 	}
-	return json.Marshal(p)
+	return json.Marshal(warned(l, p, verdict))
 }
 
 // describer words a notification for its recipient: the title and the page of a Web Push
@@ -519,6 +571,7 @@ func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18
 		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange, ErrorGroupID: job.ErrorGroupID,
 		AnnouncementID: job.AnnouncementID, AnnouncementTitle: job.AnnouncementTitle,
 		AutoDeleteMaxAgeDays: job.AutoDeleteMaxAgeDays, AutoDeleteDaysLeft: job.AutoDeleteDaysLeft,
+		DraftFailureReason: job.DraftFailureReason,
 	}, instance), l, nil
 }
 
@@ -544,6 +597,9 @@ type Wording struct {
 	// AutoDeleteMaxAgeDays and AutoDeleteDaysLeft are the maximum of an auto_delete_limit and the
 	// days until it applies to the recipient's posts.
 	AutoDeleteMaxAgeDays, AutoDeleteDaysLeft int
+	// DraftFailureReason is why the scheduled post of a scheduled_status_failed was not published
+	// (content.DraftFailureReason).
+	DraftFailureReason string
 }
 
 // DescribeNotification words n in the locale of l for the instance named instance: the title
@@ -574,6 +630,16 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		p.Title, p.Path = l.ServerPushReaction(name), statusPath(recipient.Acct, n.StatusID)
 	case notification.TypeQuote:
 		p.Title, p.Path = l.ServerPushQuote(name), statusPath(source.Acct, n.StatusID)
+	case notification.TypeReplyRequest:
+		p.Title, p.Path = l.ServerPushReplyRequest(name), statusPath(recipient.Acct, n.StatusID)
+	case notification.TypeBoostRequest:
+		p.Title, p.Path = l.ServerPushBoostRequest(name), statusPath(recipient.Acct, n.StatusID)
+	case notification.TypeQuoteRequest:
+		p.Title, p.Path = l.ServerPushQuoteRequest(name), statusPath(recipient.Acct, n.StatusID)
+	case notification.TypeInteractionAccepted:
+		p.Title, p.Path = l.ServerPushInteractionAccepted(name), statusPath(source.Acct, n.StatusID)
+	case notification.TypeInteractionRejected:
+		p.Title, p.Path = l.ServerPushInteractionRejected(name), statusPath(source.Acct, n.StatusID)
 	case notification.TypePollClosed:
 		// The voters' notifications are from the poll's author; the author's own has no source.
 		author := source.Acct
@@ -595,6 +661,8 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		p.Title, p.Path = l.ServerPushAdminWebhookDisabled(instance), "/admin/webhooks"
 	case notification.TypeAdminHookFailing:
 		p.Title, p.Path = l.ServerPushAdminHookFailing(instance), "/moderation/hook-decisions"
+	case notification.TypeAdminDomainListFailing:
+		p.Title, p.Path = l.ServerPushAdminDomainListFailing(instance), "/moderation/domain-actions/subscriptions"
 	case notification.TypeAdminHookAppeal:
 		p.Title, p.Path = l.ServerPushAdminHookAppeal(instance), "/moderation/hook-decisions/appeals"
 		if n.HookAppealID != "" {
@@ -659,6 +727,8 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 			Instance: instance, Days: n.AutoDeleteMaxAgeDays, DaysLeft: n.AutoDeleteDaysLeft,
 		})
 		p.Path = AutoDeleteSettingsPath
+	case notification.TypeScheduledStatusFailed:
+		p.Title = l.ServerPushScheduledStatusFailed(i18n.ServerPushScheduledStatusFailedArgs{Instance: instance, Reason: n.DraftFailureReason})
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}

@@ -61,8 +61,8 @@ func (f Facts) mutual() bool { return f.FollowsHost && f.FollowedByHost }
 //  4. a viewer banned from the room does not see it;
 //  5. the host, a co-host, or a participant sees it;
 //  6. a viewer invited and not revoked sees it;
-//  7. by the visibility: local is seen, followers when the viewer follows the host, mutuals
-//     when they follow each other, and invited is not.
+//  7. by the visibility: local is seen, followers when the viewer follows the host, following
+//     when the host follows the viewer, mutuals when they follow each other, and invited is not.
 func CanSee(room Room, viewer Viewer, f Facts) bool {
 	switch {
 	case room.Ended:
@@ -83,6 +83,8 @@ func CanSee(room Room, viewer Viewer, f Facts) bool {
 		return true
 	case VisibilityFollowers:
 		return f.FollowsHost
+	case VisibilityFollowing:
+		return f.FollowedByHost
 	case VisibilityMutuals:
 		return f.mutual()
 	}
@@ -96,7 +98,8 @@ func CanSee(room Room, viewer Viewer, f Facts) bool {
 //  2. a limited account may not without an explicit permission;
 //  3. an explicit permission (a granted raised hand, a grant, an invitation as a speaker) may;
 //  4. by the speakers setting: everyone may, followers when the participant follows the host,
-//     mutuals when they follow each other, and manual may not.
+//     following when the host follows the participant, mutuals when they follow each other, and
+//     manual may not.
 func CanSpeakFreely(room Room, participant Viewer, f Facts) bool {
 	switch {
 	case participant.AccountID != "" && participant.AccountID == room.HostAccountID, f.Cohost:
@@ -111,6 +114,8 @@ func CanSpeakFreely(room Room, participant Viewer, f Facts) bool {
 		return true
 	case SpeakersFollowers:
 		return f.FollowsHost
+	case SpeakersFollowing:
+		return f.FollowedByHost
 	case SpeakersMutuals:
 		return f.mutual()
 	}

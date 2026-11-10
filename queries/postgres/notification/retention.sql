@@ -6,3 +6,8 @@
 -- StatusHasNotifications reports whether a notification is about the status.
 -- name: StatusHasNotifications :one
 SELECT EXISTS (SELECT 1 FROM notifications WHERE status_id = $1);
+
+-- NotifiedStatusesAmong returns the statuses among status_ids that a notification is about, as
+-- StatusHasNotifications tells of one.
+-- name: NotifiedStatusesAmong :many
+SELECT DISTINCT status_id FROM notifications WHERE status_id = ANY(sqlc.arg(status_ids)::uuid[]) ORDER BY status_id;

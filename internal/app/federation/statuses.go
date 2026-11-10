@@ -40,7 +40,7 @@ type RemoteStatuses interface {
 	FindStatus(ctx context.Context, id string) (appcontent.Status, error)
 	FindStatusByURI(ctx context.Context, uri string) (appcontent.Status, error)
 	Tombstoned(ctx context.Context, uri string) (bool, error)
-	LocalStatusInConversation(ctx context.Context, conversationURI string) (bool, error)
+	LocalStatusInConversationOf(ctx context.Context, statusID string) (bool, error)
 }
 
 // RelayedStatuses records the remote posts that only a relay brought in, which are kept for
@@ -50,11 +50,11 @@ type RelayedStatuses interface {
 }
 
 // StatusAccounts is the part of the account module's public API that ingesting posts reads: the
-// accounts that a post mentions and the followers collection of its author.
+// accounts that a post mentions and the followers and following collections of its author.
 // *appaccount.Service implements it.
 type StatusAccounts interface {
 	FindByURI(ctx context.Context, uri string) (appaccount.Actor, error)
-	RemoteFollowersURL(ctx context.Context, accountID string) (string, error)
+	RemoteCollectionURLs(ctx context.Context, accountID string) (followers, following string, err error)
 }
 
 // StatusHandlersDeps are the ports of StatusHandlers.
@@ -89,6 +89,10 @@ type StatusHandlersDeps struct {
 	// Pins mirrors the featured collections of remote accounts (JobFetchFeatured, ADR-0006);
 	// without Pins (or Profiles), featured collections are not fetched.
 	Pins RemotePins
+	// FeaturedTags mirrors the featuredTags collections of remote accounts
+	// (JobFetchFeaturedTags, ADR-0006 §17); without FeaturedTags (or Profiles), featuredTags
+	// collections are not fetched.
+	FeaturedTags RemoteFeaturedTags
 	// Relayed records the posts that only a relay brought in, and RelayPolicy keeps out those of
 	// restricted authors (ADR-0006); without Relayed, nothing a relay brings in is stored.
 	Relayed     RelayedStatuses
@@ -106,7 +110,11 @@ type StatusHandlersDeps struct {
 	// Approvals verifies the QuoteAuthorizations of this server that remote quotes of local
 	// statuses name; nil leaves those quotes pending.
 	Approvals QuoteApprovals
-	Clock     kernel.Clock
+	// Interactions approves the remote replies to remote statuses whose replyAuthorization
+	// verifies (ADR-0155 §6), reading the parents' authors through Profiles; nil leaves the held
+	// ones held.
+	Interactions InteractionApprovals
+	Clock        kernel.Clock
 	// Host is the serving domain: actors on it are local.
 	Host   string
 	Logger *slog.Logger
@@ -130,7 +138,7 @@ func NewStatusHandlers(d StatusHandlersDeps) *StatusHandlers {
 }
 
 // Register sets the handlers of Create, Update, and Delete, and of the Add and Remove of the
-// pinned posts (FeaturedChanged), on p.
+// pinned posts and featured hashtags (FeaturedChanged), on p.
 func (h *StatusHandlers) Register(p *InboxProcessor) {
 	p.Handle(federation.ActivityCreate, h.Create)
 	p.Handle(federation.ActivityUpdate, h.Update)
@@ -220,18 +228,18 @@ func (h *StatusHandlers) Update(ctx context.Context, a *InboxActivity) error {
 	case err != nil:
 		return err
 	}
-	followers, err := h.followers(ctx, a.Actor)
+	cols, err := h.collections(ctx, a.Actor)
 	if err != nil {
 		return err
 	}
-	mentions, err := h.mentions(ctx, obj, followers)
+	mentions, err := h.mentions(ctx, obj, cols.followers)
 	if err != nil {
 		return err
 	}
 	if err := h.resolveMentions(ctx, mentions); err != nil {
 		return err
 	}
-	in := h.input(a, obj, followers, mentions)
+	in := h.input(a, obj, cols, mentions)
 	verdict, err := h.reviewUpdate(ctx, a, stored, obj, in, mentions)
 	if err != nil {
 		return err
@@ -275,6 +283,13 @@ func (h *StatusHandlers) Delete(ctx context.Context, a *InboxActivity) error {
 	case errors.Is(err, appcontent.ErrNotFound):
 		if revoked, err := h.revokeQuoteAuthorization(ctx, id, a.Actor); err != nil || revoked {
 			return err
+		}
+		if h.d.Interactions != nil {
+			// The reply of a ReplyRequest that waits for its approval is withdrawn (ADR-0155 §6).
+			withdrew, err := h.d.Interactions.WithdrawRemoteInteraction(ctx, appcontent.InteractionReply, string(id), a.Actor.Account.ID)
+			if err != nil || withdrew {
+				return err
+			}
 		}
 		return fmt.Errorf("%w: %s", ErrUnknownObject, id)
 	case errors.Is(err, appcontent.ErrNotAuthor):
@@ -341,11 +356,11 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 	if tombstoned {
 		return fmt.Errorf("%w: %s is deleted", ErrDropActivity, obj.ID)
 	}
-	followers, err := h.followers(ctx, a.Actor)
+	cols, err := h.collections(ctx, a.Actor)
 	if err != nil {
 		return err
 	}
-	mentions, err := h.mentions(ctx, obj, followers)
+	mentions, err := h.mentions(ctx, obj, cols.followers)
 	if err != nil {
 		return err
 	}
@@ -364,7 +379,7 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 			return err
 		}
 	}
-	in := h.input(a, obj, followers, mentions)
+	in := h.input(a, obj, cols, mentions)
 	if in.Visibility == appcontent.VisibilityDirect && len(mentions.accountIDs) == 0 && mentions.deactivated {
 		return fmt.Errorf("%w: %s is addressed to deactivated accounts only", ErrDropActivity, obj.ID)
 	}
@@ -400,10 +415,13 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 		if relayed {
 			return h.recordRelayed(ctx, tx, p.Status, a.Relay)
 		}
-		return h.fetchParentTx(ctx, tx, p.Status)
+		return h.fetchParentTx(ctx, tx, p)
 	})
 	if errors.Is(err, appcontent.ErrStatusExists) {
 		return nil // a concurrent activity stored it
+	}
+	if err == nil {
+		h.verifyThirdPartyReply(ctx, obj)
 	}
 	return err
 }
@@ -474,11 +492,8 @@ func (h *StatusHandlers) inScope(ctx context.Context, author appaccount.Actor, o
 	case parent.IsLocal:
 		return true, nil
 	}
-	conversation := parent.ConversationURI
-	if conversation == "" {
-		conversation = parent.URI
-	}
-	return h.d.Statuses.LocalStatusInConversation(ctx, conversation)
+	// The parent's conversation, not the one the post declares (ADR-0154 §2).
+	return h.d.Statuses.LocalStatusInConversationOf(ctx, parent.ID)
 }
 
 // followed reports whether a local account follows the remote author: its followers are local.
@@ -487,13 +502,19 @@ func (h *StatusHandlers) followed(ctx context.Context, author appaccount.Actor) 
 	return len(followers) > 0, err
 }
 
-// followers returns the followers collection of a remote author, "" when it is unknown.
-func (h *StatusHandlers) followers(ctx context.Context, author appaccount.Actor) (federation.IRI, error) {
-	u, err := h.d.Accounts.RemoteFollowersURL(ctx, author.Account.ID)
+// authorCollections are the followers and following collections of a remote author, "" when
+// they are unknown.
+type authorCollections struct {
+	followers, following federation.IRI
+}
+
+// collections returns the followers and following collections of a remote author.
+func (h *StatusHandlers) collections(ctx context.Context, author appaccount.Actor) (authorCollections, error) {
+	followers, following, err := h.d.Accounts.RemoteCollectionURLs(ctx, author.Account.ID)
 	if errors.Is(err, appaccount.ErrNotFound) {
-		return "", nil
+		return authorCollections{}, nil
 	}
-	return federation.IRI(u), err
+	return authorCollections{followers: federation.IRI(followers), following: federation.IRI(following)}, err
 }
 
 // postMentions are the actors a post mentions or addresses: the stored accounts, and the remote
@@ -513,19 +534,21 @@ type postMentions struct {
 // addresses, federation.md §4) among the stored accounts.
 func (h *StatusHandlers) mentions(ctx context.Context, obj *federation.Object, followers federation.IRI) (*postMentions, error) {
 	m := &postMentions{}
-	for _, iri := range obj.MentionedIRIs(followers, h.isLocal) {
+	iris := obj.MentionedIRIs(followers, h.isLocal)
+	found, err := h.accountsByURI(ctx, iris)
+	if err != nil {
+		return nil, err
+	}
+	for _, iri := range iris {
 		if len(m.accountIDs)+len(m.unknown) == MaxMentions {
 			break
 		}
-		a, err := h.d.Accounts.FindByURI(ctx, string(iri))
-		switch {
-		case errors.Is(err, appaccount.ErrNotFound):
+		a, ok := found[string(iri)]
+		if !ok {
 			if !h.isLocal(iri) {
 				m.unknown = append(m.unknown, iri)
 			}
 			continue
-		case err != nil:
-			return nil, err
 		}
 		if a.Account.IsLocal() {
 			if !a.Lifecycle.Active() {
@@ -540,6 +563,36 @@ func (h *StatusHandlers) mentions(ctx context.Context, obj *federation.Object, f
 		m.accountIDs = append(m.accountIDs, a.Account.ID)
 	}
 	return m, nil
+}
+
+// uriBatch is an Accounts that reads many accounts by URI at once, as *appaccount.Service does.
+type uriBatch interface {
+	FindByURIs(ctx context.Context, uris []string) (map[string]appaccount.Actor, error)
+}
+
+// accountsByURI returns the stored actors of iris, by IRI: together when Accounts can, one by one
+// otherwise. It reads every IRI: the IRIs that mentions skips (a deactivated or unknown local
+// account) do not count towards MaxMentions.
+func (h *StatusHandlers) accountsByURI(ctx context.Context, iris []federation.IRI) (map[string]appaccount.Actor, error) {
+	uris := make([]string, len(iris))
+	for i, iri := range iris {
+		uris[i] = string(iri)
+	}
+	if b, ok := h.d.Accounts.(uriBatch); ok {
+		return b.FindByURIs(ctx, uris)
+	}
+	out := make(map[string]appaccount.Actor, len(uris))
+	for _, uri := range uris {
+		a, err := h.d.Accounts.FindByURI(ctx, uri)
+		switch {
+		case errors.Is(err, appaccount.ErrNotFound):
+		case err != nil:
+			return nil, err
+		default:
+			out[uri] = a
+		}
+	}
+	return out, nil
 }
 
 // resolveMentions fetches the remote actors of m that are not stored, at most
@@ -571,18 +624,18 @@ func (h *StatusHandlers) isLocal(iri federation.IRI) bool { return iri.Origin() 
 // (federation.md §4). A post without addressing takes the addressing of the activity only when
 // the post's author signed the activity: the addressing of an activity that someone else signed
 // is not the author's, even when the post itself was fetched from its origin.
-func (h *StatusHandlers) input(a *InboxActivity, obj *federation.Object, followers federation.IRI, m *postMentions) appcontent.RemoteStatusInput {
+func (h *StatusHandlers) input(a *InboxActivity, obj *federation.Object, cols authorCollections, m *postMentions) appcontent.RemoteStatusInput {
 	var fallback federation.Audience
 	if a.Received.Trust == federation.TrustSigned {
 		fallback = a.Activity.Audience
 	}
-	return h.inputOf(a.Actor, fallback, string(a.Received.ActivityURI), obj, followers, m)
+	return h.inputOf(a.Actor, fallback, string(a.Received.ActivityURI), obj, cols, m)
 }
 
 // inputOf maps a normalized post by author to what the content module stores (federation.md
 // §4). A post without addressing takes fallback, the addressing of the activity that carried it;
 // activityURI is that activity, "" for a post fetched by its id.
-func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Audience, activityURI string, obj *federation.Object, followers federation.IRI, m *postMentions) appcontent.RemoteStatusInput {
+func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Audience, activityURI string, obj *federation.Object, cols authorCollections, m *postMentions) appcontent.RemoteStatusInput {
 	audience := obj.Audience
 	if len(audience.To) == 0 && len(audience.Cc) == 0 {
 		audience = fallback
@@ -591,8 +644,9 @@ func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Au
 		URI:                 string(obj.ID),
 		AuthorAccountID:     author.Account.ID,
 		AuthorDomain:        author.Account.Domain,
-		Visibility:          appcontent.Visibility(audience.Visibility(followers)),
+		Visibility:          appcontent.Visibility(audience.Visibility(cols.followers)),
 		InReplyToURI:        string(obj.InReplyTo),
+		Conversation:        string(obj.Conversation),
 		PublishedAt:         obj.Published,
 		RevisedAt:           obj.Updated,
 		ActivityURI:         activityURI,
@@ -621,7 +675,7 @@ func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Au
 		in.Poll = pollInput(p)
 	}
 	in.Quote = quoteInput(obj.Quote)
-	in.QuotePolicy = quotePolicyInput(obj.CanQuote, followers)
+	in.InteractionPolicy = interactionPolicyInput(obj, federation.IRI(author.Account.URI), cols)
 	return in
 }
 

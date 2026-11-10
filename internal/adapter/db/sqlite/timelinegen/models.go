@@ -10,10 +10,29 @@ import (
 	"database/sql"
 )
 
+type FeaturedTag struct {
+	AccountID  string
+	TagID      string
+	Ordinal    int64
+	FeaturedAt int64
+}
+
 type FeedAuthorRestriction struct {
 	AccountID      string
 	Restriction    string
 	EffectiveUntil sql.NullInt64
+}
+
+type FeedConversation struct {
+	AccountID      string
+	ConversationID string
+	LastEntryID    string
+}
+
+type FeedConversationParticipant struct {
+	ConversationID string
+	EntryID        string
+	AccountID      string
 }
 
 type FeedDirectRecipient struct {
@@ -67,6 +86,17 @@ type FeedTagEntry struct {
 	Visibility      string
 	IsLocal         int64
 	RevisedAt       int64
+}
+
+type FeedTagFollow struct {
+	AccountID  string
+	TagID      string
+	FollowedAt int64
+}
+
+type KeywordFilterContext struct {
+	FilterID string
+	Context  string
 }
 
 type ListMember struct {

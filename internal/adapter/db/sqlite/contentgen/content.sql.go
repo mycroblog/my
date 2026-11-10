@@ -260,8 +260,7 @@ func (q *Queries) GetAccountPostCounter(ctx context.Context, accountID string) (
 }
 
 const getLiveStatusByURI = `-- name: GetLiveStatusByURI :one
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.uri = ? AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
 `
@@ -277,7 +276,6 @@ func (q *Queries) GetLiveStatusByURI(ctx context.Context, uri string) (Status, e
 		&i.IsLocal,
 		&i.Visibility,
 		&i.InReplyToUri,
-		&i.ConversationUri,
 		&i.PublishedAt,
 	)
 	return i, err
@@ -322,7 +320,7 @@ func (q *Queries) GetLocalStatusByIdempotencyKey(ctx context.Context, arg GetLoc
 }
 
 const getStatus = `-- name: GetStatus :one
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE id = ?
 `
 
@@ -337,14 +335,13 @@ func (q *Queries) GetStatus(ctx context.Context, id string) (Status, error) {
 		&i.IsLocal,
 		&i.Visibility,
 		&i.InReplyToUri,
-		&i.ConversationUri,
 		&i.PublishedAt,
 	)
 	return i, err
 }
 
 const getStatusByURI = `-- name: GetStatusByURI :one
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE uri = ?
 `
 
@@ -359,7 +356,6 @@ func (q *Queries) GetStatusByURI(ctx context.Context, uri string) (Status, error
 		&i.IsLocal,
 		&i.Visibility,
 		&i.InReplyToUri,
-		&i.ConversationUri,
 		&i.PublishedAt,
 	)
 	return i, err
@@ -538,8 +534,8 @@ func (q *Queries) InsertLocalStatus(ctx context.Context, arg InsertLocalStatusPa
 const insertStatus = `-- name: InsertStatus :exec
 
 INSERT INTO statuses (
-  id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type InsertStatusParams struct {
@@ -550,7 +546,6 @@ type InsertStatusParams struct {
 	IsLocal         int64
 	Visibility      string
 	InReplyToUri    sql.NullString
-	ConversationUri sql.NullString
 	PublishedAt     int64
 }
 
@@ -564,7 +559,6 @@ func (q *Queries) InsertStatus(ctx context.Context, arg InsertStatusParams) erro
 		arg.IsLocal,
 		arg.Visibility,
 		arg.InReplyToUri,
-		arg.ConversationUri,
 		arg.PublishedAt,
 	)
 	return err
@@ -661,27 +655,6 @@ func (q *Queries) InsertStatusRevision(ctx context.Context, arg InsertStatusRevi
 	return err
 }
 
-const insertStatusRevisionAttachment = `-- name: InsertStatusRevisionAttachment :exec
-INSERT INTO status_revision_attachments (revision_id, position, media_id, description) VALUES (?, ?, ?, ?)
-`
-
-type InsertStatusRevisionAttachmentParams struct {
-	RevisionID  string
-	Position    int64
-	MediaID     string
-	Description sql.NullString
-}
-
-func (q *Queries) InsertStatusRevisionAttachment(ctx context.Context, arg InsertStatusRevisionAttachmentParams) error {
-	_, err := q.db.ExecContext(ctx, insertStatusRevisionAttachment,
-		arg.RevisionID,
-		arg.Position,
-		arg.MediaID,
-		arg.Description,
-	)
-	return err
-}
-
 const insertStatusRevisionBody = `-- name: InsertStatusRevisionBody :exec
 INSERT INTO status_revision_bodies (revision_id, language, content_html) VALUES (?, ?, ?)
 `
@@ -697,34 +670,6 @@ func (q *Queries) InsertStatusRevisionBody(ctx context.Context, arg InsertStatus
 	return err
 }
 
-const insertStatusRevisionEmoji = `-- name: InsertStatusRevisionEmoji :exec
-INSERT INTO status_revision_emojis (revision_id, emoji_id) VALUES (?, ?)
-`
-
-type InsertStatusRevisionEmojiParams struct {
-	RevisionID string
-	EmojiID    string
-}
-
-func (q *Queries) InsertStatusRevisionEmoji(ctx context.Context, arg InsertStatusRevisionEmojiParams) error {
-	_, err := q.db.ExecContext(ctx, insertStatusRevisionEmoji, arg.RevisionID, arg.EmojiID)
-	return err
-}
-
-const insertStatusRevisionMention = `-- name: InsertStatusRevisionMention :exec
-INSERT INTO status_revision_mentions (revision_id, account_id) VALUES (?, ?)
-`
-
-type InsertStatusRevisionMentionParams struct {
-	RevisionID string
-	AccountID  string
-}
-
-func (q *Queries) InsertStatusRevisionMention(ctx context.Context, arg InsertStatusRevisionMentionParams) error {
-	_, err := q.db.ExecContext(ctx, insertStatusRevisionMention, arg.RevisionID, arg.AccountID)
-	return err
-}
-
 const insertStatusRevisionSource = `-- name: InsertStatusRevisionSource :exec
 INSERT INTO status_revision_sources (revision_id, source_text, source_format) VALUES (?, ?, ?)
 `
@@ -737,20 +682,6 @@ type InsertStatusRevisionSourceParams struct {
 
 func (q *Queries) InsertStatusRevisionSource(ctx context.Context, arg InsertStatusRevisionSourceParams) error {
 	_, err := q.db.ExecContext(ctx, insertStatusRevisionSource, arg.RevisionID, arg.SourceText, arg.SourceFormat)
-	return err
-}
-
-const insertStatusRevisionTag = `-- name: InsertStatusRevisionTag :exec
-INSERT INTO status_revision_tags (revision_id, tag_id) VALUES (?, ?)
-`
-
-type InsertStatusRevisionTagParams struct {
-	RevisionID string
-	TagID      string
-}
-
-func (q *Queries) InsertStatusRevisionTag(ctx context.Context, arg InsertStatusRevisionTagParams) error {
-	_, err := q.db.ExecContext(ctx, insertStatusRevisionTag, arg.RevisionID, arg.TagID)
 	return err
 }
 
@@ -898,10 +829,12 @@ func (q *Queries) ListLiveRemoteStatusIDsOfAuthor(ctx context.Context, arg ListL
 }
 
 const listLiveRepliesTo = `-- name: ListLiveRepliesTo :many
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.in_reply_to_uri = ? AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM interaction_requests r WHERE r.kind = 'reply' AND r.interacting_uri = s.uri
+    AND r.target_uri = s.in_reply_to_uri
+    AND NOT EXISTS (SELECT 1 FROM interaction_request_events e WHERE e.request_id = r.id AND e.kind = 'accepted'))
 ORDER BY s.id
 `
 
@@ -922,7 +855,6 @@ func (q *Queries) ListLiveRepliesTo(ctx context.Context, inReplyToUri sql.NullSt
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 		); err != nil {
 			return nil, err
@@ -940,8 +872,7 @@ func (q *Queries) ListLiveRepliesTo(ctx context.Context, inReplyToUri sql.NullSt
 
 const listLiveStatusHeads = `-- name: ListLiveStatusHeads :many
 
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at, h.revision_id
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at, h.revision_id
 FROM statuses s
 JOIN status_heads h ON h.status_id = s.id
 ORDER BY s.id
@@ -955,7 +886,6 @@ type ListLiveStatusHeadsRow struct {
 	IsLocal         int64
 	Visibility      string
 	InReplyToUri    sql.NullString
-	ConversationUri sql.NullString
 	PublishedAt     int64
 	RevisionID      string
 }
@@ -980,7 +910,6 @@ func (q *Queries) ListLiveStatusHeads(ctx context.Context) ([]ListLiveStatusHead
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 			&i.RevisionID,
 		); err != nil {
@@ -1441,6 +1370,44 @@ func (q *Queries) ListStatusRevisions(ctx context.Context, statusID string) ([]S
 	return items, nil
 }
 
+const listStatusesByIDs = `-- name: ListStatusesByIDs :many
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
+FROM statuses WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY id
+`
+
+// ListStatusesByIDs reads what GetStatus reads, of many statuses at once; the ids are a JSON array.
+func (q *Queries) ListStatusesByIDs(ctx context.Context, ids string) ([]Status, error) {
+	rows, err := q.db.QueryContext(ctx, listStatusesByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Status{}
+	for rows.Next() {
+		var i Status
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uri,
+			&i.Url,
+			&i.AuthorAccountID,
+			&i.IsLocal,
+			&i.Visibility,
+			&i.InReplyToUri,
+			&i.PublishedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTagsByPrefix = `-- name: ListTagsByPrefix :many
 SELECT id, name, name_normalized, created_at FROM tags
 WHERE name_normalized >= CAST(?1 AS TEXT) AND name_normalized < CAST(?2 AS TEXT)
@@ -1524,7 +1491,10 @@ INSERT INTO status_counters (status_id, replies_count, boosts_count, favourites_
 SELECT s.id,
   (SELECT COUNT(*) FROM statuses c
     WHERE c.in_reply_to_uri = s.uri AND c.visibility IN ('public', 'local', 'unlisted')
-      AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = c.id)),
+      AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = c.id)
+      AND NOT EXISTS (SELECT 1 FROM interaction_requests r WHERE r.kind = 'reply' AND r.interacting_uri = c.uri
+        AND r.target_uri = c.in_reply_to_uri
+        AND NOT EXISTS (SELECT 1 FROM interaction_request_events e WHERE e.request_id = r.id AND e.kind = 'accepted'))),
   (SELECT COUNT(*) FROM boosts b
     WHERE b.status_id = s.id AND NOT EXISTS (SELECT 1 FROM boost_retractions r WHERE r.boost_id = b.id)),
   (SELECT COUNT(*) FROM favourites f WHERE f.status_id = s.id)
@@ -1571,6 +1541,9 @@ SELECT c.id, p.id, p.author_account_id
 FROM statuses c JOIN statuses p ON p.uri = c.in_reply_to_uri
 WHERE NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = c.id)
   AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = p.id)
+  AND NOT EXISTS (SELECT 1 FROM interaction_requests r WHERE r.kind = 'reply' AND r.interacting_uri = c.uri
+    AND r.target_uri = c.in_reply_to_uri
+    AND NOT EXISTS (SELECT 1 FROM interaction_request_events e WHERE e.request_id = r.id AND e.kind = 'accepted'))
 `
 
 func (q *Queries) RebuildStatusReplyLinks(ctx context.Context) error {

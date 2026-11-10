@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-  describe the authenticated user's relation to it and are omitted for anonymous
+  A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
+  `muted` describe the authenticated user's relation to it and are omitted for anonymous
   requests; `pinned` is only given to the author.
 
   In a timeline, a boost is a status of the booster with `boost` set to the boosted
@@ -9,6 +9,11 @@ description: |
   `visibility` and `language` are those of the boosted status, its `content`,
   `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
   empty, its `card` and `quote` are omitted, and its counts are zero.
+
+  An article (`article` is given) is read as its title, summary, and cover everywhere, and
+  its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+  and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+  carry no body. An article has no content warning, media attachments, or poll.
 type: object
 required:
   - id
@@ -28,6 +33,7 @@ required:
   - boosts_count
   - favourites_count
   - reactions
+  - filtered
 properties:
   id:
     $ref: ./Id.yaml
@@ -46,8 +52,11 @@ properties:
   content:
     description: |
       The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-      remote status is what the server's sanitizer kept of the received document.
+      remote status is what the server's sanitizer kept of the received document. For an
+      article, its rendered body, or empty in lists (see above).
     type: string
+  article:
+    $ref: ./StatusArticle.yaml
   spoiler_text:
     description: The content warning; empty when there is none.
     type: string
@@ -95,6 +104,27 @@ properties:
     type: array
     items:
       $ref: ./StatusTag.yaml
+  filtered:
+    description: |
+      The user's keyword filters with the action `warn` that the post matched where it is shown,
+      with the words each matched; empty when none did, and always for an anonymous request.
+      Clients fold a post with any behind the titles of its filters, with a way to show it. A
+      post that matches a filter with the action `hide` is left out instead, except the post
+      that `GET /api/v1/statuses/{id}` shows, which is folded. In a
+      timeline, a boost carries the filters that the boosted post matched. A quoted post carries
+      its own: a quote that matches folds only the quote, even for `hide`. The user's own posts
+      and boosts, and what they quote, never match.
+    type: array
+    items:
+      $ref: ./FilterResult.yaml
+  followed_tags:
+    description: |
+      On the home timeline and its stream, the names (without `#`) of the hashtags that the
+      user follows and the post carries, when the post is there only for them: its author is
+      neither the user nor an account the user follows. Omitted everywhere else.
+    type: array
+    items:
+      type: string
   emojis:
     description: |
       The custom emoji of the text, the content warning, and the poll's choices. Clients show each `:shortcode:` of those texts that is in this list as its
@@ -131,9 +161,28 @@ properties:
   bookmarked:
     description: Whether the authenticated user bookmarked the status.
     type: boolean
+  muted:
+    description: |
+      Whether the authenticated user mutes the thread (conversation) of the status, which
+      keeps the user from being notified of what happens in it (`muteStatusThread`).
+    type: boolean
   pinned:
     description: Whether the status is pinned to the author's profile; given only to the author.
     type: boolean
+  approval:
+    description: |
+      The approval of this reply by the author of the status it replies to, while it is not
+      given; given only to the author of the reply, and omitted for a reply that needs no
+      approval or has it. A `pending` reply is shown to its author alone.
+    allOf:
+      - $ref: ./InteractionApprovalState.yaml
+  boost_approval:
+    description: |
+      The approval of the authenticated user's boost of the status by its author, while it is
+      not given; omitted when the user did not ask for one or it is given (then `boosted` is
+      true).
+    allOf:
+      - $ref: ./InteractionApprovalState.yaml
   poll:
     $ref: ./Poll.yaml
   card:
@@ -144,12 +193,13 @@ properties:
       `quoted_status`.
     allOf:
       - $ref: ./StatusQuote.yaml
-  quotable:
+  permissions:
     description: |
-      Whether the authenticated user may quote the status (its `quote_policy`, its visibility,
-      and the user's follow of the author decide it); omitted for anonymous requests.
-    type: boolean
-  quote_policy:
-    description: Who may quote the status; given only to its author.
+      What the authenticated user may do with the status: reply to it, boost it, and quote it.
+      Omitted for anonymous requests.
     allOf:
-      - $ref: ./QuotePolicy.yaml
+      - $ref: ./InteractionPermissions.yaml
+  interaction_policy:
+    description: Who may reply to, boost, and quote the status; given only to its author.
+    allOf:
+      - $ref: ./InteractionPolicy.yaml

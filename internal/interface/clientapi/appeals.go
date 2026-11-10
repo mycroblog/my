@@ -85,19 +85,22 @@ func (s *Server) appealActions(ctx context.Context, accountID string, ns []notif
 	if s.o.OwnAppeals == nil {
 		return out, nil
 	}
-	l := s.Localizer(ctx)
+	var ids []string
 	for _, n := range ns {
-		if _, ok := out[n.AppealID]; ok || n.Type != notification.TypeAppealDecided || n.AppealID == "" {
-			continue
+		if n.Type == notification.TypeAppealDecided && n.AppealID != "" {
+			ids = append(ids, n.AppealID)
 		}
-		v, err := s.o.OwnAppeals.OwnAppealAction(ctx, accountID, n.AppealID)
-		switch {
-		case errors.Is(err, appmoderation.ErrNotFound):
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the action of appeal %s of a notice to %s: %w", n.AppealID, accountID, err)
-		}
-		out[n.AppealID] = newModerationAction(l, v)
+	}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	views, err := s.ownAppealActions(ctx, accountID, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the actions of the appeals of the notices to %s: %w", accountID, err)
+	}
+	l := s.Localizer(ctx)
+	for id, v := range views {
+		out[id] = newModerationAction(l, v)
 	}
 	return out, nil
 }

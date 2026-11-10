@@ -51,6 +51,18 @@
     "defaultMessage": "[Ȧ ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī řḗḗɋŭŭḗḗşŧ ȧȧẇȧȧīŧş řḗḗṽīḗḗẇ ǿǿƞ {instance}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.admin_domain_list_failing.body": {
+    "defaultMessage": "[Ŧħḗḗ şḗḗřṽḗḗř {instance} ƈǿǿŭŭŀḓ ƞǿǿŧ ƒḗḗŧƈħ ȧȧ ƀŀǿǿƈķŀīşŧ īŧ şŭŭƀşƈřīƀḗḗş ŧǿǿ ŧħřḗḗḗḗ ŧīḿḗḗş īƞ ȧȧ řǿǿẇ. Ŭƞŧīŀ ȧȧ ƒḗḗŧƈħ ẇǿǿřķş ȧȧɠȧȧīƞ, ŧħḗḗ ŀīşŧ ƈħȧȧƞɠḗḗş ƞǿǿ ḓǿǿḿȧȧīƞ ȧȧƈŧīǿǿƞş; ŧħḗḗ ȧȧƈŧīǿǿƞş īŧ īşşŭŭḗḗḓ şŧȧȧẏ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_domain_list_failing.detail": {
+    "defaultMessage": "[Ǿƥḗḗƞ ŧħḗḗ ƀŀǿǿƈķŀīşŧ şŭŭƀşƈřīƥŧīǿǿƞş ŧǿǿ şḗḗḗḗ ẇħẏ ŧħḗḗ ƒḗḗŧƈħḗḗş ƒȧȧīŀḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.admin_domain_list_failing.subject": {
+    "defaultMessage": "[Ȧ ƀŀǿǿƈķŀīşŧ şŭŭƀşƈřīƥŧīǿǿƞ ǿǿƒ {instance} ķḗḗḗḗƥş ƒȧȧīŀīƞɠ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.admin_error_group.body": {
     "defaultMessage": "[Ŧħḗḗ şḗḗřṽḗḗř ǿǿř ŧħḗḗ ẇḗḗƀ ƈŀīḗḗƞŧ ǿǿƒ {instance} řḗḗƥǿǿřŧḗḗḓ ȧȧ ƞḗḗẇ ḗḗřřǿǿř, ǿǿř ȧȧƞ ḗḗřřǿǿř ŧħȧȧŧ ẇȧȧş ḿȧȧřķḗḗḓ řḗḗşǿǿŀṽḗḗḓ ħȧȧƥƥḗḗƞḗḗḓ ȧȧɠȧȧīƞ. Şḗḗḗḗ ŧħḗḗ ḗḗřřǿǿřş īƞ ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧīǿǿƞ şƈřḗḗḗḗƞş.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -133,6 +145,10 @@
   },
   "mail.group.admin_custom_emoji_request": {
     "defaultMessage": "[Ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī řḗḗɋŭŭḗḗşŧş]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.admin_domain_list_failing": {
+    "defaultMessage": "[Ƒȧȧīŀīƞɠ ƀŀǿǿƈķŀīşŧ şŭŭƀşƈřīƥŧīǿǿƞş]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.group.admin_error_group": {

@@ -5,6 +5,7 @@ package identitytest
 import (
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"testing"
@@ -20,8 +21,9 @@ import (
 // by their methods alone, the port contract of ADR-0153 §1. Of the account repository: accounts
 // found by ID and by URI, with one instance actor; local accounts with one normalized username,
 // found by account and by user; handles; profile revisions with their fields, the head and its
-// rebuild sources; keys with their sealed private halves; lifecycle events and states, the due
-// deletions and deactivations, and the newest reactivation; the counts and lists of local
+// rebuild sources; keys with their sealed private halves; the parts of many actors read at once, as
+// the reads of one read them; lifecycle events and states, the due deletions and deactivations,
+// and the newest reactivation; the counts and lists of local
 // accounts and of the accounts of a domain; and the reads inside a transaction. Of the identity
 // repository: users, password credentials with their removal, sessions with their revocations
 // and activity, TOTP enrollments with their recovery codes used once, passkeys with their
@@ -41,6 +43,7 @@ func AccountRepositoryContract(t *testing.T, newHarness AccountFactory) {
 		{"KeepsOneUsernamePerLocalAccount", accountRepoLocalAccounts},
 		{"KeepsProfileRevisionsAndTheirHead", accountRepoProfiles},
 		{"KeepsKeys", accountRepoKeys},
+		{"ReadsTheActorPartsOfManyAccounts", accountRepoActorParts},
 		{"KeepsLifecycleEventsAndStates", accountRepoLifecycle},
 		{"ListsDueDeletionsAndDeactivations", accountRepoDue},
 		{"ListsAndCountsAccounts", accountRepoLists},
@@ -115,6 +118,9 @@ func accountRepoAccounts(t *testing.T, r *identityRepo) {
 	if _, err := r.h.Accounts.FindAccountByURI(ctx, "https://remote.example/users/nobody"); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindAccountByURI(unknown) = %v, want ErrNotFound", err)
 	}
+	if got, err := r.h.Accounts.FindAccountsByURIs(ctx, []string{a.URI, "https://remote.example/users/nobody"}); err != nil || len(got) != 1 || got[a.URI] != a {
+		t.Errorf("FindAccountsByURIs = %+v, %v; want %+v alone, as FindAccountByURI", got, err, a)
+	}
 	if h, err := r.h.Accounts.FindHandle(ctx, "alfred", "remote.example"); err != nil || h.AccountID != id {
 		t.Errorf("FindHandle = %+v, %v", h, err)
 	}
@@ -123,6 +129,11 @@ func accountRepoAccounts(t *testing.T, r *identityRepo) {
 	}
 	if _, err := r.h.Accounts.FindHandle(ctx, "alfred", "other.example"); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindHandle(another domain) = %v, want ErrNotFound", err)
+	}
+	known, other := appaccount.HandleName{UsernameNormalized: "alfred", Domain: "remote.example"}, appaccount.HandleName{UsernameNormalized: "alfred", Domain: "other.example"}
+	want, _ := r.h.Accounts.FindHandle(ctx, "alfred", "remote.example")
+	if got, err := r.h.Accounts.FindHandles(ctx, []appaccount.HandleName{known, other}); err != nil || len(got) != 1 || got[known] != want {
+		t.Errorf("FindHandles = %+v, %v; want %+v alone, as FindHandle", got, err, want)
 	}
 	// A handle moves with an upsert, and the projection is rebuilt from nothing.
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
@@ -277,6 +288,129 @@ func accountRepoKeys(t *testing.T, r *identityRepo) {
 	}
 	if _, err := r.h.Accounts.FindSealedPrivateKey(ctx, rk.ID); !errors.Is(err, appaccount.ErrNotFound) {
 		t.Errorf("FindSealedPrivateKey of a remote key = %v, want ErrNotFound", err)
+	}
+	// The keys with their sealed private keys, as ListKeys and FindSealedPrivateKey read them.
+	withSealed, err := r.h.Accounts.ListKeysWithSealed(ctx, id)
+	if err != nil || len(withSealed) != 2 {
+		t.Fatalf("ListKeysWithSealed = %+v, %v; want the two keys", withSealed, err)
+	}
+	for i, k := range withSealed {
+		if k.Key.ID != got[i].ID || k.Key.KeyID != got[i].KeyID || k.Key.Algorithm != got[i].Algorithm || k.Key.PublicKeyPEM != got[i].PublicKeyPEM ||
+			!slices.Equal(k.Key.Fingerprint, got[i].Fingerprint) || !k.Key.CreatedAt.Equal(got[i].CreatedAt) || string(k.Sealed) != "sealed "+got[i].ID {
+			t.Errorf("ListKeysWithSealed[%d] = %+v; want %+v sealed", i, k, got[i])
+		}
+	}
+	if remoteKeys, err := r.h.Accounts.ListKeysWithSealed(ctx, remote); err != nil || len(remoteKeys) != 1 || remoteKeys[0].Key.ID != rk.ID || remoteKeys[0].Sealed != nil {
+		t.Errorf("ListKeysWithSealed(remote) = %+v, %v; want its key without a private key", remoteKeys, err)
+	}
+}
+
+// accountRepoActorParts reads the parts of several accounts at once, the duplicates and the
+// unknown IDs among them, and finds each part as the reads of one account find it.
+func accountRepoActorParts(t *testing.T, r *identityRepo) {
+	ctx := t.Context()
+	aliceUser := r.user(t)
+	alice := r.localAccount(t, aliceUser, "alice")
+	bob := r.remoteAccount(t, "remote.example", "bob")
+	carol := r.remoteAccount(t, "remote.example", "") // no handle, profile, key, or state
+	r.profile(t, alice, 1, "First")
+	r.clock.Advance(time.Second)
+	rev := account.ProfileRevision{
+		ID: r.ids.NewID(), AccountID: alice, Seq: 2, DisplayName: "Alice", NoteHTML: "<p>hi</p>", RevisedAt: r.clock.Now(),
+		Fields: []account.ProfileField{{Position: 0, Name: "site", ValueHTML: "<a>site</a>"}, {Position: 1, Name: "pronouns", ValueHTML: "they"}},
+		Source: &account.ProfileSource{Note: "hi", FieldValues: []string{"https://alice.example", "they"}},
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if err := r.h.Accounts.InsertProfileRevision(ctx, tx, rev); err != nil {
+			return err
+		}
+		return r.h.Accounts.UpsertProfileHead(ctx, tx, account.ProfileHead{AccountID: alice, RevisionID: rev.ID, Seq: 2})
+	})
+	r.profile(t, bob, 1, "Bob")
+	for i, id := range []string{alice, alice, bob} {
+		r.clock.Advance(time.Second)
+		k := account.Key{ID: r.ids.NewID(), AccountID: id, KeyID: "https://example/key/" + string(rune('a'+i)), Algorithm: account.KeyRSASHA256,
+			PublicKeyPEM: "pem " + string(rune('a'+i)), Fingerprint: []byte{byte(i)}, CreatedAt: r.clock.Now()}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Accounts.InsertKey(ctx, tx, k, nil) })
+	}
+	r.lifecycle(t, alice, account.StateDeactivated)
+	unknown := r.ids.NewID()
+
+	parts, err := r.h.Accounts.FindActorParts(ctx, []string{alice, bob, carol, unknown, alice})
+	if err != nil {
+		t.Fatalf("FindActorParts: %v", err)
+	}
+	same := func(id, part string, got any, ok bool, want any, err error) {
+		t.Helper()
+		switch {
+		case errors.Is(err, appaccount.ErrNotFound):
+			if ok {
+				t.Errorf("FindActorParts: %s of %s = %+v, want none", part, id, got)
+			}
+		case err != nil:
+			t.Fatalf("%s of %s: %v", part, id, err)
+		case !ok || !reflect.DeepEqual(got, want):
+			t.Errorf("FindActorParts: %s of %s = %+v (%t), want %+v", part, id, got, ok, want)
+		}
+	}
+	for _, id := range []string{alice, bob, carol, unknown} {
+		a, ok := parts.Accounts[id]
+		want, err := r.h.Accounts.FindAccount(ctx, id)
+		same(id, "account", a, ok, want, err)
+		la, ok := parts.Locals[id]
+		wantLocal, err := r.h.Accounts.FindLocalAccount(ctx, id)
+		same(id, "local account", la, ok, wantLocal, err)
+		h, ok := parts.Handles[id]
+		wantHandle, err := r.h.Accounts.FindHandleOf(ctx, id)
+		same(id, "handle", h, ok, wantHandle, err)
+		p, ok := parts.Profiles[id]
+		wantProfile, err := r.h.Accounts.FindCurrentProfile(ctx, id)
+		same(id, "profile", p, ok, wantProfile, err)
+		ls, ok := parts.Lifecycle[id]
+		wantState, err := r.h.Accounts.FindLifecycleState(ctx, id)
+		same(id, "lifecycle state", ls, ok, wantState, err)
+		keys, err := r.h.Accounts.ListKeys(ctx, id)
+		if err != nil || len(parts.Keys[id]) != len(keys) || len(keys) > 0 && !reflect.DeepEqual(parts.Keys[id], keys) {
+			t.Errorf("FindActorParts: keys of %s = %+v, want %+v (%v)", id, parts.Keys[id], keys, err)
+		}
+	}
+	if p := parts.Profiles[alice]; p.ID != rev.ID || p.Source == nil || p.Source.Note != "hi" || !slices.Equal(p.Source.FieldValues, rev.Source.FieldValues) {
+		t.Errorf("FindActorParts: profile of alice = %+v, want the current revision with its source", p)
+	}
+	if len(parts.Keys[alice]) != 2 {
+		t.Errorf("FindActorParts: keys of alice = %+v, want two", parts.Keys[alice])
+	}
+	want, err := r.h.Accounts.FindLocalAccountByUser(ctx, aliceUser)
+	if got, gerr := r.h.Accounts.FindLocalAccountsByUsers(ctx, []string{aliceUser, r.ids.NewID()}); err != nil || gerr != nil || len(got) != 1 || got[aliceUser] != want {
+		t.Errorf("FindLocalAccountsByUsers = %+v, %v; want %+v (%v) alone, as FindLocalAccountByUser", got, gerr, want, err)
+	}
+	if got, err := r.h.Accounts.FindAccounts(ctx, []string{alice, bob, unknown}); err != nil || len(got) != 2 || got[alice] != parts.Accounts[alice] {
+		t.Errorf("FindAccounts = %+v, %v; want alice and bob, as FindAccount", got, err)
+	}
+	states, err := r.h.Accounts.FindLifecycleStates(ctx, []string{alice, bob, unknown})
+	if err != nil {
+		t.Errorf("FindLifecycleStates = %v", err)
+	}
+	for _, id := range []string{alice, bob, unknown} {
+		got, ok := states[id]
+		want, err := r.h.Accounts.FindLifecycleState(ctx, id)
+		if (err == nil) != ok || ok && got != want {
+			t.Errorf("FindLifecycleStates[%s] = %+v (%t); want %+v (%v), as FindLifecycleState", id, got, ok, want, err)
+		}
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		accounts, err := r.h.Accounts.FindAccountsTx(ctx, tx, []string{alice, bob, unknown})
+		if err == nil && (len(accounts) != 2 || accounts[alice] != parts.Accounts[alice]) {
+			t.Errorf("FindAccountsTx = %+v; want alice and bob, as FindAccounts", accounts)
+		}
+		inTx, err2 := r.h.Accounts.FindLifecycleStatesTx(ctx, tx, []string{alice, bob, unknown})
+		if err2 == nil && !maps.Equal(inTx, states) {
+			t.Errorf("FindLifecycleStatesTx = %+v; want %+v, as FindLifecycleStates", inTx, states)
+		}
+		return errors.Join(err, err2)
+	})
+	if empty, err := r.h.Accounts.FindActorParts(ctx, nil); err != nil || len(empty.Accounts) != 0 {
+		t.Errorf("FindActorParts(nil) = %+v, %v; want nothing", empty, err)
 	}
 }
 

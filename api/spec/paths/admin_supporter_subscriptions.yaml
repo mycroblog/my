@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listSupporterSubscriptions
+  x-permission: manage_supporters
   summary: List the subscriptions
   description: |
     The subscriptions to the supporter plans, newest first, narrowed to a plan and a state.

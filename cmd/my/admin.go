@@ -224,7 +224,7 @@ func adminUsage(w io.Writer) {
        my admin account password-reset-link <account>   (my admin account password-reset-link -help)
        my admin appeal list|uphold|overturn ...   (my admin appeal -help)
        my admin closure announce|withdraw|status|check|close|export-html ...   (my admin closure -help)
-       my admin domain list|issue|lift|export|import ...   (my admin domain -help)
+       my admin domain list|issue|lift|export|import|allow|subscription ...   (my admin domain -help)
        my admin emoji create|list|update|replace-image|enable|disable|copy|delete|requests ...   (my admin emoji -help)
        my admin federation sever ...   (my admin federation -help)
        my admin media reprocess ...   (my admin media -help)

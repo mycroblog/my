@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The drafts of a subscription, the lifts first, each by domain and kind.
+type: object
+required: [items]
+properties:
+  items:
+    type: array
+    items:
+      $ref: ./AdminDomainListDraft.yaml

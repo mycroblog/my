@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listNotificationRequestNotifications
+  summary: List the notifications of a notification request
+  description: |
+    The notifications waiting in the request of a source account, newest first, without the
+    dismissed ones and those about deleted posts; a 404 when the list of requests does not show
+    the request.
+  tags: [notifications]
+  security:
+    - oauth2: ["read:notifications"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of notifications.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/NotificationPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

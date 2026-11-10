@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The whole content of a draft; a save replaces what the draft had. A draft keeps text that a
+  post would refuse (empty, or longer than `max_post_characters`), up to 100,000 characters, and
+  media that are still being processed; publishing it checks it as a new post.
+type: object
+required: [visibility]
+properties:
+  text:
+    description: The plain text; omitted or empty while there is none.
+    type: string
+    maxLength: 100000
+  spoiler_text:
+    $ref: ./SpoilerText.yaml
+  sensitive:
+    description: Whether the media are sensitive.
+    type: boolean
+  language:
+    $ref: ./StatusLanguageInput.yaml
+  visibility:
+    $ref: ./Visibility.yaml
+  in_reply_to_id:
+    description: The post to reply to, checked when the draft is scheduled and published.
+    allOf:
+      - $ref: ./Id.yaml
+  quoted_status_id:
+    description: The post to quote, checked when the draft is scheduled and published.
+    allOf:
+      - $ref: ./Id.yaml
+  interaction_policy:
+    description: |
+      Who may reply to, boost, and quote the post; the kinds left out take the user's
+      `default_interaction_policy` when the draft is published.
+    allOf:
+      - $ref: ./InteractionPolicyChange.yaml
+  media:
+    description: |
+      The media to attach, in order: the user's own uploads, processed or not. A draft with a
+      `poll` attaches none.
+    allOf:
+      - $ref: ./StatusMediaInput.yaml
+  poll:
+    $ref: ./DraftPoll.yaml

@@ -37,7 +37,7 @@ func TestLandingPreview(t *testing.T) {
 		"og:site_name":      "例のサーバー",
 		"og:title":          "例のサーバー",
 		"og:url":            "https://social.example/",
-		"og:locale":         "ja",
+		"og:locale":         "ja_JP",
 		"og:image":          "https://social.example/media/p/full.png",
 		"twitter:card":      "summary_large_image",
 		"link:canonical":    "https://social.example/",
@@ -98,7 +98,7 @@ func TestAboutPreview(t *testing.T) {
 		"og:title":          "例のサーバー について",
 		"og:url":            "https://social.example/about",
 		"og:description":    "Gardeners & friends",
-		"og:locale":         "ja",
+		"og:locale":         "ja_JP",
 		"link:canonical":    "https://social.example/about",
 		"fediverse:creator": "",
 		"link:alternate":    "",
@@ -181,7 +181,7 @@ func TestDocumentPreview(t *testing.T) {
 			"og:title":          title,
 			"og:url":            "https://social.example" + path,
 			"og:description":    "Gardeners & friends",
-			"og:locale":         "ja",
+			"og:locale":         "ja_JP",
 			"link:canonical":    "https://social.example" + path,
 			"fediverse:creator": "",
 			"link:alternate":    "",
@@ -215,5 +215,56 @@ func TestDocumentPreview(t *testing.T) {
 	docs.err = errors.New("database down")
 	if rec := get(mux, web.PathAboutPrivacyPolicy, nil); rec.Code != http.StatusOK || rec.Body.String() != generic.Body.String() {
 		t.Errorf("GET %s with a failing read = %d:\n%s", web.PathAboutPrivacyPolicy, rec.Code, rec.Body.String())
+	}
+}
+
+// TestGenericShellPreview checks the site-wide preview of the generic shell (ADR-0028 §1, §2): the
+// instance's name, short description, locale, and image, without a URL of its own, the same on
+// every path and on the 404 of a hidden page, and a new ETag when what it reads changes.
+func TestGenericShellPreview(t *testing.T) {
+	summary := "Gardeners & friends"
+	img := &web.Image{URL: "https://social.example/media/thumb/large.jpg", Width: 1672, Height: 941, Alt: "A garden"}
+	mux := previewHandler(t, &fakePreviews{}, web.Options{
+		DefaultLocale:       locale("ja"),
+		InstanceName:        named("例のサーバー"),
+		InstanceDescription: func(context.Context) string { return summary },
+		DefaultImage:        func(context.Context) (*web.Image, error) { return img, nil },
+	})
+	tags := get(mux, "/tags/garden", nil)
+	if tags.Code != http.StatusOK {
+		t.Fatalf("GET /tags/garden = %d", tags.Code)
+	}
+	got := metas(t, tags.Body.String())
+	for k, v := range map[string]string{
+		"og:type": "website", "og:site_name": "例のサーバー", "og:title": "例のサーバー", "og:description": summary,
+		"og:locale": "ja_JP", "og:image": img.URL, "og:image:width": "1672", "og:image:height": "941", "og:image:alt": "A garden",
+		"twitter:card": "summary_large_image", "og:url": "", "link:canonical": "",
+	} {
+		if got[k] != v {
+			t.Errorf("%s = %q, want %q", k, got[k], v)
+		}
+	}
+	for _, path := range []string{"/costs", "/explore", "/login"} {
+		if rec := get(mux, path, nil); rec.Body.String() != tags.Body.String() || rec.Header().Get("ETag") != tags.Header().Get("ETag") {
+			t.Errorf("GET %s is not the same generic shell as /tags/garden", path)
+		}
+	}
+	if hidden := get(mux, "/@nobody", nil); hidden.Code != http.StatusNotFound || hidden.Body.String() != tags.Body.String() {
+		t.Errorf("GET /@nobody = %d, want 404 with the same generic shell", hidden.Code)
+	}
+
+	before := tags.Header().Get("ETag")
+	summary = "Gardeners, friends, and neighbours"
+	if rec := get(mux, "/tags/garden", nil); rec.Header().Get("ETag") == before || metas(t, rec.Body.String())["og:description"] != summary {
+		t.Errorf("a new short description kept the ETag or the description")
+	}
+	before = get(mux, "/tags/garden", nil).Header().Get("ETag")
+	img = &web.Image{URL: "https://social.example/media/other/large.jpg", Width: 400, Height: 400}
+	rec := get(mux, "/tags/garden", nil)
+	if rec.Header().Get("ETag") == before {
+		t.Errorf("a new image kept the ETag")
+	}
+	if m := metas(t, rec.Body.String()); m["og:image"] != img.URL || m["twitter:card"] != "summary" {
+		t.Errorf("after a new image: og:image %q, twitter:card %q", m["og:image"], m["twitter:card"])
 	}
 }

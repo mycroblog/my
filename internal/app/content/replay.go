@@ -19,18 +19,43 @@ func (s *Service) IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bo
 // ReplayEvents passes to emit, inside tx, the events that derive other modules' projections of
 // statuses and boosts from their current state (data-model §9), so that those modules rebuild
 // their projections without reading this module's tables: a StatusCreated with the current
-// revision for each status that is not deleted, ordered by status ID, then a Boosted for each
-// live boost, ordered by boost ID. Deleted statuses and retracted boosts emit nothing, so a
+// revision for each status that is not deleted, ordered by status ID (a direct one with its
+// current conversation), then a Boosted for each live boost, ordered by boost ID. Deleted statuses and retracted boosts emit nothing, so a
 // projection that applies these events to empty tables ends where incremental updating did.
+// StatusCreated.HeldReply says the replies held out of their thread, as when they were created:
+// the timelines leave the unpublished ones out (StatusCreated.Unpublished).
 func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interactions InteractionRepository, emit func(uow.Event) error) error {
 	posts, err := statuses.ListCurrentPosts(ctx, tx)
 	if err != nil {
 		return err
 	}
+	// The conversations of the direct posts, which the list of direct messages is keyed by
+	// (ADR-0154 §6), read together. The current conversation is the one every merge ended in, so
+	// no merge is replayed.
+	var direct []string
+	for _, p := range posts {
+		if p.Status.Visibility == VisibilityDirect {
+			direct = append(direct, p.Status.ID)
+		}
+	}
+	var convs map[string]content.Conversation
+	if len(direct) > 0 {
+		if convs, err = statuses.StatusConversationsTx(ctx, tx, direct); err != nil {
+			return err
+		}
+	}
+	heldIDs, err := statuses.ListHeldReplyIDs(ctx, tx)
+	if err != nil {
+		return err
+	}
+	held := make(map[string]bool, len(heldIDs))
+	for _, id := range heldIDs {
+		held[id] = true
+	}
 	live := make(map[string]content.Status, len(posts))
 	for _, p := range posts {
 		live[p.Status.ID] = p.Status
-		if err := emit(StatusCreated(p)); err != nil {
+		if err := emit(StatusCreated{Status: p.Status, Revision: p.Revision, ConversationID: convs[p.Status.ID].ID, HeldReply: held[p.Status.ID]}); err != nil {
 			return err
 		}
 	}
@@ -48,4 +73,12 @@ func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interacti
 		}
 	}
 	return nil
+}
+
+// PrivateMentionTx reports inside tx whether the status statusID is direct, and whether it
+// answers an exchange that recipientID started: its conversation (ADR-0154) holds a direct status
+// of recipientID that mentions sourceID. The notification policy's unsolicited_private_mention
+// condition reads it (ADR-0158 §6); an unknown status is neither.
+func (s *Service) PrivateMentionTx(ctx context.Context, tx uow.Tx, statusID, recipientID, sourceID string) (direct, solicited bool, err error) {
+	return s.d.Repository.PrivateMentionTx(ctx, tx, statusID, recipientID, sourceID)
 }

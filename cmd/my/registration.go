@@ -30,7 +30,8 @@ type subcommand struct {
 }
 
 // parseSubcommand parses args (the subcommand's flags and arguments) and checks that there are
-// nargs positional arguments. It returns the exit code to stop with, or -1 to go on.
+// nargs positional arguments, or at most -nargs when nargs is negative. It returns the exit code
+// to stop with, or -1 to go on.
 func parseSubcommand(name string, args []string, nargs int, stderr io.Writer, usage func(io.Writer), define func(*flag.FlagSet)) (subcommand, int) {
 	fs := newFlagSet(name)
 	fs.SetOutput(stderr)
@@ -45,7 +46,12 @@ func parseSubcommand(name string, args []string, nargs int, stderr io.Writer, us
 		}
 		return c, 2
 	}
-	if fs.NArg() != nargs {
+	if nargs < 0 && fs.NArg() > -nargs {
+		_, _ = fmt.Fprintf(stderr, "%s: want at most %d argument(s), got %d\n\n", name, -nargs, fs.NArg())
+		usage(stderr)
+		return c, 2
+	}
+	if nargs >= 0 && fs.NArg() != nargs {
 		_, _ = fmt.Fprintf(stderr, "%s: want %d argument(s), got %d\n\n", name, nargs, fs.NArg())
 		usage(stderr)
 		return c, 2

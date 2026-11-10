@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -254,13 +255,15 @@ func (s *Service) EnsureInstanceActor(ctx context.Context) (account.Account, err
 
 // ProfileInput is the content of a new profile revision.
 type ProfileInput struct {
-	DisplayName   string
-	NoteHTML      string
-	Locked        bool
-	Bot           bool
-	Discoverable  bool
-	Indexable     bool
-	AIOptOut      bool
+	DisplayName  string
+	NoteHTML     string
+	Locked       bool
+	Bot          bool
+	Discoverable bool
+	Indexable    bool
+	AIOptOut     bool
+	// Feed is the owner's choice about the Atom feed; the zero value follows Indexable.
+	Feed          account.FeedSetting
 	AvatarMediaID string
 	HeaderMediaID string
 	// Fields are numbered by their order.
@@ -321,6 +324,7 @@ func (s *Service) reviseProfile(ctx context.Context, accountID string, in Profil
 		Discoverable:  in.Discoverable,
 		Indexable:     in.Indexable,
 		AIOptOut:      in.AIOptOut,
+		Feed:          in.Feed.Normalize(),
 		AvatarMediaID: in.AvatarMediaID,
 		HeaderMediaID: in.HeaderMediaID,
 		RevisedAt:     s.d.Clock.Now(),
@@ -482,6 +486,28 @@ func (s *Service) FindByID(ctx context.Context, id string) (Actor, error) {
 	return s.actor(ctx, a)
 }
 
+// FindByIDs returns the accounts of ids that exist, by ID, as FindByID returns one: with one
+// query per part of an actor whatever the number of ids (Repository.FindActorParts).
+func (s *Service) FindByIDs(ctx context.Context, ids []string) (map[string]Actor, error) {
+	out := make(map[string]Actor, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	parts, err := s.d.Repository.FindActorParts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	reads := partReads(parts)
+	for id, a := range parts.Accounts {
+		actor, err := actorOf(ctx, reads, a)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = actor
+	}
+	return out, nil
+}
+
 // ExistingIDs returns, in ID order, the accounts among ids that exist, in one lookup.
 func (s *Service) ExistingIDs(ctx context.Context, ids []string) ([]string, error) {
 	return s.d.Repository.ExistingAccountIDs(ctx, ids)
@@ -503,6 +529,21 @@ func (s *Service) RemoteInbox(ctx context.Context, accountID string) (RemoteInbo
 		return RemoteInbox{}, err
 	}
 	return RemoteInbox{InboxURL: h.InboxURL, SharedInboxURL: h.SharedInboxURL}, nil
+}
+
+// RemoteInboxes returns the inboxes of the remote accounts of accountIDs, by account, as
+// RemoteInbox returns one, with one query; a local account, or a remote one never fetched, is
+// left out.
+func (s *Service) RemoteInboxes(ctx context.Context, accountIDs []string) (map[string]RemoteInbox, error) {
+	heads, err := s.d.Repository.FindRemoteHeads(ctx, accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]RemoteInbox, len(heads))
+	for id, h := range heads {
+		out[id] = RemoteInbox{InboxURL: h.InboxURL, SharedInboxURL: h.SharedInboxURL}
+	}
+	return out, nil
 }
 
 // RemoteInboxTx is RemoteInbox inside tx.
@@ -529,6 +570,20 @@ func (s *Service) CountKnownSharedInboxes(ctx context.Context) (int, error) {
 
 // AccountDomain returns the domain of an account (account.LocalDomain for a local one). It
 // fails with ErrNotFound when there is none.
+// AccountDomains returns the domains of the accounts of ids that exist, by ID, as AccountDomain
+// returns one, with one query.
+func (s *Service) AccountDomains(ctx context.Context, ids []string) (map[string]string, error) {
+	accounts, err := s.d.Repository.FindAccounts(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]string, len(accounts))
+	for id, a := range accounts {
+		out[id] = a.Domain
+	}
+	return out, nil
+}
+
 func (s *Service) AccountDomain(ctx context.Context, id string) (string, error) {
 	a, err := s.d.Repository.FindAccount(ctx, id)
 	if err != nil {
@@ -546,6 +601,19 @@ func (s *Service) AccountDomainTx(ctx context.Context, tx uow.Tx, id string) (st
 	return a.Domain, nil
 }
 
+// AccountDomainsTx is AccountDomainTx of each of ids that exists, by account, with one query.
+func (s *Service) AccountDomainsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]string, error) {
+	accounts, err := s.d.Repository.FindAccountsTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]string, len(accounts))
+	for id, a := range accounts {
+		out[id] = a.Domain
+	}
+	return out, nil
+}
+
 // FindByURI returns the actor with an ActivityPub id, local or remote. It fails with
 // ErrNotFound when there is none.
 func (s *Service) FindByURI(ctx context.Context, uri string) (Actor, error) {
@@ -554,6 +622,30 @@ func (s *Service) FindByURI(ctx context.Context, uri string) (Actor, error) {
 		return Actor{}, err
 	}
 	return s.actor(ctx, a)
+}
+
+// FindByURIs returns the actors of uris that exist, by URI, as FindByURI returns one, with one
+// query per part of an actor whatever the number of uris.
+func (s *Service) FindByURIs(ctx context.Context, uris []string) (map[string]Actor, error) {
+	accounts, err := s.d.Repository.FindAccountsByURIs(ctx, uris)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(accounts))
+	for _, a := range accounts {
+		ids = append(ids, a.ID)
+	}
+	actors, err := s.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]Actor, len(accounts))
+	for uri, a := range accounts {
+		if act, ok := actors[a.ID]; ok {
+			out[uri] = act
+		}
+	}
+	return out, nil
 }
 
 // AnyOnDomain reports whether one of the accounts ids is on domain, for judging what the
@@ -584,6 +676,21 @@ func (s *Service) ProfileIndexable(ctx context.Context, id string) (bool, error)
 	return actor.Profile != nil && actor.Profile.Indexable, nil
 }
 
+// ProfilesIndexable reports ProfileIndexable of each of ids, by account, with one query per part
+// of an actor.
+func (s *Service) ProfilesIndexable(ctx context.Context, ids []string) (map[string]bool, error) {
+	actors, err := s.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		a, ok := actors[id]
+		out[id] = ok && a.Profile != nil && a.Profile.Indexable
+	}
+	return out, nil
+}
+
 // AccountIDsOnDomain returns up to limit IDs of the accounts on domain or one of its subdomains in
 // order, after the ID after ("" for the first page).
 func (s *Service) AccountIDsOnDomain(ctx context.Context, domain, after string, limit int) ([]string, error) {
@@ -609,6 +716,50 @@ func (s *Service) IsLocal(ctx context.Context, tx uow.Tx, id string) (bool, erro
 	return a.IsLocal(), nil
 }
 
+// LocalAmong reports, inside tx, which of ids are local accounts, as IsLocal reports one, with
+// one query.
+func (s *Service) LocalAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	accounts, err := s.d.Repository.FindAccountsTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for id, a := range accounts {
+		if a.IsLocal() {
+			out[id] = true
+		}
+	}
+	return out, nil
+}
+
+// NotifiableAmong reports, inside tx, which of ids are local accounts that their owners did not
+// deactivate, as IsLocal and DeactivatedTx report one, with one query each.
+func (s *Service) NotifiableAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	accounts, err := s.d.Repository.FindAccountsTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var local []string
+	for _, id := range ids {
+		if a, ok := accounts[id]; ok && a.IsLocal() && !slices.Contains(local, id) {
+			local = append(local, id)
+		}
+	}
+	states, err := s.d.Repository.FindLifecycleStatesTx(ctx, tx, local)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(local))
+	for _, id := range local {
+		st, ok := states[id]
+		out[id] = !ok || !st.Deactivated()
+	}
+	return out, nil
+}
+
 // DomainOf returns, inside tx, the domain of a remote account: account.LocalDomain ("") for a
 // local account or one that does not exist.
 func (s *Service) DomainOf(ctx context.Context, tx uow.Tx, id string) (string, error) {
@@ -630,6 +781,42 @@ func (s *Service) FindByHandle(ctx context.Context, username, domain string) (Ac
 		return Actor{}, err
 	}
 	return s.FindByID(ctx, h.AccountID)
+}
+
+// HandleQuery is a handle as FindByHandle takes it: a username, and a domain (account.LocalDomain
+// for a local account), compared as FindByHandle compares them.
+type HandleQuery struct {
+	Username, Domain string
+}
+
+// FindByHandles returns the actors of the handles of queries that exist, by query, as
+// FindByHandle returns each, with one query for the handles and one per part of an actor.
+func (s *Service) FindByHandles(ctx context.Context, queries []HandleQuery) (map[HandleQuery]Actor, error) {
+	names := make([]HandleName, len(queries))
+	for i, q := range queries {
+		names[i] = HandleName{UsernameNormalized: account.NormalizeUsername(q.Username), Domain: account.NormalizeDomain(q.Domain)}
+	}
+	handles, err := s.d.Repository.FindHandles(ctx, names)
+	if err != nil {
+		return nil, err
+	}
+	var ids []string
+	for _, h := range handles {
+		ids = append(ids, h.AccountID)
+	}
+	actors, err := s.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[HandleQuery]Actor, len(queries))
+	for i, q := range queries {
+		if h, ok := handles[names[i]]; ok {
+			if a, ok := actors[h.AccountID]; ok {
+				out[q] = a
+			}
+		}
+	}
+	return out, nil
 }
 
 // InstanceActor returns the instance actor. It fails with ErrNotFound before EnsureInstanceActor.
@@ -662,6 +849,41 @@ type actorReads interface {
 	FindCurrentProfile(ctx context.Context, accountID string) (account.ProfileRevision, error)
 	ListKeys(ctx context.Context, accountID string) ([]account.Key, error)
 	FindLifecycleState(ctx context.Context, accountID string) (account.LifecycleState, error)
+}
+
+// partReads reads an actor's parts from those that FindActorParts read; a part that is not there
+// fails with ErrNotFound, as a read of one account does.
+type partReads ActorParts
+
+func (p partReads) FindLocalAccount(_ context.Context, accountID string) (account.LocalAccount, error) {
+	return partOf(p.Locals, accountID, "local account")
+}
+
+func (p partReads) FindHandleOf(_ context.Context, accountID string) (account.Handle, error) {
+	return partOf(p.Handles, accountID, "handle")
+}
+
+func (p partReads) FindCurrentProfile(_ context.Context, accountID string) (account.ProfileRevision, error) {
+	return partOf(p.Profiles, accountID, "profile")
+}
+
+func (p partReads) ListKeys(_ context.Context, accountID string) ([]account.Key, error) {
+	if keys := p.Keys[accountID]; keys != nil {
+		return keys, nil
+	}
+	return []account.Key{}, nil // as the repository's ListKeys of an account without keys
+}
+
+func (p partReads) FindLifecycleState(_ context.Context, accountID string) (account.LifecycleState, error) {
+	return partOf(p.Lifecycle, accountID, "lifecycle state")
+}
+
+func partOf[T any](m map[string]T, accountID, what string) (T, error) {
+	v, ok := m[accountID]
+	if !ok {
+		return v, fmt.Errorf("%s of %s: %w", what, accountID, ErrNotFound)
+	}
+	return v, nil
 }
 
 // txReads reads an actor's parts in a transaction.
@@ -698,6 +920,12 @@ func (s *Service) FindByIDTx(ctx context.Context, tx uow.Tx, id string) (Actor, 
 		return Actor{}, err
 	}
 	return actorOf(ctx, txReads{repo: s.d.Repository, tx: tx}, a)
+}
+
+// LifecycleStatesTx returns, inside tx, the lifecycle states of those of ids that have one, by
+// account, with one query: what DeletedTx and DeactivatedTx read of each.
+func (s *Service) LifecycleStatesTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]account.LifecycleState, error) {
+	return s.d.Repository.FindLifecycleStatesTx(ctx, tx, ids)
 }
 
 // DeletedTx reports, inside tx, whether an account is deleted (account.StateDeleted); an account
@@ -794,6 +1022,32 @@ func (s *Service) UserLifecycle(ctx context.Context, userID string) (account.Lif
 	return st, err
 }
 
+// UserLifecycles returns UserLifecycle of each of userIDs that has a local account, by user, with
+// one query for the accounts and one for their states.
+func (s *Service) UserLifecycles(ctx context.Context, userIDs []string) (map[string]account.LifecycleState, error) {
+	locals, err := s.d.Repository.FindLocalAccountsByUsers(ctx, userIDs)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]string, 0, len(locals))
+	for _, la := range locals {
+		ids = append(ids, la.AccountID)
+	}
+	states, err := s.d.Repository.FindLifecycleStates(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]account.LifecycleState, len(locals))
+	for user, la := range locals {
+		st, ok := states[la.AccountID]
+		if !ok {
+			st = account.InitialLifecycleState(la.AccountID)
+		}
+		out[user] = st
+	}
+	return out, nil
+}
+
 // UserLifecycleTx is UserLifecycle read in tx, with a lock where the database takes one.
 func (s *Service) UserLifecycleTx(ctx context.Context, tx uow.Tx, userID string) (account.LifecycleState, error) {
 	la, err := s.d.Repository.FindLocalAccountByUserTx(ctx, tx, userID)
@@ -824,6 +1078,11 @@ func (s *Service) PrivateKey(ctx context.Context, k account.Key) (crypto.Signer,
 	if err != nil {
 		return nil, err
 	}
+	return s.openPrivateKey(ctx, k, sealed)
+}
+
+// openPrivateKey opens the sealed private key of k.
+func (s *Service) openPrivateKey(ctx context.Context, k account.Key, sealed []byte) (crypto.Signer, error) {
 	der, err := s.d.Sealer.Open(ctx, sealed, PrivateKeyAAD(k.ID))
 	if err != nil {
 		return nil, fmt.Errorf("account: open private key %s: %w", k.KeyID, err)
@@ -897,12 +1156,76 @@ func (s *Service) ProofKey(ctx context.Context, accountID string) (keyID string,
 	return newest.KeyID, priv, nil
 }
 
+// ActorKeys are the keys a local actor signs its deliveries with, read together: the newest RSA
+// key, as SigningKey returns it, and the newest Ed25519 key, opened by Proof as ProofKey returns
+// it, so that a delivery that does not need it does not open it.
+type ActorKeys struct {
+	SigningKeyID string
+	Signer       crypto.Signer
+	// Proof opens the proof key; it fails with ErrNotFound when the actor has none.
+	Proof func(ctx context.Context) (keyID string, key ed25519.PrivateKey, err error)
+}
+
+// DeliveryKeys returns the keys of a local actor with one query, as SigningKey and ProofKey read
+// them. It fails as SigningKey does when the actor has no signing key.
+func (s *Service) DeliveryKeys(ctx context.Context, accountID string) (ActorKeys, error) {
+	keys, err := s.d.Repository.ListKeysWithSealed(ctx, accountID)
+	if err != nil {
+		return ActorKeys{}, err
+	}
+	newest := func(alg account.KeyAlgorithm) *KeyWithSealed {
+		var out *KeyWithSealed
+		for i := range keys {
+			k := &keys[i]
+			if k.Key.Algorithm == alg && (out == nil || k.Key.CreatedAt.After(out.Key.CreatedAt)) {
+				out = k
+			}
+		}
+		return out
+	}
+	open := func(ctx context.Context, k *KeyWithSealed) (crypto.Signer, error) {
+		if k.Sealed == nil {
+			return nil, fmt.Errorf("account: private key of %s: %w", k.Key.ID, ErrNotFound)
+		}
+		return s.openPrivateKey(ctx, k.Key, k.Sealed)
+	}
+	rsa := newest(account.KeyRSASHA256)
+	if rsa == nil {
+		return ActorKeys{}, fmt.Errorf("account: signing key of %s: %w", accountID, ErrNotFound)
+	}
+	signer, err := open(ctx, rsa)
+	if err != nil {
+		return ActorKeys{}, err
+	}
+	ed := newest(account.KeyEd25519)
+	return ActorKeys{SigningKeyID: rsa.Key.KeyID, Signer: signer, Proof: func(ctx context.Context) (string, ed25519.PrivateKey, error) {
+		if ed == nil {
+			return "", nil, fmt.Errorf("account: proof key of %s: %w", accountID, ErrNotFound)
+		}
+		signer, err := open(ctx, ed)
+		if err != nil {
+			return "", nil, err
+		}
+		priv, ok := signer.(ed25519.PrivateKey)
+		if !ok {
+			return "", nil, fmt.Errorf("account: proof key %s is a %T", ed.Key.KeyID, signer)
+		}
+		return ed.Key.KeyID, priv, nil
+	}}, nil
+}
+
 // ValidateUsername checks a new local username (account.ValidateUsername), so that other
 // modules can reject one before doing expensive work.
 func ValidateUsername(username string) error { return account.ValidateUsername(username) }
 
 // LocalAccountOfUser returns the local account a user logs in as. It fails with ErrNotFound
 // when the user has none.
+// LocalAccountsOfUsers returns the local accounts of the users of userIDs that have one, by user
+// ID, as LocalAccountOfUser returns one, with one query.
+func (s *Service) LocalAccountsOfUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error) {
+	return s.d.Repository.FindLocalAccountsByUsers(ctx, userIDs)
+}
+
 func (s *Service) LocalAccountOfUser(ctx context.Context, userID string) (account.LocalAccount, error) {
 	return s.d.Repository.FindLocalAccountByUser(ctx, userID)
 }

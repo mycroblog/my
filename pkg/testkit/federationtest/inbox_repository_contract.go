@@ -136,6 +136,10 @@ func inboxRepoRecordsOnce(t *testing.T, r *inboxRepo) {
 		t.Errorf("FindReceivedActivity(refetch) = %+v, %v; want %+v", got, err, refetch)
 	}
 	unknown := federation.IRI(inboxAlice + "/activities/unknown")
+	if many, err := r.h.Inbox.FindReceivedActivities(ctx, []federation.IRI{a.ActivityURI, refetch.ActivityURI, unknown}); err != nil || len(many) != 2 ||
+		!equalReceivedActivity(many[a.ActivityURI], a) || !equalReceivedActivity(many[refetch.ActivityURI], refetch) {
+		t.Errorf("FindReceivedActivities = %+v, %v; want the two recorded, as FindReceivedActivity", many, err)
+	}
 	if _, err := r.h.Inbox.FindReceivedActivity(ctx, unknown); !errors.Is(err, appfederation.ErrNotFound) {
 		t.Errorf("FindReceivedActivity(unknown) = %v, want ErrNotFound", err)
 	}

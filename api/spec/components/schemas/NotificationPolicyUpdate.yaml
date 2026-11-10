@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: Changes of the authenticated user's notification policy; an omitted condition keeps its action.
+type: object
+properties:
+  not_following:
+    $ref: ./NotificationPolicyAction.yaml
+  not_follower:
+    $ref: ./NotificationPolicyAction.yaml
+  new_account:
+    $ref: ./NotificationPolicyAction.yaml
+  unsolicited_private_mention:
+    $ref: ./NotificationPolicyAction.yaml
+  limited_account:
+    $ref: ./NotificationPolicyAction.yaml

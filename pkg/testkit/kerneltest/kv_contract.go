@@ -45,6 +45,7 @@ func KeyValueStoreContract(t *testing.T, newStore KeyValueStoreFactory) {
 		{"SwapsOnceConcurrently", kvSwapsOnceConcurrently},
 		{"DeletesExpired", kvDeletesExpired},
 		{"BacksARateLimiter", kvBacksARateLimiter},
+		{"GetsMany", kvGetsMany},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -361,5 +362,29 @@ func kvBacksARateLimiter(t *testing.T, s kernel.KeyValueStore, clock *testkit.Cl
 	clock.Advance(2 * time.Minute)
 	if d, err := l.Check(t.Context(), lim, "client"); err != nil || !d.Allowed {
 		t.Fatalf("Check after two windows = %+v, %v; want allowed", d, err)
+	}
+}
+
+// kvGetsMany checks that a store with batch reads returns, of many keys, the live entries that Get
+// returns: neither the expired ones, nor those of another namespace, nor the missing ones.
+func kvGetsMany(t *testing.T, s kernel.KeyValueStore, clock *testkit.Clock) {
+	b, ok := s.(kernel.KeyValueBatch)
+	if !ok {
+		t.Skip("the store reads one key at a time")
+	}
+	kvSet(t, s, "ns", "a", "1", 0)
+	kvSet(t, s, "ns", "b", "", 0)
+	kvSet(t, s, "ns", "soon", "x", time.Second)
+	kvSet(t, s, "other", "c", "3", 0)
+	clock.Advance(2 * time.Second)
+	got, err := b.GetMany(t.Context(), "ns", []string{"a", "b", "soon", "c", "missing"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || string(got["a"]) != "1" || got["b"] == nil || len(got["b"]) != 0 {
+		t.Errorf("GetMany = %q, want a and b (empty) alone, as Get", got)
+	}
+	if empty, err := b.GetMany(t.Context(), "ns", nil); err != nil || len(empty) != 0 {
+		t.Errorf("GetMany(none) = %q, %v", empty, err)
 	}
 }

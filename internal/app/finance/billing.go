@@ -19,12 +19,12 @@ import (
 // BillingSource is the port of a provider's billing data (ADR-0068 §1). Its types are of the
 // standard library and the finance domain only.
 type BillingSource interface {
-	// Name is the source's identifier: "aws", "gcp", or "plugin" (billing_sources).
+	// Name is the source's identifier: "aws", "gcp", "cloudflare", or "plugin" (billing_sources).
 	Name() string
 	// Location is the time zone of the source's billing periods (UTC, America/Los_Angeles).
 	Location() *time.Location
 	// Method is how the source reads the provider's data: MethodCostExplorer, MethodBigQuery,
-	// MethodBudget, or MethodPlugin.
+	// MethodBudget, MethodBillableUsage, or MethodPlugin.
 	Method() string
 	// Fetch returns the costs of the given billing months as the provider reports them now. It
 	// makes at most req.MaxRequests billed requests and fails with ErrRequestCap rather than make
@@ -42,6 +42,9 @@ const (
 	// MethodBudget is the notifications of a Cloud Billing budget: one estimated total per
 	// budget and month, without a breakdown by service.
 	MethodBudget = "budget"
+	// MethodBillableUsage is Cloudflare's billable usage API: the usage charges of a pay-as-you-go
+	// account by product, without fixed fees, taxes, or credits (ADR-0068 §11).
+	MethodBillableUsage = "billable_usage"
 	// MethodPlugin is an operator's plugin, which aggregates its providers itself (ADR-0146 §11).
 	MethodPlugin = "plugin"
 )

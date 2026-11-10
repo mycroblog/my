@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Where a keyword filter applies: `home` (the home timeline and the timelines of lists),
+  `notifications` (the notifications, their stream, Web Push, and email), `public` (the local,
+  federated, and hashtag timelines and their streams), `thread` (the posts before and after a
+  post), and `account` (the posts and pinned posts of a profile).
+type: string
+enum: [home, notifications, public, thread, account]

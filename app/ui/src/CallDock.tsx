@@ -59,9 +59,9 @@ export function CallDock({ label, children, end, notice }: CallDockProps) {
 const callDockButton = tv({
   slots: {
     base: [
-      "relative inline-flex shrink-0 cursor-default items-center justify-center gap-2 rounded-full font-extrabold select-none",
+      "relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-full font-extrabold select-none",
       // A control that waits pulses where it was pressed (ADR-0110 P2); with reduced motion, the wait cursor alone.
-      "data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait motion-safe:data-pending:animate-pulse",
+      "data-disabled:cursor-not-allowed data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait motion-safe:data-pending:animate-pulse",
       "motion-safe:transition-[color,background-color,box-shadow] [&>svg]:size-5 [&>svg]:shrink-0",
     ],
     count: "",

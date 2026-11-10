@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -30,9 +31,10 @@ import (
 //   - A local account that mutes the source mutes the target too, with the same handling of
 //     notifications and expiry, unless it already mutes the target.
 //
-// Each account is one short transaction, and each step is safe to run again: a follower that
-// moved no longer follows the source, a block or mute that exists is kept, and the notification
-// has one dedupe key per move.
+// The followers of a page move together in one short transaction, whose statements do not grow
+// with them, and each blocking or muting account is one short transaction. Each step is safe to
+// run again: a follower that moved no longer follows the source, a block or mute that exists is
+// kept, and the notification has one dedupe key per move.
 
 const (
 	// JobMigrateFollows migrates one page of the relationships of a moved account; its payload
@@ -45,8 +47,12 @@ const (
 	MigratePageInterval = 10 * time.Second
 )
 
-// EventFollowMigrated follows the migration of each local follower of a moved account.
-const EventFollowMigrated = "graph.follow_migrated"
+// EventFollowMigrated follows the migration of each local follower of a moved account, and
+// EventFollowsMigrated that of a page of them.
+const (
+	EventFollowMigrated  = "graph.follow_migrated"
+	EventFollowsMigrated = "graph.follows_migrated"
+)
 
 // MigrationOutcome is what became of a local account's follow of an account that moved.
 type MigrationOutcome string
@@ -81,6 +87,13 @@ type FollowMigrated struct {
 
 // EventType implements uow.Event.
 func (FollowMigrated) EventType() string { return EventFollowMigrated }
+
+// FollowsMigrated is FollowMigrated of the followers of a page of a migration, emitted once for
+// all of them; a module that projects FollowMigrated projects it too, as each of Migrations.
+type FollowsMigrated struct{ Migrations []FollowMigrated }
+
+// EventType implements uow.Event.
+func (FollowsMigrated) EventType() string { return EventFollowsMigrated }
 
 // MigrationPhase is the relationships that a step of a migration walks.
 type MigrationPhase string
@@ -192,11 +205,12 @@ func (s *Service) MigrateStep(ctx context.Context, st MigrationStep) (next Migra
 		if err != nil {
 			return MigrationStep{}, false, err
 		}
-		for _, e := range edges {
-			if err := s.migrateFollower(ctx, st, target, e.FollowerAccountID); err != nil {
-				return MigrationStep{}, false, err
-			}
-			last = e.FollowID
+		followers := make([]string, len(edges))
+		for i, e := range edges {
+			followers[i], last = e.FollowerAccountID, e.FollowID
+		}
+		if err := s.migrateFollowers(ctx, st, target, followers); err != nil {
+			return MigrationStep{}, false, err
 		}
 		n = len(edges)
 	case MigrateBlocksPhase:
@@ -204,11 +218,12 @@ func (s *Service) MigrateStep(ctx context.Context, st MigrationStep) (next Migra
 		if err != nil {
 			return MigrationStep{}, false, err
 		}
-		for _, e := range edges {
-			if err := s.migrateBlock(ctx, st, e.BlockerAccountID); err != nil {
-				return MigrationStep{}, false, err
-			}
-			last = e.BlockID
+		blockers := make([]string, len(edges))
+		for i, e := range edges {
+			blockers[i], last = e.BlockerAccountID, e.BlockID
+		}
+		if err := s.migrateBlocks(ctx, st, blockers); err != nil {
+			return MigrationStep{}, false, err
 		}
 		n = len(edges)
 	case MigrateMutesPhase:
@@ -217,10 +232,10 @@ func (s *Service) MigrateStep(ctx context.Context, st MigrationStep) (next Migra
 			return MigrationStep{}, false, err
 		}
 		for _, m := range mutes {
-			if err := s.migrateMute(ctx, st, m); err != nil {
-				return MigrationStep{}, false, err
-			}
 			last = m.AccountID
+		}
+		if err := s.migrateMutes(ctx, st, mutes); err != nil {
+			return MigrationStep{}, false, err
 		}
 		n = len(mutes)
 	default:
@@ -258,156 +273,303 @@ func (s *Service) migratingAccount(ctx context.Context, st MigrationStep, id str
 	return a, a.Account.IsLocal(), nil
 }
 
-// migrateFollower moves followerID's active follow of the source to the target, or leaves it in
-// place when the follower blocks the target, is blocked by it, or mutes its domain, and emits
-// FollowMigrated.
-func (s *Service) migrateFollower(ctx context.Context, st MigrationStep, target appaccount.Actor, followerID string) error {
-	if _, ok, err := s.migratingAccount(ctx, st, followerID); err != nil || !ok {
+// actorsBatch is an Accounts that reads many accounts at once, as *appaccount.Service does.
+type actorsBatch interface {
+	FindByIDs(ctx context.Context, ids []string) (map[string]appaccount.Actor, error)
+}
+
+// migratingAccounts returns those of ids that the migration moves (migratingAccount): with one
+// read of the accounts when Accounts can, one by one otherwise.
+func (s *Service) migratingAccounts(ctx context.Context, st MigrationStep, ids []string) ([]string, error) {
+	var out []string
+	b, ok := s.d.Accounts.(actorsBatch)
+	if !ok {
+		for _, id := range ids {
+			_, moves, err := s.migratingAccount(ctx, st, id)
+			if err != nil {
+				return nil, err
+			}
+			if moves {
+				out = append(out, id)
+			}
+		}
+		return out, nil
+	}
+	actors, err := b.FindByIDs(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		if a, found := actors[id]; found && id != st.TargetAccountID && a.Lifecycle.Active() && a.Account.IsLocal() && !slices.Contains(out, id) {
+			out = append(out, id)
+		}
+	}
+	return out, nil
+}
+
+// migrateFollowers is migrateFollower of each of followerIDs, together: one transaction, whose
+// statements do not grow with them, moves the follows of all of them, and one FollowsCreated,
+// one FollowsTerminated, and one FollowsMigrated tell the projectors.
+func (s *Service) migrateFollowers(ctx context.Context, st MigrationStep, target appaccount.Actor, followerIDs []string) error {
+	followers, err := s.migratingAccounts(ctx, st, followerIDs)
+	if err != nil || len(followers) == 0 {
 		return err
 	}
-	domainMuted := false
+	repo := s.d.Repository
+	domainMuted := map[string]bool{}
 	if !target.Account.IsLocal() {
-		var err error
-		if domainMuted, err = s.MutesDomain(ctx, followerID, target.Account.Domain); err != nil {
+		if domainMuted, err = repo.DomainMutersAmong(ctx, followers, graph.MutedDomains(target.Account.Domain)); err != nil {
 			return err
 		}
 	}
 	locked := !target.Account.IsLocal() || (target.Profile != nil && target.Profile.Locked)
 	now := kernel.Normalize(s.d.Clock.Now())
-	f := graph.Follow{ID: s.d.IDs.NewID(), FollowerAccountID: followerID, FolloweeAccountID: st.TargetAccountID, RequestedAt: now}
-	f.URI = graph.FollowURI(s.d.Host, f.ID)
-	repo := s.d.Repository
+	newFollows := make(map[string]graph.Follow, len(followers))
+	for _, id := range followers {
+		f := graph.Follow{ID: s.d.IDs.NewID(), FollowerAccountID: id, FolloweeAccountID: st.TargetAccountID, RequestedAt: now}
+		f.URI = graph.FollowURI(s.d.Host, f.ID)
+		newFollows[id] = f
+	}
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		ev := FollowMigrated{
-			AccountID: followerID, SourceAccountID: st.SourceAccountID, TargetAccountID: st.TargetAccountID, MoveID: st.MoveID, At: now,
+		pairs := make([]string, 0, 2*len(followers))
+		others := make([]string, 0, 2*len(followers))
+		for _, id := range followers {
+			pairs, others = append(pairs, id, id), append(others, st.SourceAccountID, st.TargetAccountID)
 		}
-		if err := repo.LockPair(ctx, tx, followerID, st.SourceAccountID); err != nil {
+		if err := repo.LockPairs(ctx, tx, pairs, others); err != nil {
 			return err
 		}
-		if err := repo.LockPair(ctx, tx, followerID, st.TargetAccountID); err != nil {
-			return err
-		}
-		edge, from, err := s.liveFollow(ctx, tx, followerID, st.SourceAccountID)
-		if errors.Is(err, ErrNotFound) || (err == nil && edge.State != graph.StateActive) {
-			return nil // the follow ended, or was migrated, meanwhile
-		}
+		edges, err := repo.ListEdgesBetween(ctx, tx, pairs, others)
 		if err != nil {
 			return err
 		}
-		if ev.Outcome, err = s.keepsFollow(ctx, tx, followerID, st.TargetAccountID, domainMuted); err != nil {
+		from, to := map[string]graph.Edge{}, map[string]graph.Edge{}
+		var fromIDs []string
+		for _, e := range edges {
+			switch e.FolloweeAccountID {
+			case st.SourceAccountID:
+				if e.State == graph.StateActive {
+					from[e.FollowerAccountID] = e
+					fromIDs = append(fromIDs, e.FollowID)
+				}
+			case st.TargetAccountID:
+				to[e.FollowerAccountID] = e
+			}
+		}
+		if len(from) == 0 {
+			return nil // the follows ended, or were migrated, meanwhile
+		}
+		fromFollows, err := repo.FollowsByIDs(ctx, tx, fromIDs)
+		if err != nil {
 			return err
 		}
-		if ev.Outcome != "" {
-			return tx.Emit(ctx, ev)
+		prefs, err := repo.PreferencesOf(ctx, tx, fromIDs)
+		if err != nil {
+			return err
 		}
-		switch to, err := repo.Edge(ctx, tx, followerID, st.TargetAccountID); {
-		case err == nil:
-			ev.Outcome = MigrationFollowed
-			if to.State != graph.StateActive {
-				ev.Outcome = MigrationRequested
+		blocking, blockedBy, err := repo.BlockEdgesWithTx(ctx, tx, st.TargetAccountID, followers)
+		if err != nil {
+			return err
+		}
+		var (
+			created     FollowsCreated
+			ended       FollowsTerminated
+			migrated    FollowsMigrated
+			inserted    []graph.Follow
+			insertedPrf []graph.Preferences
+			accepted    []string
+			endedIDs    []string
+		)
+		for _, id := range followers {
+			e, live := from[id]
+			fromFollow, ok := fromFollows[e.FollowID]
+			if !live || !ok {
+				continue
 			}
-		case errors.Is(err, ErrNotFound):
-			if ev.Outcome, err = s.followTargetIn(ctx, tx, f, from, locked); err != nil {
+			ev := FollowMigrated{AccountID: id, SourceAccountID: st.SourceAccountID, TargetAccountID: st.TargetAccountID, MoveID: st.MoveID, At: now}
+			switch {
+			case blockedBy[id]: // the follower blocks the target
+				ev.Outcome = MigrationBlocking
+			case blocking[id]: // the target blocks the follower
+				ev.Outcome = MigrationBlockedBy
+			case domainMuted[id]:
+				ev.Outcome = MigrationDomainMuted
+			}
+			if ev.Outcome != "" {
+				migrated.Migrations = append(migrated.Migrations, ev)
+				continue
+			}
+			if toEdge, ok := to[id]; ok {
+				ev.Outcome = MigrationFollowed
+				if toEdge.State != graph.StateActive {
+					ev.Outcome = MigrationRequested
+				}
+			} else {
+				f := newFollows[id]
+				p, ok := prefs[fromFollow.ID]
+				if !ok {
+					p = graph.DefaultPreferences(f.ID)
+				}
+				p.FollowID = f.ID
+				inserted, insertedPrf = append(inserted, f), append(insertedPrf, p)
+				if locked {
+					ev.Outcome = MigrationRequested
+					created.Requested = append(created.Requested, FollowRequested{Follow: f, Preferences: p})
+				} else {
+					ev.Outcome = MigrationFollowed
+					accepted = append(accepted, f.ID)
+					a := graph.Acceptance{FollowID: f.ID, AcceptedBy: graph.AcceptedByAuto, AcceptedAt: f.RequestedAt}
+					created.Followed = append(created.Followed, Followed{Follow: f, Acceptance: a, Preferences: p})
+				}
+			}
+			endedIDs = append(endedIDs, fromFollow.ID)
+			ended.Terminations = append(ended.Terminations, FollowTerminated{
+				Follow: fromFollow, PreviousState: graph.StateActive,
+				Termination: graph.Termination{FollowID: fromFollow.ID, Reason: graph.TerminatedMoved, TerminatedAt: now},
+			})
+			migrated.Migrations = append(migrated.Migrations, ev)
+		}
+		if len(inserted) > 0 {
+			if err := repo.InsertFollows(ctx, tx, inserted); err != nil {
 				return err
 			}
-		default:
+			if err := repo.UpsertManyPreferences(ctx, tx, insertedPrf); err != nil {
+				return err
+			}
+			if err := repo.InsertAutoAcceptances(ctx, tx, accepted, now); err != nil {
+				return err
+			}
+			if err := tx.Emit(ctx, created); err != nil {
+				return err
+			}
+		}
+		if len(endedIDs) > 0 {
+			if err := repo.InsertTerminations(ctx, tx, endedIDs, graph.TerminatedMoved, now); err != nil {
+				return err
+			}
+			if err := tx.Emit(ctx, ended); err != nil {
+				return err
+			}
+		}
+		if len(migrated.Migrations) == 0 {
+			return nil
+		}
+		return tx.Emit(ctx, migrated)
+	})
+}
+
+// migrateBlocks makes each of blockerIDs, which block the source, block the target too, together:
+// the blocks of a page are inserted, their follows with the target ended (as blockIn ends them),
+// and one BlocksCreated tells the projectors, with a number of statements that does not grow with
+// them. A blocker that blocks the target already is left as it is.
+func (s *Service) migrateBlocks(ctx context.Context, st MigrationStep, blockerIDs []string) error {
+	blockers, err := s.migratingAccounts(ctx, st, blockerIDs)
+	if err != nil || len(blockers) == 0 {
+		return err
+	}
+	now := kernel.Normalize(s.d.Clock.Now())
+	fresh := make(map[string]graph.Block, len(blockers))
+	for _, id := range blockers {
+		b := graph.Block{ID: s.d.IDs.NewID(), BlockerAccountID: id, BlockedAccountID: st.TargetAccountID, CreatedAt: now}
+		b.URI = graph.BlockURI(s.d.Host, b.ID)
+		if err := b.Validate(); err != nil {
 			return err
 		}
-		term := FollowTerminated{Termination: graph.Termination{Reason: graph.TerminatedMoved, TerminatedAt: now}}
-		if _, err := s.endIn(ctx, tx, term, followerID, st.SourceAccountID, false); err != nil {
+		fresh[id] = b
+	}
+	repo := s.d.Repository
+	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		targets := make([]string, len(blockers))
+		for i := range blockers {
+			targets[i] = st.TargetAccountID
+		}
+		if err := repo.LockPairs(ctx, tx, blockers, targets); err != nil {
+			return err
+		}
+		_, blocking, err := repo.BlockEdgesWithTx(ctx, tx, st.TargetAccountID, blockers)
+		if err != nil {
+			return err
+		}
+		var bs []graph.Block
+		ev := BlocksCreated{}
+		others := map[string][]string{}
+		for _, id := range blockers {
+			if blocking[id] {
+				continue // the account blocks the target already
+			}
+			bs = append(bs, fresh[id])
+			ev.Blocks = append(ev.Blocks, Blocked{Block: fresh[id]})
+			others[id] = []string{st.TargetAccountID}
+		}
+		if len(bs) == 0 {
+			return nil
+		}
+		if err := repo.InsertBlocks(ctx, tx, bs); err != nil {
+			return err
+		}
+		if _, err := s.endAmong(ctx, tx, others, SeverBoth, graph.TerminatedBlocked, true, now); err != nil {
 			return err
 		}
 		return tx.Emit(ctx, ev)
 	})
 }
 
-// keepsFollow returns why followerID does not follow targetID in place of the source, "" when
-// it does.
-func (s *Service) keepsFollow(ctx context.Context, tx uow.Tx, followerID, targetID string, domainMuted bool) (MigrationOutcome, error) {
-	blocking, err := found(s.d.Repository.BlockEdge(ctx, tx, followerID, targetID))
-	if err != nil || blocking {
-		return MigrationBlocking, err
+// migrateMutes makes the account of each of ms, which mutes the source, mute the target with the
+// same settings and expiry, unless it already mutes the target, together: one statement inserts
+// the mutes of a page and one MutesCreated tells the projectors.
+func (s *Service) migrateMutes(ctx context.Context, st MigrationStep, ms []graph.Mute) error {
+	ids := make([]string, len(ms))
+	for i, m := range ms {
+		ids[i] = m.AccountID
 	}
-	blockedBy, err := found(s.d.Repository.BlockEdge(ctx, tx, targetID, followerID))
-	if err != nil || blockedBy {
-		return MigrationBlockedBy, err
-	}
-	if domainMuted {
-		return MigrationDomainMuted, nil
-	}
-	return "", nil
-}
-
-// followTargetIn records f, the follow of the target in place of the follow from, with from's
-// preferences: pending when the target is remote or locked, active at once otherwise.
-func (s *Service) followTargetIn(ctx context.Context, tx uow.Tx, f, from graph.Follow, locked bool) (MigrationOutcome, error) {
-	repo := s.d.Repository
-	prefs, err := repo.Preferences(ctx, tx, from.ID)
-	switch {
-	case errors.Is(err, ErrNotFound):
-		prefs = graph.DefaultPreferences(f.ID)
-	case err != nil:
-		return "", err
-	}
-	prefs.FollowID = f.ID
-	if err := repo.InsertFollow(ctx, tx, f); err != nil {
-		return "", err
-	}
-	if err := repo.UpsertPreferences(ctx, tx, prefs); err != nil {
-		return "", err
-	}
-	if locked {
-		return MigrationRequested, tx.Emit(ctx, FollowRequested{Follow: f, Preferences: prefs})
-	}
-	a := graph.Acceptance{FollowID: f.ID, AcceptedBy: graph.AcceptedByAuto, AcceptedAt: f.RequestedAt}
-	if err := repo.InsertAcceptance(ctx, tx, a); err != nil {
-		return "", err
-	}
-	return MigrationFollowed, tx.Emit(ctx, Followed{Follow: f, Acceptance: a, Preferences: prefs})
-}
-
-// migrateBlock makes blockerID, which blocks the source, block the target too.
-func (s *Service) migrateBlock(ctx context.Context, st MigrationStep, blockerID string) error {
-	if _, ok, err := s.migratingAccount(ctx, st, blockerID); err != nil || !ok {
-		return err
-	}
-	b := graph.Block{ID: s.d.IDs.NewID(), BlockerAccountID: blockerID, BlockedAccountID: st.TargetAccountID, CreatedAt: kernel.Normalize(s.d.Clock.Now())}
-	b.URI = graph.BlockURI(s.d.Host, b.ID)
-	if err := b.Validate(); err != nil {
-		return err
-	}
-	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.blockIn(ctx, tx, b) })
-}
-
-// migrateMute makes the account of m, which mutes the source, mute the target with the same
-// settings and expiry, unless it already mutes the target.
-func (s *Service) migrateMute(ctx context.Context, st MigrationStep, m graph.Mute) error {
-	if _, ok, err := s.migratingAccount(ctx, st, m.AccountID); err != nil || !ok {
+	muters, err := s.migratingAccounts(ctx, st, ids)
+	if err != nil || len(muters) == 0 {
 		return err
 	}
 	now := kernel.Normalize(s.d.Clock.Now())
-	mute := graph.Mute{
-		AccountID: m.AccountID, TargetAccountID: st.TargetAccountID, HideNotifications: m.HideNotifications,
-		ExpiresAt: m.ExpiresAt, CreatedAt: now,
-	}
-	if err := mute.Validate(); err != nil {
-		if errors.Is(err, graph.ErrMuteExpiry) {
-			return nil // the mute of the source expired meanwhile
+	var fresh []graph.Mute
+	for _, m := range ms {
+		if !slices.Contains(muters, m.AccountID) {
+			continue
 		}
-		return err
+		mute := graph.Mute{
+			AccountID: m.AccountID, TargetAccountID: st.TargetAccountID, HideNotifications: m.HideNotifications,
+			ExpiresAt: m.ExpiresAt, CreatedAt: now,
+		}
+		if err := mute.Validate(); err != nil {
+			if errors.Is(err, graph.ErrMuteExpiry) {
+				continue // the mute of the source expired meanwhile
+			}
+			return err
+		}
+		fresh = append(fresh, mute)
+	}
+	if len(fresh) == 0 {
+		return nil
 	}
 	repo := s.d.Repository
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		switch _, err := repo.Mute(ctx, tx, m.AccountID, st.TargetAccountID, now); {
-		case err == nil:
-			return nil // the account already mutes the target: its own settings stay
-		case !errors.Is(err, ErrNotFound):
+		accounts := make([]string, len(fresh))
+		for i, m := range fresh {
+			accounts[i] = m.AccountID
+		}
+		had, err := repo.ActiveMutesOfTargetTx(ctx, tx, st.TargetAccountID, accounts, now)
+		if err != nil {
 			return err
 		}
-		if err := repo.UpsertMute(ctx, tx, mute); err != nil {
+		// An account that already mutes the target keeps its own settings.
+		fresh = slices.DeleteFunc(fresh, func(m graph.Mute) bool { _, ok := had[m.AccountID]; return ok })
+		if len(fresh) == 0 {
+			return nil
+		}
+		if err := repo.UpsertMutes(ctx, tx, fresh); err != nil {
 			return err
 		}
-		return tx.Emit(ctx, Muted{Mute: mute})
+		ev := MutesCreated{Mutes: make([]Muted, len(fresh))}
+		for i, m := range fresh {
+			ev.Mutes[i] = Muted{Mute: m}
+		}
+		return tx.Emit(ctx, ev)
 	})
 }
 

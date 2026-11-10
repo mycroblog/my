@@ -341,6 +341,8 @@ var scopeDescriptions = map[string]func(*i18n.Localizer) string{
 	identity.ScopeReadBookmarks:      (*i18n.Localizer).ServerAuthAuthorizeScopeReadBookmarks,
 	identity.ScopeReadCustomEmojis:   (*i18n.Localizer).ServerAuthAuthorizeScopeReadCustomEmojis,
 	identity.ScopeReadDirect:         (*i18n.Localizer).ServerAuthAuthorizeScopeReadDirect,
+	identity.ScopeReadEvents:         (*i18n.Localizer).ServerAuthAuthorizeScopeReadEvents,
+	identity.ScopeReadFilters:        (*i18n.Localizer).ServerAuthAuthorizeScopeReadFilters,
 	identity.ScopeReadFinance:        (*i18n.Localizer).ServerAuthAuthorizeScopeReadFinance,
 	identity.ScopeReadFollows:        (*i18n.Localizer).ServerAuthAuthorizeScopeReadFollows,
 	identity.ScopeReadMutes:          (*i18n.Localizer).ServerAuthAuthorizeScopeReadMutes,
@@ -353,7 +355,9 @@ var scopeDescriptions = map[string]func(*i18n.Localizer) string{
 	identity.ScopeWriteBlocks:        (*i18n.Localizer).ServerAuthAuthorizeScopeWriteBlocks,
 	identity.ScopeWriteBookmarks:     (*i18n.Localizer).ServerAuthAuthorizeScopeWriteBookmarks,
 	identity.ScopeWriteCustomEmojis:  (*i18n.Localizer).ServerAuthAuthorizeScopeWriteCustomEmojis,
+	identity.ScopeWriteEvents:        (*i18n.Localizer).ServerAuthAuthorizeScopeWriteEvents,
 	identity.ScopeWriteFavourites:    (*i18n.Localizer).ServerAuthAuthorizeScopeWriteFavourites,
+	identity.ScopeWriteFilters:       (*i18n.Localizer).ServerAuthAuthorizeScopeWriteFilters,
 	identity.ScopeWriteFollows:       (*i18n.Localizer).ServerAuthAuthorizeScopeWriteFollows,
 	identity.ScopeWriteMedia:         (*i18n.Localizer).ServerAuthAuthorizeScopeWriteMedia,
 	identity.ScopeWriteMutes:         (*i18n.Localizer).ServerAuthAuthorizeScopeWriteMutes,
@@ -367,6 +371,9 @@ var scopeDescriptions = map[string]func(*i18n.Localizer) string{
 func scopeDescription(l *i18n.Localizer, scope string) string {
 	if describe, ok := scopeDescriptions[scope]; ok {
 		return describe(l)
+	}
+	if p, ok := identity.ScopePermission(scope); ok {
+		return l.ServerAuthAuthorizeScopeAdminPermission(string(p))
 	}
 	return scope
 }

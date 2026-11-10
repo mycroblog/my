@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: revealAdminAccount
+  x-permission: manage_accounts
   summary: Show the email address and the IP addresses of a local account
   description: |
     The primary email address of a local account, where it registered and its newest 20

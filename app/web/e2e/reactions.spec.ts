@@ -8,6 +8,7 @@ import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 type Status = components["schemas"]["Status"];
 /** The client message `key` in the project's locale, with `{emoji}` replaced by `emoji`. */
@@ -87,6 +88,7 @@ const post: Status = {
   replies_count: 0,
   boosts_count: 0,
   favourites_count: 1,
+  filtered: [],
   reactions: [
     { name: "👍", count: 12, me: false },
     { ...blobcat, count: 3, me: false },
@@ -142,14 +144,10 @@ async function serveApi(page: Page): Promise<void> {
       });
     }
     if (path === "/preferences") {
-      return json(route, {
-        locale: test.info().project.use.locale ?? "en",
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "en",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(
+        route,
+        preferencesOf({ locale: test.info().project.use.locale ?? "en", default_post_language: "en" }),
+      );
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [] });

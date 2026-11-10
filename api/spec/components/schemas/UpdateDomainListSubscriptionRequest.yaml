@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: The changes to the settings of a subscription; what is omitted stays.
+type: object
+properties:
+  title:
+    type: string
+    minLength: 1
+    maxLength: 200
+  mode:
+    $ref: ./AdminDomainListMode.yaml
+  suspend_as:
+    $ref: ./AdminDomainListSuspendAs.yaml
+  silence_as:
+    $ref: ./AdminDomainListSilenceAs.yaml
+  apply_reject_media:
+    type: boolean
+  apply_reject_reports:
+    type: boolean
+  public_comment_from_list:
+    type: boolean

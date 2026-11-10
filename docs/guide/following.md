@@ -36,7 +36,7 @@ which shows how many there are.
 
 | Timeline | What it shows |
 | --- | --- |
-| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts set to "This server" by the people you follow. Posts you have not seen yet are counted ("new posts"), or inserted by themselves when you turn on "Show new posts automatically". |
+| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts set to "This server" by the people you follow, and the public posts and posts set to "This server" of the hashtags you follow, from people you do not follow. Posts you have not seen yet are counted ("new posts"), or inserted by themselves when you turn on "Show new posts automatically". |
 | Local | The public posts, and the posts set to "This server", of the accounts of this server. |
 | Federated | The public posts of the accounts of this server and of the accounts of other servers that this server knows. Posts set to "This server" and unlisted posts are not on it. |
 
@@ -46,8 +46,50 @@ operators can turn either one off, or show it only to people who are signed in; 
 
 A hashtag page (for example `#cats`) shows the public posts and the posts set to "This server" with that tag.
 
+## Following hashtags
+
+A hashtag page has the button "Follow" when you are signed in. After you follow a hashtag, your home timeline also shows
+the public posts and the posts set to "This server" with it from people you do not follow, the next time you open it.
+Such a post says "Followed hashtag #cats" above it, and the hashtag leads to its page, where "Following" unfollows it.
+Replies come too; boosts do not, and neither do posts of people you block or mute, or of accounts and servers that
+the server keeps off its public timelines. Home shows only the posts this server already has: following a hashtag does
+not fetch posts from other servers.
+
+You can follow up to 100 hashtags. "Followed hashtags" in the settings lists them, the latest first, follows another
+one ("Follow a hashtag", with or without the `#`), and unfollows them.
+
+## Featured hashtags
+
+A profile can feature up to ten hashtags, in the order its owner chose, each with how many of the owner's public and
+unlisted posts carry it and when the last one did. Choose yours under "Featured hashtags" in the profile settings:
+"Add a hashtag" adds a row, the arrows move a row up or down, and "Save profile" saves them with the rest of your
+profile. A hashtag you have not used yet can be featured too. Other servers that show your profile get the same list.
+On a profile of another server, the counts are of the posts this server has received, so they may be lower than on
+that server.
+
 An empty home timeline says "Your home timeline is empty". Follow someone, or "Browse the local timeline"; on a server
 without a local timeline, "Find people to follow" opens the search.
+
+## Private notes
+
+Another person's profile has a "Private note" area where you keep a note on that account, up to 2,000 characters: how
+you met, what they like. Only you can see it; the account is not told, and the note does not leave this server. "Add
+note" or "Edit note" opens it, and saving it empty removes the note. The archive of "Archive and deletion" in the
+settings holds your notes, and a note goes when you or the other account is deleted.
+
+## Following in a feed reader
+
+People without an account on the fediverse can follow a profile or a hashtag in a feed reader: add the address of the
+profile followed by `.atom` (for example `https://example.com/@alice.atom`), or of the hashtag page
+(`https://example.com/tags/cats.atom`). Most feed readers also find the feed from the page's own address. A feed holds
+the 20 newest public posts of this server's accounts, without replies or boosts; a hashtag's feed holds those with the
+tag. A post with a content warning shows only the warning, and its text and media stay on the post's page.
+
+Whether your own posts are in feeds is "Publish a feed of my public posts" under "Feeds" in the profile settings. Until
+you change it, it follows "Search engines and AI": your posts are in feeds while you let search engines index your
+profile. Once you change it, changing the search setting leaves it as it is. When it is off, your profile has no feed
+and your posts are in no hashtag's feed. A feed reader may take a minute or two to see a change. Accounts that a
+moderator has limited or suspended, and accounts that moved, have no feed.
 
 ## Lists
 

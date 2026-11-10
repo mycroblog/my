@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A change of an interaction policy: the kinds left out keep their rules. Interactions approved
+  before stay.
+type: object
+properties:
+  reply:
+    $ref: ./InteractionRule.yaml
+  announce:
+    description: Who may boost the status.
+    allOf:
+      - $ref: ./InteractionRule.yaml
+  quote:
+    $ref: ./InteractionRule.yaml

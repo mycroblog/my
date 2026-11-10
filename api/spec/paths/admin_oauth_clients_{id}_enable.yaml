@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: enableOAuthClient
+  x-permission: manage_oauth_apps
   summary: Enable an OAuth client
   description: |
     The client can be authorized again. The tokens that disabling it revoked stay revoked: the

@@ -5,8 +5,7 @@
 !.vscode/extensions.json
 
 # Secrets
-.env
-.env.*
+.env*
 # The KEK of the Compose deployment.
 /deploy/docker/secrets/
 
@@ -49,6 +48,8 @@ coverage/
 /app/docs/public/developers/
 /app/docs/public/plugins/
 /app/docs/public/*.md
+# The copy of api/openapi.yaml that the client API reference renders (app/docs/src/api-schemas.ts).
+/app/docs/generated/
 
 # Playwright output (app/web)
 test-results/

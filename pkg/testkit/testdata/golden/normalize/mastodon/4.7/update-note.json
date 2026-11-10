@@ -34,6 +34,7 @@
                 "https://www.w3.org/ns/activitystreams#Public"
               ]
             },
+            "Conversation": "https://mastodon.example/contexts/117454922805771612-117454931784872371",
             "ID": "https://mastodon.example/ap/users/117454922805771612/statuses/117454931784872371",
             "Published": "2026-10-17T06:53:48Z",
             "RawType": "Note",

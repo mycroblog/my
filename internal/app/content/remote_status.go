@@ -39,6 +39,10 @@ type RemoteStatusInput struct {
 	// Visibility comes from the addressing; it is never local (ADR-0017).
 	Visibility   content.Visibility
 	InReplyToURI string
+	// Conversation is the IRI of the conversation that the post declares (its context, else its
+	// conversation; ADR-0154 §2), "" for none. A post that declares a conversation of this
+	// server joins it by its parent alone. Only IngestRemoteStatus reads it.
+	Conversation string
 	PublishedAt  time.Time
 	// RevisedAt is the AP updated time, or PublishedAt when there is none.
 	RevisedAt time.Time
@@ -62,9 +66,9 @@ type RemoteStatusInput struct {
 	// Quote is the post that the post quotes, nil for none (ADR-0069). It is recorded with the
 	// status; a revision without one takes the quote away, and one with another is ignored.
 	Quote *RemoteQuoteInput
-	// QuotePolicy is who may quote the post, nil when it declares nobody (ADR-0069 §3); every
-	// Update replaces it.
-	QuotePolicy *RemoteQuotePolicyInput
+	// InteractionPolicy is the rules of the kinds that the post's interactionPolicy declares,
+	// none when it declares none (ADR-0155 §2, §4); every Update replaces them.
+	InteractionPolicy content.InteractionPolicy
 }
 
 // RemoteBody is the HTML of a remote post in one language (a canonical BCP 47 tag or "und").
@@ -107,8 +111,13 @@ type RemotePollInput struct {
 // IngestRemoteStatus stores a remote post inside tx (federation.md §3.4): the status with an ID
 // whose time is its published time (#71), and its first revision with the bodies sanitized, the
 // mentions, hashtags, custom emoji, the attachments' declared values, and the poll with its
-// counts. It emits StatusCreated, so that the projections, the timelines, and the notifications
-// see the post. The caller decides that the post is in scope (ADR-0006) and is not tombstoned.
+// counts. The post joins the conversation it declares, else its stored parent's, else a new one,
+// and the conversations that its reply links show to be its thread's are merged (ADR-0154 §2,
+// §3; insertStatus). It emits StatusCreated, so that the projections, the timelines, and the
+// notifications see the post. The caller decides that the post is in scope (ADR-0006) and is not
+// tombstoned.
+// A reply to a local status whose reply rules do not admit its author is stored as a held reply
+// with its reply request (replyHold, ADR-0155 §6): out of the thread, uncounted, and notifying no one.
 //
 // A URI that a status already has fails with ErrStatusExists; the transaction must then be
 // abandoned (the status is already there).
@@ -130,23 +139,16 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 		InReplyToURI:    in.InReplyToURI,
 		PublishedAt:     published,
 	}
-	st.ConversationURI = st.URI
-	if in.InReplyToURI != "" {
-		st.ConversationURI = ""
-		parent, err := s.d.Repository.FindLiveStatusByURI(ctx, tx, in.InReplyToURI)
-		switch {
-		case errors.Is(err, ErrNotFound):
-			// The thread is unknown until the parent arrives.
-		case err != nil:
-			return Post{}, err
-		default:
-			st.ConversationURI = parent.ConversationURI
-			if st.ConversationURI == "" {
-				st.ConversationURI = parent.URI
-			}
-		}
+	hold, err := s.heldReply(ctx, tx, st)
+	if err != nil {
+		return Post{}, err
 	}
-	if err := s.d.Repository.InsertStatus(ctx, tx, st); err != nil {
+	ins, err := s.insertStatus(ctx, tx, st, in.Conversation)
+	if err != nil {
+		return Post{}, err
+	}
+	held, err := s.recordReplyHold(ctx, tx, hold)
+	if err != nil {
 		return Post{}, err
 	}
 	revisedAt := remoteRevisedAt(in.RevisedAt, published, now)
@@ -157,27 +159,26 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err := s.d.Repository.InsertRevision(ctx, tx, rev); err != nil {
 		return Post{}, err
 	}
-	if err := tx.Emit(ctx, StatusCreated{Status: st, Revision: rev}); err != nil {
+	if err := tx.Emit(ctx, StatusCreated{Status: st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: held}); err != nil {
 		return Post{}, err
 	}
 	if err := s.recordQuote(ctx, tx, st, in.Quote); err != nil {
 		return Post{}, err
 	}
-	if in.QuotePolicy != nil {
-		if err := s.recordRemoteQuotePolicy(ctx, tx, st, in.QuotePolicy); err != nil {
-			return Post{}, err
-		}
+	if err := s.recordRemoteInteractionPolicy(ctx, tx, st, in.InteractionPolicy, true); err != nil {
+		return Post{}, err
 	}
 	if err := s.observePoll(ctx, tx, rev.Poll, in.Poll, now); err != nil {
 		return Post{}, err
 	}
-	return Post{Status: st, Revision: rev}, nil
+	return Post{Status: st, Revision: rev, ParentStored: ins.ParentStored}, nil
 }
 
 // ReviseRemoteStatus records a new revision of a remote post inside tx (federation.md §3.3,
 // §3.4): only when its RevisedAt is later than the current revision's, so that an Update that
 // arrives late or twice makes no revision. A revision without a quote takes the status's quote
-// away (ADR-0069 §3). The counts of the current poll are recorded either
+// away (ADR-0069 §3), and one that names the quote it asked for records it
+// (recordRequestedQuote). The counts of the current poll are recorded either
 // way, when they are higher. It reports whether a revision was made. A status that does not
 // exist or is deleted fails with ErrNotFound; one of another author with ErrNotAuthor.
 func (s *Service) ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteStatusInput) (bool, error) {
@@ -196,7 +197,7 @@ func (s *Service) ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 		return false, err
 	}
 	now := s.d.Clock.Now()
-	if err := s.recordRemoteQuotePolicy(ctx, tx, st, in.QuotePolicy); err != nil {
+	if err := s.recordRemoteInteractionPolicy(ctx, tx, st, in.InteractionPolicy, false); err != nil {
 		return false, err
 	}
 	revisedAt := remoteRevisedAt(in.RevisedAt, st.PublishedAt, now)
@@ -214,15 +215,44 @@ func (s *Service) ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err := s.d.Repository.InsertRevision(ctx, tx, rev); err != nil {
 		return false, err
 	}
-	if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev}); err != nil {
+	held := false
+	if st.InReplyToURI != "" {
+		if held, err = s.d.Repository.IsHeldReply(ctx, tx, st.ID); err != nil {
+			return false, err
+		}
+	}
+	if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev, HeldReply: held}); err != nil {
 		return false, err
 	}
 	if in.Quote == nil {
 		if err := s.detachQuote(ctx, tx, st); err != nil {
 			return false, err
 		}
+	} else if err := s.recordRequestedQuote(ctx, tx, st, in.Quote); err != nil {
+		return false, err
 	}
 	return true, s.observePoll(ctx, tx, rev.Poll, in.Poll, now)
+}
+
+// recordRequestedQuote records in tx the quote in that a revision of the remote status st names,
+// when st quoted nothing before and asked for that quote with a QuoteRequest: Bonfire names the
+// quote only once it is approved (FEP-044f). A quote cannot be added by an edit otherwise
+// (ADR-0069 §1).
+func (s *Service) recordRequestedQuote(ctx context.Context, tx uow.Tx, st content.Status, in *RemoteQuoteInput) error {
+	if s.d.Quotes == nil || in.Form != content.QuoteFormFEP044f {
+		return nil
+	}
+	if _, err := s.d.Quotes.FindQuoteTx(ctx, tx, st.ID); !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	_, err := s.d.Quotes.FindInteractionRequestFor(ctx, tx, content.InteractionQuote, st.URI, in.URI)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return nil
+	case err != nil:
+		return err
+	}
+	return s.recordQuote(ctx, tx, st, in)
 }
 
 // DeleteRemoteStatus records inside tx that the author of a remote post deleted it (a Delete,
@@ -287,11 +317,12 @@ func (s *Service) Tombstoned(ctx context.Context, uri string) (bool, error) {
 	return d.Tombstone(), nil
 }
 
-// LocalStatusInConversation reports whether a local status that is not deleted belongs to the
-// conversation conversationURI ("" is no conversation): a reply into it is in the scope of remote
-// content (ADR-0006).
-func (s *Service) LocalStatusInConversation(ctx context.Context, conversationURI string) (bool, error) {
-	return s.d.Repository.LocalStatusInConversation(ctx, conversationURI)
+// LocalStatusInConversationOf reports whether a local status that is not deleted belongs to the
+// conversation of the status statusID: a reply into it is in the scope of remote content
+// (ADR-0006). The conversation that a post declares does not count (ADR-0154 §2), so the caller
+// asks about the stored parent of the reply.
+func (s *Service) LocalStatusInConversationOf(ctx context.Context, statusID string) (bool, error) {
+	return s.d.Repository.LocalStatusInConversationOf(ctx, statusID)
 }
 
 func (s *Service) checkRemote(in RemoteStatusInput) error {
@@ -546,3 +577,172 @@ func truncateRunes(s string, n int) string {
 }
 
 func clampFocus(v float64) float64 { return min(max(v, -1), 1) }
+
+// heldReply returns the request that st, a remote status being stored, is recorded with when it
+// replies to a stored status (replyHold), nil otherwise. A parent that arrives later does not
+// hold its earlier replies.
+func (s *Service) heldReply(ctx context.Context, tx uow.Tx, st content.Status) (*replyHold, error) {
+	if st.InReplyToURI == "" {
+		return nil, nil
+	}
+	parent, err := s.d.Repository.FindLiveStatusByURI(ctx, tx, st.InReplyToURI)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return nil, nil
+	case err != nil:
+		return nil, err
+	}
+	return s.replyHold(ctx, tx, st, parent)
+}
+
+// replyHold is the request that a remote reply to parent is recorded with (ADR-0155 §6), and the
+// answer it gets at once.
+type replyHold struct {
+	request content.InteractionRequest
+	answer  answer
+	parent  content.Status
+	// existing is whether the reply has its request already: one that a ReplyRequest asked for.
+	existing bool
+	state    content.InteractionState
+}
+
+// replyHold decides how the remote reply st to parent stands with the reply rules of parent, and
+// returns the request to record with it, nil for none. A reply that a ReplyRequest asked for is
+// as its request was answered. Of a local parent, a reply that the rules admit only by who its
+// author is gets this server's approval, delivered as an Accept so that third servers may show
+// it; one that a manual rule includes waits for the author; one that no rule includes is refused,
+// with a Reject (content.MayInteract). Of a remote parent, a reply that only the parent's server
+// may approve waits for its approval, which the federation module verifies
+// (AcceptRemoteInteraction). A reply that waits or is refused is held out of the thread.
+func (s *Service) replyHold(ctx context.Context, tx uow.Tx, st, parent content.Status) (*replyHold, error) {
+	if s.d.Quotes == nil {
+		return nil, nil
+	}
+	r := content.InteractionRequest{
+		Kind: content.InteractionReply, Direction: content.DirectionOf(parent.IsLocal, false), TargetURI: parent.URI,
+		TargetAccountID: parent.AuthorAccountID, InteractingURI: st.URI, InteractingAccountID: st.AuthorAccountID,
+	}
+	switch existing, err := s.d.Quotes.FindInteractionRequestFor(ctx, tx, r.Kind, r.InteractingURI, r.TargetURI); {
+	case err == nil:
+		state, err := s.approvals().state(ctx, tx, existing)
+		if err != nil {
+			return nil, err
+		}
+		if existing.InteractingAccountID != st.AuthorAccountID {
+			state.State = content.InteractionRequestRejected
+		}
+		return &replyHold{request: existing, parent: parent, existing: true, state: state}, nil
+	case !errors.Is(err, ErrNotFound):
+		return nil, err
+	}
+	if !parent.IsLocal {
+		needs, err := s.remoteReplyNeedsAuthorization(ctx, st.AuthorAccountID, parent)
+		if err != nil || !needs {
+			return nil, err
+		}
+		return &replyHold{request: r, parent: parent}, nil
+	}
+	v, err := s.inboundReplyVerdict(ctx, st.AuthorAccountID, parent)
+	if err != nil {
+		return nil, err
+	}
+	switch {
+	case v.decision == content.InteractionAllowed && !v.needsAuthorization:
+		return nil, nil
+	case v.decision == content.InteractionAllowed:
+		uri, err := s.approvals().authorize(ctx, tx, r.Kind, r.InteractingURI, r.InteractingAccountID, parent)
+		if err != nil {
+			return nil, err
+		}
+		return &replyHold{request: r, parent: parent, answer: answer{kind: content.InteractionEventAccepted, authorization: uri, deferred: true}}, nil
+	case v.decision == content.InteractionPending:
+		return &replyHold{request: r, parent: parent}, nil
+	}
+	return &replyHold{request: r, parent: parent, answer: answer{kind: content.InteractionEventRejected, deferred: true}}, nil
+}
+
+// recordReplyHold records in tx the request of h, nil for none, and reports whether the reply is
+// held out of the thread of its parent: its request is not accepted.
+func (s *Service) recordReplyHold(ctx context.Context, tx uow.Tx, h *replyHold) (bool, error) {
+	if h == nil {
+		return false, nil
+	}
+	if h.existing {
+		return h.state.State != content.InteractionRequestAccepted, nil
+	}
+	ref := RefOf(h.parent)
+	_, state, _, err := s.approvals().request(ctx, tx, h.request, h.answer, &ref)
+	if err != nil {
+		return false, err
+	}
+	return state.State != content.InteractionRequestAccepted, nil
+}
+
+// remoteReplyNeedsAuthorization reports whether a reply of the remote account authorID to the
+// remote status parent needs the approval of parent's server to be shown (ADR-0155 §6): the reply
+// rules of parent do not admit anyone at once, and the reply is not its author's own, nor of an
+// account that parent mentions or replies to (content.NeedsAuthorization). This server cannot
+// tell who parent's author follows, so the rest waits for an authorization.
+func (s *Service) remoteReplyNeedsAuthorization(ctx context.Context, authorID string, parent content.Status) (bool, error) {
+	policy, err := interactionPolicyOf(ctx, s.d.Quotes, parent.ID)
+	if err != nil {
+		return false, err
+	}
+	f := content.InteractionFacts{Kind: content.InteractionReply, ActorAccountID: authorID, ActorVisible: true, Status: parent, Policy: policy}
+	if !content.NeedsAuthorization(f, content.InteractionAllowed) {
+		return false, nil
+	}
+	rev, err := s.d.Repository.FindCurrentRevision(ctx, parent.ID)
+	switch {
+	case errors.Is(err, ErrNotFound):
+	case err != nil:
+		return false, err
+	default:
+		f.Mentioned = slices.Contains(rev.MentionedAccountIDs, authorID)
+	}
+	if parent.InReplyToURI != "" {
+		grand, err := s.d.Repository.FindStatusByURI(ctx, parent.InReplyToURI)
+		switch {
+		case errors.Is(err, ErrNotFound):
+		case err != nil:
+			return false, err
+		default:
+			f.RepliedTo = grand.AuthorAccountID == authorID
+		}
+	}
+	return content.NeedsAuthorization(f, content.InteractionAllowed), nil
+}
+
+// inboundReplyVerdict decides a reply of the remote account authorID to the local status parent:
+// refused unless the account may see parent as an ActivityPub fetch by it would
+// (content.CanView), and neither blocks the other; then as the reply rules of parent decide
+// (content.MayInteract).
+func (s *Service) inboundReplyVerdict(ctx context.Context, authorID string, parent content.Status) (interactionVerdict, error) {
+	restrictions, err := s.d.Restrictions.Restrictions(ctx, parent.AuthorAccountID)
+	if err != nil {
+		return interactionVerdict{}, err
+	}
+	r, err := s.d.Relationships.Relationship(ctx, authorID, parent.AuthorAccountID)
+	if err != nil {
+		return interactionVerdict{}, err
+	}
+	rel := content.Relation{Blocking: r.Blocking, BlockedBy: r.BlockedBy}
+	switch {
+	case r.ActivelyFollowing():
+		rel.Follow = content.FollowActive
+	case r.RequestedFollow():
+		rel.Follow = content.FollowPending
+	}
+	rev, err := s.d.Repository.FindCurrentRevision(ctx, parent.ID)
+	if err != nil {
+		return interactionVerdict{}, err
+	}
+	rel.Mentioned = slices.Contains(rev.MentionedAccountIDs, authorID)
+	viewer := content.Viewer{Kind: content.ViewerRemote, AccountID: authorID}
+	facts := content.StatusFacts{AuthorAccountID: parent.AuthorAccountID, AuthorIsLocal: parent.IsLocal, Visibility: parent.Visibility}
+	if !content.CanView(content.ContextObjectFetch, viewer, facts, restrictions.Author, rel) || rel.Blocking || rel.BlockedBy {
+		return interactionVerdict{decision: content.InteractionDenied}, nil
+	}
+	in := interactor{follows: r.ActivelyFollowing(), followedBy: r.ActivelyFollowedBy(), mentioned: rel.Mentioned}
+	return s.interactionReaders().verdict(ctx, content.InteractionReply, authorID, false, &in, parent)
+}

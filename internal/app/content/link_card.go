@@ -67,8 +67,16 @@ type LinkCardRepository interface {
 	UpsertStatusLinkCard(ctx context.Context, tx uow.Tx, l content.StatusLinkCard) error
 	// DeleteStatusLinkCard removes the card of a status; a status without one is not an error.
 	DeleteStatusLinkCard(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusLinkCardsOf is DeleteStatusLinkCard of each of statusIDs, with one statement.
+	DeleteStatusLinkCardsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// StatusLinkCardURL returns the URL whose card a status shows.
 	StatusLinkCardURL(ctx context.Context, statusID string) (string, error)
+	// StatusLinkCardURLs, FindLinkCards, and FindLinkCardMedias return those of many statuses, URLs,
+	// and media at once, by status ID, URL, and media ID, as the reads of one return them, with
+	// one query each.
+	StatusLinkCardURLs(ctx context.Context, statusIDs []string) (map[string]string, error)
+	FindLinkCards(ctx context.Context, urls []string) (map[string]content.LinkCard, error)
+	FindLinkCardMedias(ctx context.Context, mediaIDs []string) (map[string]content.LinkCardMedia, error)
 	// FindLinkCard returns the card of a normalized URL.
 	FindLinkCard(ctx context.Context, url string) (content.LinkCard, error)
 	// FindLinkCardTx reads as FindLinkCard does, in tx.
@@ -113,6 +121,19 @@ type LinkCardDomains interface {
 	// ImagesStopped reports whether a rule of the crawler on a host, or on one of its parents,
 	// stops fetching images from it: either mode of a rule does.
 	ImagesStopped(ctx context.Context, host string) (bool, error)
+}
+
+// HostRule is what LinkCardDomains reports of one host.
+type HostRule struct {
+	Suspended, RejectsMedia, FetchStopped, ImagesStopped bool
+}
+
+// hostRuleBatch is a LinkCardDomains that answers about many hosts at once, as the composition
+// root's does.
+type hostRuleBatch interface {
+	// HostRules returns the rule of each of hosts, by host, as the four reads of LinkCardDomains
+	// answer for each.
+	HostRules(ctx context.Context, hosts []string) (map[string]HostRule, error)
 }
 
 // LinkCardCreators verifies the fediverse:creator of a page (ADR-0062 §5). The federation
@@ -221,6 +242,18 @@ func (l *LinkCards) RegisterProjectors(r *uow.Projectors) {
 	r.Register(EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return l.d.Repository.DeleteStatusLinkCard(ctx, tx, e.(StatusDeleted).Status.ID)
 	})
+	r.Register(EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return l.d.Repository.DeleteStatusLinkCardsOf(ctx, tx, deletedIDs(e.(StatusesDeleted).Deletions))
+	})
+}
+
+// deletedIDs returns the IDs of the statuses of ds.
+func deletedIDs(ds []StatusDeleted) []string {
+	ids := make([]string, len(ds))
+	for i, d := range ds {
+		ids[i] = d.Status.ID
+	}
+	return ids
 }
 
 func (l *LinkCards) project(ctx context.Context, tx uow.Tx, st content.Status, rev content.Revision) error {

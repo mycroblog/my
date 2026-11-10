@@ -38,6 +38,8 @@ type remoteFetchEnv struct {
 	remoteActors *appfederation.RemoteActors
 	// suspended are the accounts with the federation restriction.
 	suspended remoteSuspensions
+	// featuredTags are the featured hashtags that the fetches of featuredTags collections wrote.
+	featuredTags *remoteFeaturedTags
 }
 
 func newRemoteFetchEnv(t *testing.T, e *remoteStatusEnv) *remoteFetchEnv {
@@ -48,6 +50,7 @@ func newRemoteFetchEnv(t *testing.T, e *remoteStatusEnv) *remoteFetchEnv {
 	fe := &remoteFetchEnv{
 		remoteStatusEnv: e, net: &remoteNet{routes: map[string]remoteResponse{}},
 		jobs: &remoteJobs{seen: map[string]bool{}}, handlers: &queue.JobHandlerRegistry{}, suspended: remoteSuspensions{},
+		featuredTags: &remoteFeaturedTags{byAccount: map[string][]string{}},
 	}
 	kv := testkit.NewKeyValueStore(e.Clock)
 	fetcher := appfederation.NewFetcher(appfederation.FetcherDeps{
@@ -77,7 +80,8 @@ func newRemoteFetchEnv(t *testing.T, e *remoteStatusEnv) *remoteFetchEnv {
 	fe.statuses = appfederation.NewStatusHandlers(appfederation.StatusHandlersDeps{
 		UnitOfWork: e.h.UnitOfWork, Statuses: e.content, Accounts: e.remote, Actors: actors, Fetcher: actors,
 		Followers: e.graph, Tombstones: e.h.Inbox, Outbox: outbox, Jobs: fe.jobs, KV: kv, Clock: e.Clock, Host: testkit.ContractHost,
-		Profiles: e.remote, Relationships: e.graph, Restrictions: fe.suspended, Pins: pins, Quotes: e.quotes(),
+		Profiles: e.remote, Relationships: e.graph, Restrictions: fe.suspended, Pins: pins, FeaturedTags: fe.featuredTags,
+		Quotes: e.quotes(),
 	})
 	fe.statuses.Register(e.processor)
 	fe.statuses.RegisterJobs(fe.handlers)

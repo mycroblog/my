@@ -51,6 +51,10 @@ type Options struct {
 	// InstanceThumbnail returns the image that represents the instance (the thumbnail setting)
 	// for a reader of locale, for Instance.thumbnail; nil, or a nil image, leaves it out.
 	InstanceThumbnail func(ctx context.Context) (*InstanceImage, error)
+	// MediaImage returns the image of a media setting's value (preview_image, thumbnail) for the
+	// admin settings: the large still variant of the media file, nil when it is not a processed
+	// image; nil leaves the image out.
+	MediaImage func(ctx context.Context, mediaID string) (*InstanceImage, error)
 	// ResourceMetadataURL is the URL of the protected resource metadata (RFC 9728), which the
 	// WWW-Authenticate challenge of a 401 response names as resource_metadata; "" leaves it out.
 	ResourceMetadataURL string
@@ -94,6 +98,9 @@ type Options struct {
 	// AutoDelete reads and replaces the viewer's automatic deletion of their old posts (FR-118);
 	// nil answers its operations 404.
 	AutoDelete AutoDeletePolicies
+	// DraftSchedules reads the schedules of drafts that the scheduled_status_failed notifications
+	// name (ADR-0156 §8); nil presents those notifications without scheduled_status_failure.
+	DraftSchedules DraftScheduleReader
 	// TwoFactor runs the viewer's two-factor authentication; nil answers its operations 404.
 	TwoFactor TwoFactorSettings
 	// Passkeys runs the viewer's passkeys; nil answers their operations 404.
@@ -116,11 +123,17 @@ type Options struct {
 	// Subscriptions runs the viewer's subscriptions to new posts; nil answers their operations
 	// 404 and presents Relationship.notify false.
 	Subscriptions PostSubscriptions
+	// ThreadMutes mutes and unmutes the threads of statuses for the viewer and presents
+	// Status.muted; nil answers their operations 404 and presents Status.muted false.
+	ThreadMutes ThreadMutes
 	// Notifications runs the use cases of the viewer's notifications.
 	Notifications Notifications
 	// NotificationPreferences reads and changes the viewer's notification settings; nil answers
 	// their operations 404.
 	NotificationPreferences NotificationPreferences
+	// NotificationPolicies reads and changes the viewer's notification policy and runs the
+	// requests of the filtered notifications; nil answers their operations 404.
+	NotificationPolicies NotificationPolicies
 	// Push runs the Web Push subscription use cases and gives Instance.push_server_key; nil
 	// sends no Web Push.
 	Push WebPush
@@ -129,6 +142,15 @@ type Options struct {
 	Statuses     Statuses
 	StatusReader StatusReader
 	Interactions Interactions
+	// Articles writes the viewer's articles and previews their bodies (the articles operations);
+	// nil answers them 404.
+	Articles Articles
+	// Drafts runs the viewer's drafts and scheduled posts (the drafts operations); nil answers
+	// them 404.
+	Drafts Drafts
+	// InteractionRequests lists and answers the requests of interactions with the viewer's
+	// statuses (the interaction requests operations); nil lists none and answers 404.
+	InteractionRequests InteractionRequests
 	// Translations translates statuses on a reader's request (translateStatus); nil answers that
 	// no provider is available.
 	Translations Translations
@@ -144,6 +166,21 @@ type Options struct {
 	// Lists keeps the viewer's lists and reads their timelines; nil answers their operations
 	// with 404.
 	Lists Lists
+	// FollowedTags keeps the hashtags that the viewer follows; nil answers their operations with
+	// 404, and lists none.
+	FollowedTags FollowedTags
+	// KeywordFilters keeps the viewer's keyword filters; nil answers their operations with 404.
+	KeywordFilters KeywordFilters
+	// StatusFilters judges the statuses that the timelines, threads, notifications, and streams
+	// show against their viewers' keyword filters; nil judges none.
+	StatusFilters StatusFilters
+	// FeaturedTags keeps the hashtags that accounts feature on their profiles; nil answers the
+	// change with 404, and lists none.
+	FeaturedTags FeaturedTags
+	// Conversations reads and keeps the viewer's direct messages by conversation and tells the
+	// streams how a conversation shows; nil answers their operations with 404 and streams no
+	// conversation events.
+	Conversations Conversations
 	// TimelineLanguages returns the languages that a user's timelines show, none for every
 	// language (FR-208); nil shows every language.
 	TimelineLanguages func(ctx context.Context, userID string) ([]string, error)
@@ -220,6 +257,9 @@ type Options struct {
 	// LinkCardDomainRules runs the rules of the link card crawler (admin_link_card_domains.go); nil
 	// answers 404.
 	LinkCardDomainRules LinkCardDomainRules
+	// DomainAllows runs the allowlist of federation and the impact of switching to it
+	// (admin_domain_allows.go); nil answers 404.
+	DomainAllows DomainAllows
 	// InstanceTexts reads and writes the instance texts for the admin operations
 	// (admin_instance_texts.go).
 	InstanceTexts InstanceTexts
@@ -322,6 +362,9 @@ type Options struct {
 	Registrations Registrations
 	// SignupBlocks runs the sign-up block list (admin_signup_blocks.go).
 	SignupBlocks SignupBlocks
+	// DomainListSubscriptions runs the subscriptions to domain block lists
+	// (admin_domain_list_subscriptions.go).
+	DomainListSubscriptions DomainListSubscriptions
 	// Settings reads and changes the instance settings (admin_settings.go).
 	Settings InstanceSettings
 	// SingleUserAccount finds the operator's account of a one-person server, which GET /instance
@@ -348,6 +391,8 @@ type Options struct {
 	// Voice runs the voice chat rooms (voice.go); nil, while the voice chat is off, answers 404
 	// to their operations.
 	Voice VoiceRooms
+	// Events runs the events of the local users (events.go); nil answers 404 to their operations.
+	Events Events
 	// VoiceModeration reports the rooms, ends them for the moderators, and reads their records
 	// for the reports (admin_voice.go), with the voice chat off too; nil reports no room.
 	VoiceModeration VoiceModeration
@@ -388,6 +433,14 @@ type Server struct {
 	o Options
 	// streams counts the open streams.
 	streams kernel.UpDownCounter
+	// home decides which user streams of the process check a new home entry.
+	home *homeGate
+	// monitor checks the tokens of the open streams of the process on every heartbeat; nil
+	// leaves each stream to check its own.
+	monitor *streamMonitor
+	// public shares the decision and the presentation of a new entry between the streams of the
+	// public timelines of the process.
+	public *publicDispatch
 }
 
 var _ StrictServerInterface = (*Server)(nil)
@@ -412,7 +465,15 @@ func New(o Options) *Server {
 	if o.Authenticator == nil {
 		o.Authenticator = noTokens{}
 	}
-	return &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections)}
+	s := &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections), home: newHomeGate(), public: newPublicDispatch()}
+	if b, ok := o.Authenticator.(bearerBatch); ok {
+		every := o.StreamHeartbeat
+		if every <= 0 {
+			every = DefaultStreamHeartbeat
+		}
+		s.monitor = newStreamMonitor(s, b, every)
+	}
+	return s
 }
 
 // Router registers handlers for http.ServeMux patterns.

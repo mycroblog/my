@@ -115,6 +115,30 @@ func TestParseImportCSVSkipsInvalidAndDuplicateLines(t *testing.T) {
 	}
 }
 
+// TestParseImportCSVReadsFollowedHashtags checks the file of followed hashtags: one per line,
+// with or without its #, each once whatever its case; a # alone is a blank line.
+func TestParseImportCSVReadsFollowedHashtags(t *testing.T) {
+	tags, skipped, err := identity.ParseImportCSV(identity.ImportFollowedTags, "cats\n#Dogs\nCATS\nnot a tag\n#\nfoo.bar\n\n")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantTags := []identity.ImportEntry{{Line: 1, Target: "cats"}, {Line: 2, Target: "Dogs"}}
+	wantSkipped := []identity.ImportSkipped{
+		{Line: 3, Value: "CATS", Reason: identity.ImportSkipDuplicate},
+		{Line: 4, Value: "not a tag", Reason: identity.ImportSkipInvalid},
+		{Line: 6, Value: "foo.bar", Reason: identity.ImportSkipInvalid},
+	}
+	for i := range wantTags {
+		wantTags[i].ShowBoosts, wantTags[i].HideNotifications = true, true
+	}
+	if !reflect.DeepEqual(tags, wantTags) || !reflect.DeepEqual(skipped, wantSkipped) {
+		t.Errorf("tags = %+v, skipped = %+v\nwant %+v and %+v", tags, skipped, wantTags, wantSkipped)
+	}
+	if got := identity.ImportFollowedTags.FileName(); got != "followed_hashtags.csv" || !identity.ImportFollowedTags.Valid() {
+		t.Errorf("FileName = %q, Valid = %v", got, identity.ImportFollowedTags.Valid())
+	}
+}
+
 func TestParseImportCSVLimitsTheEntries(t *testing.T) {
 	var b strings.Builder
 	for i := range identity.MaxImportEntries + 1 {
@@ -148,6 +172,7 @@ func TestExportCSVRoundTrips(t *testing.T) {
 			{Target: "https://example.com/users/alice/statuses/1"}, {Target: "https://social.example/@bob/2"},
 		}, mastodonBookmarks},
 		{identity.ImportDomainMutes, []identity.ExportRow{{Target: "spam.example"}, {Target: "example.net"}}, mastodonDomains},
+		{identity.ImportFollowedTags, []identity.ExportRow{{Target: "Cats"}, {Target: "日本語"}}, "Cats\n日本語\n"},
 	}
 	for _, c := range cases {
 		got, err := identity.ExportCSV(c.kind, c.rows)

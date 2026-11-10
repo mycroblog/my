@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listReports
+  x-permission: manage_reports
   summary: List the reports
   description: |
     The reports in the moderators' queue, newest first unless `order` is `oldest`.

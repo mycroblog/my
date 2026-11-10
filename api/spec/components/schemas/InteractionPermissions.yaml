@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+description: What the authenticated user may do with a status, by each kind of interaction.
+type: object
+required: [reply, announce, quote]
+properties:
+  reply:
+    description: Whether the user may reply to the status.
+    allOf:
+      - $ref: ./InteractionPermission.yaml
+  announce:
+    description: Whether the user may boost the status.
+    allOf:
+      - $ref: ./InteractionPermission.yaml
+  quote:
+    description: Whether the user may quote the status.
+    allOf:
+      - $ref: ./InteractionPermission.yaml

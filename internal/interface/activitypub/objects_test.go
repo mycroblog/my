@@ -120,6 +120,10 @@ func TestCollectionPages(t *testing.T) {
 	}
 	s.objects.outbox = []federation.ActivityDocument{create(publicStatusID), create(outboxNext)}
 	s.objects.featured = []federation.NoteDocument{{ObjectDocument: federation.ObjectDocument{ID: federation.IRI("https://" + host + "/ap/objects/" + publicStatusID), Type: federation.ObjectNote}}}
+	s.objects.featuredTags = []federation.TagDocument{
+		{Type: federation.TagHashtag, Href: "https://" + host + "/@alice/tagged/cats", Name: "#Cats"},
+		{Type: federation.TagHashtag, Href: "https://" + host + "/@alice/tagged/dogs", Name: "#dogs"},
+	}
 	// Botty follows Alice; Alice follows Botty and the deactivated Carol, who is left out.
 	s.graph.edges = []graph.Edge{
 		{FollowerAccountID: botID, FolloweeAccountID: aliceID, FollowID: "0192f3c0-0000-7000-8000-000000000003", State: graph.StateActive, Since: created},
@@ -132,6 +136,7 @@ func TestCollectionPages(t *testing.T) {
 		{"collection-followers-page.json", "/ap/actors/" + aliceID + "/followers?page=true"},
 		{"collection-following-page.json", "/ap/actors/" + aliceID + "/following?page=true"},
 		{"collection-featured-items.json", "/ap/actors/" + aliceID + "/featured"},
+		{"collection-featured-tags-items.json", "/ap/actors/" + aliceID + "/featured-tags"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.golden, func(t *testing.T) {

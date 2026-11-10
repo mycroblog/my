@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What a keyword filter does to a post that matches it: `warn` returns the post with the filter
+  in its `filtered`, and clients fold it behind the filter's title; `hide` leaves the post out,
+  as if the user could not see it.
+type: string
+enum: [warn, hide]

@@ -81,10 +81,11 @@ oapi-codegen は分割したファイルを直接読めないので、バンド�
 - 投稿の引用（`Status.quote`、`StatusQuote`）は、`StatusView.Quote`（`content.Reader` が閲覧者ごとに決める `QuoteView`）を `Server.newStatus` で詰め替えます（ADR-0069 §5）。
   `state` は承認の状態か、閲覧者に引用先を見せない理由（`QuoteState`）で、`quoted_status` は `accepted`・`legacy` と、閲覧者のミュートの理由（`muted_account`・`blocked_domain`）のときだけ入れます。
   引用は 1 段で、`quoted_status` には `quote` を入れません。引用先の著者などのアカウントの分は、`Server.statusParts` が引用元と一緒に読みます。
-  `Status.quotable`（ログインした閲覧者が引用できるか、`content.MayQuote`）と、作者にだけの `Status.quote_policy` も `StatusView` から詰め替えます。
+  `Status.permissions`（ログインした閲覧者が返信・ブースト・引用のそれぞれを `allowed`（すぐできる）・`pending`（作者の承認待ちになる）・`denied`（できない）のどれでできるか。`content.MayInteract` の判定で、3 つの判定は作者との関係の読み出しを共有する）と、ローカルの投稿の作者にだけの `Status.interaction_policy`（返信・ブースト・引用の種類ごとの `automatic` と `manual` の相手、[ADR-0155](../adr/0155-interaction-policy.md) §10）も `StatusView` から詰め替えます。
   公開範囲が `local`・`private`・`direct` の投稿でリモートの投稿を引用すると `422` で、投稿を作りません（[ADR-0018](../adr/0018-federated-uris.md) §15）。
-  引用は投稿の作成（`createStatus` の `quoted_status_id` と `quote_policy`）でだけ付け、編集（`editStatus` の `remove_quote`）では外すことしかできません。
-  作者は `setStatusQuotePolicy` で引用の許可を変え、`listStatusQuotes` で自分の投稿への引用を一覧し、`revokeStatusQuoteApproval` で承認を取り消します。既定の許可は `Preferences.default_quote_policy` です。
+  引用は投稿の作成（`createStatus` の `quoted_status_id`）でだけ付け、編集（`editStatus` の `remove_quote`）では外すことしかできません。
+  作者は `listStatusQuotes` で自分の投稿への引用を一覧し、`revokeStatusQuoteApproval` で承認を取り消します。
+  交流の許可は、投稿の作成（`createStatus` の `interaction_policy`）と `setStatusInteractionPolicy`（`PUT /statuses/{id}/interaction_policy`）で種類ごとに指定し、指定しない種類は `Preferences.default_interaction_policy`（`updatePreferences` で種類ごとに変える）を写すか、今の値のままです。どちらも `InteractionPolicyChange` で、承認の相手が自動の相手より広くなければ `422` です。
   アカウントの投稿の一覧（`listAccountStatuses`）だけは、`StatusPage` に `remote_fetch_started` を加えた `#/components/responses/AccountStatusPage` を返します。
   その要求がリモートのアカウントの最近の投稿の取得を始めたときだけ `true` が入り、ほかのときは省きます（[federation.md §6.3](federation.md#63-投稿)、ADR-0006）。
 
@@ -313,16 +314,20 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
 
 ## 5. ストリーミング
 
-`GET /api/v1/streaming`（`streamEvents`）は Server-Sent Events のストリームで、閲覧者のホームの新着と新しい通知、サーバーのお知らせ（FR-726）を送ります（FR-207）。
+`GET /api/v1/streaming`（`streamEvents`）は Server-Sent Events のストリームで、閲覧者のホームの新着と新しい通知、ダイレクトメッセージの会話（FR-212）、サーバーのお知らせ（FR-726）を送ります（FR-207）。
 strict server は SSE を返せないので、`oapi-codegen.yaml` の `exclude-operation-ids` で生成から除き、`streaming.go` に手で書きます（ADR-0016）。
 それでも spec には `text/event-stream` の操作として書き、`security.gen.go` の表と `guard`（認証・レート制限・スコープ `read:statuses` と `read:notifications`）を通します。
 
 - クライアントは `fetch` のストリームで読み、`Authorization: Bearer` を送ります（`EventSource` はヘッダを送れません）。
-- イベントは `update`（`data` は `Status`）、`notification`（`data` は `Notification`）、`announcement`（公開した・公開中に変えたお知らせ。`data` は `Announcement`）、
+- イベントは `update`（`data` は `Status`）、`notification`（`data` は `Notification`）、
+  `conversation`（ダイレクトメッセージの会話に `direct` の投稿が届いた、または閲覧者がどこかの端末で既読にした。`data` は `listConversations` が見せる形の `Conversation`、FR-212）、
+  `announcement`（公開した・公開中に変えたお知らせ。`data` は `Announcement`）、
   `announcement_removed`（見えなくなったお知らせ。`data` は `{"id": …}`）です。`id` は付けず、`Last-Event-ID` での再開はしません。
   切れたら再接続し、ホームと通知とお知らせを読み直します。期間の始まりが後のお知らせは、始まった時にはイベントを送らないので、クライアントはお知らせを読み直したときに知ります。
 - 接続の流れは [overview §4.4](overview.md#44-リアルタイム更新sse) のとおりです。ハンドラは `stream.Subscriber` で購読し、知らせを受けるたびにユースケース
-  （`HomeEntries.HomeEntry`、`Notifications.List`、`Announcements.ShownAnnouncement`）で閲覧者に見せる形に読み直して、`Server.statuses` と `Server.newNotifications` で詰め替えます。
+  （`HomeEntries.HomeEntry`、`Notifications.List`、`Conversations.StreamConversation`、`Announcements.ShownAnnouncement`）で閲覧者に見せる形に読み直して、`Server.statuses`・`Server.newNotifications`・`Server.presentConversations` で詰め替えます。
+  `conversation` の知らせ（`stream.KindConversation`）は、`direct` の投稿の作成をコミットした後に投稿の作者と宛先ごとに 1 つ、既読にした後に閲覧者に 1 つ出し、そのアカウントのストリームにだけ届きます。
+  一覧が出さない会話（非表示・見られる投稿がない）と、`read:direct` のないトークンのストリームには送りません。
 - 開くと `: connected` を、その後 30 秒ごと（`Options.StreamHeartbeat`）に `: heartbeat` のコメント行を送ります。ハートビートのたびにアクセストークンを照合し直し、無効なら閉じます。
 - 接続数の上限は、アカウントごとに 8、プロセス全体で 1,000 です（`stream.HubOptions`）。上限はプロセスごとに数えるので、プロセス間のブローカー（設定 `stream`）を使う構成では、全体では「上限 × web のプロセス数」まで開けます。
   アカウントの上限を超えると 429（`/api/v1/problems/too-many-streams`）です。

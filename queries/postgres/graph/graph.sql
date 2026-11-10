@@ -105,6 +105,13 @@ SELECT account_id, followers_count, following_count FROM follow_counters WHERE a
 SELECT count(*) FROM follow_edges
 WHERE followee_account_id = sqlc.arg(account_id) AND state = sqlc.arg(state);
 
+-- ListFolloweesAmong returns the accounts among account_ids with an edge into them in one state,
+-- each once: those of a batch with an active follower (FolloweesAmong).
+-- name: ListFolloweesAmong :many
+SELECT DISTINCT followee_account_id FROM follow_edges
+WHERE followee_account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND state = sqlc.arg(state)
+ORDER BY followee_account_id;
+
 -- ListFollowersPage pages the edges into an account in one state, newest follow first; an empty
 -- before starts at the newest.
 -- name: ListFollowersPage :many
@@ -133,3 +140,70 @@ ON CONFLICT (uri) DO NOTHING;
 -- name: GetFollowByResendURI :one
 SELECT f.id, f.uri, f.follower_account_id, f.followee_account_id, f.requested_at
 FROM follow_resends r JOIN follows f ON f.id = r.follow_id WHERE r.uri = $1;
+
+-- The statements that end many follows at once (Repository.EndFollows), each as the statement of
+-- one follow above does for every follow it names. The unnests of a select list advance together.
+
+-- name: ListFollowsByIDs :many
+SELECT id, uri, follower_account_id, followee_account_id, requested_at FROM follows
+WHERE id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY id;
+
+-- name: InsertFollowTerminations :exec
+INSERT INTO follow_terminations (follow_id, reason, terminated_at)
+SELECT unnest(sqlc.arg(follow_ids)::uuid[]), sqlc.arg(reason), sqlc.arg(terminated_at);
+
+-- name: DeleteFollowEdgesOfFollows :execrows
+DELETE FROM follow_edges WHERE (follow_id, state) IN (
+  SELECT unnest(sqlc.arg(follow_ids)::uuid[]), unnest(sqlc.arg(states)::text[]));
+
+-- AddToManyFollowCounters is AddToFollowCounters of many accounts; it returns those that had a
+-- row, and AddFollowCounters creates the others. An upsert would check the counts of the row it
+-- proposes, below zero, before it adds them.
+-- name: AddToManyFollowCounters :many
+UPDATE follow_counters c SET followers_count = c.followers_count + d.followers_delta, following_count = c.following_count + d.following_delta
+FROM (SELECT unnest(sqlc.arg(account_ids)::uuid[]) AS account_id, unnest(sqlc.arg(followers_deltas)::bigint[]) AS followers_delta,
+  unnest(sqlc.arg(following_deltas)::bigint[]) AS following_delta) d
+WHERE c.account_id = d.account_id
+RETURNING c.account_id;
+
+-- name: DeleteZeroFollowCountersOf :exec
+DELETE FROM follow_counters WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) AND followers_count = 0 AND following_count = 0;
+
+-- ListFollowEdgesOfAccounts is ListFollowEdgesOf of many accounts, each edge once.
+-- name: ListFollowEdgesOfAccounts :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges WHERE follower_account_id = ANY(sqlc.arg(account_ids)::uuid[]) OR followee_account_id = ANY(sqlc.arg(account_ids)::uuid[])
+ORDER BY follower_account_id, followee_account_id;
+
+-- ListFollowEdgesBetween returns the edges between a_ids[i] and b_ids[i], in either direction
+-- (the unnests of a select list advance together).
+-- name: ListFollowEdgesBetween :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges
+WHERE (follower_account_id, followee_account_id) IN (SELECT unnest(sqlc.arg(a_ids)::uuid[]), unnest(sqlc.arg(b_ids)::uuid[]))
+   OR (followee_account_id, follower_account_id) IN (SELECT unnest(sqlc.arg(a_ids)::uuid[]), unnest(sqlc.arg(b_ids)::uuid[]))
+ORDER BY follower_account_id, followee_account_id;
+
+-- The statements that start many follows at once (the migration of a moved account's followers),
+-- each as the statement of one follow above does for every follow it names (the unnests of a
+-- select list advance together).
+
+-- name: InsertFollows :exec
+INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(uris)::text[]), unnest(sqlc.arg(follower_account_ids)::uuid[]),
+  unnest(sqlc.arg(followee_account_ids)::uuid[]), unnest(sqlc.arg(requested_ats)::timestamptz[]);
+
+-- name: UpsertManyFollowPreferences :exec
+INSERT INTO follow_preferences (follow_id, show_boosts)
+SELECT unnest(sqlc.arg(follow_ids)::uuid[]), unnest(sqlc.arg(show_boosts)::boolean[])
+ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts;
+
+-- name: InsertAutoFollowAcceptances :exec
+INSERT INTO follow_acceptances (follow_id, accepted_by, activity_uri, accepted_at)
+SELECT unnest(sqlc.arg(follow_ids)::uuid[]), sqlc.arg(accepted_by), NULL, sqlc.arg(accepted_at);
+
+-- name: InsertFollowEdges :execrows
+INSERT INTO follow_edges (follower_account_id, followee_account_id, follow_id, state, since)
+SELECT unnest(sqlc.arg(follower_account_ids)::uuid[]), unnest(sqlc.arg(followee_account_ids)::uuid[]), unnest(sqlc.arg(follow_ids)::uuid[]),
+  unnest(sqlc.arg(states)::text[]), unnest(sqlc.arg(sinces)::timestamptz[])
+ON CONFLICT (follower_account_id, followee_account_id) DO NOTHING;

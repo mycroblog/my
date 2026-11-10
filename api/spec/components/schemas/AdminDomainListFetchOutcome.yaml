@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+description: |
+  `applied`: the list was read and replaced the domains the subscription holds.
+  `not_modified`: the list did not change. `failed`: nothing was read and nothing changed.
+type: string
+enum: [applied, not_modified, failed]

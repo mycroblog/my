@@ -5,6 +5,8 @@ package identitytest
 import (
 	"context"
 	"errors"
+	"maps"
+	"reflect"
 	"slices"
 	"testing"
 	"time"
@@ -88,6 +90,9 @@ func oauthRepoClients(t *testing.T, r *identityRepo) {
 	}
 	if got, err := r.h.Identity.FindOAuthClientByID(ctx, c.ID); err != nil || got.ClientID != c.ClientID {
 		t.Errorf("FindOAuthClientByID = %+v, %v", got, err)
+	}
+	if got, err := r.h.Identity.ExistingOAuthClients(ctx, []string{c.ID, r.ids.NewID()}); err != nil || !maps.Equal(got, map[string]bool{c.ID: true}) {
+		t.Errorf("ExistingOAuthClients = %v, %v; want the client alone", got, err)
 	}
 	if _, _, err := r.h.Identity.FindOAuthClient(ctx, "unknown"); !errors.Is(err, appidentity.ErrNotFound) {
 		t.Errorf("FindOAuthClient(unknown) = %v, want ErrNotFound", err)
@@ -224,6 +229,18 @@ func oauthRepoDisablement(t *testing.T, r *identityRepo) {
 	}
 	if _, state, err := r.h.Identity.FindAccessTokenByAccessHash(ctx, expired.AccessTokenHash); err != nil || state.Revoked || !state.Client.Disabled {
 		t.Errorf("expired token = %+v, %v; want it without a revocation, its client disabled", state, err)
+	}
+	// Many tokens at once, as each.
+	byHash, err := r.h.Identity.FindAccessTokensByAccessHashes(ctx, [][]byte{expired.AccessTokenHash, live.AccessTokenHash, []byte("unknown")})
+	if err != nil || len(byHash) != 2 {
+		t.Errorf("FindAccessTokensByAccessHashes = %+v, %v; want the two tokens", byHash, err)
+	}
+	for _, tok := range []identity.AccessToken{expired, live} {
+		one, state, err := r.h.Identity.FindAccessTokenByAccessHash(ctx, tok.AccessTokenHash)
+		got := byHash[string(tok.AccessTokenHash)]
+		if err != nil || !reflect.DeepEqual(got.Token, one) || got.State != state {
+			t.Errorf("FindAccessTokensByAccessHashes[%s] = %+v; want %+v %+v, as FindAccessTokenByAccessHash (%v)", tok.ID, got, one, state, err)
+		}
 	}
 	// Lifting enables the client again; a second lift finds nothing.
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {

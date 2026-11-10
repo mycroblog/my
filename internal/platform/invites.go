@@ -37,3 +37,18 @@ func (a *App) inviterRestricted(ctx context.Context, accountID string) (bool, er
 	}
 	return slices.Contains(rs, moderation.RestrictFederation) || slices.Contains(rs, moderation.RestrictUnsolicitedReach), nil
 }
+
+// inviterRestrictedAmong is inviterRestricted of many accounts, with one read of their
+// restrictions.
+func (a *App) inviterRestrictedAmong(ctx context.Context, accountIDs []string) (map[string]bool, error) {
+	all, err := a.AccountPolicy.RestrictionsOf(ctx, accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(accountIDs))
+	for _, id := range accountIDs {
+		rs := all[id]
+		out[id] = slices.Contains(rs, moderation.RestrictFederation) || slices.Contains(rs, moderation.RestrictUnsolicitedReach)
+	}
+	return out, nil
+}

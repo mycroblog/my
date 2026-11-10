@@ -7,7 +7,8 @@
 // belongs to this tab only and ends with it; another account signing in on the same tab reads its own
 // key, and the end of the session removes it (it is the user's own data). Files picked but not yet uploaded live only in memory (their object URLs end with the page).
 import type { StorageKey, StoredCompose } from "../../../lib/storage";
-import type { CreateStatusRequest, QuotePolicy, StatusRejection, Visibility } from "../api/compose";
+import type { CreateStatusRequest, StatusRejection, Visibility } from "../api/compose";
+import type { InteractionPolicyChange } from "./interactionPolicy";
 import type { PollDraft } from "./poll";
 
 /** One image of the draft. */
@@ -24,6 +25,12 @@ export type AttachmentDraft = {
   error: string | null;
 };
 
+/**
+ * The draft on the server that a draft continues (ADR-0156): its ID, the `ETag` of the version it started from (the
+ * `If-Match` of the next save), and when it is scheduled to be published (null while it is not).
+ */
+export type SavedDraft = { id: string; etag: string; scheduledAt: string | null };
+
 export type Draft = {
   text: string;
   hasWarning: boolean;
@@ -36,8 +43,8 @@ export type Draft = {
   replyToId: string | null;
   /** The post quoted (FR-114), or null for none. */
   quoteId: string | null;
-  /** Who may quote the post; null follows the preference. */
-  quotePolicy: QuotePolicy | null;
+  /** The rules chosen for who may reply to, boost, and quote the post (ADR-0155); the kinds left out follow the preference. */
+  interactionPolicy: InteractionPolicyChange;
   attachments: readonly AttachmentDraft[];
   /** The poll of the post (FR-112), or null for none. A post with a poll attaches no media. */
   poll: PollDraft | null;
@@ -46,6 +53,8 @@ export type Draft = {
    * so sending it again cannot post it twice, and dropped by any edit.
    */
   idempotencyKey: string | null;
+  /** The draft on the server it continues, or null for one only in this tab. Edits keep it; saving or posting ends it. */
+  saved: SavedDraft | null;
 };
 
 /** A post that was handed to the server and has not been confirmed yet: what is sent, and the draft it came from. */
@@ -70,7 +79,8 @@ export type ComposeState = {
   rejection: Rejection | null;
 };
 
-const emptyDraft: Draft = {
+/** A draft with nothing in it, following every default. */
+export const emptyDraft: Draft = {
   text: "",
   hasWarning: false,
   spoilerText: "",
@@ -79,10 +89,11 @@ const emptyDraft: Draft = {
   language: null,
   replyToId: null,
   quoteId: null,
-  quotePolicy: null,
+  interactionPolicy: {},
   attachments: [],
   poll: null,
   idempotencyKey: null,
+  saved: null,
 };
 
 /** Whether the draft has nothing the user would miss. */
@@ -93,7 +104,8 @@ export function isEmptyDraft(draft: Draft): boolean {
     draft.attachments.length === 0 &&
     draft.poll === null &&
     draft.replyToId === null &&
-    draft.quoteId === null
+    draft.quoteId === null &&
+    draft.saved === null
   );
 }
 
@@ -175,18 +187,54 @@ export class DraftStore {
 
   /**
    * Moves the draft into the outbox under `idempotencyKey`, with the request `body` made from it, and starts an empty draft that keeps the
-   * chosen visibility, language and quote policy. The refusal of an earlier post gives way to this one.
+   * chosen visibility, language and interaction policy. The refusal of an earlier post gives way to this one.
    */
   send(idempotencyKey: string, body: CreateStatusRequest): OutboxItem {
     const item: OutboxItem = { idempotencyKey, body, draft: { ...this.#state.draft, idempotencyKey } };
-    const { visibility, language, quotePolicy } = this.#state.draft;
+    const { visibility, language, interactionPolicy } = this.#state.draft;
     this.#set({
-      draft: { ...emptyDraft, visibility: item.draft.replyToId === null ? visibility : null, language, quotePolicy },
+      draft: {
+        ...emptyDraft,
+        visibility: item.draft.replyToId === null ? visibility : null,
+        language,
+        interactionPolicy,
+      },
       outbox: [...this.#state.outbox.filter((o) => o.idempotencyKey !== idempotencyKey), item],
       error: null,
       rejection: null,
     });
     return item;
+  }
+
+  /**
+   * Replaces the draft with `draft`, one the user opened from the drafts saved on the server or that was just saved
+   * there (the form then starts empty, keeping the chosen visibility, language and interaction policy, as after a send).
+   */
+  replace(draft: Draft | null) {
+    const { visibility, language, interactionPolicy, replyToId } = this.#state.draft;
+    this.#set({
+      ...this.#state,
+      draft: draft ?? {
+        ...emptyDraft,
+        visibility: replyToId === null ? visibility : null,
+        language,
+        interactionPolicy,
+      },
+      error: null,
+    });
+  }
+
+  /**
+   * Changes the server draft that the outbox post `idempotencyKey` publishes: its newer ETag once its content was saved,
+   * or none once it can no longer be (it is then sent as a new post).
+   */
+  setOutboxSaved(idempotencyKey: string, saved: SavedDraft | null) {
+    this.#set({
+      ...this.#state,
+      outbox: this.#state.outbox.map((o) =>
+        o.idempotencyKey === idempotencyKey ? { ...o, draft: { ...o.draft, saved } } : o,
+      ),
+    });
   }
 
   /** Drops a post from the outbox: it was posted, or the user discarded it. */

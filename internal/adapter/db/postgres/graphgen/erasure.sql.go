@@ -11,6 +11,44 @@ import (
 	"context"
 )
 
+const eraseAccountNotesBy = `-- name: EraseAccountNotesBy :execrows
+DELETE FROM account_notes WHERE account_notes.account_id = $1 AND account_notes.target_account_id IN (
+  SELECT n.target_account_id FROM account_notes n WHERE n.account_id = $1
+  ORDER BY n.target_account_id LIMIT $2)
+`
+
+type EraseAccountNotesByParams struct {
+	AccountID string
+	Lim       int32
+}
+
+func (q *Queries) EraseAccountNotesBy(ctx context.Context, arg EraseAccountNotesByParams) (int64, error) {
+	result, err := q.db.Exec(ctx, eraseAccountNotesBy, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const eraseAccountNotesOf = `-- name: EraseAccountNotesOf :execrows
+DELETE FROM account_notes WHERE account_notes.target_account_id = $1 AND account_notes.account_id IN (
+  SELECT n.account_id FROM account_notes n WHERE n.target_account_id = $1
+  ORDER BY n.account_id LIMIT $2)
+`
+
+type EraseAccountNotesOfParams struct {
+	AccountID string
+	Lim       int32
+}
+
+func (q *Queries) EraseAccountNotesOf(ctx context.Context, arg EraseAccountNotesOfParams) (int64, error) {
+	result, err := q.db.Exec(ctx, eraseAccountNotesOf, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const eraseBlockEdgesOfBlocks = `-- name: EraseBlockEdgesOfBlocks :exec
 DELETE FROM block_edges WHERE block_id = ANY($1::uuid[])
 `

@@ -13,6 +13,10 @@ DELETE FROM post_subscriptions WHERE account_id = ? AND target_account_id = ?;
 -- name: PostSubscriptionExists :one
 SELECT EXISTS (SELECT 1 FROM post_subscriptions WHERE account_id = ? AND target_account_id = ?);
 
+-- The targets among target_ids that the account subscribes to.
+-- name: ListSubscribedTargets :many
+SELECT target_account_id FROM post_subscriptions WHERE account_id = sqlc.arg(account_id) AND target_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(target_ids) AS TEXT)));
+
 -- name: CountPostSubscriptions :one
 SELECT COUNT(*) FROM post_subscriptions WHERE account_id = ?;
 
@@ -55,3 +59,13 @@ DELETE FROM post_subscription_requests WHERE account_id = ? AND target_account_i
 
 -- name: PostSubscriptionRequestExists :one
 SELECT EXISTS (SELECT 1 FROM post_subscription_requests WHERE account_id = ? AND target_account_id = ?);
+
+-- DeletePostSubscriptionRequests and DeletePostSubscriptions are DeletePostSubscriptionRequest
+-- and DeletePostSubscription of many pairs, a JSON array of {"a": account, "b": target}.
+-- name: DeletePostSubscriptionRequests :exec
+DELETE FROM post_subscription_requests WHERE (account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));
+
+-- name: DeletePostSubscriptions :exec
+DELETE FROM post_subscriptions WHERE (account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));

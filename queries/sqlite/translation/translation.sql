@@ -87,3 +87,18 @@ DELETE FROM translation_account_usage WHERE month < @month;
 
 -- name: DeleteTranslationServerUsageBefore :exec
 DELETE FROM translation_server_usage WHERE month < @month;
+
+-- The translations of many statuses, and the rows of many translations, each statement as the one
+-- of one above does for every one it names. The lists are JSON arrays.
+
+-- name: ListStatusTranslationIDsOf :many
+SELECT id FROM status_translations WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT))) ORDER BY id;
+
+-- name: DeleteStatusTranslationAttachmentsOf :exec
+DELETE FROM status_translation_attachments WHERE translation_id IN (SELECT value FROM json_each(CAST(sqlc.arg(translation_ids) AS TEXT)));
+
+-- name: DeleteStatusTranslationPollOptionsOf :exec
+DELETE FROM status_translation_poll_options WHERE translation_id IN (SELECT value FROM json_each(CAST(sqlc.arg(translation_ids) AS TEXT)));
+
+-- name: DeleteStatusTranslationsByIDs :exec
+DELETE FROM status_translations WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(translation_ids) AS TEXT)));

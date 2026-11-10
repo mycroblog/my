@@ -33,7 +33,8 @@ const (
 	RefreshActorsEvery = time.Hour
 	// RefreshActorsBatch is the number of stale actors one JobRefreshActors reads.
 	RefreshActorsBatch = 200
-	// KeyResolveTimeout bounds resolving a key for an inbound signature (federation.md §3.1).
+	// KeyResolveTimeout bounds fetching the actor of an unknown key for an inbound signature
+	// (federation.md §3.1); storing it is not cut.
 	KeyResolveTimeout = 5 * time.Second
 )
 
@@ -78,15 +79,20 @@ type RemoteActorsDeps struct {
 	Jobs      queue.JobQueue
 	Outbox    queue.Outbox
 	Followers Followers
-	Clock     kernel.Clock
-	IDs       kernel.IDGenerator
-	Logger    *slog.Logger
+	// Featured clears what a remote account features when its stored document stops declaring
+	// the collection; the fetches of the collections it declares need only the Outbox.
+	Featured RemoteFeaturedClearers
+	Clock    kernel.Clock
+	IDs      kernel.IDGenerator
+	Logger   *slog.Logger
 	// Review asks the hook inbound.actor about a changed profile before it is stored (ADR-0147
 	// §2); its zero value asks nothing.
 	Review ActorReview
 	// Batch is the number of stale actors one JobRefreshActors reads; 0 means
 	// RefreshActorsBatch.
 	Batch int
+	// KeyResolveTimeout bounds the fetch of ResolvePublicKey; 0 means KeyResolveTimeout.
+	KeyResolveTimeout time.Duration
 }
 
 // RemoteActors fetches remote actors and keeps them in the account module (federation.md
@@ -160,7 +166,14 @@ func (r *RemoteActors) Resolve(ctx context.Context, uri string) (appaccount.Acto
 // actor) and stores it. When the stored actor's server answers 410 Gone, the actor is marked
 // deleted; another failure is counted in the actor's head.
 func (r *RemoteActors) Refresh(ctx context.Context, uri string) (appaccount.Actor, error) {
-	actor, raw, err := r.fetchActor(ctx, uri)
+	return r.refreshWithin(ctx, ctx, uri)
+}
+
+// refreshWithin is Refresh with the fetch bound by fetchCtx and everything else, the storing
+// included, by ctx: a deadline meant for the remote server never cuts a transaction or the reads
+// after it.
+func (r *RemoteActors) refreshWithin(ctx, fetchCtx context.Context, uri string) (appaccount.Actor, error) {
+	actor, raw, err := r.fetchActor(fetchCtx, uri)
 	if err != nil {
 		r.recordFailure(ctx, uri, err)
 		return appaccount.Actor{}, err
@@ -243,7 +256,7 @@ func (r *RemoteActors) storeAfter(ctx context.Context, actor *federation.Actor, 
 		if err := r.applyActorVerdict(ctx, tx, v, stored.ID); err != nil {
 			return err
 		}
-		if err := enqueueFetchFeaturedTx(ctx, tx, r.d.Outbox, stored.ID, actor.ID, actor.Featured); err != nil {
+		if err := r.d.Featured.syncFeaturedTx(ctx, tx, r.d.Outbox, stored.ID, actor); err != nil {
 			return err
 		}
 		return r.seeInstance(ctx, tx, in.Domain)
@@ -299,7 +312,7 @@ func (r *RemoteActors) input(ctx context.Context, a *federation.Actor, raw []byt
 		PreferredUsername: a.PreferredUsername, Name: a.Name, SummaryHTML: a.Summary,
 		ProfileURL: string(a.URL), InboxURL: string(a.Inbox), SharedInboxURL: string(a.SharedInbox),
 		OutboxURL: string(a.Outbox), FollowersURL: string(a.Followers), FollowingURL: string(a.Following),
-		FeaturedURL: string(a.Featured), AvatarURL: string(a.Icon), HeaderURL: string(a.Image),
+		FeaturedURL: string(a.Featured), FeaturedTagsURL: string(a.FeaturedTags), AvatarURL: string(a.Icon), HeaderURL: string(a.Image),
 		Locked: a.ManuallyApprovesFollowers, Bot: a.Bot(), Discoverable: a.Discoverable, Indexable: a.Indexable,
 		Keys: r.actorKeys(ctx, a, raw), Document: raw, Handle: r.checkHandle(ctx, a),
 	}
@@ -371,7 +384,8 @@ func (r *RemoteActors) refreshIfStale(ctx context.Context, accountID string) {
 // ResolvePublicKey implements PublicKeyResolver: the current key of keyID from account_keys,
 // or the key of the fetched owner when it is unknown or refresh is set (ADR-0006). A stored
 // key of an actor fetched RemoteActorTTL ago is used and the actor refreshed asynchronously.
-// Fetching gives up after KeyResolveTimeout.
+// Fetching gives up after KeyResolveTimeout, and the key is then unavailable (503, which the
+// sender retries); storing the fetched actor runs with ctx alone.
 func (r *RemoteActors) ResolvePublicKey(ctx context.Context, keyID string, refresh bool) (PublicKey, error) {
 	kid, err := CanonicalIRI(keyID)
 	if err != nil {
@@ -390,11 +404,18 @@ func (r *RemoteActors) ResolvePublicKey(ctx context.Context, keyID string, refre
 			return PublicKey{}, err
 		}
 	}
-	fetchCtx, cancel := context.WithTimeout(ctx, KeyResolveTimeout)
+	timeout := r.d.KeyResolveTimeout
+	if timeout <= 0 {
+		timeout = KeyResolveTimeout
+	}
+	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
-	owner, err := r.Refresh(fetchCtx, string(kid))
+	owner, err := r.refreshWithin(ctx, fetchCtx, string(kid))
 	switch {
-	case errors.Is(err, ErrFetchUnavailable):
+	case err == nil:
+	// A server that did not answer within the timeout, while the request itself goes on, is
+	// unavailable now, whatever the fetch made of the cut.
+	case errors.Is(err, ErrFetchUnavailable), ctx.Err() == nil && fetchCtx.Err() != nil:
 		return PublicKey{}, fmt.Errorf("%w: %w", ErrPublicKeyUnavailable, err)
 	case isFetchError(err):
 		return PublicKey{}, fmt.Errorf("%w: %w", ErrPublicKeyNotFound, err)
@@ -475,6 +496,33 @@ type refreshAllPayload struct {
 	AfterAccountID string `json:"after_account_id,omitempty"`
 }
 
+// followedAmong is a Followers that tells the actors of a batch with an active follower at once,
+// as graph.Service does.
+type followedAmong interface {
+	FollowedAmong(ctx context.Context, accountIDs []string) (map[string]bool, error)
+}
+
+// followed returns the actors of heads that local accounts follow: with one read when Followers
+// can, one by one otherwise.
+func (r *RemoteActors) followed(ctx context.Context, heads []appaccount.RemoteHead) (map[string]bool, error) {
+	ids := make([]string, len(heads))
+	for i, h := range heads {
+		ids[i] = h.AccountID
+	}
+	if b, ok := r.d.Followers.(followedAmong); ok {
+		return b.FollowedAmong(ctx, ids)
+	}
+	out := map[string]bool{}
+	for _, id := range ids {
+		followers, _, err := r.d.Followers.ActiveFollowerIDs(ctx, id, "", 1)
+		if err != nil {
+			return nil, err
+		}
+		out[id] = len(followers) > 0
+	}
+	return out, nil
+}
+
 // handleRefreshAll reads one batch of stale actors, enqueues a refresh of each one that local
 // accounts follow, and enqueues the next batch (federation.md §6.2, ADR-0006).
 func (r *RemoteActors) handleRefreshAll(ctx context.Context, j queue.Job) queue.Result {
@@ -492,13 +540,13 @@ func (r *RemoteActors) handleRefreshAll(ctx context.Context, j queue.Job) queue.
 	if err != nil {
 		return queue.Retry(0, err)
 	}
+	followed, err := r.followed(ctx, heads)
+	if err != nil {
+		return queue.Retry(0, err)
+	}
 	var jobs []queue.NewJob
 	for _, h := range heads {
-		followers, _, err := r.d.Followers.ActiveFollowerIDs(ctx, h.AccountID, "", 1)
-		if err != nil {
-			return queue.Retry(0, err)
-		}
-		if len(followers) > 0 {
+		if followed[h.AccountID] {
 			jobs = append(jobs, refreshJob(h.AccountID))
 		}
 	}

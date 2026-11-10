@@ -10,6 +10,17 @@ import (
 	"database/sql"
 )
 
+type ConversationMute struct {
+	AccountID      string
+	ConversationID string
+	CreatedAt      int64
+}
+
+type ErrorGroupNoticeHour struct {
+	HourStart int64
+	Notices   int64
+}
+
 type Notification struct {
 	ID                      string
 	RecipientAccountID      string
@@ -37,13 +48,28 @@ type Notification struct {
 	AnnouncementID          sql.NullString
 	HookAppealID            sql.NullString
 	AutoDeleteLimitNoticeID sql.NullString
+	DraftScheduleID         sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
+}
+
+type NotificationPolicy struct {
+	AccountID       string
+	PolicyCondition string
+	PolicyAction    string
+	UpdatedAt       int64
 }
 
 type NotificationReadMarker struct {
 	AccountID  string
 	LastReadID string
+}
+
+type NotificationRequest struct {
+	RecipientAccountID string
+	SourceAccountID    string
+	NotificationsCount int64
+	LastNotificationID string
 }
 
 type NotificationSetting struct {

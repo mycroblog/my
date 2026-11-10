@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { expect } from "storybook/test";
+import { expect, waitFor } from "storybook/test";
 import { spacing } from "./storySpacing";
 import { Button, ButtonLink } from "./Button";
 import { CloseIcon, MoreIcon, PlusIcon, ReplyIcon, StarIcon } from "./Icons";
@@ -137,5 +137,43 @@ export const InToolbar: Story = {
       await expect(iconOf(name)?.height, name).toBeCloseTo(spacing(5), 1);
       await expect(boxOf(name).height, name).toBe(boxOf("Favourite").height);
     }
+  },
+};
+
+/**
+ * What the pointer meets (web-client/16-look-states-and-wording.md G26, G27): the hand over an enabled button and a
+ * toggle, not-allowed over a disabled one and wait over a pending one, and a look that changes under the pointer.
+ */
+export const PointerStates: Story = {
+  tags: ["no-screenshot"],
+  render: () => (
+    <div className="flex flex-wrap gap-2">
+      {variants.map((variant) => (
+        <Button key={variant} variant={variant}>
+          {variant}
+        </Button>
+      ))}
+      <ToggleButton aria-label="Favourite">
+        <StarIcon />
+      </ToggleButton>
+      <Button isDisabled>Disabled</Button>
+      <Button isPending>Pending</Button>
+    </div>
+  ),
+  play: async ({ canvas, userEvent }) => {
+    const looks = (element: HTMLElement) => {
+      const style = getComputedStyle(element);
+      return [style.backgroundColor, style.color, style.boxShadow, style.translate, style.filter].join("|");
+    };
+    for (const name of [...variants, "Favourite"]) {
+      const button = canvas.getByRole("button", { name });
+      await expect(getComputedStyle(button).cursor, name).toBe("pointer");
+      const resting = looks(button);
+      await userEvent.hover(button);
+      await waitFor(() => expect(looks(button), name).not.toBe(resting));
+      await userEvent.unhover(button);
+    }
+    await expect(getComputedStyle(canvas.getByRole("button", { name: "Disabled" })).cursor).toBe("not-allowed");
+    await expect(getComputedStyle(canvas.getByRole("button", { name: "Pending" })).cursor).toBe("wait");
   },
 };

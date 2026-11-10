@@ -4,6 +4,7 @@ package moderation
 
 import (
 	"context"
+	"fmt"
 	"slices"
 	"time"
 
@@ -45,6 +46,11 @@ func (p *AccountPolicy) OwnRestrictions(ctx context.Context, accountID string) (
 	return p.repo.AccountRestrictionsInEffect(ctx, accountID, p.clock.Now())
 }
 
+// OwnRestrictionsOf returns OwnRestrictions of each of accountIDs, by account, with one query.
+func (p *AccountPolicy) OwnRestrictionsOf(ctx context.Context, accountIDs []string) (map[string][]moderation.Restriction, error) {
+	return p.repo.AccountRestrictionsInEffectOf(ctx, accountIDs, p.clock.Now())
+}
+
 // RestrictedAccounts returns up to limit accounts on which their own actions impose r now,
 // newest first, by ID, whose ID is below before ("" for the first page).
 func (p *AccountPolicy) RestrictedAccounts(ctx context.Context, r moderation.Restriction, before string, limit int) ([]string, error) {
@@ -62,11 +68,19 @@ func (s *Service) RecentReportsOf(ctx context.Context, targetAccountID string, l
 	if len(rs) > limit {
 		rs = rs[:limit]
 	}
+	ids := make([]string, len(rs))
+	for i, r := range rs {
+		ids[i] = r.ID
+	}
+	statuses, err := s.d.Repository.FindReportStatuses(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
 	out := make([]moderation.ReportRecord, 0, len(rs))
 	for _, r := range rs {
-		st, err := s.d.Repository.FindReportStatus(ctx, r.ID)
-		if err != nil {
-			return nil, err
+		st, ok := statuses[r.ID]
+		if !ok {
+			return nil, fmt.Errorf("status of report %s: %w", r.ID, ErrNotFound)
 		}
 		out = append(out, moderation.ReportRecord{Report: r, Status: st})
 	}

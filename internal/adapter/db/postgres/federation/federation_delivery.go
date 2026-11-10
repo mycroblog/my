@@ -72,6 +72,30 @@ func (r *Repository) FindDelivery(ctx context.Context, id string) (federation.De
 	}, nil
 }
 
+// FindDeliveryContext implements federation.Repository.
+func (r *Repository) FindDeliveryContext(ctx context.Context, id string) (appfederation.DeliveryContext, error) {
+	row, err := r.db.reader().GetDeliveryContext(ctx, id)
+	if err != nil {
+		return appfederation.DeliveryContext{}, postgres.NotFound(err, appfederation.ErrNotFound, "delivery "+id)
+	}
+	out := appfederation.DeliveryContext{
+		Delivery: federation.Delivery{
+			ID: row.ID, OutboundActivityID: row.OutboundActivityID, InboxURL: federation.IRI(row.InboxUrl),
+			Domain: row.Domain, CreatedAt: postgres.UTC(row.CreatedAt),
+		},
+		Activity: federation.OutboundActivity{
+			ID: row.OutboundActivityID, ActivityURI: federation.IRI(row.ActivityUri), Type: federation.ActivityType(row.Type),
+			ActorAccountID: row.ActorAccountID, ObjectKind: federation.OutboundObjectKind(row.ObjectType),
+			ObjectID: row.ObjectID, CreatedAt: postgres.UTC(row.ActivityCreatedAt),
+		},
+		Document: row.Document, Health: federation.InstanceAvailable,
+	}
+	if row.HealthState != nil {
+		out.Health, out.HealthRow = federation.InstanceState(*row.HealthState), true
+	}
+	return out, nil
+}
+
 // ListDeliveryAttempts implements federation.Repository.
 func (r *Repository) ListDeliveryAttempts(ctx context.Context, deliveryID string) ([]federation.DeliveryAttempt, error) {
 	rows, err := r.db.reader().ListDeliveryAttempts(ctx, deliveryID)

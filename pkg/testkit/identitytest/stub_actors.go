@@ -46,6 +46,18 @@ func (s *StubActors) FindByID(_ context.Context, id string) (appaccount.Actor, e
 	return a, nil
 }
 
+func (s *StubActors) FindByIDs(_ context.Context, ids []string) (map[string]appaccount.Actor, error) {
+	s.Mu.Lock()
+	defer s.Mu.Unlock()
+	out := make(map[string]appaccount.Actor, len(ids))
+	for _, id := range ids {
+		if a, ok := s.Actors[id]; ok {
+			out[id] = a
+		}
+	}
+	return out, nil
+}
+
 func (s *StubActors) ExistingIDs(_ context.Context, ids []string) ([]string, error) {
 	s.Mu.Lock()
 	defer s.Mu.Unlock()

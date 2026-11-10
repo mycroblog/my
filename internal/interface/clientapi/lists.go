@@ -290,6 +290,6 @@ func (s *Server) GetListTimeline(ctx context.Context, req GetListTimelineRequest
 		}
 		return nil, err
 	}
-	res, err := s.statusPage(ctx, &v, entryItems(page.Entries), page.Next)
+	res, err := s.statusPage(ctx, &v, timeline.FilterContextHome, entryItems(page.Entries), page.Next)
 	return GetListTimeline200JSONResponse{res}, err
 }

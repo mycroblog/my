@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
@@ -44,9 +45,19 @@ type HookAppeals interface {
 // statusRejected returns the answer to a post that local.status refused: fixed text that holds
 // nothing of the plugin's answer, and the decision with its deadline. ok is false for another error.
 func (s *Server) statusRejected(ctx context.Context, err error) (CreateStatusResponseObject, bool, error) {
+	r, ok, err := s.rejectedProblem(ctx, err)
+	if !ok || err != nil {
+		return nil, ok, err
+	}
+	return CreateStatus422ApplicationProblemPlusJSONResponse{r}, true, nil
+}
+
+// rejectedProblem is the 422 status-rejected problem of a new post or article that the decision
+// hook local.status refused, when err is a *appcontent.RejectedByReviewError.
+func (s *Server) rejectedProblem(ctx context.Context, err error) (StatusRejectedProblemApplicationProblemPlusJSONResponse, bool, error) {
 	var rejected *appcontent.RejectedByReviewError
 	if !errors.As(err, &rejected) {
-		return nil, false, nil
+		return StatusRejectedProblemApplicationProblemPlusJSONResponse{}, false, nil
 	}
 	l := s.Localizer(ctx)
 	body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeStatusRejected,
@@ -59,15 +70,15 @@ func (s *Server) statusRejected(ctx context.Context, err error) (CreateStatusRes
 		if s.o.HookAppeals != nil {
 			deadline, err := s.o.HookAppeals.AppealDeadline(ctx, rejected.DecidedAt)
 			if err != nil {
-				return nil, true, fmt.Errorf("clientapi: the appeal deadline of decision %s: %w", rejected.DecisionID, err)
+				return StatusRejectedProblemApplicationProblemPlusJSONResponse{}, true, fmt.Errorf("clientapi: the appeal deadline of decision %s: %w", rejected.DecisionID, err)
 			}
 			deadline = deadline.UTC()
 			out.AppealDeadline = &deadline
 		}
 	}
-	return CreateStatus422ApplicationProblemPlusJSONResponse{StatusRejectedProblemApplicationProblemPlusJSONResponse{
+	return StatusRejectedProblemApplicationProblemPlusJSONResponse{
 		Body: out, Headers: StatusRejectedProblemResponseHeaders{CacheControl: headers.CacheControl, ContentLanguage: headers.ContentLanguage},
-	}}, true, nil
+	}, true, nil
 }
 
 func hookAppealState(r hook.AppealRecord) HookAppealState {
@@ -163,23 +174,34 @@ func (s *Server) notifiedHookAppeals(ctx context.Context, accountID string, ns [
 	if s.o.HookAppeals == nil {
 		return out, nil
 	}
+	var ids []string
 	for _, n := range ns {
-		if n.Type != notification.TypeHookAppealDecided || n.HookAppealID == "" {
-			continue
+		if n.Type == notification.TypeHookAppealDecided && n.HookAppealID != "" && !slices.Contains(ids, n.HookAppealID) {
+			ids = append(ids, n.HookAppealID)
 		}
-		if _, ok := out[n.HookAppealID]; ok {
-			continue
-		}
-		a, err := s.o.HookAppeals.OwnAppealByID(ctx, accountID, n.HookAppealID)
-		switch {
-		case errors.Is(err, apphook.ErrAppealNotFound):
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the appeal of notification %s: %w", n.ID, err)
-		}
-		out[n.HookAppealID] = newOwnHookAppeal(a)
+	}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	var recs map[string]hook.AppealRecord
+	var err error
+	if b, ok := s.o.HookAppeals.(hookAppealBatch); ok {
+		recs, err = b.OwnAppealsByID(ctx, accountID, ids)
+	} else {
+		recs, err = byOne(ids, func(id string) (hook.AppealRecord, error) { return s.o.HookAppeals.OwnAppealByID(ctx, accountID, id) }, apphook.ErrAppealNotFound)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the appeals of the notifications: %w", err)
+	}
+	for id, a := range recs {
+		out[id] = newOwnHookAppeal(a)
 	}
 	return out, nil
+}
+
+// hookAppealBatch is a HookAppeals that reads many appeals at once, as *apphook.Service does.
+type hookAppealBatch interface {
+	OwnAppealsByID(ctx context.Context, accountID string, ids []string) (map[string]hook.AppealRecord, error)
 }
 
 func newAdminHookAppeal(r hook.AppealRecord) AdminHookAppeal {

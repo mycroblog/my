@@ -91,12 +91,39 @@ func (q *Queries) DeleteStatusTranslationAttachments(ctx context.Context, transl
 	return err
 }
 
+const deleteStatusTranslationAttachmentsOf = `-- name: DeleteStatusTranslationAttachmentsOf :exec
+DELETE FROM status_translation_attachments WHERE translation_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteStatusTranslationAttachmentsOf(ctx context.Context, translationIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteStatusTranslationAttachmentsOf, translationIds)
+	return err
+}
+
 const deleteStatusTranslationPollOptions = `-- name: DeleteStatusTranslationPollOptions :exec
 DELETE FROM status_translation_poll_options WHERE translation_id = ?1
 `
 
 func (q *Queries) DeleteStatusTranslationPollOptions(ctx context.Context, translationID string) error {
 	_, err := q.db.ExecContext(ctx, deleteStatusTranslationPollOptions, translationID)
+	return err
+}
+
+const deleteStatusTranslationPollOptionsOf = `-- name: DeleteStatusTranslationPollOptionsOf :exec
+DELETE FROM status_translation_poll_options WHERE translation_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteStatusTranslationPollOptionsOf(ctx context.Context, translationIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteStatusTranslationPollOptionsOf, translationIds)
+	return err
+}
+
+const deleteStatusTranslationsByIDs = `-- name: DeleteStatusTranslationsByIDs :exec
+DELETE FROM status_translations WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteStatusTranslationsByIDs(ctx context.Context, translationIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteStatusTranslationsByIDs, translationIds)
 	return err
 }
 
@@ -336,6 +363,36 @@ SELECT id FROM status_translations WHERE status_id = ?1 ORDER BY id
 
 func (q *Queries) ListStatusTranslationIDs(ctx context.Context, statusID string) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, listStatusTranslationIDs, statusID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listStatusTranslationIDsOf = `-- name: ListStatusTranslationIDsOf :many
+
+SELECT id FROM status_translations WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY id
+`
+
+// The translations of many statuses, and the rows of many translations, each statement as the one
+// of one above does for every one it names. The lists are JSON arrays.
+func (q *Queries) ListStatusTranslationIDsOf(ctx context.Context, statusIds string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listStatusTranslationIDsOf, statusIds)
 	if err != nil {
 		return nil, err
 	}

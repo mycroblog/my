@@ -59,3 +59,20 @@
 - プランの作成と、条件の版を足す変更は、同じトランザクションでジョブ `supporters.ensure_prices`（冪等キー `ensure_prices:<版の ID>`）を積みます。ジョブは事業者に月と年の価格を作らせ（`EnsurePlan`）、`supporter_plan_prices` と今の価格、アーカイブを記録します。今の価格は、事業者が今の条件に返した価格で、プランと間隔ごとにアーカイブされていない最新の価格（作った順）と一致します。金額を以前の金額に戻しても新しい価格として記録するので、プランは毎回使える状態になります。既存の加入はもとの価格のまま続きます。
 - 決済画面の行（`supporter_checkouts`）は ADR-0072 §15 の表にない追加で、`pending` の加入の取り直しと定期の照合（`Syncer.OpenCheckouts`）が読みます。PAY.JP の参照は加入と 1 時間ごとの期限で決まるので、同じ時間に始め直しても行は増えず、書き込みは何もしません（`ON CONFLICT DO NOTHING`）。決済画面の URL は行に持たないので、始め直しのたびに事業者のアダプターが、そのとき頼まれたプランと価格で作ります。
 - 2 つめのサブスクリプションの行（`supporter_duplicate_subscriptions`）は ADR-0072 §15 の表にない追加で、見つけたトランザクションで積むジョブ `supporters.command` が読み直し、まだ続いていれば `supporter_duplicate_cancellations` を書いてから解約して返金し、`supporter_duplicate_settlements` を書きます。すでに終わっていれば返金せずに `supporter_duplicate_settlements` だけを書きます。済んでいない行は、管理者の支払いの状態（`duplicate_charge`）に出て、照合のたびにジョブを積み直します。
+
+#### チップ
+
+1 回の支払いのチップ（FR-918、[ADR-0162](../../../adr/0162-one-time-tips.md) §12）。`supporters` が持ちます。
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `supporter_tip_changes` | イベント | `id`, `state`（`enum(enabled, disabled)`）, `currency`（`string(3)`）, `changed_by_user_id`（NULL 可 = CLI）, `changed_at` | 最新の行が今の状態。行がなければ無効 |
+| `supporter_tip_amounts` | イベント（子） | `change_id`, `amount_minor`（`bigint`） | PK `(change_id, amount_minor)`。`enabled` の行ごとに 1〜6 行 |
+| `supporter_tips` | リソース | `id`（事業者に載せるこちらの ID）, `user_id`, `amount_minor`, `currency`, `provider`, `created_at` | インデックス `(user_id, id DESC)` |
+| `supporter_tip_checkouts` | イベント | `tip_id`（PK）, `provider`, `provider_checkout_id`, `expires_at`, `created_at` | 一意 `(provider, provider_checkout_id)` |
+| `supporter_tip_payments` | イベント | `tip_id`（PK）, `provider`, `provider_payment_id`, `amount_minor`, `currency`, `paid_at` | 一意 `(provider, provider_payment_id)` |
+| `supporter_tip_outcomes` | イベント | `id`, `tip_id`, `kind`（`enum(expired, refunded, charged_back, dispute_won)`）, `occurred_at` | 一意 `(tip_id, kind)` |
+| `supporter_open_tips` | 投影 | `user_id`（PK）, `tip_id`, `expires_at` | 支払いも期限切れもないチップ。利用者ごとに 1 つ。一意 `(tip_id)`。インデックス `(expires_at)` |
+
+- チップの状態は、支払いの行があれば `paid`、なく `expired` の結果があれば `expired`、どちらもなければ `open` です。支払いの後の全額の返金・チャージバック・その取り消しは結果の行で表し、一部の返金は収入の行（§4.12）だけです。
+- お金の動きの支払いの参照（`MoneyMovement.Payment`）を `supporter_tip_payments` で引いてチップに行き着き、収入の行の `source` を `one_time` にします。

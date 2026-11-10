@@ -28,6 +28,7 @@ import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
 import { CompletionTextArea, CompletionTextField } from "../../compose";
 import { EmojiPickerButton, useCustomEmojiImages, useCustomEmojiShortcodes } from "../../emoji";
+import { FeaturedTagsEditor } from "../../hashtags";
 import { acceptedImageTypes } from "../api/media";
 import {
   characterCount,
@@ -41,7 +42,7 @@ import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 /**
  * The profile editor (FR-006) in the sections of its screen requirements (web-client/screens/settings-profile.md): a
- * preview of the profile as it is being edited, then the fields, and the save button with its result in a bar that
+ * preview of the profile as it is being edited, then the fields (the featured hashtags among them), and the save button with its result in a bar that
  * stays at the bottom edge of the screen (`FormActionBar` `sticky`). React Aria's native validation shows each error
  * under its field, links it with aria-describedby and marks the field invalid; the browser then refuses to submit,
  * and focus moves to the first invalid field, so a screen reader reads the error with the field. A text over its
@@ -135,6 +136,7 @@ export function ProfileForm() {
           </Stack>
         </Section>
         <ProfileFields fields={form.fields} lengthCheck={lengthCheck} />
+        <FeaturedTagsEditor draft={form.featuredTags} />
         <Section title={t("client:settings.profile.account_kind")}>
           <Checkbox {...form.locked} description={t("client:settings.profile.locked.description")}>
             {t("client:settings.profile.locked")}
@@ -150,6 +152,7 @@ export function ProfileForm() {
           </Checkbox>
         </Section>
         <CrawlerSettings indexable={form.indexable} aiOptOut={form.aiOptOut} serverPolicy={form.serverPolicy} />
+        <FeedSettings form={form} />
         <FormActionBar sticky result={form.result}>
           <Button type="submit" variant="primary" isPending={form.isSaving} isDisabled={form.isBusy && !form.isSaving}>
             {t("client:settings.profile.save")}
@@ -272,6 +275,38 @@ function CrawlerSettings({ indexable, aiOptOut, serverPolicy }: CrawlerSettingsP
             usage: serverPolicy.aiUsage,
           })}
         </Hint>
+      )}
+    </Section>
+  );
+}
+
+/**
+ * Whether the Atom feed of the public posts is served for feed readers (FR-213), and its address. Until the owner
+ * chooses, it follows the search setting above, which the section says.
+ */
+function FeedSettings({ form }: { form: ReturnType<typeof useProfileForm> }) {
+  const t = useT();
+  const intl = useIntl();
+  return (
+    <Section title={t("client:settings.profile.feeds")}>
+      <Checkbox {...form.feed} description={t("client:settings.profile.feed_enabled.description")}>
+        {t("client:settings.profile.feed_enabled")}
+      </Checkbox>
+      {form.feedFollowsIndexable && <Hint>{t("client:settings.profile.feed_enabled.follows_indexable")}</Hint>}
+      {form.feed.isSelected && (
+        <Text as="p" size="sm" tone="muted" wrap="anywhere">
+          {/* The address is no running text: it reads left to right whatever the sentence around it (Y10). */}
+          {intl.formatMessage(
+            { id: "client:settings.profile.feed_enabled.address" },
+            {
+              url: (
+                <bdi key="url" dir="ltr">
+                  {form.feedUrl}
+                </bdi>
+              ),
+            },
+          )}
+        </Text>
       )}
     </Section>
   );

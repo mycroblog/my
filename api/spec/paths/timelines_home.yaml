@@ -3,8 +3,9 @@ get:
   operationId: getHomeTimeline
   summary: Get the home timeline
   description: |
-    The viewer's own posts and boosts and those of the accounts the viewer follows, newest
-    first, in the viewer's timeline languages.
+    The viewer's own posts and boosts and those of the accounts the viewer follows, and the
+    `public` and `local` posts of other accounts with a hashtag the viewer follows (which
+    carry `followed_tags`), newest first, each once, in the viewer's timeline languages.
   tags: [timelines]
   security:
     - oauth2: ["read:statuses"]

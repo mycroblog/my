@@ -20,6 +20,7 @@ The adapters that need nothing beyond the standard library and the packages the 
 | `no_cloudtasks` | The Google Cloud Tasks queue (Cloud Tasks client library) and its `/_internal/jobs` and `/_internal/tick` endpoints | `queue = cloudtasks` |
 | `no_billing_aws` | The import of the AWS usage charges (AWS Cost Explorer SDK) | `billing_sources = aws` |
 | `no_billing_gcp` | The import of the Google Cloud usage charges (BigQuery REST client; with `no_pubsub`, the Pub/Sub client library of `billing_gcp_method = budget`) | `billing_sources = gcp` |
+| `no_billing_cloudflare` | The import of the Cloudflare usage charges (Cloudflare's Go SDK, about 16 MB of the binary) | `billing_sources = cloudflare` |
 | `no_translator_google` | The Google Cloud Translation provider of the translation of posts (Cloud Translation client library) | `translator_google_project` |
 | `no_payments_stripe` | The Stripe adapter of the supporters' payments (`stripe-go`) | `payments = stripe` |
 | `no_payments_payjp` | The PAY.JP adapter of the supporters' payments and its checkout and card pages (no third-party library) | `payments = payjp` |

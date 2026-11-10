@@ -187,7 +187,6 @@ type UserPreference struct {
 	UserID                  string
 	Locale                  string
 	DefaultVisibility       string
-	DefaultQuotePolicy      string
 	DefaultPostLanguage     string
 	RequireMediaDescription int64
 	TimelineAutoInsert      int64

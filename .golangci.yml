@@ -136,6 +136,8 @@ linters:
             - github.com/mycroblog/my/internal/i18n
             # Counting the grapheme clusters of a list's name (ADR-0013 §10): pure-Go Unicode data, not an external resource.
             - github.com/rivo/uniseg
+            # The NFKC of the keyword filters' normalization (ADR-0157 §4): pure-Go Unicode data, not an external resource.
+            - golang.org/x/text/unicode/norm
         domain-notification:
           list-mode: strict
           files:
@@ -261,6 +263,24 @@ linters:
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/domain/voice
+        domain-gathering:
+          list-mode: strict
+          files:
+            - "**/internal/domain/gathering/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/domain/gathering
+        app-gathering:
+          list-mode: strict
+          files:
+            - "**/internal/app/gathering/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/domain/gathering
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/i18n
+            # Counting the grapheme clusters of an event's title (ADR-0161 §5): pure-Go Unicode data, not an external resource.
+            - github.com/rivo/uniseg
         app-voice:
           list-mode: strict
           files:
@@ -441,7 +461,8 @@ linters:
             - golang.org/x/text/language
         # bluemonday is the remote HTML sanitizer (ADR-0019 §2); it stays inside the adapter of
         # kernel.HTMLSanitizer so that every caller goes through the port and its policy version,
-        # and holds the allowlist of the instance's documents (htmlsanitizer.SanitizeDocument).
+        # and holds the allowlists of the instance's documents (htmlsanitizer.SanitizeDocument)
+        # and of articles (htmlsanitizer.SanitizeArticle).
         bluemonday:
           list-mode: lax
           files:
@@ -450,8 +471,9 @@ linters:
           deny:
             - pkg: github.com/microcosm-cc/bluemonday
               desc: sanitize HTML through kernel.HTMLSanitizer (internal/adapter/htmlsanitizer)
-        # goldmark renders the instance's documents (#489); it stays inside the adapter of
-        # instance.DocumentRenderer, which sanitizes what it renders with the document allowlist.
+        # goldmark renders the instance's documents (#489) and articles (ADR-0160 §4); it stays inside
+        # the adapter of instance.DocumentRenderer and content.ArticleRenderer, which sanitize what
+        # they render with their allowlists.
         goldmark:
           list-mode: lax
           files:
@@ -459,7 +481,7 @@ linters:
             - "!**/internal/adapter/markdown/**"
           deny:
             - pkg: github.com/yuin/goldmark
-              desc: render Markdown through instance.DocumentRenderer (internal/adapter/markdown)
+              desc: render Markdown through instance.DocumentRenderer or content.ArticleRenderer (internal/adapter/markdown)
         # The HTTP signature libraries (ADR-0006) stay inside the adapter of federation.Signer and
         # federation.Verifier, so that every signature goes through the policy of ADR-0006.
         httpsig:
@@ -712,6 +734,26 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
             - github.com/mycroblog/my/schema/12-finance$
+        db-gathering:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/gathering/**"
+            - "**/internal/adapter/db/postgres/gathering/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/gatheringgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/gatheringgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/schema/19-gathering$
         db-graph:
           list-mode: strict
           files:

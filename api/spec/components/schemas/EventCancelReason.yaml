@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+  suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+type: string
+enum: [organizer, moderator, organizer_suspended, organizer_deleted]

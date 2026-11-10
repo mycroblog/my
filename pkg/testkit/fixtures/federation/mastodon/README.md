@@ -25,6 +25,10 @@ See [pkg/testkit/README.md](../../../README.md#federation-fixtures) for the layo
   of `ActivityPub::CollectionsController` and `ActivityPub::CollectionSerializer`, with `ActivityPub::NoteSerializer` rendering the
   pinned posts inline. The items are the objects of the captured `4.7/create-note.json` and `create-note-unlisted.json`, the newest
   pin first (the public post was pinned last); the `@context` is that of `4.7/outbox-page.json`.
+- `4.7/featured-tags.json` is what Mastodon v4.7.3 serves for bob's featuredTags collection, rendered from its source: `set_items`
+  (`tags`) and `collection_presenter` of `ActivityPub::CollectionsController` (an unordered `Collection`) and
+  `ActivityPub::CollectionSerializer`, with `ActivityPub::HashtagSerializer` rendering each `FeaturedTag` (`href` is the profile's
+  page of the tag, `name` the tag with `#`); the tags `cats` and `Photography` are the fixture's own.
 
 | File | Source | License |
 | --- | --- | --- |
@@ -46,6 +50,7 @@ See [pkg/testkit/README.md](../../../README.md#federation-fixtures) for the layo
 | `4.7/outbox.json` | `outbox_presenter` of [app/controllers/activitypub/outboxes_controller.rb](https://github.com/mastodon/mastodon/blob/v4.7.3/app/controllers/activitypub/outboxes_controller.rb) and [app/serializers/activitypub/collection_serializer.rb](https://github.com/mastodon/mastodon/blob/v4.7.3/app/serializers/activitypub/collection_serializer.rb) | AGPL-3.0 |
 | `4.7/outbox-page.json` | the same, with the page's items by [app/serializers/activitypub/outbox_serializer.rb](https://github.com/mastodon/mastodon/blob/v4.7.3/app/serializers/activitypub/outbox_serializer.rb): the captured posts and boost above | AGPL-3.0 |
 | `4.7/featured.json` | `collection_presenter` and `set_items` of [app/controllers/activitypub/collections_controller.rb](https://github.com/mastodon/mastodon/blob/v4.7.3/app/controllers/activitypub/collections_controller.rb) and [app/serializers/activitypub/collection_serializer.rb](https://github.com/mastodon/mastodon/blob/v4.7.3/app/serializers/activitypub/collection_serializer.rb): the captured posts above | AGPL-3.0 |
+| `4.7/featured-tags.json` | `set_items` and `collection_presenter` of [app/controllers/activitypub/collections_controller.rb](https://github.com/mastodon/mastodon/blob/v4.7.3/app/controllers/activitypub/collections_controller.rb), [app/serializers/activitypub/collection_serializer.rb](https://github.com/mastodon/mastodon/blob/v4.7.3/app/serializers/activitypub/collection_serializer.rb), and [app/serializers/activitypub/hashtag_serializer.rb](https://github.com/mastodon/mastodon/blob/v4.7.3/app/serializers/activitypub/hashtag_serializer.rb) | AGPL-3.0 |
 | `4.8/actor.json` | capture of a Mastodon 4.8 actor | capture |
 | `circa-2018/follow.json` | [test/fixtures/mastodon-follow-activity.json](https://akkoma.dev/AkkomaGang/akkoma/src/commit/98dd958886a8b0ef65d5bd827aba3789f1dc5116/test/fixtures/mastodon-follow-activity.json) | AGPL-3.0 |
 | `circa-2018/accept-follow.json` | [test/fixtures/mastodon-accept-activity.json](https://akkoma.dev/AkkomaGang/akkoma/src/commit/98dd958886a8b0ef65d5bd827aba3789f1dc5116/test/fixtures/mastodon-accept-activity.json) | AGPL-3.0 |

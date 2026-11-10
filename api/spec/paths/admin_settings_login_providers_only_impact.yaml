@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getLoginProvidersOnlyImpact
+  x-permission: manage_settings
   summary: Count who limiting sign-in to login providers would affect
   description: |
     How many active local users have no link to a login provider that users can sign in with

@@ -32,3 +32,9 @@ properties:
     description: When the action was lifted; omitted until it is.
     type: string
     format: date-time
+  subscription_id:
+    description: |
+      The subscription to a domain block list that issued the action; omitted for an action
+      a moderator issued.
+    allOf:
+      - $ref: ./Id.yaml

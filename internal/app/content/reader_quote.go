@@ -3,7 +3,6 @@
 package content
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -175,61 +174,103 @@ func (r *Reader) presentQuoted(ctx context.Context, viewer Viewer, quoted conten
 }
 
 // remoteMayQuote reports whether the policy of the local status quoted approves a quote of it by
-// the remote account accountID, as AnswerQuoteRequest decides.
+// the remote account accountID at once, as AnswerQuoteRequest decides.
 func (r *Reader) remoteMayQuote(ctx context.Context, accountID string, quoted content.Status) (bool, error) {
 	visible, err := r.aud.remoteVisible(ctx, accountID, quoted)
 	if err != nil || !visible {
 		return false, err
 	}
-	rel, err := r.d.Relationships.Relationship(ctx, accountID, quoted.AuthorAccountID)
+	facts, err := r.quoteFacts(ctx, accountID, quoted)
 	if err != nil {
 		return false, err
 	}
-	policy, err := r.quotePolicy(ctx, quoted.ID)
-	if err != nil {
-		return false, err
-	}
-	return content.MayQuote(content.QuoteFacts{
-		QuoterAccountID: accountID, QuoterVisible: !rel.Blocking && !rel.BlockedBy, QuoterFollows: rel.ActivelyFollowing(),
-		Quoted: quoted, Policy: policy,
-	}) == content.QuoteApproved, nil
+	facts.QuoterIsLocal, facts.QuoterVisible = false, facts.QuoterVisible && visible
+	return content.MayQuote(facts) == content.QuoteApproved, nil
 }
 
-// quotable reports whether viewer may quote st, which they may see, and returns its quote
-// policy for its author (ADR-0069 §5).
-func (r *Reader) quotable(ctx context.Context, viewer Viewer, st content.Status) (bool, content.QuotePolicy, error) {
+// InteractionPermissions is what a local viewer may do with a status by each kind of
+// interaction (content.MayInteract): at once, once the author approves it, or not at all.
+type InteractionPermissions struct {
+	Reply, Announce, Quote content.InteractionDecision
+}
+
+// permissions returns what viewer, who may see st, may do with it by each kind of interaction,
+// nil for an anonymous viewer, and the interaction settings of st for its local author, nil for
+// anyone else (ADR-0069 §5, ADR-0155 §10). parent is the status st replies to as the viewer sees
+// it, nil for none. The three decisions share the reads of how the viewer stands with the author.
+func (r *Reader) permissions(ctx context.Context, viewer Viewer, st content.Status, parent *content.Status) (*InteractionPermissions, *content.InteractionSettings, error) {
 	if r.d.Quotes == nil || viewer.Kind != ViewerLocal || viewer.AccountID == "" {
-		return false, "", nil
+		return nil, nil, nil
 	}
-	policy, err := r.quotePolicy(ctx, st.ID)
+	facts, err := r.quoteFacts(ctx, viewer.AccountID, st)
 	if err != nil {
-		return false, "", err
+		return nil, nil, err
 	}
-	var follows bool
-	if viewer.AccountID != st.AuthorAccountID {
-		rel, err := r.d.Relationships.Relationship(ctx, viewer.AccountID, st.AuthorAccountID)
-		if err != nil {
-			return false, "", err
+	f := content.InteractionFacts{
+		ActorAccountID: viewer.AccountID, ActorURI: facts.QuoterURI, ActorIsLocal: true, ActorVisible: facts.QuoterVisible,
+		Follows: facts.QuoterFollows, FollowedBy: facts.QuoterFollowed, Mentioned: facts.QuoterMentioned,
+		RepliedTo: parent != nil && parent.AuthorAccountID == viewer.AccountID, Status: st, Policy: facts.Policy,
+	}
+	if f.ActorURI == "" && (namesActors(facts.Policy, content.InteractionReply) || namesActors(facts.Policy, content.InteractionAnnounce)) {
+		if f.ActorURI, err = r.actorURI(ctx, viewer.AccountID); err != nil {
+			return nil, nil, err
 		}
-		follows = rel.ActivelyFollowing()
 	}
-	allowance := content.MayQuote(content.QuoteFacts{
-		QuoterAccountID: viewer.AccountID, QuoterIsLocal: true, QuoterVisible: true, QuoterFollows: follows, Quoted: st, Policy: policy,
-	})
-	own := content.QuotePolicy("")
+	decide := func(kind content.InteractionKind) content.InteractionDecision {
+		f.Kind = kind
+		return content.MayInteract(f)
+	}
+	out := InteractionPermissions{
+		Reply: decide(content.InteractionReply), Announce: decide(content.InteractionAnnounce), Quote: decide(content.InteractionQuote),
+	}
+	var own *content.InteractionSettings
 	if viewer.AccountID == st.AuthorAccountID && st.IsLocal {
-		own = cmp.Or(policy, content.DefaultQuotePolicy)
+		settings := content.SettingsOf(facts.Policy)
+		own = &settings
 	}
-	return allowance != content.QuoteDenied, own, nil
+	return &out, own, nil
 }
 
-// quotePolicy returns who may quote statusID, "" when it declares nobody.
-func (r *Reader) quotePolicy(ctx context.Context, statusID string) (content.QuotePolicy, error) {
-	p, err := r.d.Quotes.FindQuotePolicy(ctx, statusID)
-	if errors.Is(err, ErrNotFound) {
+// actorURI returns the actor IRI of an account, "" when it is not known.
+func (r *Reader) actorURI(ctx context.Context, accountID string) (string, error) {
+	a, err := r.d.Accounts.FindByID(ctx, accountID)
+	if errors.Is(err, appaccount.ErrNotFound) {
 		return "", nil
 	}
-	return p.Policy, err
+	return a.Account.URI, err
+}
+
+// quoteFacts returns what MayQuote decides a quote of st by accountID by: the policy of st, and
+// how the account stands with its author. QuoterVisible is whether neither blocks the other; the
+// caller sets whether the account may see st and is local.
+func (r *Reader) quoteFacts(ctx context.Context, accountID string, st content.Status) (content.QuoteFacts, error) {
+	policy, err := interactionPolicyOf(ctx, r.d.Quotes, st.ID)
+	if err != nil {
+		return content.QuoteFacts{}, err
+	}
+	f := content.QuoteFacts{QuoterAccountID: accountID, QuoterVisible: true, Quoted: st, Policy: policy}
+	if accountID == st.AuthorAccountID {
+		return f, nil
+	}
+	rel, err := r.d.Relationships.Relationship(ctx, accountID, st.AuthorAccountID)
+	if err != nil {
+		return content.QuoteFacts{}, err
+	}
+	f.QuoterVisible = !rel.Blocking && !rel.BlockedBy
+	f.QuoterFollows, f.QuoterFollowed = rel.ActivelyFollowing(), rel.ActivelyFollowedBy()
+	if f.QuoterMentioned, err = r.d.Interactions.Mentioned(ctx, st.ID, accountID); err != nil {
+		return content.QuoteFacts{}, err
+	}
+	if namesActors(policy, content.InteractionQuote) {
+		a, err := r.d.Accounts.FindByID(ctx, accountID)
+		switch {
+		case err == nil:
+			f.QuoterURI = a.Account.URI
+		case !errors.Is(err, appaccount.ErrNotFound):
+			return content.QuoteFacts{}, err
+		}
+	}
+	return f, nil
 }
 
 // QuotesPage is a page of the statuses that quote a status.

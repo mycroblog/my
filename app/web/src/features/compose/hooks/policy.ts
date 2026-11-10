@@ -20,6 +20,19 @@ export function defaultVisibility(preference: Visibility, replyTo: Status | unde
 }
 
 /**
+ * The visibility a post asks for: the chosen one, or the default. A reply to a direct message stays direct whatever
+ * is chosen, so that a conversation of the direct messages never reaches more people than it had (ADR-0154 §6).
+ */
+export function chosenVisibility(
+  chosen: Visibility | null,
+  preference: Visibility,
+  replyTo: Status | undefined,
+): Visibility {
+  if (replyTo?.visibility === "direct") return "direct";
+  return chosen ?? defaultVisibility(preference, replyTo);
+}
+
+/**
  * The visibility a post gets: the chosen one when the account's posting limits keep it, and their
  * ceiling otherwise. The server decides the limits and applies the same rule when it posts (PostingLimits
  * in api/openapi.yaml); without limits (not loaded yet) the choice stands. On a one-person server, `local` (a draft's,

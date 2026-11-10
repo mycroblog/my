@@ -75,21 +75,22 @@ func fetchObjectJob(p fetchObjectPayload) (queue.NewJob, error) {
 	return queue.NewJob{Type: JobFetchObject, Payload: payload, IdempotencyKey: "fetch_object:" + hex.EncodeToString(sum[:])}, nil
 }
 
-// RegisterJobs registers the handlers of JobFetchObject, JobFetchOutbox, JobFetchFeatured, and
-// JobVerifyQuote.
+// RegisterJobs registers the handlers of JobFetchObject, JobFetchOutbox, JobFetchFeatured,
+// JobFetchFeaturedTags, and JobVerifyQuote.
 func (h *StatusHandlers) RegisterJobs(r *queue.JobHandlerRegistry) {
 	r.Register(JobFetchObject, h.handleFetchObject)
 	r.Register(JobFetchOutbox, h.handleFetchOutbox)
 	r.Register(JobFetchFeatured, h.handleFetchFeatured)
+	r.Register(JobFetchFeaturedTags, h.handleFetchFeaturedTags)
 	r.Register(JobVerifyQuote, h.handleVerifyQuote)
 }
 
-// fetchParentTx enqueues in tx the fetch of the parent of a reply that was just ingested, when
-// the parent is not stored (its conversation is unknown) and is remote: one level, with no
-// further ancestors (federation.md §6.3).
-func (h *StatusHandlers) fetchParentTx(ctx context.Context, tx uow.Tx, st appcontent.Status) error {
-	parent := federation.IRI(st.InReplyToURI)
-	if h.d.Outbox == nil || parent == "" || st.ConversationURI != "" || h.isLocal(parent) {
+// fetchParentTx enqueues in tx the fetch of the parent of a reply p that was just ingested, when
+// the parent is not stored and is remote: one level, with no further ancestors (federation.md
+// §6.3). Storing the parent merges the reply's conversation into the parent's (ADR-0154 §3).
+func (h *StatusHandlers) fetchParentTx(ctx context.Context, tx uow.Tx, p appcontent.Post) error {
+	parent := federation.IRI(p.Status.InReplyToURI)
+	if h.d.Outbox == nil || parent == "" || p.ParentStored || h.isLocal(parent) {
 		return nil
 	}
 	job, err := fetchObjectJob(fetchObjectPayload{URI: string(parent)})
@@ -456,11 +457,11 @@ func (h *StatusHandlers) store(ctx context.Context, author appaccount.Actor, obj
 	if author.Deleted() {
 		return appcontent.Status{}, fmt.Errorf("%w: the author of %s is deleted", ErrNotTaken, obj.ID)
 	}
-	followers, err := h.followers(ctx, author)
+	cols, err := h.collections(ctx, author)
 	if err != nil {
 		return appcontent.Status{}, err
 	}
-	mentions, err := h.mentions(ctx, obj, followers)
+	mentions, err := h.mentions(ctx, obj, cols.followers)
 	if err != nil {
 		return appcontent.Status{}, err
 	}
@@ -469,7 +470,7 @@ func (h *StatusHandlers) store(ctx context.Context, author appaccount.Actor, obj
 			return appcontent.Status{}, err
 		}
 	}
-	in := h.inputOf(author, federation.Audience{}, "", obj, followers, mentions)
+	in := h.inputOf(author, federation.Audience{}, "", obj, cols, mentions)
 	if opts.relay != nil && in.Visibility != appcontent.VisibilityPublic {
 		return appcontent.Status{}, fmt.Errorf("%w: the relayed %s is not public", ErrNotTaken, obj.ID)
 	}
@@ -487,7 +488,7 @@ func (h *StatusHandlers) store(ctx context.Context, author appaccount.Actor, obj
 		case opts.relay != nil:
 			return h.recordRelayed(ctx, tx, st, opts.relay)
 		case opts.parent:
-			return h.fetchParentTx(ctx, tx, st)
+			return h.fetchParentTx(ctx, tx, p)
 		}
 		return nil
 	})

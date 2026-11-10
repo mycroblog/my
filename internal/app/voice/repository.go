@@ -176,6 +176,25 @@ type HostGrace struct {
 	EndsAt time.Time
 }
 
+// Schedule is the schedule of a room that another module opened by its schedule
+// (voice_room_schedules, ADR-0100 §16).
+type Schedule struct {
+	RoomID string
+	// Key is the caller's key of the schedule, unique among the rooms.
+	Key string
+	// WaitEndsAt is the end of the wait for the first participant and the host.
+	WaitEndsAt time.Time
+}
+
+// CohostCandidate is a co-host candidate of a scheduled room (voice_room_cohost_candidates).
+type CohostCandidate struct {
+	// Position is the order of the nomination, from 0.
+	Position int
+	// Removed reports that the account was removed as a co-host of the room once, by the host
+	// or as it became the host: such a candidate does not become a co-host again on its own.
+	Removed bool
+}
+
 // RoomRecord is a room with its head, its current revision, and its ending.
 type RoomRecord struct {
 	Room
@@ -237,6 +256,24 @@ type Repository interface {
 	DeleteHostGrace(ctx context.Context, tx uow.Tx, roomID string) (bool, error)
 	// FindHostGrace returns the grace of a room; ErrNotFound without one.
 	FindHostGrace(ctx context.Context, tx uow.Tx, roomID string) (HostGrace, error)
+	// HostGraces returns the host graces of the rooms of roomIDs that have one, by room, with one
+	// query.
+	HostGraces(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]HostGrace, error)
+
+	// InsertSchedule records the schedule of a scheduled room.
+	InsertSchedule(ctx context.Context, tx uow.Tx, sc Schedule) error
+	// FindSchedule returns the schedule of a room; ErrNotFound for a room that no schedule opened.
+	FindSchedule(ctx context.Context, tx uow.Tx, roomID string) (Schedule, error)
+	// FindScheduleByKey returns the schedule of a key; ErrNotFound without one.
+	FindScheduleByKey(ctx context.Context, tx uow.Tx, key string) (Schedule, error)
+	// InsertCohostCandidates records the co-host candidates of a scheduled room in the order of
+	// accountIDs; a candidate recorded already keeps its position.
+	InsertCohostCandidates(ctx context.Context, tx uow.Tx, roomID string, accountIDs []string) error
+	// FindCohostCandidate returns an account as a co-host candidate of a room; ErrNotFound when
+	// it is none.
+	FindCohostCandidate(ctx context.Context, tx uow.Tx, roomID, accountID string) (CohostCandidate, error)
+	// Attended reports whether anybody ever joined a room.
+	Attended(ctx context.Context, tx uow.Tx, roomID string) (bool, error)
 
 	// FindRoom returns a room with its head, its current revision, and its ending; ErrNotFound
 	// for an unknown room.
@@ -249,9 +286,15 @@ type Repository interface {
 	HostedRooms(ctx context.Context, tx uow.Tx, accountID, beforeID string, limit int) ([]RoomRecord, error)
 	// Participants returns the participants of a room in the order they joined.
 	Participants(ctx context.Context, tx uow.Tx, roomID string) ([]Participant, error)
+	// ParticipantsOfRooms returns the participants of each of roomIDs, by room, as Participants
+	// returns those of one, with one query.
+	ParticipantsOfRooms(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string][]Participant, error)
 	// FindParticipant returns the participation of an account that has not ended; ErrNotFound
 	// when the account is in no room.
 	FindParticipant(ctx context.Context, tx uow.Tx, accountID string) (Participant, error)
+	// ParticipantsAmong reports, inside tx, which of accountIDs are participants of a room, as
+	// FindParticipant finds one.
+	ParticipantsAmong(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string]bool, error)
 	// FindParticipationEnd returns the end of a participation; ErrNotFound for one that has
 	// not ended.
 	FindParticipationEnd(ctx context.Context, tx uow.Tx, participationID string) (ParticipationEnd, error)
@@ -264,6 +307,12 @@ type Repository interface {
 	Banned(ctx context.Context, tx uow.Tx, roomID, accountID string) (bool, error)
 	// SpeakGranted reports whether the newest speak grant of an account in a room is granted.
 	SpeakGranted(ctx context.Context, tx uow.Tx, roomID, accountID string) (bool, error)
+	// ViewerFacts reads, of each of accountIDs, what Banned, FindInvitation (one not revoked), and
+	// SpeakGranted read of one account in the room, with one query.
+	ViewerFacts(ctx context.Context, tx uow.Tx, roomID string, accountIDs []string) (map[string]ViewerFacts, error)
+	// ViewerFactsInRooms reads what ViewerFacts reads of accountID in each of roomIDs, by room, with
+	// one query.
+	ViewerFactsInRooms(ctx context.Context, tx uow.Tx, accountID string, roomIDs []string) (map[string]ViewerFacts, error)
 }
 
 // ProjectionRepository derives the projections of the voice module (data-model §9) from the
@@ -283,4 +332,10 @@ type ProjectionRepository interface {
 	// RebuildProjections empties voice_room_heads and voice_room_participants and derives
 	// both again from every event.
 	RebuildProjections(ctx context.Context, tx uow.Tx) error
+}
+
+// ViewerFacts are what the room's own records say of an account (Repository.ViewerFacts): banned,
+// invited by an invitation not revoked, and granted the right to speak.
+type ViewerFacts struct {
+	Banned, Invited, SpeakGranted bool
 }

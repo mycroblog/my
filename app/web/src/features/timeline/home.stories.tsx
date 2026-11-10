@@ -6,7 +6,16 @@ import { http, HttpResponse } from "msw";
 import { expect, waitFor } from "storybook/test";
 import { type Schemas, statusPage } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
-import { bob, carol, haruka, maximiliana, newsBot, pictureHandlers, variedTimeline } from "../../test/postStories";
+import {
+  bob,
+  carol,
+  haruka,
+  maximiliana,
+  newsBot,
+  pictureHandlers,
+  post,
+  variedTimeline,
+} from "../../test/postStories";
 import { showcasePictures, showcaseTimeline, showcaseViewer } from "../../test/showcase";
 import {
   answering,
@@ -103,6 +112,28 @@ export const Showcase: Story = answering(
   viewerWith(showcaseViewer),
   ...showcasePictures,
   homeTimeline(showcaseTimeline),
+);
+
+/**
+ * Posts that are on the home timeline only for the hashtags the viewer follows, from people the viewer does not
+ * follow: the line above each says which hashtags brought it (ADR-0013 §28).
+ */
+export const FollowedHashtags: Story = answering(
+  homeTimeline([
+    post(60, haruka, {
+      content: "<p>Rye and spelt, 36 hours cold. #sourdough</p>",
+      tags: [{ name: "sourdough", url: "https://my.example/tags/sourdough" }],
+      followed_tags: ["sourdough"],
+    }),
+    post(61, carol, {
+      content: "<p>Sunday loaves for the neighbours. #sourdough #baking</p>",
+      tags: [
+        { name: "sourdough", url: "https://my.example/tags/sourdough" },
+        { name: "baking", url: "https://my.example/tags/baking" },
+      ],
+      followed_tags: ["sourdough", "baking"],
+    }),
+  ]),
 );
 
 /** Someone who follows nobody yet: the timeline is empty. */

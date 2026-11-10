@@ -19,7 +19,8 @@ import { FieldDescription, FieldError, FieldLabel, type FieldTextProps, fieldCon
 const select = tv({
   slots: {
     root: "group flex flex-col gap-1",
-    trigger: "flex cursor-default items-center gap-2 text-start data-focus-visible:focus-ring",
+    trigger:
+      "flex cursor-pointer items-center gap-2 text-start data-disabled:cursor-not-allowed data-focus-visible:focus-ring",
     // The closed select shows only an option's label: its description is for choosing (as React Aria's Select styles do).
     value: "truncate data-placeholder:text-fg-muted **:data-[slot=description]:hidden",
     chevron: "size-4 shrink-0 fill-none stroke-current stroke-2 text-fg-muted",
@@ -33,7 +34,8 @@ const select = tv({
       field: {
         trigger: [
           fieldControl(),
-          "justify-between group-data-invalid:border-danger group-data-invalid:ring-1 group-data-invalid:ring-danger data-pressed:bg-surface-raised",
+          "justify-between group-data-invalid:border-danger group-data-invalid:ring-1 group-data-invalid:ring-danger",
+          "data-hovered:bg-surface-raised data-pressed:bg-surface-raised",
         ],
       },
       // Looks like a ghost Button of the `toolbar` size, with its icon as large, so that it lines up with the buttons beside it.
@@ -130,8 +132,8 @@ export function Select<T extends object>({
 const selectItem = tv({
   slots: {
     root: [
-      "flex min-h-8.5 cursor-default items-center gap-2 rounded-md px-2 py-1 text-base text-fg outline-hidden",
-      "data-disabled:opacity-50 data-focus-visible:focus-ring data-focused:bg-surface-sunken pointer-coarse:min-h-11",
+      "flex min-h-8.5 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-base text-fg outline-hidden",
+      "data-disabled:cursor-not-allowed data-disabled:opacity-50 data-focus-visible:focus-ring data-focused:bg-surface-sunken pointer-coarse:min-h-11",
     ],
     check: "size-4 shrink-0 fill-none stroke-current stroke-3 text-accent",
     // Keeps the label aligned with the selected one, whose check takes this space.

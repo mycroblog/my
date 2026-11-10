@@ -105,6 +105,36 @@ func (r *Repository) DeleteStatusEntries(ctx context.Context, tx uow.Tx, statusI
 	return postgres.Wrap(q.DeleteFeedEntriesOfStatus(ctx, statusID), "delete feed entries of a status")
 }
 
+// DeleteStatusEntriesOf implements timeline.Repository.
+func (r *Repository) DeleteStatusEntriesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error {
+	if len(statusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	list := statusIDs
+	if err := q.DeleteFeedDirectRecipientsOf(ctx, list); err != nil {
+		return postgres.Wrap(err, "delete feed direct recipients")
+	}
+	used, err := q.ListCountedFeedTagIDsOf(ctx, list)
+	if err != nil {
+		return postgres.Wrap(err, "list the counted tags of feed entries")
+	}
+	if err := q.DeleteFeedTagEntriesOf(ctx, list); err != nil {
+		return postgres.Wrap(err, "delete feed tag entries")
+	}
+	deltas := make(map[string]int64, len(used))
+	for _, id := range used {
+		deltas[id]--
+	}
+	if err := applyTagUsage(ctx, q, deltas); err != nil {
+		return err
+	}
+	return postgres.Wrap(q.DeleteFeedEntriesOfStatuses(ctx, list), "delete feed entries of statuses")
+}
+
 func deleteEntryChildren(ctx context.Context, q *timelinegen.Queries, entryID string) error {
 	if err := q.DeleteFeedDirectRecipients(ctx, entryID); err != nil {
 		return postgres.Wrap(err, "delete feed direct recipients")
@@ -127,21 +157,34 @@ func deleteEntryChildren(ctx context.Context, q *timelinegen.Queries, entryID st
 // feed_tag_entries has changed, and reads its last_used_at again (tag_usage, ADR-0092 §1). A
 // tag's usage that drops to zero is deleted.
 func applyTagUsage(ctx context.Context, q *timelinegen.Queries, deltas map[string]int64) error {
+	var add, drain, adjust struct {
+		ids []string
+		ns  []int64
+	}
 	for _, id := range slices.Sorted(maps.Keys(deltas)) {
-		d := deltas[id]
-		var err error
-		switch {
+		switch d := deltas[id]; {
 		case d > 0:
-			err = q.AddTagUsage(ctx, timelinegen.AddTagUsageParams{TagID: id, N: d})
-		case d < 0:
-			if err = q.DeleteDrainedTagUsage(ctx, timelinegen.DeleteDrainedTagUsageParams{TagID: id, N: -d}); err == nil {
-				err = q.AdjustTagUsage(ctx, timelinegen.AdjustTagUsageParams{TagID: id, Delta: d})
-			}
+			add.ids, add.ns = append(add.ids, id), append(add.ns, d)
 		default:
-			err = q.AdjustTagUsage(ctx, timelinegen.AdjustTagUsageParams{TagID: id})
+			if d < 0 {
+				drain.ids, drain.ns = append(drain.ids, id), append(drain.ns, -d)
+			}
+			adjust.ids, adjust.ns = append(adjust.ids, id), append(adjust.ns, d)
 		}
-		if err != nil {
-			return postgres.Wrap(err, "update tag usage")
+	}
+	if len(add.ids) > 0 {
+		if err := q.AddManyTagUsage(ctx, timelinegen.AddManyTagUsageParams{TagIds: add.ids, Ns: add.ns}); err != nil {
+			return postgres.Wrap(err, "add tag usage")
+		}
+	}
+	if len(drain.ids) > 0 {
+		if err := q.DeleteManyDrainedTagUsage(ctx, timelinegen.DeleteManyDrainedTagUsageParams{TagIds: drain.ids, Ns: drain.ns}); err != nil {
+			return postgres.Wrap(err, "delete drained tag usage")
+		}
+	}
+	if len(adjust.ids) > 0 {
+		if err := q.AdjustManyTagUsage(ctx, timelinegen.AdjustManyTagUsageParams{TagIds: adjust.ids, Deltas: adjust.ns}); err != nil {
+			return postgres.Wrap(err, "adjust tag usage")
 		}
 	}
 	return nil
@@ -156,12 +199,10 @@ func (r *Repository) ReplaceDirectRecipients(ctx context.Context, tx uow.Tx, ent
 	if err := q.DeleteFeedDirectRecipients(ctx, entryID); err != nil {
 		return postgres.Wrap(err, "delete feed direct recipients")
 	}
-	for _, id := range accountIDs {
-		if err := q.InsertFeedDirectRecipient(ctx, timelinegen.InsertFeedDirectRecipientParams{EntryID: entryID, RecipientAccountID: id}); err != nil {
-			return postgres.Wrap(err, "insert feed direct recipient")
-		}
+	if len(accountIDs) == 0 {
+		return nil
 	}
-	return nil
+	return postgres.Wrap(q.InsertFeedDirectRecipients(ctx, timelinegen.InsertFeedDirectRecipientsParams{EntryID: entryID, RecipientAccountIds: accountIDs}), "insert feed direct recipients")
 }
 
 // ReplaceTags implements timeline.Repository.
@@ -183,14 +224,16 @@ func (r *Repository) ReplaceTags(ctx context.Context, tx uow.Tx, e apptimeline.E
 	}
 	counts := apptimeline.CountsTagUsage(e.Visibility)
 	added := map[string]bool{}
-	for _, id := range tagIDs {
-		err := q.InsertFeedTagEntry(ctx, timelinegen.InsertFeedTagEntryParams{
-			TagID: id, EntryID: e.ID, AuthorAccountID: e.AuthorAccountID, Visibility: string(e.Visibility), IsLocal: e.IsLocal,
+	if len(tagIDs) > 0 {
+		err := q.InsertFeedTagEntries(ctx, timelinegen.InsertFeedTagEntriesParams{
+			TagIds: tagIDs, EntryID: e.ID, AuthorAccountID: e.AuthorAccountID, Visibility: string(e.Visibility), IsLocal: e.IsLocal,
 			RevisedAt: postgres.UTC(revisedAt),
 		})
 		if err != nil {
-			return postgres.Wrap(err, "insert feed tag entry")
+			return postgres.Wrap(err, "insert feed tag entries")
 		}
+	}
+	for _, id := range tagIDs {
 		if counts && !added[id] { // a tag listed twice counts once
 			added[id] = true
 			deltas[id]++
@@ -318,12 +361,29 @@ func (r *Repository) DeleteProjection(ctx context.Context, tx uow.Tx) error {
 	for _, del := range []func(context.Context) error{
 		q.DeleteAllFeedEntries, q.DeleteAllFeedDirectRecipients, q.DeleteAllFeedTagEntries, q.DeleteAllTagUsage,
 		q.DeleteAllFeedFollowEdges, q.DeleteAllFeedExclusions, q.DeleteAllFeedDomainMutes,
+		q.DeleteAllFeedConversationParticipants, q.DeleteAllFeedConversations,
 	} {
 		if err := del(ctx); err != nil {
 			return postgres.Wrap(err, "empty the feed projections")
 		}
 	}
 	return nil
+}
+
+// FeedFollowersAmong implements apptimeline.Repository.
+func (r *Repository) FeedFollowersAmong(ctx context.Context, followeeID string, followerIDs []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(followerIDs) == 0 {
+		return out, nil
+	}
+	ids, err := r.db.reader().ListFeedFollowersAmong(ctx, timelinegen.ListFeedFollowersAmongParams{Followee: followeeID, FollowerIds: followerIDs})
+	if err != nil {
+		return nil, postgres.Wrap(err, "list feed followers")
+	}
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, nil
 }
 
 // ListHome implements timeline.Repository.
@@ -376,7 +436,7 @@ func (r *Repository) ListTag(ctx context.Context, tq apptimeline.TagQuery) ([]ap
 		return nil, err
 	}
 	rows, err := r.db.reader().ListTagEntries(ctx, timelinegen.ListTagEntriesParams{
-		TagID: tq.TagID, IncludeLocal: tq.IncludeLocal, Before: postgres.ToNullString(tq.Before), Now: tq.Now,
+		TagID: tq.TagID, IncludeLocal: tq.IncludeLocal, LocalOnly: tq.LocalOnly, ExcludeReplies: tq.ExcludeReplies, Before: postgres.ToNullString(tq.Before), Now: tq.Now,
 		Viewer: postgres.ToNullString(tq.ViewerAccountID), AllLanguages: all, Languages: langs, PageLimit: limit,
 	})
 	return entriesFrom(rows, err, "list tag entries")
@@ -517,7 +577,7 @@ func (r *Repository) Snapshot(ctx context.Context) (apptimeline.Projection, erro
 	for _, row := range domainMutes {
 		p.DomainMutes = append(p.DomainMutes, apptimeline.DomainMute{ViewerAccountID: row.ViewerAccountID, Domain: row.Domain})
 	}
-	return p, nil
+	return p, conversationSnapshot(ctx, q, &p)
 }
 
 func entryFrom(row timelinegen.FeedEntry) apptimeline.Entry {

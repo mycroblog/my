@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: moveInstanceRule
+  x-permission: manage_rules
   summary: Move an instance rule
   description: |
     Moves the rule to a place among the rules in effect and numbers them 1, 2, ... in their

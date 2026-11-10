@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The scheduled post that a `scheduled_status_failed` tells of: its draft, why it was not
+  published, and when it was to be published.
+type: object
+required: [draft_id, reason, publish_at]
+properties:
+  draft_id:
+    description: The draft of the scheduled post, which stays to fix and schedule again.
+    allOf:
+      - $ref: ./Id.yaml
+  reason:
+    $ref: ./DraftFailureReason.yaml
+  publish_at:
+    description: When the post was to be published.
+    type: string
+    format: date-time

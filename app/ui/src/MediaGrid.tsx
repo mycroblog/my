@@ -21,7 +21,8 @@ const mediaGrid = tv({
     image: "relative size-full object-cover",
     // A picture that opens the viewer: the whole cell is its button, with the focus ring inside the cell's clip.
     open: [
-      "relative block size-full cursor-zoom-in outline-none",
+      "relative block size-full cursor-zoom-in outline-none data-hovered:brightness-95 data-pressed:brightness-90",
+      "motion-safe:transition-[filter] motion-safe:duration-fast",
       "data-focus-visible:outline-2 data-focus-visible:-outline-offset-2 data-focus-visible:outline-focus",
     ],
     // A video keeps its whole frame in the cell, letterboxed on the cell's surface.
@@ -38,8 +39,8 @@ const mediaGrid = tv({
       "pointer-events-none absolute inset-e-1.5 bottom-1.5 grid size-6 place-items-center rounded-full bg-media-chip text-toast-fg shadow-sm [&>svg]:size-4",
     // The description mark of a picture that opens: a small button of its own (44 px to a coarse pointer).
     badgeButton: [
-      "absolute inset-e-1 bottom-1 z-10 grid size-8 cursor-default place-items-center rounded-full bg-media-chip text-toast-fg shadow-sm",
-      "data-focus-visible:focus-ring data-hovered:bg-toast pointer-coarse:size-11 [&>svg]:size-4",
+      "absolute inset-e-1 bottom-1 z-10 grid size-8 cursor-pointer place-items-center rounded-full bg-media-chip text-toast-fg shadow-sm",
+      "data-focus-visible:focus-ring data-hovered:bg-toast data-pressed:bg-toast motion-safe:data-pressed:scale-95 pointer-coarse:size-11 [&>svg]:size-4",
     ],
     // The mark of the attachments that the grid leaves out, a link to the post that has them, in the top-end corner,
     // over the mark of a cell that could not load.
@@ -47,8 +48,10 @@ const mediaGrid = tv({
       "absolute inset-e-1.5 top-1.5 z-20 min-h-6 gap-1 rounded-md bg-media-chip px-2 text-xs font-bold text-toast-fg tabular-nums no-underline shadow-sm",
       "data-hovered:text-toast-fg data-hovered:underline pointer-coarse:min-h-11 [&>svg]:size-3.5",
     ],
-    toggle:
-      "absolute cursor-default rounded-full bg-surface-raised font-extrabold text-fg select-none data-focus-visible:focus-ring data-hovered:bg-surface-sunken motion-safe:transition-colors",
+    toggle: [
+      "absolute cursor-pointer rounded-full bg-surface-raised font-extrabold text-fg select-none data-focus-visible:focus-ring",
+      "data-hovered:bg-surface-sunken data-pressed:bg-surface-sunken motion-safe:transition-[background-color,scale] motion-safe:data-pressed:scale-95",
+    ],
   },
   variants: {
     count: {

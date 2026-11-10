@@ -63,6 +63,7 @@ const post: Status = {
   boosts_count: 0,
   favourites_count: 0,
   reactions: [],
+  filtered: [],
 };
 
 async function signedInServer(page: Page) {

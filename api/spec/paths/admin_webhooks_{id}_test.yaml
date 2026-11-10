@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: testWebhook
+  x-permission: manage_webhooks
   summary: Send a test message to a webhook
   description: |
     Sends a `webhook.test` message to the endpoint, whatever it subscribes to, and returns

@@ -29,12 +29,18 @@ func runAdminDomain(args []string, stdin io.Reader, stdout, stderr io.Writer) in
 		adminDomainUsage(stderr)
 		return 2
 	}
-	sub, code := dispatch("admin domain", args, []string{"list", "issue", "lift", "export", "import"}, stderr, adminDomainUsage)
+	sub, code := dispatch("admin domain", args, []string{"list", "issue", "lift", "export", "import", "allow", "subscription"}, stderr, adminDomainUsage)
 	if code >= 0 {
 		return code
 	}
+	if sub == "allow" {
+		return runAdminDomainAllow(args[1:], stdout, stderr)
+	}
 	if sub == "export" || sub == "import" {
 		return runAdminDomainCSV(sub, args[1:], stdin, stdout, stderr)
+	}
+	if sub == "subscription" {
+		return runAdminDomainSubscription(args[1:], stdout, stderr)
 	}
 	var (
 		domain, kind, comment, note, before string
@@ -156,6 +162,9 @@ func adminDomainUsage(w io.Writer) {
   my admin domain export [-config <file>]
   my admin domain import [-apply] [-only <domains>] [-private-note <text>]
                          [-config <file>] <file | ->
+  my admin domain allow list|add|remove ...
+  my admin domain subscription list|add|update|remove|fetch|fetches|drafts|accept|reject ...
+                         (my admin domain subscription -help)
 
 Moderation actions on remote domains and their subdomains, in effect at
 once for federation and the timelines:
@@ -186,6 +195,10 @@ noop, plus reject_media and reject_reports. Rows whose actions are already in
 effect on the domain or a parent domain, duplicates, and invalid rows issue
 nothing. Nothing changes without -apply; -only keeps the rows of the listed
 domains. Imported actions last until lifted and are audited like any other.
+
+allow manages the allowlist of federation, the only domains the server
+federates with while the instance setting federation_scope is allowlist (see
+my admin domain allow -help).
 `)
 }
 

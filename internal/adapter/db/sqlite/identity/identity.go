@@ -79,6 +79,26 @@ func roleFrom(row identitygen.Role) identity.Role {
 	return identity.Role{ID: row.ID, Key: row.Key, Position: int(row.Position), CreatedAt: sqlite.FromMillis(row.CreatedAt)}
 }
 
+// ListUserRolesOf implements identity.Repository.
+func (r *Repository) ListUserRolesOf(ctx context.Context, userIDs []string) (map[string][]identity.Role, error) {
+	out := make(map[string][]identity.Role, len(userIDs))
+	if len(userIDs) == 0 {
+		return out, nil
+	}
+	ids, err := sqlite.JSONList(userIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListUserRolesOf(ctx, ids)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list user roles of users")
+	}
+	for _, row := range rows {
+		out[row.UserID] = append(out[row.UserID], roleFrom(identitygen.Role{ID: row.ID, Key: row.Key, Position: row.Position, CreatedAt: row.CreatedAt}))
+	}
+	return out, nil
+}
+
 // FindUser implements identity.Repository.
 func (r *Repository) FindUser(ctx context.Context, id string) (identity.User, error) {
 	row, err := r.db.reader().GetUser(ctx, id)

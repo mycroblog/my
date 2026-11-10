@@ -10,6 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/graph"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -44,7 +45,9 @@ type projectionRepositories struct {
 	finance       finance.Repository
 	supporters    supporters.Repository
 	voice         voice.Repository
+	gatherings    gathering.Repository
 	diagnostics   diagnostics.Repository
+	drafts        content.DraftRepository
 }
 
 // projectionRepositories returns the repositories of the database that the projections rebuild.
@@ -52,8 +55,8 @@ func (r *repositories) projectionRepositories() projectionRepositories {
 	return projectionRepositories{
 		accounts: r.accounts, instances: r.instances, follows: r.follows, statuses: r.statuses, interactions: r.interactions, emojis: r.emojis,
 		feeds: r.feeds, notifications: r.notifs, moderation: r.mods, decisions: r.decisions, identities: r.identities, webhooks: r.hooks, relays: r.feds,
-		finance: r.finance, quotes: r.quotes, supporters: r.supporters, voice: r.voice,
-		diagnostics: r.diagnostics,
+		finance: r.finance, quotes: r.quotes, supporters: r.supporters, voice: r.voice, gatherings: r.gatherings,
+		diagnostics: r.diagnostics, drafts: r.drafts,
 	}
 }
 
@@ -118,6 +121,13 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				},
 			},
 			{
+				Name: "scheduled_drafts", Module: "content",
+				Tables: []string{"scheduled_drafts"},
+				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+					return content.RebuildScheduledDrafts(ctx, u, r.drafts)
+				},
+			},
+			{
 				Name: "status_sensitivity_overrides", Module: "content",
 				Tables: []string{"status_sensitivity_overrides"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
@@ -150,15 +160,18 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				},
 			},
 			{
-				Name: "status_quote_states", Module: "content",
-				Tables: []string{"status_quote_states"},
+				Name: "interaction_request_states", Module: "content",
+				Tables: []string{"interaction_request_states"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
-					return content.RebuildQuoteStates(ctx, u, r.quotes)
+					return content.RebuildInteractionStates(ctx, u, r.quotes)
 				},
 			},
 			{
 				Name: "feeds", Module: "timeline",
-				Tables: []string{"feed_entries", "feed_direct_recipients", "feed_tag_entries", "tag_usage", "feed_follow_edges", "feed_exclusions", "feed_domain_mutes"},
+				Tables: []string{
+					"feed_entries", "feed_direct_recipients", "feed_tag_entries", "tag_usage", "feed_follow_edges", "feed_exclusions", "feed_domain_mutes",
+					"feed_conversation_participants", "feed_conversations",
+				},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return timeline.RebuildProjections(ctx, u, r.feeds,
 						timeline.ContentSource(r.statuses, r.interactions), timeline.GraphSource(r.follows))
@@ -177,6 +190,13 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				Tables: []string{"notification_exclusions", "notification_domain_exclusions"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return notification.RebuildExclusions(ctx, u, r.notifications, notification.GraphSource(r.follows))
+				},
+			},
+			{
+				Name: "notification_requests", Module: "notification",
+				Tables: []string{"notification_requests"},
+				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+					return notification.RebuildRequests(ctx, u, r.notifications)
 				},
 			},
 			{
@@ -222,6 +242,13 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				Tables: []string{"voice_room_heads", "voice_room_participants"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return voice.RebuildProjections(ctx, u, r.voice)
+				},
+			},
+			{
+				Name: "gathering", Module: "gathering",
+				Tables: []string{"gathering_attendees", "gathering_heads", "gathering_coorganizers"},
+				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+					return gathering.RebuildProjections(ctx, u, r.gatherings)
 				},
 			},
 			{

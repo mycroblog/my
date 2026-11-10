@@ -67,9 +67,10 @@ func NewInteractions(d InteractionDeps) *Interactions {
 // Boost makes accountID boost statusID and returns the live boost. Boosting a status that the
 // account already boosts returns the existing boost. The boost copies the status's visibility;
 // a boost of a local status never federates (content.Boost.Federates, ADR-0017). A status whose
-// visibility does not allow the account to boost it fails with content.ErrNotBoostable, and an
-// account whose restrictions forbid posting or interacting with ErrPostingRestricted or
-// ErrInteractionRestricted.
+// visibility does not allow the account to boost it fails with content.ErrNotBoostable, one whose
+// boost rules do not admit the account at once with ErrBoostNotAllowed (content.MayInteract,
+// ADR-0155 §3), and an account whose restrictions forbid posting or interacting with
+// ErrPostingRestricted or ErrInteractionRestricted.
 func (s *Interactions) Boost(ctx context.Context, accountID, statusID string) (content.Boost, error) {
 	if err := s.checkRestrictions(ctx, accountID, true); err != nil {
 		return content.Boost{}, err
@@ -81,39 +82,71 @@ func (s *Interactions) Boost(ctx context.Context, accountID, statusID string) (c
 	if !st.Visibility.Boostable(st.AuthorAccountID == accountID) {
 		return content.Boost{}, fmt.Errorf("boost %s: %w", statusID, content.ErrNotBoostable)
 	}
+	v, err := s.interactionReaders().localVerdict(ctx, content.InteractionAnnounce, accountID, nil, st, ErrBoostNotAllowed)
+	if err != nil {
+		return content.Boost{}, err
+	}
 	id := s.d.IDs.NewID()
 	b := content.Boost{
 		ID: id, URI: content.ActivityURI(s.d.Host, id), BoosterAccountID: accountID, StatusID: st.ID,
 		Visibility: st.Visibility, IsLocal: true, BoostedAt: s.d.Clock.Now(),
 	}
 	var out content.Boost
-	repo := s.d.Interactions
+	requested := false
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		out = content.Boost{}
-		if err := s.ensureLive(ctx, tx, st.ID); err != nil {
-			return err
+		out, requested = content.Boost{}, false
+		if s.d.Quotes != nil && v.requested(st) {
+			edge, err := s.d.Interactions.BoostEdge(ctx, tx, accountID, st.ID)
+			switch {
+			case err == nil:
+				out, err = s.d.Interactions.Boost(ctx, tx, edge.BoostID)
+				return err
+			case !errors.Is(err, ErrNotFound):
+				return err
+			}
+			requested = true
+			return s.requestBoost(ctx, tx, b, st)
 		}
-		edge, err := repo.BoostEdge(ctx, tx, accountID, st.ID)
-		switch {
-		case err == nil:
-			out, err = repo.Boost(ctx, tx, edge.BoostID)
-			return err
-		case !errors.Is(err, ErrNotFound):
-			return err
-		}
-		if err := repo.InsertBoost(ctx, tx, b); err != nil {
-			return err
-		}
-		out = b
-		return tx.Emit(ctx, Boosted{Boost: b, Status: RefOf(st)})
+		out, err = s.insertBoost(ctx, tx, b, st)
+		return err
 	})
 	if err != nil {
 		return content.Boost{}, err
 	}
+	if requested {
+		return content.Boost{}, fmt.Errorf("boost of %s: %w", st.ID, ErrInteractionAwaitsApproval)
+	}
 	return out, nil
 }
 
-// Unboost retracts accountID's live boost of statusID. Without one it changes nothing.
+// requestBoost records in tx the request of the local boost b of st, pending, unless the booster
+// asked for one already: the boost is recorded, and goes out, once the request is approved
+// (ADR-0155 §7).
+func (s *Interactions) requestBoost(ctx context.Context, tx uow.Tx, b content.Boost, st content.Status) error {
+	if err := s.ensureLive(ctx, tx, st.ID); err != nil {
+		return err
+	}
+	r := content.InteractionRequest{
+		Kind: content.InteractionAnnounce, Direction: content.DirectionOf(st.IsLocal, true), TargetURI: st.URI,
+		TargetAccountID: st.AuthorAccountID, InteractingURI: b.URI, InteractingAccountID: b.BoosterAccountID, Visibility: b.Visibility,
+	}
+	own, err := s.d.Quotes.ListOwnInteractions(ctx, b.BoosterAccountID, []string{st.URI})
+	if err != nil {
+		return err
+	}
+	for _, o := range own {
+		if o.Kind == content.InteractionAnnounce && o.State == content.InteractionRequestPending {
+			return nil // asked already
+		}
+	}
+	ref := RefOf(st)
+	_, _, _, err = s.approvals().request(ctx, tx, r, answer{}, &ref)
+	return err
+}
+
+// Unboost retracts accountID's live boost of statusID. Without one it withdraws the account's
+// pending requests to boost it (ADR-0155 §7), whose AnnounceRequest the federation module takes
+// back with the Undo of the Announce; without those either it changes nothing.
 func (s *Interactions) Unboost(ctx context.Context, accountID, statusID string) error {
 	st, err := s.d.Statuses.FindStatus(ctx, statusID)
 	if errors.Is(err, ErrNotFound) {
@@ -127,7 +160,7 @@ func (s *Interactions) Unboost(ctx context.Context, accountID, statusID string) 
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		edge, err := repo.BoostEdge(ctx, tx, accountID, statusID)
 		if errors.Is(err, ErrNotFound) {
-			return nil
+			return s.withdrawBoostRequests(ctx, tx, accountID, st)
 		}
 		if err != nil {
 			return err
@@ -359,6 +392,15 @@ func (s *Interactions) ReplaceRemotePins(ctx context.Context, accountID string, 
 	})
 }
 
+// ClearRemotePinsTx removes in tx the pins of the remote account accountID, whose actor document
+// no longer declares a featured collection of its origin (ADR-0006 §17). The federation module
+// calls it in the transaction that stores the document; the caller has checked that the account
+// is remote. Clearing an account that pins nothing changes nothing.
+func (s *Interactions) ClearRemotePinsTx(ctx context.Context, tx uow.Tx, accountID string) error {
+	_, err := s.d.Interactions.DeletePinsOf(ctx, tx, accountID)
+	return err
+}
+
 // visibleStatus returns statusID when accountID is a local, active account that may see it
 // (content.CanView in ContextStatus). A status that is missing, deleted, or hidden from the
 // account fails with ErrNotFound.
@@ -393,6 +435,11 @@ func (s *Interactions) checkRestrictions(ctx context.Context, accountID string, 
 	return nil
 }
 
+// interactionReaders returns the ports that decide who may interact with a status.
+func (s *Interactions) interactionReaders() interactionReaders {
+	return interactionReaders{statuses: s.d.Statuses, policies: s.d.Quotes, relationships: s.d.Relationships, accounts: s.d.Accounts}
+}
+
 func (s *Interactions) audience() audience {
 	return audience{
 		statuses: s.d.Statuses, interactions: s.d.Interactions, accounts: s.d.Accounts,
@@ -416,4 +463,28 @@ func (s *Interactions) ensureLive(ctx context.Context, tx uow.Tx, statusID strin
 // a deleted or missing status fails with ErrNotFound.
 func (s *Interactions) Counters(ctx context.Context, statusID string) (content.Counters, error) {
 	return s.d.Statuses.FindCounters(ctx, statusID)
+}
+
+// withdrawBoostRequests withdraws in tx the pending requests of accountID to boost st.
+func (s *Interactions) withdrawBoostRequests(ctx context.Context, tx uow.Tx, accountID string, st content.Status) error {
+	if s.d.Quotes == nil {
+		return nil
+	}
+	own, err := s.d.Quotes.ListOwnInteractions(ctx, accountID, []string{st.URI})
+	if err != nil {
+		return err
+	}
+	for _, o := range own {
+		if o.Kind != content.InteractionAnnounce || o.State != content.InteractionRequestPending {
+			continue
+		}
+		r, err := s.d.Quotes.FindInteractionRequest(ctx, tx, o.RequestID)
+		if err != nil {
+			return err
+		}
+		if err := s.approvals().withdraw(ctx, tx, r); err != nil {
+			return err
+		}
+	}
+	return nil
 }

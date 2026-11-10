@@ -52,7 +52,9 @@ CREATE TABLE account_profile_revisions (
   ai_opt_out INTEGER NOT NULL CHECK (ai_opt_out IN (0, 1)),
   avatar_media_id TEXT,
   header_media_id TEXT,
-  revised_at INTEGER NOT NULL
+  revised_at INTEGER NOT NULL,
+  -- The owner's choice about the Atom feed (FR-213): follow indexable, or enabled / disabled.
+  feed TEXT NOT NULL DEFAULT 'follow_indexable' CHECK (feed IN ('follow_indexable', 'enabled', 'disabled'))
 ) STRICT;
 CREATE UNIQUE INDEX account_profile_revisions_account_id_seq ON account_profile_revisions (account_id, seq);
 
@@ -228,7 +230,8 @@ CREATE TABLE remote_accounts (
 ) STRICT;
 
 -- Event: one fetch of a remote actor's document whose content differed from the previous one.
--- document_digest is the SHA-256 of the document.
+-- document_digest is the SHA-256 of the document. The collections are NULL when the document
+-- does not declare them; featured_tags_url is its featuredTags (ADR-0006 §17).
 CREATE TABLE remote_account_snapshots (
   id TEXT NOT NULL PRIMARY KEY,
   account_id TEXT NOT NULL,
@@ -244,7 +247,8 @@ CREATE TABLE remote_account_snapshots (
   following_total INTEGER,
   statuses_total INTEGER,
   document_digest BLOB NOT NULL,
-  fetched_at INTEGER NOT NULL
+  fetched_at INTEGER NOT NULL,
+  featured_tags_url TEXT
 ) STRICT;
 CREATE INDEX remote_account_snapshots_account_id_id ON remote_account_snapshots (account_id, id DESC);
 

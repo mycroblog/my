@@ -31,10 +31,15 @@ type SubscriptionRepository interface {
 	InsertSubscription(ctx context.Context, tx uow.Tx, s notification.Subscription) (bool, error)
 	// DeleteSubscription deletes the subscription, if any, and reports whether there was one.
 	DeleteSubscription(ctx context.Context, tx uow.Tx, accountID, targetAccountID string) (bool, error)
+	// DeleteSubscriptions is DeleteSubscription of the pairs (accountIDs[i], targetIDs[i]).
+	DeleteSubscriptions(ctx context.Context, tx uow.Tx, accountIDs, targetIDs []string) error
 	// CountSubscriptions counts the account's subscriptions.
 	CountSubscriptions(ctx context.Context, tx uow.Tx, accountID string) (int64, error)
 	// Subscribed reports whether the account subscribes to the target.
 	Subscribed(ctx context.Context, accountID, targetAccountID string) (bool, error)
+	// SubscribedAmong returns the targets among targetIDs that the account subscribes to, with one
+	// query.
+	SubscribedAmong(ctx context.Context, accountID string, targetIDs []string) (map[string]bool, error)
 	// HasSubscribers reports whether any account subscribes to the target.
 	HasSubscribers(ctx context.Context, tx uow.Tx, targetAccountID string) (bool, error)
 	// ListSubscriptions returns at most limit of the account's subscriptions, newest first,
@@ -50,6 +55,9 @@ type SubscriptionRepository interface {
 	InsertSubscriptionRequest(ctx context.Context, tx uow.Tx, r notification.SubscriptionRequest) error
 	// DeleteSubscriptionRequest deletes the request, if any, and reports whether there was one.
 	DeleteSubscriptionRequest(ctx context.Context, tx uow.Tx, accountID, targetAccountID string) (bool, error)
+	// DeleteSubscriptionRequests is DeleteSubscriptionRequest of the pairs (accountIDs[i],
+	// targetIDs[i]).
+	DeleteSubscriptionRequests(ctx context.Context, tx uow.Tx, accountIDs, targetIDs []string) error
 	// SubscriptionRequested reports whether the account asked for a subscription to the target
 	// that awaits the acceptance of its follow.
 	SubscriptionRequested(ctx context.Context, accountID, targetAccountID string) (bool, error)
@@ -221,6 +229,12 @@ func (s *Subscriptions) Subscribed(ctx context.Context, accountID, targetID stri
 	return s.d.Repository.Subscribed(ctx, accountID, targetID)
 }
 
+// SubscribedAmong returns the targets among targetIDs that accountID subscribes to, as Subscribed
+// reports one, with one query.
+func (s *Subscriptions) SubscribedAmong(ctx context.Context, accountID string, targetIDs []string) (map[string]bool, error) {
+	return s.d.Repository.SubscribedAmong(ctx, accountID, targetIDs)
+}
+
 // List returns a page of accountID's subscriptions, newest first.
 func (s *Subscriptions) List(ctx context.Context, accountID string, p SubscriptionPage) ([]notification.Subscription, error) {
 	return s.d.Repository.ListSubscriptions(ctx, accountID, p.Before, p.limit())
@@ -273,6 +287,38 @@ func registerSubscriptionProjectors(r *uow.Projectors, d ProjectorDeps) {
 		_, err = repo.DeleteSubscription(ctx, tx, f.FollowerAccountID, f.FolloweeAccountID)
 		return err
 	})
+	r.Register(appgraph.EventFollowsTerminated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ts := e.(appgraph.FollowsTerminated).Terminations
+		followers, followees := make([]string, len(ts)), make([]string, len(ts))
+		for i, t := range ts {
+			followers[i], followees[i] = t.Follow.FollowerAccountID, t.Follow.FolloweeAccountID
+		}
+		if err := repo.DeleteSubscriptionRequests(ctx, tx, followers, followees); err != nil {
+			return err
+		}
+		local, err := localAmong(ctx, tx, d.Accounts, followees)
+		if err != nil {
+			return err
+		}
+		var subFollowers, subFollowees []string
+		for i, followee := range followees {
+			if !local[followee] {
+				subFollowers, subFollowees = append(subFollowers, followers[i]), append(subFollowees, followee)
+			}
+		}
+		return repo.DeleteSubscriptions(ctx, tx, subFollowers, subFollowees)
+	})
+	r.Register(appgraph.EventBlocksCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		// The subscriptions between each blocker and the blocked, both ways.
+		var as, bs []string
+		for _, b := range e.(appgraph.BlocksCreated).Blocks {
+			as, bs = append(as, b.Block.BlockerAccountID, b.Block.BlockedAccountID), append(bs, b.Block.BlockedAccountID, b.Block.BlockerAccountID)
+		}
+		if err := repo.DeleteSubscriptions(ctx, tx, as, bs); err != nil {
+			return err
+		}
+		return repo.DeleteSubscriptionRequests(ctx, tx, as, bs)
+	})
 	r.Register(appgraph.EventBlocked, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		b := e.(appgraph.Blocked).Block
 		if err := deleteSubscription(ctx, repo, tx, b.BlockerAccountID, b.BlockedAccountID); err != nil {
@@ -280,29 +326,40 @@ func registerSubscriptionProjectors(r *uow.Projectors, d ProjectorDeps) {
 		}
 		return deleteSubscription(ctx, repo, tx, b.BlockedAccountID, b.BlockerAccountID)
 	})
-	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		ev := e.(appcontent.StatusCreated)
+	newPost := func(ctx context.Context, tx uow.Tx, st appcontent.Status, rev appcontent.Revision) error {
 		if d.PostJobs == nil {
 			return nil
 		}
-		fetched := !ev.Status.IsLocal && (ev.Revision.Remote == nil || ev.Revision.Remote.ActivityURI == "")
+		fetched := !st.IsLocal && (rev.Remote == nil || rev.Remote.ActivityURI == "")
 		if fetched {
 			return nil // an old post fetched for a thread, a search, or a quote is no new post
 		}
-		has, err := repo.HasSubscribers(ctx, tx, ev.Status.AuthorAccountID)
+		has, err := repo.HasSubscribers(ctx, tx, st.AuthorAccountID)
 		if err != nil || !has {
 			return err
 		}
 		payload, err := json.Marshal(postJob{
-			StatusID: ev.Status.ID, AuthorAccountID: ev.Status.AuthorAccountID, InReplyToURI: ev.Status.InReplyToURI,
-			MentionedAccountIDs: ev.Revision.MentionedAccountIDs, At: ev.Revision.RevisedAt,
+			StatusID: st.ID, AuthorAccountID: st.AuthorAccountID, InReplyToURI: st.InReplyToURI,
+			MentionedAccountIDs: rev.MentionedAccountIDs, At: rev.RevisedAt,
 		})
 		if err != nil {
 			return err
 		}
 		return d.PostJobs.EnqueueTx(ctx, tx, queue.NewJob{
-			Type: JobNotifyPostSubscribers, Payload: payload, IdempotencyKey: JobNotifyPostSubscribers + ":" + ev.Status.ID,
+			Type: JobNotifyPostSubscribers, Payload: payload, IdempotencyKey: JobNotifyPostSubscribers + ":" + st.ID,
 		})
+	}
+	// A reply held out of its thread is a new post once it is approved (ADR-0155 §6, §7).
+	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.StatusCreated)
+		if ev.HeldReply {
+			return nil
+		}
+		return newPost(ctx, tx, ev.Status, ev.Revision)
+	})
+	r.Register(appcontent.EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.StatusReleased)
+		return newPost(ctx, tx, ev.Status, ev.Revision)
 	})
 }
 
@@ -423,18 +480,42 @@ func (n *postNotifier) enqueue(ctx context.Context, job postJob, steps []queue.F
 	return n.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return n.d.Projectors.PostJobs.EnqueueTx(ctx, tx, jobs...) })
 }
 
-// notifyBatch notifies, in one transaction, those of ids who may see the post.
+// postsBatch is a Posts that decides for many accounts at once, as the platform's does.
+type postsBatch interface {
+	// StatusVisibleTo reports, by account, StatusVisible of each of accountIDs.
+	StatusVisibleTo(ctx context.Context, accountIDs []string, statusID string) (map[string]bool, error)
+}
+
+// notifyBatch notifies, in one transaction, those of ids who may see the post, deciding who may
+// see it together when Posts can.
 func (n *postNotifier) notifyBatch(ctx context.Context, job postJob, ids []string) error {
-	var to []string
+	var candidates []string
 	for _, id := range ids {
-		if slices.Contains(job.MentionedAccountIDs, id) {
-			continue
+		if !slices.Contains(job.MentionedAccountIDs, id) {
+			candidates = append(candidates, id)
 		}
-		visible, err := n.d.Posts.StatusVisible(ctx, id, job.StatusID)
-		if err != nil {
+	}
+	if len(candidates) == 0 {
+		return nil
+	}
+	visible := map[string]bool{}
+	if b, ok := n.d.Posts.(postsBatch); ok {
+		var err error
+		if visible, err = b.StatusVisibleTo(ctx, candidates, job.StatusID); err != nil {
 			return err
 		}
-		if visible {
+	} else {
+		for _, id := range candidates {
+			ok, err := n.d.Posts.StatusVisible(ctx, id, job.StatusID)
+			if err != nil {
+				return err
+			}
+			visible[id] = ok
+		}
+	}
+	var to []string
+	for _, id := range candidates {
+		if visible[id] {
 			to = append(to, id)
 		}
 	}
@@ -442,15 +523,9 @@ func (n *postNotifier) notifyBatch(ctx context.Context, job postJob, ids []strin
 		return nil
 	}
 	return n.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		for _, id := range to {
-			err := n.p.notify(ctx, tx, notification.Notification{
-				RecipientAccountID: id, SourceAccountID: job.AuthorAccountID, Type: notification.TypeStatus,
-				StatusID: job.StatusID, DedupeKey: notification.StatusKey(job.StatusID), CreatedAt: job.At,
-			})
-			if err != nil {
-				return err
-			}
-		}
-		return nil
+		return n.p.notifyAll(ctx, tx, notification.Notification{
+			SourceAccountID: job.AuthorAccountID, Type: notification.TypeStatus,
+			StatusID: job.StatusID, DedupeKey: notification.StatusKey(job.StatusID), CreatedAt: job.At,
+		}, to)
 	})
 }

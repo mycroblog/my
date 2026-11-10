@@ -18,6 +18,7 @@ import {
   test,
 } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 type Schemas = components["schemas"];
 /** The client message `key` in the project's locale, with `{name}` arguments replaced by `values`. */
@@ -133,14 +134,7 @@ async function serveApi(page: Page, permissions: Schemas["Permission"][]) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, account(permissions));
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "und",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale }));
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (key === "GET /custom_emojis") return json(route, { items: [] });

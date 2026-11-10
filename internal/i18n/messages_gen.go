@@ -116,6 +116,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeAdmin() string {
 	return l.format("server:auth.authorize.scope.admin", nil)
 }
 
+// ServerAuthAuthorizeScopeAdminPermission formats "server:auth.authorize.scope.admin_permission". Permission (an OAuth permission scope admin:<permission>, which only a token the user issues to themselves holds) listed where scopes are described. {permission} is the name of a permission of the user's roles, such as manage_invites.
+//
+//	en: Use the permission {permission} of your roles
+func (l *Localizer) ServerAuthAuthorizeScopeAdminPermission(permission string) string {
+	return l.format("server:auth.authorize.scope.admin_permission", map[string]any{"permission": permission})
+}
+
 // ServerAuthAuthorizeScopeAdminRead formats "server:auth.authorize.scope.admin_read". Permission (OAuth scope admin:read) listed on the authorization page.
 //
 //	en: Read the instance's administration data, as far as your roles allow
@@ -184,6 +191,20 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadCustomEmojis() string {
 //	en: Read the direct messages you send and receive
 func (l *Localizer) ServerAuthAuthorizeScopeReadDirect() string {
 	return l.format("server:auth.authorize.scope.read_direct", nil)
+}
+
+// ServerAuthAuthorizeScopeReadEvents formats "server:auth.authorize.scope.read_events". Permission (OAuth scope read:events) listed on the authorization page.
+//
+//	en: Read the events you can see
+func (l *Localizer) ServerAuthAuthorizeScopeReadEvents() string {
+	return l.format("server:auth.authorize.scope.read_events", nil)
+}
+
+// ServerAuthAuthorizeScopeReadFilters formats "server:auth.authorize.scope.read_filters". Permission (OAuth scope read:filters) listed on the authorization page.
+//
+//	en: Read your keyword filters
+func (l *Localizer) ServerAuthAuthorizeScopeReadFilters() string {
+	return l.format("server:auth.authorize.scope.read_filters", nil)
 }
 
 // ServerAuthAuthorizeScopeReadFinance formats "server:auth.authorize.scope.read_finance". Permission (OAuth scope read:finance) listed on the authorization page.
@@ -277,11 +298,25 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteCustomEmojis() string {
 	return l.format("server:auth.authorize.scope.write_custom_emojis", nil)
 }
 
+// ServerAuthAuthorizeScopeWriteEvents formats "server:auth.authorize.scope.write_events". Permission (OAuth scope write:events) listed on the authorization page.
+//
+//	en: Create, change, and cancel events, answer them, and invite people to them
+func (l *Localizer) ServerAuthAuthorizeScopeWriteEvents() string {
+	return l.format("server:auth.authorize.scope.write_events", nil)
+}
+
 // ServerAuthAuthorizeScopeWriteFavourites formats "server:auth.authorize.scope.write_favourites". Permission (OAuth scope write:favourites) listed on the authorization page.
 //
 //	en: Add and remove favourites and emoji reactions
 func (l *Localizer) ServerAuthAuthorizeScopeWriteFavourites() string {
 	return l.format("server:auth.authorize.scope.write_favourites", nil)
+}
+
+// ServerAuthAuthorizeScopeWriteFilters formats "server:auth.authorize.scope.write_filters". Permission (OAuth scope write:filters) listed on the authorization page.
+//
+//	en: Create, change, and delete your keyword filters
+func (l *Localizer) ServerAuthAuthorizeScopeWriteFilters() string {
+	return l.format("server:auth.authorize.scope.write_filters", nil)
 }
 
 // ServerAuthAuthorizeScopeWriteFollows formats "server:auth.authorize.scope.write_follows". Permission (OAuth scope write:follows) listed on the authorization page.
@@ -300,7 +335,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteMedia() string {
 
 // ServerAuthAuthorizeScopeWriteMutes formats "server:auth.authorize.scope.write_mutes". Permission (OAuth scope write:mutes) listed on the authorization page.
 //
-//	en: Mute and unmute accounts and domains
+//	en: Mute and unmute accounts, domains, and threads
 func (l *Localizer) ServerAuthAuthorizeScopeWriteMutes() string {
 	return l.format("server:auth.authorize.scope.write_mutes", nil)
 }
@@ -1722,6 +1757,69 @@ func (l *Localizer) ServerErrorsDomainMutesTooMany() string {
 	return l.format("server:errors.domain_mutes.too_many", nil)
 }
 
+// ServerErrorsDraftChanged formats "server:errors.draft.changed". Detail of the HTTP 412 API error when a draft was saved on another device or tab after the client read it.
+//
+//	en: The draft was saved elsewhere since you opened it. Open it again to see the latest version.
+func (l *Localizer) ServerErrorsDraftChanged() string {
+	return l.format("server:errors.draft.changed", nil)
+}
+
+// ServerErrorsDraftIfMatchRequired formats "server:errors.draft.if_match_required". Detail of the HTTP 428 API error when a save of a draft has no If-Match header.
+//
+//	en: Send the If-Match header with the ETag of the draft you read.
+func (l *Localizer) ServerErrorsDraftIfMatchRequired() string {
+	return l.format("server:errors.draft.if_match_required", nil)
+}
+
+// ServerErrorsDraftInvalid formats "server:errors.draft.invalid". Detail of the HTTP 422 API error when the content of a draft is too long, attaches too many files or one twice, or has a poll with too many choices or a duration out of range.
+//
+//	en: The draft cannot be saved: the text, a media file, or the poll is outside what a draft keeps.
+func (l *Localizer) ServerErrorsDraftInvalid() string {
+	return l.format("server:errors.draft.invalid", nil)
+}
+
+// ServerErrorsDraftMaxDrafts formats "server:errors.draft.max_drafts". Detail of the HTTP 422 API error when the user saves a new draft while at the limit. {max} is the number of drafts without a schedule a user may keep.
+//
+//	en: {max, plural, one {You can keep at most # draft that is not scheduled. Delete or publish one first.} other {You can keep at most # drafts that are not scheduled. Delete or publish one first.}}
+func (l *Localizer) ServerErrorsDraftMaxDrafts(max int) string {
+	return l.format("server:errors.draft.max_drafts", map[string]any{"max": max})
+}
+
+// ServerErrorsDraftMaxScheduledPosts formats "server:errors.draft.max_scheduled_posts". Detail of the HTTP 422 API error when the user schedules a post while at the limit. {max} is the number of scheduled posts a user may have waiting.
+//
+//	en: {max, plural, one {You can have at most # scheduled post waiting.} other {You can have at most # scheduled posts waiting.}}
+func (l *Localizer) ServerErrorsDraftMaxScheduledPosts(max int) string {
+	return l.format("server:errors.draft.max_scheduled_posts", map[string]any{"max": max})
+}
+
+// ServerErrorsDraftMaxScheduledPostsPerDay formats "server:errors.draft.max_scheduled_posts_per_day". Detail of the HTTP 422 API error when the user schedules a post on a UTC day that already has as many scheduled posts as allowed. {max} is that number.
+//
+//	en: {max, plural, one {You can schedule at most # post for one day (UTC).} other {You can schedule at most # posts for one day (UTC).}}
+func (l *Localizer) ServerErrorsDraftMaxScheduledPostsPerDay(max int) string {
+	return l.format("server:errors.draft.max_scheduled_posts_per_day", map[string]any{"max": max})
+}
+
+// ServerErrorsDraftNotScheduled formats "server:errors.draft.not_scheduled". Detail of the HTTP 409 API error when the user cancels the schedule of a draft that has none.
+//
+//	en: The draft is not scheduled.
+func (l *Localizer) ServerErrorsDraftNotScheduled() string {
+	return l.format("server:errors.draft.not_scheduled", nil)
+}
+
+// ServerErrorsDraftScheduleTooFar formats "server:errors.draft.schedule_too_far". Detail of the HTTP 422 API error when the time of a schedule is too far ahead. {days} is how many days ahead a post may be scheduled at most.
+//
+//	en: {days, plural, one {Schedule the post at most # day from now.} other {Schedule the post at most # days from now.}}
+func (l *Localizer) ServerErrorsDraftScheduleTooFar(days int) string {
+	return l.format("server:errors.draft.schedule_too_far", map[string]any{"days": days})
+}
+
+// ServerErrorsDraftScheduleTooSoon formats "server:errors.draft.schedule_too_soon". Detail of the HTTP 422 API error when the time of a schedule is too soon. {minutes} is how many minutes ahead a post must be scheduled at least.
+//
+//	en: {minutes, plural, one {Schedule the post at least # minute from now.} other {Schedule the post at least # minutes from now.}}
+func (l *Localizer) ServerErrorsDraftScheduleTooSoon(minutes int) string {
+	return l.format("server:errors.draft.schedule_too_soon", map[string]any{"minutes": minutes})
+}
+
 // ServerErrorsEmailAlreadyVerified formats "server:errors.email.already_verified". Title of the HTTP 409 API error when a user asks for the verification email again although their email address is verified and still receives email.
 //
 //	en: The email address is already verified.
@@ -1734,6 +1832,83 @@ func (l *Localizer) ServerErrorsEmailAlreadyVerified() string {
 //	en: The email address is not suppressed.
 func (l *Localizer) ServerErrorsEmailNotSuppressed() string {
 	return l.format("server:errors.email.not_suppressed", nil)
+}
+
+// ServerErrorsEventAlreadyInvited formats "server:errors.event.already_invited". API error title for HTTP 409 when an organizer invites a user to an event a second time (a user is invited once, even after a revocation).
+//
+//	en: That user is already invited to the event.
+func (l *Localizer) ServerErrorsEventAlreadyInvited() string {
+	return l.format("server:errors.event.already_invited", nil)
+}
+
+// ServerErrorsEventClosed formats "server:errors.event.closed". API error title for HTTP 409 when an event was cancelled, or an answer comes after it started.
+//
+//	en: The event takes no more changes.
+func (l *Localizer) ServerErrorsEventClosed() string {
+	return l.format("server:errors.event.closed", nil)
+}
+
+// ServerErrorsEventFull formats "server:errors.event.full". API error title for HTTP 409 when a user answers going to an event whose attendees who answer going reached its capacity.
+//
+//	en: The event is full.
+func (l *Localizer) ServerErrorsEventFull() string {
+	return l.format("server:errors.event.full", nil)
+}
+
+// ServerErrorsEventInvalidCoorganizer formats "server:errors.event.invalid_coorganizer". API error title for HTTP 422 when the named co-organizer is not a local, active user, is the organizer, or is in a block relation with an organizer.
+//
+//	en: That user cannot co-organize the event.
+func (l *Localizer) ServerErrorsEventInvalidCoorganizer() string {
+	return l.format("server:errors.event.invalid_coorganizer", nil)
+}
+
+// ServerErrorsEventInvalidInvitee formats "server:errors.event.invalid_invitee". API error title for HTTP 422 when the invited user is not a local, active user, organizes the event, or is in a block relation with an organizer.
+//
+//	en: That user cannot be invited to the event.
+func (l *Localizer) ServerErrorsEventInvalidInvitee() string {
+	return l.format("server:errors.event.invalid_invitee", nil)
+}
+
+// ServerErrorsEventNotAttending formats "server:errors.event.not_attending". API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event.
+//
+//	en: That user has not answered going or maybe.
+func (l *Localizer) ServerErrorsEventNotAttending() string {
+	return l.format("server:errors.event.not_attending", nil)
+}
+
+// ServerErrorsEventNotEligible formats "server:errors.event.not_eligible". API error title for HTTP 403 when a user who may not organize events creates or revises one (ADR-0161 §3: a local, unrestricted account, with the create_events permission unless everyone may create events).
+//
+//	en: You may not create events.
+func (l *Localizer) ServerErrorsEventNotEligible() string {
+	return l.format("server:errors.event.not_eligible", nil)
+}
+
+// ServerErrorsEventNotOrganizer formats "server:errors.event.not_organizer". API error title for HTTP 403 when someone who neither organizes nor co-organizes an event revises it, invites to it, or approves its attendees.
+//
+//	en: Only the organizer or a co-organizer of the event may do this.
+func (l *Localizer) ServerErrorsEventNotOrganizer() string {
+	return l.format("server:errors.event.not_organizer", nil)
+}
+
+// ServerErrorsEventOrganizerOnly formats "server:errors.event.organizer_only". API error title for HTTP 403 when a co-organizer of an event changes its visibility, names or removes a co-organizer, or cancels it.
+//
+//	en: Only the organizer of the event may do this.
+func (l *Localizer) ServerErrorsEventOrganizerOnly() string {
+	return l.format("server:errors.event.organizer_only", nil)
+}
+
+// ServerErrorsEventTooManyCoorganizers formats "server:errors.event.too_many_coorganizers". API error title for HTTP 409 when the organizer names a co-organizer past the limit of three.
+//
+//	en: The event has as many co-organizers as it may.
+func (l *Localizer) ServerErrorsEventTooManyCoorganizers() string {
+	return l.format("server:errors.event.too_many_coorganizers", nil)
+}
+
+// ServerErrorsEventVoiceUnavailable formats "server:errors.event.voice_unavailable". API error title for HTTP 422 when an event gets a voice chat room as a place while voice chat is off or its organizer may not host rooms.
+//
+//	en: The event cannot be held in a voice chat room.
+func (l *Localizer) ServerErrorsEventVoiceUnavailable() string {
+	return l.format("server:errors.event.voice_unavailable", nil)
 }
 
 // ServerErrorsExportInProgress formats "server:errors.export.in_progress". API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built.
@@ -1757,6 +1932,13 @@ func (l *Localizer) ServerErrorsExternalConfirmationExpired() string {
 	return l.format("server:errors.external_confirmation.expired", nil)
 }
 
+// ServerErrorsFeaturedTagsTooMany formats "server:errors.featured_tags.too_many". API error title for HTTP 422 when the user asks to feature more hashtags on their profile than the limit.
+//
+//	en: You can feature at most 10 hashtags on your profile.
+func (l *Localizer) ServerErrorsFeaturedTagsTooMany() string {
+	return l.format("server:errors.featured_tags.too_many", nil)
+}
+
 // ServerErrorsFederationRestricted formats "server:errors.federation_restricted". API error title for HTTP 403 when the instance's federation mode (off, inbound only, or outbound only) does not let the operation through: following or resolving a remote account, or quoting a remote post.
 //
 //	en: This server does not federate in the direction that this needs.
@@ -1769,6 +1951,13 @@ func (l *Localizer) ServerErrorsFederationRestricted() string {
 //	en: Only this server's own apps may do this.
 func (l *Localizer) ServerErrorsFirstPartyOnly() string {
 	return l.format("server:errors.first_party_only", nil)
+}
+
+// ServerErrorsFollowedTagsTooMany formats "server:errors.followed_tags.too_many". API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags.
+//
+//	en: You already follow the most hashtags allowed. Unfollow one first.
+func (l *Localizer) ServerErrorsFollowedTagsTooMany() string {
+	return l.format("server:errors.followed_tags.too_many", nil)
 }
 
 // ServerErrorsForbidden formats "server:errors.forbidden". API error title for HTTP 403 when the user may not perform the operation, e.g. edit another account's post.
@@ -1839,6 +2028,13 @@ func (l *Localizer) ServerErrorsInsufficientScope() string {
 //	en: The access token needs the scope {scope}.
 func (l *Localizer) ServerErrorsInsufficientScopeDetail(scope string) string {
 	return l.format("server:errors.insufficient_scope_detail", map[string]any{"scope": scope})
+}
+
+// ServerErrorsInteractionRequestAnswered formats "server:errors.interaction_request.answered". Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before.
+//
+//	en: This request is answered already.
+func (l *Localizer) ServerErrorsInteractionRequestAnswered() string {
+	return l.format("server:errors.interaction_request.answered", nil)
 }
 
 // ServerErrorsInteractionRestricted formats "server:errors.interaction_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying).
@@ -1923,6 +2119,20 @@ func (l *Localizer) ServerErrorsInvitesRegistrationClosed() string {
 //	en: You have as many usable invites as allowed. Revoke one, or wait until one expires or is used up.
 func (l *Localizer) ServerErrorsInvitesTooMany() string {
 	return l.format("server:errors.invites.too_many", nil)
+}
+
+// ServerErrorsKeywordFiltersTooMany formats "server:errors.keyword_filters.too_many". API error title for HTTP 422 when the user creates another keyword filter beyond the limit of filters.
+//
+//	en: You already have the most keyword filters allowed. Delete one first.
+func (l *Localizer) ServerErrorsKeywordFiltersTooMany() string {
+	return l.format("server:errors.keyword_filters.too_many", nil)
+}
+
+// ServerErrorsKeywordFiltersTooManyWords formats "server:errors.keyword_filters.too_many_words". API error title for HTTP 422 when the words of a keyword filter, or of all the user's filters, would pass their limit.
+//
+//	en: A keyword filter has at most 100 words, and all your filters at most 1,000. Remove some first.
+func (l *Localizer) ServerErrorsKeywordFiltersTooManyWords() string {
+	return l.format("server:errors.keyword_filters.too_many_words", nil)
 }
 
 // ServerErrorsLastAdministrator formats "server:errors.last_administrator". API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account.
@@ -2163,6 +2373,20 @@ func (l *Localizer) ServerErrorsPasskeyTooMany() string {
 	return l.format("server:errors.passkey.too_many", nil)
 }
 
+// ServerErrorsPreconditionFailed formats "server:errors.precondition_failed". API error title for HTTP 412 when the If-Match of a request names an older version of the resource.
+//
+//	en: The resource changed since you read it.
+func (l *Localizer) ServerErrorsPreconditionFailed() string {
+	return l.format("server:errors.precondition_failed", nil)
+}
+
+// ServerErrorsPreconditionRequired formats "server:errors.precondition_required". API error title for HTTP 428 when a request that replaces a resource has no If-Match header.
+//
+//	en: This request needs the version you read.
+func (l *Localizer) ServerErrorsPreconditionRequired() string {
+	return l.format("server:errors.precondition_required", nil)
+}
+
 // ServerErrorsProfileRejected formats "server:errors.profile.rejected". API error title for HTTP 422 when the server's automated review of profiles refused a change of the user's profile. Fixed text: it never says why.
 //
 //	en: This change of your profile was not saved.
@@ -2373,6 +2597,62 @@ func (l *Localizer) ServerErrorsStatusAlreadyDeleted() string {
 	return l.format("server:errors.status.already_deleted", nil)
 }
 
+// ServerErrorsStatusArticleDirect formats "server:errors.status.article_direct". Detail of the HTTP 422 API error when a new article has the visibility direct, which articles never have.
+//
+//	en: An article cannot be a direct post.
+func (l *Localizer) ServerErrorsStatusArticleDirect() string {
+	return l.format("server:errors.status.article_direct", nil)
+}
+
+// ServerErrorsStatusArticleEditedAsPost formats "server:errors.status.article_edited_as_post". Detail of the HTTP 422 API error when the user edits an article as a short post.
+//
+//	en: An article is edited as an article.
+func (l *Localizer) ServerErrorsStatusArticleEditedAsPost() string {
+	return l.format("server:errors.status.article_edited_as_post", nil)
+}
+
+// ServerErrorsStatusArticleSummaryInvalid formats "server:errors.status.article_summary_invalid". Detail of the HTTP 422 API error when the summary of an article is too long. {max} is the maximum number of characters.
+//
+//	en: {max, plural, one {The summary of an article must be at most # character.} other {The summary of an article must be at most # characters.}}
+func (l *Localizer) ServerErrorsStatusArticleSummaryInvalid(max int) string {
+	return l.format("server:errors.status.article_summary_invalid", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTitleInvalid formats "server:errors.status.article_title_invalid". Detail of the HTTP 422 API error when the title of an article is blank or too long. {max} is the maximum number of characters.
+//
+//	en: {max, plural, one {The title of an article must be 1 character.} other {The title of an article must be 1 to # characters.}}
+func (l *Localizer) ServerErrorsStatusArticleTitleInvalid(max int) string {
+	return l.format("server:errors.status.article_title_invalid", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTooLong formats "server:errors.status.article_too_long". Detail of the HTTP 422 API error when the body of an article renders to more HTML than the instance allows. {max} is the maximum number of bytes.
+//
+//	en: {max, plural, one {The body of an article must make at most # byte of HTML.} other {The body of an article must make at most # bytes of HTML.}}
+func (l *Localizer) ServerErrorsStatusArticleTooLong(max int) string {
+	return l.format("server:errors.status.article_too_long", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTooManyImages formats "server:errors.status.article_too_many_images". Detail of the HTTP 422 API error when the body of an article shows more of the user's images than the instance allows. {max} is the maximum number of images.
+//
+//	en: {max, plural, one {The body of an article can show at most # image.} other {The body of an article can show at most # images.}}
+func (l *Localizer) ServerErrorsStatusArticleTooManyImages(max int) string {
+	return l.format("server:errors.status.article_too_many_images", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTooManyTags formats "server:errors.status.article_too_many_tags". Detail of the HTTP 422 API error when an article is given more hashtags than allowed. {max} is the maximum number of hashtags.
+//
+//	en: {max, plural, one {An article can have at most # hashtag.} other {An article can have at most # hashtags.}}
+func (l *Localizer) ServerErrorsStatusArticleTooManyTags(max int) string {
+	return l.format("server:errors.status.article_too_many_tags", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusBoostNotAllowed formats "server:errors.status.boost_not_allowed". Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them.
+//
+//	en: The author of this post does not let you boost it.
+func (l *Localizer) ServerErrorsStatusBoostNotAllowed() string {
+	return l.format("server:errors.status.boost_not_allowed", nil)
+}
+
 // ServerErrorsStatusEditRejected formats "server:errors.status.edit_rejected". API error title for HTTP 422 when the server's automated review of posts refused an edit of a post. Fixed text: it never says why.
 //
 //	en: This edit was not saved.
@@ -2392,6 +2672,13 @@ func (l *Localizer) ServerErrorsStatusEditRejectedDetail() string {
 //	en: The post has no text.
 func (l *Localizer) ServerErrorsStatusEmptyText() string {
 	return l.format("server:errors.status.empty_text", nil)
+}
+
+// ServerErrorsStatusInvalidHashtag formats "server:errors.status.invalid_hashtag". Detail of the HTTP 422 API error when a hashtag given to an article has characters that a hashtag cannot have.
+//
+//	en: A hashtag of the article is not a hashtag.
+func (l *Localizer) ServerErrorsStatusInvalidHashtag() string {
+	return l.format("server:errors.status.invalid_hashtag", nil)
 }
 
 // ServerErrorsStatusInvalidLanguage formats "server:errors.status.invalid_language". Detail of the HTTP 422 API error when a post's language is not a well-formed BCP 47 tag such as en or ja.
@@ -2448,6 +2735,13 @@ func (l *Localizer) ServerErrorsStatusMediaNotReady() string {
 //	en: This server requires a description (alt text) for every image. Add one to each image before posting.
 func (l *Localizer) ServerErrorsStatusMissingMediaDescription() string {
 	return l.format("server:errors.status.missing_media_description", nil)
+}
+
+// ServerErrorsStatusNotArticle formats "server:errors.status.not_article". Detail of the HTTP 422 API error when the user edits a post as an article.
+//
+//	en: This post is not an article.
+func (l *Localizer) ServerErrorsStatusNotArticle() string {
+	return l.format("server:errors.status.not_article", nil)
 }
 
 // ServerErrorsStatusNotAuthor formats "server:errors.status.not_author". Detail of the HTTP 403 API error when a user tries to edit or delete another account's post.
@@ -2584,6 +2878,13 @@ func (l *Localizer) ServerErrorsStatusRejected() string {
 //	en: This server's automated review did not accept this post. If you think this is a mistake, you can appeal.
 func (l *Localizer) ServerErrorsStatusRejectedDetail() string {
 	return l.format("server:errors.status.rejected.detail", nil)
+}
+
+// ServerErrorsStatusReplyNotAllowed formats "server:errors.status.reply_not_allowed". Detail of the HTTP 422 API error when the author of a post chose who may reply to it and the user is not among them.
+//
+//	en: The author of this post does not let you reply to it.
+func (l *Localizer) ServerErrorsStatusReplyNotAllowed() string {
+	return l.format("server:errors.status.reply_not_allowed", nil)
 }
 
 // ServerErrorsStatusReplyNotFound formats "server:errors.status.reply_not_found". Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see.
@@ -3031,6 +3332,36 @@ func (l *Localizer) ServerErrorsWrongPassword() string {
 	return l.format("server:errors.wrong_password", nil)
 }
 
+// ServerFeedContentWarning formats "server:feed.content_warning". Text of a post in an Atom feed when the post has a content warning: the feed shows only the warning, and the body and the media stay on the post's page. {warning} is the warning, written by the author.
+//
+//	en: Content warning: {warning}. Open the post to read it.
+func (l *Localizer) ServerFeedContentWarning(warning string) string {
+	return l.format("server:feed.content_warning", map[string]any{"warning": warning})
+}
+
+// ServerFeedTagTitleArgs holds the arguments of ServerFeedTagTitle, passed by name.
+//
+//exhaustruct:enforce
+type ServerFeedTagTitleArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Tag      string
+}
+
+// ServerFeedTagTitle formats "server:feed.tag_title". Title of the Atom feed of a hashtag, and of the link to it in the hashtag's page. {tag} is the hashtag without #; {instance} is the name of the server.
+//
+//	en: #{tag} on {instance}
+func (l *Localizer) ServerFeedTagTitle(args ServerFeedTagTitleArgs) string {
+	return l.format("server:feed.tag_title", map[string]any{"instance": args.Instance, "tag": args.Tag})
+}
+
+// ServerFeedUntitled formats "server:feed.untitled". Title of a post in an Atom feed when the post has no text to take its title from (pictures only, say). {name} is the author's display name, or the username when there is none.
+//
+//	en: Post by {name}
+func (l *Localizer) ServerFeedUntitled(name string) string {
+	return l.format("server:feed.untitled", map[string]any{"name": name})
+}
+
 // ServerHealthUnavailable formats "server:health.unavailable". Body of the readiness check response (HTTP 503) while a dependency such as the database is unavailable.
 //
 //	en: The server is not ready to accept requests.
@@ -3136,6 +3467,27 @@ func (l *Localizer) ServerMailAdminCustomEmojiRequestBody(instance string) strin
 //	en: A custom emoji request awaits review on {instance}
 func (l *Localizer) ServerMailAdminCustomEmojiRequestSubject(instance string) string {
 	return l.format("server:mail.admin_custom_emoji_request.subject", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminDomainListFailingBody formats "server:mail.admin_domain_list_failing.body". First paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: The server {instance} could not fetch a blocklist it subscribes to three times in a row. Until a fetch works again, the list changes no domain actions; the actions it issued stay.
+func (l *Localizer) ServerMailAdminDomainListFailingBody(instance string) string {
+	return l.format("server:mail.admin_domain_list_failing.body", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminDomainListFailingDetail formats "server:mail.admin_domain_list_failing.detail". Second paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing, before the link.
+//
+//	en: Open the blocklist subscriptions to see why the fetches failed.
+func (l *Localizer) ServerMailAdminDomainListFailingDetail() string {
+	return l.format("server:mail.admin_domain_list_failing.detail", nil)
+}
+
+// ServerMailAdminDomainListFailingSubject formats "server:mail.admin_domain_list_failing.subject". Subject of the email to a moderator who gets moderator notifications by email: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: A blocklist subscription of {instance} keeps failing
+func (l *Localizer) ServerMailAdminDomainListFailingSubject(instance string) string {
+	return l.format("server:mail.admin_domain_list_failing.subject", map[string]any{"instance": instance})
 }
 
 // ServerMailAdminErrorGroupBody formats "server:mail.admin_error_group.body". Paragraph of the email to an administrator who manages the errors. It never names the error or a user. {instance} is the server's display name, or its domain name when it has none.
@@ -3283,6 +3635,13 @@ func (l *Localizer) ServerMailGroupAdminAppeal() string {
 //	en: Custom emoji requests
 func (l *Localizer) ServerMailGroupAdminCustomEmojiRequest() string {
 	return l.format("server:mail.group.admin_custom_emoji_request", nil)
+}
+
+// ServerMailGroupAdminDomainListFailing formats "server:mail.group.admin_domain_list_failing". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Failing blocklist subscriptions
+func (l *Localizer) ServerMailGroupAdminDomainListFailing() string {
+	return l.format("server:mail.group.admin_domain_list_failing", nil)
 }
 
 // ServerMailGroupAdminErrorGroup formats "server:mail.group.admin_error_group". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
@@ -4295,9 +4654,9 @@ func (l *Localizer) ServerPreviewAvatarAlt(name string) string {
 	return l.format("server:preview.avatar_alt", map[string]any{"name": name})
 }
 
-// ServerPreviewBuiltinImageAlt formats "server:preview.builtin_image_alt". Alt text of the built-in preview image in a link preview (og:image:alt), for profiles and posts without images on an instance without its own preview image. The image is a white speech bubble with three dots on a blue gradient.
+// ServerPreviewBuiltinImageAlt formats "server:preview.builtin_image_alt". Alt text of the built-in preview image in a link preview (og:image:alt), for the pages without an image of their own on an instance with no preview image, thumbnail, or logo. The image is mycroblog's colourful wordmark "my" on white.
 //
-//	en: A speech bubble with three dots on a blue gradient
+//	en: The mycroblog logo
 func (l *Localizer) ServerPreviewBuiltinImageAlt() string {
 	return l.format("server:preview.builtin_image_alt", nil)
 }
@@ -4427,6 +4786,13 @@ func (l *Localizer) ServerPushAdminCustomEmojiRequest(instance string) string {
 	return l.format("server:push.admin_custom_emoji_request", map[string]any{"instance": instance})
 }
 
+// ServerPushAdminDomainListFailing formats "server:push.admin_domain_list_failing". Web Push notification to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: A blocklist subscription of {instance} keeps failing
+func (l *Localizer) ServerPushAdminDomainListFailing(instance string) string {
+	return l.format("server:push.admin_domain_list_failing", map[string]any{"instance": instance})
+}
+
 // ServerPushAdminErrorGroupCreated formats "server:push.admin_error_group.created". Web Push notification to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: A new error was reported on {instance}
@@ -4537,6 +4903,13 @@ func (l *Localizer) ServerPushBoost(name string) string {
 	return l.format("server:push.boost", map[string]any{"name": name})
 }
 
+// ServerPushBoostRequest formats "server:push.boost_request". Web Push notification. {name} is the display name, or the @handle, of the account whose boost of the user's post waits for the user's approval.
+//
+//	en: {name} asked to boost your post
+func (l *Localizer) ServerPushBoostRequest(name string) string {
+	return l.format("server:push.boost_request", map[string]any{"name": name})
+}
+
 // ServerPushCustomEmojiRequestDecided formats "server:push.custom_emoji_request_decided". Web Push notification: an administrator approved or rejected the user's request for a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: The administrators of {instance} reviewed your custom emoji request
@@ -4549,6 +4922,22 @@ func (l *Localizer) ServerPushCustomEmojiRequestDecided(instance string) string 
 //	en: {name} favourited your post
 func (l *Localizer) ServerPushFavourite(name string) string {
 	return l.format("server:push.favourite", map[string]any{"name": name})
+}
+
+// ServerPushFilteredArgs holds the arguments of ServerPushFiltered, passed by name.
+//
+//exhaustruct:enforce
+type ServerPushFilteredArgs struct {
+	_      struct{} // forces keyed fields
+	Filter string
+	Title  string
+}
+
+// ServerPushFiltered formats "server:push.filtered". Web Push notification, and the subject of its email, about a post that one of the user's keyword filters with the action warn matched: it says what the notification is and names the filter instead of showing more. {title} is the usual text of the notification, such as “Alice mentioned you”; {filter} is the title of the filter, as the user wrote it.
+//
+//	en: {title} (matches your filter “{filter}”)
+func (l *Localizer) ServerPushFiltered(args ServerPushFilteredArgs) string {
+	return l.format("server:push.filtered", map[string]any{"filter": args.Filter, "title": args.Title})
 }
 
 // ServerPushFollow formats "server:push.follow". Web Push notification. {name} is the display name, or the @handle, of the account that followed the user.
@@ -4577,6 +4966,20 @@ func (l *Localizer) ServerPushFollowRequest(name string) string {
 //	en: The moderators of {instance} reviewed your appeal of a refused post
 func (l *Localizer) ServerPushHookAppealDecided(instance string) string {
 	return l.format("server:push.hook_appeal_decided", map[string]any{"instance": instance})
+}
+
+// ServerPushInteractionAccepted formats "server:push.interaction_accepted". Web Push notification. {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it.
+//
+//	en: {name} approved your interaction with their post
+func (l *Localizer) ServerPushInteractionAccepted(name string) string {
+	return l.format("server:push.interaction_accepted", map[string]any{"name": name})
+}
+
+// ServerPushInteractionRejected formats "server:push.interaction_rejected". Web Push notification. {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it.
+//
+//	en: {name} declined your interaction with their post
+func (l *Localizer) ServerPushInteractionRejected(name string) string {
+	return l.format("server:push.interaction_rejected", map[string]any{"name": name})
 }
 
 // ServerPushMention formats "server:push.mention". Web Push notification. {name} is the display name, or the @handle, of the account that wrote a post that mentions the user.
@@ -4614,6 +5017,13 @@ func (l *Localizer) ServerPushQuote(name string) string {
 	return l.format("server:push.quote", map[string]any{"name": name})
 }
 
+// ServerPushQuoteRequest formats "server:push.quote_request". Web Push notification. {name} is the display name, or the @handle, of the account whose quote of the user's post waits for the user's approval.
+//
+//	en: {name} asked to quote your post
+func (l *Localizer) ServerPushQuoteRequest(name string) string {
+	return l.format("server:push.quote_request", map[string]any{"name": name})
+}
+
 // ServerPushReaction formats "server:push.reaction". Web Push notification. {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji.
 //
 //	en: {name} reacted to your post
@@ -4621,11 +5031,18 @@ func (l *Localizer) ServerPushReaction(name string) string {
 	return l.format("server:push.reaction", map[string]any{"name": name})
 }
 
-// ServerPushRelationshipsSevered formats "server:push.relationships_severed". Web Push notification: the moderators suspended a server or an account, which ended follows between it and the user. {instance} is the server's display name, or its domain name when it has none.
+// ServerPushRelationshipsSevered formats "server:push.relationships_severed". Web Push notification: follows between the user and accounts of other servers ended, because the moderators suspended a server or an account, or because this server stopped federating with a server (it federates only with the servers it allows). {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: A suspension by the moderators of {instance} ended some of your follows
+//	en: {instance} ended some of your follows with accounts on other servers
 func (l *Localizer) ServerPushRelationshipsSevered(instance string) string {
 	return l.format("server:push.relationships_severed", map[string]any{"instance": instance})
+}
+
+// ServerPushReplyRequest formats "server:push.reply_request". Web Push notification. {name} is the display name, or the @handle, of the account whose reply to the user's post waits for the user's approval.
+//
+//	en: {name} asked to reply to your post
+func (l *Localizer) ServerPushReplyRequest(name string) string {
+	return l.format("server:push.reply_request", map[string]any{"name": name})
 }
 
 // ServerPushReportResolved formats "server:push.report_resolved". Web Push notification: the moderators resolved a report that the user filed. It never says how. {instance} is the server's display name, or its domain name when it has none.
@@ -4633,6 +5050,22 @@ func (l *Localizer) ServerPushRelationshipsSevered(instance string) string {
 //	en: A report you filed on {instance} has been resolved
 func (l *Localizer) ServerPushReportResolved(instance string) string {
 	return l.format("server:push.report_resolved", map[string]any{"instance": instance})
+}
+
+// ServerPushScheduledStatusFailedArgs holds the arguments of ServerPushScheduledStatusFailed, passed by name.
+//
+//exhaustruct:enforce
+type ServerPushScheduledStatusFailedArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Reason   string
+}
+
+// ServerPushScheduledStatusFailed formats "server:push.scheduled_status_failed". Web Push notification telling a local user that a post they scheduled could not be published at its time; the draft stays and can be fixed and scheduled again. {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: {instance}: your scheduled post could not be published {reason, select, restricted {because your account cannot post now} reply_unavailable {because the post it replies to is no longer available} quote_unavailable {because the post it quotes is no longer available} media_unavailable {because an attached file is no longer available} invalid {because it does not meet the requirements for a post} rejected {because the server's automated review refused it} other {}}
+func (l *Localizer) ServerPushScheduledStatusFailed(args ServerPushScheduledStatusFailedArgs) string {
+	return l.format("server:push.scheduled_status_failed", map[string]any{"instance": args.Instance, "reason": args.Reason})
 }
 
 // ServerPushServiceClosureAnnounced formats "server:push.service_closure_announced". Web Push notification to every user: the administrators announced that the server closes on a date. {instance} is the server's display name, or its domain name when it has none.

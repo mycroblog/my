@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: enableWebhook
+  x-permission: manage_webhooks
   summary: Enable a webhook
   description: |
     The endpoint receives the messages of its events again; the messages of the time it was

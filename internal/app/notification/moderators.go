@@ -120,11 +120,13 @@ type ModeratorDeps struct {
 //   - diagnostics.error_group_created, _confirmed, and _regressed: admin_error_group, to the
 //     holders of manage_errors, with the hourly cap of errors.go (ADR-0103 §8).
 //   - hook.failing: admin_hook_failing, to the holders of manage_reports (ADR-0147).
+//   - moderation.domain_list_failing: admin_domain_list_failing, to the holders of
+//     manage_domains (ADR-0159 §5).
 //   - hook.appeal_filed: admin_hook_appeal, to the holders of manage_reports other than the
 //     author who appealed (ADR-0147 §9).
 //
 // The dedupe keys (notification.AdminReportKey, AdminSignUpKey, AdminAppealKey,
-// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey, AdminHookFailingKey, AdminHookAppealKey, AdminErrorGroupKey,
+// AdminWebhookDisabledKey, AdminCustomEmojiRequestKey, AdminAccountMovedKey, AdminHookFailingKey, AdminDomainListFailingKey, AdminHookAppealKey, AdminErrorGroupKey,
 // AdminErrorGroupOthersKey) make projecting an event again
 // create nothing more. A recipient who turned the type off in the app gets nothing. For each
 // recipient who gets the type by email and whose notification is new, the projector enqueues
@@ -163,6 +165,12 @@ func RegisterModeratorProjectors(r *uow.Projectors, d ModeratorDeps) {
 		ev := e.(apphook.Failing)
 		return p.notify(ctx, tx, notification.Notification{
 			Type: notification.TypeAdminHookFailing, DedupeKey: notification.AdminHookFailingKey(string(ev.Hook), ev.At), CreatedAt: ev.At,
+		})
+	})
+	r.Register(appmoderation.EventDomainListFailing, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appmoderation.DomainListFailing)
+		return p.notify(ctx, tx, notification.Notification{
+			Type: notification.TypeAdminDomainListFailing, DedupeKey: notification.AdminDomainListFailingKey(ev.FetchID), CreatedAt: ev.At,
 		})
 	})
 	r.Register(apphook.EventAppealFiled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {

@@ -13,7 +13,8 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 # and CodeQL. nightly.yml calls it every night, and it runs by hand on any branch:
 # `gh workflow run slow-suite.yml --ref <branch>`. release.yml calls it as the release gate: the whole suite, or, when a
 # run of it already passed on the commit, `scope: release`, which runs only the jobs that check the commit's images
-# against a release (upgrade, restore-drill). Every job checks out the commit
+# against a release (upgrade, restore-drill), or `scope: none`, which runs nothing, for a pre-release released without
+# the suite in an emergency (`skip_slow_suite`). Every job checks out the commit
 # of the run (github.sha), so a caller tests the commit it was started on.
 #
 # No concurrency group: in a called workflow the group would be evaluated in the caller's context, and a release and
@@ -36,7 +37,7 @@ on:
         type: string
         default: ""
       scope:
-        description: "`all` runs every job; `release` runs only the jobs that check this commit's images for a release (upgrade, restore-drill), for a commit whose suite already passed."
+        description: "`all` runs every job; `release` runs only the jobs that check this commit's images for a release (upgrade, restore-drill), for a commit whose suite already passed; `none` runs none, for a pre-release that skips the suite in an emergency."
         type: string
         default: all
       allow_destructive:
@@ -68,42 +69,42 @@ permissions:
 
 jobs:
   web-e2e:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     uses: ./.github/workflows/web-e2e.yml
     with:
       matrix: full
       shards: 8
 
   federation-live:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     uses: ./.github/workflows/federation-live.yml
 
   postgres-contract:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     uses: ./.github/workflows/postgres-contract.yml
 
   stream-contract:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     uses: ./.github/workflows/stream-contract.yml
 
   mail-integration:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     uses: ./.github/workflows/mail-integration.yml
 
   voice-contract:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     uses: ./.github/workflows/voice-contract.yml
 
   blob-contract:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     uses: ./.github/workflows/blob-contract.yml
 
   search-contract:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     uses: ./.github/workflows/search-contract.yml
 
   docker:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     # The docker job of ci.yml, with the linux/arm64 image builds whatever changed.
     runs-on: ubuntu-latest
     steps:
@@ -127,6 +128,7 @@ jobs:
         run: scripts/task.sh docker:web-reproducible
 
   upgrade:
+    if: inputs.scope != 'none'
     # A database made and filled by the previous release's images, upgraded with this commit's server image in the order
     # of deploy/docker/compose.yaml (my db upgrade -check, my schema apply, my db upgrade), on SQLite and PostgreSQL
     # (scripts/upgrade-test.sh). The previous release's image is the published one (MY_PREVIOUS_IMAGE), or is built from
@@ -175,6 +177,7 @@ jobs:
           scripts/task.sh docker:upgrade-test PREVIOUS="$PREVIOUS"
 
   restore-drill:
+    if: inputs.scope != 'none'
     # An instance filled through this commit's images, backed up while it runs (my db backup or pg_dump, then the
     # media), lost with every container and volume, and restored into new ones, on SQLite and PostgreSQL: the data, the
     # Actors' keys, a signed delivery, and the failures without the KEK (scripts/restore-drill.sh).
@@ -191,7 +194,7 @@ jobs:
         run: scripts/task.sh docker:restore-drill
 
   go-static:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     # The Go checks the merge queue leaves out (ADR-0079): golangci-lint over everything, where pull requests only
     # lint the modules they change, and the builds of the build tag sets that leave adapters out.
     runs-on: ubuntu-latest
@@ -228,7 +231,7 @@ jobs:
             run: scripts/task.sh go:build-tags
 
   codeql:
-    if: inputs.scope != 'release'
+    if: inputs.scope == 'all'
     uses: ./.github/workflows/codeql.yml
     # The analysis uploads its results to the Security tab. A caller grants the same permissions to the job that calls
     # this workflow.
@@ -238,7 +241,7 @@ jobs:
       security-events: write
 
   # The one result of the suite: fails when any job above failed or was cancelled, so that a caller can depend on it.
-  # A job is skipped only by `scope: release`, and a skipped job counts as passed.
+  # A job is skipped only by `scope: release` or `scope: none`, and a skipped job counts as passed.
   result:
     if: always()
     needs: [web-e2e, federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, docker, upgrade, restore-drill, go-static, codeql]

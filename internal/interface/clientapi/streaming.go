@@ -18,6 +18,8 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/notification"
+	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
 // Defaults of the streaming endpoint.
@@ -70,8 +72,10 @@ func (s *Server) registerStreaming(r Router) {
 // serveStreaming serves GET /api/v1/streaming: a Server-Sent Events stream of the viewer's new
 // home timeline entries (event update, data a Status, and event list_update for each list of the
 // viewer whose timeline lists the entry, data its ID and the Status), notifications (event notification,
-// data a Notification), and announcements (event announcement, data an Announcement, and event
-// announcement_removed, data its ID). The stream subscribes to the signals of stream.Subscriber and reads
+// data a Notification), conversations of the direct messages (event conversation, data a
+// Conversation), announcements (event announcement, data an Announcement, and event
+// announcement_removed, data its ID), and the counts of the notification requests when they
+// change (event notification_requests, data a NotificationRequestSummary). The stream subscribes to the signals of stream.Subscriber and reads
 // each change back through the use cases, as the viewer would see it in the home timeline or
 // the notification list. It ends when the client goes, the subscription ends (the broker shuts
 // down, the client fell behind, or the broker may have missed signals), a write times out, or
@@ -93,6 +97,7 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer sub.Close()
+	defer s.home.register(v.AccountID)()
 
 	home, err := s.timelineQuery(ctx, &v, nil, nil, true)
 	if err != nil {
@@ -104,6 +109,15 @@ func (s *Server) serveStreaming(w http.ResponseWriter, r *http.Request) {
 		sentEntries: newRecentIDs(streamRecentEntries),
 		// Notifications from the moment the stream opens; earlier ones are in the list.
 		lastNotification: kernel.UUIDv7Floor(time.Now()),
+	}
+	if s.o.NotificationPolicies != nil {
+		// The counts from the moment the stream opens; the client reads them with the list.
+		sum, err := s.o.NotificationPolicies.RequestSummary(ctx, v.AccountID)
+		if err != nil {
+			s.responseError(w, r, err)
+			return
+		}
+		st.requests = &sum
 	}
 	s.runStream(w, r, st, sub, streamKindUser, st.handle, nil)
 }
@@ -168,18 +182,30 @@ func (s *Server) runStream(w http.ResponseWriter, r *http.Request, st *streamSta
 	}
 	ticker := time.NewTicker(heartbeat)
 	defer ticker.Stop()
+	// The process checks the tokens of all its streams at once (streamMonitor) when it can; a
+	// stream checks its own otherwise.
+	var ended <-chan struct{}
+	if s.monitor != nil {
+		c := s.monitor.add(token)
+		defer s.monitor.remove(c)
+		ended = c.ended
+	}
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-sub.Done():
 			return
+		case <-ended:
+			return // revoked, expired, the account became unusable, or the server was closed
 		case <-ticker.C:
-			if _, err := s.o.Authenticator.AuthenticateBearer(ctx, token); err != nil {
-				return // revoked, expired, or the account became unusable
-			}
-			if s.streamClosed(ctx) {
-				return // the server was closed (ADR-0088 §2)
+			if s.monitor == nil {
+				if _, err := s.o.Authenticator.AuthenticateBearer(ctx, token); err != nil {
+					return // revoked, expired, or the account became unusable
+				}
+				if s.streamClosed(ctx) {
+					return // the server was closed (ADR-0088 §2)
+				}
 			}
 			if alive != nil && !alive(ctx) {
 				return
@@ -225,19 +251,57 @@ type streamState struct {
 	lastNotification string
 	// sentEntries holds the IDs of the home timeline entries recently sent.
 	sentEntries *recentIDs
+	// requests is the last counts of the notification requests that the stream sent or read
+	// when it opened; nil without NotificationPolicies.
+	requests *notification.RequestSummary
 }
 
 // handle sends what signal e means for the viewer.
 func (st *streamState) handle(ctx context.Context, e stream.Event) error {
 	switch e.Kind {
 	case stream.KindHomeEntry:
+		// The streams of the accounts whose home timelines cannot list the entry skip it.
+		batch, _ := st.s.o.HomeEntries.(homeAudienceBatch)
+		if !st.s.home.mayList(ctx, batch, e, st.viewer.AccountID) {
+			return nil
+		}
 		return st.homeEntry(ctx, e.EntryID)
 	case stream.KindNotifications:
-		return st.notifications(ctx)
+		if err := st.notifications(ctx); err != nil {
+			return err
+		}
+		return st.notificationRequests(ctx)
+	case stream.KindConversation:
+		return st.conversation(ctx, e)
 	case stream.KindAnnouncement:
 		return st.announcement(ctx, e.AnnouncementID)
 	}
 	return nil
+}
+
+// conversation sends the conversation of e as the viewer's list of direct messages shows it
+// (event conversation), when the list shows it. A token without read:direct sees no direct post,
+// so it receives none.
+func (st *streamState) conversation(ctx context.Context, e stream.Event) error {
+	if st.s.o.Conversations == nil || e.AccountID != st.viewer.AccountID {
+		return nil
+	}
+	viewer := localContentViewer(st.viewer)
+	if viewer.DirectDenied {
+		return nil
+	}
+	c, ok, err := st.s.o.Conversations.StreamConversation(ctx, viewer, e.ConversationID)
+	if err != nil {
+		return fmt.Errorf("conversation %s: %w", e.ConversationID, err)
+	}
+	if !ok {
+		return nil
+	}
+	items, err := st.s.presentConversations(ctx, &st.viewer, viewer, []apptimeline.Conversation{c})
+	if err != nil || len(items) == 0 {
+		return err
+	}
+	return st.event("conversation", items[0])
 }
 
 // announcementRemoved is the data of an announcement_removed event.
@@ -280,7 +344,7 @@ func (st *streamState) homeEntry(ctx context.Context, id string) error {
 	if err != nil || !ok {
 		return err
 	}
-	statuses, err := st.s.statuses(ctx, viewer, entryItems([]apptimeline.Entry{entry}))
+	statuses, err := st.s.statuses(ctx, viewer, timeline.FilterContextHome, entryItems([]apptimeline.Entry{entry}))
 	if err != nil {
 		return err
 	}
@@ -349,16 +413,43 @@ func (st *streamState) notifications(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		for i, item := range items {
+		// A notification that a keyword filter hides has no item, and the next page starts
+		// after it all the same.
+		for _, item := range items {
 			if err := st.event("notification", item); err != nil {
 				return err
 			}
-			st.lastNotification = ns[i].ID
+			st.lastNotification = item.Id
+		}
+		if len(ns) > 0 {
+			st.lastNotification = ns[len(ns)-1].ID
 		}
 		if len(ns) < appnotification.MaxPageLimit {
 			return nil
 		}
 	}
+}
+
+// notificationRequests sends the counts of the viewer's notification requests (event
+// notification_requests, data a NotificationRequestSummary) when they differ from the last ones
+// sent or read when the stream opened: the stream sends no filtered notification, only that the
+// counts changed (ADR-0158 §7).
+func (st *streamState) notificationRequests(ctx context.Context) error {
+	if st.requests == nil {
+		return nil
+	}
+	sum, err := st.s.o.NotificationPolicies.RequestSummary(ctx, st.viewer.AccountID)
+	if err != nil {
+		return fmt.Errorf("count the notification requests of %s: %w", st.viewer.AccountID, err)
+	}
+	if sum == *st.requests {
+		return nil
+	}
+	if err := st.event("notification_requests", NotificationRequestSummary{AccountsCount: sum.Accounts, NotificationsCount: sum.Notifications}); err != nil {
+		return err
+	}
+	*st.requests = sum
+	return nil
 }
 
 // event writes one event with data as its JSON.

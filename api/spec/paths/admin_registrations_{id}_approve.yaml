@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: approveRegistration
+  x-permission: manage_accounts
   summary: Approve a registration
   description: |
     Approves a pending registration, so that its user can sign in, with an optional note

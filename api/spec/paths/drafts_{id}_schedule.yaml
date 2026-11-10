@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: MIT
+put:
+  operationId: scheduleDraft
+  summary: Schedule a draft, or move its schedule
+  description: |
+    Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+    The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+    being processed pass), and again when it is published, by the user's state and the posts it
+    replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+    the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+    (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+    than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+    `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+  tags: [drafts]
+  security:
+    - oauth2: ["write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/DraftId.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/DraftScheduleRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Draft.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: unscheduleDraft
+  summary: Cancel the schedule of a draft
+  description: The draft stays, without a schedule. A draft that is not scheduled is a 409.
+  tags: [drafts]
+  security:
+    - oauth2: ["write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/DraftId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Draft.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -172,6 +172,7 @@ describe("the navigation's timelines", () => {
       "/public",
       "/notifications",
       "/search",
+      "/direct-messages",
       "/profile",
       "/bookmarks",
       "/settings",

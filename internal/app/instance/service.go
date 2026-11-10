@@ -211,6 +211,36 @@ func (s *Service) SettingsTx(ctx context.Context, tx uow.Tx) (instance.Settings,
 	return instance.NewSettings(cur), nil
 }
 
+// FederationScope returns the current value of the federation_scope setting (ADR-0159 §2), read
+// per request and per job, so that a change applies at once.
+func (s *Service) FederationScope(ctx context.Context) (instance.FederationScope, error) {
+	settings, err := s.Settings(ctx)
+	if err != nil {
+		return "", err
+	}
+	return settings.FederationScope(), nil
+}
+
+// FederationScopeTx is FederationScope inside tx.
+func (s *Service) FederationScopeTx(ctx context.Context, tx uow.Tx) (instance.FederationScope, error) {
+	settings, err := s.SettingsTx(ctx, tx)
+	if err != nil {
+		return "", err
+	}
+	return settings.FederationScope(), nil
+}
+
+// EffectiveAuthorizedFetch reports whether the ActivityPub GETs need a verified signature: the
+// authorized_fetch setting (FR-408), or federation_scope allowlist, which requires it (ADR-0159
+// §2).
+func (s *Service) EffectiveAuthorizedFetch(ctx context.Context) (bool, error) {
+	settings, err := s.Settings(ctx)
+	if err != nil {
+		return false, err
+	}
+	return settings.EffectiveAuthorizedFetch(), nil
+}
+
 // FederationModeTx is FederationMode inside tx.
 func (s *Service) FederationModeTx(ctx context.Context, tx uow.Tx) (instance.FederationMode, error) {
 	cur, err := s.d.Repository.ListCurrentSettingsTx(ctx, tx)
@@ -283,11 +313,22 @@ func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]ins
 		if err := s.checkSingleUser(ctx, tx, revs); err != nil {
 			return err
 		}
+		cur, err := s.d.Repository.ListCurrentSettingsTx(ctx, tx)
+		if err != nil {
+			return err
+		}
+		previous := map[instance.SettingKey]string{}
+		before := instance.NewSettings(cur)
 		for i, rev := range revs {
 			if err := s.d.Repository.InsertSettingRevision(ctx, tx, rev); err != nil {
 				return err
 			}
-			if err := tx.Emit(ctx, SettingRevised{Revision: rev}); err != nil {
+			prev, seen := previous[rev.Key]
+			if !seen {
+				prev, _ = before.Value(rev.Key)
+			}
+			previous[rev.Key] = rev.Value
+			if err := tx.Emit(ctx, SettingRevised{Revision: rev, Previous: prev}); err != nil {
 				return err
 			}
 			if err := tx.Emit(ctx, audits[i]); err != nil {

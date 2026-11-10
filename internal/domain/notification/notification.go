@@ -24,11 +24,13 @@ type Type string
 // whose subscription the announcement cancels (ADR-0088 §2). voice_room_started and
 // voice_room_invited come from the voice chat rooms (ADR-0100 §8). admin_report, admin_sign_up,
 // admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved,
-// admin_service_closure_due, admin_error_group, admin_hook_failing, and admin_hook_appeal go to the staff whose roles grant the permission they need
+// admin_service_closure_due, admin_error_group, admin_hook_failing, admin_hook_appeal, and
+// admin_domain_list_failing go to the staff whose roles grant the permission they need
 // (ModeratorPermission). status tells a subscriber of a new post of an account it subscribes to
 // (ADR-0086). announcement tells every local user of a server-wide announcement once it starts
 // to show (ADR-0125 §2). auto_delete_limit tells a local account in advance that the server
-// maximum of the automatic deletion binds it (ADR-0151 §7).
+// maximum of the automatic deletion binds it (ADR-0151 §7). scheduled_status_failed tells the
+// author of a scheduled post that it could not be published (ADR-0156 §8).
 const (
 	TypeFollow         Type = "follow"
 	TypeFollowRequest  Type = "follow_request"
@@ -102,6 +104,10 @@ const (
 	// TypeAdminHookFailing tells the holders of manage_reports that calls of a decision hook keep
 	// failing, so that subjects go unreviewed or wait (ADR-0147).
 	TypeAdminHookFailing Type = "admin_hook_failing"
+	// TypeAdminDomainListFailing tells the holders of manage_domains that the fetches of a
+	// subscription to a domain block list keep failing (ADR-0159 §5), so that the list no longer
+	// changes the domain actions. It names none.
+	TypeAdminDomainListFailing Type = "admin_domain_list_failing"
 	// TypeAdminHookAppeal tells the holders of manage_reports that an author appealed a post that
 	// the decision hook local.status refused (ADR-0147 §9): HookAppealID is the appeal.
 	TypeAdminHookAppeal Type = "admin_hook_appeal"
@@ -118,6 +124,21 @@ const (
 	// binds it, and from when its posts go by the maximum (ADR-0151 §7): AutoDeleteLimitNoticeID is
 	// the notice, and it has no source account.
 	TypeAutoDeleteLimit Type = "auto_delete_limit"
+	// TypeScheduledStatusFailed tells the author of a scheduled post that it could not be
+	// published (ADR-0156 §8): DraftScheduleID is the schedule (draft_schedules), whose result
+	// says why, and it has no source account.
+	TypeScheduledStatusFailed Type = "scheduled_status_failed"
+	// TypeReplyRequest, TypeBoostRequest, and TypeQuoteRequest tell the author of a local status
+	// of a reply, a boost, or a quote of it that waits for the author's approval (ADR-0155 §10).
+	// StatusID is the status, SourceAccountID the account that interacts.
+	TypeReplyRequest Type = "reply_request"
+	TypeBoostRequest Type = "boost_request"
+	TypeQuoteRequest Type = "quote_request"
+	// TypeInteractionAccepted and TypeInteractionRejected tell a local account that the author of
+	// a status approved or refused its reply, boost, or quote of it (ADR-0155 §10). StatusID is
+	// the status interacted with, SourceAccountID its author.
+	TypeInteractionAccepted Type = "interaction_accepted"
+	TypeInteractionRejected Type = "interaction_rejected"
 )
 
 // ErrorGroupChange is what an admin_error_group tells of (notifications.error_group_change).
@@ -219,7 +240,9 @@ var Types = []Type{
 	TypeAccountMoved, TypeAdminAccountMoved,
 	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
 	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
-	TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit,
+	TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit, TypeScheduledStatusFailed,
+	TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
+	TypeAdminDomainListFailing,
 }
 
 // Valid reports whether t is a known notification type.
@@ -233,7 +256,9 @@ func (t Type) Valid() bool {
 		TypeAccountMoved, TypeAdminAccountMoved,
 		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
 		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
-		TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit:
+		TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit, TypeScheduledStatusFailed,
+		TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
+		TypeAdminDomainListFailing:
 		return true
 	}
 	return false
@@ -296,8 +321,11 @@ type Notification struct {
 	// AutoDeleteLimitNoticeID is the notice of the server maximum of the automatic deletion
 	// (status_auto_delete_limit_notices) of an auto_delete_limit, "" for the other types.
 	AutoDeleteLimitNoticeID string
-	DedupeKey               string
-	CreatedAt               time.Time
+	// DraftScheduleID is the schedule of a draft (draft_schedules) of a scheduled_status_failed,
+	// "" for the other types.
+	DraftScheduleID string
+	DedupeKey       string
+	CreatedAt       time.Time
 }
 
 var (
@@ -366,11 +394,17 @@ func (n Notification) Validate() error {
 	if n.Type == TypeStatus && (n.StatusID == "" || n.SourceAccountID == "") {
 		return errors.New("notification: a status names its post and its author")
 	}
+	if n.Type.Approval() && (n.StatusID == "" || n.SourceAccountID == "") {
+		return errors.New("notification: the notifications of the approvals of interactions name a status and an account")
+	}
 	if (n.Type == TypeAnnouncement) != (n.AnnouncementID != "") || (n.Type == TypeAnnouncement && n.SourceAccountID != "") {
 		return errors.New("notification: an announcement, and only it, names an announcement, and it has no source account")
 	}
 	if limit := n.Type == TypeAutoDeleteLimit; limit != (n.AutoDeleteLimitNoticeID != "") || (limit && n.SourceAccountID != "") {
 		return errors.New("notification: an auto_delete_limit, and only it, names a notice of the maximum, and it has no source account")
+	}
+	if failed := n.Type == TypeScheduledStatusFailed; failed != (n.DraftScheduleID != "") || (failed && n.SourceAccountID != "") {
+		return errors.New("notification: a scheduled_status_failed, and only it, names a draft schedule, and it has no source account")
 	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),
@@ -379,6 +413,7 @@ func (n Notification) Validate() error {
 		n.Type == TypeAdminAppeal && n.SourceAccountID != "",
 		n.Type == TypeAdminWebhookDisabled && n.SourceAccountID != "",
 		n.Type == TypeAdminHookFailing && n.SourceAccountID != "",
+		n.Type == TypeAdminDomainListFailing && n.SourceAccountID != "",
 		n.Type == TypeAdminCustomEmojiRequest && n.SourceAccountID != "",
 		n.Type == TypeCustomEmojiRequestDecided && n.SourceAccountID != "",
 		n.Type == TypeAdminSignUp && (n.SubjectUserID == "" || n.SourceAccountID != ""):
@@ -443,8 +478,27 @@ func AdminServiceClosureDueKey(announcementID string) string {
 // one per follow and type. Following again after unfollowing is a new follow and notifies again.
 func FollowKey(t Type, followID string) string { return string(t) + ":" + followID }
 
+// Approval reports whether t is a notification of the approval of an interaction: a request that
+// waits for the recipient's answer, or the answer to the recipient's (ADR-0155 §10).
+func (t Type) Approval() bool {
+	switch t {
+	case TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected:
+		return true
+	}
+	return false
+}
+
+// ApprovalKey is the dedupe key of a notification of type t of the interaction request requestID.
+func ApprovalKey(t Type, requestID string) string { return string(t) + ":" + requestID }
+
 // AutoDeleteLimitKey is the dedupe key of an auto_delete_limit notification: one per notice.
 func AutoDeleteLimitKey(noticeID string) string { return string(TypeAutoDeleteLimit) + ":" + noticeID }
+
+// ScheduledStatusFailedKey is the dedupe key of a scheduled_status_failed notification: one per
+// schedule.
+func ScheduledStatusFailedKey(scheduleID string) string {
+	return string(TypeScheduledStatusFailed) + ":" + scheduleID
+}
 
 // AnnouncementKey is the dedupe key of an announcement notification: one per announcement and
 // recipient.
@@ -506,14 +560,16 @@ const (
 	PermissionManageServiceClosure Permission = "manage_service_closure"
 	// PermissionManageErrors is the identity module's manage_errors.
 	PermissionManageErrors Permission = "manage_errors"
+	// PermissionManageDomains is the identity module's manage_domains.
+	PermissionManageDomains Permission = "manage_domains"
 )
 
 // ModeratorPermission returns the permission that the recipient of a notification of type t
 // needs, when they get it and while they read it, and whether t needs one: admin_report needs
 // manage_reports, admin_sign_up, admin_appeal, and admin_account_moved manage_accounts, admin_webhook_disabled
 // manage_webhooks, admin_custom_emoji_request manage_custom_emojis,
-// admin_service_closure_due manage_service_closure, and admin_error_group manage_errors. The
-// other types need none.
+// admin_service_closure_due manage_service_closure, admin_error_group manage_errors, and
+// admin_domain_list_failing manage_domains. The other types need none.
 func ModeratorPermission(t Type) (Permission, bool) {
 	switch t {
 	case TypeAdminReport, TypeAdminHookFailing, TypeAdminHookAppeal:
@@ -528,6 +584,8 @@ func ModeratorPermission(t Type) (Permission, bool) {
 		return PermissionManageServiceClosure, true
 	case TypeAdminErrorGroup:
 		return PermissionManageErrors, true
+	case TypeAdminDomainListFailing:
+		return PermissionManageDomains, true
 	}
 	return "", false
 }
@@ -567,6 +625,12 @@ func AdminWebhookDisabledKey(stateChangeID string) string {
 // day, however often its breaker opens.
 func AdminHookFailingKey(hook string, at time.Time) string {
 	return string(TypeAdminHookFailing) + ":" + hook + ":" + at.UTC().Format(time.DateOnly)
+}
+
+// AdminDomainListFailingKey is the dedupe key of an admin_domain_list_failing notification: one
+// per fetch that made the failures of the subscription reach the threshold.
+func AdminDomainListFailingKey(fetchID string) string {
+	return string(TypeAdminDomainListFailing) + ":" + fetchID
 }
 
 // AdminCustomEmojiRequestKey is the dedupe key of an admin_custom_emoji_request notification: one

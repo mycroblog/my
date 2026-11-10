@@ -592,6 +592,39 @@ describe("the notifications page", () => {
       );
     });
 
+    test("a scheduled post that could not be published says why and when it was to be, and leads to the drafts", async () => {
+      server.use(resumableSession());
+      markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+      server.use(
+        http.get(`${apiBase}/notifications`, () =>
+          HttpResponse.json({
+            items: [
+              {
+                id: "0192f0c4-7a8e-7000-8000-0000000000f6",
+                type: "scheduled_status_failed",
+                created_at: "2026-11-20T08:30:05Z",
+                scheduled_status_failure: {
+                  draft_id: "0192f0c4-7a8e-7000-8000-0000000000d1",
+                  reason: "quote_unavailable",
+                  publish_at: "2026-11-20T08:30:00Z",
+                },
+              },
+            ] satisfies Notification[],
+          }),
+        ),
+      );
+
+      await renderApp({ path: "/notifications" });
+
+      const feed = await screen.findByRole("feed", { name: "Notifications" });
+      const row = within(feed).getByRole("article", { name: /Your scheduled post could not be published/ });
+      expect(row).toHaveTextContent("The post it quotes is no longer available. It was scheduled for");
+      expect(row).toHaveTextContent("The draft is kept, so you can fix it and schedule it again.");
+      expect(within(row).getByText(/2026/, { selector: "time[datetime='2026-11-20T08:30:00Z']" })).toBeInTheDocument();
+      // The draft stays on the drafts page, with the failure.
+      expect(within(row).getByRole("link", { name: "Open your drafts" })).toHaveAttribute("href", "/drafts");
+    });
+
     test("lead nowhere to pay in the Tauri app", async () => {
       (globalThis as { isTauri?: unknown }).isTauri = true;
       server.use(resumableSession());
@@ -677,6 +710,35 @@ describe("the notifications page", () => {
     expect(
       within(within(feed).getByRole("article", { name: /A poll you took part in/ })).queryAllByRole("link"),
     ).toEqual([]);
+  });
+
+  test("shows only what a mention matched of the viewer's keyword filters, not its text", async () => {
+    server.use(resumableSession());
+    markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+    const items: Notification[] = [
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000d1",
+        type: "mention",
+        created_at: "2026-10-16T09:00:00Z",
+        account: otherAccountFixture,
+        status: {
+          ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000b4"),
+          content: "<p>the ending</p>",
+          filtered: [{ filter: { id: "f1", title: "Spoilers" }, keyword_matches: ["ending"] }],
+        },
+      },
+    ];
+    server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
+
+    await renderApp({ path: "/notifications" });
+
+    const feed = await screen.findByRole("feed", { name: "Notifications" });
+    const [mention] = within(feed).getAllByRole("article");
+    expect(within(mention as HTMLElement).getByRole("link", { name: "Filtered: ⁨Spoilers⁩" })).toHaveAttribute(
+      "href",
+      "/@bob/status/0192f0c4-7a8e-7000-8000-0000000000b4",
+    );
+    expect(within(feed).queryByText("the ending", { exact: false })).not.toBeInTheDocument();
   });
 
   test("says which emoji an account reacted with", async () => {
@@ -800,6 +862,24 @@ describe("the notifications page", () => {
       },
       // A severance that is no longer there says only that follows ended.
       { id: "0192f0c4-7a8e-7000-8000-0000000000d3", type: "relationships_severed", created_at: at },
+      // The allowlist cut every server off that it does not allow, then one whose allow was removed.
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000d4",
+        type: "relationships_severed",
+        created_at: at,
+        relationship_severance: { kind: "allowlist_cutoff", followers_lost: 3, following_lost: 2 },
+      },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000d5",
+        type: "relationships_severed",
+        created_at: at,
+        relationship_severance: {
+          kind: "allowlist_cutoff",
+          domain: "gone.example",
+          followers_lost: 0,
+          following_lost: 1,
+        },
+      },
     ];
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
 
@@ -821,7 +901,19 @@ describe("the notifications page", () => {
     });
     expect(within(account).getByRole("link", { name: "Bob" })).toHaveAttribute("href", "/@bob");
     expect(
-      within(feed).getByRole("article", { name: /A suspension by the moderators ended some of your follows/ }),
+      within(feed).getByRole("article", {
+        name: /A suspension or a change in the servers this server federates with ended some of your follows/,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(feed).getByRole("article", {
+        name: /This server now federates only with the servers it allows\. You lost 3 followers and 2 accounts you followed on the other servers\./,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(feed).getByRole("article", {
+        name: /This server no longer federates with gone\.example\. You lost 0 followers and 1 account you followed there\./,
+      }),
     ).toBeInTheDocument();
   });
 
@@ -1082,25 +1174,38 @@ describe("the notifications page", () => {
 
       list.hold();
       const button = screen.getByRole("button", { name: "Try again" });
+      let requests = list.state.requests;
       await user.click(button);
+      // Answer once the request is held, so the answer cannot overtake it.
+      await waitFor(() => {
+        expect(list.state.requests).toBeGreaterThan(requests);
+      });
       list.answer(false);
 
       const alert = await within(screen.getByRole("main")).findByRole("alert");
       expect(alert).toHaveTextContent("Could not load the notifications");
       expect(alert).not.toHaveTextContent("Service Unavailable");
+      // The alert and the button settle in separate renders: wait for the button, then assert.
+      await waitFor(() => {
+        expect(button).not.toHaveAttribute("data-pending");
+      });
       expect(button).toHaveFocus();
-      expect(button).not.toHaveAttribute("data-pending");
 
       // And again: the alert goes while the retry runs, and comes back with its result.
       list.hold();
+      requests = list.state.requests;
       await user.click(button);
       await waitFor(() => {
         expect(within(screen.getByRole("main")).queryByRole("alert")).not.toBeInTheDocument();
+        expect(list.state.requests).toBeGreaterThan(requests);
       });
       list.answer(false);
       expect(await within(screen.getByRole("main")).findByRole("alert")).toHaveTextContent(
         "Could not load the notifications",
       );
+      await waitFor(() => {
+        expect(button).not.toHaveAttribute("data-pending");
+      });
       expect(button).toHaveFocus();
     });
 

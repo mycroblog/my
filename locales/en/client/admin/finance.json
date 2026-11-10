@@ -439,6 +439,10 @@
     "defaultMessage": "An approximation from the budget notifications: totals based on estimates, without a breakdown by service.",
     "description": "Note under a provider on the costs screen when Google Cloud is imported from its budget notifications (billing_gcp_method = budget): the figures are approximate."
   },
+  "admin.finance.imports.method.billable_usage": {
+    "defaultMessage": "Usage charges only, by product. Plans, add-ons, taxes, and credits aren't imported: add them as costs yourself.",
+    "description": "Note under a provider on the costs screen when Cloudflare is imported from its billable usage (billing_sources = cloudflare): only usage charges by product, without plans, taxes, or credits."
+  },
   "admin.finance.imports.months": {
     "defaultMessage": "Billing months of {provider}",
     "description": "Accessible name of the list of a provider's imported billing months on the costs screen."
@@ -460,7 +464,7 @@
     "description": "Result of an import attempt that succeeded."
   },
   "admin.finance.imports.error.permission": {
-    "defaultMessage": "Failed: the credentials may not read the billing data. Grant the permission to the server's role or service account.",
+    "defaultMessage": "Failed: the credentials may not read the billing data. Grant the permission to the server's role, service account, or API token, and check the account in the deployment settings.",
     "description": "Result of an import attempt refused for lack of permission, with how to fix it."
   },
   "admin.finance.imports.error.not_enabled": {

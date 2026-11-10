@@ -19,7 +19,7 @@
 // they answer 202 Accepted, or the status of the step that refused the request. The outbox
 // (the Create activities of public and unlisted statuses), followers, and following
 // collections are paged (?page=true, then ?max_id=…&page=true); featured holds the pinned public
-// and unlisted statuses, and featured-tags is empty. Profile pages (/@alice) redirect
-// ActivityPub requests to the actor and pass every other request to the web client's HTML
-// handler (Options.HTML).
+// and unlisted statuses, and featured-tags the hashtags that the actor features. Profile pages
+// (/@alice) redirect ActivityPub requests to the actor and pass every other request to the web
+// client's HTML handler (Options.HTML).
 package activitypub

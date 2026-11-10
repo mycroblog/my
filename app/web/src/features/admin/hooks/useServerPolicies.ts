@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The server's policies (FR-001, FR-105, FR-202, FR-408, FR-409, FR-413, FR-718, FR-725, FR-903, ADR-0009, ADR-0057): who may sign
 // up, whether the server is a one-person server (FR-811, ADR-0152), who may create invites of their own and the caps of those invites (ADR-0106 §14, §15), the default language, the public timelines, whether images need a description, the federation (its direction,
-// ADR-0006, which asks before it narrows), who may read the
+// ADR-0006, which asks before it narrows) and its scope (ADR-0159 §2, §3, which asks before it limits it to the allowlist), who may read the
 // list of the domain actions, whether the landing page shows the server's numbers and who runs it,
 // what the server states to search engines and AI crawlers, which posts its search covers (ADR-0149 §5), voice chat (ADR-0100 §2, §9, §13: who may start a
 // room, whether visitors see a room's summary, and how many days the participants' records are kept), and the
@@ -19,6 +19,7 @@ import { useLocale, useT } from "../../../lib/i18n";
 import { singleUserRequiresOneAccountType } from "../../../lib/singleUser";
 import {
   cacheSavedSettings,
+  federationScopeImpactQueryOptions,
   type InstanceSettingKey,
   instanceSettingsQueryOptions,
   loginProvidersOnlyImpactQueryOptions,
@@ -43,6 +44,7 @@ const policyKeys = [
   "federated_timeline_visibility",
   "require_media_description",
   "federation_mode",
+  "federation_scope",
   "authorized_fetch",
   "remote_media_policy",
   "remote_media_cache_ttl_seconds",
@@ -133,6 +135,7 @@ const policyPages = {
   ],
   federation: [
     "federation_mode",
+    "federation_scope",
     "authorized_fetch",
     "remote_media_policy",
     "remote_media_cache_ttl_seconds",
@@ -346,6 +349,7 @@ export function useServerPolicies(page: PolicyPage) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isConfirmingLimit, setIsConfirmingLimit] = useState(false);
   const [isConfirmingRetention, setIsConfirmingRetention] = useState(false);
+  const [isConfirmingScope, setIsConfirmingScope] = useState(false);
 
   const savedValue = (key: PolicyKey) => saved.get(key)?.value ?? "";
   const valueOf = (key: PolicyKey) => drafts[key] ?? savedValue(key);
@@ -424,6 +428,10 @@ export function useServerPolicies(page: PolicyPage) {
   // from the server, which never refuses: the administrator decides.
   const limitTurnsOn = savedValue("login_providers_only") !== "true" && valueOf("login_providers_only") === "true";
   const impact = useQuery({ ...loginProvidersOnlyImpactQueryOptions(api), enabled: limitTurnsOn });
+  // Limiting the federation to the allowlist ends the follows with every other server for good (ADR-0159 §3); the
+  // count comes from the server, and the operator confirms it before the switch is sent.
+  const scopeNarrows = savedValue("federation_scope") !== "allowlist" && valueOf("federation_scope") === "allowlist";
+  const scopeImpact = useQuery({ ...federationScopeImpactQueryOptions(api), enabled: scopeNarrows });
   // Turning on or tightening the maximum of the automatic deletion notifies every account it newly binds.
   const tightening = page === "auto_delete" ? retentionTightening(savedValue, sentValue) : null;
 
@@ -466,6 +474,11 @@ export function useServerPolicies(page: PolicyPage) {
         setIsConfirmingLimit(true);
         return;
       }
+      if (scopeNarrows) {
+        void scopeImpact.refetch();
+        setIsConfirmingScope(true);
+        return;
+      }
       // Narrowing the federation mode stops what other servers receive and send; the operator confirms it first.
       if (narrowing !== null) {
         setIsConfirming(true);
@@ -494,6 +507,32 @@ export function useServerPolicies(page: PolicyPage) {
       /** Closes the confirmation without saving; the form keeps the drafts. */
       cancel: () => {
         setIsConfirmingLimit(false);
+      },
+    },
+    /**
+     * The confirmation of limiting the federation to the allowlist: whether it is open, and what the switch would end,
+     * which must have arrived before it can be confirmed.
+     */
+    scopeConfirmation: {
+      isOpen: isConfirmingScope && scopeNarrows,
+      impact: scopeImpact.data,
+      isFailed: scopeImpact.isError,
+      /** Counts again after a failure. */
+      retry: () => {
+        void scopeImpact.refetch();
+      },
+      /** Goes on to the confirmation of a narrowing of the federation mode, or saves. */
+      confirm: () => {
+        setIsConfirmingScope(false);
+        if (narrowing !== null) {
+          setIsConfirming(true);
+        } else if (!save.isPending) {
+          save.mutate(changes);
+        }
+      },
+      /** Closes the confirmation without saving; the form keeps the drafts. */
+      cancel: () => {
+        setIsConfirmingScope(false);
       },
     },
     /** The confirmation of a stricter maximum of the automatic deletion: what it will be, and whether it is open. */

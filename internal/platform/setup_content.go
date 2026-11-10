@@ -7,9 +7,14 @@ import (
 	"errors"
 	"time"
 
+	"github.com/mycroblog/my/internal/adapter/markdown"
+	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/domain/hook"
+	domainidentity "github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -20,18 +25,22 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 	interactions content.InteractionRepository, medias content.MediaRepository,
 ) {
 	content.RegisterProjectors(a.Projectors, statuses)
-	content.RegisterQuoteProjectors(a.Projectors, quotes)
+	content.RegisterApprovalProjectors(a.Projectors, quotes, a.IDs, a.Clock)
 	a.Content = content.NewService(content.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: statuses, Accounts: a.Accounts, Relationships: a.Graph,
-		Restrictions:            a.AccountPolicy.Content(),
-		Media:                   medias,
-		RemoteMentions:          remoteMentions{a}, // reads a.RemoteActors, built by setUpRemoteActors
-		Sanitizer:               newHTMLSanitizer(),
-		RemoteMedia:             remoteMediaRecorder{a}, // reads a.Media, built by setMedia
-		Quotes:                  quotes,
-		DefaultQuotePolicy:      a.defaultQuotePolicy,
-		MaxStatusLength:         a.Instance.MaxStatusLength,
-		RequireMediaDescription: a.Instance.RequireMediaDescription,
+		Restrictions:   a.AccountPolicy.Content(),
+		Media:          medias,
+		RemoteMentions: remoteMentions{a}, // reads a.RemoteActors, built by setUpRemoteActors
+		Sanitizer:      newHTMLSanitizer(),
+		RemoteMedia:    remoteMediaRecorder{a}, // reads a.Media, built by setMedia
+		Quotes:         quotes,
+		// Reads a.Interactions, built below.
+		ReconsiderRequests: func(ctx context.Context, statusID string) error {
+			return a.Interactions.ReconsiderRequests(ctx, statusID)
+		},
+		DefaultInteractionPolicy: a.defaultInteractionPolicy,
+		MaxStatusLength:          a.Instance.MaxStatusLength,
+		RequireMediaDescription:  a.Instance.RequireMediaDescription,
 		// A one-person server posts nothing new as local (ADR-0152 §5).
 		SingleUser:      a.Instance.SingleUser,
 		DefaultLanguage: a.defaultPostLanguage,
@@ -53,7 +62,15 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 			Reports: hookReports{a.Moderation}, InstanceActor: a.emojiImageOwner,
 		},
 		MediaReview: a.mediaReview(),
-		Clock:       a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
+		// Articles (ADR-0160): their Markdown, the author's images, which read a.Media, built by
+		// setMedia, and the instance settings of who writes them and how long they are.
+		ArticleRenderer: markdown.NewArticleRenderer(),
+		ArticleImage: func(ctx context.Context, accountID, mediaID string) (content.ArticleImageSource, bool, error) {
+			return a.Media.ArticleImage(ctx, accountID, mediaID)
+		},
+		ArticleLimits:    a.articleLimits,
+		MayWriteArticles: a.mayWriteArticles,
+		Clock:            a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
 	})
 	a.Hooks.RegisterOverrideEffect(hook.MediaCheck, a.Content.UndoMediaReview)
 	// After RegisterProjectors, which creates the counters that these projectors update.
@@ -81,26 +98,81 @@ func (a *App) setUpStatusReader(statuses content.Repository, interactions conten
 	})
 }
 
-// setUpPreviews builds the link previews of profiles and statuses. They read statuses and their
-// images, so they come after the media use cases.
+// setUpPreviews builds the link previews of profiles and statuses and the Atom feeds (FR-213).
+// They read statuses and their images, so they come after the media use cases, and the feeds
+// list their posts from the timelines.
 func (a *App) setUpPreviews(statuses content.Repository) {
 	a.Previews = content.NewPreviews(content.PreviewDeps{
 		Repository: statuses, Accounts: a.Accounts, Restrictions: a.AccountPolicy.Content(), Media: a.Media,
-		DefaultLanguage: a.defaultPostLanguage,
+		DefaultLanguage: a.defaultPostLanguage, Moved: a.moved,
+	})
+	page := func(p timeline.Page, err error) ([]string, string, error) {
+		if err != nil {
+			return nil, "", err
+		}
+		ids := make([]string, 0, len(p.Entries))
+		for _, e := range p.Entries {
+			ids = append(ids, e.StatusID)
+		}
+		return ids, p.Next, nil
+	}
+	a.Feeds = content.NewFeeds(content.FeedDeps{
+		Previews: a.Previews, Repository: statuses,
+		ProfilePosts: func(ctx context.Context, accountID, before string, limit int) ([]string, string, error) {
+			return page(a.Timeline.ProfileFeed(ctx, accountID, timeline.Query{Before: before, Limit: limit}))
+		},
+		TagPosts: func(ctx context.Context, tagID, before string, limit int) ([]string, string, error) {
+			return page(a.Timeline.HashtagFeed(ctx, tagID, timeline.Query{Before: before, Limit: limit}))
+		},
 	})
 }
 
-// defaultQuotePolicy returns who may quote the new statuses of a user (ADR-0069 §1): the
-// default of their preferences.
-func (a *App) defaultQuotePolicy(ctx context.Context, userID string) (content.QuotePolicy, error) {
+// moved reports whether an account moved to another one (ADR-0089).
+func (a *App) moved(ctx context.Context, accountID string) (bool, error) {
+	_, err := a.Accounts.MoveState(ctx, accountID)
+	if errors.Is(err, account.ErrNotFound) {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// articleLimits returns the instance settings that bound an article (ADR-0160 §5).
+func (a *App) articleLimits(ctx context.Context) (content.ArticleLimits, error) {
+	s, err := a.Instance.Settings(ctx)
+	if err != nil {
+		return content.ArticleLimits{}, err
+	}
+	return content.ArticleLimits{MaxBytes: s.MaxArticleBytes(), MaxImages: s.MaxArticleImages()}, nil
+}
+
+// mayWriteArticles reports whether a local user may write new articles (ADR-0160 §3): everyone
+// while article_authoring is everyone, the holders of create_articles otherwise.
+func (a *App) mayWriteArticles(ctx context.Context, userID string) (bool, error) {
+	s, err := a.Instance.Settings(ctx)
+	if err != nil {
+		return false, err
+	}
+	if s.ArticleAuthoring() == instance.ArticleAuthoringEveryone {
+		return true, nil
+	}
+	return a.Identity.HasPermission(ctx, userID, domainidentity.PermCreateArticles)
+}
+
+// defaultInteractionPolicy returns who may reply to, boost, and quote the new statuses of a user
+// (ADR-0155 §5): the defaults of their preferences.
+func (a *App) defaultInteractionPolicy(ctx context.Context, userID string) (content.InteractionSettings, error) {
 	p, err := a.Identity.Preferences(ctx, userID)
 	if errors.Is(err, identity.ErrNotFound) {
-		return content.QuotePolicyPublic, nil
+		return content.DefaultInteractionSettings, nil
 	}
 	if err != nil {
-		return "", err
+		return content.InteractionSettings{}, err
 	}
-	return content.QuotePolicy(p.DefaultQuotePolicy), nil
+	setting := func(s domainidentity.InteractionSetting) content.InteractionSetting {
+		return content.InteractionSetting{Automatic: content.InteractionAudience(s.Automatic), Manual: content.InteractionAudience(s.Manual)}
+	}
+	d := p.DefaultInteractionPolicy
+	return content.InteractionSettings{Reply: setting(d.Reply), Announce: setting(d.Announce), Quote: setting(d.Quote)}, nil
 }
 
 // defaultPostLanguage returns the default post language of a user's preferences, or "" for a

@@ -4,6 +4,13 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
+import {
+  type InteractionKind,
+  type InteractionPolicy,
+  type InteractionPolicyChange,
+  type InteractionRule,
+  withChange,
+} from "../../compose";
 import { useAppLocale } from "../../../lib/locale";
 import { saveStateOf } from "./saveState";
 import { deviceTimeZone } from "./timeZones";
@@ -21,7 +28,6 @@ export const followBrowser = "browser";
 /** The preferences that the settings page changes, by their API name. */
 type PreferenceKey =
   | "default_visibility"
-  | "default_quote_policy"
   | "default_post_language"
   | "require_media_description"
   | "timeline_languages"
@@ -40,13 +46,23 @@ export type PreferenceControl<T> = {
   saveState: SaveState;
 };
 
+/** The default interaction policy as its choices show it: each kind's rule is saved as soon as it changes. */
+type InteractionPolicyControl = {
+  value: InteractionPolicy;
+  onChange: (kind: InteractionKind, rule: InteractionRule) => void;
+  isPending: boolean;
+  /** Why the last change was not saved, localized, under the kind it changed. */
+  errors: Partial<Record<InteractionKind, string>>;
+  saveState: SaveState;
+};
+
 export type PreferencesControls = {
   /** The chosen language, or `followBrowser`. */
   locale: PreferenceControl<string>;
   /** The chosen time zone, or `followBrowser`. */
   timeZone: PreferenceControl<string>;
   defaultVisibility: PreferenceControl<Preferences["default_visibility"]>;
-  defaultQuotePolicy: PreferenceControl<Preferences["default_quote_policy"]>;
+  defaultInteractionPolicy: InteractionPolicyControl;
   defaultPostLanguage: PreferenceControl<string>;
   requireMediaDescription: PreferenceControl<boolean>;
   timelineLanguages: PreferenceControl<string[]>;
@@ -81,7 +97,7 @@ export function usePreferences(): PreferencesControls {
       detect: () => ({ time_zone: deviceTimeZone() }),
     }),
     defaultVisibility: usePreferenceControl("default_visibility", data.default_visibility),
-    defaultQuotePolicy: usePreferenceControl("default_quote_policy", data.default_quote_policy),
+    defaultInteractionPolicy: useDefaultInteractionPolicyControl(data.default_interaction_policy),
     defaultPostLanguage: usePreferenceControl("default_post_language", data.default_post_language),
     requireMediaDescription: usePreferenceControl("require_media_description", data.require_media_description),
     timelineLanguages: usePreferenceControl("timeline_languages", data.timeline_languages),
@@ -123,6 +139,34 @@ function usePreferenceControl<K extends PreferenceKey>(
     error: mutation.isError ? errorMessage(mutation.error) : undefined,
     saveState: saveStateOf(mutation),
   };
+}
+
+/**
+ * Who may reply to, boost, and quote a new post by default (ADR-0155 §5): each change sets the rule of one kind of the
+ * default interaction policy, and the server keeps the others. The value is the pending rule over the saved policy
+ * (S8).
+ */
+function useDefaultInteractionPolicyControl(saved: InteractionPolicy): InteractionPolicyControl {
+  const mutation = useSaveChange();
+  const pending = mutation.isPending ? mutation.variables.default_interaction_policy : undefined;
+  const changed = mutation.variables?.default_interaction_policy;
+  const failedKind = mutation.isError && changed !== undefined ? interactionKindOf(changed) : undefined;
+  return {
+    value: pending === undefined ? saved : withChange(saved, pending),
+    onChange: (kind, rule) => {
+      mutation.mutate({ default_interaction_policy: { [kind]: rule } });
+    },
+    isPending: mutation.isPending,
+    errors: failedKind === undefined ? {} : { [failedKind]: errorMessage(mutation.error) },
+    saveState: saveStateOf(mutation),
+  };
+}
+
+/** The kind that a change of one rule sets. */
+function interactionKindOf(change: InteractionPolicyChange): InteractionKind | undefined {
+  if (change.reply !== undefined) return "reply";
+  if (change.announce !== undefined) return "announce";
+  return change.quote === undefined ? undefined : "quote";
 }
 
 /**

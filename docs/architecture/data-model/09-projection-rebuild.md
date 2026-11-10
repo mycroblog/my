@@ -16,17 +16,18 @@
 | `login_provider_heads` / `user_external_identities` | `login_provider_revisions`・`login_provider_state_changes`・`login_provider_secrets`、`external_identity_links`・`external_identity_unlinks` | 同期 |
 | `account_handles` / `remote_account_heads` / `account_profile_heads` | `local_accounts` と `remote_account_handle_verifications`、`remote_account_snapshots` と取得の結果、`account_profile_revisions` | 同期 |
 | `account_search_terms` | `account_handles`・`account_profile_heads`・`account_lifecycle_states` と `moderation` の凍結（`account_restrictions`） | 同期（再構築は Go の `account.SearchTermProjector.Rebuild`。`moderation` の後に走る） |
-| `status_heads` / `status_mention_index` / `status_reply_links` | `status_revisions` と子テーブル、`statuses`、`status_deletions` | 同期 |
+| `status_heads` / `status_mention_index` / `status_reply_links` | `status_revisions` と子テーブル、`statuses`、`status_deletions`、`interaction_requests`・`interaction_request_events`（保留の返信） | 同期 |
 | `status_link_cards` | `status_revisions` の本文・ソース・添付・投票、`status_deletions` | 同期（URL は Go の `content.LinkCardURL` が選ぶので、`my projection` の対象ではない） |
 | `custom_emoji_pending_requests` | `custom_emoji_requests`, `custom_emoji_request_outcomes` | 同期 |
 | `status_reaction_counts` | `reactions`, `status_deletions` | 同期 |
-| `status_quote_states` | `status_quotes`, `status_quote_events` | 同期（再構築は Go の `content.RebuildQuoteStates`） |
+| `interaction_request_states` | `interaction_requests`, `interaction_request_events` | 同期（再構築は Go の `content.RebuildInteractionStates`） |
 | `follow_edges` / `block_edges` / `boost_edges` | `follows` と承認・拒否・終了、`blocks` と取り消し、`boosts` と取り消し | 同期 |
 | `feed_*` / `tag_usage` | `content` と `graph` の `ReplayEvents` が現在の状態から再生するイベント（下記） | 同期 |
 | `feed_author_restrictions` / `feed_domain_restrictions` | `moderation.ReplayEvents` と `account.ReplayDeletions` が再生するイベント（下記） | 同期 |
 | `poll_tallies` | `poll_tally_observations`, `poll_tally_observation_counts` | 同期 |
 | `notification_exclusions` / `notification_domain_exclusions` | `blocks` と取り消し（`block_edges`）、`mutes`、`account_domain_mutes` | 同期 |
 | `notification_deleted_statuses` | `status_deletions` | 同期 |
+| `notification_requests` | `notification_filterings`、`notification_accepted_sources`、`notification_request_dismissals` | 同期 |
 | `instance_settings` / `instance_texts` / `instance_rule_heads` / `instance_theme` / `instance_brands` / `announcement_heads` / `service_closure_heads` | `instance_setting_revisions`、`instance_text_revisions`、`instance_rules` と `instance_rule_revisions`・`instance_rule_retirements`、`instance_theme_revisions`、`instance_brand_revisions`、`announcement_revisions`・`announcement_state_changes`、`service_closure_events`・`service_closure_schedules` | 同期 |
 | `webhook_endpoint_heads` / `webhook_endpoint_failures` | `webhook_endpoint_revisions`・`webhook_endpoint_state_changes`・`webhook_secrets`、`webhook_delivery_attempts` | 同期 |
 | `relay_states` | `relay_events` | 同期 |
@@ -34,12 +35,13 @@
 | `cost_item_heads` | `cost_items`, `cost_item_label_revisions`, `cost_item_end_changes`, `cost_item_cancellations` | 同期 |
 | `supporter_plan_heads` / `supporter_plan_price_heads` / `supporter_subscription_heads` / `supporter_live_subscriptions` / `supporter_subscription_deadlines` | `supporter_plan_revisions`・`supporter_plan_retirements`、`supporter_plan_prices`・`supporter_plan_price_archivals`、`supporter_subscriptions`・`supporter_subscription_transitions`・`supporter_grace_periods` | 同期 |
 | `voice_room_heads` / `voice_room_participants` | `voice_rooms`・`voice_room_revisions`・`voice_room_host_changes`・`voice_room_endings`、`voice_room_participations`・`voice_room_participation_ends`・`voice_room_role_changes`・`voice_room_hand_raises`・`voice_room_cohost_changes` | 同期（`voice_room_host_graces` は現在値で、再構築の対象でない） |
+| `gathering_attendees` / `gathering_heads` / `gathering_coorganizers` | `gathering_rsvps`・`gathering_rsvp_approvals`、`gatherings`・`gathering_revisions`・`gathering_schedule_confirmations`・`gathering_cancellations`、`gathering_coorganizer_changes` | 同期（`gathering_heads` は `gathering_attendees` の「行く」を数えるので、出欠を先に作る） |
 | `error_group_states` | `error_groups`・`error_group_events` | 同期（`error_group_counts`・`error_group_samples` は現在値で、再構築の対象でない） |
 | カウンタ類 | 元のイベントの件数 | 同期（加算）＋定期検証 |
 
 - CLI: `my projection list` は投影と所有モジュールと表を示します。投影の名前は所有モジュールの再構築関数の単位です
   （`instance`、`account`、`identity`、`moderation`、`graph`、`content`、`status_sensitivity_overrides`、`boost_edges`、`feeds`、`feed_restrictions`、
-  `notification_exclusions`、`notification_deleted_statuses`、`relay_states`、`webhook`、`finance`、`supporters`、`voice`、`diagnostics`）。
+  `notification_exclusions`、`notification_requests`、`notification_deleted_statuses`、`relay_states`、`webhook`、`finance`、`supporters`、`voice`、`gathering`、`diagnostics`）。
   `<name>` には投影の名前か、その表の名前を渡します。省略するとすべての投影です。
   - `my projection verify [<name>]` は、1 つのトランザクションの中で現在の表を読み、所有モジュールの再構築関数を実行し、結果の表を読んでロールバックします。
     差分の行（現在の表にあって作り直した結果にない行、その逆）を表示し、差分があれば 1 で終了します。何も変えません。

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -145,6 +146,11 @@ func registrationRepoApplications(t *testing.T, r *identityRepo) {
 	if _, err := r.h.Identity.FindRegistrationState(ctx, r.ids.NewID()); !errors.Is(err, appidentity.ErrNotFound) {
 		t.Errorf("FindRegistrationState(unknown) = %v, want ErrNotFound", err)
 	}
+	want, _ := r.h.Identity.FindRegistrationState(ctx, alice)
+	if got, err := r.h.Identity.FindRegistrationStates(ctx, []string{alice, r.ids.NewID()}); err != nil || len(got) != 1 || got[alice].State != want.State ||
+		!got[alice].Since.Equal(want.Since) || got[alice].UserID != alice {
+		t.Errorf("FindRegistrationStates = %+v, %v; want %+v alone, as FindRegistrationState", got, err, want)
+	}
 }
 
 func registrationRepoLists(t *testing.T, r *identityRepo) {
@@ -216,6 +222,9 @@ func registrationRepoEmails(t *testing.T, r *identityRepo) {
 	}
 	if _, _, err := r.h.Identity.FindPrimaryEmail(ctx, bob); !errors.Is(err, appidentity.ErrNotFound) {
 		t.Errorf("FindPrimaryEmail(without one) = %v, want ErrNotFound", err)
+	}
+	if got, err := r.h.Identity.PrimaryEmailsVerified(ctx, []string{alice, bob}); err != nil || !maps.Equal(got, map[string]bool{alice: true}) {
+		t.Errorf("PrimaryEmailsVerified = %v, %v; want alice verified, bob without one", got, err)
 	}
 }
 

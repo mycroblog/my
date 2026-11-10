@@ -37,14 +37,16 @@ const (
 	OutboxUserNamespace = "federation.outbox_fetch_user"
 )
 
-// OutboxAccounts is the part of the account module's public API that fetching outboxes and
-// featured collections reads: the account and the collections of its newest document.
-// *appaccount.Service implements it.
+// OutboxAccounts is the part of the account module's public API that fetching outboxes,
+// featured collections, and featuredTags collections reads: the account and the collections of
+// its newest document. *appaccount.Service implements it.
 type OutboxAccounts interface {
 	FindByID(ctx context.Context, id string) (appaccount.Actor, error)
-	// RemoteOutboxURL and RemoteFeaturedURL fail with appaccount.ErrNotFound for a local account.
+	// RemoteOutboxURL, RemoteFeaturedURL, and RemoteFeaturedTagsURL fail with
+	// appaccount.ErrNotFound for a local account.
 	RemoteOutboxURL(ctx context.Context, accountID string) (string, error)
 	RemoteFeaturedURL(ctx context.Context, accountID string) (string, error)
+	RemoteFeaturedTagsURL(ctx context.Context, accountID string) (string, error)
 }
 
 // fetchOutboxPayload is the payload of JobFetchOutbox.
@@ -217,8 +219,8 @@ func (h *StatusHandlers) fetchOutbox(ctx context.Context, accountID string) (int
 	return stored, nil
 }
 
-// collectionPage returns the page of a collection of author (its outbox, its featured
-// collection) to read: the collection itself when it lists items, or else its first page,
+// collectionPage returns the page of a collection of author (its outbox, its featured or
+// featuredTags collection) to read: the collection itself when it lists items, or else its first page,
 // embedded or fetched. Only a page of the author's origin is read; it returns nil when there is
 // none.
 func (h *StatusHandlers) collectionPage(ctx context.Context, b *fetchBudget, author, collection federation.IRI) (*federation.Collection, error) {
@@ -230,7 +232,7 @@ func (h *StatusHandlers) collectionPage(ctx context.Context, b *fetchBudget, aut
 	switch {
 	case c == nil:
 		return nil, fmt.Errorf("%w: %s is not a collection", ErrNotTaken, collection)
-	case c.Page || len(c.Items) > 0:
+	case c.Page || len(c.Items) > 0 || len(c.Hashtags) > 0:
 		return c, nil
 	}
 	if doc := c.First.Trusted(); doc != nil {

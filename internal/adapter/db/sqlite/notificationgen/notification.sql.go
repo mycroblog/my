@@ -60,6 +60,11 @@ WHERE n.recipient_account_id = ?1
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR instr(CAST(?5 AS TEXT), ',' || n.announcement_id || ',') > 0)
 `
 
@@ -157,6 +162,44 @@ func (q *Queries) DeleteNotificationExclusion(ctx context.Context, arg DeleteNot
 	return err
 }
 
+const deleteNotificationExclusionsOf = `-- name: DeleteNotificationExclusionsOf :exec
+DELETE FROM notification_exclusions WHERE reason = CAST(?1 AS TEXT) AND (viewer_account_id, target_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?2 AS TEXT)))
+`
+
+type DeleteNotificationExclusionsOfParams struct {
+	Reason string
+	Pairs  string
+}
+
+func (q *Queries) DeleteNotificationExclusionsOf(ctx context.Context, arg DeleteNotificationExclusionsOfParams) error {
+	_, err := q.db.ExecContext(ctx, deleteNotificationExclusionsOf, arg.Reason, arg.Pairs)
+	return err
+}
+
+const dismissNotificationByDedupeKey = `-- name: DismissNotificationByDedupeKey :execrows
+INSERT INTO notification_dismissals (notification_id, dismissed_at)
+SELECT n.id, ?1 FROM notifications n
+WHERE true AND n.recipient_account_id = ?2 AND n.dedupe_key = ?3
+ON CONFLICT (notification_id) DO NOTHING
+`
+
+type DismissNotificationByDedupeKeyParams struct {
+	DismissedAt        int64
+	RecipientAccountID string
+	DedupeKey          string
+}
+
+// DismissNotificationByDedupeKey dismisses the notification of a recipient with a dedupe key, if
+// there is one that is not dismissed yet (a request of an interaction that was withdrawn).
+func (q *Queries) DismissNotificationByDedupeKey(ctx context.Context, arg DismissNotificationByDedupeKeyParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, dismissNotificationByDedupeKey, arg.DismissedAt, arg.RecipientAccountID, arg.DedupeKey)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const domainExcluded = `-- name: DomainExcluded :one
 SELECT EXISTS (SELECT 1 FROM notification_domain_exclusions dx
   WHERE dx.viewer_account_id = ?1
@@ -177,6 +220,42 @@ func (q *Queries) DomainExcluded(ctx context.Context, arg DomainExcludedParams) 
 	return exists, err
 }
 
+const domainsExcludedAmong = `-- name: DomainsExcludedAmong :many
+SELECT DISTINCT dx.viewer_account_id FROM notification_domain_exclusions dx
+WHERE dx.viewer_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+  AND (dx.domain = CAST(?2 AS TEXT) OR substr(CAST(?2 AS TEXT), -(length(dx.domain) + 1)) = '.' || dx.domain)
+`
+
+type DomainsExcludedAmongParams struct {
+	ViewerAccountIds string
+	Domain           string
+}
+
+// DomainsExcludedAmong returns the viewers among a JSON array that exclude the domain or one of
+// its parents, as DomainExcluded checks one.
+func (q *Queries) DomainsExcludedAmong(ctx context.Context, arg DomainsExcludedAmongParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, domainsExcludedAmong, arg.ViewerAccountIds, arg.Domain)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var viewer_account_id string
+		if err := rows.Scan(&viewer_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, viewer_account_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getErrorGroupNotices = `-- name: GetErrorGroupNotices :one
 SELECT CAST(COALESCE((SELECT notices FROM error_group_notice_hours WHERE hour_start = ?), 0) AS INTEGER)
 `
@@ -189,7 +268,7 @@ func (q *Queries) GetErrorGroupNotices(ctx context.Context, hourStart int64) (in
 }
 
 const getNotification = `-- name: GetNotification :one
-SELECT id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at
+SELECT id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at
 FROM notifications WHERE id = ?
 `
 
@@ -223,6 +302,7 @@ func (q *Queries) GetNotification(ctx context.Context, id string) (Notification,
 		&i.AnnouncementID,
 		&i.HookAppealID,
 		&i.AutoDeleteLimitNoticeID,
+		&i.DraftScheduleID,
 		&i.DedupeKey,
 		&i.CreatedAt,
 	)
@@ -245,8 +325,8 @@ func (q *Queries) GetNotificationReadMarker(ctx context.Context, accountID strin
 const insertNotification = `-- name: InsertNotification :execrows
 
 
-INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, dedupe_key, created_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
 `
 
@@ -277,6 +357,7 @@ type InsertNotificationParams struct {
 	AnnouncementID          sql.NullString
 	HookAppealID            sql.NullString
 	AutoDeleteLimitNoticeID sql.NullString
+	DraftScheduleID         sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
 }
@@ -313,6 +394,7 @@ func (q *Queries) InsertNotification(ctx context.Context, arg InsertNotification
 		arg.AnnouncementID,
 		arg.HookAppealID,
 		arg.AutoDeleteLimitNoticeID,
+		arg.DraftScheduleID,
 		arg.DedupeKey,
 		arg.CreatedAt,
 	)
@@ -332,6 +414,18 @@ ON CONFLICT (status_id) DO NOTHING
 // InsertNotificationDeletedStatus inserts nothing when the status is already recorded.
 func (q *Queries) InsertNotificationDeletedStatus(ctx context.Context, statusID string) error {
 	_, err := q.db.ExecContext(ctx, insertNotificationDeletedStatus, statusID)
+	return err
+}
+
+const insertNotificationDeletedStatuses = `-- name: InsertNotificationDeletedStatuses :exec
+INSERT INTO notification_deleted_statuses (status_id) SELECT value FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (status_id) DO NOTHING
+`
+
+// InsertNotificationDeletedStatuses is InsertNotificationDeletedStatus of many statuses, a JSON
+// array; WHERE true keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertNotificationDeletedStatuses(ctx context.Context, statusIds string) error {
+	_, err := q.db.ExecContext(ctx, insertNotificationDeletedStatuses, statusIds)
 	return err
 }
 
@@ -371,6 +465,189 @@ func (q *Queries) InsertNotificationDomainExclusion(ctx context.Context, arg Ins
 	return err
 }
 
+const insertNotificationsFor = `-- name: InsertNotificationsFor :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at)
+SELECT value ->> '$.id', value ->> '$.recipient', CAST(?1 AS TEXT),
+  CAST(?2 AS TEXT), CAST(?3 AS TEXT), CAST(?4 AS TEXT), CAST(?5 AS TEXT), CAST(?6 AS TEXT), CAST(?7 AS TEXT), CAST(?8 AS TEXT), CAST(?9 AS TEXT), CAST(?10 AS TEXT), CAST(?11 AS TEXT), CAST(?12 AS TEXT), CAST(?13 AS TEXT), CAST(?14 AS TEXT), CAST(?15 AS TEXT), CAST(?16 AS TEXT), CAST(?17 AS TEXT), CAST(?18 AS TEXT), CAST(?19 AS TEXT), CAST(?20 AS TEXT), CAST(?21 AS INTEGER), CAST(?22 AS TEXT), CAST(?23 AS TEXT), CAST(?24 AS TEXT), CAST(?25 AS TEXT),
+  CAST(?26 AS TEXT), CAST(?27 AS INTEGER)
+FROM json_each(CAST(?28 AS TEXT)) WHERE true
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING recipient_account_id
+`
+
+type InsertNotificationsForParams struct {
+	Type                    string
+	SourceAccountID         sql.NullString
+	SourceDomain            sql.NullString
+	StatusID                sql.NullString
+	ModerationActionID      sql.NullString
+	ReportID                sql.NullString
+	SubjectUserID           sql.NullString
+	SeveranceID             sql.NullString
+	AppealID                sql.NullString
+	CustomEmojiRequestID    sql.NullString
+	SupporterSubscriptionID sql.NullString
+	ReactionEmoji           sql.NullString
+	ReactionCustomEmojiID   sql.NullString
+	AccountMoveID           sql.NullString
+	AccountMoveOutcome      sql.NullString
+	ServiceClosureEventID   sql.NullString
+	ServiceClosureChange    sql.NullString
+	VoiceRoomID             sql.NullString
+	ErrorGroupChange        sql.NullString
+	ErrorGroupID            sql.NullString
+	ErrorGroupHour          sql.NullInt64
+	AnnouncementID          sql.NullString
+	HookAppealID            sql.NullString
+	AutoDeleteLimitNoticeID sql.NullString
+	DraftScheduleID         sql.NullString
+	DedupeKey               string
+	CreatedAt               int64
+	Recipients              string
+}
+
+// InsertNotificationsFor inserts one notification for each element of a JSON array of
+// {"id", "recipient"}, with every other column the same, as InsertNotification inserts one, and
+// returns the recipients it inserted one for. WHERE true keeps ON CONFLICT from reading as a join
+// constraint.
+func (q *Queries) InsertNotificationsFor(ctx context.Context, arg InsertNotificationsForParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, insertNotificationsFor,
+		arg.Type,
+		arg.SourceAccountID,
+		arg.SourceDomain,
+		arg.StatusID,
+		arg.ModerationActionID,
+		arg.ReportID,
+		arg.SubjectUserID,
+		arg.SeveranceID,
+		arg.AppealID,
+		arg.CustomEmojiRequestID,
+		arg.SupporterSubscriptionID,
+		arg.ReactionEmoji,
+		arg.ReactionCustomEmojiID,
+		arg.AccountMoveID,
+		arg.AccountMoveOutcome,
+		arg.ServiceClosureEventID,
+		arg.ServiceClosureChange,
+		arg.VoiceRoomID,
+		arg.ErrorGroupChange,
+		arg.ErrorGroupID,
+		arg.ErrorGroupHour,
+		arg.AnnouncementID,
+		arg.HookAppealID,
+		arg.AutoDeleteLimitNoticeID,
+		arg.DraftScheduleID,
+		arg.DedupeKey,
+		arg.CreatedAt,
+		arg.Recipients,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var recipient_account_id string
+		if err := rows.Scan(&recipient_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, recipient_account_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const insertNotificationsForEach = `-- name: InsertNotificationsForEach :many
+INSERT INTO notifications (id, recipient_account_id, type, source_account_id, source_domain, status_id, moderation_action_id, report_id, subject_user_id, severance_id, appeal_id, custom_emoji_request_id, supporter_subscription_id, reaction_emoji, reaction_custom_emoji_id, account_move_id, account_move_outcome, service_closure_event_id, service_closure_change, voice_room_id, error_group_change, error_group_id, error_group_hour, announcement_id, hook_appeal_id, auto_delete_limit_notice_id, draft_schedule_id, dedupe_key, created_at)
+SELECT value ->> '$.id', value ->> '$.recipient', CAST(?1 AS TEXT),
+  NULLIF(value ->> '$.source_account_id', ''), NULLIF(value ->> '$.source_domain', ''), CAST(?2 AS TEXT), CAST(?3 AS TEXT), CAST(?4 AS TEXT), CAST(?5 AS TEXT), NULLIF(value ->> '$.severance_id', ''), CAST(?6 AS TEXT), CAST(?7 AS TEXT), CAST(?8 AS TEXT), CAST(?9 AS TEXT), CAST(?10 AS TEXT), CAST(?11 AS TEXT), CAST(?12 AS TEXT), CAST(?13 AS TEXT), CAST(?14 AS TEXT), CAST(?15 AS TEXT), CAST(?16 AS TEXT), CAST(?17 AS TEXT), CAST(?18 AS INTEGER), CAST(?19 AS TEXT), CAST(?20 AS TEXT), CAST(?21 AS TEXT), CAST(?22 AS TEXT),
+  value ->> '$.dedupe_key', value ->> '$.created_at'
+FROM json_each(CAST(?23 AS TEXT)) WHERE true
+ON CONFLICT (recipient_account_id, dedupe_key) DO NOTHING
+RETURNING id
+`
+
+type InsertNotificationsForEachParams struct {
+	Type                    string
+	StatusID                sql.NullString
+	ModerationActionID      sql.NullString
+	ReportID                sql.NullString
+	SubjectUserID           sql.NullString
+	AppealID                sql.NullString
+	CustomEmojiRequestID    sql.NullString
+	SupporterSubscriptionID sql.NullString
+	ReactionEmoji           sql.NullString
+	ReactionCustomEmojiID   sql.NullString
+	AccountMoveID           sql.NullString
+	AccountMoveOutcome      sql.NullString
+	ServiceClosureEventID   sql.NullString
+	ServiceClosureChange    sql.NullString
+	VoiceRoomID             sql.NullString
+	ErrorGroupChange        sql.NullString
+	ErrorGroupID            sql.NullString
+	ErrorGroupHour          sql.NullInt64
+	AnnouncementID          sql.NullString
+	HookAppealID            sql.NullString
+	AutoDeleteLimitNoticeID sql.NullString
+	DraftScheduleID         sql.NullString
+	Recipients              string
+}
+
+// InsertNotificationsForEach is InsertNotificationsFor whose rows differ by their source, its
+// domain, severance, dedupe key, and time too, an empty source, domain, or severance standing
+// for none. It returns the IDs it inserted.
+func (q *Queries) InsertNotificationsForEach(ctx context.Context, arg InsertNotificationsForEachParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, insertNotificationsForEach,
+		arg.Type,
+		arg.StatusID,
+		arg.ModerationActionID,
+		arg.ReportID,
+		arg.SubjectUserID,
+		arg.AppealID,
+		arg.CustomEmojiRequestID,
+		arg.SupporterSubscriptionID,
+		arg.ReactionEmoji,
+		arg.ReactionCustomEmojiID,
+		arg.AccountMoveID,
+		arg.AccountMoveOutcome,
+		arg.ServiceClosureEventID,
+		arg.ServiceClosureChange,
+		arg.VoiceRoomID,
+		arg.ErrorGroupChange,
+		arg.ErrorGroupID,
+		arg.ErrorGroupHour,
+		arg.AnnouncementID,
+		arg.HookAppealID,
+		arg.AutoDeleteLimitNoticeID,
+		arg.DraftScheduleID,
+		arg.Recipients,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listNotificationSettings = `-- name: ListNotificationSettings :many
 SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
 WHERE account_id = ? ORDER BY notification_group, channel
@@ -406,9 +683,43 @@ func (q *Queries) ListNotificationSettings(ctx context.Context, accountID string
 	return items, nil
 }
 
+const listNotificationSettingsOf = `-- name: ListNotificationSettingsOf :many
+SELECT account_id, notification_group, channel, enabled, updated_at FROM notification_settings
+WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY account_id, notification_group, channel
+`
+
+func (q *Queries) ListNotificationSettingsOf(ctx context.Context, accountIds string) ([]NotificationSetting, error) {
+	rows, err := q.db.QueryContext(ctx, listNotificationSettingsOf, accountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []NotificationSetting{}
+	for rows.Next() {
+		var i NotificationSetting
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.NotificationGroup,
+			&i.Channel,
+			&i.Enabled,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listNotifications = `-- name: ListNotifications :many
 SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
-  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.dedupe_key, n.created_at
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at
 FROM notifications n
 WHERE n.recipient_account_id = ?1
   AND (CAST(?2 AS TEXT) = '' OR n.id < CAST(?2 AS TEXT))
@@ -422,6 +733,11 @@ WHERE n.recipient_account_id = ?1
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR instr(CAST(?6 AS TEXT), ',' || n.announcement_id || ',') > 0)
 ORDER BY n.id DESC
 LIMIT ?7
@@ -487,6 +803,7 @@ func (q *Queries) ListNotifications(ctx context.Context, arg ListNotificationsPa
 			&i.AnnouncementID,
 			&i.HookAppealID,
 			&i.AutoDeleteLimitNoticeID,
+			&i.DraftScheduleID,
 			&i.DedupeKey,
 			&i.CreatedAt,
 		); err != nil {
@@ -505,7 +822,7 @@ func (q *Queries) ListNotifications(ctx context.Context, arg ListNotificationsPa
 
 const listNotificationsAfter = `-- name: ListNotificationsAfter :many
 SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
-  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.dedupe_key, n.created_at
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at
 FROM notifications n
 WHERE n.recipient_account_id = ?1
   AND n.id > CAST(?2 AS TEXT)
@@ -519,6 +836,11 @@ WHERE n.recipient_account_id = ?1
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR instr(CAST(?6 AS TEXT), ',' || n.announcement_id || ',') > 0)
 ORDER BY n.id ASC
 LIMIT ?7
@@ -580,6 +902,7 @@ func (q *Queries) ListNotificationsAfter(ctx context.Context, arg ListNotificati
 			&i.AnnouncementID,
 			&i.HookAppealID,
 			&i.AutoDeleteLimitNoticeID,
+			&i.DraftScheduleID,
 			&i.DedupeKey,
 			&i.CreatedAt,
 		); err != nil {
@@ -637,6 +960,11 @@ WHERE n.id = ?1 AND n.recipient_account_id = ?2
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR substr(n.source_domain, -(length(dx.domain) + 1)) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR instr(CAST(?5 AS TEXT), ',' || n.announcement_id || ',') > 0))
 `
 
@@ -685,6 +1013,20 @@ func (q *Queries) UpsertNotificationExclusion(ctx context.Context, arg UpsertNot
 		arg.Reason,
 		arg.ExpiresAt,
 	)
+	return err
+}
+
+const upsertNotificationExclusions = `-- name: UpsertNotificationExclusions :exec
+INSERT INTO notification_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at
+`
+
+// UpsertNotificationExclusions and DeleteNotificationExclusionsOf are UpsertNotificationExclusion
+// and DeleteNotificationExclusion of many pairs, JSON arrays.
+func (q *Queries) UpsertNotificationExclusions(ctx context.Context, exclusions string) error {
+	_, err := q.db.ExecContext(ctx, upsertNotificationExclusions, exclusions)
 	return err
 }
 

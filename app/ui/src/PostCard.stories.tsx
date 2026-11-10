@@ -238,6 +238,26 @@ export const Boosted: Story = {
   },
 };
 
+/**
+ * A post on the home timeline only for a hashtag the viewer follows: the line above it says which, with a link to the
+ * hashtag's page, and starts the article's name.
+ */
+export const FollowedHashtag: Story = {
+  args: {
+    context: (
+      <PostCardContext kind="hashtag">
+        Followed hashtag <PostCardNameLink href="#cats">#cats</PostCardNameLink>
+      </PostCardContext>
+    ),
+  },
+  play: async ({ canvas }) => {
+    await expect(
+      canvas.getByRole("article", { name: /^Followed hashtag #cats\s+Alice\s+@alice\s+2h\s+Public$/ }),
+    ).toBeInTheDocument();
+    await expect(canvas.getByRole("link", { name: "#cats" })).toHaveAttribute("href", "#cats");
+  },
+};
+
 /** A long display name and handle are cut with an ellipsis; the link is still named by both in full. */
 export const LongNames: Story = {
   args: {

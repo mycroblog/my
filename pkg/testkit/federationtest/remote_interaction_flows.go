@@ -59,8 +59,14 @@ type RemoteInteractionFactory func(t *testing.T, opts uow.Options) RemoteInterac
 // each inbox, also while an earlier delivery retries (ADR-0004 ordering keys), so that an inbox
 // of one reaction per account ends with what the sender has; and a local vote in a remote poll
 // sends a Create of a Note per choice to the poll's author (FR-112), the votes in a poll being
-// decided with the poll locked. The actors and the fetches are
-// in-memory stand-ins.
+// decided with the poll locked; and the reply and boost rules of a post (ADR-0155) refuse local
+// replies and boosts outside them, keep remote replies outside them out of the thread, the
+// counts, and the notifications, and leave remote boosts outside them unrecorded; the
+// ReplyRequests and AnnounceRequests of local posts are answered at once or by their author, a
+// reply without a request waits for the author's answer, which releases it into the thread, and
+// a local reply or boost of a remote post that needs an approval goes out as a request, held for
+// its author alone until the verified Accept releases it with its authorization. The actors and
+// the fetches are in-memory stand-ins.
 func RemoteInteractionFlows(t *testing.T, newHarness RemoteInteractionFactory) {
 	t.Helper()
 	cases := []struct {
@@ -80,6 +86,11 @@ func RemoteInteractionFlows(t *testing.T, newHarness RemoteInteractionFactory) {
 		{"QuotesLocalPostsWithApprovals", remoteQuotesLocalPosts},
 		{"SendsQuoteRequestsAndTakesTheAnswers", remoteSendsQuoteRequests},
 		{"AnswersQuoteRequestsAndRevokesApprovals", remoteAnswersQuoteRequests},
+		{"EnforcesReplyAndBoostRules", remoteEnforcesInteractionPolicies},
+		{"AnswersReplyAndAnnounceRequests", remoteAnswersReplyAndAnnounceRequests},
+		{"HoldsRepliesWithoutRequests", remoteHoldsRepliesWithoutRequests},
+		{"RequestsLocalRepliesAndBoosts", remoteRequestsLocalRepliesAndBoosts},
+		{"WithdrawsRequests", remoteWithdrawsRequests},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newRemoteInteractionEnv(t, newHarness)) })
@@ -138,6 +149,7 @@ func newRemoteInteractionEnv(t *testing.T, newHarness RemoteInteractionFactory) 
 		Interactions: e.interactions, Statuses: rs.statuses,
 	})
 	rs.votes.target = e.interactions
+	rs.approvals.target = e.interactions
 	outbox := queue.AfterCommit(rs.projectors, e.jobs, nil)
 	appfederation.RegisterOutboundProjectors(rs.projectors, appfederation.RecorderDeps{
 		Repository: ih.Federation, Outbox: outbox, IDs: rs.IDs, Host: testkit.ContractHost,
@@ -160,7 +172,8 @@ func newRemoteInteractionEnv(t *testing.T, newHarness RemoteInteractionFactory) 
 		e.quotes = appfederation.NewQuoteHandlers(appfederation.QuoteHandlersDeps{
 			UnitOfWork: ih.UnitOfWork,
 			Recorder:   appfederation.RecorderDeps{Repository: ih.Federation, Outbox: outbox, IDs: rs.IDs, Host: testkit.ContractHost},
-			Approvals:  e.interactions, Quotes: rs.content, Statuses: rs.content, Accounts: rs.Accounts, Fetcher: rs.fetcher, Clock: rs.Clock,
+			Approvals:  e.interactions, Interactions: e.interactions, Quotes: rs.content, Statuses: rs.content, Accounts: rs.Accounts,
+			Fetcher: rs.fetcher, Clock: rs.Clock,
 		})
 		e.quotes.RegisterProjectors(rs.projectors)
 		e.quotes.Register(rs.processor)

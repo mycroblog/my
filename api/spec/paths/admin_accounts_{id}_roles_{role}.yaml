@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 put:
   operationId: grantAccountRole
+  x-permission: manage_roles
   summary: Grant a role to a local account
   description: |
     Grants the role to the user of a local account; its permissions apply from the user's
@@ -23,6 +24,7 @@ put:
       $ref: ../components/responses/Problem.yaml
 delete:
   operationId: revokeAccountRole
+  x-permission: manage_roles
   summary: Revoke a role from a local account
   description: |
     Revokes the role from the user of a local account; its permissions stop applying from

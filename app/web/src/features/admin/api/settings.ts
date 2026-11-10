@@ -24,13 +24,13 @@ export const instanceNameLimit = 100;
 export const shortDescriptionLimit = 500;
 export const descriptionLimit = 20_000;
 
-/** The most characters of the thumbnail's alt text (internal/domain/instance, text.go). */
-export const thumbnailAltLimit = 1500;
+/** The most characters of the alt text of the thumbnail and of the preview image (internal/domain/instance, text.go). */
+export const imageAltLimit = 1500;
 
 /** The texts of the server settings screen. */
 type SettingsTextKey = Extract<
   Schemas["InstanceTextKey"],
-  "name" | "short_description" | "description" | "thumbnail_alt"
+  "name" | "short_description" | "description" | "thumbnail_alt" | "preview_image_alt"
 >;
 
 /** A new value of a text; an empty `body` clears it. */
@@ -74,6 +74,14 @@ export function instanceSettingsQueryOptions(api: Api) {
 /** Who limiting sign-in to login providers keeps from signing in, read before an administrator turns it on. */
 export function loginProvidersOnlyImpactQueryOptions(api: Api) {
   return api.query.queryOptions("get", "/admin/settings/login_providers_only/impact");
+}
+
+/**
+ * What switching federation_scope to `allowlist` with the allowlist as it is would end (ADR-0159 §3): the follows, the
+ * local accounts that lose one, and the servers with the most of them.
+ */
+export function federationScopeImpactQueryOptions(api: Api) {
+  return api.query.queryOptions("get", "/admin/settings/federation_scope/impact");
 }
 
 /**

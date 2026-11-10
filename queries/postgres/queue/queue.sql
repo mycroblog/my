@@ -2,9 +2,15 @@
 --
 -- Queries of the database job queue (internal/adapter/queue/db) for PostgreSQL.
 
--- name: InsertJob :exec
+-- InsertJobs inserts the jobs of the arrays, of one length, one row per index (the unnests of a
+-- select list advance together), as an INSERT of each would: an empty idempotency, ordering, or
+-- trace key is none.
+-- name: InsertJobs :exec
 INSERT INTO jobs (id, type, payload, idempotency_key, ordering_key, trace_parent, attempt, run_at, created_at)
-VALUES ($1, $2, $3, $4, $5, $6, 0, $7, $8)
+SELECT unnest(sqlc.arg(ids)::uuid[]), unnest(sqlc.arg(types)::text[]), unnest(sqlc.arg(payloads)::bytea[]),
+  NULLIF(unnest(sqlc.arg(idempotency_keys)::text[]), ''), NULLIF(unnest(sqlc.arg(ordering_keys)::text[]), ''),
+  NULLIF(unnest(sqlc.arg(trace_parents)::text[]), ''), 0, unnest(sqlc.arg(run_ats)::timestamptz[]),
+  unnest(sqlc.arg(created_ats)::timestamptz[])
 ON CONFLICT (idempotency_key) DO NOTHING;
 
 -- A claim takes three statements in one transaction, because under READ COMMITTED a claim

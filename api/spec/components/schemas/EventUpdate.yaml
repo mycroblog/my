@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
+  date (`starts_at` and `ends_at` together) is checked as a new event's.
+type: object
+properties:
+  title:
+    type: string
+  description:
+    type: string
+  visibility:
+    $ref: ./EventVisibility.yaml
+  time_zone:
+    type: string
+  place_disclosure:
+    $ref: ./EventPlaceDisclosure.yaml
+  capacity:
+    type: integer
+  places:
+    type: array
+    items:
+      $ref: ./EventPlace.yaml
+  starts_at:
+    type: string
+    format: date-time
+  ends_at:
+    type: string
+    format: date-time

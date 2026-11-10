@@ -1,0 +1,74 @@
+{
+  "notification_policy.action.accept": {
+    "defaultMessage": "Accept",
+    "description": "Name of the action of the notification policy that lets notifications through, as an option of each condition and as a term in the explanation of the actions."
+  },
+  "notification_policy.action.accept.description": {
+    "defaultMessage": "The notification appears in your notifications and reaches you the ways you chose above.",
+    "description": "What the action 'Accept' of the notification policy does. 'Above' is the table of the notification settings, which chooses how notifications reach the user."
+  },
+  "notification_policy.action.drop": {
+    "defaultMessage": "Drop",
+    "description": "Name of the action of the notification policy that makes no notification, as an option of each condition and as a term in the explanation of the actions."
+  },
+  "notification_policy.action.drop.description": {
+    "defaultMessage": "No notification is made. What the person did still happens: a follow still follows you.",
+    "description": "What the action 'Drop' of the notification policy does."
+  },
+  "notification_policy.action.filter": {
+    "defaultMessage": "Hold",
+    "description": "Name of the action of the notification policy that holds notifications in a request of their sender, as an option of each condition and as a term in the explanation of the actions."
+  },
+  "notification_policy.action.filter.description": {
+    "defaultMessage": "The notification stays out of your notifications and the unread count, and sends no push notification, email, or sound. It waits in a request at the top of your notifications, where you accept or dismiss it.",
+    "description": "What the action 'Hold' of the notification policy does."
+  },
+  "notification_policy.condition.limited_account": {
+    "defaultMessage": "Accounts limited by the moderators",
+    "description": "Label of a condition of the notification policy: the moderators of the server limited the sender's account or its server."
+  },
+  "notification_policy.condition.limited_account.description": {
+    "defaultMessage": "Accounts that the moderators of this server limited, by themselves or with their server. This applies to people you follow too.",
+    "description": "Explanation of the condition 'Accounts limited by the moderators' of the notification policy."
+  },
+  "notification_policy.condition.new_account": {
+    "defaultMessage": "New accounts",
+    "description": "Label of a condition of the notification policy: the sender's account is new."
+  },
+  "notification_policy.condition.new_account.description": {
+    "defaultMessage": "Accounts created less than 30 days ago.",
+    "description": "Explanation of the condition 'New accounts' of the notification policy."
+  },
+  "notification_policy.condition.not_follower": {
+    "defaultMessage": "People who don't follow you",
+    "description": "Label of a condition of the notification policy: the sender does not follow the user."
+  },
+  "notification_policy.condition.not_follower.description": {
+    "defaultMessage": "Including people whose follow request you have not approved.",
+    "description": "Explanation of the condition 'People who don't follow you' of the notification policy."
+  },
+  "notification_policy.condition.not_following": {
+    "defaultMessage": "People you don't follow",
+    "description": "Label of a condition of the notification policy: the sender is not followed by the user."
+  },
+  "notification_policy.condition.not_following.description": {
+    "defaultMessage": "A follow request of yours that waits for approval does not count as following.",
+    "description": "Explanation of the condition 'People you don't follow' of the notification policy."
+  },
+  "notification_policy.condition.unsolicited_private_mention": {
+    "defaultMessage": "Unrequested private mentions",
+    "description": "Label of a condition of the notification policy: a direct (private) post that mentions the user without the user having started the conversation."
+  },
+  "notification_policy.condition.unsolicited_private_mention.description": {
+    "defaultMessage": "Direct posts that mention you without replying to a direct post of yours that mentioned the sender.",
+    "description": "Explanation of the condition 'Unrequested private mentions' of the notification policy."
+  },
+  "notification_policy.description": {
+    "defaultMessage": "Choose what happens to the notifications of people who meet each condition. A notification that meets several conditions gets the strictest choice. People you follow, and people whose requests you accepted, meet none of the conditions but the last one. Notifications from the moderators and from this server are never held or dropped. A change applies to the notifications that come after it.",
+    "description": "Description of the notification policy section. 'The last one' is the condition 'Accounts limited by the moderators', which comes last."
+  },
+  "notification_policy.title": {
+    "defaultMessage": "Notification policy",
+    "description": "Heading of the section of the notification settings where the user chooses, for each condition on who sent a notification, whether such notifications are accepted, held as requests, or dropped."
+  }
+}

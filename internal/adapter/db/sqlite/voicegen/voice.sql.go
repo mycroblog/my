@@ -143,6 +143,32 @@ func (q *Queries) GetVoiceRoom(ctx context.Context, id string) (GetVoiceRoomRow,
 	return i, err
 }
 
+const getVoiceRoomCohostCandidate = `-- name: GetVoiceRoomCohostCandidate :one
+SELECT c.position,
+  CAST(EXISTS (SELECT 1 FROM voice_room_cohost_changes x WHERE x.room_id = c.room_id AND x.account_id = c.account_id AND x.change = 'removed') AS INTEGER) AS removed
+FROM voice_room_cohost_candidates c
+WHERE c.room_id = ? AND c.account_id = ?
+`
+
+type GetVoiceRoomCohostCandidateParams struct {
+	RoomID    string
+	AccountID string
+}
+
+type GetVoiceRoomCohostCandidateRow struct {
+	Position int64
+	Removed  int64
+}
+
+// GetVoiceRoomCohostCandidate returns the position of a co-host candidate of a room and whether
+// the account was ever removed as a co-host of it.
+func (q *Queries) GetVoiceRoomCohostCandidate(ctx context.Context, arg GetVoiceRoomCohostCandidateParams) (GetVoiceRoomCohostCandidateRow, error) {
+	row := q.db.QueryRowContext(ctx, getVoiceRoomCohostCandidate, arg.RoomID, arg.AccountID)
+	var i GetVoiceRoomCohostCandidateRow
+	err := row.Scan(&i.Position, &i.Removed)
+	return i, err
+}
+
 const getVoiceRoomHostGrace = `-- name: GetVoiceRoomHostGrace :one
 SELECT room_id, ends_at FROM voice_room_host_graces WHERE room_id = ?
 `
@@ -222,6 +248,28 @@ func (q *Queries) GetVoiceRoomParticipationEnd(ctx context.Context, participatio
 	return i, err
 }
 
+const getVoiceRoomSchedule = `-- name: GetVoiceRoomSchedule :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE room_id = ?
+`
+
+func (q *Queries) GetVoiceRoomSchedule(ctx context.Context, roomID string) (VoiceRoomSchedule, error) {
+	row := q.db.QueryRowContext(ctx, getVoiceRoomSchedule, roomID)
+	var i VoiceRoomSchedule
+	err := row.Scan(&i.RoomID, &i.ScheduleKey, &i.WaitEndsAt)
+	return i, err
+}
+
+const getVoiceRoomScheduleByKey = `-- name: GetVoiceRoomScheduleByKey :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE schedule_key = ?
+`
+
+func (q *Queries) GetVoiceRoomScheduleByKey(ctx context.Context, scheduleKey string) (VoiceRoomSchedule, error) {
+	row := q.db.QueryRowContext(ctx, getVoiceRoomScheduleByKey, scheduleKey)
+	var i VoiceRoomSchedule
+	err := row.Scan(&i.RoomID, &i.ScheduleKey, &i.WaitEndsAt)
+	return i, err
+}
+
 const insertVoiceRoom = `-- name: InsertVoiceRoom :exec
 
 
@@ -272,6 +320,22 @@ func (q *Queries) InsertVoiceRoomBan(ctx context.Context, arg InsertVoiceRoomBan
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const insertVoiceRoomCohostCandidate = `-- name: InsertVoiceRoomCohostCandidate :exec
+INSERT INTO voice_room_cohost_candidates (room_id, account_id, position) VALUES (?, ?, ?)
+ON CONFLICT (room_id, account_id) DO NOTHING
+`
+
+type InsertVoiceRoomCohostCandidateParams struct {
+	RoomID    string
+	AccountID string
+	Position  int64
+}
+
+func (q *Queries) InsertVoiceRoomCohostCandidate(ctx context.Context, arg InsertVoiceRoomCohostCandidateParams) error {
+	_, err := q.db.ExecContext(ctx, insertVoiceRoomCohostCandidate, arg.RoomID, arg.AccountID, arg.Position)
+	return err
 }
 
 const insertVoiceRoomCohostChange = `-- name: InsertVoiceRoomCohostChange :exec
@@ -610,6 +674,23 @@ func (q *Queries) InsertVoiceRoomRoleChange(ctx context.Context, arg InsertVoice
 	return err
 }
 
+const insertVoiceRoomSchedule = `-- name: InsertVoiceRoomSchedule :exec
+
+INSERT INTO voice_room_schedules (room_id, schedule_key, wait_ends_at) VALUES (?, ?, ?)
+`
+
+type InsertVoiceRoomScheduleParams struct {
+	RoomID      string
+	ScheduleKey string
+	WaitEndsAt  int64
+}
+
+// Scheduled rooms (ADR-0100 section 16) ------------------------------------------------------
+func (q *Queries) InsertVoiceRoomSchedule(ctx context.Context, arg InsertVoiceRoomScheduleParams) error {
+	_, err := q.db.ExecContext(ctx, insertVoiceRoomSchedule, arg.RoomID, arg.ScheduleKey, arg.WaitEndsAt)
+	return err
+}
+
 const insertVoiceRoomSpeakGrant = `-- name: InsertVoiceRoomSpeakGrant :exec
 INSERT INTO voice_room_speak_grants (id, room_id, account_id, change, changed_by_account_id, changed_at)
 VALUES (?, ?, ?, ?, ?, ?)
@@ -634,6 +715,18 @@ func (q *Queries) InsertVoiceRoomSpeakGrant(ctx context.Context, arg InsertVoice
 		arg.ChangedAt,
 	)
 	return err
+}
+
+const isVoiceRoomAttended = `-- name: IsVoiceRoomAttended :one
+SELECT CAST(EXISTS (SELECT 1 FROM voice_room_participations WHERE room_id = ?) AS INTEGER) AS attended
+`
+
+// IsVoiceRoomAttended reports whether anybody ever joined a room.
+func (q *Queries) IsVoiceRoomAttended(ctx context.Context, roomID string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, isVoiceRoomAttended, roomID)
+	var attended int64
+	err := row.Scan(&attended)
+	return attended, err
 }
 
 const isVoiceRoomBanned = `-- name: IsVoiceRoomBanned :one
@@ -849,6 +942,88 @@ func (q *Queries) ListOpenVoiceRooms(ctx context.Context, tag string) ([]ListOpe
 	return items, nil
 }
 
+const listVoiceRoomFactsOfViewer = `-- name: ListVoiceRoomFactsOfViewer :many
+SELECT CAST(v.value AS TEXT) AS room_id,
+  EXISTS (SELECT 1 FROM voice_room_bans b WHERE b.room_id = v.value AND b.account_id = ?1) AS banned,
+  EXISTS (SELECT 1 FROM voice_room_invitations i WHERE i.room_id = v.value AND i.invitee_account_id = ?1
+    AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
+  CAST(COALESCE((
+    SELECT g.change = 'granted' FROM voice_room_speak_grants g
+    WHERE g.room_id = v.value AND g.account_id = ?1
+    ORDER BY g.id DESC LIMIT 1
+  ), 0) AS INTEGER) AS speak_granted
+FROM json_each(CAST(?2 AS TEXT)) v
+`
+
+type ListVoiceRoomFactsOfViewerParams struct {
+	AccountID string
+	RoomIds   string
+}
+
+type ListVoiceRoomFactsOfViewerRow struct {
+	RoomID       string
+	Banned       bool
+	Invited      bool
+	SpeakGranted int64
+}
+
+// ListVoiceRoomFactsOfViewer returns, for each room of a JSON array, what
+// ListVoiceRoomViewerFacts returns of the account.
+func (q *Queries) ListVoiceRoomFactsOfViewer(ctx context.Context, arg ListVoiceRoomFactsOfViewerParams) ([]ListVoiceRoomFactsOfViewerRow, error) {
+	rows, err := q.db.QueryContext(ctx, listVoiceRoomFactsOfViewer, arg.AccountID, arg.RoomIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListVoiceRoomFactsOfViewerRow{}
+	for rows.Next() {
+		var i ListVoiceRoomFactsOfViewerRow
+		if err := rows.Scan(
+			&i.RoomID,
+			&i.Banned,
+			&i.Invited,
+			&i.SpeakGranted,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVoiceRoomHostGraces = `-- name: ListVoiceRoomHostGraces :many
+SELECT room_id, ends_at FROM voice_room_host_graces WHERE room_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) ListVoiceRoomHostGraces(ctx context.Context, roomIds string) ([]VoiceRoomHostGrace, error) {
+	rows, err := q.db.QueryContext(ctx, listVoiceRoomHostGraces, roomIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VoiceRoomHostGrace{}
+	for rows.Next() {
+		var i VoiceRoomHostGrace
+		if err := rows.Scan(&i.RoomID, &i.EndsAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVoiceRoomInvitations = `-- name: ListVoiceRoomInvitations :many
 SELECT i.id, i.room_id, i.invitee_account_id, i.role, i.invited_by_account_id, i.invited_at
 FROM voice_room_invitations i
@@ -932,6 +1107,71 @@ func (q *Queries) ListVoiceRoomParticipants(ctx context.Context, roomID string) 
 	return items, nil
 }
 
+const listVoiceRoomParticipantsAmong = `-- name: ListVoiceRoomParticipantsAmong :many
+SELECT account_id FROM voice_room_participants WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY account_id
+`
+
+// ListVoiceRoomParticipantsAmong returns the participants among account_ids, a JSON array.
+func (q *Queries) ListVoiceRoomParticipantsAmong(ctx context.Context, accountIds string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listVoiceRoomParticipantsAmong, accountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVoiceRoomParticipantsOf = `-- name: ListVoiceRoomParticipantsOf :many
+SELECT account_id, room_id, participation_id, role, cohost_change_id, hand_raised FROM voice_room_participants
+WHERE room_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+ORDER BY room_id, participation_id
+`
+
+// The participants of the rooms of room_ids, as ListVoiceRoomParticipants lists those of one.
+func (q *Queries) ListVoiceRoomParticipantsOf(ctx context.Context, roomIds string) ([]VoiceRoomParticipant, error) {
+	rows, err := q.db.QueryContext(ctx, listVoiceRoomParticipantsOf, roomIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []VoiceRoomParticipant{}
+	for rows.Next() {
+		var i VoiceRoomParticipant
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.RoomID,
+			&i.ParticipationID,
+			&i.Role,
+			&i.CohostChangeID,
+			&i.HandRaised,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVoiceRoomRevisionHashtags = `-- name: ListVoiceRoomRevisionHashtags :many
 SELECT revision_id, position, name, name_normalized FROM voice_room_revision_hashtags
 WHERE revision_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
@@ -953,6 +1193,62 @@ func (q *Queries) ListVoiceRoomRevisionHashtags(ctx context.Context, revisionIds
 			&i.Position,
 			&i.Name,
 			&i.NameNormalized,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listVoiceRoomViewerFacts = `-- name: ListVoiceRoomViewerFacts :many
+SELECT CAST(v.value AS TEXT) AS account_id,
+  EXISTS (SELECT 1 FROM voice_room_bans b WHERE b.room_id = ?1 AND b.account_id = v.value) AS banned,
+  EXISTS (SELECT 1 FROM voice_room_invitations i WHERE i.room_id = ?1 AND i.invitee_account_id = v.value
+    AND NOT EXISTS (SELECT 1 FROM voice_room_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
+  CAST(COALESCE((
+    SELECT g.change = 'granted' FROM voice_room_speak_grants g
+    WHERE g.room_id = ?1 AND g.account_id = v.value
+    ORDER BY g.id DESC LIMIT 1
+  ), 0) AS INTEGER) AS speak_granted
+FROM json_each(CAST(?2 AS TEXT)) v
+`
+
+type ListVoiceRoomViewerFactsParams struct {
+	RoomID     string
+	AccountIds string
+}
+
+type ListVoiceRoomViewerFactsRow struct {
+	AccountID    string
+	Banned       bool
+	Invited      bool
+	SpeakGranted int64
+}
+
+// ListVoiceRoomViewerFacts returns, for each account of a JSON array, what IsVoiceRoomBanned,
+// GetVoiceRoomInvitation (an invitation that is not revoked), and IsVoiceRoomSpeakGranted read of
+// the account in the room.
+func (q *Queries) ListVoiceRoomViewerFacts(ctx context.Context, arg ListVoiceRoomViewerFactsParams) ([]ListVoiceRoomViewerFactsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listVoiceRoomViewerFacts, arg.RoomID, arg.AccountIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListVoiceRoomViewerFactsRow{}
+	for rows.Next() {
+		var i ListVoiceRoomViewerFactsRow
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.Banned,
+			&i.Invited,
+			&i.SpeakGranted,
 		); err != nil {
 			return nil, err
 		}

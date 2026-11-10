@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"sync"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -34,6 +36,8 @@ type fakeObjects struct {
 	requests []*appfederation.SignedRequest
 	outbox   []federation.ActivityDocument
 	featured []federation.NoteDocument
+	// featuredTags are the Hashtags of every actor's featured-tags collection.
+	featuredTags []federation.TagDocument
 	// authorizedFetch is the authorized fetch setting.
 	authorizedFetch bool
 	err             error
@@ -87,7 +91,7 @@ func (f *fakeObjects) StatusActivity(_ context.Context, req appfederation.Reques
 	return f.find(req, id, "/activity")
 }
 
-func (f *fakeObjects) QuoteAuthorization(context.Context, string) (appfederation.Object, error) {
+func (f *fakeObjects) Authorization(context.Context, appcontent.InteractionKind, string) (appfederation.Object, error) {
 	return appfederation.Object{}, appfederation.ErrNotFound
 }
 
@@ -131,6 +135,17 @@ func (f *fakeObjects) Outbox(_ context.Context, _ string, before string) (appfed
 
 func (f *fakeObjects) Featured(context.Context, string) ([]federation.NoteDocument, error) {
 	return f.featured, f.err
+}
+
+func (f *fakeObjects) FeaturedTags(context.Context, appaccount.Actor) ([]federation.TagDocument, error) {
+	if f.featuredTags == nil {
+		return []federation.TagDocument{}, f.err
+	}
+	return f.featuredTags, f.err
+}
+
+func (f *fakeObjects) Conversation(_ context.Context, _ appfederation.Requester, id string, _ bool, _ string) (appfederation.ConversationCollection, error) {
+	return appfederation.ConversationCollection{}, fmt.Errorf("conversation %s: %w", id, appfederation.ErrNotFound)
 }
 
 // fakeGraph is an activitypub.Graph over a list of edges.

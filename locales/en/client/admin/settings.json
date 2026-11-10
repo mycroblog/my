@@ -56,7 +56,7 @@
     "description": "Button that opens the file picker to choose the server's thumbnail."
   },
   "admin.settings.contact.thumbnail.description": {
-    "defaultMessage": "A wide image, such as 1600 × 900 pixels, at the top of the about page and the page that welcomes visitors.",
+    "defaultMessage": "A wide image, such as 1600 × 900 pixels, at the top of the about page and the page that welcomes visitors. Link previews use it too while no preview image is set.",
     "description": "Help about the server's thumbnail: where it shows and what size suits it."
   },
   "admin.settings.contact.thumbnail.failed": {
@@ -70,6 +70,22 @@
   "admin.settings.contact.title": {
     "defaultMessage": "Contact and thumbnail",
     "description": "Heading of the section of the server's contact and thumbnail on the server settings screen."
+  },
+  "admin.settings.preview.title": {
+    "defaultMessage": "Link previews",
+    "description": "Heading of the section of the server settings' general page that sets the image of link previews (preview_image)."
+  },
+  "admin.settings.preview.description": {
+    "defaultMessage": "The image that a link to this server shows on other services, such as X, Mastodon, and Slack, for the pages without an image of their own. Without one, the thumbnail is used, then the logo, then the mycroblog logo.",
+    "description": "Explains the link preview section: which pages use the image and what is used when it is not set, in order."
+  },
+  "admin.settings.preview.image": {
+    "defaultMessage": "Preview image",
+    "description": "Heading of the image field of link previews (preview_image)."
+  },
+  "admin.settings.preview.image.description": {
+    "defaultMessage": "A wide image of 1200 × 630 pixels shows as a large card.",
+    "description": "Hint under the heading of the preview image: the recommended size."
   },
   "admin.settings.descriptions.description": {
     "defaultMessage": "The short description is a paragraph that the about page and other apps show next to the server's name; the full description says more on the about page. Write them once, in any language: everyone sees them as they are, whatever the language of their app.",
@@ -1278,5 +1294,85 @@
   "admin.settings.auto_delete.confirm.confirm": {
     "defaultMessage": "Save and notify",
     "description": "Button that saves the stricter maximum, which notifies the bound accounts."
+  },
+  "admin.settings.federation.scope": {
+    "defaultMessage": "Federation scope",
+    "description": "Label of the radio buttons of the federation scope setting (federation_scope): which servers this server federates with."
+  },
+  "admin.settings.federation.scope.description": {
+    "defaultMessage": "Which servers this server federates with.",
+    "description": "Description of the federation scope setting."
+  },
+  "admin.settings.federation.scope.open": {
+    "defaultMessage": "All servers",
+    "description": "Choice of the federation scope: every server that no domain action suspends."
+  },
+  "admin.settings.federation.scope.open.description": {
+    "defaultMessage": "Federates with every server that no domain action suspends.",
+    "description": "Description of the federation scope All servers."
+  },
+  "admin.settings.federation.scope.allowlist": {
+    "defaultMessage": "Allowed domains only",
+    "description": "Choice of the federation scope: only the domains on the allowlist."
+  },
+  "admin.settings.federation.scope.allowlist.description": {
+    "defaultMessage": "Federates only with the allowed domains and their subdomains; every other server is treated as suspended, and ActivityPub fetches need an allowed server's signature.",
+    "description": "Description of the federation scope Allowed domains only."
+  },
+  "admin.settings.federation.scope.allowlist_link": {
+    "defaultMessage": "Allowed domains",
+    "description": "Link from the federation scope to the allowlist; shown to people who manage domain actions."
+  },
+  "admin.settings.federation.scope.confirm.title": {
+    "defaultMessage": "Federate with allowed domains only?",
+    "description": "Title of the confirmation before limiting the federation to the allowlist."
+  },
+  "admin.settings.federation.scope.confirm.loading": {
+    "defaultMessage": "Counting the follows the switch would end…",
+    "description": "Shown in the confirmation of limiting the federation while the count loads."
+  },
+  "admin.settings.federation.scope.confirm.failed": {
+    "defaultMessage": "The follows the switch would end could not be counted.",
+    "description": "Shown in the confirmation of limiting the federation when the count failed."
+  },
+  "admin.settings.federation.scope.confirm.count_again": {
+    "defaultMessage": "Count again",
+    "description": "Button that counts again the follows the switch would end after a failure."
+  },
+  "admin.settings.federation.scope.confirm.none": {
+    "defaultMessage": "No follow ends: every server that people here follow or are followed by is allowed.",
+    "description": "Shown in the confirmation of limiting the federation when no follow ends."
+  },
+  "admin.settings.federation.scope.confirm.count": {
+    "defaultMessage": "{follows, plural, one {# follow ends} other {# follows end}}, of {accounts, plural, one {# local account} other {# local accounts}} with {servers, plural, one {# server} other {# servers}}.",
+    "description": "How many follows the switch to the allowlist ends, how many local accounts lose one, and with how many servers."
+  },
+  "admin.settings.federation.scope.confirm.top": {
+    "defaultMessage": "The servers with the most follows that end:",
+    "description": "Heading of the list of the servers with the most follows the switch ends."
+  },
+  "admin.settings.federation.scope.confirm.domain": {
+    "defaultMessage": "{domain}: {count, plural, one {# follow} other {# follows}}",
+    "description": "One server of the list of the servers with the most follows the switch ends. {domain} is the domain; {count} how many."
+  },
+  "admin.settings.federation.scope.confirm.permanent": {
+    "defaultMessage": "The follows end for good: switching back to “All servers” or allowing a server later does not bring them back.",
+    "description": "Bullet of the confirmation of limiting the federation: the follows do not come back."
+  },
+  "admin.settings.federation.scope.confirm.notified": {
+    "defaultMessage": "Each person here who loses a follow is notified of how many.",
+    "description": "Bullet of the confirmation of limiting the federation: the users are notified."
+  },
+  "admin.settings.federation.scope.confirm.signatures": {
+    "defaultMessage": "ActivityPub fetches without an allowed server's signature are refused, so servers and crawlers that do not sign no longer see the public posts.",
+    "description": "Bullet of the confirmation of limiting the federation: unsigned fetches are refused."
+  },
+  "admin.settings.federation.scope.confirm.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button of the confirmation of limiting the federation that closes it without saving."
+  },
+  "admin.settings.federation.scope.confirm.confirm": {
+    "defaultMessage": "Switch and save",
+    "description": "Button of the confirmation of limiting the federation that saves the settings."
   }
 }

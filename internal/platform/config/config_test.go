@@ -688,7 +688,7 @@ func TestLoadInvalid(t *testing.T) {
 		{
 			name: "unknown billing source",
 			env:  with(minimal(), "MY_BILLING_SOURCES", "aws, azure"),
-			want: []string{`billing_sources (MY_BILLING_SOURCES): "azure" is not a billing source; use aws, gcp, or plugin, comma-separated`},
+			want: []string{`billing_sources (MY_BILLING_SOURCES): "azure" is not a billing source; use aws, gcp, cloudflare, or plugin, comma-separated`},
 		},
 		{
 			name: "repeated billing source",
@@ -699,6 +699,19 @@ func TestLoadInvalid(t *testing.T) {
 			name: "Google Cloud billing import without its table",
 			env:  with(minimal(), "MY_BILLING_SOURCES", "gcp"),
 			want: []string{`billing_gcp_table (MY_BILLING_GCP_TABLE): required when billing_sources includes gcp and billing_gcp_method is bigquery`},
+		},
+		{
+			name: "Cloudflare billing import without its account and token",
+			env:  with(minimal(), "MY_BILLING_SOURCES", "cloudflare"),
+			want: []string{
+				`billing_cloudflare_account_id (MY_BILLING_CLOUDFLARE_ACCOUNT_ID): required when billing_sources includes cloudflare`,
+				`billing_cloudflare_api_token (MY_BILLING_CLOUDFLARE_API_TOKEN): required when billing_sources includes cloudflare`,
+			},
+		},
+		{
+			name: "malformed Cloudflare account ID",
+			env:  with(minimal(), "MY_BILLING_SOURCES", "cloudflare", "MY_BILLING_CLOUDFLARE_ACCOUNT_ID", "my-account", "MY_BILLING_CLOUDFLARE_API_TOKEN", "token"),
+			want: []string{`billing_cloudflare_account_id (MY_BILLING_CLOUDFLARE_ACCOUNT_ID): not a Cloudflare account ID (32 lowercase hexadecimal digits, from the account's overview in the dashboard)`},
 		},
 		{
 			name: "Google Cloud billing import of a budget without its subscription",
@@ -1067,7 +1080,7 @@ func TestLoadSettingsRedactSecrets(t *testing.T) {
 		"MY_STREAM_POSTGRES_URL", "postgres://user:pass@db/my", "MY_DATABASE_DEV_URL", "postgres://user:pass@db/my_dev",
 		"MY_PAYMENTS", "stripe", "MY_PAYMENTS_STRIPE_SECRET_KEY", "rk_test_abc", "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET", "whsec_abc",
 		"MY_PAYMENTS_PAYJP_SECRET_KEY", "sk_test_abc", "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN", "whook_abc",
-		"MY_TRANSLATOR_DEEPL_API_KEY", "deepl:fx",
+		"MY_TRANSLATOR_DEEPL_API_KEY", "deepl:fx", "MY_BILLING_CLOUDFLARE_API_TOKEN", "cf-token",
 		"MY_VOICE_TURN_COTURN_SECRET", "turn", "MY_VOICE_TURN_CLOUDFLARE_API_TOKEN", "token", "MY_VOICE_LIVEKIT_API_SECRET", "lk",
 		"MY_SEARCH_ELASTICSEARCH_API_KEY", "es-key", "MY_SEARCH_ELASTICSEARCH_PASSWORD", "es-password", "MY_SEARCH_OPENSEARCH_PASSWORD", "osp", "MY_SEARCH_MEILISEARCH_API_KEY", "meili",
 		"MY_VOICE_SORA_API_HEADER_VALUE", "Basic abc", "MY_VOICE_SORA_WEBHOOK_PASSWORD", "pw", "MY_VOICE_SORA_CLOUD_API_KEY", "key",
@@ -1210,19 +1223,20 @@ func TestConfigLogValueRedactsSecrets(t *testing.T) {
 	cfg, _, err := Load(source(with(minimal(), "MY_DATABASE_URL", "postgres://user:hunter2@db/my", "MY_KEK_PREVIOUS", testKEK1, "MY_MAIL_SMTP_PASSWORD", "hunter3",
 		"MY_CAPTCHA", "hcaptcha", "MY_CAPTCHA_SITE_KEY", "site", "MY_CAPTCHA_SECRET_KEY", "0x5eCrE7",
 		"MY_KV", "valkey", "MY_VALKEY_URL", "valkey://user:pass@cache:6379/0",
-		"MY_STREAM_POSTGRES_URL", "postgres://user:pass@db/my"), nil))
+		"MY_STREAM_POSTGRES_URL", "postgres://user:pass@db/my",
+		"MY_BILLING_CLOUDFLARE_ACCOUNT_ID", "023e105f4ecef8ad9ca31a8372d0c353", "MY_BILLING_CLOUDFLARE_API_TOKEN", "cf-billing-read-token"), nil))
 	if err != nil {
 		t.Fatal(err)
 	}
 	var buf bytes.Buffer
 	slog.New(slog.NewTextHandler(&buf, nil)).Info("config", "config", cfg)
 	out := buf.String()
-	for _, secret := range []string{"hunter2", "hunter3", "0x5eCrE7", string(cfg.KEK), string(cfg.PreviousKEKs[0]), testKEK, testKEK1} {
+	for _, secret := range []string{"hunter2", "hunter3", "0x5eCrE7", "cf-billing-read-token", string(cfg.KEK), string(cfg.PreviousKEKs[0]), testKEK, testKEK1} {
 		if strings.Contains(out, secret) {
 			t.Errorf("log output %q contains secret %q", out, secret)
 		}
 	}
-	for _, want := range []string{"config.host=social.example.org", "config.database_url=(redacted)", "config.kek=(redacted)", "config.kek_previous=1", "config.captcha_secret_key=(redacted)"} {
+	for _, want := range []string{"config.host=social.example.org", "config.database_url=(redacted)", "config.kek=(redacted)", "config.kek_previous=1", "config.captcha_secret_key=(redacted)", "config.billing_cloudflare_api_token=(redacted)"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("log output %q does not contain %q", out, want)
 		}

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -61,8 +62,14 @@ func (f *fakeStatuses) Edit(_ context.Context, in appcontent.EditInput) (appcont
 	return f.edit(in)
 }
 
-func (f *fakeStatuses) SetQuotePolicy(_ context.Context, accountID, id string, p content.QuotePolicy) (content.StatusQuotePolicy, error) {
-	return content.StatusQuotePolicy{StatusID: id, Policy: p}, f.do("quote_policy:"+string(p), accountID, id)
+func (f *fakeStatuses) SetInteractionPolicy(_ context.Context, accountID, id string, c appcontent.InteractionPolicyChange) (content.InteractionSettings, error) {
+	var kinds []string
+	for _, k := range content.InteractionKinds {
+		if set, ok := c[k]; ok {
+			kinds = append(kinds, string(k)+"="+string(set.Automatic)+"/"+string(set.Manual))
+		}
+	}
+	return content.DefaultInteractionSettings, f.do("interaction_policy:"+strings.Join(kinds, ","), accountID, id)
 }
 
 func (f *fakeStatuses) Quotes(_ context.Context, v appcontent.Viewer, id, _ string, _ int) (appcontent.QuotesPage, error) {
@@ -117,12 +124,8 @@ func (f *fakeStatuses) History(_ context.Context, v appcontent.Viewer, id string
 	return []appcontent.RevisionView{{Revision: view.Revision, Attachments: view.Attachments}}, nil
 }
 
-func (f *fakeStatuses) Source(_ context.Context, v appcontent.Viewer, id string) (content.Revision, error) {
-	view, err := f.View(context.Background(), v, id)
-	if err != nil {
-		return content.Revision{}, err
-	}
-	return view.Revision, nil
+func (f *fakeStatuses) Source(_ context.Context, v appcontent.Viewer, id string) (appcontent.StatusView, error) {
+	return f.View(context.Background(), v, id)
 }
 
 func (f *fakeStatuses) Bookmarks(_ context.Context, v appcontent.Viewer, _ string, limit int) (appcontent.BookmarkPage, error) {
@@ -146,6 +149,14 @@ func (f *fakeStatuses) Reactions(_ context.Context, v appcontent.Viewer, id, emo
 
 func (f *fakeStatuses) ReactionEmoji(_ context.Context, e appcontent.ReactionEmoji) (appcontent.EmojiView, error) {
 	return appcontent.EmojiView{Emoji: e, Custom: &sampleCustomEmoji}, nil
+}
+
+func (f *fakeStatuses) ReactionEmojis(ctx context.Context, emojis []appcontent.ReactionEmoji) (map[string]appcontent.EmojiView, error) {
+	out := map[string]appcontent.EmojiView{}
+	for _, e := range emojis {
+		out[e.Key()], _ = f.ReactionEmoji(ctx, e)
+	}
+	return out, nil
 }
 
 // sampleCustomEmoji is a custom emoji of another server.
@@ -423,6 +434,7 @@ func TestStatusProblems(t *testing.T) {
 		{fmt.Errorf("x: %w", appcontent.ErrMediaNotReady), http.StatusUnprocessableEntity, "", "添付したファイルは処理中か、処理できませんでした。"},
 		{appcontent.ErrTooManyMedia, http.StatusUnprocessableEntity, "", "1 件の投稿に添付できるファイルは重複なしで 4 個までです。"},
 		{appcontent.ErrReplyTargetNotFound, http.StatusUnprocessableEntity, "", "返信先の投稿が見つかりません。"},
+		{fmt.Errorf("x: %w", appcontent.ErrReplyNotAllowed), http.StatusUnprocessableEntity, "", "この投稿の作者は、あなたが返信することを認めていません。"},
 		{fmt.Errorf("x: %w", content.ErrInvalidPoll), http.StatusUnprocessableEntity, "", "投票の選択肢は互いに異なる 2〜4 個 (それぞれ 50 文字以内) にし、期間は 5 分〜30 日にしてください。"},
 		{appcontent.ErrPollWithMedia, http.StatusUnprocessableEntity, "", "投票のある投稿にはファイルを添付できません。"},
 		{appcontent.ErrPollNotEditable, http.StatusUnprocessableEntity, "", "投票のある投稿は編集できません。"},
@@ -454,6 +466,7 @@ func TestStatusProblems(t *testing.T) {
 		detail       string
 	}{
 		{http.MethodPost, "/boost", content.ErrNotBoostable, "この投稿はブーストできません。"},
+		{http.MethodPost, "/boost", fmt.Errorf("x: %w", appcontent.ErrBoostNotAllowed), "この投稿の作者は、あなたがブーストすることを認めていません。"},
 		{http.MethodPost, "/pin", content.ErrNotPinnable, "固定できるのは、ダイレクト以外の自分の投稿だけです。"},
 		{http.MethodPost, "/pin", content.ErrPinLimit, "固定できる投稿は 5 件までです。"},
 		{http.MethodPost, "/favourite", errNotFound, ""},
@@ -558,25 +571,36 @@ func TestQuoteOperations(t *testing.T) {
 		},
 		view: func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) {
 			view := sampleView(v)
-			view.Quotable, view.QuotePolicy = true, content.QuotePolicyFollowers
+			settings := content.DefaultInteractionSettings.With(content.InteractionQuote, content.InteractionSetting{Automatic: content.AudienceFollowers})
+			view.InteractionPolicy = &settings
+			if view.Relation != nil {
+				view.Permissions = &appcontent.InteractionPermissions{
+					Reply: content.InteractionAllowed, Announce: content.InteractionPending, Quote: content.InteractionAllowed,
+				}
+			}
 			return view, nil
 		},
 	}
 	e := newStatusEnv(t, f)
 
-	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"look","visibility":"public","quoted_status_id":"`+sampleStatusID+`","quote_policy":"nobody"}`)
-	if res.StatusCode != http.StatusCreated || created.QuotedStatusID != sampleStatusID || created.QuotePolicy != content.QuotePolicyNobody {
+	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"look","visibility":"public","quoted_status_id":"`+sampleStatusID+`","interaction_policy":{"quote":{"automatic":"nobody"}}}`)
+	if res.StatusCode != http.StatusCreated || created.QuotedStatusID != sampleStatusID ||
+		!maps.Equal(created.InteractionPolicy, appcontent.InteractionPolicyChange{content.InteractionQuote: {Automatic: content.AudienceNobody}}) {
 		t.Errorf("create = %d with %+v, want the quote and its policy", res.StatusCode, created)
 	}
-	if s := decodeStatus(t, res); s.Quotable == nil || !*s.Quotable || s.QuotePolicy == nil || *s.QuotePolicy != clientapi.QuotePolicyFollowers {
-		t.Errorf("status = quotable %v, policy %v; want true and followers", s.Quotable, s.QuotePolicy)
+	if s := decodeStatus(t, res); s.Permissions == nil || s.Permissions.Quote != clientapi.InteractionPermissionAllowed ||
+		s.Permissions.Announce != clientapi.InteractionPermissionPending || s.InteractionPolicy == nil ||
+		s.InteractionPolicy.Quote.Automatic != clientapi.InteractionAudienceFollowers || s.InteractionPolicy.Quote.Manual != nil ||
+		s.InteractionPolicy.Reply.Automatic != clientapi.InteractionAudienceEveryone {
+		t.Errorf("status = permissions %+v, policy %+v; want a quote at once, a boost that waits, and followers for quotes", s.Permissions, s.InteractionPolicy)
 	}
-	if s := decodeStatus(t, e.send(t, http.MethodGet, "/statuses/"+sampleStatusID, "", "")); s.Quotable != nil {
-		t.Errorf("an anonymous status says whether it is quotable: %v", *s.Quotable)
+	if s := decodeStatus(t, e.send(t, http.MethodGet, "/statuses/"+sampleStatusID, "", "")); s.Permissions != nil {
+		t.Errorf("an anonymous status says what its viewer may do: %+v", *s.Permissions)
 	}
-	res = e.send(t, http.MethodPut, "/statuses/"+sampleStatusID+"/quote_policy", "write", `{"quote_policy":"followers"}`)
+	res = e.send(t, http.MethodPut, "/statuses/"+sampleStatusID+"/interaction_policy", "write",
+		`{"quote":{"automatic":"followers"},"reply":{"automatic":"mentioned","manual":"everyone"}}`)
 	if res.StatusCode != http.StatusOK || decodeStatus(t, res).Id != sampleStatusID {
-		t.Errorf("set quote policy = %d", res.StatusCode)
+		t.Errorf("set interaction policy = %d", res.StatusCode)
 	}
 	res = e.send(t, http.MethodGet, "/statuses/"+sampleStatusID+"/quotes", "read", "")
 	var page clientapi.StatusPage
@@ -587,7 +611,7 @@ func TestQuoteOperations(t *testing.T) {
 	if res := e.send(t, http.MethodDelete, "/statuses/"+sampleStatusID+"/quotes/"+quoting+"/approval", "write", ""); res.StatusCode != http.StatusNoContent {
 		t.Errorf("revoke = %d, want 204", res.StatusCode)
 	}
-	if want := "quote_policy:followers quotes revoke_quote:" + quoting; strings.Join(ops, " ") != want {
+	if want := "interaction_policy:reply=mentioned/everyone,quote=followers/ quotes revoke_quote:" + quoting; strings.Join(ops, " ") != want {
 		t.Errorf("operations = %v, want %s", ops, want)
 	}
 }

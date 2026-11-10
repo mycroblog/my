@@ -5,6 +5,7 @@ package content
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -40,7 +41,6 @@ func (r *StatusRepository) InsertStatus(ctx context.Context, tx uow.Tx, s conten
 		IsLocal:         sqlite.BoolToInt(s.IsLocal),
 		Visibility:      string(s.Visibility),
 		InReplyToUri:    sqlite.ToNullString(s.InReplyToURI),
-		ConversationUri: sqlite.ToNullString(s.ConversationURI),
 		PublishedAt:     sqlite.ToMillis(s.PublishedAt),
 	})
 	if sqlite.IsUniqueViolation(err, "statuses.uri") {
@@ -101,29 +101,53 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 			return sqlite.Wrap(err, "insert status revision source")
 		}
 	}
-	for _, a := range rev.Attachments {
-		err := q.InsertStatusRevisionAttachment(ctx, contentgen.InsertStatusRevisionAttachmentParams{
-			RevisionID: rev.ID, Position: int64(a.Position), MediaID: a.MediaID, Description: sqlite.ToNullString(a.Description),
-		})
+	if len(rev.Attachments) > 0 {
+		type row struct {
+			Position    int    `json:"position"`
+			MediaID     string `json:"media_id"`
+			Description string `json:"description"`
+		}
+		rows := make([]row, len(rev.Attachments))
+		for i, a := range rev.Attachments {
+			rows[i] = row{Position: a.Position, MediaID: a.MediaID, Description: a.Description}
+		}
+		list, err := json.Marshal(rows)
 		if err != nil {
-			return sqlite.Wrap(err, "insert status revision attachment")
+			return err
+		}
+		if err := q.InsertStatusRevisionAttachments(ctx, contentgen.InsertStatusRevisionAttachmentsParams{RevisionID: rev.ID, Attachments: string(list)}); err != nil {
+			return sqlite.Wrap(err, "insert status revision attachments")
 		}
 	}
-	for _, id := range rev.MentionedAccountIDs {
-		err := q.InsertStatusRevisionMention(ctx, contentgen.InsertStatusRevisionMentionParams{RevisionID: rev.ID, AccountID: id})
+	if len(rev.MentionedAccountIDs) > 0 {
+		list, err := sqlite.JSONList(rev.MentionedAccountIDs)
 		if err != nil {
-			return sqlite.Wrap(err, "insert status revision mention")
+			return err
+		}
+		if err := q.InsertStatusRevisionMentions(ctx, contentgen.InsertStatusRevisionMentionsParams{RevisionID: rev.ID, AccountIds: list}); err != nil {
+			return sqlite.Wrap(err, "insert status revision mentions")
 		}
 	}
-	for _, id := range rev.TagIDs {
-		if err := q.InsertStatusRevisionTag(ctx, contentgen.InsertStatusRevisionTagParams{RevisionID: rev.ID, TagID: id}); err != nil {
-			return sqlite.Wrap(err, "insert status revision tag")
+	if len(rev.TagIDs) > 0 {
+		list, err := sqlite.JSONList(rev.TagIDs)
+		if err != nil {
+			return err
+		}
+		if err := q.InsertStatusRevisionTags(ctx, contentgen.InsertStatusRevisionTagsParams{RevisionID: rev.ID, TagIds: list}); err != nil {
+			return sqlite.Wrap(err, "insert status revision tags")
 		}
 	}
-	for _, id := range rev.EmojiIDs {
-		if err := q.InsertStatusRevisionEmoji(ctx, contentgen.InsertStatusRevisionEmojiParams{RevisionID: rev.ID, EmojiID: id}); err != nil {
+	if len(rev.EmojiIDs) > 0 {
+		list, err := sqlite.JSONList(rev.EmojiIDs)
+		if err != nil {
+			return err
+		}
+		if err := q.InsertStatusRevisionEmojis(ctx, contentgen.InsertStatusRevisionEmojisParams{RevisionID: rev.ID, EmojiIds: list}); err != nil {
 			return sqlite.Wrap(err, "insert status revision emoji")
 		}
+	}
+	if err := insertRevisionArticle(ctx, q, rev); err != nil {
+		return err
 	}
 	return insertRemoteRevisionParts(ctx, q, rev)
 }
@@ -148,6 +172,37 @@ func (r *StatusRepository) InsertDeletion(ctx context.Context, tx uow.Tx, d cont
 	return sqlite.Wrap(err, "insert status deletion")
 }
 
+// InsertDeletions implements content.Repository.
+func (r *StatusRepository) InsertDeletions(ctx context.Context, tx uow.Tx, ds []content.Deletion) error {
+	if len(ds) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	type row struct {
+		StatusID        string `json:"status_id"`
+		URI             string `json:"uri"`
+		AuthorAccountID string `json:"author_account_id"`
+	}
+	rows := make([]row, len(ds))
+	for i, d := range ds {
+		rows[i] = row{StatusID: d.StatusID, URI: d.URI, AuthorAccountID: d.AuthorAccountID}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return err
+	}
+	err = q.InsertStatusDeletions(ctx, contentgen.InsertStatusDeletionsParams{
+		Origin: string(ds[0].Origin), ModerationActionID: sqlite.ToNullString(ds[0].ModerationActionID), DeletedAt: sqlite.ToMillis(ds[0].DeletedAt), Deletions: string(list),
+	})
+	if sqlite.IsUniqueViolation(err, "status_deletions.status_id") || sqlite.IsUniqueViolation(err, "status_deletions.uri") {
+		return fmt.Errorf("delete %d statuses: %w", len(ds), appcontent.ErrAlreadyDeleted)
+	}
+	return sqlite.Wrap(err, "insert status deletions")
+}
+
 // EnsureTag implements content.Repository.
 func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.Tag) (content.Tag, error) {
 	q, err := r.db.queries(tx)
@@ -165,6 +220,48 @@ func (r *StatusRepository) EnsureTag(ctx context.Context, tx uow.Tx, t content.T
 		return content.Tag{}, sqlite.Wrap(err, "get tag")
 	}
 	return tagFrom(row), nil
+}
+
+// EnsureTags implements content.Repository.
+func (r *StatusRepository) EnsureTags(ctx context.Context, tx uow.Tx, tags []content.Tag) (map[string]content.Tag, error) {
+	out := make(map[string]content.Tag, len(tags))
+	if len(tags) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	type row struct {
+		ID             string `json:"id"`
+		Name           string `json:"name"`
+		NameNormalized string `json:"name_normalized"`
+	}
+	rows := make([]row, len(tags))
+	names := make([]string, len(tags))
+	for i, t := range tags {
+		rows[i], names[i] = row{ID: t.ID, Name: t.Name, NameNormalized: t.NameNormalized}, t.NameNormalized
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := q.InsertTagsIfAbsent(ctx, contentgen.InsertTagsIfAbsentParams{CreatedAt: sqlite.ToMillis(tags[0].CreatedAt), Tags: string(list)}); err != nil {
+		return nil, sqlite.Wrap(err, "insert tags")
+	}
+	nameList, err := sqlite.JSONList(names)
+	if err != nil {
+		return nil, err
+	}
+	found, err := q.ListTagsByNames(ctx, nameList)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list tags by names")
+	}
+	for _, f := range found {
+		t := tagFrom(f)
+		out[t.NameNormalized] = t
+	}
+	return out, nil
 }
 
 // Head implements content.Repository.
@@ -201,12 +298,14 @@ func (r *StatusRepository) ReplaceMentions(ctx context.Context, tx uow.Tx, statu
 	if err := q.DeleteStatusMentions(ctx, statusID); err != nil {
 		return sqlite.Wrap(err, "delete status mentions")
 	}
-	for _, id := range accountIDs {
-		if err := q.InsertStatusMention(ctx, contentgen.InsertStatusMentionParams{AccountID: id, StatusID: statusID}); err != nil {
-			return sqlite.Wrap(err, "insert status mention")
-		}
+	if len(accountIDs) == 0 {
+		return nil
 	}
-	return nil
+	list, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertStatusMentions(ctx, contentgen.InsertStatusMentionsParams{StatusID: statusID, AccountIds: list}), "insert status mentions")
 }
 
 // LockStatusKeys implements content.Repository. It does nothing: write transactions begin with
@@ -477,6 +576,26 @@ func (r *StatusRepository) FindStatus(ctx context.Context, id string) (content.S
 	return statusFrom(row), nil
 }
 
+// FindStatuses implements content.Repository.
+func (r *StatusRepository) FindStatuses(ctx context.Context, ids []string) (map[string]content.Status, error) {
+	out := make(map[string]content.Status, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(ids)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListStatusesByIDs(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list statuses")
+	}
+	for _, row := range rows {
+		out[row.ID] = statusFrom(row)
+	}
+	return out, nil
+}
+
 // FindStatusByURI implements content.Repository.
 func (r *StatusRepository) FindStatusByURI(ctx context.Context, uri string) (content.Status, error) {
 	row, err := r.db.reader().GetStatusByURI(ctx, uri)
@@ -525,7 +644,7 @@ func (r *StatusRepository) ListCurrentPosts(ctx context.Context, tx uow.Tx) ([]a
 	for i, row := range rows {
 		out[i].Status = statusFrom(contentgen.Status{
 			ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
-			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri, ConversationUri: row.ConversationUri,
+			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri,
 			PublishedAt: row.PublishedAt,
 		})
 		if out[i].Revision, err = findRevision(ctx, q, row.RevisionID); err != nil {
@@ -541,13 +660,9 @@ func findRevision(ctx context.Context, q *contentgen.Queries, id string) (conten
 	if err != nil {
 		return content.Revision{}, sqlite.NotFound(err, appcontent.ErrNotFound, "status revision "+id)
 	}
-	rev := revisionFrom(row)
-	bodies, err := q.ListStatusRevisionBodies(ctx, id)
-	if err != nil {
+	rr := revisionRows{row: row}
+	if rr.bodies, err = q.ListStatusRevisionBodies(ctx, id); err != nil {
 		return content.Revision{}, sqlite.Wrap(err, "list status revision bodies")
-	}
-	for _, b := range bodies {
-		rev.Bodies = append(rev.Bodies, content.Body{Language: b.Language, ContentHTML: b.ContentHtml})
 	}
 	src, err := q.GetStatusRevisionSource(ctx, id)
 	switch {
@@ -555,27 +670,91 @@ func findRevision(ctx context.Context, q *contentgen.Queries, id string) (conten
 	case err != nil:
 		return content.Revision{}, sqlite.Wrap(err, "get status revision source")
 	default:
-		rev.Source = &content.Source{Text: src.SourceText, Format: content.SourceFormat(src.SourceFormat)}
+		rr.source = &src
 	}
-	attachments, err := q.ListStatusRevisionAttachments(ctx, id)
-	if err != nil {
+	if rr.attachments, err = q.ListStatusRevisionAttachments(ctx, id); err != nil {
 		return content.Revision{}, sqlite.Wrap(err, "list status revision attachments")
 	}
-	for _, a := range attachments {
+	if rr.mentions, err = q.ListStatusRevisionMentions(ctx, id); err != nil {
+		return content.Revision{}, sqlite.Wrap(err, "list status revision mentions")
+	}
+	if rr.tags, err = q.ListStatusRevisionTags(ctx, id); err != nil {
+		return content.Revision{}, sqlite.Wrap(err, "list status revision tags")
+	}
+	if rr.emojis, err = q.ListStatusRevisionEmojis(ctx, id); err != nil {
+		return content.Revision{}, sqlite.Wrap(err, "list status revision emoji")
+	}
+	poll, err := q.GetPollByRevision(ctx, id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+	case err != nil:
+		return content.Revision{}, sqlite.Wrap(err, "get poll")
+	default:
+		rr.poll = &poll
+		if rr.options, err = q.ListPollOptions(ctx, poll.ID); err != nil {
+			return content.Revision{}, sqlite.Wrap(err, "list poll options")
+		}
+	}
+	remote, err := q.GetRemoteStatusRevision(ctx, id)
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+	case err != nil:
+		return content.Revision{}, sqlite.Wrap(err, "get remote status revision")
+	default:
+		rr.remote = &remote
+	}
+	if err := readRevisionArticle(ctx, q, &rr); err != nil {
+		return content.Revision{}, err
+	}
+	return rr.revision(), nil
+}
+
+// revisionRows are the rows of a revision and its parts, read for one revision (findRevision) or
+// for many together (FindCurrentRevisions); revision builds the revision from them alike.
+type revisionRows struct {
+	row                    contentgen.StatusRevision
+	bodies                 []contentgen.StatusRevisionBody
+	source                 *contentgen.StatusRevisionSource
+	attachments            []contentgen.StatusRevisionAttachment
+	mentions, tags, emojis []string
+	poll                   *contentgen.Poll
+	options                []contentgen.PollOption
+	remote                 *contentgen.RemoteStatusRevision
+	article                *contentgen.StatusRevisionArticle
+	cover                  *contentgen.StatusRevisionArticleCover
+	images                 []contentgen.StatusRevisionArticleImage
+}
+
+func (rr revisionRows) revision() content.Revision {
+	rev := revisionFrom(rr.row)
+	for _, b := range rr.bodies {
+		rev.Bodies = append(rev.Bodies, content.Body{Language: b.Language, ContentHTML: b.ContentHtml})
+	}
+	if src := rr.source; src != nil {
+		rev.Source = &content.Source{Text: src.SourceText, Format: content.SourceFormat(src.SourceFormat)}
+	}
+	for _, a := range rr.attachments {
 		rev.Attachments = append(rev.Attachments, content.Attachment{
 			Position: int(a.Position), MediaID: a.MediaID, Description: a.Description.String,
 		})
 	}
-	if rev.MentionedAccountIDs, err = nonEmpty(q.ListStatusRevisionMentions(ctx, id)); err != nil {
-		return content.Revision{}, sqlite.Wrap(err, "list status revision mentions")
+	rev.MentionedAccountIDs, _ = nonEmpty(rr.mentions, nil)
+	rev.TagIDs, _ = nonEmpty(rr.tags, nil)
+	rev.EmojiIDs, _ = nonEmpty(rr.emojis, nil)
+	if rr.poll != nil {
+		p := &content.Poll{ID: rr.poll.ID, Multiple: rr.poll.Multiple != 0, HideTotals: rr.poll.HideTotals != 0, ClosesAt: sqlite.FromNullMillis(rr.poll.ClosesAt)}
+		for _, o := range rr.options {
+			p.Options = append(p.Options, content.PollOption{Position: int(o.Position), Title: o.Title})
+		}
+		rev.Poll = p
 	}
-	if rev.TagIDs, err = nonEmpty(q.ListStatusRevisionTags(ctx, id)); err != nil {
-		return content.Revision{}, sqlite.Wrap(err, "list status revision tags")
+	if rr.remote != nil {
+		rev.Remote = &content.RemoteRevisionSource{ActivityURI: rr.remote.ActivityUri.String, HTMLPolicyVersion: int(rr.remote.HtmlPolicyVersion),
+			OmittedAttachments: int(rr.remote.OmittedAttachmentCount),
+		}
 	}
-	if rev.EmojiIDs, err = nonEmpty(q.ListStatusRevisionEmojis(ctx, id)); err != nil {
-		return content.Revision{}, sqlite.Wrap(err, "list status revision emoji")
-	}
-	return rev, findRemoteRevisionParts(ctx, q, &rev)
+	rev.Article = rr.articleRevision()
+	return rev
 }
 
 // nonEmpty turns an empty list into nil, as the domain leaves absent children nil.
@@ -708,7 +887,6 @@ func statusFrom(row contentgen.Status) content.Status {
 		IsLocal:         row.IsLocal != 0,
 		Visibility:      content.Visibility(row.Visibility),
 		InReplyToURI:    row.InReplyToUri.String,
-		ConversationURI: row.ConversationUri.String,
 		PublishedAt:     sqlite.FromMillis(row.PublishedAt),
 	}
 }

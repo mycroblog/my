@@ -186,9 +186,11 @@ func (q *Queries) GetDomainModerationAction(ctx context.Context, id string) (Dom
 
 const getDomainModerationActionRecord = `-- name: GetDomainModerationActionRecord :one
 SELECT a.id, a.domain, a.kind, a.public_comment, a.private_note, a.obfuscate, a.issued_by_user_id,
-  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at
+  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at,
+  sa.subscription_id
 FROM domain_moderation_actions a
 LEFT JOIN domain_moderation_action_lifts l ON l.action_id = a.id
+LEFT JOIN subscription_domain_actions sa ON sa.action_id = a.id
 WHERE a.id = $1
 `
 
@@ -205,6 +207,7 @@ type GetDomainModerationActionRecordRow struct {
 	LiftActionID   *string
 	LiftedByUserID *string
 	LiftedAt       *time.Time
+	SubscriptionID *string
 }
 
 func (q *Queries) GetDomainModerationActionRecord(ctx context.Context, id string) (GetDomainModerationActionRecordRow, error) {
@@ -223,6 +226,7 @@ func (q *Queries) GetDomainModerationActionRecord(ctx context.Context, id string
 		&i.LiftActionID,
 		&i.LiftedByUserID,
 		&i.LiftedAt,
+		&i.SubscriptionID,
 	)
 	return i, err
 }
@@ -845,33 +849,35 @@ func (q *Queries) InsertReportResolution(ctx context.Context, arg InsertReportRe
 	return err
 }
 
-const insertReportRuleCitation = `-- name: InsertReportRuleCitation :exec
-INSERT INTO report_rule_citations (report_id, rule_id) VALUES ($1, $2)
+const insertReportRuleCitations = `-- name: InsertReportRuleCitations :exec
+INSERT INTO report_rule_citations (report_id, rule_id)
+SELECT $1::uuid, unnest($2::uuid[])
 ON CONFLICT (report_id, rule_id) DO NOTHING
 `
 
-type InsertReportRuleCitationParams struct {
+type InsertReportRuleCitationsParams struct {
 	ReportID string
-	RuleID   string
+	RuleIds  []string
 }
 
-func (q *Queries) InsertReportRuleCitation(ctx context.Context, arg InsertReportRuleCitationParams) error {
-	_, err := q.db.Exec(ctx, insertReportRuleCitation, arg.ReportID, arg.RuleID)
+func (q *Queries) InsertReportRuleCitations(ctx context.Context, arg InsertReportRuleCitationsParams) error {
+	_, err := q.db.Exec(ctx, insertReportRuleCitations, arg.ReportID, arg.RuleIds)
 	return err
 }
 
-const insertReportStatus = `-- name: InsertReportStatus :exec
-INSERT INTO report_statuses (report_id, status_id) VALUES ($1, $2)
+const insertReportStatuses = `-- name: InsertReportStatuses :exec
+INSERT INTO report_statuses (report_id, status_id)
+SELECT $1::uuid, unnest($2::uuid[])
 ON CONFLICT (report_id, status_id) DO NOTHING
 `
 
-type InsertReportStatusParams struct {
-	ReportID string
-	StatusID string
+type InsertReportStatusesParams struct {
+	ReportID  string
+	StatusIds []string
 }
 
-func (q *Queries) InsertReportStatus(ctx context.Context, arg InsertReportStatusParams) error {
-	_, err := q.db.Exec(ctx, insertReportStatus, arg.ReportID, arg.StatusID)
+func (q *Queries) InsertReportStatuses(ctx context.Context, arg InsertReportStatusesParams) error {
+	_, err := q.db.Exec(ctx, insertReportStatuses, arg.ReportID, arg.StatusIds)
 	return err
 }
 
@@ -899,6 +905,38 @@ ORDER BY restriction, source_action_id
 
 func (q *Queries) ListAccountRestrictionRows(ctx context.Context, accountID string) ([]AccountRestriction, error) {
 	rows, err := q.db.Query(ctx, listAccountRestrictionRows, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AccountRestriction{}
+	for rows.Next() {
+		var i AccountRestriction
+		if err := rows.Scan(
+			&i.AccountID,
+			&i.Restriction,
+			&i.SourceActionID,
+			&i.EffectiveUntil,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAccountRestrictionRowsOf = `-- name: ListAccountRestrictionRowsOf :many
+SELECT account_id, restriction, source_action_id, effective_until
+FROM account_restrictions WHERE account_id = ANY($1::uuid[])
+ORDER BY account_id, restriction, source_action_id
+`
+
+// ListAccountRestrictionRowsOf is ListAccountRestrictionRows of many accounts.
+func (q *Queries) ListAccountRestrictionRowsOf(ctx context.Context, accountIds []string) ([]AccountRestriction, error) {
+	rows, err := q.db.Query(ctx, listAccountRestrictionRowsOf, accountIds)
 	if err != nil {
 		return nil, err
 	}
@@ -957,9 +995,11 @@ func (q *Queries) ListAccountRestrictionsInEffect(ctx context.Context, arg ListA
 
 const listDomainModerationActions = `-- name: ListDomainModerationActions :many
 SELECT a.id, a.domain, a.kind, a.public_comment, a.private_note, a.obfuscate, a.issued_by_user_id,
-  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at
+  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at,
+  sa.subscription_id
 FROM domain_moderation_actions a
 LEFT JOIN domain_moderation_action_lifts l ON l.action_id = a.id
+LEFT JOIN subscription_domain_actions sa ON sa.action_id = a.id
 WHERE ($1::text = '' OR a.domain = $1::text)
   AND (cardinality($2::text[]) = 0 OR a.kind = ANY($2::text[]))
   AND ($3::timestamptz IS NULL
@@ -990,6 +1030,7 @@ type ListDomainModerationActionsRow struct {
 	LiftActionID   *string
 	LiftedByUserID *string
 	LiftedAt       *time.Time
+	SubscriptionID *string
 }
 
 // ListDomainModerationActions returns the domain actions with their lifts, newest first: those
@@ -1024,6 +1065,7 @@ func (q *Queries) ListDomainModerationActions(ctx context.Context, arg ListDomai
 			&i.LiftActionID,
 			&i.LiftedByUserID,
 			&i.LiftedAt,
+			&i.SubscriptionID,
 		); err != nil {
 			return nil, err
 		}

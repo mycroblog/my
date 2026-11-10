@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getNotificationRequestSummary
+  summary: Count the notification requests
+  description: The number of requests that the list of requests shows, and of their notifications.
+  tags: [notifications]
+  security:
+    - oauth2: ["read:notifications"]
+  responses:
+    "200":
+      description: The counts.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/NotificationRequestSummary.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

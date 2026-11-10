@@ -445,6 +445,57 @@ func (q *Queries) GetDelivery(ctx context.Context, id string) (Delivery, error) 
 	return i, err
 }
 
+const getDeliveryContext = `-- name: GetDeliveryContext :one
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at,
+  doc.document, h.state AS health_state
+FROM deliveries d
+JOIN outbound_activities a ON a.id = d.outbound_activity_id
+LEFT JOIN outbound_activity_documents doc ON doc.outbound_activity_id = a.id
+LEFT JOIN instance_health h ON h.domain = d.domain
+WHERE d.id = ?1
+`
+
+type GetDeliveryContextRow struct {
+	ID                 string
+	OutboundActivityID string
+	InboxUrl           string
+	Domain             string
+	CreatedAt          int64
+	ActivityUri        string
+	Type               string
+	ActorAccountID     string
+	ObjectType         string
+	ObjectID           string
+	ActivityCreatedAt  int64
+	Document           []byte
+	HealthState        sql.NullString
+}
+
+// GetDeliveryContext returns a delivery with its activity, the activity's document (NULL for
+// none), and the health state of the delivery's server (NULL for a server without a row), as
+// GetDelivery, GetOutboundActivity, GetOutboundActivityDocument, and GetInstanceHealth read them.
+func (q *Queries) GetDeliveryContext(ctx context.Context, id string) (GetDeliveryContextRow, error) {
+	row := q.db.QueryRowContext(ctx, getDeliveryContext, id)
+	var i GetDeliveryContextRow
+	err := row.Scan(
+		&i.ID,
+		&i.OutboundActivityID,
+		&i.InboxUrl,
+		&i.Domain,
+		&i.CreatedAt,
+		&i.ActivityUri,
+		&i.Type,
+		&i.ActorAccountID,
+		&i.ObjectType,
+		&i.ObjectID,
+		&i.ActivityCreatedAt,
+		&i.Document,
+		&i.HealthState,
+	)
+	return i, err
+}
+
 const getInstanceHealth = `-- name: GetInstanceHealth :one
 SELECT domain, state, since, failure_days, last_failure_day FROM instance_health WHERE domain = ?1
 `
@@ -607,6 +658,40 @@ func (q *Queries) InsertClosureDelete(ctx context.Context, arg InsertClosureDele
 	return result.RowsAffected()
 }
 
+const insertDeliveries = `-- name: InsertDeliveries :many
+INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
+SELECT value ->> '$.id', value ->> '$.outbound_activity_id', value ->> '$.inbox_url', value ->> '$.domain', value ->> '$.created_at'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (outbound_activity_id, inbox_url) DO NOTHING
+RETURNING id
+`
+
+// InsertDeliveries inserts the deliveries of a JSON array, one row per element, as InsertDelivery
+// inserts one, and returns the IDs of those it inserted. WHERE true keeps ON CONFLICT from
+// reading as a join constraint.
+func (q *Queries) InsertDeliveries(ctx context.Context, deliveries string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, insertDeliveries, deliveries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertDelivery = `-- name: InsertDelivery :execrows
 INSERT INTO deliveries (id, outbound_activity_id, inbox_url, domain, created_at)
 VALUES (?1, ?2, ?3, ?4, ?5)
@@ -712,6 +797,19 @@ func (q *Queries) InsertInstanceNodeinfoObservation(ctx context.Context, arg Ins
 	return err
 }
 
+const insertOutboundActivities = `-- name: InsertOutboundActivities :exec
+INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
+SELECT value ->> '$.id', value ->> '$.activity_uri', value ->> '$.type', value ->> '$.actor_account_id',
+  value ->> '$.object_type', value ->> '$.object_id', value ->> '$.created_at'
+FROM json_each(CAST(?1 AS TEXT))
+`
+
+// InsertOutboundActivities is InsertOutboundActivity of many activities, a JSON array.
+func (q *Queries) InsertOutboundActivities(ctx context.Context, activities string) error {
+	_, err := q.db.ExecContext(ctx, insertOutboundActivities, activities)
+	return err
+}
+
 const insertOutboundActivity = `-- name: InsertOutboundActivity :exec
 INSERT INTO outbound_activities (id, activity_uri, type, actor_account_id, object_type, object_id, created_at)
 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
@@ -759,6 +857,25 @@ func (q *Queries) InsertOutboundActivityDocument(ctx context.Context, arg Insert
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const insertOutboundActivityDocuments = `-- name: InsertOutboundActivityDocuments :exec
+INSERT INTO outbound_activity_documents (outbound_activity_id, document, built_at)
+SELECT value ->> '$.id', unhex(value ->> '$.document'), CAST(?1 AS INTEGER)
+FROM json_each(CAST(?2 AS TEXT)) WHERE true
+ON CONFLICT (outbound_activity_id) DO NOTHING
+`
+
+type InsertOutboundActivityDocumentsParams struct {
+	BuiltAt   int64
+	Documents string
+}
+
+// InsertOutboundActivityDocuments is InsertOutboundActivityDocument of many activities, a JSON
+// array whose documents are hex; WHERE true keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertOutboundActivityDocuments(ctx context.Context, arg InsertOutboundActivityDocumentsParams) error {
+	_, err := q.db.ExecContext(ctx, insertOutboundActivityDocuments, arg.BuiltAt, arg.Documents)
+	return err
 }
 
 const insertOutboundFanOutCompletion = `-- name: InsertOutboundFanOutCompletion :exec
@@ -1166,6 +1283,39 @@ func (q *Queries) ListInstanceHealth(ctx context.Context, arg ListInstanceHealth
 	return items, nil
 }
 
+const listInstanceHealthOf = `-- name: ListInstanceHealthOf :many
+SELECT domain, state FROM instance_health WHERE domain IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+type ListInstanceHealthOfRow struct {
+	Domain string
+	State  string
+}
+
+// The health of the servers of domains that have a row, as GetInstanceHealth reads one.
+func (q *Queries) ListInstanceHealthOf(ctx context.Context, domains string) ([]ListInstanceHealthOfRow, error) {
+	rows, err := q.db.QueryContext(ctx, listInstanceHealthOf, domains)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListInstanceHealthOfRow{}
+	for rows.Next() {
+		var i ListInstanceHealthOfRow
+		if err := rows.Scan(&i.Domain, &i.State); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOutboundActivitiesOfObject = `-- name: ListOutboundActivitiesOfObject :many
 SELECT id, activity_uri, type, actor_account_id, object_type, object_id, created_at
 FROM outbound_activities WHERE object_type = ?1 AND object_id = ?2 ORDER BY id
@@ -1194,6 +1344,42 @@ func (q *Queries) ListOutboundActivitiesOfObject(ctx context.Context, arg ListOu
 			&i.ObjectType,
 			&i.ObjectID,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReceivedActivities = `-- name: ListReceivedActivities :many
+SELECT activity_uri, actor_uri, type, signature_scheme, trust, received_at FROM received_activities
+WHERE activity_uri IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+// ListReceivedActivities is GetReceivedActivity of many activities, a JSON array.
+func (q *Queries) ListReceivedActivities(ctx context.Context, activityUris string) ([]ReceivedActivity, error) {
+	rows, err := q.db.QueryContext(ctx, listReceivedActivities, activityUris)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ReceivedActivity{}
+	for rows.Next() {
+		var i ReceivedActivity
+		if err := rows.Scan(
+			&i.ActivityUri,
+			&i.ActorUri,
+			&i.Type,
+			&i.SignatureScheme,
+			&i.Trust,
+			&i.ReceivedAt,
 		); err != nil {
 			return nil, err
 		}

@@ -1,0 +1,14 @@
+{
+  "feed.content_warning": {
+    "defaultMessage": "‮Ↄouʇǝuʇ ʍɐɹuıuƃ: {warning}. Odǝu ʇɥǝ dosʇ ʇo ɹǝɐp ıʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "feed.tag_title": {
+    "defaultMessage": "‮#{tag} ou {instance}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "feed.untitled": {
+    "defaultMessage": "‮Ԁosʇ qʎ {name}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  }
+}

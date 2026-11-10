@@ -89,16 +89,6 @@ SELECT CAST(COALESCE(SUM(file_size), 0) AS BIGINT) FROM remote_media_cache;
 -- name: DeleteRemoteMediaCache :execrows
 DELETE FROM remote_media_cache WHERE url = @url AND fetched_at = @fetched_at;
 
--- ExistsLocalStatusInConversation reports whether a local status that is not deleted belongs to
--- the conversation, for the scope of remote content (ADR-0006: replies in a thread that has a
--- local status).
--- name: ExistsLocalStatusInConversation :one
-SELECT EXISTS (
-  SELECT 1 FROM statuses s
-  WHERE s.conversation_uri = @conversation_uri AND s.is_local = true
-    AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
-);
-
 -- IsCustomEmojiImage reports whether any revision of a custom emoji, current or not, uses the
 -- media file as its image, for the avatars policy of the remote media cache.
 -- name: IsCustomEmojiImage :one

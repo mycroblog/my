@@ -95,6 +95,7 @@ export function post(n: number, account: Account, overrides: Partial<Status> = {
     boosts_count: 0,
     favourites_count: 0,
     reactions: [],
+    filtered: [],
     ...overrides,
   };
 }

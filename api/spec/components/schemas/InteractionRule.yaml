@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+  those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+  others are refused.
+type: object
+required: [automatic]
+properties:
+  automatic:
+    $ref: ./InteractionAudience.yaml
+  manual:
+    description: Whom the author approves by hand; wider than `automatic`. Left out for none.
+    allOf:
+      - $ref: ./InteractionAudience.yaml

@@ -1,7 +1,7 @@
 # Blocking, muting, and reporting
 
-You decide what you read and who can reach you. Blocking and muting are yours alone; a report goes to the moderators of
-the server.
+You decide what you read and who can reach you. Blocking, muting, and keyword filters are yours alone; a report goes to
+the moderators of the server.
 
 ## Blocking an account
 
@@ -19,12 +19,22 @@ A block also hides the posts of the two of you from each other.
 whom. "Muted accounts", under "Relationships" in the settings, lists them, shows when a mute ends ("Until ...") and
 whether "Notifications hidden too", and lets you "Unmute".
 
+To stop only the notifications of one conversation and keep reading its posts, mute the thread instead (see
+[Muting a thread](notifications.md#muting-a-thread)). To hold the notifications of people you don't know until you
+accept them, use the notification policy (see
+[Holding notifications from people you don't know](notifications.md#holding-notifications-from-people-you-dont-know)).
+
 ## Muting a server
 
 "Muted domains", under "Relationships" in the settings, mutes a whole server (for example `mastodon.example`; its
 subdomains are muted too). It hides the posts of its accounts from your timelines other than home, their boosts from
 your home timeline, and their notifications. The accounts of that server you follow stay on your home timeline. Only you
 are affected, and the server is not told.
+
+## Filtering posts by keyword
+
+"Keyword filters", under "Display and notifications" in the settings, folds or hides the posts that contain words you
+choose, whoever wrote them. [Keyword filters](keyword-filters.md) explains how to set them up and how their words match.
 
 ## Reporting an account or a post
 

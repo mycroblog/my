@@ -55,6 +55,8 @@ export const viewerFixture: Schemas["CredentialAccount"] = {
   discoverable: true,
   indexable: true,
   ai_opt_out: false,
+  feed_enabled: true,
+  feed_follows_indexable: true,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: [],
@@ -139,9 +141,24 @@ export function relationshipFixture(
     blocking: false,
     muting: false,
     muting_notifications: false,
+    note: "",
     ...overrides,
   };
 }
+
+/** An `InteractionPolicy` that lets everyone reply, boost, and quote at once: a new user's default. */
+/** What a signed-in viewer may do with a post whose policy admits everyone at once (`Status.permissions`). */
+export const permissionsFixture: Schemas["InteractionPermissions"] = {
+  reply: "allowed",
+  announce: "allowed",
+  quote: "allowed",
+};
+
+export const interactionPolicyFixture: Schemas["InteractionPolicy"] = {
+  reply: { automatic: "everyone" },
+  announce: { automatic: "everyone" },
+  quote: { automatic: "everyone" },
+};
 
 /** The signed-in user's `Preferences` for GET /preferences (operationId getPreferences). */
 export const preferencesFixture: Schemas["Preferences"] = {
@@ -151,13 +168,28 @@ export const preferencesFixture: Schemas["Preferences"] = {
   locale_follows_browser: false,
   time_zone_follows_browser: false,
   default_visibility: "public",
-  default_quote_policy: "public",
+  default_interaction_policy: interactionPolicyFixture,
   default_post_language: "en",
   require_media_description: false,
   timeline_auto_insert: true,
   link_card_size: "large",
   timeline_languages: [],
 };
+
+/**
+ * The preferences after a change of PATCH /preferences, as the server answers it: the kinds of the default
+ * interaction policy that the change leaves out keep their rules.
+ */
+export function changedPreferences(
+  preferences: Schemas["Preferences"],
+  { default_interaction_policy: policy, ...change }: Schemas["UpdatePreferencesRequest"],
+): Schemas["Preferences"] {
+  return {
+    ...preferences,
+    ...change,
+    default_interaction_policy: { ...preferences.default_interaction_policy, ...policy },
+  };
+}
 
 /** The renditions of an image whose every size is served at `url`, as a remote account's avatar is. */
 export function imageFixture(url: string): Schemas["MediaVariants"] {
@@ -240,6 +272,7 @@ function postFixture(
     boosts_count: 0,
     favourites_count: 0,
     reactions: [],
+    filtered: [],
     ...overrides,
   };
 }
@@ -296,3 +329,27 @@ export const remoteStatusFixture: Schemas["Status"] = postFixture(
     ],
   },
 );
+
+/** A draft saved on the server as it answers it (operationId getDraft), from the content of a save (ADR-0156). */
+export function draftFixture(
+  id: string,
+  content: Partial<Schemas["DraftRequest"]> = {},
+  extra: Partial<Schemas["Draft"]> = {},
+): Schemas["Draft"] {
+  return {
+    id,
+    created_at: "2026-11-09T09:00:00Z",
+    updated_at: "2026-11-09T09:00:00Z",
+    text: content.text ?? "",
+    spoiler_text: content.spoiler_text ?? "",
+    sensitive: content.sensitive ?? false,
+    visibility: content.visibility ?? "public",
+    media: content.media ?? [],
+    ...(content.language === undefined ? {} : { language: content.language }),
+    ...(content.in_reply_to_id === undefined ? {} : { in_reply_to_id: content.in_reply_to_id }),
+    ...(content.quoted_status_id === undefined ? {} : { quoted_status_id: content.quoted_status_id }),
+    ...(content.interaction_policy === undefined ? {} : { interaction_policy: content.interaction_policy }),
+    ...(content.poll === undefined ? {} : { poll: content.poll }),
+    ...extra,
+  };
+}

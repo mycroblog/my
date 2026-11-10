@@ -10,6 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
 // streamKindTimeline is the my.stream.kind of the streams of the local and federated timelines.
@@ -89,6 +90,10 @@ func (s *Server) serveTimelineStream(w http.ResponseWriter, r *http.Request) {
 		streamState: streamState{s: s, w: w, rc: http.NewResponseController(w), viewer: v, home: q, sentEntries: newRecentIDs(streamRecentEntries)},
 		timeline:    tl.timeline,
 	}
+	if s.public != nil {
+		s.public.add(ts)
+		defer s.public.remove(ts)
+	}
 	alive := func(ctx context.Context) bool {
 		denied, err := s.timelineDenied(ctx, tl.access)
 		return err != nil || denied == nil // a failed read keeps the stream until the next heartbeat
@@ -109,6 +114,21 @@ func (ts *timelineStream) handle(ctx context.Context, e stream.Event) error {
 	if e.Kind != stream.KindPublicEntry || ts.sentEntries.has(e.EntryID) {
 		return nil
 	}
+	if ts.s.public != nil {
+		statuses, ok, err := ts.s.public.statuses(ctx, ts.s, ts, e.EntryID)
+		if err != nil {
+			return err
+		}
+		if ok {
+			for _, status := range statuses {
+				if err := ts.event("update", status); err != nil {
+					return err
+				}
+			}
+			ts.sentEntries.add(e.EntryID)
+			return nil
+		}
+	}
 	viewer := localContentViewer(ts.viewer)
 	lookup := ts.s.o.PublicEntries.PublicEntry
 	if ts.timeline == stream.TimelineLocal {
@@ -118,7 +138,7 @@ func (ts *timelineStream) handle(ctx context.Context, e stream.Event) error {
 	if err != nil || !ok {
 		return err
 	}
-	statuses, err := ts.s.statuses(ctx, viewer, entryItems([]apptimeline.Entry{entry}))
+	statuses, err := ts.s.statuses(ctx, viewer, timeline.FilterContextPublic, entryItems([]apptimeline.Entry{entry}))
 	if err != nil {
 		return err
 	}

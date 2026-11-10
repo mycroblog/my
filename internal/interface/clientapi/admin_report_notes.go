@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 
-	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -44,21 +43,19 @@ func (s *Server) reportDetailResponse(ctx context.Context, d moderation.ReportDe
 		return AdminReportDetailJSONResponse{}, err
 	}
 	authors := map[string]string{}
+	if s.o.UserAccounts != nil {
+		users := make([]string, len(d.Notes))
+		for i, n := range d.Notes {
+			users[i] = n.AuthorUserID
+		}
+		if authors, err = moderatorAccounts(ctx, s.reads(), users); err != nil {
+			return AdminReportDetailJSONResponse{}, err
+		}
+	}
 	for _, n := range d.Notes {
 		note := AdminReportNote{Id: n.ID, Body: n.Body, CreatedAt: n.WrittenAt.UTC()}
-		if u := n.AuthorUserID; u != "" && s.o.UserAccounts != nil {
-			id, ok := authors[u]
-			if !ok {
-				la, err := s.o.UserAccounts.LocalAccountOfUser(ctx, u)
-				if err != nil && !errors.Is(err, appaccount.ErrNotFound) {
-					return AdminReportDetailJSONResponse{}, fmt.Errorf("clientapi: the account of user %s: %w", u, err)
-				}
-				id = la.AccountID
-				authors[u] = id
-			}
-			if id != "" {
-				note.AuthorAccountId = &id
-			}
+		if id := authors[n.AuthorUserID]; id != "" {
+			note.AuthorAccountId = &id
 		}
 		body.Notes = append(body.Notes, note)
 	}

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The new-post form (a dialog from lg, a sheet below; FR-101) in the states of ADR-0079 §13: empty, written with a
 // content warning and a poll, too long, sent empty with Ctrl+Enter, with files dragged over it, a reply, a quote, a
-// post the server failed to take, and a post its automated review refused, with the appeal.
+// post the server failed to take, a post its automated review refused, with the appeal, the schedule popover, and a
+// save with nothing written.
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { createTranslate, type I18n } from "../../lib/i18n";
-import { instanceFixture, statusPage } from "../../test/fixtures";
+import { instanceFixture, permissionsFixture, statusPage } from "../../test/fixtures";
 import { apiBase, problem } from "../../test/msw/http";
 import { longPost, pictureHandlers, quotePost, variedTimeline } from "../../test/postStories";
 import { answering, inLocale, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
@@ -132,7 +133,7 @@ export const Quote: Story = {
       path: `/@${quotePost.account.acct}/status/${quotePost.id}`,
       handlers: [
         ...pictureHandlers,
-        http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json({ ...quotePost, quotable: true })),
+        http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json({ ...quotePost, permissions: permissionsFixture })),
       ],
     },
   },
@@ -183,6 +184,31 @@ export const Rejected: Story = {
     await expect(await dialog.findByText("This post was not published.")).toBeInTheDocument();
     await expect(dialog.getByRole("button", { name: "Appeal" })).toBeVisible();
     await expect(dialog.getByRole("textbox", { name: "Your post" })).toHaveValue("Fresh bread, half price today.");
+  },
+};
+
+/** The schedule popover over a written post: the date and the time in the user's time zone (ADR-0156). */
+export const Scheduling: Story = {
+  play: async (context) => {
+    const { userEvent } = context;
+    const dialog = within(await openCompose(context));
+    await userEvent.type(dialog.getByRole("textbox", { name: "Your post" }), "The market opens at nine tomorrow.");
+    await userEvent.click(dialog.getByRole("button", { name: "Schedule the post" }));
+    // The popover fades in from opacity 0: it is visible once the fade has run.
+    const picker = await within(document.body).findByRole("dialog", { name: "Schedule the post" });
+    await waitFor(() => expect(picker).toBeVisible());
+  },
+};
+
+/** Saving with nothing written: the send bar says why nothing was saved. */
+export const SaveWhileEmpty: Story = {
+  play: async (context) => {
+    const { userEvent } = context;
+    const dialog = within(await openCompose(context));
+    await userEvent.click(dialog.getByRole("button", { name: "Save draft" }));
+    // The result fades in from opacity 0 (@starting-style): it is visible once the fade has run.
+    const reason = await dialog.findByText("There is nothing to save yet.");
+    await waitFor(() => expect(reason).toBeVisible());
   },
 };
 

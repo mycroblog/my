@@ -153,26 +153,37 @@ func fanOutClosure(ctx context.Context, d ClosureDeps, p closureFanout) error {
 		Page: d.Recipients.LocalUserAccountIDs,
 		Handle: func(ctx context.Context, ids []string) error {
 			err := d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-				for _, id := range ids {
-					n := notification.Notification{
-						ID: d.IDs.NewID(), RecipientAccountID: id, Type: notification.TypeServiceClosure,
-						ServiceClosureEventID: p.EventID, ServiceClosureChange: p.Change,
-						DedupeKey: notification.ServiceClosureKey(p.EventID), CreatedAt: p.At,
-					}
-					if err := n.Validate(); err != nil {
+				// The service_closure of each, with one insert of all and one enqueue of their
+				// Web Push messages.
+				n := notification.Notification{
+					Type: notification.TypeServiceClosure, ServiceClosureEventID: p.EventID, ServiceClosureChange: p.Change,
+					DedupeKey: notification.ServiceClosureKey(p.EventID), CreatedAt: p.At,
+				}
+				newIDs := make([]string, len(ids))
+				for i, id := range ids {
+					one := n
+					one.ID, one.RecipientAccountID = d.IDs.NewID(), id
+					if err := one.Validate(); err != nil {
 						return err
 					}
-					created, err := d.Repository.InsertNotification(ctx, tx, n)
-					if err != nil {
-						return err
-					}
-					if created {
-						if err := d.Push.enqueue(ctx, tx, n); err != nil {
-							return err
-						}
+					newIDs[i] = one.ID
+				}
+				if len(ids) == 0 {
+					return nil
+				}
+				inserted, err := d.Repository.InsertNotificationsFor(ctx, tx, n, newIDs, ids)
+				if err != nil {
+					return err
+				}
+				var created []notification.Notification
+				for i, id := range ids {
+					if inserted[id] {
+						one := n
+						one.ID, one.RecipientAccountID = newIDs[i], id
+						created = append(created, one)
 					}
 				}
-				return nil
+				return d.Push.enqueueAll(ctx, tx, created, nil)
 			})
 			if err != nil {
 				return fmt.Errorf("notification: notify the service closure: %w", err)

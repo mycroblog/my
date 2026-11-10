@@ -5,6 +5,7 @@ package notificationtest
 import (
 	"context"
 	"errors"
+	"maps"
 	"reflect"
 	"slices"
 	"sync"
@@ -25,7 +26,10 @@ import (
 // subdomains, and deleted statuses that hide notifications; the read marker, which only moves
 // forward; the settings, replaced per group and channel; the error group notices of an hour, also
 // added concurrently, and their prune; the projections emptied for a rebuild with the statuses
-// notified of; and the subscriptions to new posts and the requests for them. The notification use
+// notified of; the subscriptions to new posts and the requests for them; the thread mutes,
+// inserted once, read by conversation and account, and moved by a merge; and the notification
+// policy: its choices, the filtered notifications out of the list and in their source's request,
+// the accepted sources, the dismissals of the requests, and the rebuild of the requests. The notification use
 // cases on top of it are NotificationFlows, which internal/flowtest/notification runs once on
 // SQLite.
 func NotificationContract(t *testing.T, newHarness NotificationFactory) {
@@ -40,10 +44,20 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"HidesDismissedExcludedAndDeleted", notificationRepoHides},
 		{"AdvancesTheReadMarker", notificationRepoReadMarker},
 		{"ReplacesSettings", notificationRepoSettings},
+		{"InsertsForManyRecipients", notificationRepoInsertsFor},
 		{"CountsErrorGroupNotices", notificationRepoErrorGroupNotices},
 		{"EmptiesTheProjections", notificationRepoRebuild},
 		{"KeepsSubscriptions", notificationRepoSubscriptions},
 		{"KeepsSubscriptionRequests", notificationRepoSubscriptionRequests},
+		{"DeletesManySubscriptions", notificationRepoDeleteMany},
+		{"InsertsEachForManyRecipients", notificationRepoInsertsForEach},
+		{"RecordsManyDeletedStatuses", notificationRepoDeletedStatuses},
+		{"UpsertsAndDeletesManyExclusions", notificationRepoManyExclusions},
+		{"KeepsThreadMutes", notificationRepoThreadMutes},
+		{"SavesPolicyChoices", notificationRepoPolicies},
+		{"KeepsRequestsOfFilteredNotifications", notificationRepoRequests},
+		{"DismissesAndHidesRequests", notificationRepoRequestDismissals},
+		{"RebuildsRequests", notificationRepoRebuildRequests},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -350,6 +364,16 @@ func notificationRepoHides(t *testing.T, r *notificationRepo) {
 			t.Errorf("DomainExcluded(%s) = %v, want %v", domain, got, want)
 		}
 	}
+	for domain, want := range map[string]bool{"muted.example": true, "a.b.muted.example": true, "notmuted.example": false} {
+		var got map[string]bool
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			got, err = r.repo.DomainExcludedAmong(ctx, tx, []string{alice, r.ids.NewID()}, domain)
+			return err
+		})
+		if got[alice] != want || len(got) > 1 {
+			t.Errorf("DomainExcludedAmong(%s) = %v, want alice %v alone, as DomainExcluded", domain, got, want)
+		}
+	}
 
 	// The mute expires; the block and the domain mute go when deleted.
 	r.clock.Advance(2 * time.Hour)
@@ -370,6 +394,51 @@ func notificationRepoHides(t *testing.T, r *notificationRepo) {
 	}
 	if has, err := r.statusHasNotifications(t, r.ids.NewID()); err != nil || has {
 		t.Errorf("StatusHasNotifications(another status) = %v, %v; want false", has, err)
+	}
+}
+
+// notificationRepoDeletedStatuses records the deleted statuses of many at once, those that a
+// notification is about, which hides their notifications as InsertDeletedStatus does.
+func notificationRepoDeletedStatuses(t *testing.T, r *notificationRepo) {
+	alice, bob := r.ids.NewID(), r.ids.NewID()
+	kept, gone := r.ids.NewID(), r.ids.NewID()
+	r.insert(t, notification.Notification{RecipientAccountID: alice, Type: notification.TypeFavourite, SourceAccountID: bob, StatusID: kept})
+	r.insert(t, notification.Notification{RecipientAccountID: alice, Type: notification.TypeFavourite, SourceAccountID: bob, StatusID: gone})
+	visible := func() int { return len(r.list(t, alice, nil, appnotification.Hidden{}, "", 10)) }
+	if n := visible(); n != 2 {
+		t.Fatalf("notifications = %d, want 2", n)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.repo.RecordDeletedStatuses(ctx, tx, []string{gone, r.ids.NewID()}), r.repo.RecordDeletedStatuses(ctx, tx, []string{gone}),
+			r.repo.RecordDeletedStatuses(ctx, tx, nil))
+	})
+	if n := visible(); n != 1 {
+		t.Errorf("notifications after RecordDeletedStatuses = %d, want the one of the live status", n)
+	}
+}
+
+// notificationRepoManyExclusions upserts and deletes many exclusions at once, which hide their
+// targets' notifications as UpsertExclusion and DeleteExclusion do.
+func notificationRepoManyExclusions(t *testing.T, r *notificationRepo) {
+	alice, bob, carol := r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	r.notify(t, alice, notification.TypeFollow, bob)
+	r.notify(t, alice, notification.TypeFollow, carol)
+	visible := func() int { return len(r.list(t, alice, nil, appnotification.Hidden{}, "", 10)) }
+	soon := r.clock.Now().Add(time.Hour)
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.repo.UpsertExclusions(ctx, tx, []notification.Exclusion{
+			{ViewerAccountID: alice, TargetAccountID: bob, Reason: notification.ExcludedBlock},
+			{ViewerAccountID: alice, TargetAccountID: carol, Reason: notification.ExcludedMute, ExpiresAt: &soon},
+		}), r.repo.UpsertExclusions(ctx, tx, nil))
+	})
+	if n := visible(); n != 0 {
+		t.Errorf("notifications with the exclusions = %d, want none", n)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(r.repo.DeleteExclusionsOf(ctx, tx, []string{alice, alice}, []string{carol, bob}, notification.ExcludedMute), r.repo.DeleteExclusionsOf(ctx, tx, nil, nil, notification.ExcludedMute))
+	})
+	if n := visible(); n != 1 {
+		t.Errorf("notifications after DeleteExclusionsOf of the mutes = %d, want carol's (bob's is a block)", n)
 	}
 }
 
@@ -446,6 +515,14 @@ func notificationRepoSettings(t *testing.T, r *notificationRepo) {
 	if !reflect.DeepEqual(inTx, want) {
 		t.Errorf("NotificationSettingsTx = %+v, want %+v", inTx, want)
 	}
+	var of map[string][]notification.Setting
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		of, err = r.repo.NotificationSettingsOfTx(ctx, tx, []string{alice, bob, r.ids.NewID()})
+		return err
+	})
+	if !reflect.DeepEqual(of[alice], want) || len(of[bob]) != 1 || !of[bob][0].Enabled || len(of) != 2 {
+		t.Errorf("NotificationSettingsOfTx = %+v; want those of alice and bob, as NotificationSettingsTx", of)
+	}
 	if got, err := r.repo.NotificationSettings(t.Context(), bob); err != nil || len(got) != 1 || !got[0].Enabled {
 		t.Errorf("NotificationSettings of bob = %+v, %v", got, err)
 	}
@@ -490,6 +567,17 @@ func notificationRepoErrorGroupNotices(t *testing.T, r *notificationRepo) {
 	for at, want := range map[time.Time]int64{hour: n, next: 1, next.Add(time.Hour): 0} {
 		if got, err := r.repo.ErrorGroupNotices(ctx, at); err != nil || got != want {
 			t.Errorf("ErrorGroupNotices(%v) = %d, %v; want %d", at, got, err, want)
+		}
+	}
+	if got, err := r.repo.ErrorGroupNoticesOf(ctx, []time.Time{hour, next, next.Add(time.Hour)}); err != nil {
+		t.Errorf("ErrorGroupNoticesOf = %v", err)
+	} else {
+		byMilli := map[int64]int64{}
+		for at, c := range got {
+			byMilli[at.UnixMilli()] = c
+		}
+		if want := map[int64]int64{hour.UnixMilli(): n, next.UnixMilli(): 1}; !reflect.DeepEqual(byMilli, want) {
+			t.Errorf("ErrorGroupNoticesOf = %v (by millisecond); want %v", byMilli, want)
 		}
 	}
 	if d, err := r.repo.DeleteErrorGroupNoticesBefore(ctx, next); err != nil || d != 1 {
@@ -603,6 +691,15 @@ func notificationRepoSubscriptions(t *testing.T, r *notificationRepo) {
 	if ok, err := r.repo.Subscribed(ctx, targets[1], alice); err != nil || ok {
 		t.Errorf("Subscribed the other way = %v, %v; want false", ok, err)
 	}
+	if got, err := r.repo.SubscribedAmong(ctx, alice, append(slices.Clone(targets), alice)); err != nil || len(got) != len(targets) {
+		t.Errorf("SubscribedAmong = %v, %v; want the %d targets", got, err, len(targets))
+	} else {
+		for _, id := range targets {
+			if !got[id] {
+				t.Errorf("SubscribedAmong leaves out %s", id)
+			}
+		}
+	}
 
 	// Newest first, and by target in descending order at the same time.
 	tied := []string{targets[0], targets[1]}
@@ -690,5 +787,167 @@ func notificationRepoSubscriptionRequests(t *testing.T, r *notificationRepo) {
 	}
 	if ok, err := r.repo.SubscriptionRequested(ctx, alice, bob); err != nil || ok {
 		t.Errorf("SubscriptionRequested after the delete = %v, %v; want false", ok, err)
+	}
+}
+
+// notificationRepoDeleteMany deletes the subscriptions and the requests of many pairs together,
+// as DeleteSubscription and DeleteSubscriptionRequest delete those of one, and nothing else.
+func notificationRepoDeleteMany(t *testing.T, r *notificationRepo) {
+	ctx := t.Context()
+	alice, bob, carol := r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		var errs []error
+		for _, p := range [][2]string{{alice, bob}, {alice, carol}, {bob, carol}} {
+			_, err := r.repo.InsertSubscription(ctx, tx, notification.Subscription{AccountID: p[0], TargetAccountID: p[1], CreatedAt: r.clock.Now()})
+			errs = append(errs, err, r.repo.InsertSubscriptionRequest(ctx, tx, notification.SubscriptionRequest{AccountID: p[0], TargetAccountID: p[1], CreatedAt: r.clock.Now()}))
+		}
+		return errors.Join(errs...)
+	})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return errors.Join(
+			r.repo.DeleteSubscriptions(ctx, tx, []string{alice, bob}, []string{bob, carol}),
+			r.repo.DeleteSubscriptionRequests(ctx, tx, []string{alice, bob}, []string{bob, carol}),
+			r.repo.DeleteSubscriptions(ctx, tx, nil, nil), r.repo.DeleteSubscriptionRequests(ctx, tx, nil, nil))
+	})
+	for _, c := range []struct {
+		account, target string
+		want            bool
+	}{{alice, bob, false}, {bob, carol, false}, {alice, carol, true}} {
+		if ok, err := r.repo.Subscribed(ctx, c.account, c.target); err != nil || ok != c.want {
+			t.Errorf("Subscribed(%s, %s) after DeleteSubscriptions = %v, %v; want %v", c.account, c.target, ok, err, c.want)
+		}
+		if ok, err := r.repo.SubscriptionRequested(ctx, c.account, c.target); err != nil || ok != c.want {
+			t.Errorf("SubscriptionRequested(%s, %s) after DeleteSubscriptionRequests = %v, %v; want %v", c.account, c.target, ok, err, c.want)
+		}
+	}
+}
+
+// notificationRepoInsertsForEach checks that InsertNotificationsForEach inserts each notification
+// as InsertNotification inserts it, and skips the recipients who have one with its dedupe key.
+func notificationRepoInsertsForEach(t *testing.T, r *notificationRepo) {
+	alice, bob, dave := r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	of := func(recipient string) notification.Notification {
+		sv := r.ids.NewID()
+		return notification.Notification{
+			ID: r.ids.NewID(), RecipientAccountID: recipient, Type: notification.TypeRelationshipsSevered, SeveranceID: sv,
+			DedupeKey: notification.RelationshipsSeveredKey(sv), CreatedAt: r.clock.Now(),
+		}
+	}
+	ns := []notification.Notification{of(alice), of(bob)}
+	var got map[string]bool
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		got, err = r.repo.InsertNotificationsForEach(ctx, tx, ns)
+		return err
+	})
+	if !maps.Equal(got, map[string]bool{ns[0].ID: true, ns[1].ID: true}) {
+		t.Errorf("InsertNotificationsForEach(alice, bob) = %v, want both", got)
+	}
+	read := func(id string) (n notification.Notification) {
+		t.Helper()
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			n, err = r.repo.Notification(ctx, tx, id)
+			return err
+		})
+		return n
+	}
+	one, _ := r.insert(t, of(dave))
+	want := read(one.ID)
+	for _, n := range ns {
+		want.ID, want.RecipientAccountID, want.SeveranceID, want.DedupeKey = n.ID, n.RecipientAccountID, n.SeveranceID, n.DedupeKey
+		if got := read(n.ID); !reflect.DeepEqual(got, want) {
+			t.Errorf("Notification(%s) = %+v; want %+v, as InsertNotification inserts it", n.ID, got, want)
+		}
+	}
+	again := ns[0]
+	again.ID = r.ids.NewID()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		got, err = r.repo.InsertNotificationsForEach(ctx, tx, []notification.Notification{again})
+		return err
+	})
+	if len(got) != 0 {
+		t.Errorf("InsertNotificationsForEach of a dedupe key again = %v, want none", got)
+	}
+
+	// Rows of one recipient that differ by their source, its domain, and their time, without a
+	// severance.
+	carol := r.ids.NewID()
+	follow := func(source, domain string, at time.Time) notification.Notification {
+		id := r.ids.NewID()
+		return notification.Notification{
+			ID: id, RecipientAccountID: carol, Type: notification.TypeFollow, SourceAccountID: source, SourceDomain: domain,
+			DedupeKey: notification.FollowKey(notification.TypeFollow, r.ids.NewID()), CreatedAt: at,
+		}
+	}
+	follows := []notification.Notification{follow(r.ids.NewID(), "", r.clock.Now()), follow(r.ids.NewID(), "remote.example", r.clock.Now().Add(time.Second))}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		got, err = r.repo.InsertNotificationsForEach(ctx, tx, follows)
+		return err
+	})
+	if !maps.Equal(got, map[string]bool{follows[0].ID: true, follows[1].ID: true}) {
+		t.Errorf("InsertNotificationsForEach(two follows of carol) = %v, want both", got)
+	}
+	for _, n := range follows {
+		one := n
+		one.ID, one.RecipientAccountID, one.DedupeKey = r.ids.NewID(), r.ids.NewID(), "follow:"+r.ids.NewID()
+		single, _ := r.insert(t, one)
+		want := read(single.ID)
+		want.ID, want.RecipientAccountID, want.DedupeKey = n.ID, n.RecipientAccountID, n.DedupeKey
+		if got := read(n.ID); !reflect.DeepEqual(got, want) {
+			t.Errorf("Notification(%s) = %+v; want %+v, as InsertNotification inserts it", n.ID, got, want)
+		}
+	}
+}
+
+// notificationRepoInsertsFor checks that InsertNotificationsFor inserts for each recipient the
+// notification that InsertNotification inserts, and skips the recipients who have one with its
+// dedupe key.
+func notificationRepoInsertsFor(t *testing.T, r *notificationRepo) {
+	alice, bob, carol, dave := r.ids.NewID(), r.ids.NewID(), r.ids.NewID(), r.ids.NewID()
+	n := notification.Notification{
+		Type: notification.TypeMention, SourceAccountID: r.ids.NewID(), SourceDomain: "remote.example", StatusID: r.ids.NewID(),
+		DedupeKey: "mention:" + r.ids.NewID(), CreatedAt: r.clock.Now(),
+	}
+	insertFor := func(recipients ...string) (map[string]bool, []string) {
+		t.Helper()
+		ids := make([]string, len(recipients))
+		for i := range ids {
+			ids[i] = r.ids.NewID()
+		}
+		var got map[string]bool
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			got, err = r.repo.InsertNotificationsFor(ctx, tx, n, ids, recipients)
+			return err
+		})
+		return got, ids
+	}
+	got, ids := insertFor(alice, bob)
+	if !maps.Equal(got, map[string]bool{alice: true, bob: true}) {
+		t.Errorf("InsertNotificationsFor(alice, bob) = %v, want both", got)
+	}
+	// The single insert of the same notification, to compare with.
+	one := n
+	one.RecipientAccountID = dave
+	one, _ = r.insert(t, one)
+	read := func(id string) (n notification.Notification) {
+		t.Helper()
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			n, err = r.repo.Notification(ctx, tx, id)
+			return err
+		})
+		return n
+	}
+	want := read(one.ID)
+	for i, recipient := range []string{alice, bob} {
+		got := read(ids[i])
+		want.ID, want.RecipientAccountID = ids[i], recipient
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("Notification(%s) = %+v; want %+v, as InsertNotification inserts it", ids[i], got, want)
+		}
+	}
+	if got, _ := insertFor(alice, carol); !maps.Equal(got, map[string]bool{carol: true}) {
+		t.Errorf("InsertNotificationsFor(alice again, carol) = %v, want carol alone", got)
+	}
+	if got, _ := insertFor(); len(got) != 0 {
+		t.Errorf("InsertNotificationsFor(nobody) = %v", got)
 	}
 }

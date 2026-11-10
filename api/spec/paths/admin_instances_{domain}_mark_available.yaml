@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: markInstanceAvailable
+  x-permission: manage_domains
   summary: Mark a remote server available
   description: |
     Clears the failure days of the server and, when it is unavailable, marks it available

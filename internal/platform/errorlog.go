@@ -81,6 +81,11 @@ func (s ErrorLogSink) ReceiveError(_ context.Context, ev kernel.ErrorEvent) {
 	if ev.Attempt > 0 {
 		r.AddAttrs(slog.Int("attempt", ev.Attempt))
 	}
+	// Where Error Reporting reads the request: the method, the route as the URL, and the status.
+	if ev.HTTPRoute != "" {
+		r.AddAttrs(slog.Group("context", slog.Group("httpRequest",
+			slog.String("method", ev.HTTPMethod), slog.String("url", ev.HTTPRoute), slog.Int("responseStatusCode", ev.HTTPStatus))))
+	}
 	r.AddAttrs(slog.String("message", errorLogMessage(ev)))
 	_ = s.handler.Handle(ctx, r) // a line that cannot be written is not reported
 }

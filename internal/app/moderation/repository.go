@@ -58,6 +58,8 @@ type Repository interface {
 	DeleteAccountRestrictionsOf(ctx context.Context, tx uow.Tx, actionID string) error
 	// AccountRestrictionRows returns every row of an account, expired ones included.
 	AccountRestrictionRows(ctx context.Context, tx uow.Tx, accountID string) ([]moderation.RestrictionRow, error)
+	// AccountRestrictionRowsOf is AccountRestrictionRows of each of accountIDs, by account.
+	AccountRestrictionRowsOf(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string][]moderation.RestrictionRow, error)
 	// DeleteExpiredAccountRestrictions deletes at most limit rows of any account that have
 	// expired at now, the earliest expired first, and returns them.
 	DeleteExpiredAccountRestrictions(ctx context.Context, tx uow.Tx, now time.Time, limit int) ([]moderation.RestrictionRow, error)
@@ -87,11 +89,22 @@ type Repository interface {
 	// DomainRestrictionsInEffect returns the distinct restrictions in effect at now of any of
 	// the domains, in restriction order.
 	DomainRestrictionsInEffect(ctx context.Context, domains []string, now time.Time) ([]moderation.Restriction, error)
+	// AccountRestrictionsInEffectOf and DomainRestrictionsInEffectOf return those restrictions of
+	// many accounts and of many domains, by account and by domain (one domain at a time, not any of
+	// them), each in restriction order, with one query whatever their number.
+	AccountRestrictionsInEffectOf(ctx context.Context, accountIDs []string, now time.Time) (map[string][]moderation.Restriction, error)
+	DomainRestrictionsInEffectOf(ctx context.Context, domains []string, now time.Time) (map[string][]moderation.Restriction, error)
 	// FindReport returns a report with its statuses.
 	FindReport(ctx context.Context, id string) (moderation.Report, error)
+	// FindReports returns the reports of ids that exist, by ID, as FindReport returns one, with one
+	// query per part.
+	FindReports(ctx context.Context, ids []string) (map[string]moderation.Report, error)
 	// FindReportByURI returns the report of a received Flag with its statuses.
 	FindReportByURI(ctx context.Context, uri string) (moderation.Report, error)
 	FindReportStatus(ctx context.Context, reportID string) (moderation.ReportStatus, error)
+	// FindReportStatuses returns the statuses of the reports of reportIDs that have one, by report
+	// ID, as FindReportStatus returns one, with one query.
+	FindReportStatuses(ctx context.Context, reportIDs []string) (map[string]moderation.ReportStatus, error)
 	// CountReports counts the reports in a state.
 	CountReports(ctx context.Context, state moderation.ReportState) (int64, error)
 	// OldestReportFiledAt returns when the oldest report in a state was filed; it fails with
@@ -109,6 +122,9 @@ type Repository interface {
 	ListReportsByReporter(ctx context.Context, reporterAccountID, before string, limit int) ([]moderation.ReportRecord, error)
 	// FindActionRecord returns an action on an account with its lift.
 	FindActionRecord(ctx context.Context, id string) (moderation.ActionRecord, error)
+	// FindActionRecords returns the actions of ids that exist, by ID, as FindActionRecord returns
+	// one, with one query per part.
+	FindActionRecords(ctx context.Context, ids []string) (map[string]moderation.ActionRecord, error)
 	// ListActions returns up to limit actions on accounts with their lifts, newest first: those
 	// on q.AccountID (every account when empty), only those in effect at q.InEffectAt when it
 	// is set, whose ID is below q.Before (from the newest when empty).
@@ -137,8 +153,12 @@ type Repository interface {
 	AccountAdminRepository
 	// The sign-up block list (signup_block.go).
 	SignupBlockRepository
+	// The subscriptions to domain block lists (domain_list.go).
+	DomainListRepository
 	// The rebuild of the projections (projection.go).
 	ProjectionRepository
+	// The allowlist of federation (allowlist.go).
+	AllowlistRepository
 }
 
 // ReportQuery selects the reports of a list.
@@ -172,6 +192,8 @@ type DomainActionQuery struct {
 type TxReads interface {
 	AccountRestrictionsInEffectTx(ctx context.Context, tx uow.Tx, accountID string, now time.Time) ([]moderation.Restriction, error)
 	DomainRestrictionsInEffectTx(ctx context.Context, tx uow.Tx, domains []string, now time.Time) ([]moderation.Restriction, error)
+	AccountRestrictionsInEffectOfTx(ctx context.Context, tx uow.Tx, accountIDs []string, now time.Time) (map[string][]moderation.Restriction, error)
+	DomainRestrictionsInEffectOfTx(ctx context.Context, tx uow.Tx, domains []string, now time.Time) (map[string][]moderation.Restriction, error)
 	FindReportTx(ctx context.Context, tx uow.Tx, id string) (moderation.Report, error)
 	FindReportStatusTx(ctx context.Context, tx uow.Tx, reportID string) (moderation.ReportStatus, error)
 	FindActionRecordTx(ctx context.Context, tx uow.Tx, id string) (moderation.ActionRecord, error)

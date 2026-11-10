@@ -49,8 +49,11 @@ type QuoteHandlersDeps struct {
 	Recorder  RecorderDeps
 	Approvals QuoteApprovals
 	Quotes    RemoteQuotes
-	Statuses  QuoteStatuses
-	Accounts  Accounts
+	// Interactions asks and answers the approvals of replies and boosts (ADR-0155 §6, §7); nil
+	// takes no ReplyRequest or AnnounceRequest and sends none.
+	Interactions InteractionApprovals
+	Statuses     QuoteStatuses
+	Accounts     Accounts
 	// Fetcher fetches the QuoteAuthorizations that remote servers answer with.
 	Fetcher DocumentFetcher
 	Clock   kernel.Clock
@@ -74,10 +77,15 @@ func NewQuoteHandlers(d QuoteHandlersDeps) *QuoteHandlers {
 
 func (h *QuoteHandlers) isLocal(iri federation.IRI) bool { return iri.Origin() == h.origin }
 
-// Register sets the handler of QuoteRequest on p. The answers to this server's QuoteRequests
-// arrive as Accept and Reject, which the handlers of follows pass on (ReceiveQuoteAnswer).
+// Register sets the handlers of QuoteRequest, and of ReplyRequest and AnnounceRequest with
+// Interactions, on p. The answers to this server's requests arrive as Accept and Reject, which
+// the handlers of follows pass on (ReceiveQuoteAnswer).
 func (h *QuoteHandlers) Register(p *InboxProcessor) {
 	p.Handle(federation.ActivityQuoteRequest, h.quoteRequest)
+	if h.d.Interactions != nil {
+		p.Handle(federation.ActivityReplyRequest, h.interactionRequest(appcontent.InteractionReply))
+		p.Handle(federation.ActivityAnnounceRequest, h.interactionRequest(appcontent.InteractionAnnounce))
+	}
 }
 
 // RegisterProjectors records the activities that the changes of quotes lead to (ADR-0069 §3):
@@ -85,10 +93,45 @@ func (h *QuoteHandlers) Register(p *InboxProcessor) {
 //     to the quoted author's inbox.
 //   - content.quote_changed that approves a local status's quote by a remote
 //     QuoteAuthorization: the Update of the status, whose Note names it.
-//   - content.quote_policy_changed: the Update of the status, whose interactionPolicy says it.
+//   - content.interaction_policy_changed of the rules of any kind: the Update of the status, whose
+//     interactionPolicy says them (ADR-0155 §9).
 //   - content.quote_authorization_revoked of a remote quote: the Delete of the
 //     QuoteAuthorization to the quoting author's inbox.
+//   - content.interaction_requested of a local account's pending reply or boost of a remote
+//     status: the ReplyRequest or AnnounceRequest to the status author's inbox (ADR-0155 §7).
+//   - content.interaction_answered of a remote account's interaction with a local status that
+//     no handler answered (Deferred): the Accept or Reject to its inbox (ADR-0155 §6); of the
+//     withdrawal of a local account's pending reply or boost of a remote status: the Delete of the
+//     reply or the Undo of the Announce to the inbox that its request went to.
 func (h *QuoteHandlers) RegisterProjectors(r *uow.Projectors) {
+	r.Register(appcontent.EventInteractionRequested, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appcontent.InteractionRequested)
+		if !ok || ev.Request.Direction != appcontent.DirectionOutbound || ev.State.State != appcontent.InteractionRequestPending {
+			return nil
+		}
+		switch ev.Request.Kind {
+		case appcontent.InteractionReply:
+			return h.recordReplyRequest(ctx, tx, ev.Request)
+		case appcontent.InteractionAnnounce:
+			return h.recordAnnounceRequest(ctx, tx, ev.Request, ev.Target)
+		}
+		return nil // a QuoteRequest goes out with its quote (content.quote_recorded)
+	})
+	r.Register(appcontent.EventInteractionAnswered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appcontent.InteractionAnswered)
+		switch {
+		case !ok:
+			return nil
+		case ev.Event.Kind == appcontent.InteractionEventWithdrawn:
+			if ev.Request.Direction != appcontent.DirectionOutbound {
+				return nil
+			}
+			return h.recordWithdrawal(ctx, tx, ev.Request)
+		case !ev.Deferred || ev.Request.Direction != appcontent.DirectionInbound:
+			return nil
+		}
+		return h.recordDeferredAnswer(ctx, tx, ev)
+	})
 	r.Register(appcontent.EventQuoteRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.QuoteRecorded)
 		if !ok || !ev.Status.IsLocal || ev.Quote.Form != appcontent.QuoteFormFEP044f || h.isLocal(federation.IRI(ev.Quote.QuotedURI)) {
@@ -104,9 +147,10 @@ func (h *QuoteHandlers) RegisterProjectors(r *uow.Projectors) {
 		}
 		return h.recordUpdate(ctx, tx, ev.Status)
 	})
-	r.Register(appcontent.EventQuotePolicyChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		ev, ok := e.(appcontent.QuotePolicyChanged)
-		if !ok || !ev.Status.IsLocal {
+	r.Register(appcontent.EventInteractionPolicyChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appcontent.InteractionPolicyChanged)
+		// The Note carries the rules of every kind (canReply, canAnnounce, canQuote).
+		if !ok || !ev.Status.IsLocal || len(ev.Kinds) == 0 {
 			return nil
 		}
 		return h.recordUpdate(ctx, tx, ev.Status)
@@ -159,7 +203,7 @@ func (h *QuoteHandlers) recordQuoteRequest(ctx context.Context, tx uow.Tx, st ap
 // recordRevocation records the Delete of a revoked QuoteAuthorization to the quoting author's
 // inbox and the quoted author's followers (ADR-0069 §3); a local quoting author gets none.
 func (h *QuoteHandlers) recordRevocation(ctx context.Context, tx uow.Tx, ev appcontent.QuoteAuthorizationRevoked) error {
-	inbox, quoter, ok, err := h.remoteInbox(ctx, tx, ev.Authorization.QuotingAccountID)
+	inbox, quoter, ok, err := h.remoteInbox(ctx, tx, ev.Authorization.InteractingAccountID)
 	if err != nil || !ok {
 		return err
 	}
@@ -217,7 +261,8 @@ func (h *QuoteHandlers) remoteInbox(ctx context.Context, tx uow.Tx, accountID st
 // quotes of public and unlisted statuses (content.MayQuote).
 func (f *FanOut) quoteSubject(ctx context.Context, s subject, p fanOutPayload) (subject, error) {
 	switch s.act.Type {
-	case federation.ActivityQuoteRequest, federation.ActivityAccept, federation.ActivityReject, federation.ActivityDelete:
+	case federation.ActivityQuoteRequest, federation.ActivityAnnounceRequest, federation.ActivityAccept, federation.ActivityReject,
+		federation.ActivityDelete, federation.ActivityUndo:
 	default:
 		return subject{}, fmt.Errorf("%w: %s of a quote", federation.ErrInvalidOutbound, s.act.Type)
 	}
@@ -225,8 +270,8 @@ func (f *FanOut) quoteSubject(ctx context.Context, s subject, p fanOutPayload) (
 	if p.Inbox == "" && (p.Phase == "" || p.Phase == string(phaseRelay)) {
 		return subject{}, fmt.Errorf("%w: %s of quote %s without an inbox", federation.ErrInvalidOutbound, s.act.Type, s.act.ObjectID)
 	}
-	s.inbox = federation.IRI(p.Inbox)
-	if s.act.Type == federation.ActivityDelete {
+	s.inbox, s.followersToo = federation.IRI(p.Inbox), p.Followers
+	if s.followersToo || s.act.ObjectKind == federation.OutboundQuote && s.act.Type == federation.ActivityDelete {
 		var err error
 		if s.restrictions, err = f.d.Statuses.AuthorRestrictions(ctx, s.act.ActorAccountID); err != nil {
 			return subject{}, err
@@ -239,6 +284,11 @@ func (f *FanOut) quoteSubject(ctx context.Context, s subject, p fanOutPayload) (
 
 // store stores the document of act in tx and enqueues its fan-out to inbox alone.
 func (h *QuoteHandlers) store(ctx context.Context, tx uow.Tx, act federation.OutboundActivity, doc federation.ActivityDocument, inbox federation.IRI) error {
+	return h.storeTo(ctx, tx, act, doc, fanOutPayload{Inbox: string(inbox)})
+}
+
+// storeTo stores the document of act in tx and enqueues its fan-out with the payload p.
+func (h *QuoteHandlers) storeTo(ctx context.Context, tx uow.Tx, act federation.OutboundActivity, doc federation.ActivityDocument, p fanOutPayload) error {
 	b, err := doc.Marshal()
 	if err != nil {
 		return err
@@ -246,7 +296,7 @@ func (h *QuoteHandlers) store(ctx context.Context, tx uow.Tx, act federation.Out
 	if _, err := h.d.Recorder.Repository.InsertOutboundDocument(ctx, tx, act.ID, b, act.CreatedAt); err != nil {
 		return err
 	}
-	return h.rec.enqueue(ctx, tx, act, fanOutPayload{Inbox: string(inbox)})
+	return h.rec.enqueue(ctx, tx, act, p)
 }
 
 // answer decides a remote QuoteRequest of the local status quoted by the post quoting: the
@@ -256,7 +306,7 @@ func (h *QuoteHandlers) store(ctx context.Context, tx uow.Tx, act federation.Out
 func (h *QuoteHandlers) answer(ctx context.Context, in *InboxActivity, quoted, quoting federation.IRI) (appcontent.QuoteAuthorization, appcontent.Status, error) {
 	if federation.Allows(in.mode(), federation.FlowIngest) {
 		return h.d.Approvals.AnswerQuoteRequest(ctx, appcontent.QuoteRequestInput{
-			QuotedURI: string(quoted), QuotingURI: string(quoting), QuoterAccountID: in.Actor.Account.ID,
+			QuotedURI: string(quoted), QuotingURI: string(quoting), QuoterAccountID: in.Actor.Account.ID, ActivityURI: string(in.Activity.ID),
 		})
 	}
 	st, err := h.d.Statuses.FindStatusByURI(ctx, string(quoted))
@@ -269,6 +319,20 @@ func (h *QuoteHandlers) answer(ctx context.Context, in *InboxActivity, quoted, q
 	return appcontent.QuoteAuthorization{}, st, fmt.Errorf("%w: %w: mode %s", appcontent.ErrQuoteRefused, ErrFederationRestricted, in.mode())
 }
 
+// quotedObject returns the status that a QuoteRequest's object names. Bonfire at times names the
+// Create of a status in this server's document instead of the status: embedded, whose object's
+// IRI alone is taken, or by its IRI, the status's with /activity (createURI, ADR-0018), which
+// is read without fetching. The caller checks that the result is a local status.
+func (h *QuoteHandlers) quotedObject(ref federation.Ref) federation.IRI {
+	if d := ref.Untrusted(); d != nil && d.Activity != nil && d.Activity.Type == federation.ActivityCreate {
+		return d.Activity.Object().ID
+	}
+	if status, ok := strings.CutSuffix(string(ref.ID), "/activity"); ok && h.isLocal(ref.ID) {
+		return federation.IRI(status)
+	}
+	return ref.ID
+}
+
 // quoteRequest answers a remote QuoteRequest of a quote of a local status (ADR-0069 §2): the
 // content module decides it, and the Accept with this server's QuoteAuthorization as result, or
 // the Reject, goes to the actor's inbox. The quoting post (instrument) must be of the actor's
@@ -276,7 +340,7 @@ func (h *QuoteHandlers) answer(ctx context.Context, in *InboxActivity, quoted, q
 // otherwise); a stored quoting post's quote is approved here too.
 func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) error {
 	act := in.Activity
-	quoted, quoting := act.Object().ID, act.Instrument.ID
+	quoted, quoting := h.quotedObject(act.Object()), act.Instrument.ID
 	switch {
 	case quoted == "" || !h.isLocal(quoted):
 		return fmt.Errorf("%w: QuoteRequest of %q, which is not a local status", ErrDropActivity, quoted)
@@ -286,6 +350,8 @@ func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) err
 	auth, st, err := h.answer(ctx, in, quoted, quoting)
 	accepted := err == nil
 	switch {
+	case errors.Is(err, appcontent.ErrQuoteAwaitsApproval):
+		return nil // the author answers it
 	case errors.Is(err, appcontent.ErrQuoteRefused):
 	case errors.Is(err, appcontent.ErrNotFound):
 		return fmt.Errorf("%w: QuoteRequest of %s: %w", ErrDropActivity, quoted, err)
@@ -342,11 +408,15 @@ func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) err
 }
 
 // ReceiveQuoteAnswer takes an Accept or Reject whose object is this server's QuoteRequest
-// (ADR-0069 §3), and reports whether it was one. The answer must come from the quoted author.
+// (ADR-0069 §3), ReplyRequest, or AnnounceRequest (receiveInteractionAnswer), and reports whether
+// it was one. The answer must come from the quoted author.
 // An Accept must name a QuoteAuthorization of the quoted author's host that approves the quote
 // (checkQuoteAuthorization); the quote is then approved, and its approval goes out in an Update
 // of the status. A Reject refuses the quote.
 func (h *QuoteHandlers) ReceiveQuoteAnswer(ctx context.Context, in *InboxActivity, accepted bool) (bool, error) {
+	if handled, err := h.receiveInteractionAnswer(ctx, in, accepted); handled {
+		return true, err
+	}
 	ref := in.Activity.Object()
 	statusID, ok := h.quoteRequestStatus(ref.ID)
 	if !ok {

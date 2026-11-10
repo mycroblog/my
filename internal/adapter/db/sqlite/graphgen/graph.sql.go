@@ -51,6 +51,40 @@ func (q *Queries) AddToFollowCounters(ctx context.Context, arg AddToFollowCounte
 	return result.RowsAffected()
 }
 
+const addToManyFollowCounters = `-- name: AddToManyFollowCounters :many
+UPDATE follow_counters SET
+  followers_count = followers_count + (SELECT CAST(value ->> '$.followers' AS INTEGER) FROM json_each(CAST(?1 AS TEXT)) WHERE value ->> '$.account_id' = follow_counters.account_id),
+  following_count = following_count + (SELECT CAST(value ->> '$.following' AS INTEGER) FROM json_each(CAST(?1 AS TEXT)) WHERE value ->> '$.account_id' = follow_counters.account_id)
+WHERE account_id IN (SELECT value ->> '$.account_id' FROM json_each(CAST(?1 AS TEXT)))
+RETURNING account_id
+`
+
+// AddToManyFollowCounters is AddToFollowCounters of many accounts, a JSON array; it returns those
+// that had a row, and AddFollowCounters creates the others. An upsert would check the counts of
+// the row it proposes, below zero, before it adds them.
+func (q *Queries) AddToManyFollowCounters(ctx context.Context, deltas string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, addToManyFollowCounters, deltas)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var account_id string
+		if err := rows.Scan(&account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, account_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countFollowersInState = `-- name: CountFollowersInState :one
 SELECT count(*) FROM follow_edges
 WHERE followee_account_id = ?1 AND state = ?2
@@ -111,12 +145,34 @@ func (q *Queries) DeleteFollowEdge(ctx context.Context, arg DeleteFollowEdgePara
 	return result.RowsAffected()
 }
 
+const deleteFollowEdgesOfFollows = `-- name: DeleteFollowEdgesOfFollows :execrows
+DELETE FROM follow_edges WHERE (follow_id, state) IN (
+  SELECT value ->> '$.follow_id', value ->> '$.state' FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) DeleteFollowEdgesOfFollows(ctx context.Context, edges string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteFollowEdgesOfFollows, edges)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const deleteZeroFollowCounters = `-- name: DeleteZeroFollowCounters :exec
 DELETE FROM follow_counters WHERE account_id = ? AND followers_count = 0 AND following_count = 0
 `
 
 func (q *Queries) DeleteZeroFollowCounters(ctx context.Context, accountID string) error {
 	_, err := q.db.ExecContext(ctx, deleteZeroFollowCounters, accountID)
+	return err
+}
+
+const deleteZeroFollowCountersOf = `-- name: DeleteZeroFollowCountersOf :exec
+DELETE FROM follow_counters WHERE account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND followers_count = 0 AND following_count = 0
+`
+
+func (q *Queries) DeleteZeroFollowCountersOf(ctx context.Context, accountIds string) error {
+	_, err := q.db.ExecContext(ctx, deleteZeroFollowCountersOf, accountIds)
 	return err
 }
 
@@ -217,6 +273,22 @@ func (q *Queries) GetFollowPreferences(ctx context.Context, followID string) (Fo
 	return i, err
 }
 
+const insertAutoFollowAcceptances = `-- name: InsertAutoFollowAcceptances :exec
+INSERT INTO follow_acceptances (follow_id, accepted_by, activity_uri, accepted_at)
+SELECT value, CAST(?1 AS TEXT), NULL, CAST(?2 AS INTEGER) FROM json_each(CAST(?3 AS TEXT))
+`
+
+type InsertAutoFollowAcceptancesParams struct {
+	AcceptedBy string
+	AcceptedAt int64
+	FollowIds  string
+}
+
+func (q *Queries) InsertAutoFollowAcceptances(ctx context.Context, arg InsertAutoFollowAcceptancesParams) error {
+	_, err := q.db.ExecContext(ctx, insertAutoFollowAcceptances, arg.AcceptedBy, arg.AcceptedAt, arg.FollowIds)
+	return err
+}
+
 const insertFollow = `-- name: InsertFollow :exec
 
 INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at) VALUES (?, ?, ?, ?, ?)
@@ -291,6 +363,21 @@ func (q *Queries) InsertFollowEdge(ctx context.Context, arg InsertFollowEdgePara
 	return result.RowsAffected()
 }
 
+const insertFollowEdges = `-- name: InsertFollowEdges :execrows
+INSERT INTO follow_edges (follower_account_id, followee_account_id, follow_id, state, since)
+SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.follow_id', value ->> '$.state', value ->> '$.since'
+FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (follower_account_id, followee_account_id) DO NOTHING
+`
+
+func (q *Queries) InsertFollowEdges(ctx context.Context, edges string) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertFollowEdges, edges)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const insertFollowRejection = `-- name: InsertFollowRejection :exec
 INSERT INTO follow_rejections (follow_id, rejected_by, activity_uri, rejected_at) VALUES (?, ?, ?, ?)
 `
@@ -344,6 +431,37 @@ type InsertFollowTerminationParams struct {
 
 func (q *Queries) InsertFollowTermination(ctx context.Context, arg InsertFollowTerminationParams) error {
 	_, err := q.db.ExecContext(ctx, insertFollowTermination, arg.FollowID, arg.Reason, arg.TerminatedAt)
+	return err
+}
+
+const insertFollowTerminations = `-- name: InsertFollowTerminations :exec
+INSERT INTO follow_terminations (follow_id, reason, terminated_at)
+SELECT value, CAST(?1 AS TEXT), CAST(?2 AS INTEGER) FROM json_each(CAST(?3 AS TEXT)) WHERE true
+`
+
+type InsertFollowTerminationsParams struct {
+	Reason       string
+	TerminatedAt int64
+	FollowIds    string
+}
+
+func (q *Queries) InsertFollowTerminations(ctx context.Context, arg InsertFollowTerminationsParams) error {
+	_, err := q.db.ExecContext(ctx, insertFollowTerminations, arg.Reason, arg.TerminatedAt, arg.FollowIds)
+	return err
+}
+
+const insertFollows = `-- name: InsertFollows :exec
+
+INSERT INTO follows (id, uri, follower_account_id, followee_account_id, requested_at)
+SELECT value ->> '$.id', value ->> '$.uri', value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.requested_at'
+FROM json_each(CAST(?1 AS TEXT))
+`
+
+// The statements that start many follows at once (the migration of a moved account's followers),
+// each as the statement of one follow above does for every follow it names. The lists are JSON
+// arrays; WHERE true keeps ON CONFLICT from reading as a join constraint.
+func (q *Queries) InsertFollows(ctx context.Context, follows string) error {
+	_, err := q.db.ExecContext(ctx, insertFollows, follows)
 	return err
 }
 
@@ -408,6 +526,45 @@ func (q *Queries) ListFollowEdges(ctx context.Context) ([]FollowEdge, error) {
 	return items, nil
 }
 
+const listFollowEdgesBetween = `-- name: ListFollowEdgesBetween :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges
+WHERE (follower_account_id, followee_account_id) IN (SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?1 AS TEXT)))
+   OR (followee_account_id, follower_account_id) IN (SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(?1 AS TEXT)))
+ORDER BY follower_account_id, followee_account_id
+`
+
+// ListFollowEdgesBetween returns the edges between the accounts of each pair, a JSON array of
+// {"a": ..., "b": ...}, in either direction.
+func (q *Queries) ListFollowEdgesBetween(ctx context.Context, pairs string) ([]FollowEdge, error) {
+	rows, err := q.db.QueryContext(ctx, listFollowEdgesBetween, pairs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FollowEdge{}
+	for rows.Next() {
+		var i FollowEdge
+		if err := rows.Scan(
+			&i.FollowerAccountID,
+			&i.FolloweeAccountID,
+			&i.FollowID,
+			&i.State,
+			&i.Since,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFollowEdgesOf = `-- name: ListFollowEdgesOf :many
 SELECT follower_account_id, followee_account_id, follow_id, state, since
 FROM follow_edges WHERE follower_account_id = ?1 OR followee_account_id = ?1
@@ -418,6 +575,44 @@ ORDER BY follower_account_id, followee_account_id
 // by follower and followee.
 func (q *Queries) ListFollowEdgesOf(ctx context.Context, accountID string) ([]FollowEdge, error) {
 	rows, err := q.db.QueryContext(ctx, listFollowEdgesOf, accountID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FollowEdge{}
+	for rows.Next() {
+		var i FollowEdge
+		if err := rows.Scan(
+			&i.FollowerAccountID,
+			&i.FolloweeAccountID,
+			&i.FollowID,
+			&i.State,
+			&i.Since,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFollowEdgesOfAccounts = `-- name: ListFollowEdgesOfAccounts :many
+SELECT follower_account_id, followee_account_id, follow_id, state, since
+FROM follow_edges
+WHERE follower_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+   OR followee_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+ORDER BY follower_account_id, followee_account_id
+`
+
+// ListFollowEdgesOfAccounts is ListFollowEdgesOf of many accounts, each edge once.
+func (q *Queries) ListFollowEdgesOfAccounts(ctx context.Context, accountIds string) ([]FollowEdge, error) {
+	rows, err := q.db.QueryContext(ctx, listFollowEdgesOfAccounts, accountIds)
 	if err != nil {
 		return nil, err
 	}
@@ -501,6 +696,42 @@ func (q *Queries) ListFollowHistories(ctx context.Context) ([]ListFollowHistorie
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFolloweesAmong = `-- name: ListFolloweesAmong :many
+SELECT DISTINCT followee_account_id FROM follow_edges
+WHERE followee_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND state = ?2
+ORDER BY followee_account_id
+`
+
+type ListFolloweesAmongParams struct {
+	AccountIds string
+	State      string
+}
+
+// ListFolloweesAmong returns the accounts among account_ids (a JSON array) with an edge into them
+// in one state, each once: those of a batch with an active follower (FolloweesAmong).
+func (q *Queries) ListFolloweesAmong(ctx context.Context, arg ListFolloweesAmongParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listFolloweesAmong, arg.AccountIds, arg.State)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var followee_account_id string
+		if err := rows.Scan(&followee_account_id); err != nil {
+			return nil, err
+		}
+		items = append(items, followee_account_id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -615,6 +846,44 @@ func (q *Queries) ListFollowingPage(ctx context.Context, arg ListFollowingPagePa
 	return items, nil
 }
 
+const listFollowsByIDs = `-- name: ListFollowsByIDs :many
+
+SELECT id, uri, follower_account_id, followee_account_id, requested_at FROM follows
+WHERE id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY id
+`
+
+// The statements that end many follows at once (Repository.EndFollows), each as the statement of
+// one follow above does for every follow it names. The lists are JSON arrays; WHERE true keeps
+// ON CONFLICT from reading as a join constraint.
+func (q *Queries) ListFollowsByIDs(ctx context.Context, ids string) ([]Follow, error) {
+	rows, err := q.db.QueryContext(ctx, listFollowsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Follow{}
+	for rows.Next() {
+		var i Follow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Uri,
+			&i.FollowerAccountID,
+			&i.FolloweeAccountID,
+			&i.RequestedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateFollowEdge = `-- name: UpdateFollowEdge :execrows
 UPDATE follow_edges SET state = ?1, since = ?2
 WHERE follower_account_id = ?3 AND followee_account_id = ?4
@@ -677,5 +946,16 @@ type UpsertFollowPreferencesParams struct {
 
 func (q *Queries) UpsertFollowPreferences(ctx context.Context, arg UpsertFollowPreferencesParams) error {
 	_, err := q.db.ExecContext(ctx, upsertFollowPreferences, arg.FollowID, arg.ShowBoosts)
+	return err
+}
+
+const upsertManyFollowPreferences = `-- name: UpsertManyFollowPreferences :exec
+INSERT INTO follow_preferences (follow_id, show_boosts)
+SELECT value ->> '$.follow_id', value ->> '$.show_boosts' FROM json_each(CAST(?1 AS TEXT)) WHERE true
+ON CONFLICT (follow_id) DO UPDATE SET show_boosts = excluded.show_boosts
+`
+
+func (q *Queries) UpsertManyFollowPreferences(ctx context.Context, preferences string) error {
+	_, err := q.db.ExecContext(ctx, upsertManyFollowPreferences, preferences)
 	return err
 }

@@ -70,7 +70,7 @@ async function post(page: Page, text: string): Promise<void> {
   await newPostButton(page, message("compose.open")).click();
   const form = page.getByRole("form", { name: message("compose.title") });
   await form.getByRole("textbox", { name: message("compose.text.label") }).fill(text);
-  await form.getByRole("button", { name: message("compose.submit") }).click();
+  await form.getByRole("button", { name: message("compose.submit"), exact: true }).click();
   // The new user's first post: its notice welcomes them too.
   await expectToast(page, message("compose.posted.first"));
 }

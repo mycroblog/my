@@ -28,8 +28,8 @@
     "description": "Alt text of a profile's avatar in a link preview (og:image:alt) when the avatar is the preview image. {name} is the display name, or the username when there is none."
   },
   "preview.builtin_image_alt": {
-    "defaultMessage": "Eine Sprechblase mit drei Punkten auf einem blauen Farbverlauf",
-    "description": "Alt text of the built-in preview image in a link preview (og:image:alt), for profiles and posts without images on an instance without its own preview image. The image is a white speech bubble with three dots on a blue gradient."
+    "defaultMessage": "Das Logo von mycroblog",
+    "description": "Alt text of the built-in preview image in a link preview (og:image:alt), for the pages without an image of their own on an instance with no preview image, thumbnail, or logo. The image is mycroblog's colourful wordmark \"my\" on white."
   },
   "preview.default_image_alt": {
     "defaultMessage": "Bild von {instance}",

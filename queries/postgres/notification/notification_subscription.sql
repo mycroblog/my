@@ -13,6 +13,10 @@ DELETE FROM post_subscriptions WHERE account_id = $1 AND target_account_id = $2;
 -- name: PostSubscriptionExists :one
 SELECT EXISTS (SELECT 1 FROM post_subscriptions WHERE account_id = $1 AND target_account_id = $2);
 
+-- The targets among target_ids that the account subscribes to.
+-- name: ListSubscribedTargets :many
+SELECT target_account_id FROM post_subscriptions WHERE account_id = sqlc.arg(account_id) AND target_account_id = ANY(sqlc.arg(target_ids)::uuid[]);
+
 -- name: CountPostSubscriptions :one
 SELECT COUNT(*) FROM post_subscriptions WHERE account_id = $1;
 
@@ -56,3 +60,13 @@ DELETE FROM post_subscription_requests WHERE account_id = $1 AND target_account_
 
 -- name: PostSubscriptionRequestExists :one
 SELECT EXISTS (SELECT 1 FROM post_subscription_requests WHERE account_id = $1 AND target_account_id = $2);
+
+-- DeletePostSubscriptionRequests and DeletePostSubscriptions are DeletePostSubscriptionRequest
+-- and DeletePostSubscription of many pairs (the unnests of a select list advance together).
+-- name: DeletePostSubscriptionRequests :exec
+DELETE FROM post_subscription_requests WHERE (account_id, target_account_id) IN (
+  SELECT unnest(sqlc.arg(account_ids)::uuid[]), unnest(sqlc.arg(target_ids)::uuid[]));
+
+-- name: DeletePostSubscriptions :exec
+DELETE FROM post_subscriptions WHERE (account_id, target_account_id) IN (
+  SELECT unnest(sqlc.arg(account_ids)::uuid[]), unnest(sqlc.arg(target_ids)::uuid[]));

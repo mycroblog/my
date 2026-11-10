@@ -71,12 +71,15 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 		FollowersCount: base.FollowersCount, FollowingCount: base.FollowingCount,
 		Source: AccountSource{Fields: []AccountFieldSource{}}, Posting: posting, Permissions: permissions,
 		StatusesCount: statuses, FollowRequestsCount: requests,
+		// Without a profile, the owner has made no choice about the feed.
+		FeedFollowsIndexable: true,
 	}
 	p := a.Profile
 	if p == nil {
 		return out, nil
 	}
 	out.Discoverable, out.Indexable, out.AiOptOut = p.Discoverable, p.Indexable, p.AIOptOut
+	out.FeedEnabled, out.FeedFollowsIndexable = p.FeedEnabled(), p.FeedFollowsIndexable()
 	for i, f := range p.Fields {
 		src := AccountFieldSource{Name: f.Name}
 		if p.Source != nil && i < len(p.Source.FieldValues) {
@@ -138,6 +141,7 @@ func (s *Server) UpdateAccountCredentials(ctx context.Context, req UpdateAccount
 		in = appaccount.ProfileUpdate{
 			DisplayName: b.DisplayName, Note: b.Note, AvatarMediaID: knownIDPtr(b.AvatarMediaId), HeaderMediaID: knownIDPtr(b.HeaderMediaId),
 			Locked: b.Locked, Bot: b.Bot, Discoverable: b.Discoverable, Indexable: b.Indexable, AIOptOut: b.AiOptOut,
+			FeedEnabled: b.FeedEnabled,
 		}
 		if b.Fields != nil {
 			fields := make([]account.FieldSource, len(*b.Fields))

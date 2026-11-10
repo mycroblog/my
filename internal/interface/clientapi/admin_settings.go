@@ -94,6 +94,16 @@ func (s *Server) adminSettingList(ctx context.Context) (AdminSettingListJSONResp
 			item.Choices = &d.Choices
 		case instance.KindInt:
 			item.Minimum, item.Maximum = &d.Min, &d.Max
+		case instance.KindMedia:
+			if value != "" && s.o.MediaImage != nil {
+				img, err := s.o.MediaImage(ctx, value)
+				if err != nil {
+					return AdminSettingListJSONResponse{}, fmt.Errorf("clientapi: the image of %s: %w", d.Key, err)
+				}
+				if img != nil {
+					item.Image = &AdminSettingImage{Url: img.URL, Width: img.Width, Height: img.Height}
+				}
+			}
 		}
 		list.Items = append(list.Items, item)
 	}

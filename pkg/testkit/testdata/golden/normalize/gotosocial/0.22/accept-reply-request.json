@@ -16,12 +16,16 @@
           "Activity": {
             "Actor": "https://other.example/users/brand_new_person",
             "ID": "https://other.example/users/brand_new_person/statuses/01H641QSRS3TCXSVC10X4GPKW7/replyRequest",
+            "Instrument": {
+              "ID": "https://other.example/users/brand_new_person/statuses/01H641QSRS3TCXSVC10X4GPKW7"
+            },
             "Objects": [
               {
                 "ID": "http://remote.example/users/foss_satan/statuses/01FVW7JHQFSFK166WWKR8CBA6M"
               }
             ],
-            "RawType": "ReplyRequest"
+            "RawType": "ReplyRequest",
+            "Type": "ReplyRequest"
           }
         },
         "ID": "https://other.example/users/brand_new_person/statuses/01H641QSRS3TCXSVC10X4GPKW7/replyRequest",

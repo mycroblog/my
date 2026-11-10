@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -58,6 +59,40 @@ func publicCache(ctx context.Context) string {
 	return cachePublic
 }
 
+// textsBatch is an Instance that reads every text at once, as *appinstance.Service does.
+type textsBatch interface {
+	// Texts returns every current, non-empty text.
+	Texts(ctx context.Context) ([]instance.Text, error)
+}
+
+// instanceTexts returns the texts of keys that are not empty, by key, as Text returns each: all of
+// them with one read when Instance can, one by one otherwise.
+func (s *Server) instanceTexts(ctx context.Context, keys ...instance.TextKey) (map[instance.TextKey]instance.Text, error) {
+	out := make(map[instance.TextKey]instance.Text, len(keys))
+	if b, ok := s.o.Instance.(textsBatch); ok {
+		all, err := b.Texts(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: the instance texts: %w", err)
+		}
+		for _, t := range all {
+			if slices.Contains(keys, t.Key) {
+				out[t.Key] = t
+			}
+		}
+		return out, nil
+	}
+	for _, key := range keys {
+		text, ok, err := s.o.Instance.Text(ctx, key)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: instance text %s: %w", key, err)
+		}
+		if ok {
+			out[key] = text
+		}
+	}
+	return out, nil
+}
+
 // GetInstance serves GET /api/v1/instance. The administrators' texts and rules hold one value
 // each, the same in every locale. Like every response, it varies with Accept-Language (localize)
 // for anonymous requests and is private for authenticated ones.
@@ -72,6 +107,11 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		if settings, err = s.o.Instance.Settings(ctx); err != nil {
 			return nil, fmt.Errorf("clientapi: instance settings: %w", err)
 		}
+		texts, err := s.instanceTexts(ctx, instance.TextName, instance.TextShortDescription, instance.TextDescription,
+			instance.TextTerms, instance.TextPrivacyPolicy, instance.TextCommerceDisclosure)
+		if err != nil {
+			return nil, err
+		}
 		for _, t := range []struct {
 			key instance.TextKey
 			set func(string)
@@ -80,19 +120,22 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 			{instance.TextShortDescription, func(v string) { out.ShortDescription = &v }},
 			{instance.TextDescription, func(v string) { out.Description = &v }},
 		} {
-			text, ok, err := s.o.Instance.Text(ctx, t.key)
-			if err != nil {
-				return nil, fmt.Errorf("clientapi: instance text %s: %w", t.key, err)
-			}
-			if ok {
+			if text, ok := texts[t.key]; ok {
 				t.set(text.Body)
 			}
 		}
-		if err := s.documentURLs(ctx, &out); err != nil {
-			return nil, err
-		}
+		s.documentURLs(texts, &out)
 	}
 	out.Limits = InstanceLimits{MaxPostCharacters: settings.MaxStatusLength(), RequireMediaDescription: settings.RequireMediaDescription()}
+	out.Limits.Drafts = &InstanceDraftLimits{
+		MaxDrafts: settings.MaxDrafts(), MaxScheduledPosts: settings.MaxScheduledPosts(),
+		MaxScheduledPostsPerDay: settings.MaxScheduledPostsPerDay(), ScheduledPostMinLeadMinutes: settings.ScheduledPostMinLeadMinutes(),
+		ScheduledPostMaxLeadDays: settings.ScheduledPostMaxLeadDays(),
+	}
+	// The limits of articles and who may write them (ADR-0160 §3, §5).
+	out.Limits.Articles = &InstanceArticleLimits{MaxBytes: settings.MaxArticleBytes(), MaxImages: settings.MaxArticleImages()}
+	authoring := InstanceArticleAuthoring(settings.ArticleAuthoring())
+	out.ArticleAuthoring = &authoring
 	out.Timelines = InstanceTimelines{Local: InstanceAudience(settings.LocalTimelineVisibility()), Federated: InstanceAudience(settings.FederatedTimelineVisibility())}
 	// The direction the instance federates in, by which clients offer the operations on remote
 	// accounts and posts (FR-413, ADR-0006).
@@ -115,7 +158,7 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		out.AutoDeleteLimit = &AutoDeleteLimit{
 			MaxAgeDays: l.MaxAgeDays, AllowPinned: l.AllowPinned, KeptPins: l.KeptPins,
 			AllowBookmarked: l.AllowBookmarked, AllowFavourited: l.AllowFavourited, AllowMedia: l.AllowMedia,
-			AllowPolls: l.AllowPolls, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
+			AllowPolls: l.AllowPolls, AllowArticles: &l.AllowArticles, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
 		}
 	}
 	// How much of the costs GET /instance/cost_totals publishes (FR-903, ADR-0067 §8).

@@ -14,7 +14,10 @@ import {
   DisplayIcon,
   DomainMuteIcon,
   ExternalLink,
+  FilterIcon,
   FollowRequestIcon,
+  HashtagIcon,
+  WaitingIcon,
   ImportExportIcon,
   InviteIcon,
   LinkedAccountIcon,
@@ -81,6 +84,7 @@ const groups: readonly { id: string; heading: ClientMessageKey; pages: readonly 
     pages: [
       { href: "/settings/preferences", label: "client:settings.preferences.title", icon: DisplayIcon },
       { href: "/settings/notifications", label: "client:settings.notifications.title", icon: NotificationsIcon },
+      { href: "/settings/filters", label: "client:filters.title", icon: FilterIcon },
       { href: "/settings/voice", label: "client:voice.history.title", icon: VoiceIcon, voice: true },
     ],
   },
@@ -89,6 +93,12 @@ const groups: readonly { id: string; heading: ClientMessageKey; pages: readonly 
     heading: "client:settings.menu.group.relationships",
     pages: [
       { href: "/settings/follow-requests", label: "client:settings.follow_requests.title", icon: FollowRequestIcon },
+      {
+        href: "/settings/interaction-requests",
+        label: "client:interaction_requests.title",
+        icon: WaitingIcon,
+      },
+      { href: "/settings/followed-tags", label: "client:tag.followed_list.title", icon: HashtagIcon },
       { href: "/settings/blocks", label: "client:settings.blocks.title", icon: BlockIcon },
       { href: "/settings/mutes", label: "client:settings.mutes.title", icon: MuteIcon },
       { href: "/settings/domain-mutes", label: "client:settings.domain_mutes.title", icon: DomainMuteIcon },

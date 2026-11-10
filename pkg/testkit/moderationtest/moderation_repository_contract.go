@@ -27,7 +27,8 @@ import (
 // the lists of reports, of actions, and of domain actions newest first with their filters and
 // keyset pages; the notes and reopenings of a report and the counts of a target's history; what
 // the rebuild of the projections reads and deletes; and the reads in a transaction that see what
-// it wrote. The moderation use cases on top of it are ModerationFlows, which
+// it wrote; and the allowlist of federation (AllowlistContract). The moderation use cases on top
+// of it are ModerationFlows, which
 // internal/flowtest/moderation runs once on SQLite.
 func ModerationContract(t *testing.T, newHarness ModerationFactory) {
 	t.Helper()
@@ -44,6 +45,7 @@ func ModerationContract(t *testing.T, newHarness ModerationFactory) {
 		{"ReadsAndDeletesForTheRebuild", modRepoRebuild},
 		{"ReadsWhatItsTransactionWrote", modRepoTxReads},
 	})
+	t.Run("Allowlist", func(t *testing.T) { AllowlistContract(t, newHarness) })
 }
 
 type modRepoCase struct {
@@ -214,6 +216,11 @@ func modRepoActions(t *testing.T, r *modRepo) {
 	if rec, err := r.h.Moderation.FindActionRecord(ctx, a.ID); err != nil || rec.Lift == nil || *rec.Lift != l {
 		t.Errorf("FindActionRecord after the lift = %+v, %v; want the lift %+v", rec, err, l)
 	}
+	if recs, err := r.h.Moderation.FindActionRecords(ctx, []string{a.ID, r.ids.NewID()}); err != nil || len(recs) != 1 {
+		t.Errorf("FindActionRecords = %+v, %v; want only the action", recs, err)
+	} else if one, _ := r.h.Moderation.FindActionRecord(ctx, a.ID); !reflect.DeepEqual(recs[a.ID], one) {
+		t.Errorf("FindActionRecords[a] = %+v; want %+v as FindActionRecord reads it", recs[a.ID], one)
+	}
 	err = r.txErr(t, func(ctx context.Context, tx uow.Tx) error {
 		return r.h.Moderation.InsertActionLift(ctx, tx, moderation.Lift{ActionID: a.ID, LiftedAt: r.clock.Now()})
 	})
@@ -318,6 +325,18 @@ func modRepoAccountRestrictions(t *testing.T, r *modRepo) {
 		if !slices.Equal(got, want) {
 			t.Errorf("%s: AccountRestrictionsInEffectTx = %v; want %v", name, got, want)
 		}
+		other := r.ids.NewID()
+		of, err := r.h.Moderation.AccountRestrictionsInEffectOf(ctx, []string{account, other}, at)
+		if err != nil || !slices.Equal(of[account], want) || len(of[other]) != 0 {
+			t.Errorf("%s: AccountRestrictionsInEffectOf = %v, %v; want %v of the account alone", name, of, err, want)
+		}
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			of, err = r.h.Moderation.AccountRestrictionsInEffectOfTx(ctx, tx, []string{account, other}, at)
+			return err
+		})
+		if !slices.Equal(of[account], want) || len(of[other]) != 0 {
+			t.Errorf("%s: AccountRestrictionsInEffectOfTx = %v; want %v of the account alone", name, of, want)
+		}
 	}
 	now := r.clock.Now()
 	inEffect("now", now, moderation.RestrictLogin, moderation.RestrictPost, moderation.RestrictPublicDiscovery)
@@ -333,6 +352,15 @@ func modRepoAccountRestrictions(t *testing.T, r *modRepo) {
 	})
 	if !reflect.DeepEqual(sortRows(got), sortRows(rows[:4])) {
 		t.Errorf("AccountRestrictionRows = %+v, want %+v", got, rows[:4])
+	}
+	var of map[string][]moderation.RestrictionRow
+	stranger := r.ids.NewID()
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		of, err = r.h.Moderation.AccountRestrictionRowsOf(ctx, tx, []string{account, stranger})
+		return err
+	})
+	if !reflect.DeepEqual(sortRows(of[account]), sortRows(rows[:4])) || len(of[stranger]) != 0 {
+		t.Errorf("AccountRestrictionRowsOf = %+v, want %+v of the account alone, as AccountRestrictionRows", of, rows[:4])
 	}
 
 	// The expired rows go in batches, the earliest end first, and only when they ended.
@@ -406,6 +434,31 @@ func modRepoDomainRestrictions(t *testing.T, r *modRepo) {
 		if !slices.Equal(got, want) {
 			t.Errorf("%s: DomainRestrictionsInEffectTx = %v; want %v", name, got, want)
 		}
+		// By domain: the union over the domains is what DomainRestrictionsInEffect finds of all.
+		of, err := r.h.Moderation.DomainRestrictionsInEffectOf(ctx, domains, at)
+		if err != nil {
+			t.Fatalf("%s: DomainRestrictionsInEffectOf = %v", name, err)
+		}
+		var ofTx map[string][]moderation.Restriction
+		r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+			ofTx, err = r.h.Moderation.DomainRestrictionsInEffectOfTx(ctx, tx, domains, at)
+			return err
+		})
+		if !reflect.DeepEqual(ofTx, of) {
+			t.Errorf("%s: DomainRestrictionsInEffectOfTx = %v, want %v as DomainRestrictionsInEffectOf", name, ofTx, of)
+		}
+		var union []moderation.Restriction
+		for _, d := range domains {
+			one, err := r.h.Moderation.DomainRestrictionsInEffect(ctx, []string{d}, at)
+			if err != nil || !slices.Equal(of[d], one) && (len(of[d]) != 0 || len(one) != 0) {
+				t.Errorf("%s: DomainRestrictionsInEffectOf[%s] = %v, want %v (%v) as DomainRestrictionsInEffect", name, d, of[d], one, err)
+			}
+			union = append(union, of[d]...)
+		}
+		slices.Sort(union)
+		if union = slices.Compact(union); !slices.Equal(union, want) && (len(union) != 0 || len(want) != 0) {
+			t.Errorf("%s: the union of DomainRestrictionsInEffectOf = %v; want %v", name, union, want)
+		}
 	}
 	inEffect("a subdomain and its parents", []string{"sub.bad.example", "bad.example", "example"}, now,
 		moderation.RestrictFederation, moderation.RestrictMediaFetch, moderation.RestrictProfileView)
@@ -455,6 +508,28 @@ func modRepoReports(t *testing.T, r *modRepo) {
 	}
 	if got, err := r.h.Moderation.FindReport(ctx, local.ID); err != nil || !sameReport(got, local) {
 		t.Errorf("FindReport(local) = %+v, %v; want %+v", got, err, local)
+	}
+	if got, err := r.h.Moderation.FindReports(ctx, []string{remote.ID, local.ID, r.ids.NewID()}); err != nil || len(got) != 2 ||
+		!sameReport(got[remote.ID], remote) || !sameReport(got[local.ID], local) {
+		t.Errorf("FindReports = %+v, %v; want the remote and the local report", got, err)
+	}
+	reportStatuses, err := r.h.Moderation.FindReportStatuses(ctx, []string{remote.ID, local.ID, r.ids.NewID()})
+	if err != nil {
+		t.Errorf("FindReportStatuses = %v", err)
+	}
+	for _, id := range []string{remote.ID, local.ID} {
+		one, err := r.h.Moderation.FindReportStatus(ctx, id)
+		got, ok := reportStatuses[id]
+		switch {
+		case errors.Is(err, appmoderation.ErrNotFound):
+			if ok {
+				t.Errorf("FindReportStatuses[%s] = %+v; want none, as FindReportStatus finds none", id, got)
+			}
+		case err != nil:
+			t.Errorf("FindReportStatus(%s) = %v", id, err)
+		case !ok || !reflect.DeepEqual(got, one):
+			t.Errorf("FindReportStatuses[%s] = %+v; want %+v as FindReportStatus reads it", id, got, one)
+		}
 	}
 	if got, err := r.h.Moderation.FindReportByURI(ctx, remote.URI); err != nil || !sameReport(got, remote) {
 		t.Errorf("FindReportByURI = %+v, %v; want %+v", got, err, remote)

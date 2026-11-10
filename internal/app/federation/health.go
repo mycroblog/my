@@ -27,6 +27,10 @@ const (
 type DeliveryAttempted struct {
 	Attempt federation.DeliveryAttempt
 	Domain  string
+	// NoHealthRow reports that the server had no instance_health row when the delivery read its
+	// context: a success then has no failure to clear, and the projector writes nothing without
+	// reading the row. A failure recorded in between is cleared by the next success.
+	NoHealthRow bool
 }
 
 // EventType implements uow.Event.
@@ -69,6 +73,9 @@ func RegisterHealthProjectors(r *uow.Projectors, d HealthProjectorDeps) {
 		case federation.DeliveryRetryableFailure:
 			return p.failed(ctx, tx, ev.Domain, ev.Attempt.AttemptedAt)
 		case federation.DeliverySucceeded:
+			if ev.NoHealthRow {
+				return nil // a server without a row has no failure to clear
+			}
 			return p.reached(ctx, tx, ev.Domain, federation.ReasonDeliverySucceeded, ev.Attempt.AttemptedAt)
 		}
 		return nil

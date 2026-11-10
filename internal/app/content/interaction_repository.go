@@ -51,6 +51,8 @@ type InteractionRepository interface {
 	DeleteBoostEdge(ctx context.Context, tx uow.Tx, e content.BoostEdge) (bool, error)
 	// DeleteStatusBoostEdges removes the edges of every boost of a status.
 	DeleteStatusBoostEdges(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusBoostEdgesOf is DeleteStatusBoostEdges of each of statusIDs, with one statement.
+	DeleteStatusBoostEdgesOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// RebuildBoostEdges empties boost_edges and derives it again from the boosts that are not
 	// retracted, of statuses that are not deleted (data-model §9).
 	RebuildBoostEdges(ctx context.Context, tx uow.Tx) error
@@ -62,6 +64,12 @@ type InteractionRepository interface {
 	// ListLocalStatusBoosters returns the local accounts that boost a status in boost_edges,
 	// ordered by ID.
 	ListLocalStatusBoosters(ctx context.Context, tx uow.Tx, statusID string) ([]string, error)
+	// ListLocalStatusBoostersOf is ListLocalStatusBoosters of each of statusIDs, together: a
+	// booster of several of them comes once for each.
+	ListLocalStatusBoostersOf(ctx context.Context, tx uow.Tx, statusIDs []string) ([]string, error)
+	// SubtractLocalPostsOf is AddLocalPosts of -removed[id] for each account id, with one
+	// statement per step.
+	SubtractLocalPostsOf(ctx context.Context, tx uow.Tx, removed map[string]int64) error
 
 	// status_counters, shared with the status projectors (Repository.RebuildCounters counts
 	// the boosts and favourites by the same rules).
@@ -78,6 +86,12 @@ type InteractionRepository interface {
 	// Mentioned reports whether the current revision of a status mentions an account
 	// (status_mention_index), for the visibility check.
 	Mentioned(ctx context.Context, statusID, accountID string) (bool, error)
+	// MentionedIn returns the statuses among statusIDs that mention accountID, as Mentioned tells of
+	// one, with one query whatever the number of statuses.
+	MentionedIn(ctx context.Context, statusIDs []string, accountID string) (map[string]bool, error)
+	// MentionedAmong returns the accounts among accountIDs that statusID mentions, as Mentioned
+	// tells of each, with one query.
+	MentionedAmong(ctx context.Context, statusID string, accountIDs []string) (map[string]bool, error)
 
 	// Current values. Each insert does nothing when the account already has the row for the
 	// status and reports whether it inserted; each delete reports whether there was a row.
@@ -123,6 +137,8 @@ type InteractionRepository interface {
 	AddReactions(ctx context.Context, tx uow.Tx, statusID string, emoji content.ReactionEmoji, delta int64) error
 	// DeleteStatusReactionCounts removes the counts of a status.
 	DeleteStatusReactionCounts(ctx context.Context, tx uow.Tx, statusID string) error
+	// DeleteStatusReactionCountsOf is DeleteStatusReactionCounts of each of statusIDs.
+	DeleteStatusReactionCountsOf(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// RebuildReactionCounts empties status_reaction_counts and derives it again from the
 	// reactions to statuses that are not deleted (data-model §9).
 	RebuildReactionCounts(ctx context.Context, tx uow.Tx) error
@@ -133,6 +149,16 @@ type InteractionRepository interface {
 	FindReactionByURI(ctx context.Context, uri string) (content.Reaction, error)
 	// ListAccountStatusReactions returns the reactions of an account to a status, oldest first.
 	ListAccountStatusReactions(ctx context.Context, accountID, statusID string) ([]content.Reaction, error)
+	// FindAccountInteractions returns what accountID did with each of statusIDs, by status ID: its
+	// favourite, boost edge, bookmark, pin, and reactions, as FindFavourite, FindBoostEdge,
+	// FindBookmark, FindPin, and ListAccountStatusReactions return them of one status, with one
+	// query per kind whatever the number of statuses.
+	FindAccountInteractions(ctx context.Context, accountID string, statusIDs []string) (AccountInteractions, error)
+	// FindInteractionsOfAccounts is FindAccountInteractions of each of accountIDs, by account,
+	// with one query per kind.
+	FindInteractionsOfAccounts(ctx context.Context, accountIDs, statusIDs []string) (map[string]AccountInteractions, error)
+	// MentionsOfAccountsIn is MentionedIn of each of accountIDs, by account, with one query.
+	MentionsOfAccountsIn(ctx context.Context, statusIDs, accountIDs []string) (map[string]map[string]bool, error)
 	// ListStatusReactions returns the reactions to a status newest first, only those with the
 	// emoji whose key is emojiKey unless it is "": those with an ID below before ("" starts at
 	// the newest), at most limit of them.
@@ -140,11 +166,17 @@ type InteractionRepository interface {
 	// ListReactionCounts returns the counts of the reactions to a status, the largest first
 	// (ties by key), at most limit of them.
 	ListReactionCounts(ctx context.Context, statusID string, limit int) ([]content.ReactionCount, error)
+	// ListReactionCountsOf returns the reaction counts of each of statusIDs that has some, by
+	// status ID, as ListReactionCounts returns those of one, with one query.
+	ListReactionCountsOf(ctx context.Context, statusIDs []string, limit int) (map[string][]content.ReactionCount, error)
 	// ListAllReactionCounts returns status_reaction_counts ordered by status and key, for
 	// verifying it.
 	ListAllReactionCounts(ctx context.Context) ([]content.ReactionCount, error)
 
 	FindBoost(ctx context.Context, id string) (content.Boost, error)
+	// FindBoosts returns the boosts of ids that exist, by ID, as FindBoost returns one, with one
+	// query.
+	FindBoosts(ctx context.Context, ids []string) (map[string]content.Boost, error)
 	FindBoostByURI(ctx context.Context, uri string) (content.Boost, error)
 	FindBoostRetraction(ctx context.Context, boostID string) (content.BoostRetraction, error)
 	// FindBoostRetractionTx is FindBoostRetraction inside tx.
@@ -160,4 +192,14 @@ type InteractionRepository interface {
 	ListFavourites(ctx context.Context, accountID, before string, limit int) ([]content.Favourite, error)
 	ListBookmarks(ctx context.Context, accountID, before string, limit int) ([]content.Bookmark, error)
 	ListPins(ctx context.Context, accountID string) ([]content.Pin, error)
+}
+
+// AccountInteractions are what one account did with many statuses, by status ID
+// (InteractionRepository.FindAccountInteractions).
+type AccountInteractions struct {
+	Favourites map[string]content.Favourite
+	BoostEdges map[string]content.BoostEdge
+	Bookmarks  map[string]content.Bookmark
+	Pins       map[string]content.Pin
+	Reactions  map[string][]content.Reaction
 }

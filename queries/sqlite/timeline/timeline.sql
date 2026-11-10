@@ -27,16 +27,8 @@ DELETE FROM feed_entries WHERE id = ?;
 -- name: DeleteFeedEntriesOfStatus :exec
 DELETE FROM feed_entries WHERE status_id = ?;
 
--- name: InsertFeedDirectRecipient :exec
-INSERT INTO feed_direct_recipients (entry_id, recipient_account_id) VALUES (?, ?)
-ON CONFLICT DO NOTHING;
-
 -- name: DeleteFeedDirectRecipients :exec
 DELETE FROM feed_direct_recipients WHERE entry_id = ?;
-
--- name: InsertFeedTagEntry :exec
-INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at) VALUES (?, ?, ?, ?, ?, ?)
-ON CONFLICT DO NOTHING;
 
 -- name: DeleteFeedTagEntries :exec
 DELETE FROM feed_tag_entries WHERE entry_id = ?;
@@ -133,6 +125,11 @@ SELECT viewer_account_id, domain FROM feed_domain_mutes ORDER BY viewer_account_
 -- before = '' starts at the newest entry. A language filter applies when all_languages is 0:
 -- entries in an undetermined language ('und') always pass. A restriction or mute applies while
 -- its end is NULL or after now. A domain restriction also covers the subdomains of its domain.
+
+-- The accounts among follower_ids whose home timelines follow the followee.
+-- name: ListFeedFollowersAmong :many
+SELECT follower_account_id FROM feed_follow_edges
+WHERE followee_account_id = sqlc.arg(followee) AND follower_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(follower_ids) AS TEXT)));
 
 -- ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
 -- accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
@@ -235,7 +232,8 @@ LIMIT sqlc.arg(page_limit);
 
 -- ListTagEntries is the timeline of a hashtag (FR-203): the public and local posts with the tag
 -- (public only when include_local is 0), with the exclusions of ListLocalEntries and of the
--- author's domain.
+-- author's domain. local_only keeps the posts of local authors, and exclude_replies leaves out
+-- the posts that reply to a status (the Atom feed of a hashtag, FR-213).
 -- name: ListTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
@@ -243,6 +241,8 @@ FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.tag_id = sqlc.arg(tag_id) AND t.visibility IN ('public', 'local')
   AND (CAST(sqlc.arg(include_local) AS INTEGER) = 1 OR t.visibility = 'public')
+  AND (CAST(sqlc.arg(local_only) AS INTEGER) = 0 OR t.is_local = 1)
+  AND (CAST(sqlc.arg(exclude_replies) AS INTEGER) = 0 OR e.is_reply = 0)
   AND (CAST(sqlc.arg(before) AS TEXT) = '' OR t.entry_id < CAST(sqlc.arg(before) AS TEXT))
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
@@ -345,22 +345,6 @@ WHERE recipient_account_id = sqlc.arg(viewer) AND entry_id IN (SELECT value FROM
 -- ListCountedFeedTagIDs returns the tags of an entry that tag_usage counts.
 -- name: ListCountedFeedTagIDs :many
 SELECT tag_id FROM feed_tag_entries WHERE entry_id = ? AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id;
-
--- AddTagUsage adds n posts to the usage of a tag, which a post that counts carries.
--- name: AddTagUsage :exec
-INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
-VALUES (CAST(sqlc.arg(tag_id) AS TEXT), CAST(sqlc.arg(n) AS INTEGER), (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = CAST(sqlc.arg(tag_id) AS TEXT) AND f.visibility IN ('public', 'local', 'unlisted')))
-ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at;
-
--- DeleteDrainedTagUsage deletes the usage of a tag that n posts fewer would leave at zero.
--- name: DeleteDrainedTagUsage :exec
-DELETE FROM tag_usage WHERE tag_id = CAST(sqlc.arg(tag_id) AS TEXT) AND statuses_count <= CAST(sqlc.arg(n) AS INTEGER);
-
--- AdjustTagUsage adds delta (which may be zero or negative) posts to the usage of a tag that has
--- a row and that a post that counts still carries, and reads its last_used_at again.
--- name: AdjustTagUsage :exec
-UPDATE tag_usage SET statuses_count = statuses_count + CAST(sqlc.arg(delta) AS INTEGER), last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = CAST(sqlc.arg(tag_id) AS TEXT) AND f.visibility IN ('public', 'local', 'unlisted'))
-WHERE tag_id = CAST(sqlc.arg(tag_id) AS TEXT);
 
 -- ListTagUsageOf returns the usage of the tags among ids that have a row.
 -- name: ListTagUsageOf :many
@@ -480,3 +464,100 @@ WHERE e.author_account_id IN (
   AND (CAST(sqlc.arg(all_languages) AS INTEGER) = 1 OR e.language = 'und' OR e.language IN (SELECT value FROM json_each(CAST(sqlc.arg(languages) AS TEXT))))
 ORDER BY e.id DESC
 LIMIT sqlc.arg(page_limit);
+
+-- DeleteFeedFollowEdges and DeleteListMembersOfFollows are DeleteFeedFollowEdge and
+-- DeleteListMembersOfFollow of many pairs, a JSON array of {"a": follower, "b": followee}.
+-- name: DeleteFeedFollowEdges :exec
+DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));
+
+-- name: DeleteListMembersOfFollows :exec
+DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
+  SELECT value ->> '$.a', value ->> '$.b' FROM json_each(CAST(sqlc.arg(pairs) AS TEXT)));
+
+-- The rows of an entry's direct recipients and tag entries, and the tag usage that they change,
+-- written with one statement each; the lists are JSON arrays, and WHERE true keeps ON CONFLICT
+-- from reading as a join constraint. Tag usage: AddManyTagUsage adds n posts to the usage of each
+-- tag; DeleteManyDrainedTagUsage deletes the usage of each tag that n posts fewer would leave at
+-- zero; AdjustManyTagUsage adds n (zero or negative) posts to each tag that has a row, and reads
+-- its last_used_at again.
+
+-- name: InsertFeedDirectRecipients :exec
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT CAST(sqlc.arg(entry_id) AS TEXT), value FROM json_each(CAST(sqlc.arg(recipient_account_ids) AS TEXT)) WHERE true
+ON CONFLICT DO NOTHING;
+
+-- name: InsertFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT value, CAST(sqlc.arg(entry_id) AS TEXT), CAST(sqlc.arg(author_account_id) AS TEXT), CAST(sqlc.arg(visibility) AS TEXT),
+  CAST(sqlc.arg(is_local) AS INTEGER), CAST(sqlc.arg(revised_at) AS INTEGER)
+FROM json_each(CAST(sqlc.arg(tag_ids) AS TEXT)) WHERE true
+ON CONFLICT DO NOTHING;
+
+-- name: AddManyTagUsage :exec
+INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
+SELECT value ->> '$.tag_id', value ->> '$.n',
+  (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = value ->> '$.tag_id' AND f.visibility IN ('public', 'local', 'unlisted'))
+FROM json_each(CAST(sqlc.arg(usage) AS TEXT)) WHERE true
+ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at;
+
+-- name: DeleteManyDrainedTagUsage :exec
+DELETE FROM tag_usage WHERE EXISTS (
+  SELECT 1 FROM json_each(CAST(sqlc.arg(usage) AS TEXT))
+  WHERE value ->> '$.tag_id' = tag_usage.tag_id AND tag_usage.statuses_count <= CAST(value ->> '$.n' AS INTEGER));
+
+-- name: AdjustManyTagUsage :exec
+UPDATE tag_usage SET
+  statuses_count = statuses_count + (SELECT CAST(value ->> '$.n' AS INTEGER) FROM json_each(CAST(sqlc.arg(usage) AS TEXT)) WHERE value ->> '$.tag_id' = tag_usage.tag_id),
+  last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = tag_usage.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
+WHERE tag_id IN (SELECT value ->> '$.tag_id' FROM json_each(CAST(sqlc.arg(usage) AS TEXT)));
+
+-- UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges, a JSON array; WHERE true keeps
+-- ON CONFLICT from reading as a join constraint.
+-- name: UpsertFeedFollowEdges :exec
+INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
+SELECT value ->> '$.follower_account_id', value ->> '$.followee_account_id', value ->> '$.show_boosts'
+FROM json_each(CAST(sqlc.arg(edges) AS TEXT)) WHERE true
+ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts;
+
+-- The rows of the entries of many deleted statuses, each statement as the one of one entry above
+-- does for every entry it names. The lists are JSON arrays.
+
+-- name: DeleteFeedDirectRecipientsOf :exec
+DELETE FROM feed_direct_recipients WHERE entry_id IN (SELECT value FROM json_each(CAST(sqlc.arg(entry_ids) AS TEXT)));
+
+-- name: ListCountedFeedTagIDsOf :many
+SELECT tag_id FROM feed_tag_entries WHERE entry_id IN (SELECT value FROM json_each(CAST(sqlc.arg(entry_ids) AS TEXT))) AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id;
+
+-- name: DeleteFeedTagEntriesOf :exec
+DELETE FROM feed_tag_entries WHERE entry_id IN (SELECT value FROM json_each(CAST(sqlc.arg(entry_ids) AS TEXT)));
+
+-- name: DeleteFeedEntriesOfStatuses :exec
+DELETE FROM feed_entries WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT)));
+
+-- The facts of many viewers, each as the query of one viewer above reads it, for deciding one new
+-- entry for many streams at once.
+
+-- name: ListFeedFollowedAmongOf :many
+SELECT follower_account_id, followee_account_id FROM feed_follow_edges
+WHERE follower_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) AS TEXT))) AND followee_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)));
+
+-- name: ListFeedExclusionsAmongOf :many
+SELECT viewer_account_id, target_account_id, reason FROM feed_exclusions
+WHERE viewer_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) AS TEXT))) AND (expires_at IS NULL OR expires_at > CAST(sqlc.arg(now) AS INTEGER))
+  AND target_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)));
+
+-- name: ListFeedDomainMutesAmongOf :many
+SELECT viewer_account_id, domain FROM feed_domain_mutes
+WHERE viewer_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) AS TEXT))) AND domain IN (SELECT value FROM json_each(CAST(sqlc.arg(domains) AS TEXT)));
+
+-- name: ListFeedDirectEntriesAmongOf :many
+SELECT recipient_account_id, entry_id FROM feed_direct_recipients
+WHERE recipient_account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(viewers) AS TEXT))) AND entry_id IN (SELECT value FROM json_each(CAST(sqlc.arg(entry_ids) AS TEXT)));
+
+-- UpsertFeedExclusions is UpsertFeedExclusion of many exclusions, a JSON array.
+-- name: UpsertFeedExclusions :exec
+INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT value ->> '$.viewer', value ->> '$.target', value ->> '$.reason', value ->> '$.expires_at'
+FROM json_each(CAST(sqlc.arg(exclusions) AS TEXT)) WHERE true
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;

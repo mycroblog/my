@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -139,27 +140,23 @@ func (s *Server) ListOwnReports(ctx context.Context, req ListOwnReportsRequestOb
 // target that is not presentable to them (suspended, deleted, or blocking them) is left out of a
 // report that stays listed. A report whose target account no longer exists is left out.
 func (s *Server) newReports(ctx context.Context, viewer Viewer, recs []moderation.ReportRecord) ([]Report, error) {
-	exists := map[string]bool{}
-	var actors []appaccount.Actor
+	var targets []string
 	for _, rec := range recs {
-		id := rec.Report.TargetAccountID
-		if _, ok := exists[id]; ok {
-			continue
+		if id := rec.Report.TargetAccountID; !slices.Contains(targets, id) {
+			targets = append(targets, id)
 		}
-		a, err := s.o.Accounts.FindByID(ctx, id)
-		switch {
-		case errors.Is(err, appaccount.ErrNotFound):
-			exists[id] = false
-			continue
-		case err != nil:
-			return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", id, rec.Report.ID, err)
-		}
-		exists[id] = true
-		shown, err := s.presentable(ctx, a, &viewer, true)
-		if err != nil {
-			return nil, fmt.Errorf("clientapi: the target %s of report %s: %w", id, rec.Report.ID, err)
-		}
-		if shown {
+	}
+	found, err := s.o.Accounts.FindByIDs(ctx, targets)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the targets of the reports: %w", err)
+	}
+	shown, err := s.presentableOf(ctx, &viewer, found, targets, true)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the targets of the reports: %w", err)
+	}
+	var actors []appaccount.Actor
+	for _, id := range targets {
+		if a, ok := shown[id]; ok {
 			actors = append(actors, a)
 		}
 	}
@@ -173,7 +170,7 @@ func (s *Server) newReports(ctx context.Context, viewer Viewer, recs []moderatio
 	}
 	out := make([]Report, 0, len(recs))
 	for _, rec := range recs {
-		if exists[rec.Report.TargetAccountID] {
+		if _, ok := found[rec.Report.TargetAccountID]; ok {
 			out = append(out, newReport(rec, byID[rec.Report.TargetAccountID]))
 		}
 	}

@@ -30,7 +30,8 @@ const (
 )
 
 // StreamEvent is an event of GET /streaming: one of *UpdateEvent, *ListUpdateEvent, *NotificationEvent,
-// *AnnouncementEvent, *AnnouncementRemovedEvent, and *UnknownEvent. Branch on it with a type switch.
+// *ConversationEvent, *AnnouncementEvent, *AnnouncementRemovedEvent, *NotificationRequestsEvent, and *UnknownEvent.
+// Branch on it with a type switch.
 type StreamEvent interface {
 	// EventName is the `event` field of the event, such as "update".
 	EventName() string
@@ -49,11 +50,20 @@ type ListUpdateEvent struct {
 // NotificationEvent is a new notification.
 type NotificationEvent struct{ Notification Notification }
 
+// ConversationEvent is a conversation of the direct messages that changed (a direct post arrived in it, or the
+// user read it), as ListConversations shows it. A token without the read:direct scope receives none.
+type ConversationEvent struct{ Conversation Conversation }
+
 // AnnouncementEvent is an announcement that was published or changed.
 type AnnouncementEvent struct{ Announcement Announcement }
 
 // AnnouncementRemovedEvent is an announcement that no longer shows.
 type AnnouncementRemovedEvent struct{ ID string }
+
+// NotificationRequestsEvent tells the new counts of the notification requests: a notification that the user's
+// notification policy filtered arrived, or a request was accepted or dismissed. The filtered notification itself
+// comes with no NotificationEvent.
+type NotificationRequestsEvent struct{ Summary NotificationRequestSummary }
 
 // UnknownEvent is an event that this version of the library does not know, which a newer server may send. Name
 // is its `event` field ("message" when it has none) and Data its data, unparsed.
@@ -71,11 +81,17 @@ func (*ListUpdateEvent) EventName() string { return "list_update" }
 // EventName is "notification".
 func (*NotificationEvent) EventName() string { return "notification" }
 
+// EventName is "conversation".
+func (*ConversationEvent) EventName() string { return "conversation" }
+
 // EventName is "announcement".
 func (*AnnouncementEvent) EventName() string { return "announcement" }
 
 // EventName is "announcement_removed".
 func (*AnnouncementRemovedEvent) EventName() string { return "announcement_removed" }
+
+// EventName is "notification_requests".
+func (*NotificationRequestsEvent) EventName() string { return "notification_requests" }
 
 // EventName is the event's own name.
 func (e *UnknownEvent) EventName() string { return e.Name }
@@ -322,6 +338,9 @@ func parseStreamEvent(ev rawEvent) (StreamEvent, error) {
 	case "notification":
 		e := &NotificationEvent{}
 		typed, target = e, &e.Notification
+	case "conversation":
+		e := &ConversationEvent{}
+		typed, target = e, &e.Conversation
 	case "announcement":
 		e := &AnnouncementEvent{}
 		typed, target = e, &e.Announcement
@@ -335,6 +354,9 @@ func parseStreamEvent(ev rawEvent) (StreamEvent, error) {
 		}
 		e.ID = removed.ID
 		return e, nil
+	case "notification_requests":
+		e := &NotificationRequestsEvent{}
+		typed, target = e, &e.Summary
 	default:
 		return &UnknownEvent{Name: ev.name, Data: ev.data}, nil
 	}

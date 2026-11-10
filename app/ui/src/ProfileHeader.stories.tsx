@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect, waitFor } from "storybook/test";
+import { Box } from "./Box";
 import { Button } from "./Button";
+import { Cluster } from "./Cluster";
 import { CustomEmoji } from "./CustomEmoji";
 import { ExternalLink } from "./ExternalLink";
 import { Heading } from "./Heading";
 import { Link } from "./Link";
+import { Hint } from "./Text";
 import { ProfileField, ProfileFields, ProfileHeader, ProfileHeaderImage } from "./ProfileHeader";
 
 /** A stand-in image, inline so the story does not depend on the network. */
@@ -175,6 +178,26 @@ export const ManyFields: Story = {
 };
 
 /** A narrow container: the fields stack their names above their values. */
+/**
+ * Buttons with a line about the follow (a request another server has not answered): the buttons stay at the end of the
+ * avatar's row, and the line takes a row of its own below it.
+ */
+export const ActionsWithHint: Story = {
+  args: {
+    actions: (
+      <>
+        <Cluster align="center" gap="2">
+          <Button>Requested</Button>
+          <Button variant="ghost">More</Button>
+        </Cluster>
+        <Box fullRow>
+          <Hint>Waiting for example.social to accept the follow request.</Hint>
+        </Box>
+      </>
+    ),
+  },
+};
+
 export const Narrow: Story = {
   decorators: [
     (Story) => (

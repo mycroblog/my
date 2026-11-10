@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+description: What an event says of the user who reads it.
+type: object
+required: [organizer, coorganizer, invited, approved]
+properties:
+  organizer:
+    description: Whether the user organizes the event.
+    type: boolean
+  coorganizer:
+    description: Whether the user co-organizes the event.
+    type: boolean
+  invited:
+    description: Whether the user has an invitation that was not revoked.
+    type: boolean
+  answer:
+    description: The user's answer; omitted before the user answers.
+    allOf:
+      - $ref: ./EventAnswer.yaml
+  approved:
+    description: Whether the organizer or a co-organizer approved the user's answer.
+    type: boolean

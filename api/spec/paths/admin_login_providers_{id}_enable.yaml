@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: enableLoginProvider
+  x-permission: manage_login_providers
   summary: Enable a login provider
   description: |
     Users sign in, sign up, and link their accounts with the provider again. Enabling an

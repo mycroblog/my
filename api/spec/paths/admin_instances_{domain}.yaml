@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getInstanceHealth
+  x-permission: manage_domains
   summary: Get the health of a remote server
   description: |
     The health of the server; one without failures is `available`, without `since`. Needs

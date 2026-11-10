@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Why a difference waits for a moderator. `draft_mode`: the subscription is in the draft
+  mode. `unknown_severity`: the list gives the domain a severity this server does not know.
+  `mass_lift`: one fetch would lift more than 10 actions and more than half of the
+  subscription's actions, which a broken or empty list would do.
+type: string
+enum: [draft_mode, unknown_severity, mass_lift]

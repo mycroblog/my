@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -54,6 +55,26 @@ func (s sqliteStore) get(ctx context.Context, tx uow.Tx, namespace, key string, 
 		return nil, false, nil
 	}
 	return v, err == nil, err
+}
+
+func (s sqliteStore) getMany(ctx context.Context, tx uow.Tx, namespace string, keys []string, now time.Time) (map[string][]byte, error) {
+	q, err := s.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := json.Marshal(keys)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListEntries(ctx, sqlitekv.ListEntriesParams{Namespace: namespace, Keys: string(list), Now: millis(now)})
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string][]byte, len(rows))
+	for _, r := range rows {
+		out[r.Key] = r.Value
+	}
+	return out, nil
 }
 
 func (s sqliteStore) set(ctx context.Context, tx uow.Tx, namespace, key string, value []byte, expiresAt *time.Time) error {

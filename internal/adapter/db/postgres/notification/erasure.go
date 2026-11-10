@@ -29,7 +29,7 @@ func (r *Repository) EraseNotificationsOf(ctx context.Context, tx uow.Tx, accoun
 	most := int64(len(list))
 	if len(list) > 0 {
 		ids := list
-		if err := postgres.RunSteps(ctx, ids, "erase notifications", q.EraseNotificationDismissals, q.EraseNotifications); err != nil {
+		if err := postgres.RunSteps(ctx, ids, "erase notifications", q.EraseNotificationDismissals, q.EraseNotificationFilterings, q.EraseNotifications); err != nil {
 			return 0, err
 		}
 	}
@@ -57,6 +57,9 @@ func (r *Repository) EraseNotificationsOf(ctx context.Context, tx uow.Tx, accoun
 	if err := postgres.RunSteps(ctx, accountID, "erase post subscriptions", q.ErasePostSubscriptionsOf, q.ErasePostSubscriptionRequestsOf); err != nil {
 		return 0, err
 	}
+	if err := postgres.RunSteps(ctx, accountID, "erase conversation mutes", q.EraseConversationMutesOf); err != nil {
+		return 0, err
+	}
 	subscribers, err := q.ErasePostSubscriptionsAsTarget(ctx, notificationgen.ErasePostSubscriptionsAsTargetParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, postgres.Wrap(err, "erase post subscriptions")
@@ -65,7 +68,11 @@ func (r *Repository) EraseNotificationsOf(ctx context.Context, tx uow.Tx, accoun
 	if err != nil {
 		return 0, postgres.Wrap(err, "erase post subscription requests")
 	}
-	return max(most, viewer, target, domains, subscribers, requesters), nil
+	policy, err := erasePolicyOf(ctx, q, accountID, lim)
+	if err != nil {
+		return 0, err
+	}
+	return max(most, viewer, target, domains, subscribers, requesters, policy), nil
 }
 
 // EraseStatusNotifications implements notification.ErasureRepository.
@@ -75,6 +82,15 @@ func (r *Repository) EraseStatusNotifications(ctx context.Context, tx uow.Tx, st
 		return err
 	}
 	ids := statusIDs
-	return postgres.RunSteps(ctx, ids, "erase notifications of statuses",
-		q.EraseNotificationDismissalsOfStatuses, q.EraseNotificationsOfStatuses, q.EraseDeletedStatusesOfStatuses)
+	pairs, err := filteredPairsOfStatuses(ctx, q, ids)
+	if err != nil {
+		return err
+	}
+	err = postgres.RunSteps(ctx, ids, "erase notifications of statuses",
+		q.EraseNotificationDismissalsOfStatuses, q.EraseNotificationFilteringsOfStatuses, q.EraseNotificationsOfStatuses, q.EraseDeletedStatusesOfStatuses)
+	if err != nil || len(pairs) == 0 {
+		return err
+	}
+	// The requests that held the erased notifications count the rest.
+	return refreshRequests(ctx, q, pairs)
 }

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminCustomEmojiRequests
+  x-permission: manage_custom_emojis
   summary: List the custom emoji requests
   description: |
     The custom emoji requests of the holders of `create_custom_emojis`, newest

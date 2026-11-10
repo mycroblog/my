@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The viewer's relationship with an account (web-client/README.md S1, FR-301 to FR-303): reading it, batched, and the
-// changes of it. Keys follow openapi-react-query's `[method, path, init]`.
+// changes of it, the viewer's private note on the account (FR-310) among them. Keys follow openapi-react-query's `[method, path, init]`.
 import type { QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
@@ -177,4 +177,22 @@ export async function storeRelationship(
     queryClient.invalidateQueries({ queryKey: ["get", "/blocks"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/mutes"] }),
   ]);
+}
+
+/** The longest private note on an account, in characters (code points), as the server counts them. */
+export const maxNoteLength = 2000;
+
+/**
+ * Writes the viewer's private note on the account `id` (PUT /accounts/{id}/note, FR-310); an empty note removes it.
+ * Returns the relationship, which carries the note.
+ */
+export async function saveNote(api: Api, id: string, note: string): Promise<Relationship> {
+  const { data, error } = await api.fetch.PUT("/accounts/{id}/note", { params: { path: { id } }, body: { note } });
+  if (data === undefined) throw new ApiError(error);
+  return data;
+}
+
+/** Puts the relationship that a change of the note returned into the cache: the note changes nothing else. */
+export function storeNote(queryClient: QueryClient, api: Api, relationship: Relationship): void {
+  queryClient.setQueryData(relationshipQueryOptions(api, relationship.id).queryKey, { items: [relationship] });
 }

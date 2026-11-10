@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: resolveReport
+  x-permission: manage_reports
   summary: Resolve a report
   description: |
     Resolves an open report with an outcome. Resolving a resolved report changes nothing

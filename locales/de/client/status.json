@@ -511,34 +511,6 @@
     "defaultMessage": "Zitieren",
     "description": "Accessible name of the button in a post's action bar that starts a new post quoting it."
   },
-  "status.quote_policy.action": {
-    "defaultMessage": "Ändern, wer zitieren darf",
-    "description": "Item of the menu of the user's own post that opens the dialog choosing who may quote it."
-  },
-  "status.quote_policy.title": {
-    "defaultMessage": "Wer diesen Beitrag zitieren darf",
-    "description": "Title of the dialog that chooses who may quote one of the user's posts."
-  },
-  "status.quote_policy.close": {
-    "defaultMessage": "Schließen",
-    "description": "Accessible name of the close button of the dialog that chooses who may quote a post."
-  },
-  "status.quote_policy.label": {
-    "defaultMessage": "Wer zitieren darf",
-    "description": "Label of the choices of who may quote a post, in its dialog."
-  },
-  "status.quote_policy.description": {
-    "defaultMessage": "Bereits genehmigte Zitate bleiben bestehen. Um deinen Beitrag aus einem Zitat zu entfernen, nutze das Menü des Beitrags, der ihn zitiert.",
-    "description": "Description of the choices of who may quote a post."
-  },
-  "status.quote_policy.done": {
-    "defaultMessage": "Geändert, wer den Beitrag zitieren darf",
-    "description": "Toast after the user changed who may quote one of their posts."
-  },
-  "status.quote_policy.failed": {
-    "defaultMessage": "Es konnte nicht geändert werden, wer den Beitrag zitieren darf: {reason}",
-    "description": "Toast when the change of who may quote a post failed. {reason} is the server's reason."
-  },
   "status.quotes.action": {
     "defaultMessage": "Beiträge, die diesen zitieren",
     "description": "Item of the menu of the user's own post that opens the list of the posts that quote it."

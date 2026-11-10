@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+description: The body of an article as publishing it would store it.
+type: object
+required: [content, summary, summary_from_body, bytes, max_bytes, images, max_images]
+properties:
+  content:
+    description: The body as sanitized HTML, the same as the published article's `content`.
+    type: string
+  summary:
+    description: The summary the article would get.
+    type: string
+  summary_from_body:
+    description: Whether `summary` is made from the body, because the one sent was blank.
+    type: boolean
+  bytes:
+    description: The UTF-8 bytes of `content`; over `max_bytes`, publishing is a 422.
+    type: integer
+    minimum: 0
+  max_bytes:
+    description: The most bytes of `content` (`Instance.limits.articles.max_bytes`).
+    type: integer
+    minimum: 1
+  images:
+    description: The number of the user's own uploads that the body shows as images; over `max_images`, publishing is a 422.
+    type: integer
+    minimum: 0
+  max_images:
+    description: The most images of the body (`Instance.limits.articles.max_images`).
+    type: integer
+    minimum: 0

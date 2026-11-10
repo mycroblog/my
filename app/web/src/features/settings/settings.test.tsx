@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Preferences, PreferencesChange, ProfileChange } from "./api/me";
 import {
   accountFixture,
+  changedPreferences,
   instanceFixture,
   mediaFixture,
   preferencesFixture,
@@ -60,8 +61,7 @@ function preferencesServer(initial: Partial<Preferences> = {}) {
       const change = (await request.json()) as PreferencesChange;
       changes.push(change);
       preferences = {
-        ...preferences,
-        ...change,
+        ...changedPreferences(preferences, change),
         time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined,
         locale_follows_browser:
           change.locale_follows_browser ?? (change.locale === undefined && preferences.locale_follows_browser),
@@ -164,6 +164,29 @@ describe("preferences", () => {
     });
     expect(within(languages).getByRole("checkbox", { name: "German" })).toBeChecked();
     expect((await screen.findAllByText("Saved")).length).toBeGreaterThan(0);
+  });
+
+  test("who may reply to, boost, and quote new posts is saved one kind at a time", async () => {
+    const prefs = preferencesServer();
+    const { user } = await renderApp({ path: "/settings/preferences" });
+    const group = await screen.findByRole("group", { name: "Who can reply to, boost, and quote your new posts" });
+
+    await user.click(within(group).getByRole("button", { name: "Anyone Who can boost" }));
+    await user.click(await screen.findByRole("option", { name: "Followers and people you mention" }));
+    expect(
+      await within(group).findByRole("button", { name: "Followers and people you mention Who can boost" }),
+    ).toBeInTheDocument();
+    await user.click(within(group).getByRole("checkbox", { name: "Others can boost with your approval" }));
+
+    await waitFor(() => {
+      expect(prefs.changes).toEqual([
+        { default_interaction_policy: { announce: { automatic: "followers" } } },
+        { default_interaction_policy: { announce: { automatic: "followers", manual: "everyone" } } },
+      ]);
+    });
+    expect(within(group).getByRole("checkbox", { name: "Others can boost with your approval" })).toBeChecked();
+    // Everyone may still reply at once, so there is no one left to approve.
+    expect(within(group).getByRole("checkbox", { name: "Others can reply with your approval" })).toBeDisabled();
   });
 
   test("a preference shows that it is saving right after the change, and then that it is saved, beside it", async () => {
@@ -411,7 +434,7 @@ describe("navigation", () => {
     expect(section).toHaveAccessibleDescription(
       expect.stringContaining("the first 5 shown items are in the tab bar") as string,
     );
-    expect(within(section).getAllByRole("checkbox")).toHaveLength(8);
+    expect(within(section).getAllByRole("checkbox")).toHaveLength(9);
     expect(within(section).getByRole("checkbox", { name: "Settings" })).toBeDisabled();
     expect(within(section).getByRole("checkbox", { name: "Search" })).toHaveAccessibleDescription(
       "In the tab bar on phones",
@@ -437,7 +460,9 @@ describe("navigation", () => {
     await waitFor(() => {
       expect(within(section).getByRole("button", { name: "Move Profile up" })).toHaveFocus();
     });
-    expect(await screen.findByText("Profile moved to position 5 of 8")).toBeInTheDocument();
+    expect(await screen.findByText("Profile moved to position 6 of 9")).toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(await screen.findByText("Profile moved to position 5 of 9")).toBeInTheDocument();
     expect(within(section).getByRole("checkbox", { name: "Profile" })).toHaveAccessibleDescription(
       "In the tab bar on phones",
     );
@@ -462,7 +487,7 @@ describe("navigation", () => {
     expect(previewItems()).toEqual(["Home", "Federated", "Notifications", "Profile", "Search", "Menu"]);
 
     expect(navigationKey.read()).toEqual({
-      order: ["home", "local", "public", "notifications", "profile", "search", "settings", "bookmarks"],
+      order: ["home", "local", "public", "notifications", "profile", "search", "direct", "settings", "bookmarks"],
       hidden: ["local"],
     });
     const nav = screen.getByRole("navigation", { name: "Main" });
@@ -476,6 +501,7 @@ describe("navigation", () => {
       "/notifications",
       "/profile",
       "/search",
+      "/direct-messages",
       "/settings",
       "/bookmarks",
       "/announcements",
@@ -487,7 +513,7 @@ describe("navigation", () => {
     await user.click(within(section).getByRole("button", { name: "Restore the default" }));
     expect(localStorage.getItem("my:display:navigation")).toBeNull();
     expect(within(section).getByRole("checkbox", { name: "Local" })).toBeChecked();
-    expect(within(section).getAllByRole("checkbox", { checked: true })).toHaveLength(8);
+    expect(within(section).getAllByRole("checkbox", { checked: true })).toHaveLength(9);
   });
 
   test("says which timeline this server does not offer", async () => {
@@ -788,9 +814,11 @@ describe("profile", () => {
       "Header image",
       "Name and bio",
       "Fields",
+      "Featured hashtags",
       "Followers and bots",
       "Discovery",
       "Search engines and AI",
+      "Feeds",
     ]);
     // A form saved by its button has no switch (web-client/21-experience-principles.md §21.4).
     expect(screen.queryByRole("switch")).not.toBeInTheDocument();
@@ -950,6 +978,52 @@ describe("profile", () => {
 
     expect((await screen.findAllByText("Your profile has been saved.")).length).toBeGreaterThan(0);
     expect(changes).toEqual([expect.objectContaining({ indexable: false, ai_opt_out: true })]);
+  });
+
+  test("the feed follows the search setting until it is chosen, and then is saved as its own choice", async () => {
+    const changes = profileServer();
+    server.use(
+      http.get(`${apiBase}/accounts/verify_credentials`, () =>
+        HttpResponse.json({ ...viewerFixture, indexable: false, feed_enabled: false, feed_follows_indexable: true }),
+      ),
+    );
+    const { user } = await renderApp({ path: "/settings/profile" });
+    const feeds = await screen.findByRole("region", { name: "Feeds" });
+    const feed = within(feeds).getByRole("checkbox", { name: "Publish a feed of my public posts" });
+    expect(feed).not.toBeChecked();
+    expect(
+      within(feeds).getByText("Until you change it, this follows your choice about search above."),
+    ).toBeInTheDocument();
+    expect(within(feeds).queryByText(/Feed address/)).not.toBeInTheDocument();
+
+    // Allowing search turns the feed on while there is no choice of its own, and saves no choice.
+    const crawlers = screen.getByRole("region", { name: "Search engines and AI" });
+    await user.click(
+      within(crawlers).getByRole("checkbox", { name: "Let search engines index my profile and public posts" }),
+    );
+    expect(feed).toBeChecked();
+    expect(within(feeds).getByText(`${viewerFixture.url}.atom`)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+    expect((await screen.findAllByText("Your profile has been saved.")).length).toBeGreaterThan(0);
+    expect(changes.at(-1)).not.toHaveProperty("feed_enabled");
+
+    // Turning the feed off is the owner's choice, which the next search setting leaves as it is.
+    await user.click(feed);
+    expect(feed).not.toBeChecked();
+    expect(
+      within(feeds).queryByText("Until you change it, this follows your choice about search above."),
+    ).not.toBeInTheDocument();
+    await user.click(
+      within(crawlers).getByRole("checkbox", { name: "Let search engines index my profile and public posts" }),
+    );
+    await user.click(
+      within(crawlers).getByRole("checkbox", { name: "Let search engines index my profile and public posts" }),
+    );
+    expect(feed).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+    await waitFor(() => {
+      expect(changes.at(-1)).toEqual(expect.objectContaining({ indexable: true, feed_enabled: false }));
+    });
   });
 
   test.each([
@@ -1337,8 +1411,15 @@ describe("the settings page", () => {
     const menu = await screen.findByRole("navigation", { name: "Settings pages" });
     expectMenuGroups(menu, {
       "Profile and community": ["/settings/profile", "/settings/badges"],
-      "Display and notifications": ["/settings/preferences", "/settings/notifications"],
-      Relationships: ["/settings/follow-requests", "/settings/blocks", "/settings/mutes", "/settings/domain-mutes"],
+      "Display and notifications": ["/settings/preferences", "/settings/notifications", "/settings/filters"],
+      Relationships: [
+        "/settings/follow-requests",
+        "/settings/interaction-requests",
+        "/settings/followed-tags",
+        "/settings/blocks",
+        "/settings/mutes",
+        "/settings/domain-mutes",
+      ],
       Security: [
         "/settings/password",
         "/settings/two-factor",

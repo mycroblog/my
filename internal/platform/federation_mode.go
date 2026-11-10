@@ -43,6 +43,21 @@ func (m federationModes) FederationModeTx(ctx context.Context, tx uow.Tx) (domai
 	return settingModes(m).FederationModeTx(ctx, tx)
 }
 
+// DeliveryGate implements the read of a delivery's gate in one query (federation.Deliverer):
+// whether the closure delivers its retractions alone, as closureSettings.ClosureRetracts tells,
+// and the mode, as FederationMode tells.
+func (m federationModes) DeliveryGate(ctx context.Context) (bool, domainfederation.Mode, error) {
+	c, mode, err := m.a.Instance.FederationGate(ctx)
+	if err != nil {
+		return false, "", err
+	}
+	st := c.CurrentState()
+	if !domaininstance.ClosureAllows(st, domaininstance.ClosureFederate) {
+		return domaininstance.ClosureAllows(st, domaininstance.ClosureRetract), domainfederation.ModeOff, nil
+	}
+	return false, domainfederation.Mode(mode), nil
+}
+
 // settingModes reads the instance setting federation_mode as it is, for the ActivityPub handler,
 // which answers a closed server's requests by the closure before the mode.
 type settingModes struct{ a *App }

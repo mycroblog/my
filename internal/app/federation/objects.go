@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -45,6 +47,12 @@ type ObjectStatuses interface {
 	PostCount(ctx context.Context, accountID string) (int64, error)
 }
 
+// unpublishedStatuses tells the held local replies, which their author alone sees (ADR-0155 §7), as
+// *appcontent.Service does.
+type unpublishedStatuses interface {
+	Unpublished(ctx context.Context, st appcontent.Status) (bool, error)
+}
+
 // ObjectAccounts is the part of the account module's public API that object fetches read.
 // *appaccount.Service implements it.
 type ObjectAccounts interface {
@@ -65,6 +73,12 @@ type ObjectGraph interface {
 // implements it.
 type ProfileTimeline interface {
 	Profile(ctx context.Context, viewer appcontent.Viewer, authorAccountID string, f apptimeline.ProfileFilter, q apptimeline.Query) (apptimeline.Page, error)
+}
+
+// FeaturedTagReader reads the hashtags that a local account features on its profile, in its
+// order (ADR-0006 §17); *apptimeline.Service implements it.
+type FeaturedTagReader interface {
+	FeaturedTags(ctx context.Context, accountID string) ([]apptimeline.FeaturedTag, error)
 }
 
 // StatusReader presents statuses to a viewer and resolves the parts of the revisions that Notes
@@ -93,6 +107,9 @@ type ObjectsDeps struct {
 	// Quotes reads the quotes and quote policies that Notes present, and the approvals this
 	// server gives (ADR-0069); nil presents none and serves no QuoteAuthorization.
 	Quotes ObjectQuotes
+	// Conversations reads the conversations whose IRIs Notes carry and whose collections are
+	// served (ADR-0154 §5, §9); nil leaves context out of Notes and serves no collection.
+	Conversations ObjectConversations
 	// Boosts reads the boosts whose Announce is served (ADR-0018 §16); nil serves none.
 	Boosts   ObjectBoosts
 	Statuses ObjectStatuses
@@ -100,6 +117,9 @@ type ObjectsDeps struct {
 	Graph    ObjectGraph
 	Timeline ProfileTimeline
 	Reader   StatusReader
+	// FeaturedTags reads the featured hashtags of the featuredTags collections; nil serves them
+	// empty.
+	FeaturedTags FeaturedTagReader
 	// Images reads the avatars and headers of the actors that archives export; nil exports none.
 	Images ProfileImages
 	// Aliases reads the aliases of the actors that archives export; nil exports none.
@@ -140,7 +160,7 @@ func NewObjects(d ObjectsDeps) *Objects {
 	if d.AccountDomain == "" {
 		d.AccountDomain = d.Host
 	}
-	return &Objects{d: d, notes: notes{parts: d.Reader, graph: d.Graph, quotes: d.Quotes, host: d.Host, accountDomain: d.AccountDomain}}
+	return &Objects{d: d, notes: notes{parts: d.Reader, graph: d.Graph, quotes: d.Quotes, conversations: d.Conversations, host: d.Host, accountDomain: d.AccountDomain}}
 }
 
 // AuthorizedFetch reports whether authorized fetch (FR-408, federation.md §10) is on: GETs of
@@ -349,6 +369,12 @@ func (o *Objects) object(ctx context.Context, req Requester, statusID string, ac
 // Facts only ever widen what CanView grants, so reading them lazily decides the same.
 func (o *Objects) canView(ctx context.Context, req Requester, st appcontent.Status, rev appcontent.Revision, restrictions appcontent.AuthorRestrictions) (bool, error) {
 	facts := appcontent.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	if u, ok := o.d.Statuses.(unpublishedStatuses); ok {
+		var err error
+		if facts.Unpublished, err = u.Unpublished(ctx, st); err != nil {
+			return false, err
+		}
+	}
 	viewer := appcontent.Viewer{Kind: appcontent.ViewerAnonymous}
 	var rel appcontent.Relation
 	if !req.Anonymous() {
@@ -431,9 +457,13 @@ func (o *Objects) Outbox(ctx context.Context, accountID, before string) (OutboxP
 		return OutboxPage{}, err
 	}
 	out := OutboxPage{Items: []federation.ActivityDocument{}, Next: page.Next}
+	notes, parts, err := o.pageNotes(ctx, views)
+	if err != nil {
+		return OutboxPage{}, err
+	}
 	for _, v := range views {
 		actor := federation.IRI(v.Author.Account.URI)
-		note, err := o.viewNote(ctx, v)
+		note, err := o.viewNote(ctx, notes, v, parts[v.Status.ID])
 		if err != nil {
 			return OutboxPage{}, err
 		}
@@ -450,8 +480,12 @@ func (o *Objects) Featured(ctx context.Context, accountID string) ([]federation.
 		return nil, err
 	}
 	out := []federation.NoteDocument{}
+	notes, parts, err := o.pageNotes(ctx, views)
+	if err != nil {
+		return nil, err
+	}
 	for _, v := range views {
-		note, err := o.viewNote(ctx, v)
+		note, err := o.viewNote(ctx, notes, v, parts[v.Status.ID])
 		if err != nil {
 			return nil, err
 		}
@@ -460,28 +494,180 @@ func (o *Objects) Featured(ctx context.Context, accountID string) ([]federation.
 	return out, nil
 }
 
+// FeaturedTags returns the Hashtags of the hashtags that the local account a features on its
+// profile, in its order: name is the hashtag with its #, and href the page of the account's posts
+// with it, as Mastodon's featuredTags collection has them (ADR-0006 §17).
+func (o *Objects) FeaturedTags(ctx context.Context, a appaccount.Actor) ([]federation.TagDocument, error) {
+	out := []federation.TagDocument{}
+	if o.d.FeaturedTags == nil || a.Local == nil {
+		return out, nil
+	}
+	tags, err := o.d.FeaturedTags.FeaturedTags(ctx, a.Account.ID)
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range tags {
+		out = append(out, federation.TagDocument{
+			Type: federation.TagHashtag, Href: FeaturedTagURL(o.d.Host, a.Local.Username, t.Tag.NameNormalized), Name: "#" + t.Tag.Name,
+		})
+	}
+	return out, nil
+}
+
+// FeaturedTagURL returns the page of the posts of a local username on host with a hashtag, for a
+// normalized tag name: the href of the Hashtag of a featured hashtag.
+func FeaturedTagURL(host, username, nameNormalized string) string {
+	return ProfileURL(host, username) + "/tagged/" + url.PathEscape(nameNormalized)
+}
+
 // viewNote returns the Note of a status as an anonymous visitor sees it, from the parts that the
-// reader resolved. The reader showed the status to an anonymous visitor, so it is public or
-// unlisted and its effective visibility is its own (a ceiling would have made it followers-only):
-// no mention is left out of tag (ADR-0017 is about local statuses). Like every Note, it says what
-// the status quotes and who may quote it.
-func (o *Objects) viewNote(ctx context.Context, v appcontent.StatusView) (federation.NoteDocument, error) {
-	parts, err := o.viewParts(ctx, v)
+// reader resolved and parts, those of pageParts. The reader showed the status to an anonymous
+// visitor, so it is public or unlisted and its effective visibility is its own (a ceiling would
+// have made it followers-only): no mention is left out of tag (ADR-0017 is about local statuses).
+// Like every Note, it says what the status quotes and who may quote it, through notes.
+func (o *Objects) viewNote(ctx context.Context, notes notes, v appcontent.StatusView, parts appcontent.RevisionParts) (federation.NoteDocument, error) {
+	note := statusNote(v.Status, v.Revision, v.Author, v.Status.Visibility, parts,
+		updatedOf(v.Revision), o.d.Host, o.d.AccountDomain)
+	note, err := notes.inConversation(ctx, note, v.Status)
 	if err != nil {
 		return federation.NoteDocument{}, err
 	}
-	note := statusNote(v.Status, v.Revision, v.Author, v.Status.Visibility, parts,
-		updatedOf(v.Revision), o.d.Host, o.d.AccountDomain)
-	return o.notes.withQuotes(ctx, note, v.Status, v.Author, v.Status.Visibility)
+	return notes.withQuotes(ctx, note, v.Status, v.Author, v.Status.Visibility, parts.Mentions)
 }
 
-// viewParts returns the parts of the Note of a status from those the reader resolved, with the
-// custom emoji of its revision.
-func (o *Objects) viewParts(ctx context.Context, v appcontent.StatusView) (appcontent.RevisionParts, error) {
-	parts := appcontent.RevisionParts{Attachments: v.Attachments, Mentions: v.Mentions, Tags: v.Tags, Poll: v.Poll}
-	var err error
-	parts.Emojis, err = o.d.Reader.EmojiTags(ctx, v.Revision.EmojiIDs)
-	return parts, err
+// pageNotes returns the notes that build the Notes of views, with the quotes of views read
+// together when Quotes can (appcontent.Service.NoteQuotesOf), and the parts of their Notes by
+// status (pageParts).
+func (o *Objects) pageNotes(ctx context.Context, views []appcontent.StatusView) (notes, map[string]appcontent.RevisionParts, error) {
+	parts, err := o.pageParts(ctx, views)
+	if err != nil {
+		return notes{}, nil, err
+	}
+	n := o.notes
+	ids := make([]string, len(views))
+	for i, v := range views {
+		ids[i] = v.Status.ID
+	}
+	if n.conversations != nil && len(ids) > 0 {
+		convs, err := n.conversations.ConversationsOf(ctx, ids)
+		if err != nil {
+			return notes{}, nil, err
+		}
+		n.conversations = &pageConversations{NoteConversations: n.conversations, page: ids, read: convs}
+	}
+	b, ok := n.quotes.(noteQuoteBatch)
+	if !ok || len(views) == 0 {
+		return n, parts, nil
+	}
+	q, err := b.NoteQuotesOf(ctx, ids)
+	if err != nil {
+		return notes{}, nil, err
+	}
+	n.quotes = &pageNoteQuotes{NoteQuotes: n.quotes, page: ids, read: q}
+	return n, parts, nil
+}
+
+// pageParts returns, by status, the parts of the Notes of views from those the reader resolved,
+// with the custom emoji of their revisions read together: each status gets the tags of its own
+// emoji, in the order that EmojiTags returns them.
+func (o *Objects) pageParts(ctx context.Context, views []appcontent.StatusView) (map[string]appcontent.RevisionParts, error) {
+	var ids []string
+	for _, v := range views {
+		ids = append(ids, v.Revision.EmojiIDs...)
+	}
+	var tags []appcontent.EmojiTag
+	if len(ids) > 0 {
+		var err error
+		if tags, err = o.d.Reader.EmojiTags(ctx, ids); err != nil {
+			return nil, err
+		}
+	}
+	out := make(map[string]appcontent.RevisionParts, len(views))
+	for _, v := range views {
+		parts := appcontent.RevisionParts{Attachments: v.Attachments, Mentions: v.Mentions, Tags: v.Tags, Poll: v.Poll}
+		for _, t := range tags {
+			if slices.Contains(v.Revision.EmojiIDs, t.ID) {
+				parts.Emojis = append(parts.Emojis, t)
+			}
+		}
+		out[v.Status.ID] = parts
+	}
+	return out, nil
+}
+
+// noteQuoteBatch is a NoteQuotes that reads the quotes of many statuses at once, as
+// *appcontent.Service does.
+type noteQuoteBatch interface {
+	NoteQuotesOf(ctx context.Context, statusIDs []string) (appcontent.NoteQuotes, error)
+}
+
+// pageNoteQuotes answers the quote reads of the statuses of a page from what NoteQuotesOf read
+// for them, and every other read from NoteQuotes.
+type pageNoteQuotes struct {
+	NoteQuotes
+	page []string
+	read appcontent.NoteQuotes
+}
+
+func (p *pageNoteQuotes) FindQuote(ctx context.Context, statusID string) (appcontent.Quote, appcontent.QuoteState, error) {
+	if !slices.Contains(p.page, statusID) {
+		return p.NoteQuotes.FindQuote(ctx, statusID)
+	}
+	q, ok := p.read.Quotes[statusID]
+	if !ok {
+		return appcontent.Quote{}, appcontent.QuoteState{}, fmt.Errorf("quote of %s: %w", statusID, appcontent.ErrNotFound)
+	}
+	return q, p.read.States[statusID], nil
+}
+
+func (p *pageNoteQuotes) FindInteractionPolicy(ctx context.Context, statusID string) (appcontent.InteractionPolicy, error) {
+	if !slices.Contains(p.page, statusID) {
+		return p.NoteQuotes.FindInteractionPolicy(ctx, statusID)
+	}
+	return p.read.Policies[statusID], nil
+}
+
+func (p *pageNoteQuotes) ReplyAuthorization(ctx context.Context, statusID string) (string, error) {
+	if !slices.Contains(p.page, statusID) {
+		return p.NoteQuotes.ReplyAuthorization(ctx, statusID)
+	}
+	return p.read.ReplyAuthorizations[statusID], nil
+}
+
+func (p *pageNoteQuotes) FederatedQuotePage(ctx context.Context, uri string) (string, bool, error) {
+	if l, ok := p.read.Links[uri]; ok {
+		return l.Page, l.OK, nil
+	}
+	return p.NoteQuotes.FederatedQuotePage(ctx, uri)
+}
+
+// pageConversations answers the conversations of the statuses of a page from what
+// ConversationsOf read for them, and reads those of any other.
+type pageConversations struct {
+	NoteConversations
+	page []string
+	read map[string]appcontent.Conversation
+}
+
+func (p *pageConversations) ConversationsOf(ctx context.Context, statusIDs []string) (map[string]appcontent.Conversation, error) {
+	out := make(map[string]appcontent.Conversation, len(statusIDs))
+	var other []string
+	for _, id := range statusIDs {
+		if !slices.Contains(p.page, id) {
+			other = append(other, id)
+		} else if c, ok := p.read[id]; ok {
+			out[id] = c
+		}
+	}
+	if len(other) == 0 {
+		return out, nil
+	}
+	more, err := p.NoteConversations.ConversationsOf(ctx, other)
+	if err != nil {
+		return nil, err
+	}
+	maps.Copy(out, more)
+	return out, nil
 }
 
 // updatedOf returns when an edited status was last revised, zero for one never edited.

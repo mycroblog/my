@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getInstanceRule
+  x-permission: manage_rules
   summary: Get an instance rule
   description: |
     A rule, retired or not; reports cite rules by ID. An unknown ID is a 404. Needs the
@@ -17,6 +18,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 put:
   operationId: updateInstanceRule
+  x-permission: manage_rules
   summary: Revise the text of an instance rule
   description: |
     Records a revision whose text and hint replace those of the rule, so that an omitted hint

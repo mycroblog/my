@@ -26,7 +26,7 @@
 | `account.created` | ローカルのアカウントの作成（登録が有効になったとき） | `manage_accounts` |
 | `moderation_action.created` / `moderation_action.lifted` | アカウントへの処分と解除（FR-703, FR-713） | `manage_accounts` |
 | `appeal.created` | 異議申し立て（FR-707） | `manage_accounts` |
-| `domain_moderation_action.created` / `domain_moderation_action.lifted` | ドメイン単位の処分と解除（FR-702） | `manage_domains` |
+| `domain_moderation_action.created` / `domain_moderation_action.lifted` | ドメイン単位の処分と解除（FR-702）。ブロックリストの購読が下した処分も送り、`data` の `subscription_id` が購読を指す（ADR-0159 §8） | `manage_domains` |
 | `account.updated` | ローカルのアカウントのプロフィールの変更（新しい版の記録） | `manage_accounts` |
 | `status.created` | ローカルの利用者の公開範囲 `public` の投稿 | `manage_webhooks`（ほかに要らない） |
 | `custom_emoji.created` / `custom_emoji.updated` / `custom_emoji.deleted` | カスタム絵文字の管理操作（ADR-0051、#618 の §5 で監査ログに記録する操作）。作成とリモートの絵文字の複製は `created`、画像の差し替え・設定と別名の変更・無効化と有効化は `updated`、削除は `deleted` | `manage_custom_emojis`（ADR-0051、#618） |

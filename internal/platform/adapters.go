@@ -14,6 +14,7 @@ import (
 	"github.com/mycroblog/my/internal/app/dbupgrade"
 	"github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/graph"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -63,10 +64,13 @@ type repositories struct {
 	payments     supporters.PaymentRepository
 	supporters   supporters.Repository
 	voice        voice.Repository
+	gatherings   gathering.Repository
 	diagnostics  diagnostics.Repository
 	translations translation.Repository
 	search       search.Repository
 	decisions    apphook.Repository
+	// drafts holds the drafts and scheduled posts (ADR-0156).
+	drafts content.DraftRepository
 	// existingStatuses tells the retention of the decisions which statuses have a row.
 	existingStatuses apphook.Statuses
 	retention        retentionRepositories

@@ -28,6 +28,24 @@ func (r *Repository) DomainRestrictionsInEffectTx(ctx context.Context, tx uow.Tx
 	return (&Repository{db: db}).DomainRestrictionsInEffect(ctx, domains, now)
 }
 
+// AccountRestrictionsInEffectOfTx implements the reads in a transaction.
+func (r *Repository) AccountRestrictionsInEffectOfTx(ctx context.Context, tx uow.Tx, accountIDs []string, now time.Time) (map[string][]moderation.Restriction, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&Repository{db: db}).AccountRestrictionsInEffectOf(ctx, accountIDs, now)
+}
+
+// DomainRestrictionsInEffectOfTx implements the reads in a transaction.
+func (r *Repository) DomainRestrictionsInEffectOfTx(ctx context.Context, tx uow.Tx, domains []string, now time.Time) (map[string][]moderation.Restriction, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&Repository{db: db}).DomainRestrictionsInEffectOf(ctx, domains, now)
+}
+
 // FindReportTx implements the reads in a transaction.
 func (r *Repository) FindReportTx(ctx context.Context, tx uow.Tx, id string) (moderation.Report, error) {
 	db, err := r.db.in(tx)

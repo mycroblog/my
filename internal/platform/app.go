@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"golang.org/x/sync/singleflight"
 
@@ -31,6 +32,7 @@ import (
 	appdiagnostics "github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/finance"
+	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/graph"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -108,8 +110,8 @@ type App struct {
 	// ErrorReporter receives the error reports of every module and hands them to its sinks:
 	// those the modules add and the exporter that cfg.ErrorsExporter selects (ADR-0103).
 	ErrorReporter *ErrorReporter
-	// MetricsSnapshot reports the instance-wide gauges (ADR-0055 §4); nil when Meter records
-	// nothing.
+	// MetricsSnapshot computes the instance-wide gauges and exports them through Meter or, when Meter
+	// writes no gauges on request (metrics_exporter = none among them), as a log line (ADR-0055 §4).
 	MetricsSnapshot *metrics.Service
 	// HumanVerifier checks the CAPTCHA token of the sign-in and registration forms, and
 	// HumanCheckWidget is what those pages render for it; both are nil when captcha is none
@@ -145,6 +147,8 @@ type App struct {
 	Statuses *content.Reader
 	// AutoDelete holds the users' automatic deletion of their old posts and runs it (FR-118).
 	AutoDelete *content.AutoDelete
+	// Drafts holds the users' drafts and publishes the scheduled ones (ADR-0156).
+	Drafts *content.DraftService
 	// Timeline reads the home, local, hashtag, and profile timelines (FR-201 to FR-204).
 	Timeline *timeline.Service
 	// TagSearch is the prefix search of hashtags (ADR-0092 §1).
@@ -166,6 +170,8 @@ type App struct {
 	voiceNotifier *notification.VoiceNotifier
 	// Subscriptions keeps the local accounts' subscriptions to new posts (ADR-0086).
 	Subscriptions *notification.Subscriptions
+	// ThreadMutes keeps the local accounts' mutes of conversations (ADR-0158 §8).
+	ThreadMutes *notification.ThreadMutes
 	// Push registers the Web Push subscriptions and sends the notifications to them (FR-206).
 	Push *notification.PushService
 	// Streams is the broker of the streaming endpoint that cfg.Stream selects: a stream.Hub,
@@ -188,6 +194,8 @@ type App struct {
 	// Previews reads profiles and statuses as an anonymous visitor sees them, for the link
 	// previews of the web client's profile and post pages (ADR-0028).
 	Previews *content.Previews
+	// Feeds reads the posts of the Atom feeds of profiles and hashtags (FR-213).
+	Feeds *content.Feeds
 	// Webhooks sends the events of the other modules to the instance's webhooks (ADR-0060).
 	Webhooks *webhook.Service
 	// Finance records the instance's costs and totals them by week, month, and year (ADR-0067).
@@ -205,6 +213,8 @@ type App struct {
 	// VoiceRooms runs the voice chat rooms (ADR-0100) and their jobs; its use cases answer
 	// ErrDisabled while Voice is off.
 	VoiceRooms *appvoice.Service
+	// Events runs the events of the local users (ADR-0161).
+	Events *appgathering.Service
 	// Hooks runs the decision hooks (ADR-0147). A module that owns a subject takes it as apphook.Gate.
 	Hooks *apphook.Service
 	// mediaCheck is the hook media.check that the media processing and the posts share.
@@ -407,6 +417,10 @@ type AppOptions struct {
 	// Clock, when set, tells the time instead of the system clock. Tests only, to give the App a
 	// clock that never goes back, as the wall clock does when the host steps it.
 	Clock kernel.Clock
+	// InlineQueueMaxDelay, when set, gives queue = inline the delay limit of a queue service
+	// (inline.Options.MaxDelay). Tests only, to run jobs further ahead than the limit through
+	// the re-enqueue chain.
+	InlineQueueMaxDelay time.Duration
 	// KeyManager stands in for the KMS adapter of a key_manager other than local, which then wraps
 	// behind the cache of the DEKs, next to the KEKs of kek and kek_previous, and with
 	// key_manager = local for the KMS adapter of kms_key that only unwraps. Tests only, to move
@@ -493,7 +507,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 			_ = a.Close()
 		}
 	}()
-	if err := a.setUpQueue(cfg); err != nil {
+	if err := a.setUpQueue(cfg, opts.InlineQueueMaxDelay); err != nil {
 		return nil, err
 	}
 	if err := a.setUpKV(ctx, cfg); err != nil {
@@ -553,6 +567,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.registerBusinessMetrics(a.Projectors)
 	fedOutbox := a.setUpFederation(cfg, repos.feds)
 	a.setUpPolls(cfg, repos.statuses, repos.feds, fedOutbox)
+	a.setUpDrafts(repos.drafts, repos.medias, fedOutbox)
 	if err := a.setUpDelivery(repos.feds); err != nil {
 		return nil, err
 	}
@@ -569,7 +584,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpSearch(ctx, cfg, repos.search, opts); err != nil {
 		return nil, err
 	}
-	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias, repos.voice, repos.translations); err != nil {
+	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias, repos.voice, repos.translations, repos.gatherings); err != nil {
 		return nil, err
 	}
 	a.setUpRemoteActors(cfg, repos.feds)
@@ -586,6 +601,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpVoice(cfg, repos.voice); err != nil {
 		return nil, err
 	}
+	a.setUpGathering(repos.gatherings)
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {
 		return nil, err
 	}

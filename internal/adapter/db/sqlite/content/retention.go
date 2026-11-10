@@ -95,11 +95,12 @@ func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusI
 	steps := []func(context.Context, string) error{
 		q.PurgeStatusSensitivityOverrides, q.PurgeStatusRevisionBodies, q.PurgeStatusRevisionSources, q.PurgeStatusRevisionAttachments,
 		q.PurgeStatusRevisionMentions, q.PurgeStatusRevisionTags, q.PurgeStatusRevisionEmojis,
+		q.PurgeStatusRevisionArticles, q.PurgeStatusRevisionArticleCovers, q.PurgeStatusRevisionArticleImages, q.PurgeStatusArticles,
 		q.PurgeRemoteStatusRevisions, q.PurgePollTallyObservationCounts, q.PurgePollTallyObservations,
 		q.PurgePollVotes, q.PurgePollTallies, q.PurgePollOptions, q.PurgePolls, q.PurgeStatusRevisions,
-		q.PurgeRemoteBoostRetractions, q.PurgeRemoteBoosts, q.PurgeRelayedStatuses, q.PurgeStatusQuoteStates,
-		q.PurgeStatusQuoteEvents, q.PurgeStatusQuotes, q.PurgeStatusQuotePolicies,
-		q.PurgeQuoteAuthorizationRevocations, q.PurgeQuoteAuthorizations, q.PurgeStatuses,
+		q.PurgeRemoteBoostRetractions, q.PurgeRemoteBoosts, q.PurgeRelayedStatuses, q.PurgeInteractionRequestEvents,
+		q.PurgeInteractionRequestStates, q.PurgeInteractionRequests, q.PurgeStatusQuoteDetachments, q.PurgeStatusQuotes,
+		q.PurgeStatusInteractionPolicies, q.PurgeInteractionAuthorizationRevocations, q.PurgeInteractionAuthorizations, q.PurgeStatusConversations, q.PurgeStatuses,
 	}
 	for _, step := range steps {
 		if err := step(ctx, ids); err != nil {

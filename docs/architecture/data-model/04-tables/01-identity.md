@@ -150,13 +150,13 @@
 `admin`（`position` 1000）はすべての権限、`moderator`（`position` 100）は最初 `manage_reports`・`manage_accounts`・`view_audit` を持ちます。
 組み込みロールは `my serve` の起動時（どの `role` のプロセスでも）、`my admin create`、`my admin role` のたびに作り直すので、版を上げても手作業は要りません。作り直すときは、ない組み込みロールを足し、`admin` にすべての権限（新しい版で増えた権限を含む）を持たせ、`moderator` の権限と位置は管理者が変えたまま残します。
 権限は区分（[ADR-0058](../../../adr/0058-moderation-admin-separation.md)、[ADR-0070](../../../adr/0070-permission-split-emoji-finance.md)）を持ちます。モデレーションは `manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`、
-利用者の機能は `view_finance`・`create_custom_emojis`・`start_voice_rooms`・`create_invites`・`keep_posts_longer`、サーバー管理はそれ以外のすべて（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs` など）です。区分は列に持たず、`internal/domain/identity` の `Permission.Category` が返します
+利用者の機能は `view_finance`・`create_custom_emojis`・`start_voice_rooms`・`create_invites`・`keep_posts_longer`・`create_articles`・`create_events`、サーバー管理はそれ以外のすべて（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs` など）です。区分は列に持たず、`internal/domain/identity` の `Permission.Category` が返します
 （Web クライアントのナビゲーションの出し分けと `my admin role list` の表示が使う）。
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `roles` | リソース | `id`, `key`（`string(64)`）, `position`（`int`）, `created_at` | 一意 `(key)` |
-| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure, start_voice_rooms, manage_errors, manage_login_providers, create_invites, keep_posts_longer)`） | PK `(role_id, permission)` |
+| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure, start_voice_rooms, manage_errors, manage_login_providers, create_invites, keep_posts_longer, create_articles, create_events)`） | PK `(role_id, permission)` |
 | `user_role_grants` | イベント | `id`, `user_id`, `role_id`, `granted_by_user_id`（NULL 可 = CLI による付与。最初の管理者など）, `granted_at` | |
 | `user_role_revocations` | イベント | `grant_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による剥奪）, `revoked_at` | |
 | `user_roles` | 投影 | `user_id`, `role_id`, `grant_id` | PK `(user_id, role_id)` |
@@ -274,14 +274,15 @@
 
 | テーブル | カラム | 制約 |
 | --- | --- | --- |
-| `user_preferences` | `user_id`（PK）, `locale`（`lang`）, `default_visibility`（`enum(public, local, unlisted, private, direct)`）, `default_quote_policy`（`enum(public, followers, nobody)`。新しい投稿の引用の許可、ADR-0069 §1）, `default_post_language`（`lang`）, `require_media_description`（`bool`）, `timeline_auto_insert`（`bool`。タイムラインの新着を確認なしで挿入するか、ADR-0013）, `link_card_size`（`enum(large, small)`。リンクのカードの出し方、既定は `large`）, `locale_follows_browser`（`bool`）, `time_zone_follows_browser`（`bool`。Web クライアントがブラウザの言語・タイムゾーンに従うか。`locale` とタイムゾーンは最後に検知した値を持ち、メールや Push が使う）, `updated_at` | |
+| `user_preferences` | `user_id`（PK）, `locale`（`lang`）, `default_visibility`（`enum(public, local, unlisted, private, direct)`）, `default_post_language`（`lang`）, `require_media_description`（`bool`）, `timeline_auto_insert`（`bool`。タイムラインの新着を確認なしで挿入するか、ADR-0013）, `link_card_size`（`enum(large, small)`。リンクのカードの出し方、既定は `large`）, `locale_follows_browser`（`bool`）, `time_zone_follows_browser`（`bool`。Web クライアントがブラウザの言語・タイムゾーンに従うか。`locale` とタイムゾーンは最後に検知した値を持ち、メールや Push が使う）, `updated_at` | |
+| `user_interaction_policies` | `user_id`, `kind`（`enum(reply, announce, quote)`）, `approval`（`enum(automatic, manual)`）, `audience`（`enum(everyone, followers, mentioned, nobody)`） | PK `(user_id, kind, approval)`。新しい投稿の交流の許可の既定値（ADR-0155 §4, §5）。`content.status_interaction_policies` と同じ形で、投稿の代わりに利用者を持ち、相手の Actor の IRI を持たない。種類の行が無ければ `everyone` を自動で認める |
 | `user_timeline_languages` | `user_id`, `language`（`lang`） | PK `(user_id, language)`。行が無ければすべての言語を表示（FR-208） |
 | `user_time_zones` | `user_id`（PK）, `time_zone`（IANA 名） | 行が無ければタイムゾーンを選んでいない（日時は UTC。Web クライアントは端末のゾーンを保存する） |
 
 - 登録時に既定値の行を作ります。`locale` は登録時に指定されたロケール、無ければインスタンスの既定（`default_locale`）、それも無ければ `en` です。
   サーバーで描く登録のページは、要求の `Accept-Language` にいちばん合う、カタログのあるロケール（疑似ロケールは除く。`i18n.Resolver.AcceptedLocale`）を指定します。
   合うものが無ければ指定せず、インスタンスの既定になります。
-  `user_time_zones` の行は作らない（タイムゾーンはまだ無い状態で、`UTC` として扱う）。`locale_follows_browser` と `time_zone_follows_browser` は真です。`default_visibility` は `public`、`default_post_language` は `und`（クライアントに任せる）、`require_media_description` は偽、`timeline_auto_insert` は真（ADR-0013 の 6）です。
+  `user_time_zones` の行は作らない（タイムゾーンはまだ無い状態で、`UTC` として扱う）。`locale_follows_browser` と `time_zone_follows_browser` は真です。`default_visibility` は `public`、`user_interaction_policies` は 3 つの種類とも `everyone` の自動の行だけ、`default_post_language` は `und`（クライアントに任せる）、`require_media_description` は偽、`timeline_auto_insert` は真（ADR-0013 の 6）です。
 - `lang` の値は BCP 47 として検証し、正規形（`ja-JP`、`zh-Hant-TW`、`iw` → `he`）で保存します。未知のサブタグ、言語を明示しないタグ（`und-JP`、私用の `x-…`）は拒否します。
   `locale` は `und` も拒否します。
 - タイムゾーンを選んだ事実は `user_time_zones` の行の有無で表します（ADR-0020 規約 4。`user_preferences` に NULL 許容の列や「選んだか」の列を置かない）。
@@ -300,7 +301,7 @@
 
 - 本人のデータのアーカイブ（FR-008）です。要求（`POST /api/v1/exports`）が `data_exports` の行とジョブ `identity.build_export` を同じトランザクションで積みます。作成中（結果のない行）の要求があるあいだは、次の要求を受け付けません（`409`）。
   確認と挿入は同じトランザクションで、利用者の行（`users`）を `FOR UPDATE` でロックしてから行うので（SQLite は書き込みのトランザクションが直列）、同時の要求でも作成中の要求は 1 件までです。インポートの開始も同じ行をロックします。
-- ジョブは ZIP のアーカイブを Blob の非公開のキー `exports/{user_id}/{export_id}/{試行ごとの ID}.zip` に書き、そのキーを持つ `ready` の結果を記録します。中身は `actor.json`（Actor）、`outbox.json`（本人の削除されていない投稿すべてを、公開範囲に関わらず `Create` の `OrderedCollection` にしたもの。ブーストは含めない）、`moderation.json`（本人への処分と異議申し立て、本人が出した通報。非公開のメモと通報者は含めない。ADR-0058）と、下の「CSV のエクスポートとインポート」の 4 つの CSV です。
+- ジョブは ZIP のアーカイブを Blob の非公開のキー `exports/{user_id}/{export_id}/{試行ごとの ID}.zip` に書き、そのキーを持つ `ready` の結果を記録します。中身は `actor.json`（Actor）、`outbox.json`（本人の削除されていない投稿すべてを、公開範囲に関わらず `Create` の `OrderedCollection` にしたもの。ブーストは含めない）、`moderation.json`（本人への処分と異議申し立て、本人が出した通報。非公開のメモと通報者は含めない。ADR-0058）、`keyword_filters.json`（本人のキーワードフィルタすべて。期限の過ぎたものも含め古い順に、名前・動作・文脈・期限・期限切れか・作成時刻と、入力したとおりの語と「単語全体」の指定。クライアント API の `KeywordFilter` と同じ名前。ADR-0157 §8）、`account_notes.json`（本人が書いたアカウントへの非公開のメモすべて。古い順に、相手の ID と Actor の URI、メモ、更新時刻。FR-310）と、下の「CSV のエクスポートとインポート」の 4 つの CSV です。
   結果のある行は作り直さないので、再実行してよい。キーは試行ごとに別なので、重なって走った試行が記録済みのアーカイブを上書きしたり消したりすることはなく、記録された `blob_key` と `file_size` は常に同じ Blob を指します。結果を記録できなかった試行（先に別の試行が記録した、要求が消された）は自分の Blob を消します。
   結果の記録は要求の行を `FOR KEY SHARE` でロックしてから行い、要求の削除は要求の行を先に消すので、消された要求に結果が残ることはありません。
   5 回目の構築が失敗すると `failed` を記録します。記録にも失敗したときは、その後の最大 3 回の実行が記録だけをやり直し、それでも結果のない要求は 1 時間ごとのジョブ `identity.expire_exports` が要求から 24 時間後（`identity.ExportStaleAfter`）に `failed` にするので、作成中のまま残りません。
@@ -311,7 +312,7 @@
 
 | テーブル | 分類 | カラム |
 | --- | --- | --- |
-| `data_imports` | リソース | `id`, `user_id`, `account_id`, `kind`（`enum(following, blocks, mutes, domain_mutes, bookmarks)`）, `mode`（`enum(merge, overwrite)`）, `created_at`。インデックス `(user_id, id DESC)`、`(created_at)` |
+| `data_imports` | リソース | `id`, `user_id`, `account_id`, `kind`（`enum(following, blocks, mutes, domain_mutes, bookmarks, followed_tags)`）, `mode`（`enum(merge, overwrite)`）, `created_at`。インデックス `(user_id, id DESC)`、`(created_at)` |
 | `data_import_items` | リソース（インポートの子） | `import_id`, `position`（PK は `(import_id, position)`）, `action`（`enum(add, remove)`）, `target`, `show_boosts`, `notify`, `hide_notifications` |
 | `data_import_item_results` | イベント（項目の子） | `import_id`, `position`（PK）, `outcome`（`enum(done, failed)`）, `failure`（NULL 可。`failed` のときだけ `enum(unresolvable, unavailable, blocked, restricted, self, limit)`）, `processed_at` |
 | `data_import_item_failures` | イベント（項目の子） | `import_id`, `position`, `attempt`（PK は `(import_id, position, attempt)`。項目ごとに 1 から数える）, `failed_at`。再試行に値するエラーで項目を行えなかった実行 |
@@ -319,14 +320,15 @@
 - 本人のフォロー・ブロック・ミュート・ミュートしたドメイン・ブックマークを、Mastodon の「インポートとエクスポート」と同じ CSV で読み書きします（FR-008）。Mastodon が書き出した CSV をこちらで、こちらが書き出した CSV を Mastodon で読み込めます。
   - フォローは `following_accounts.csv`（`Account address,Show boosts,Notify on new posts,Languages`。承認済みのフォローだけ）、ブロックは `blocked_accounts.csv`（1 行に 1 アドレス、見出しなし）、ミュートは `muted_accounts.csv`（`Account address,Hide notifications`。期限の過ぎていないもの）、ミュートしたドメインは `blocked_domains.csv`（1 行に 1 ドメイン、見出しなし。読み込みでは Mastodon の見出し `#domain` も受け付ける。Mastodon の利用者単位のドメインブロックはこちらのドメインのミュートになる、FR-304）、ブックマークは `bookmarks.csv`（1 行に投稿の URI 1 つ、見出しなし。今も見られる投稿だけ）です。
   - アドレスは `username@domain` で、このサーバーのアカウントはアカウントドメインを付けます。handle を確かめていないリモートのアカウントは書き出しません。
-  - エクスポートは要求のたびにその時点の内容から作り（`GET /api/v1/csv_exports/{kind}`）、テーブルを持ちません。データのアーカイブにも同じ 5 つのファイルを入れます。
+  - フォローしたハッシュタグ（ADR-0013 §27）は Mastodon に書き出しのファイルが無いので、同じ形の `followed_hashtags.csv`（1 行に 1 タグ、`#` なし、見出しなし。新しくフォローしたものが先）を独自に書き出し、読み込みます。Mastodon はこのファイルを読みません。
+  - エクスポートは要求のたびにその時点の内容から作り（`GET /api/v1/csv_exports/{kind}`）、テーブルを持ちません。データのアーカイブにも同じ 6 つのファイルを入れます。
 - 読み込みは Mastodon の読み方に合わせます（`identity.ParseImportCSV`）。見出しの行は任意で、最初の欄が既知の見出し（`Account address` など）なら見出し、そうでなければ種類の既定の列とします。アドレスの先頭の `@` は落とし、空行は無視し、省いた設定は Mastodon と同じ既定（ブーストを表示する・新しい投稿を通知しない・ミュートした相手の通知を隠す）にします。フォローの `Languages` は使いません。
-  アドレス（ブックマークは `http(s)` の URL、ミュートしたドメインはホスト名）でない行は `invalid`、前の行と同じ相手（ユーザー名とドメインの大文字小文字を区別しない）は `duplicate` として飛ばします。1 ファイルは 10,000 件まで（`identity.MaxImportEntries`）です。
+  アドレス（ブックマークは `http(s)` の URL、ミュートしたドメインはホスト名、ハッシュタグは先頭の `#` を落とした空白・区切りの記号を含まない名前）でない行は `invalid`、前の行と同じ相手（ユーザー名とドメインの大文字小文字を区別しない）は `duplicate` として飛ばします。1 ファイルは 10,000 件まで（`identity.MaxImportEntries`）です。
 - 開始（`POST /api/v1/imports`）は、ファイルの各項目を `add` の項目に、`overwrite` では今あるもののうちファイルにないもの（アドレスを同じ規則で、ドメインは IDNA の A ラベルの小文字にして比べる）を `remove` の項目にし、`data_imports` の行・項目・最初のジョブ `identity.process_import` を 1 つのトランザクションで書きます。
-  `remove` の項目の `target` は相手のアカウントか投稿の ID かドメイン、`add` の項目の `target` はファイルに書かれたアドレスか URL です。プレビュー（`POST /api/v1/imports/preview`）は同じ比較をして件数を返し、何も書きません。
+  `remove` の項目の `target` は相手のアカウントか投稿の ID かドメインかハッシュタグの名前、`add` の項目の `target` はファイルに書かれたアドレスか URL かハッシュタグです。プレビュー（`POST /api/v1/imports/preview`）は同じ比較をして件数を返し、何も書きません。
   結果のない項目が残るインポートがあるあいだは、次のインポートを受け付けません（`409`）。確認と挿入はデータエクスポートと同じく利用者の行をロックした同じトランザクションで行うので、同時の開始でも進行中のインポートは 1 件までです。
 - ジョブは結果のない項目を 20 件ずつ順に行い、項目ごとに結果を記録してから次の 20 件のジョブを積みます（冪等キーは次の位置を含み、順序キーでインポートごとに 1 本ずつ流す）。
-  リモートのアカウントは WebFinger と Actor の取得で解決し（検索と同じ `federation.RemoteActors.ResolveHandle`）、投稿は URL で解決して（`federation.Resolver`）、フォロー・ブロック・ミュート・ブックマークの各ユースケースを呼びます。リモートへの `Follow` の配送は、フォローのイベントから連合のモジュールが積むジョブが行います。
+  リモートのアカウントは WebFinger と Actor の取得で解決し（検索と同じ `federation.RemoteActors.ResolveHandle`）、投稿は URL で解決して（`federation.Resolver`）、フォロー・ブロック・ミュート・ブックマーク・ハッシュタグのフォローの各ユースケースを呼びます（ハッシュタグでない名前は `unresolvable`、フォローの上限（100）を超えるものは `limit`）。リモートへの `Follow` の配送は、フォローのイベントから連合のモジュールが積むジョブが行います。
   同じ項目をもう一度行っても変わらない操作なので、ジョブの再実行は安全です。見つからない・処分された・ブロックで妨げられた・自分自身・ミュートできないドメイン（このサーバーのドメインは `unresolvable`、上限を超えたものは `limit`）などの項目は `failed` を記録して先へ進みます。それ以外のエラーは `data_import_item_failures` に記録してバッチを止め、同じトランザクションで遅延付きのジョブ（30 秒から失敗ごとに倍）を積んでその項目からやり直します。失敗は項目ごとに数えるので、ほかの項目の失敗やジョブ自体の再試行が項目の回数を使うことはありません。5 回目の失敗で項目を `failed`（`unavailable`）にして、インポートが止まらないようにします。
   結果と失敗の記録はインポートの行を `FOR KEY SHARE` でロックしてから行い（SQLite は書き込みのトランザクションが直列）、インポートの削除はインポートの行を先に消すので、期限切れやアカウントの消去で消えたインポートに結果が残ることはありません。消えていればジョブはそこで止まります。
 - 状態は件数から求めます: 項目の数とすべての結果の数が等しければ `finished`、そうでなければ `in_progress`。

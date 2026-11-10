@@ -3,16 +3,16 @@
 // Bob's post `statusFixture`; the thread around it (GET /statuses/{id}/context): no ancestors and no
 // replies; its source (GET /statuses/{id}/source): the plain text of that post; its history
 // (GET /statuses/{id}/history): the one revision of a post never edited; and the actions on it (boost,
-// favourite, bookmark, pin and their removal; edit; delete; the emoji reaction and its removal). An action answers
+// favourite, bookmark, pin, the thread's mute and their removal; edit; delete; the emoji reaction and its removal). An action answers
 // the post with the viewer's relation set as asked (a reaction: the post with that one reaction, the viewer's); an
 // edit answers it with the new text as its content and `edited_at` set. The accounts that reacted to a post
 // (GET /statuses/{id}/reactions) are Bob with 👍, in one page. A vote in the poll of a post
 // (POST /statuses/{id}/poll/votes) answers the post with `pollFixture` and the vote counted in it. A change of who
-// may quote a post (PUT /statuses/{id}/quote_policy) answers the post with that policy; the posts that quote a post
+// may quote a post (PUT /statuses/{id}/interaction_policy) answers the post with that policy; the posts that quote a post
 // (GET /statuses/{id}/quotes) are none; and the revocation of an approval (DELETE /statuses/{id}/quotes/{quote_id}/approval)
 // answers 204. A translation (POST /statuses/{id}/translation) is one line of English by the fake provider.
 import { http, HttpResponse } from "msw";
-import { otherAccountFixture, type Schemas, statusFixture } from "../../../test/fixtures";
+import { interactionPolicyFixture, otherAccountFixture, type Schemas, statusFixture } from "../../../test/fixtures";
 import { apiBase, withViewer } from "../../../test/msw/http";
 
 /** The viewer's relations to a post, as the Status fields that the actions set. */
@@ -99,6 +99,11 @@ export const handlers = [
       withViewer(request, () => HttpResponse.json({ ...statusFixture(String(params["id"])), pinned: on })),
     ),
   ),
+  ...[true, false].map((on) =>
+    (on ? http.post : http.delete)(`${apiBase}/statuses/:id/mute`, ({ params, request }) =>
+      withViewer(request, () => HttpResponse.json({ ...statusFixture(String(params["id"])), muted: on })),
+    ),
+  ),
   http.delete(`${apiBase}/statuses/:id`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
   ),
@@ -141,10 +146,13 @@ export const handlers = [
       items: [{ account: otherAccountFixture, emoji: { name: "👍" }, created_at: "2026-10-16T10:00:00Z" }],
     } satisfies Schemas["StatusReactionPage"]),
   ),
-  http.put(`${apiBase}/statuses/:id/quote_policy`, async ({ params, request }) => {
-    const body = (await request.json()) as Schemas["SetQuotePolicyRequest"];
+  http.put(`${apiBase}/statuses/:id/interaction_policy`, async ({ params, request }) => {
+    const body = (await request.json()) as Schemas["InteractionPolicyChange"];
     return withViewer(request, () =>
-      HttpResponse.json({ ...statusFixture(String(params["id"])), quote_policy: body.quote_policy }),
+      HttpResponse.json({
+        ...statusFixture(String(params["id"])),
+        interaction_policy: { ...interactionPolicyFixture, ...body },
+      }),
     );
   }),
   http.get(`${apiBase}/statuses/:id/quotes`, ({ request }) =>

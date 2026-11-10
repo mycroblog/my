@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 put:
   operationId: replaceCustomEmojiImage
+  x-permission: manage_custom_emojis
   summary: Replace the image of a local custom emoji
   description: |
     Makes the image of a media file the new image of a local emoji, checked as for a new

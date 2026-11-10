@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import type { Page, Route } from "@playwright/test";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, servedImage, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 /** The CLDR short name of the Unicode emoji `emoji` as the project's locale shows it (ja, or else en). */
 function emojiName(emoji: string): string {
@@ -106,6 +107,8 @@ async function serveApi(page: Page): Promise<void> {
         discoverable: true,
         indexable: true,
         ai_opt_out: false,
+        feed_enabled: true,
+        feed_follows_indexable: true,
         source: { note: "", fields: [] },
         posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
         permissions: [],
@@ -127,17 +130,14 @@ async function serveApi(page: Page): Promise<void> {
       });
     }
     if (path === "/api/v1/preferences") {
-      return json(route, {
-        locale: test.info().project.use.locale ?? "en",
-        time_zone: "UTC",
-        time_zone_chosen: true,
-        default_visibility: "public",
-        default_quote_policy: "public",
-        default_post_language: "en",
-        require_media_description: false,
-        timeline_auto_insert: true,
-        timeline_languages: [],
-      });
+      return json(
+        route,
+        preferencesOf({
+          locale: test.info().project.use.locale ?? "en",
+          default_post_language: "en",
+          timeline_auto_insert: true,
+        }),
+      );
     }
     if (path === "/api/v1/custom_emojis") return json(route, { items: emojis });
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);

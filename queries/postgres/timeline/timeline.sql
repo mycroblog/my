@@ -27,16 +27,8 @@ DELETE FROM feed_entries WHERE id = $1;
 -- name: DeleteFeedEntriesOfStatus :exec
 DELETE FROM feed_entries WHERE status_id = $1;
 
--- name: InsertFeedDirectRecipient :exec
-INSERT INTO feed_direct_recipients (entry_id, recipient_account_id) VALUES ($1, $2)
-ON CONFLICT DO NOTHING;
-
 -- name: DeleteFeedDirectRecipients :exec
 DELETE FROM feed_direct_recipients WHERE entry_id = $1;
-
--- name: InsertFeedTagEntry :exec
-INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at) VALUES ($1, $2, $3, $4, $5, $6)
-ON CONFLICT DO NOTHING;
 
 -- name: DeleteFeedTagEntries :exec
 DELETE FROM feed_tag_entries WHERE entry_id = $1;
@@ -134,6 +126,11 @@ SELECT viewer_account_id, domain FROM feed_domain_mutes ORDER BY viewer_account_
 -- ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
 -- accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
 -- boosts, within the read window (id >= window_floor).
+-- The accounts among follower_ids whose home timelines follow the followee.
+-- name: ListFeedFollowersAmong :many
+SELECT follower_account_id FROM feed_follow_edges
+WHERE followee_account_id = sqlc.arg(followee) AND follower_account_id = ANY(sqlc.arg(follower_ids)::uuid[]);
+
 -- name: ListHomeEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
@@ -231,8 +228,9 @@ ORDER BY e.id DESC
 LIMIT sqlc.arg(page_limit);
 
 -- ListTagEntries is the timeline of a hashtag (FR-203): the public and local posts with the tag
--- (public only when include_local is 0), with the exclusions of ListLocalEntries and of the
--- author's domain.
+-- (public only when include_local is false), with the exclusions of ListLocalEntries and of the
+-- author's domain. local_only keeps the posts of local authors, and exclude_replies leaves out
+-- the posts that reply to a status (the Atom feed of a hashtag, FR-213).
 -- name: ListTagEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
@@ -240,6 +238,8 @@ FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.tag_id = sqlc.arg(tag_id) AND t.visibility IN ('public', 'local')
   AND (sqlc.arg(include_local)::boolean OR t.visibility = 'public')
+  AND (NOT sqlc.arg(local_only)::boolean OR t.is_local)
+  AND (NOT sqlc.arg(exclude_replies)::boolean OR NOT e.is_reply)
   AND (sqlc.narg(before)::uuid IS NULL OR t.entry_id < sqlc.narg(before)::uuid)
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
@@ -342,22 +342,6 @@ WHERE recipient_account_id = sqlc.arg(viewer) AND entry_id = ANY(sqlc.arg(entry_
 -- ListCountedFeedTagIDs returns the tags of an entry that tag_usage counts.
 -- name: ListCountedFeedTagIDs :many
 SELECT tag_id FROM feed_tag_entries WHERE entry_id = $1 AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id;
-
--- AddTagUsage adds n posts to the usage of a tag, which a post that counts carries.
--- name: AddTagUsage :exec
-INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
-VALUES (sqlc.arg(tag_id)::uuid, sqlc.arg(n)::bigint, (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = sqlc.arg(tag_id)::uuid AND f.visibility IN ('public', 'local', 'unlisted')))
-ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at;
-
--- DeleteDrainedTagUsage deletes the usage of a tag that n posts fewer would leave at zero.
--- name: DeleteDrainedTagUsage :exec
-DELETE FROM tag_usage WHERE tag_id = sqlc.arg(tag_id)::uuid AND statuses_count <= sqlc.arg(n)::bigint;
-
--- AdjustTagUsage adds delta (which may be zero or negative) posts to the usage of a tag that has
--- a row and that a post that counts still carries, and reads its last_used_at again.
--- name: AdjustTagUsage :exec
-UPDATE tag_usage SET statuses_count = statuses_count + sqlc.arg(delta)::bigint, last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = sqlc.arg(tag_id)::uuid AND f.visibility IN ('public', 'local', 'unlisted'))
-WHERE tag_id = sqlc.arg(tag_id)::uuid;
 
 -- ListTagUsageOf returns the usage of the tags among ids that have a row.
 -- name: ListTagUsageOf :many
@@ -477,3 +461,97 @@ WHERE e.author_account_id IN (
   AND (sqlc.arg(all_languages)::boolean OR e.language = 'und' OR e.language = ANY(sqlc.arg(languages)::text[]))
 ORDER BY e.id DESC
 LIMIT sqlc.arg(page_limit);
+
+-- DeleteFeedFollowEdges and DeleteListMembersOfFollows are DeleteFeedFollowEdge and
+-- DeleteListMembersOfFollow of many pairs (the unnests of a select list advance together).
+-- name: DeleteFeedFollowEdges :exec
+DELETE FROM feed_follow_edges WHERE (follower_account_id, followee_account_id) IN (
+  SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]));
+
+-- name: DeleteListMembersOfFollows :exec
+DELETE FROM list_members WHERE (owner_account_id, member_account_id) IN (
+  SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]));
+
+-- The rows of an entry's direct recipients and tag entries, and the tag usage that they change,
+-- written with one statement each (the unnests of a select list advance together). Tag usage:
+-- AddManyTagUsage adds n posts to the usage of each tag; DeleteManyDrainedTagUsage deletes the
+-- usage of each tag that n posts fewer would leave at zero; AdjustManyTagUsage adds delta (which
+-- may be zero or negative) posts to each tag that has a row, and reads its last_used_at again.
+
+-- name: InsertFeedDirectRecipients :exec
+INSERT INTO feed_direct_recipients (entry_id, recipient_account_id)
+SELECT sqlc.arg(entry_id)::uuid, unnest(sqlc.arg(recipient_account_ids)::uuid[])
+ON CONFLICT DO NOTHING;
+
+-- name: InsertFeedTagEntries :exec
+INSERT INTO feed_tag_entries (tag_id, entry_id, author_account_id, visibility, is_local, revised_at)
+SELECT unnest(sqlc.arg(tag_ids)::uuid[]), sqlc.arg(entry_id)::uuid, sqlc.arg(author_account_id)::uuid, sqlc.arg(visibility)::text,
+  sqlc.arg(is_local)::boolean, sqlc.arg(revised_at)::timestamptz
+ON CONFLICT DO NOTHING;
+
+-- name: AddManyTagUsage :exec
+INSERT INTO tag_usage (tag_id, statuses_count, last_used_at)
+SELECT d.tag_id, d.n, (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = d.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
+FROM (SELECT unnest(sqlc.arg(tag_ids)::uuid[]) AS tag_id, unnest(sqlc.arg(ns)::bigint[]) AS n) d
+ON CONFLICT (tag_id) DO UPDATE SET statuses_count = tag_usage.statuses_count + excluded.statuses_count, last_used_at = excluded.last_used_at;
+
+-- name: DeleteManyDrainedTagUsage :exec
+DELETE FROM tag_usage t
+USING (SELECT unnest(sqlc.arg(tag_ids)::uuid[]) AS tag_id, unnest(sqlc.arg(ns)::bigint[]) AS n) d
+WHERE t.tag_id = d.tag_id AND t.statuses_count <= d.n;
+
+-- name: AdjustManyTagUsage :exec
+UPDATE tag_usage t SET statuses_count = t.statuses_count + d.delta,
+  last_used_at = (SELECT max(f.revised_at) FROM feed_tag_entries f WHERE f.tag_id = t.tag_id AND f.visibility IN ('public', 'local', 'unlisted'))
+FROM (SELECT unnest(sqlc.arg(tag_ids)::uuid[]) AS tag_id, unnest(sqlc.arg(deltas)::bigint[]) AS delta) d
+WHERE t.tag_id = d.tag_id;
+
+-- UpsertFeedFollowEdges is UpsertFeedFollowEdge of many edges (the unnests of a select list
+-- advance together).
+-- name: UpsertFeedFollowEdges :exec
+INSERT INTO feed_follow_edges (follower_account_id, followee_account_id, show_boosts)
+SELECT unnest(sqlc.arg(follower_ids)::uuid[]), unnest(sqlc.arg(followee_ids)::uuid[]), unnest(sqlc.arg(show_boosts)::boolean[])
+ON CONFLICT (follower_account_id, followee_account_id) DO UPDATE SET show_boosts = excluded.show_boosts;
+
+-- The rows of the entries of many deleted statuses, each statement as the one of one entry above
+-- does for every entry it names.
+
+-- name: DeleteFeedDirectRecipientsOf :exec
+DELETE FROM feed_direct_recipients WHERE entry_id = ANY(sqlc.arg(entry_ids)::uuid[]);
+
+-- name: ListCountedFeedTagIDsOf :many
+SELECT tag_id FROM feed_tag_entries WHERE entry_id = ANY(sqlc.arg(entry_ids)::uuid[]) AND visibility IN ('public', 'local', 'unlisted') ORDER BY tag_id;
+
+-- name: DeleteFeedTagEntriesOf :exec
+DELETE FROM feed_tag_entries WHERE entry_id = ANY(sqlc.arg(entry_ids)::uuid[]);
+
+-- name: DeleteFeedEntriesOfStatuses :exec
+DELETE FROM feed_entries WHERE status_id = ANY(sqlc.arg(status_ids)::uuid[]);
+
+-- The facts of many viewers, each as the query of one viewer above reads it, for deciding one new
+-- entry for many streams at once.
+
+-- name: ListFeedFollowedAmongOf :many
+SELECT follower_account_id, followee_account_id FROM feed_follow_edges
+WHERE follower_account_id = ANY(sqlc.arg(viewers)::uuid[]) AND followee_account_id = ANY(sqlc.arg(account_ids)::uuid[]);
+
+-- name: ListFeedExclusionsAmongOf :many
+SELECT viewer_account_id, target_account_id, reason FROM feed_exclusions
+WHERE viewer_account_id = ANY(sqlc.arg(viewers)::uuid[]) AND (expires_at IS NULL OR expires_at > sqlc.arg(now)::timestamptz)
+  AND target_account_id = ANY(sqlc.arg(account_ids)::uuid[]);
+
+-- name: ListFeedDomainMutesAmongOf :many
+SELECT viewer_account_id, domain FROM feed_domain_mutes
+WHERE viewer_account_id = ANY(sqlc.arg(viewers)::uuid[]) AND domain = ANY(sqlc.arg(domains)::text[]);
+
+-- name: ListFeedDirectEntriesAmongOf :many
+SELECT recipient_account_id, entry_id FROM feed_direct_recipients
+WHERE recipient_account_id = ANY(sqlc.arg(viewers)::uuid[]) AND entry_id = ANY(sqlc.arg(entry_ids)::uuid[]);
+
+-- UpsertFeedExclusions is UpsertFeedExclusion of many exclusions (the unnests of a select list
+-- advance together; an empty expiry is none).
+-- name: UpsertFeedExclusions :exec
+INSERT INTO feed_exclusions (viewer_account_id, target_account_id, reason, expires_at)
+SELECT unnest(sqlc.arg(viewer_account_ids)::uuid[]), unnest(sqlc.arg(target_account_ids)::uuid[]), unnest(sqlc.arg(reasons)::text[]),
+  NULLIF(unnest(sqlc.arg(expires_ats)::text[]), '')::timestamptz
+ON CONFLICT (viewer_account_id, target_account_id, reason) DO UPDATE SET expires_at = excluded.expires_at;

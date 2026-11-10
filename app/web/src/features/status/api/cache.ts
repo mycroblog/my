@@ -42,6 +42,11 @@ export function withRelationFrom(status: Status, relation: Relation, from: Statu
   const { flag, count } = relationFields[relation];
   const next: Status = { ...status, [flag]: from[flag] === true };
   if (count !== null) next[count] = from[count];
+  // A boost that waits for the author's approval is not a boost yet (ADR-0155 §7): the answer says so.
+  if (relation === "boost") {
+    delete next.boost_approval;
+    if (from.boost_approval !== undefined) next.boost_approval = from.boost_approval;
+  }
   return next;
 }
 

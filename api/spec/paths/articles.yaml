@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: createArticle
+  summary: Post an article
+  description: |
+    Posts an article as the authenticated user (201): a long post with a title, a summary, and
+    a cover, whose body is Markdown. The server renders the body once, now, and the article is
+    a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+    deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+    `getStatus` does.
+
+    The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+    Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+    second level of heading (the title is the first). An image whose destination is
+    `media:` followed by the ID of one of the user's own uploads that finished processing
+    (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+    so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+    nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+
+    A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+    than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+    posting. An article is never `direct` (422). While the instance lets only some users write
+    articles (`Instance.article_authoring` is `permission`), a user without the permission
+    `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+    with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+    does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+    server's automated review refuses the article, nothing is posted and the answer is a 422
+    `/api/v1/problems/status-rejected`, as for a post.
+  tags: [statuses]
+  security:
+    - oauth2: ["write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/IdempotencyKey.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateArticleRequest.yaml
+  responses:
+    "201":
+      description: The posted article.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Status.yaml
+    "422":
+      $ref: ../components/responses/StatusRejectedProblem.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

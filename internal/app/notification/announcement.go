@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	appinstance "github.com/mycroblog/my/internal/app/instance"
@@ -131,12 +132,7 @@ func fanOutAnnouncement(ctx context.Context, d AnnouncementDeps, a appinstance.A
 		Page: d.Recipients.LocalUserAccountIDs,
 		Handle: func(ctx context.Context, ids []string) error {
 			err := d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-				for _, id := range ids {
-					if err := notifyOfAnnouncement(ctx, d, tx, id, a.ID, a.Title, now); err != nil {
-						return err
-					}
-				}
-				return nil
+				return notifyAllOfAnnouncement(ctx, d, tx, ids, a.ID, a.Title, now)
 			})
 			if err != nil {
 				return fmt.Errorf("notification: notify announcement %s: %w", a.ID, err)
@@ -162,6 +158,79 @@ func fanOutAnnouncement(ctx context.Context, d AnnouncementDeps, a appinstance.A
 		return fmt.Errorf("notification: the recipients of announcement %s: %w", a.ID, err)
 	}
 	return nil
+}
+
+// notifiableBatchRecipients is an AnnouncementRecipients that decides many accounts at once, as
+// the composition root's does.
+type notifiableBatchRecipients interface {
+	NotifiableAmong(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string]bool, error)
+}
+
+// notifyAllOfAnnouncement is notifyOfAnnouncement of each of ids, with a number of queries that
+// does not grow with them: their states and settings read together, their notifications inserted
+// and their Web Push messages enqueued with one statement each. Without the batch read of the
+// recipients it notifies them one by one.
+func notifyAllOfAnnouncement(ctx context.Context, d AnnouncementDeps, tx uow.Tx, ids []string, announcementID, title string, now time.Time) error {
+	b, ok := d.Recipients.(notifiableBatchRecipients)
+	if !ok {
+		for _, id := range ids {
+			if err := notifyOfAnnouncement(ctx, d, tx, id, announcementID, title, now); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	notifiable, err := b.NotifiableAmong(ctx, tx, ids)
+	if err != nil {
+		return err
+	}
+	var recipients []string
+	for _, id := range ids {
+		if notifiable[id] && !slices.Contains(recipients, id) {
+			recipients = append(recipients, id)
+		}
+	}
+	if len(recipients) == 0 {
+		return nil
+	}
+	saved, err := d.Repository.NotificationSettingsOfTx(ctx, tx, recipients)
+	if err != nil {
+		return err
+	}
+	n := notification.Notification{
+		Type: notification.TypeAnnouncement, AnnouncementID: announcementID, DedupeKey: notification.AnnouncementKey(announcementID), CreatedAt: now,
+	}
+	var kept, newIDs []string
+	for _, id := range recipients {
+		if !notification.NewChoices(saved[id]).TypeEnabled(notification.TypeAnnouncement, notification.ChannelInApp) {
+			continue // turned off in the app: not created (ADR-0086 §10)
+		}
+		one := n
+		one.ID, one.RecipientAccountID = d.IDs.NewID(), id
+		if err := one.Validate(); err != nil {
+			return err
+		}
+		kept, newIDs = append(kept, id), append(newIDs, one.ID)
+	}
+	if len(kept) == 0 {
+		return nil
+	}
+	inserted, err := d.Repository.InsertNotificationsFor(ctx, tx, n, newIDs, kept)
+	if err != nil {
+		return err
+	}
+	var created []notification.Notification
+	for i, id := range kept {
+		if inserted[id] {
+			one := n
+			one.ID, one.RecipientAccountID = newIDs[i], id
+			created = append(created, one)
+		}
+	}
+	return d.Push.enqueueAll(ctx, tx, created, func(j *pushJob) { j.AnnouncementTitle = title })
 }
 
 // notifyOfAnnouncement creates the announcement of recipientID, unless it is suspended or

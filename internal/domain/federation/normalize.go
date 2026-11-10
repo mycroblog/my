@@ -77,11 +77,11 @@ var (
 	activityTypes = []ActivityType{
 		ActivityCreate, ActivityUpdate, ActivityDelete, ActivityFollow, ActivityAccept, ActivityReject,
 		ActivityUndo, ActivityAnnounce, ActivityLike, ActivityEmojiReact, ActivityBlock, ActivityFlag,
-		ActivityAdd, ActivityRemove, ActivityMove, ActivityQuoteRequest,
+		ActivityAdd, ActivityRemove, ActivityMove, ActivityQuoteRequest, ActivityReplyRequest, ActivityAnnounceRequest,
 	}
 	objectTypes = []ObjectType{
 		ObjectNote, ObjectQuestion, ObjectArticle, ObjectPage, ObjectEvent, ObjectImage, ObjectVideo,
-		ObjectAudio, ObjectTombstone, ObjectQuoteAuthorization,
+		ObjectAudio, ObjectTombstone, ObjectQuoteAuthorization, ObjectReplyAuthorization, ObjectAnnounceAuthorization,
 	}
 	convertedTypes  = []ObjectType{ObjectArticle, ObjectPage, ObjectEvent, ObjectImage, ObjectVideo, ObjectAudio}
 	actorTypes      = []ActorType{ActorPerson, ActorService, ActorApplication, ActorGroup, ActorOrganization}
@@ -129,12 +129,14 @@ func (n normalizer) activity(o object, t ActivityType, raw string) (*Activity, e
 		return nil, err
 	}
 	switch t {
-	case ActivityQuoteRequest:
+	case ActivityQuoteRequest, ActivityReplyRequest, ActivityAnnounceRequest:
 		if a.Instrument, err = n.ref(o.get("instrument"), container); err != nil {
 			return nil, err
 		}
 	case ActivityAccept:
 		a.Result = n.firstRef(o.get("result"))
+	case ActivityAnnounce:
+		a.Authorization = n.firstRef(o.get("announceAuthorization"))
 	}
 	return a, nil
 }
@@ -147,6 +149,7 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 		Converted:    slices.Contains(convertedTypes, t),
 		AttributedTo: n.firstRef(o.get("attributedTo")),
 		InReplyTo:    n.firstRef(o.get("inReplyTo")),
+		Conversation: n.conversation(o),
 		Published:    n.time(o.get("published")),
 		Updated:      n.time(o.get("updated")),
 		URL:          n.displayURL(o.get("url")),
@@ -199,12 +202,40 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 		return nil, err
 	}
 	obj.Quote = n.quote(o)
-	obj.CanQuote = n.canQuote(o)
-	if t == ObjectQuoteAuthorization {
+	obj.CanReply, obj.CanAnnounce, obj.CanQuote = n.canInteract(o, "canReply"), n.canInteract(o, "canAnnounce"), n.canInteract(o, "canQuote")
+	switch t {
+	case ObjectQuoteAuthorization, ObjectReplyAuthorization, ObjectAnnounceAuthorization:
 		obj.InteractingObject = n.firstRef(o.get("interactingObject"))
 		obj.InteractionTarget = n.firstRef(o.get("interactionTarget"))
 	}
+	obj.ReplyAuthorization = n.firstRef(o.get("replyAuthorization"))
 	return obj, nil
+}
+
+// maxConversationURILength bounds the tag: URI of a declared conversation, which NormalizeIRI does
+// not read.
+const maxConversationURILength = 2048
+
+// conversation reads the conversation that a post declares (federation.md §4, ADR-0154 §2): the
+// first context, when it is an https IRI (a string, the href of a Link, or the id of an embedded
+// object), else the conversation (ostatus:conversation), when it is an https IRI or a tag: URI
+// (RFC 4151, which Mastodon sends for its older conversations). Anything else declares none.
+func (n normalizer) conversation(o object) IRI {
+	if c := n.firstRef(o.get("context")); c != PublicIRI && strings.HasPrefix(string(c), "https://") {
+		return c
+	}
+	v, _ := o.get("conversation").(string)
+	v = strings.TrimSpace(v)
+	if strings.HasPrefix(v, "tag:") {
+		if len(v) > maxConversationURILength || strings.ContainsFunc(v, func(r rune) bool { return r <= ' ' || r == 0x7f || r == utf8.RuneError }) {
+			return ""
+		}
+		return IRI(v)
+	}
+	if c := n.normalizeIRI(v); c != PublicIRI && strings.HasPrefix(string(c), "https://") {
+		return c
+	}
+	return ""
 }
 
 // quoteProperties are the properties that name the quoted post, in the order they are read
@@ -243,17 +274,45 @@ func (n normalizer) quote(o object) *Quote {
 	return nil
 }
 
-// canQuote reads interactionPolicy.canQuote, nil when the object has none.
-func (n normalizer) canQuote(o object) *CanQuote {
+// canInteract reads the property kind (canReply, canAnnounce, or canQuote) of the object's
+// interactionPolicy, nil when the object declares none: no interactionPolicy, no such property,
+// or one that is null or has neither list (GoToSocial's convention). The names before GoToSocial
+// 0.20, always and approvalRequired, are read too.
+func (n normalizer) canInteract(o object, kind string) *CanInteract {
 	policy, ok := o.get("interactionPolicy").(object)
 	if !ok {
 		return nil
 	}
-	c, ok := policy.get("canQuote").(object)
+	c, ok := policy.get(kind).(object)
 	if !ok {
 		return nil
 	}
-	return &CanQuote{AutomaticApproval: n.recipients(list(c.get("automaticApproval"))), ManualApproval: n.recipients(list(c.get("manualApproval")))}
+	declared := false
+	read := func(names ...string) []IRI {
+		var vs []any
+		for _, name := range names {
+			if v := c.get(name); v != nil {
+				declared = true
+				vs = append(vs, list(v)...)
+			}
+		}
+		return n.recipients(vs)
+	}
+	out := &CanInteract{AutomaticApproval: read("automaticApproval", "always"), ManualApproval: read("manualApproval", "approvalRequired")}
+	if !declared {
+		return nil
+	}
+	return out
+}
+
+// hashtagName returns the name of a Hashtag item, without its leading # ("" when it has none),
+// and false for any other value.
+func hashtagName(v any) (string, bool) {
+	o, ok := v.(object)
+	if !ok || !slices.Contains(strs(o.get("type")), string(TagHashtag)) {
+		return "", false
+	}
+	return strings.TrimPrefix(strings.TrimSpace(str(o.get("name"))), "#"), true
 }
 
 // activityStreamsMediaType reports whether the mediaType of a Link names an ActivityStreams
@@ -274,6 +333,12 @@ func (n normalizer) collection(o object, page bool) (*Collection, error) {
 		items = o.get("items")
 	}
 	for _, v := range list(items) {
+		if name, ok := hashtagName(v); ok {
+			if name != "" && len(c.Hashtags) < MaxItems {
+				c.Hashtags = append(c.Hashtags, name)
+			}
+			continue
+		}
 		if len(c.Items) == MaxItems {
 			break
 		}
@@ -307,6 +372,7 @@ func (n normalizer) actor(o object, t ActorType) (*Actor, error) {
 		Followers:                 n.firstRef(o.get("followers")),
 		Following:                 n.firstRef(o.get("following")),
 		Featured:                  n.firstRef(o.get("featured")),
+		FeaturedTags:              n.firstRef(o.get("featuredTags")),
 		Icon:                      n.imageURL(o.get("icon")),
 		Image:                     n.imageURL(o.get("image")),
 		ManuallyApprovesFollowers: o.get("manuallyApprovesFollowers") == true,

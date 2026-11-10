@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: A word of a keyword filter.
+type: object
+required: [keyword, whole_word]
+properties:
+  keyword:
+    description: |
+      The word or phrase, as the user typed it. It matches the text, the content warning, the
+      poll's choices, and the alt text of a post, each on its own, regardless of case, of
+      half-width and full-width forms, and of katakana and hiragana; runs of white space match
+      one space. Up to 100 characters once normalized.
+    type: string
+    minLength: 1
+    maxLength: 400
+  whole_word:
+    description: |
+      Whether the word matches only where no letter, digit, or `_` touches it. Characters of
+      scripts that do not separate words with spaces (Chinese, Japanese, Thai, and the like)
+      never count as touching, so there the word matches anywhere.
+    type: boolean

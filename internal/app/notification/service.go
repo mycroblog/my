@@ -17,6 +17,8 @@ type Deps struct {
 	UnitOfWork uow.UnitOfWork
 	Repository Repository
 	Clock      kernel.Clock
+	// IDs names the dismissals of the requests (DismissRequest).
+	IDs kernel.IDGenerator
 	// Staff reads the permissions of the recipients of the moderator notifications, which the
 	// list leaves out once the recipient no longer holds them, and which offer the moderator rows
 	// of the notification settings; nil holds none.
@@ -27,6 +29,10 @@ type Deps struct {
 	// Announcements tells which announcements the users see now: the list leaves out the
 	// notifications of the others (ADR-0125 §2). nil shows none of them.
 	Announcements ShownAnnouncements
+	// Filters judges the statuses of the unread notifications against the recipient's keyword
+	// filters: the unread count leaves out those that a hide filter matches, which the list
+	// leaves out too (ADR-0157 §7). nil judges none.
+	Filters StatusFilters
 }
 
 // ShownAnnouncements tells which server-wide announcements the users see now: published and
@@ -126,7 +132,10 @@ func (s *Service) ReadMarker(ctx context.Context, accountID string) (notificatio
 }
 
 // UnreadCount returns the number of accountID's notifications that List would return and that
-// are newer than its read marker; withoutModerator counts as Query.WithoutModerator lists.
+// are newer than its read marker; withoutModerator counts as Query.WithoutModerator lists. It
+// leaves out the notifications whose status a hide keyword filter matches (Deps.Filters), which
+// the client API leaves out of the list, so that no unread notification stays that cannot be
+// read.
 func (s *Service) UnreadCount(ctx context.Context, accountID string, withoutModerator bool) (int64, error) {
 	m, err := s.ReadMarker(ctx, accountID)
 	if err != nil {
@@ -136,7 +145,13 @@ func (s *Service) UnreadCount(ctx context.Context, accountID string, withoutMode
 	if err != nil {
 		return 0, err
 	}
-	return s.d.Repository.CountNotificationsAfter(ctx, accountID, m.LastReadID, hidden, s.d.Clock.Now())
+	now := s.d.Clock.Now()
+	n, err := s.d.Repository.CountNotificationsAfter(ctx, accountID, m.LastReadID, hidden, now)
+	if err != nil || n == 0 {
+		return n, err
+	}
+	filtered, err := s.unreadHidden(ctx, accountID, m.LastReadID, hidden, now)
+	return max(n-filtered, 0), err
 }
 
 // hidden returns what the reads of accountID's notifications leave out now: the types of the

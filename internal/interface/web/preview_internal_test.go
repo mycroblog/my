@@ -71,7 +71,11 @@ func TestCard(t *testing.T) {
 }
 
 func TestOGLocale(t *testing.T) {
-	for in, want := range map[string]string{"ja": "ja", "en-US": "en_US", "zh-Hant-TW": "zh_TW", "pt_br": "pt_BR", "ar": "ar"} {
+	for in, want := range map[string]string{
+		"ja": "ja_JP", "en": "en_US", "en-US": "en_US", "en-GB": "en_GB", "zh-Hant-TW": "zh_TW", "zh-Hant": "zh_TW",
+		"zh-Hans": "zh_CN", "pt_br": "pt_BR", "pt": "pt_BR", "de": "de_DE", "es": "es_ES", "fr": "fr_FR", "ar": "ar_EG",
+		"en-XA": "en", "ar-XB": "ar", "eo": "eo", "und": "und",
+	} {
 		if got := ogLocale(in); got != want {
 			t.Errorf("ogLocale(%q) = %q, want %q", in, got, want)
 		}

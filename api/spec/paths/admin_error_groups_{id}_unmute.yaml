@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/ErrorGroupId.yaml
 post:
   operationId: unmuteErrorGroup
+  x-permission: manage_errors
   summary: Unmute an error group
   description: |
     Opens a muted group again (also one that was resolved before it was muted). Unmuting a group that is not muted changes nothing. An unknown group is a 404. Needs the `manage_errors` permission.

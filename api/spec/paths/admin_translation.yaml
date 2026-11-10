@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getAdminTranslationOverview
+  x-permission: manage_settings
   summary: Show how translation is used
   description: |
     The characters of posts sent to providers in the current month, the cache hit rate, and the

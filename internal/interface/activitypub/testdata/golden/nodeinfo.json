@@ -21,6 +21,7 @@
   },
   "metadata": {
     "federationMode": "both",
+    "federationScope": "open",
     "maintainer": {
       "name": "Alice",
       "email": "admin@example.com"

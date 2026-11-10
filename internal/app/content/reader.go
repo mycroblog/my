@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -19,6 +20,9 @@ const (
 	MaxThreadAncestors = 40
 	// MaxThreadDescendants is the number of replies Thread returns below a status.
 	MaxThreadDescendants = 60
+	// MaxThreadStatuses is the number of statuses of a conversation, oldest first, that Thread
+	// reads to find the ancestors and descendants among.
+	MaxThreadStatuses = 2000
 )
 
 // ReaderDeps are the ports a Reader uses.
@@ -52,6 +56,9 @@ type ReaderDeps struct {
 type Reader struct {
 	d   ReaderDeps
 	aud audience
+	// reactionEmoji are the custom emoji of the reactions that a page read beforehand
+	// (Reader.page); nil outside a page.
+	reactionEmoji map[string]*ReactionCustomEmoji
 }
 
 // NewReader returns a Reader on d.
@@ -78,6 +85,9 @@ type StatusView struct {
 	InReplyTo *content.Status
 	// Attachments are the attached media that finished processing, in order.
 	Attachments []MediaView
+	// Cover is the cover image of an article (Revision.Article), nil for none or one that cannot be
+	// shown.
+	Cover *MediaView
 	// Mentions are the mentioned accounts that exist, in the revision's order.
 	Mentions []appaccount.Actor
 	Tags     []content.Tag
@@ -94,11 +104,12 @@ type StatusView struct {
 	// Quote is the quote of the status, nil for none or for a status presented as a quote
 	// (ADR-0069).
 	Quote *QuoteView
-	// Quotable is whether the viewer, a local account, may quote the status
-	// (content.MayQuote); false for an anonymous viewer.
-	Quotable bool
-	// QuotePolicy is who may quote the status, for its author only; "" for anyone else.
-	QuotePolicy content.QuotePolicy
+	// Permissions is what the viewer, a local account, may do with the status by each kind of
+	// interaction (content.MayInteract, ADR-0155 §10); nil for an anonymous viewer.
+	Permissions *InteractionPermissions
+	// InteractionPolicy is who may reply to, boost, and quote the status (ADR-0155 §10), for the
+	// author of a local status only; nil for anyone else.
+	InteractionPolicy *content.InteractionSettings
 }
 
 // Edited reports whether the status has a revision after its first.
@@ -106,11 +117,19 @@ func (v StatusView) Edited() bool { return v.Revision.Seq > 1 }
 
 // ViewerRelation is what a local viewer did with a status.
 type ViewerRelation struct {
+	// AccountID is the viewer's account.
+	AccountID                       string
 	Favourited, Boosted, Bookmarked bool
 	// Author is whether the viewer is the author, who alone can pin the status.
 	Author bool
 	// Pinned is whether the author pinned the status; always false for other viewers.
 	Pinned bool
+	// Approval is, for the author of a reply, the state of its request while it is not approved
+	// (ADR-0155 §10): pending, or rejected; "" for a reply that needs no approval or has it.
+	Approval content.InteractionRequestState
+	// BoostApproval is the state of the viewer's request to boost the status while it is not
+	// approved: pending, or rejected; "" for none.
+	BoostApproval content.InteractionRequestState
 }
 
 // MediaView is an attached media file that can be shown: an upload that finished processing, or
@@ -130,10 +149,12 @@ type MediaView struct {
 // poll with its counts as an anonymous viewer sees them, nil when the revision has none.
 type RevisionParts struct {
 	Attachments []MediaView
-	Mentions    []appaccount.Actor
-	Tags        []content.Tag
-	Emojis      []EmojiTag
-	Poll        *PollView
+	// Cover is the cover image of an article's revision, nil for none or one that cannot be shown.
+	Cover    *MediaView
+	Mentions []appaccount.Actor
+	Tags     []content.Tag
+	Emojis   []EmojiTag
+	Poll     *PollView
 }
 
 // RevisionView is one revision of a status, for its edit history.
@@ -174,6 +195,37 @@ func (r *Reader) View(ctx context.Context, viewer Viewer, statusID string) (Stat
 func (r *Reader) Visible(ctx context.Context, viewer Viewer, statusID string) (content.Status, error) {
 	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
 	return st, err
+}
+
+// VisibleAmong is Visible of each of ids, by ID, reading the statuses and their authors once
+// (Reader.page); those that viewer may not see, missing or deleted, are left out.
+func (r *Reader) VisibleAmong(ctx context.Context, viewer Viewer, ids []string) (map[string]content.Status, error) {
+	out := make(map[string]content.Status, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+	page, err := r.page(ctx, viewer, ids)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		st, _, err := page.aud.visibleStatus(ctx, viewer, id)
+		if errors.Is(err, ErrNotFound) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		out[id] = st
+	}
+	return out, nil
+}
+
+// VisibleToLocal reports, by account, whether each of the local accounts of viewerIDs may see
+// statusID, as Visible decides for one, with a number of queries that does not grow with
+// viewerIDs.
+func (r *Reader) VisibleToLocal(ctx context.Context, statusID string, viewerIDs []string) (map[string]bool, error) {
+	return r.aud.visibleToLocal(ctx, statusID, viewerIDs)
 }
 
 // ReadableStatus is a status that a viewer may see, for a module that works on its text.
@@ -223,86 +275,101 @@ func (r *Reader) Live(ctx context.Context, statusID string) error {
 	return err
 }
 
-// Thread returns the ancestors and descendants of a status that viewer may see (FR-106).
+// Thread returns the ancestors and descendants of a status that viewer may see (FR-106). The
+// candidates are the statuses of its conversation that are not deleted (ADR-0154 §1), read
+// once; the ancestors and descendants are those that the reply links reach from the status, so
+// that a status that only declares the conversation is not shown. The candidates are then
+// decided and presented a page at a time (Reader.page): the ancestors with the first
+// descendants, and more descendants while fewer than MaxThreadDescendants are shown.
 func (r *Reader) Thread(ctx context.Context, viewer Viewer, statusID string) (Thread, error) {
 	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
 	if err != nil {
 		return Thread{}, err
 	}
-	var out Thread
-	seen := map[string]bool{st.ID: true}
-	for cur := st; len(out.Ancestors) < MaxThreadAncestors && cur.InReplyToURI != ""; {
-		parent, view, ok, err := r.viewByURI(ctx, viewer, cur.InReplyToURI)
-		if err != nil {
-			return Thread{}, err
+	convs, err := r.d.Statuses.StatusConversations(ctx, []string{st.ID})
+	if err != nil {
+		return Thread{}, err
+	}
+	conv, ok := convs[st.ID]
+	if !ok {
+		return Thread{}, nil
+	}
+	candidates, err := r.d.Statuses.ListLiveConversationStatuses(ctx, conv.ID, viewer.AccountID, "", MaxThreadStatuses)
+	if err != nil {
+		return Thread{}, err
+	}
+	byURI := make(map[string]content.Status, len(candidates))
+	replies := map[string][]content.Status{} // by the URI replied to, in ID order
+	for _, c := range candidates {
+		byURI[c.URI] = c
+		if c.InReplyToURI != "" {
+			replies[c.InReplyToURI] = append(replies[c.InReplyToURI], c)
 		}
+	}
+	seen := map[string]bool{st.ID: true}
+	var up []string // the ancestors, nearest first
+	for cur := st; len(up) < MaxThreadAncestors && cur.InReplyToURI != ""; {
+		parent, ok := byURI[cur.InReplyToURI]
 		if !ok || seen[parent.ID] {
 			break
 		}
 		seen[parent.ID] = true
-		out.Ancestors = append([]StatusView{view}, out.Ancestors...)
+		up = append(up, parent.ID)
 		cur = parent
 	}
-	if err := r.descend(ctx, viewer, st, seen, &out.Descendants); err != nil {
+	// The descendants depth first in posting order; skip[i] is where the replies below down[i] end.
+	var down []string
+	var skip []int
+	var walk func(uri string)
+	walk = func(uri string) {
+		for _, reply := range replies[uri] {
+			if seen[reply.ID] {
+				continue
+			}
+			seen[reply.ID] = true
+			i := len(down)
+			down, skip = append(down, reply.ID), append(skip, 0)
+			walk(reply.URI)
+			skip[i] = len(down)
+		}
+	}
+	walk(st.URI)
+
+	loaded := min(len(down), MaxThreadDescendants)
+	page, err := r.page(ctx, viewer, slices.Concat(up, down[:loaded]))
+	if err != nil {
 		return Thread{}, err
 	}
-	return out, nil
-}
-
-// descend appends the visible replies to st, each followed by its own replies.
-func (r *Reader) descend(ctx context.Context, viewer Viewer, st content.Status, seen map[string]bool, out *[]StatusView) error {
-	replies, err := r.d.Statuses.ListReplies(ctx, st.URI)
-	if err != nil {
-		return err
-	}
-	for _, reply := range replies {
-		if len(*out) >= MaxThreadDescendants {
-			return nil
-		}
-		if seen[reply.ID] {
-			continue
-		}
-		seen[reply.ID] = true
-		ok, author, err := r.aud.visible(ctx, viewer, reply)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			continue
-		}
-		view, err := r.present(ctx, viewer, reply, author)
+	var out Thread
+	for _, id := range up {
+		view, err := page.View(ctx, viewer, id)
 		if errors.Is(err, ErrNotFound) {
-			continue // deleted meanwhile
+			break // the ancestors stop at the first that the viewer may not see
 		}
 		if err != nil {
-			return err
+			return Thread{}, err
 		}
-		*out = append(*out, view)
-		if err := r.descend(ctx, viewer, reply, seen, out); err != nil {
-			return err
+		out.Ancestors = append([]StatusView{view}, out.Ancestors...)
+	}
+	for i := 0; i < len(down) && len(out.Descendants) < MaxThreadDescendants; {
+		if i >= loaded {
+			loaded = min(len(down), i+MaxThreadDescendants)
+			if page, err = r.page(ctx, viewer, down[i:loaded]); err != nil {
+				return Thread{}, err
+			}
 		}
+		view, err := page.View(ctx, viewer, down[i])
+		if errors.Is(err, ErrNotFound) {
+			i = skip[i] // nor the replies below one that the viewer may not see
+			continue
+		}
+		if err != nil {
+			return Thread{}, err
+		}
+		out.Descendants = append(out.Descendants, view)
+		i++
 	}
-	return nil
-}
-
-// viewByURI returns the live status with uri as viewer sees it; ok is false when it is
-// missing, deleted, or hidden from the viewer.
-func (r *Reader) viewByURI(ctx context.Context, viewer Viewer, uri string) (content.Status, StatusView, bool, error) {
-	st, err := r.d.Statuses.FindStatusByURI(ctx, uri)
-	if errors.Is(err, ErrNotFound) {
-		return content.Status{}, StatusView{}, false, nil
-	}
-	if err != nil {
-		return content.Status{}, StatusView{}, false, err
-	}
-	view, err := r.View(ctx, viewer, st.ID)
-	if errors.Is(err, ErrNotFound) {
-		return content.Status{}, StatusView{}, false, nil
-	}
-	if err != nil {
-		return content.Status{}, StatusView{}, false, err
-	}
-	return st, view, true, nil
+	return out, nil
 }
 
 // History returns the revisions of a status that viewer may see, oldest first (FR-109). What
@@ -338,18 +405,18 @@ func (r *Reader) History(ctx context.Context, viewer Viewer, statusID string) ([
 	return out, nil
 }
 
-// Source returns the current revision of a local account's own status, whose Source holds
-// what the author typed. Another account's status, or one hidden from viewer, fails with
-// ErrNotFound, like a missing one.
-func (r *Reader) Source(ctx context.Context, viewer Viewer, statusID string) (content.Revision, error) {
+// Source returns a local account's own status with its current revision, whose Source holds
+// what the author typed (and, for an article, its Article and the hashtags in Tags). Another
+// account's status, or one hidden from viewer, fails with ErrNotFound, like a missing one.
+func (r *Reader) Source(ctx context.Context, viewer Viewer, statusID string) (StatusView, error) {
 	view, err := r.View(ctx, viewer, statusID)
 	if err != nil {
-		return content.Revision{}, err
+		return StatusView{}, err
 	}
 	if view.Status.AuthorAccountID != viewer.AccountID || view.Revision.Source == nil {
-		return content.Revision{}, fmt.Errorf("source of %s: %w", statusID, ErrNotFound)
+		return StatusView{}, fmt.Errorf("source of %s: %w", statusID, ErrNotFound)
 	}
-	return view.Revision, nil
+	return view, nil
 }
 
 // Bookmarks returns a page of the bookmarked statuses of the local account viewer, newest
@@ -408,18 +475,21 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 			}
 		}
 	}
-	parts, err := r.Parts(ctx, rev)
+	// A view presents no Emoji tags (a client reads the custom emoji of a page together), so it
+	// reads the parts without them.
+	parts, err := r.viewParts(ctx, rev)
 	if err != nil {
 		return StatusView{}, err
 	}
-	out.Attachments, out.Mentions, out.Tags = parts.Attachments, parts.Mentions, parts.Tags
+	out.Attachments, out.Cover, out.Mentions, out.Tags = parts.Attachments, parts.Cover, parts.Mentions, parts.Tags
 	if r.d.LinkCards != nil {
 		if out.Card, err = r.d.LinkCards.View(ctx, st, rev); err != nil {
 			return StatusView{}, err
 		}
 	}
-	// The image of a card is shown as sensitive as the attachments are (ADR-0062 §7).
-	if (len(out.Attachments) > 0 || out.Card != nil && out.Card.Image != nil) && !out.Revision.Sensitive {
+	// The image of a card and the cover of an article are shown as sensitive as the attachments
+	// are (ADR-0062 §7).
+	if (len(out.Attachments) > 0 || out.Cover != nil || out.Card != nil && out.Card.Image != nil) && !out.Revision.Sensitive {
 		if out.Revision.Sensitive, err = r.forcedSensitive(ctx, st); err != nil {
 			return StatusView{}, err
 		}
@@ -448,7 +518,7 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 			return StatusView{}, err
 		}
 	}
-	if out.Quotable, out.QuotePolicy, err = r.quotable(ctx, viewer, st); err != nil {
+	if out.Permissions, out.InteractionPolicy, err = r.permissions(ctx, viewer, st, out.InReplyTo); err != nil {
 		return StatusView{}, err
 	}
 	return out, nil
@@ -470,33 +540,59 @@ func (r *Reader) forcedSensitive(ctx context.Context, st content.Status) (bool, 
 // that present it to a viewer decide that first. ActivityPub documents of local statuses are
 // built from it (federation.md §7.4).
 func (r *Reader) Parts(ctx context.Context, rev content.Revision) (RevisionParts, error) {
-	var out RevisionParts
-	var err error
-	if out.Attachments, err = r.attachments(ctx, rev.Attachments); err != nil {
+	out, err := r.viewParts(ctx, rev)
+	if err != nil {
 		return RevisionParts{}, err
-	}
-	for _, id := range rev.MentionedAccountIDs {
-		a, err := r.d.Accounts.FindByID(ctx, id)
-		if errors.Is(err, appaccount.ErrNotFound) {
-			continue
-		}
-		if err != nil {
-			return RevisionParts{}, err
-		}
-		out.Mentions = append(out.Mentions, a)
-	}
-	for _, id := range rev.TagIDs {
-		tag, err := r.d.Statuses.FindTag(ctx, id)
-		if err != nil {
-			return RevisionParts{}, err
-		}
-		out.Tags = append(out.Tags, tag)
 	}
 	if out.Emojis, err = r.EmojiTags(ctx, rev.EmojiIDs); err != nil {
 		return RevisionParts{}, err
 	}
 	if out.Poll, err = r.poll(ctx, rev, ""); err != nil {
 		return RevisionParts{}, err
+	}
+	return out, nil
+}
+
+// viewParts resolves the attachments, mentioned accounts, and hashtags of rev, the parts of
+// Parts that a StatusView presents.
+func (r *Reader) viewParts(ctx context.Context, rev content.Revision) (RevisionParts, error) {
+	var out RevisionParts
+	var err error
+	if out.Attachments, err = r.attachments(ctx, rev.Attachments); err != nil {
+		return RevisionParts{}, err
+	}
+	if a := rev.Article; a != nil && a.Cover != nil {
+		cover, err := r.attachments(ctx, []content.Attachment{{MediaID: a.Cover.MediaID, Description: a.Cover.Description}})
+		if err != nil {
+			return RevisionParts{}, err
+		}
+		if len(cover) > 0 {
+			out.Cover = &cover[0]
+		}
+	}
+	if len(rev.MentionedAccountIDs) > 0 {
+		mentioned, err := r.d.Accounts.FindByIDs(ctx, rev.MentionedAccountIDs)
+		if err != nil {
+			return RevisionParts{}, err
+		}
+		for _, id := range rev.MentionedAccountIDs {
+			if a, ok := mentioned[id]; ok {
+				out.Mentions = append(out.Mentions, a)
+			}
+		}
+	}
+	if len(rev.TagIDs) > 0 {
+		tags, err := r.d.Statuses.FindTags(ctx, rev.TagIDs)
+		if err != nil {
+			return RevisionParts{}, err
+		}
+		for _, id := range rev.TagIDs {
+			tag, ok := tags[id]
+			if !ok {
+				return RevisionParts{}, fmt.Errorf("tag %s of revision %s: %w", id, rev.ID, ErrNotFound)
+			}
+			out.Tags = append(out.Tags, tag)
+		}
 	}
 	return out, nil
 }
@@ -513,7 +609,7 @@ func (r *Reader) EmojiTags(ctx context.Context, ids []string) ([]EmojiTag, error
 // relation returns what accountID did with st.
 func (r *Reader) relation(ctx context.Context, accountID string, st content.Status) (*ViewerRelation, error) {
 	repo := r.d.Interactions
-	var rel ViewerRelation
+	rel := ViewerRelation{AccountID: accountID}
 	var err error
 	if rel.Favourited, err = found(repo.FindFavourite(ctx, accountID, st.ID)); err != nil {
 		return nil, err
@@ -530,7 +626,32 @@ func (r *Reader) relation(ctx context.Context, accountID string, st content.Stat
 			return nil, err
 		}
 	}
+	if r.d.Quotes != nil {
+		own, err := r.d.Quotes.ListOwnInteractions(ctx, accountID, []string{st.URI})
+		if err != nil {
+			return nil, err
+		}
+		rel.Approval, rel.BoostApproval = ownApprovals(own, st)
+	}
 	return &rel, nil
+}
+
+// ownApprovals returns the states of the requests of own, an account's interactions, that are not
+// approved: of its reply st, and of its boost of st, a pending one before a rejected one.
+func ownApprovals(own []OwnInteraction, st content.Status) (reply, boost content.InteractionRequestState) {
+	for _, o := range own {
+		// An approved interaction needs none any more, and a withdrawn one is gone.
+		if o.State == content.InteractionRequestAccepted || o.State == content.InteractionRequestWithdrawn {
+			continue
+		}
+		switch {
+		case o.Kind == content.InteractionReply && o.InteractingURI == st.URI:
+			reply = o.State
+		case o.Kind == content.InteractionAnnounce && o.TargetURI == st.URI && boost != content.InteractionRequestPending:
+			boost = o.State
+		}
+	}
+	return reply, boost
 }
 
 // found turns a lookup into whether it found a row.

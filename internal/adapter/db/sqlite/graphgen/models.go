@@ -16,6 +16,13 @@ type AccountDomainMute struct {
 	CreatedAt int64
 }
 
+type AccountNote struct {
+	AccountID       string
+	TargetAccountID string
+	Note            string
+	UpdatedAt       int64
+}
+
 type Block struct {
 	ID               string
 	Uri              sql.NullString

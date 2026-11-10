@@ -68,15 +68,21 @@ tags:
       within the caps of the instance settings, listing them, and revoking them. The operations
       need a `read:accounts` or `write:accounts` scope.
   - name: notifications
-    description: The authenticated user's notifications, their read marker, and dismissals.
+    description: The authenticated user's notifications, their read marker, dismissals, and the requests of the notifications that the notification policy filtered.
   - name: push
     description: The Web Push subscription of the access token's grant.
   - name: statuses
     description: Posts, their threads and edit history, and boosts, favourites, bookmarks, and pins of them.
+  - name: drafts
+    description: The drafts of posts that the authenticated user saves on the server, publishing them now or at a chosen time.
   - name: timelines
     description: The home, local, hashtag, list, and account timelines.
   - name: lists
     description: The authenticated user's lists of the accounts the user follows, which only the user sees.
+  - name: filters
+    description: The authenticated user's keyword filters, which fold or leave out the posts that match them.
+  - name: conversations
+    description: The authenticated user's direct messages by conversation, with what the user read and hid.
   - name: reports
     description: Reports of accounts and posts to the moderators.
   - name: streaming
@@ -110,6 +116,12 @@ tags:
       a `read:voice` or `write:voice` scope, except the summary of a room for the visitors who
       do not see it. Every operation answers 404 while the voice chat is off on the server, and
       for a room that the user does not see.
+  - name: events
+    description: |
+      The events of the local users: creating, changing, and cancelling them, answering them,
+      the attendees and their approval, the invitations, and the co-organizers. Nothing of them
+      is federated. The operations need a `read:events` or `write:events` scope, and answer 404
+      for an event that the user does not see.
   - name: client-errors
     description: The uncaught errors of the web client, which it reports to its own server.
   - name: admin-moderation
@@ -174,6 +186,8 @@ paths:
     $ref: ./paths/preferences_badges_{role_id}.yaml
   /preferences/notifications:
     $ref: ./paths/preferences_notifications.yaml
+  /preferences/notification_policy:
+    $ref: ./paths/preferences_notification_policy.yaml
   /preferences/supporter_listing:
     $ref: ./paths/preferences_supporter_listing.yaml
   /accounts/deactivation:
@@ -260,8 +274,12 @@ paths:
     $ref: ./paths/accounts_{id}_following.yaml
   /accounts/{id}/lists:
     $ref: ./paths/accounts_{id}_lists.yaml
+  /accounts/{id}/featured_tags:
+    $ref: ./paths/accounts_{id}_featured_tags.yaml
   /accounts/{id}/mute:
     $ref: ./paths/accounts_{id}_mute.yaml
+  /accounts/{id}/note:
+    $ref: ./paths/accounts_{id}_note.yaml
   /accounts/{id}/follower:
     $ref: ./paths/accounts_{id}_follower.yaml
   /accounts/{id}/subscribe:
@@ -276,6 +294,12 @@ paths:
     $ref: ./paths/follow_requests_{id}_accept.yaml
   /follow_requests/{id}/reject:
     $ref: ./paths/follow_requests_{id}_reject.yaml
+  /interaction_requests:
+    $ref: ./paths/interaction_requests.yaml
+  /interaction_requests/{id}/accept:
+    $ref: ./paths/interaction_requests_{id}_accept.yaml
+  /interaction_requests/{id}/reject:
+    $ref: ./paths/interaction_requests_{id}_reject.yaml
   /mutes:
     $ref: ./paths/mutes.yaml
   /domain_mutes:
@@ -306,18 +330,46 @@ paths:
     $ref: ./paths/notifications_marker.yaml
   /notifications/{id}/dismiss:
     $ref: ./paths/notifications_{id}_dismiss.yaml
+  /notifications/requests:
+    $ref: ./paths/notifications_requests.yaml
+  /notifications/requests/summary:
+    $ref: ./paths/notifications_requests_summary.yaml
+  /notifications/requests/{id}:
+    $ref: ./paths/notifications_requests_{id}.yaml
+  /notifications/requests/{id}/notifications:
+    $ref: ./paths/notifications_requests_{id}_notifications.yaml
+  /notifications/requests/{id}/accept:
+    $ref: ./paths/notifications_requests_{id}_accept.yaml
+  /notifications/requests/{id}/dismiss:
+    $ref: ./paths/notifications_requests_{id}_dismiss.yaml
   /push/subscription:
     $ref: ./paths/push_subscription.yaml
   /bookmarks:
     $ref: ./paths/bookmarks.yaml
   /statuses:
     $ref: ./paths/statuses.yaml
+  /articles:
+    $ref: ./paths/articles.yaml
+  /articles/preview:
+    $ref: ./paths/articles_preview.yaml
+  /articles/{id}:
+    $ref: ./paths/articles_{id}.yaml
+  /drafts:
+    $ref: ./paths/drafts.yaml
+  /drafts/{id}:
+    $ref: ./paths/drafts_{id}.yaml
+  /drafts/{id}/schedule:
+    $ref: ./paths/drafts_{id}_schedule.yaml
+  /drafts/{id}/publish:
+    $ref: ./paths/drafts_{id}_publish.yaml
   /statuses/search:
     $ref: ./paths/statuses_search.yaml
   /statuses/{id}:
     $ref: ./paths/statuses_{id}.yaml
   /statuses/{id}/bookmark:
     $ref: ./paths/statuses_{id}_bookmark.yaml
+  /statuses/{id}/mute:
+    $ref: ./paths/statuses_{id}_mute.yaml
   /statuses/{id}/boost:
     $ref: ./paths/statuses_{id}_boost.yaml
   /statuses/{id}/context:
@@ -336,8 +388,8 @@ paths:
     $ref: ./paths/statuses_{id}_reactions.yaml
   /statuses/{id}/translation:
     $ref: ./paths/statuses_{id}_translation.yaml
-  /statuses/{id}/quote_policy:
-    $ref: ./paths/statuses_{id}_quote_policy.yaml
+  /statuses/{id}/interaction_policy:
+    $ref: ./paths/statuses_{id}_interaction_policy.yaml
   /statuses/{id}/quotes:
     $ref: ./paths/statuses_{id}_quotes.yaml
   /statuses/{id}/quotes/{quote_id}/approval:
@@ -348,6 +400,18 @@ paths:
     $ref: ./paths/accounts_{id}_statuses.yaml
   /tags/search:
     $ref: ./paths/tags_search.yaml
+  /tags/{hashtag}:
+    $ref: ./paths/tags_{hashtag}.yaml
+  /tags/{hashtag}/follow:
+    $ref: ./paths/tags_{hashtag}_follow.yaml
+  /followed_tags:
+    $ref: ./paths/followed_tags.yaml
+  /filters:
+    $ref: ./paths/filters.yaml
+  /filters/{id}:
+    $ref: ./paths/filters_{id}.yaml
+  /featured_tags:
+    $ref: ./paths/featured_tags.yaml
   /timelines/home:
     $ref: ./paths/timelines_home.yaml
   /timelines/local:
@@ -358,6 +422,14 @@ paths:
     $ref: ./paths/timelines_tag_{hashtag}.yaml
   /timelines/list/{id}:
     $ref: ./paths/timelines_list_{id}.yaml
+  /conversations:
+    $ref: ./paths/conversations.yaml
+  /conversations/{id}:
+    $ref: ./paths/conversations_{id}.yaml
+  /conversations/{id}/read:
+    $ref: ./paths/conversations_{id}_read.yaml
+  /conversations/{id}/hide:
+    $ref: ./paths/conversations_{id}_hide.yaml
   /reports:
     $ref: ./paths/reports.yaml
   /announcements:
@@ -434,6 +506,24 @@ paths:
     $ref: ./paths/voice_rooms_{id}_summary.yaml
   /voice/history:
     $ref: ./paths/voice_history.yaml
+  /events:
+    $ref: ./paths/events.yaml
+  /events/{id}:
+    $ref: ./paths/events_{id}.yaml
+  /events/{id}/cancel:
+    $ref: ./paths/events_{id}_cancel.yaml
+  /events/{id}/rsvp:
+    $ref: ./paths/events_{id}_rsvp.yaml
+  /events/{id}/attendees:
+    $ref: ./paths/events_{id}_attendees.yaml
+  /events/{id}/attendees/{account_id}/approval:
+    $ref: ./paths/events_{id}_attendees_{account_id}_approval.yaml
+  /events/{id}/invitations:
+    $ref: ./paths/events_{id}_invitations.yaml
+  /events/{id}/invitations/{account_id}:
+    $ref: ./paths/events_{id}_invitations_{account_id}.yaml
+  /events/{id}/coorganizers/{account_id}:
+    $ref: ./paths/events_{id}_coorganizers_{account_id}.yaml
   /client_errors:
     $ref: ./paths/client_errors.yaml
   /admin/queue:
@@ -630,10 +720,30 @@ paths:
     $ref: ./paths/admin_domain_actions_import_preview.yaml
   /admin/domain_actions/import:
     $ref: ./paths/admin_domain_actions_import.yaml
+  /admin/domain_list_subscriptions:
+    $ref: ./paths/admin_domain_list_subscriptions.yaml
+  /admin/domain_list_subscriptions/{id}:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}.yaml
+  /admin/domain_list_subscriptions/{id}/fetch:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_fetch.yaml
+  /admin/domain_list_subscriptions/{id}/fetches:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_fetches.yaml
+  /admin/domain_list_subscriptions/{id}/drafts:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_drafts.yaml
+  /admin/domain_list_subscriptions/{id}/drafts/accept:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_drafts_accept.yaml
+  /admin/domain_list_subscriptions/{id}/drafts/reject:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_drafts_reject.yaml
   /admin/settings:
     $ref: ./paths/admin_settings.yaml
   /admin/settings/login_providers_only/impact:
     $ref: ./paths/admin_settings_login_providers_only_impact.yaml
+  /admin/settings/federation_scope/impact:
+    $ref: ./paths/admin_settings_federation_scope_impact.yaml
+  /admin/domain_allows:
+    $ref: ./paths/admin_domain_allows.yaml
+  /admin/domain_allows/{domain}:
+    $ref: ./paths/admin_domain_allows_{domain}.yaml
   /invites:
     $ref: ./paths/invites.yaml
   /invites/{id}/revoke:
@@ -757,6 +867,19 @@ components:
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
         `/api/v1/problems/first-party-only` from them.
 
+        A permission scope `admin:<permission>` (`admin:manage_invites`, `admin:manage_finance`, ...)
+        stands in for `admin:read` and `admin:write` on the admin operations that need that
+        permission of the user's roles, which each names with `x-permission`; every call still needs
+        the permission on the user's roles. Only a token that the user issues to themselves from an
+        OAuth app they registered (`issueOAuthAppToken`) may hold one, and only for a permission
+        their roles hold when it is issued: an authorization request of any client but the server's
+        own asks for one in vain (`invalid_scope`). Such a token reaches only the permissions its
+        scopes name: an operation without `x-permission`, or one that needs another permission,
+        answers 403 `/api/v1/problems/insufficient-scope`, and a webhook it sets up subscribes only
+        to events that its permissions show. `manage_roles`, `manage_oauth_apps`,
+        `manage_login_recovery`, `manage_login_providers`, `manage_service_closure`, and the member
+        permissions have no permission scope. `admin` grants every permission scope.
+
         The moderator notifications (`admin_report`, `admin_appeal`, `admin_sign_up`,
         `admin_error_group`, and the other types that need a role's permission) reach first-party
         clients only: another client's token, whatever the user's roles, does not get them in the
@@ -778,32 +901,50 @@ components:
             admin: Administer the instance, as far as the user's roles allow (first-party clients only).
             "admin:read": Read the instance's administration data, as far as the user's roles allow (first-party clients only).
             "admin:write": Change the instance's administration data, as far as the user's roles allow (first-party clients only).
+            "admin:manage_reports": Use the permission manage_reports of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_accounts": Use the permission manage_accounts of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_domains": Use the permission manage_domains of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_rules": Use the permission manage_rules of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_settings": Use the permission manage_settings of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_invites": Use the permission manage_invites of the user's roles (tokens the user issues to themselves only).
+            "admin:view_audit": Use the permission view_audit of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_jobs": Use the permission manage_jobs of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_custom_emojis": Use the permission manage_custom_emojis of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_webhooks": Use the permission manage_webhooks of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_announcements": Use the permission manage_announcements of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_finance": Use the permission manage_finance of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_supporters": Use the permission manage_supporters of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_errors": Use the permission manage_errors of the user's roles (tokens the user issues to themselves only).
             read: Read everything the user can read.
             write: Change everything the user can change.
             follow: Read and change follows, blocks, and mutes.
             push: Receive Web Push notifications.
-            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings, aliases, and automatic deletion policy.
+            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings and policy, aliases, and automatic deletion policy.
             "read:blocks": Read the accounts the user blocks.
             "read:bookmarks": Read the user's bookmarks.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
-            "read:direct": Read the direct posts the user sends and receives (`read:statuses` does not show them).
+            "read:direct": Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
+            "read:events": Read the events the user sees, their attendees, and the invitations of the events the user organizes.
+            "read:filters": Read the user's keyword filters.
             "read:finance": Read the totals of the instance's costs and income, as far as the user's roles allow.
-            "read:follows": Read follows, follow requests, lists, and the accounts whose new posts notify the user.
+            "read:follows": Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
             "read:mutes": Read the accounts and domains the user mutes.
-            "read:notifications": Read the user's notifications.
+            "read:notifications": Read the user's notifications and the notification requests.
             "read:reports": Read the reports the user filed and whether they are resolved.
             "read:statuses": Read posts and timelines.
             "read:supporters": Read the user's own supporter subscription.
             "read:voice": Read the voice chat rooms the user sees.
-            "write:accounts": Change the user's profile, preferences, notification settings, badges, and supporter listing.
+            "write:accounts": Change the user's profile, featured hashtags, preferences, notification settings and policy, badges, and supporter listing.
             "write:blocks": Block and unblock accounts.
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
+            "write:events": Create, change, and cancel events, answer them, approve their attendees, invite to them, and name their co-organizers.
             "write:favourites": Favourite posts and react to them with emoji, and take both back.
-            "write:follows": Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts.
+            "write:filters": Create, change, and delete the user's keyword filters.
+            "write:follows": Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
             "write:media": Upload media, read their state while they process, and change their descriptions.
-            "write:mutes": Mute and unmute accounts and domains.
-            "write:notifications": Mark notifications read and dismiss them.
+            "write:mutes": Mute and unmute accounts, domains, and threads.
+            "write:notifications": Mark notifications read and dismiss them, and accept and dismiss the notification requests.
             "write:reports": Report accounts and posts to the moderators.
             "write:statuses": Post, edit, delete, boost, and pin posts, vote in polls, and set who may quote a post.
             "write:supporters": Subscribe to the supporter plans, and change, cancel, and resume the subscription (first-party clients only).
@@ -811,6 +952,8 @@ components:
   headers:
     CacheControl:
       $ref: ./components/headers/CacheControl.yaml
+    ETag:
+      $ref: ./components/headers/ETag.yaml
     XRobotsTag:
       $ref: ./components/headers/XRobotsTag.yaml
   parameters:
@@ -828,6 +971,8 @@ components:
       $ref: ./components/parameters/BadgeRoleId.yaml
     BrandKind:
       $ref: ./components/parameters/BrandKind.yaml
+    ConversationId:
+      $ref: ./components/parameters/ConversationId.yaml
     CostItemId:
       $ref: ./components/parameters/CostItemId.yaml
     Cursor:
@@ -836,20 +981,32 @@ components:
       $ref: ./components/parameters/CustomEmojiId.yaml
     CustomEmojiRequestId:
       $ref: ./components/parameters/CustomEmojiRequestId.yaml
+    DomainListSubscriptionId:
+      $ref: ./components/parameters/DomainListSubscriptionId.yaml
+    DraftId:
+      $ref: ./components/parameters/DraftId.yaml
     ErrorGroupId:
       $ref: ./components/parameters/ErrorGroupId.yaml
+    EventAccountId:
+      $ref: ./components/parameters/EventAccountId.yaml
+    EventId:
+      $ref: ./components/parameters/EventId.yaml
     DomainActionId:
       $ref: ./components/parameters/DomainActionId.yaml
     HookDecisionId:
       $ref: ./components/parameters/HookDecisionId.yaml
     IdempotencyKey:
       $ref: ./components/parameters/IdempotencyKey.yaml
+    IfMatch:
+      $ref: ./components/parameters/IfMatch.yaml
     InstanceDocumentKind:
       $ref: ./components/parameters/InstanceDocumentKind.yaml
     InstanceDomain:
       $ref: ./components/parameters/InstanceDomain.yaml
     InstanceTextKey:
       $ref: ./components/parameters/InstanceTextKey.yaml
+    InteractionRequestId:
+      $ref: ./components/parameters/InteractionRequestId.yaml
     InviteId:
       $ref: ./components/parameters/InviteId.yaml
     LoginProviderId:
@@ -864,6 +1021,10 @@ components:
       $ref: ./components/parameters/ListAccountId.yaml
     ListId:
       $ref: ./components/parameters/ListId.yaml
+    KeywordFilterId:
+      $ref: ./components/parameters/KeywordFilterId.yaml
+    HashtagName:
+      $ref: ./components/parameters/HashtagName.yaml
     OAuthAppId:
       $ref: ./components/parameters/OAuthAppId.yaml
     RegistrationId:
@@ -893,6 +1054,10 @@ components:
     WebhookId:
       $ref: ./components/parameters/WebhookId.yaml
   responses:
+    AdminDomainListDraftResult:
+      $ref: ./components/responses/AdminDomainListDraftResult.yaml
+    AdminDomainListSubscription:
+      $ref: ./components/responses/AdminDomainListSubscription.yaml
     AdminHookAppeal:
       $ref: ./components/responses/AdminHookAppeal.yaml
     AccountAliasList:
@@ -917,6 +1082,8 @@ components:
       $ref: ./components/responses/AdminLoginProvider.yaml
     BrandProblem:
       $ref: ./components/responses/BrandProblem.yaml
+    Draft:
+      $ref: ./components/responses/Draft.yaml
     ErrorGroup:
       $ref: ./components/responses/ErrorGroup.yaml
     AdminDomainAction:
@@ -959,6 +1126,8 @@ components:
       $ref: ./components/responses/AdminWebhook.yaml
     AdminWebhookDelivery:
       $ref: ./components/responses/AdminWebhookDelivery.yaml
+    Conversation:
+      $ref: ./components/responses/Conversation.yaml
     CostItem:
       $ref: ./components/responses/CostItem.yaml
     CustomEmojiProblem:
@@ -995,6 +1164,16 @@ components:
       $ref: ./components/responses/List.yaml
     ListCollection:
       $ref: ./components/responses/ListCollection.yaml
+    Hashtag:
+      $ref: ./components/responses/Hashtag.yaml
+    FollowedHashtagCollection:
+      $ref: ./components/responses/FollowedHashtagCollection.yaml
+    KeywordFilter:
+      $ref: ./components/responses/KeywordFilter.yaml
+    KeywordFilterCollection:
+      $ref: ./components/responses/KeywordFilterCollection.yaml
+    FeaturedHashtagCollection:
+      $ref: ./components/responses/FeaturedHashtagCollection.yaml
   schemas:
     AdminBrandImage:
       $ref: ./components/schemas/AdminBrandImage.yaml
@@ -1012,6 +1191,56 @@ components:
       $ref: ./components/schemas/AccountList.yaml
     AccountSuggestionList:
       $ref: ./components/schemas/AccountSuggestionList.yaml
+    AdminDomainListChange:
+      $ref: ./components/schemas/AdminDomainListChange.yaml
+    AdminDomainListDraft:
+      $ref: ./components/schemas/AdminDomainListDraft.yaml
+    AdminDomainListDraftList:
+      $ref: ./components/schemas/AdminDomainListDraftList.yaml
+    AdminDomainListDraftResult:
+      $ref: ./components/schemas/AdminDomainListDraftResult.yaml
+    AdminDomainListFetch:
+      $ref: ./components/schemas/AdminDomainListFetch.yaml
+    AdminDomainListFetchError:
+      $ref: ./components/schemas/AdminDomainListFetchError.yaml
+    AdminDomainListFetchOutcome:
+      $ref: ./components/schemas/AdminDomainListFetchOutcome.yaml
+    AdminDomainListFetchPage:
+      $ref: ./components/schemas/AdminDomainListFetchPage.yaml
+    AdminDomainListFormat:
+      $ref: ./components/schemas/AdminDomainListFormat.yaml
+    AdminDomainListHold:
+      $ref: ./components/schemas/AdminDomainListHold.yaml
+    AdminDomainListMode:
+      $ref: ./components/schemas/AdminDomainListMode.yaml
+    AdminDomainListSilenceAs:
+      $ref: ./components/schemas/AdminDomainListSilenceAs.yaml
+    AdminDomainListSubscription:
+      $ref: ./components/schemas/AdminDomainListSubscription.yaml
+    AdminDomainListSubscriptionPage:
+      $ref: ./components/schemas/AdminDomainListSubscriptionPage.yaml
+    AdminDomainListSuspendAs:
+      $ref: ./components/schemas/AdminDomainListSuspendAs.yaml
+    CreateDomainListSubscriptionRequest:
+      $ref: ./components/schemas/CreateDomainListSubscriptionRequest.yaml
+    DomainListDraftsRequest:
+      $ref: ./components/schemas/DomainListDraftsRequest.yaml
+    Draft:
+      $ref: ./components/schemas/Draft.yaml
+    DraftFailureReason:
+      $ref: ./components/schemas/DraftFailureReason.yaml
+    DraftPage:
+      $ref: ./components/schemas/DraftPage.yaml
+    DraftPoll:
+      $ref: ./components/schemas/DraftPoll.yaml
+    DraftRequest:
+      $ref: ./components/schemas/DraftRequest.yaml
+    DraftScheduleOutcome:
+      $ref: ./components/schemas/DraftScheduleOutcome.yaml
+    DraftScheduleRequest:
+      $ref: ./components/schemas/DraftScheduleRequest.yaml
+    NotificationScheduledStatusFailure:
+      $ref: ./components/schemas/NotificationScheduledStatusFailure.yaml
     RelationshipList:
       $ref: ./components/schemas/RelationshipList.yaml
     TagSuggestionList:
@@ -1020,6 +1249,8 @@ components:
       $ref: ./components/schemas/AccountBadge.yaml
     AccountMove:
       $ref: ./components/schemas/AccountMove.yaml
+    AccountNoteUpdate:
+      $ref: ./components/schemas/AccountNoteUpdate.yaml
     AccountFieldSource:
       $ref: ./components/schemas/AccountFieldSource.yaml
     AccountPage:
@@ -1212,6 +1443,10 @@ components:
       $ref: ./components/schemas/AdminPasswordResetLink.yaml
     LoginProvidersOnlyImpact:
       $ref: ./components/schemas/LoginProvidersOnlyImpact.yaml
+    FederationScopeImpact:
+      $ref: ./components/schemas/FederationScopeImpact.yaml
+    FederationScopeImpactDomain:
+      $ref: ./components/schemas/FederationScopeImpactDomain.yaml
     AdminQueue:
       $ref: ./components/schemas/AdminQueue.yaml
     AdminRegistration:
@@ -1262,6 +1497,8 @@ components:
       $ref: ./components/schemas/AdminSameIpAccounts.yaml
     AdminSetting:
       $ref: ./components/schemas/AdminSetting.yaml
+    AdminSettingImage:
+      $ref: ./components/schemas/AdminSettingImage.yaml
     AdminSettingList:
       $ref: ./components/schemas/AdminSettingList.yaml
     AdminSignupBlock:
@@ -1414,6 +1651,10 @@ components:
       $ref: ./components/schemas/ConfirmedOperation.yaml
     CopyCustomEmojiRequest:
       $ref: ./components/schemas/CopyCustomEmojiRequest.yaml
+    Conversation:
+      $ref: ./components/schemas/Conversation.yaml
+    ConversationPage:
+      $ref: ./components/schemas/ConversationPage.yaml
     CostBasis:
       $ref: ./components/schemas/CostBasis.yaml
     CostBreakdownLine:
@@ -1452,6 +1693,8 @@ components:
       $ref: ./components/schemas/CreateCustomEmojiRequest.yaml
     CreateDomainActionRequest:
       $ref: ./components/schemas/CreateDomainActionRequest.yaml
+    CreateDomainAllowRequest:
+      $ref: ./components/schemas/CreateDomainAllowRequest.yaml
     CreateInviteRequest:
       $ref: ./components/schemas/CreateInviteRequest.yaml
     CreateOwnInviteRequest:
@@ -1534,6 +1777,10 @@ components:
       $ref: ./components/schemas/DomainBlockImportPreview.yaml
     DomainBlockImportResult:
       $ref: ./components/schemas/DomainBlockImportResult.yaml
+    DomainAllow:
+      $ref: ./components/schemas/DomainAllow.yaml
+    DomainAllowList:
+      $ref: ./components/schemas/DomainAllowList.yaml
     DomainBlockImportRow:
       $ref: ./components/schemas/DomainBlockImportRow.yaml
     DomainBlockImportSkipped:
@@ -1568,6 +1815,46 @@ components:
       $ref: ./components/schemas/ErrorGroupSource.yaml
     ErrorGroupState:
       $ref: ./components/schemas/ErrorGroupState.yaml
+    Event:
+      $ref: ./components/schemas/Event.yaml
+    EventAnswer:
+      $ref: ./components/schemas/EventAnswer.yaml
+    EventAttendee:
+      $ref: ./components/schemas/EventAttendee.yaml
+    EventAttendeePage:
+      $ref: ./components/schemas/EventAttendeePage.yaml
+    EventCancelReason:
+      $ref: ./components/schemas/EventCancelReason.yaml
+    EventCancelRequest:
+      $ref: ./components/schemas/EventCancelRequest.yaml
+    EventCancellation:
+      $ref: ./components/schemas/EventCancellation.yaml
+    EventCreate:
+      $ref: ./components/schemas/EventCreate.yaml
+    EventInvitation:
+      $ref: ./components/schemas/EventInvitation.yaml
+    EventInvitationCreate:
+      $ref: ./components/schemas/EventInvitationCreate.yaml
+    EventInvitationPage:
+      $ref: ./components/schemas/EventInvitationPage.yaml
+    EventPage:
+      $ref: ./components/schemas/EventPage.yaml
+    EventPlace:
+      $ref: ./components/schemas/EventPlace.yaml
+    EventPlaceDisclosure:
+      $ref: ./components/schemas/EventPlaceDisclosure.yaml
+    EventPlaceKind:
+      $ref: ./components/schemas/EventPlaceKind.yaml
+    EventRSVP:
+      $ref: ./components/schemas/EventRSVP.yaml
+    EventState:
+      $ref: ./components/schemas/EventState.yaml
+    EventUpdate:
+      $ref: ./components/schemas/EventUpdate.yaml
+    EventViewer:
+      $ref: ./components/schemas/EventViewer.yaml
+    EventVisibility:
+      $ref: ./components/schemas/EventVisibility.yaml
     ExternalAuthorizationStart:
       $ref: ./components/schemas/ExternalAuthorizationStart.yaml
     ExternalConfirmationRequest:
@@ -1636,6 +1923,8 @@ components:
       $ref: ./components/schemas/InstanceExternalReviewScope.yaml
     InstanceClosure:
       $ref: ./components/schemas/InstanceClosure.yaml
+    InstanceDraftLimits:
+      $ref: ./components/schemas/InstanceDraftLimits.yaml
     InstanceLimits:
       $ref: ./components/schemas/InstanceLimits.yaml
     InstanceRegistrations:
@@ -1684,6 +1973,34 @@ components:
       $ref: ./components/schemas/List.yaml
     ListCollection:
       $ref: ./components/schemas/ListCollection.yaml
+    Hashtag:
+      $ref: ./components/schemas/Hashtag.yaml
+    FollowedHashtag:
+      $ref: ./components/schemas/FollowedHashtag.yaml
+    FollowedHashtagCollection:
+      $ref: ./components/schemas/FollowedHashtagCollection.yaml
+    KeywordFilter:
+      $ref: ./components/schemas/KeywordFilter.yaml
+    KeywordFilterAction:
+      $ref: ./components/schemas/KeywordFilterAction.yaml
+    KeywordFilterCollection:
+      $ref: ./components/schemas/KeywordFilterCollection.yaml
+    KeywordFilterContext:
+      $ref: ./components/schemas/KeywordFilterContext.yaml
+    KeywordFilterKeyword:
+      $ref: ./components/schemas/KeywordFilterKeyword.yaml
+    KeywordFilterRequest:
+      $ref: ./components/schemas/KeywordFilterRequest.yaml
+    FilterResult:
+      $ref: ./components/schemas/FilterResult.yaml
+    MatchedKeywordFilter:
+      $ref: ./components/schemas/MatchedKeywordFilter.yaml
+    FeaturedHashtag:
+      $ref: ./components/schemas/FeaturedHashtag.yaml
+    FeaturedHashtagCollection:
+      $ref: ./components/schemas/FeaturedHashtagCollection.yaml
+    SetFeaturedTagsRequest:
+      $ref: ./components/schemas/SetFeaturedTagsRequest.yaml
     ListRequest:
       $ref: ./components/schemas/ListRequest.yaml
     MediaAnimatedVariants:
@@ -1734,6 +2051,18 @@ components:
       $ref: ./components/schemas/NotificationMarkerUpdate.yaml
     NotificationPage:
       $ref: ./components/schemas/NotificationPage.yaml
+    NotificationPolicy:
+      $ref: ./components/schemas/NotificationPolicy.yaml
+    NotificationPolicyAction:
+      $ref: ./components/schemas/NotificationPolicyAction.yaml
+    NotificationPolicyUpdate:
+      $ref: ./components/schemas/NotificationPolicyUpdate.yaml
+    NotificationRequest:
+      $ref: ./components/schemas/NotificationRequest.yaml
+    NotificationRequestPage:
+      $ref: ./components/schemas/NotificationRequestPage.yaml
+    NotificationRequestSummary:
+      $ref: ./components/schemas/NotificationRequestSummary.yaml
     NotificationSettingCell:
       $ref: ./components/schemas/NotificationSettingCell.yaml
     NotificationSettingRow:
@@ -1822,8 +2151,26 @@ components:
       $ref: ./components/schemas/QrCode.yaml
     LinkCardSize:
       $ref: ./components/schemas/LinkCardSize.yaml
-    QuotePolicy:
-      $ref: ./components/schemas/QuotePolicy.yaml
+    InteractionAudience:
+      $ref: ./components/schemas/InteractionAudience.yaml
+    InteractionApprovalState:
+      $ref: ./components/schemas/InteractionApprovalState.yaml
+    InteractionKind:
+      $ref: ./components/schemas/InteractionKind.yaml
+    InteractionPolicy:
+      $ref: ./components/schemas/InteractionPolicy.yaml
+    InteractionRequest:
+      $ref: ./components/schemas/InteractionRequest.yaml
+    InteractionRequestPage:
+      $ref: ./components/schemas/InteractionRequestPage.yaml
+    InteractionPolicyChange:
+      $ref: ./components/schemas/InteractionPolicyChange.yaml
+    InteractionPermission:
+      $ref: ./components/schemas/InteractionPermission.yaml
+    InteractionPermissions:
+      $ref: ./components/schemas/InteractionPermissions.yaml
+    InteractionRule:
+      $ref: ./components/schemas/InteractionRule.yaml
     QuoteState:
       $ref: ./components/schemas/QuoteState.yaml
     ReactToStatusRequest:
@@ -1886,8 +2233,6 @@ components:
       $ref: ./components/schemas/SetInstanceTextRequest.yaml
     SetLinkCardDomainRuleRequest:
       $ref: ./components/schemas/SetLinkCardDomainRuleRequest.yaml
-    SetQuotePolicyRequest:
-      $ref: ./components/schemas/SetQuotePolicyRequest.yaml
     SetThemeRequest:
       $ref: ./components/schemas/SetThemeRequest.yaml
     SignupBlockImportResult:
@@ -1896,6 +2241,32 @@ components:
       $ref: ./components/schemas/SignupBlockImportSkipped.yaml
     SpoilerText:
       $ref: ./components/schemas/SpoilerText.yaml
+    ArticleCoverInput:
+      $ref: ./components/schemas/ArticleCoverInput.yaml
+    ArticlePreview:
+      $ref: ./components/schemas/ArticlePreview.yaml
+    ArticlePreviewRequest:
+      $ref: ./components/schemas/ArticlePreviewRequest.yaml
+    ArticleSource:
+      $ref: ./components/schemas/ArticleSource.yaml
+    ArticleSummary:
+      $ref: ./components/schemas/ArticleSummary.yaml
+    ArticleTagsInput:
+      $ref: ./components/schemas/ArticleTagsInput.yaml
+    ArticleText:
+      $ref: ./components/schemas/ArticleText.yaml
+    ArticleTitle:
+      $ref: ./components/schemas/ArticleTitle.yaml
+    CreateArticleRequest:
+      $ref: ./components/schemas/CreateArticleRequest.yaml
+    EditArticleRequest:
+      $ref: ./components/schemas/EditArticleRequest.yaml
+    InstanceArticleLimits:
+      $ref: ./components/schemas/InstanceArticleLimits.yaml
+    StatusArticle:
+      $ref: ./components/schemas/StatusArticle.yaml
+    StatusEditArticle:
+      $ref: ./components/schemas/StatusEditArticle.yaml
     Status:
       $ref: ./components/schemas/Status.yaml
     StatusContext:
@@ -1994,6 +2365,8 @@ components:
       $ref: ./components/schemas/UpdateCredentialsRequest.yaml
     UpdateCustomEmojiRequest:
       $ref: ./components/schemas/UpdateCustomEmojiRequest.yaml
+    UpdateDomainListSubscriptionRequest:
+      $ref: ./components/schemas/UpdateDomainListSubscriptionRequest.yaml
     UpdateInstanceSettingsRequest:
       $ref: ./components/schemas/UpdateInstanceSettingsRequest.yaml
     UpdateLoginProviderRequest:

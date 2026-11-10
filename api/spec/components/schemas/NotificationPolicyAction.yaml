@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What the notification policy does with the notifications whose source meets a condition.
+  `accept` lists them and delivers them as the notification settings say; `filter` keeps them
+  out of the list and the unread count, in the request of their source, and delivers them
+  nowhere (no Web Push, email, sound, or streaming event); `drop` creates no notification.
+type: string
+enum: [accept, filter, drop]

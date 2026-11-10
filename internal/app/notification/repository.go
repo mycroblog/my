@@ -25,15 +25,28 @@ var ErrNotFound = errors.New("notification: not found")
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.
 type Repository interface {
 	SubscriptionRepository
+	ThreadMuteRepository
+	PolicyRepository
 
 	// InsertNotification inserts a notification and reports false, writing nothing, when the
 	// recipient already has one with the same dedupe key.
 	InsertNotification(ctx context.Context, tx uow.Tx, n notification.Notification) (bool, error)
+	// InsertNotificationsFor inserts with one statement, for each of recipients, n with the ID at
+	// the same index of ids and its recipient, as InsertNotification inserts each, and returns
+	// the recipients it inserted one for.
+	InsertNotificationsFor(ctx context.Context, tx uow.Tx, n notification.Notification, ids, recipients []string) (map[string]bool, error)
+	// InsertNotificationsForEach is InsertNotificationsFor of ns, which differ by their ID,
+	// recipient, source, source domain, severance, dedupe key, and time, and share every other
+	// field with ns[0]; it returns, by ID, those it inserted.
+	InsertNotificationsForEach(ctx context.Context, tx uow.Tx, ns []notification.Notification) (map[string]bool, error)
 	// AddErrorGroupNotice adds one admin_error_group notice to the hour that starts at hour, in
 	// tx, and returns the hour's notices with it; concurrent transactions each add theirs.
 	AddErrorGroupNotice(ctx context.Context, tx uow.Tx, hour time.Time) (int64, error)
 	// ErrorGroupNotices returns the admin_error_group notices of the hour that starts at hour.
 	ErrorGroupNotices(ctx context.Context, hour time.Time) (int64, error)
+	// ErrorGroupNoticesOf returns the notices of each of hours that has some, by the hour in UTC,
+	// as ErrorGroupNotices returns those of one, with one query.
+	ErrorGroupNoticesOf(ctx context.Context, hours []time.Time) (map[time.Time]int64, error)
 	// DeleteErrorGroupNoticesBefore deletes the notices of the hours that start before before, in
 	// one statement outside any transaction, and returns how many hours it deleted.
 	DeleteErrorGroupNoticesBefore(ctx context.Context, before time.Time) (int64, error)
@@ -42,6 +55,9 @@ type Repository interface {
 	// InsertDismissal inserts a dismissal and reports false, writing nothing, when the
 	// notification is already dismissed.
 	InsertDismissal(ctx context.Context, tx uow.Tx, d notification.Dismissal) (bool, error)
+	// DismissByDedupeKey dismisses the notification of the recipient with dedupeKey at at, if
+	// there is one that is not dismissed.
+	DismissByDedupeKey(ctx context.Context, tx uow.Tx, recipientAccountID, dedupeKey string, at time.Time) error
 	// AdvanceReadMarker sets the account's marker to m.LastReadID unless it is already there or
 	// past it, and reports whether it moved.
 	AdvanceReadMarker(ctx context.Context, tx uow.Tx, m notification.ReadMarker) (bool, error)
@@ -51,6 +67,9 @@ type Repository interface {
 	// NotificationSettingsTx returns inside tx the settings that the account chose, in order of
 	// group and channel.
 	NotificationSettingsTx(ctx context.Context, tx uow.Tx, accountID string) ([]notification.Setting, error)
+	// NotificationSettingsOfTx returns inside tx the saved settings of each of accountIDs that has
+	// some, by account, as NotificationSettingsTx returns those of one, with one query.
+	NotificationSettingsOfTx(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string][]notification.Setting, error)
 	// NotificationSettings is NotificationSettingsTx outside any transaction.
 	NotificationSettings(ctx context.Context, accountID string) ([]notification.Setting, error)
 
@@ -59,6 +78,10 @@ type Repository interface {
 	// UpsertExclusion inserts an exclusion, or replaces the expiry of the one with the same
 	// viewer, target, and reason.
 	UpsertExclusion(ctx context.Context, tx uow.Tx, x notification.Exclusion) error
+	// UpsertExclusions is UpsertExclusion of each of xs, with one statement.
+	UpsertExclusions(ctx context.Context, tx uow.Tx, xs []notification.Exclusion) error
+	// DeleteExclusionsOf is DeleteExclusion of the pairs (viewerIDs[i], targetIDs[i]) for reason.
+	DeleteExclusionsOf(ctx context.Context, tx uow.Tx, viewerIDs, targetIDs []string, reason notification.ExclusionReason) error
 	// DeleteExclusion deletes the exclusion of the viewer, target, and reason, if any.
 	DeleteExclusion(ctx context.Context, tx uow.Tx, viewerAccountID, targetAccountID string, reason notification.ExclusionReason) error
 	// InsertDomainExclusion records that the viewer mutes a domain and its subdomains, which
@@ -69,9 +92,15 @@ type Repository interface {
 	// DomainExcluded reports whether an exclusion of the viewer covers domain: the domain itself
 	// or one of its parent domains.
 	DomainExcluded(ctx context.Context, tx uow.Tx, viewerAccountID, domain string) (bool, error)
+	// DomainExcludedAmong returns the viewers among viewerAccountIDs for whom DomainExcluded is
+	// true, with one query.
+	DomainExcludedAmong(ctx context.Context, tx uow.Tx, viewerAccountIDs []string, domain string) (map[string]bool, error)
 	// InsertDeletedStatus records that a status is deleted, so that the notifications about it
 	// are no longer visible. Recording it again changes nothing.
 	InsertDeletedStatus(ctx context.Context, tx uow.Tx, statusID string) error
+	// RecordDeletedStatuses is recordDeletedStatus of each of statusIDs: it inserts those that a
+	// notification is about, with one read and one insert.
+	RecordDeletedStatuses(ctx context.Context, tx uow.Tx, statusIDs []string) error
 	// DeleteAllExclusions (with the domain exclusions) and DeleteAllDeletedStatuses empty the
 	// projections, for a rebuild.
 	DeleteAllExclusions(ctx context.Context, tx uow.Tx) error
@@ -99,6 +128,9 @@ type Repository interface {
 	// CountNotificationsAfter counts the recipient's visible notifications, as in
 	// ListNotifications with hidden, whose ID is greater than after ("" counts them all).
 	CountNotificationsAfter(ctx context.Context, recipientAccountID, after string, hidden Hidden, now time.Time) (int64, error)
+	// UnreadNotificationStatuses returns the status of each of the newest limit notifications that
+	// CountNotificationsAfter counts and that have a status, once per notification, newest first.
+	UnreadNotificationStatuses(ctx context.Context, recipientAccountID, after string, hidden Hidden, now time.Time, limit int) ([]string, error)
 	// FindReadMarker returns an account's read marker; ErrNotFound means it has read nothing.
 	FindReadMarker(ctx context.Context, accountID string) (notification.ReadMarker, error)
 	// StatusHasNotifications reports whether a notification, dismissed or not, is about the status.

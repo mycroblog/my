@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listInteractionRequests
+  summary: List the interaction requests to the authenticated user
+  description: |
+    The replies, boosts, and quotes of the user's statuses that wait for the user's approval,
+    newest first, of one kind when `kind` is given. A request whose status the user deleted, or
+    whose account the user may not see, is left out, so a page may hold fewer than `limit`
+    requests before the last.
+  tags: [statuses]
+  security:
+    - oauth2: ["read:statuses"]
+  parameters:
+    - name: kind
+      in: query
+      required: false
+      description: Only the requests of this kind.
+      schema:
+        $ref: ../components/schemas/InteractionKind.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of interaction requests.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/InteractionRequestPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

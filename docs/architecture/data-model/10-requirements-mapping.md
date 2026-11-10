@@ -13,7 +13,7 @@
 | FR-012 ログイン中のブラウザ | S | `sessions`, `session_origins`, `session_activity`, `session_revocations`, `oauth_token_revocations`, `oauth_token_family_last_used` |
 | FR-101〜104 投稿・公開範囲・メンション・タグ・CW | M | `statuses`, `status_revisions` と子テーブル, `status_mention_index`, `feed_tag_entries` |
 | FR-105 画像添付・代替テキスト | M | `media_files`, `uploaded_media`, `media_processing_results`, `media_variants`, `media_focus`, `media_descriptions`, `status_revision_attachments` |
-| FR-106 返信・スレッド | M | `statuses.in_reply_to_uri` / `conversation_uri`, `status_reply_links` |
+| FR-106 返信・スレッド | M | `statuses.in_reply_to_uri`, `conversations` / `status_conversations` / `conversation_merges`, `status_reply_links`, `interaction_requests` / `interaction_request_events` / `interaction_request_states`（承認の要る返信） |
 | FR-107 ブースト・お気に入り | M | `boosts`, `boost_retractions`, `boost_edges`, `favourites`, `status_counters` |
 | FR-108 削除 | M | `status_deletions`, `deliveries` |
 | FR-109 編集と履歴 | S | `status_revisions`, `status_heads` |
@@ -21,19 +21,23 @@
 | FR-111 カスタム絵文字 | S | `custom_emojis`, `custom_emoji_images`, `custom_emoji_settings`, `custom_emoji_aliases`, `status_revision_emojis`, `account_profile_revision_emojis`, `audit_log_entries` |
 | FR-112 投票 | C | `polls`, `poll_options`, `poll_votes`, `poll_tally_observations`, `poll_tallies` |
 | FR-113 ブックマーク | S | `bookmarks` |
-| FR-114 引用投稿 | S | `status_quotes`, `status_quote_events`, `status_quote_states`, `status_quote_policies`, `quote_authorizations`, `quote_authorization_revocations`, `user_preferences`（`default_quote_policy`）, `notifications`（`quote`） |
+| FR-114 引用投稿 | S | `status_quotes`, `status_quote_detachments`, `status_interaction_policies`, `interaction_requests`, `interaction_request_events`, `interaction_request_states`, `interaction_authorizations`, `interaction_authorization_revocations`, `user_interaction_policies`, `notifications`（`quote`・`quote_request`・`interaction_accepted`・`interaction_rejected`） |
 | FR-116 絵文字リアクション | M | `reactions`, `status_reaction_counts`, `custom_emojis`, `notifications`（`reaction`） |
 | FR-117 リンクのカード | S | `link_cards`, `link_card_media`, `status_link_cards`, `instance_settings`（`link_cards`, `link_cards_ignore_robots_txt`）, `link_card_domain_rules` |
 | FR-120 投稿の翻訳 | S | `status_translations`, `status_translation_attachments`, `status_translation_poll_options`, `translation_account_usage`, `translation_server_usage` |
 | FR-201〜204 タイムライン | M | `feed_entries`, `feed_direct_recipients`, `feed_tag_entries`, `feed_follow_edges`, `feed_exclusions`, `feed_author_restrictions`, `feed_domain_restrictions` |
-| FR-205 通知 | M | `notifications`, `notification_dismissals`, `notification_read_markers`, `post_subscriptions`, `post_subscription_requests` |
+| FR-205 通知 | M | `notifications`, `notification_dismissals`, `notification_read_markers`, `post_subscriptions`, `post_subscription_requests`, `conversation_mutes` |
 | FR-206 Web Push | S | `push_subscriptions`, `push_subscription_alerts` |
 | FR-210 通知の設定 | S | `notification_settings`、`user_tokens.unsubscribe_category` |
+| FR-209 キーワードフィルタ | S | `keyword_filters`, `keyword_filter_settings`, `keyword_filter_contexts`, `keyword_filter_words`（照合は読み取りのたび、§6） |
 | FR-211 リスト | S | `lists`, `list_names`, `list_members`, `feed_follow_edges`, `feed_entries` |
+| FR-212 ダイレクトメッセージの一覧 | S | `feed_conversation_participants`, `feed_conversations`, `feed_conversation_reads`, `feed_conversation_hides`, `status_conversations`, `conversation_merges` |
+| FR-213 Atom フィード | S | `account_profile_revisions.feed`, `feed_entries`, `feed_tag_entries`, `kv_entries`（描いたフィードを 1 分間） |
 | FR-208 言語フィルタ | S | `user_timeline_languages`, `feed_entries.language` |
 | FR-301〜302 フォロー・リクエスト | M | `follows`, `follow_acceptances`, `follow_rejections`, `follow_terminations`, `follow_edges` |
 | FR-303 ブロック・ミュート | M | `blocks`, `block_retractions`, `block_edges`, `mutes` |
 | FR-304 ドメインミュート | C | `account_domain_mutes`, `feed_domain_mutes`, `notification_domain_exclusions` |
+| FR-310 アカウントへの非公開のメモ | S | `account_notes` |
 | FR-305 リモートアカウント検索 | M | `account_handles`, `accounts.uri` |
 | FR-306 アカウントとハッシュタグの前方一致の検索（FR-119 の `@` と `#` の補完） | S | `account_search_terms`, `tags`, `tag_usage` |
 | FR-307 このサーバーのアカウントの部分一致の検索と見つけてもらう設定 | M | `account_search_terms`（`infix`・`exact_username`）, `account_profile_revisions`（`discoverable`） |
@@ -68,6 +72,7 @@
 | FR-915 絵文字の作成の権限と承認制 | S | `role_permissions`（`create_custom_emojis`）, `custom_emojis`（`created_by_user_id`）, `custom_emoji_requests`, `custom_emoji_request_outcomes`, `custom_emoji_pending_requests`, `audit_log_entries`, `notifications`（`admin_custom_emoji_request`, `custom_emoji_request_decided`） |
 | FR-916 会計の閲覧の権限 | S | `role_permissions`（`view_finance`）, `instance_settings`（`finance_viewer_item_names`, `finance_viewer_item_memos`, `finance_viewer_income`）と FR-902 の集計（読み取りのときに計算する） |
 | FR-917 収入の記録と公開 | S | §4.12 の `income_movements` と、`instance_settings`（`income_visibility`）。集計は読み取りのときに計算する |
+| FR-918 チップ | S | §4.13 のチップの表（`supporter_tip_changes` から `supporter_open_tips`）と、§4.12 の `income_movements.source`（ADR-0162） |
 | FR-923 ルームの設定 | M | §4.14 の `voice_rooms`, `voice_room_revisions`, `voice_room_revision_hashtags`, `voice_room_heads` |
 | FR-924 参加と発話 | M | `voice_room_participations`, `voice_room_participation_ends`, `voice_room_role_changes`, `voice_room_speak_grants`, `voice_room_hand_raises`, `voice_room_participants` |
 | FR-925・FR-926 ホストと共同ホスト、ホストの退出と切断 | M | `voice_room_host_changes`, `voice_room_cohost_changes`, `voice_room_host_graces`, `voice_room_endings`, `voice_room_heads` |

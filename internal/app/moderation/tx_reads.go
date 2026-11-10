@@ -82,7 +82,29 @@ func (p *FederationPolicy) RejectsMediaTx(ctx context.Context, tx uow.Tx, domain
 		return false, nil
 	}
 	rs, err := p.repo.DomainRestrictionsInEffectTx(ctx, tx, domains, p.clock.Now())
-	return slices.Contains(rs, moderation.RestrictMediaFetch), err
+	if err != nil {
+		return false, err
+	}
+	if rejectsMedia(rs) {
+		return true, nil
+	}
+	return p.cutOffTx(ctx, tx, domain)
+}
+
+// cutOffTx reports whether the allowlist cuts off domain as cutOffAmong does, read in tx.
+func (p *FederationPolicy) cutOffTx(ctx context.Context, tx uow.Tx, domain string) (bool, error) {
+	if p.scopes == nil {
+		return false, nil
+	}
+	scope, err := p.scopes.FederationScopeTx(ctx, tx)
+	if err != nil || scope != moderation.ScopeAllowlist {
+		return false, err
+	}
+	allowed, err := p.repo.AllowedDomainsTx(ctx, tx, moderation.DomainAndParents(domain))
+	if err != nil {
+		return false, err
+	}
+	return !moderation.Allowed(domain, allowed), nil
 }
 
 // SuspendedTx reports whether an account's own actions suspend it at the policy's now (the
@@ -97,6 +119,20 @@ func (p *AccountPolicy) SuspendedTx(ctx context.Context, tx uow.Tx, accountID st
 	return moderation.FederationSuspended(rows, p.clock.Now()), nil
 }
 
+// SuspendedAmongTx is SuspendedTx of each of ids, by account, with one query.
+func (p *AccountPolicy) SuspendedAmongTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	rows, err := p.repo.AccountRestrictionRowsOf(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	now := p.clock.Now()
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		out[id] = moderation.FederationSuspended(rows[id], now)
+	}
+	return out, nil
+}
+
 // AccountEffectsTx returns inside tx the restrictions that an account's own actions have in effect
 // at the policy's now, each with its end, as moderation.account_restrictions_changed carries them.
 func (p *AccountPolicy) AccountEffectsTx(ctx context.Context, tx uow.Tx, accountID string) ([]Effect, error) {
@@ -105,6 +141,64 @@ func (p *AccountPolicy) AccountEffectsTx(ctx context.Context, tx uow.Tx, account
 		return nil, err
 	}
 	return moderation.Merge(rows, p.clock.Now()), nil
+}
+
+// accountDomainsBatch is an AccountDomains that finds the domains of many accounts at once, as
+// *appaccount.Service does.
+type accountDomainsBatch interface {
+	AccountDomainsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]string, error)
+}
+
+// UnsolicitedReachRestrictedAmongTx is UnsolicitedReachRestrictedTx of each of ids, by account,
+// with one query for the accounts' restrictions, one for their domains, and one for the
+// restrictions of the domains; without the batch read of the domains it reads them one by one.
+func (p *AccountPolicy) UnsolicitedReachRestrictedAmongTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(ids))
+	b, ok := p.accounts.(accountDomainsBatch)
+	if !ok {
+		for _, id := range ids {
+			restricted, err := p.UnsolicitedReachRestrictedTx(ctx, tx, id)
+			if err != nil {
+				return nil, err
+			}
+			out[id] = restricted
+		}
+		return out, nil
+	}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	now := p.clock.Now()
+	own, err := p.repo.AccountRestrictionsInEffectOfTx(ctx, tx, ids, now)
+	if err != nil {
+		return nil, err
+	}
+	domains, err := b.AccountDomainsTx(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	var all []string
+	for _, d := range domains {
+		for _, dd := range moderation.DomainAndParents(d) {
+			if !slices.Contains(all, dd) {
+				all = append(all, dd)
+			}
+		}
+	}
+	ofDomains, err := p.repo.DomainRestrictionsInEffectOfTx(ctx, tx, all, now)
+	if err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		rs := own[id]
+		if d, found := domains[id]; found {
+			for _, dd := range moderation.DomainAndParents(d) {
+				rs = append(rs, ofDomains[dd]...)
+			}
+		}
+		out[id] = slices.Contains(rs, moderation.RestrictUnsolicitedReach)
+	}
+	return out, nil
 }
 
 // UnsolicitedReachRestrictedTx is UnsolicitedReachRestricted inside tx.

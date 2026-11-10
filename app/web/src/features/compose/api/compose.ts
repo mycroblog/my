@@ -13,8 +13,6 @@ import { isPostListQuery } from "../../../lib/query";
 export type Status = components["schemas"]["Status"];
 export type MediaAttachment = components["schemas"]["MediaAttachment"];
 export type Visibility = components["schemas"]["Visibility"];
-/** Who may quote a post (FR-114, ADR-0069). */
-export type QuotePolicy = components["schemas"]["QuotePolicy"];
 export type CreateStatusRequest = components["schemas"]["CreateStatusRequest"];
 export type PostingLimits = components["schemas"]["PostingLimits"];
 type CredentialAccount = components["schemas"]["CredentialAccount"];

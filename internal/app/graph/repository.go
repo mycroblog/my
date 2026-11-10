@@ -54,6 +54,8 @@ type Repository interface {
 	// do nothing.
 	LockPair(ctx context.Context, tx uow.Tx, accountA, accountB string) error
 	InsertBlock(ctx context.Context, tx uow.Tx, b graph.Block) error
+	// InsertBlocks is InsertBlock of each of bs, which share their CreatedAt, with one statement.
+	InsertBlocks(ctx context.Context, tx uow.Tx, bs []graph.Block) error
 	// InsertBlockRetraction fails with ErrAlreadyRecorded when the block is already retracted.
 	InsertBlockRetraction(ctx context.Context, tx uow.Tx, r graph.BlockRetraction) error
 	// Block returns a block by ID.
@@ -61,6 +63,12 @@ type Repository interface {
 	// BlockByURI returns the block with an activity URI and its retraction, if any.
 	BlockByURI(ctx context.Context, tx uow.Tx, uri string) (graph.BlockHistory, error)
 	UpsertMute(ctx context.Context, tx uow.Tx, m graph.Mute) error
+	// UpsertMutes is UpsertMute of each of ms, which share their target and CreatedAt, with one
+	// statement.
+	UpsertMutes(ctx context.Context, tx uow.Tx, ms []graph.Mute) error
+	// ActiveMutesOfTargetTx returns, inside tx, the mutes of targetID by those of accountIDs that
+	// have not expired at now, by account, as Mute reads one.
+	ActiveMutesOfTargetTx(ctx context.Context, tx uow.Tx, targetID string, accountIDs []string, now time.Time) (map[string]graph.Mute, error)
 	// DeleteMute deletes accountID's mute of targetAccountID and reports whether there was one.
 	DeleteMute(ctx context.Context, tx uow.Tx, accountID, targetAccountID string) (bool, error)
 	// DeleteExpiredMutes deletes at most limit mutes that have expired at now and returns them.
@@ -74,6 +82,10 @@ type Repository interface {
 	DeleteDomainMute(ctx context.Context, tx uow.Tx, accountID, domain string) (bool, error)
 	// CountDomainMutes returns how many domains accountID mutes.
 	CountDomainMutes(ctx context.Context, tx uow.Tx, accountID string) (int, error)
+	// UpsertNote writes accountID's private note on n.TargetAccountID, replacing the one it had.
+	UpsertNote(ctx context.Context, tx uow.Tx, n graph.Note) error
+	// DeleteNote deletes accountID's note on targetAccountID and reports whether there was one.
+	DeleteNote(ctx context.Context, tx uow.Tx, accountID, targetAccountID string) (bool, error)
 
 	// Projections, written only by this module's projectors and rebuild.
 
@@ -93,12 +105,60 @@ type Repository interface {
 	// AddCounters adds the deltas to an account's counters, creating the row from zero, and
 	// deletes the row when both counters reach zero: no row means zero.
 	AddCounters(ctx context.Context, tx uow.Tx, accountID string, followersDelta, followingDelta int64) error
+
+	// The writes that end many follows at once (Service.SeverDirected), each as the write of one
+	// follow above does for every follow it names, with one statement.
+
+	// LockPairs is LockPair of each pair (as[i], bs[i]).
+	LockPairs(ctx context.Context, tx uow.Tx, as, bs []string) error
+	// ListEdgesOfAccounts is ListEdgesOf of each of ids, each edge once.
+	ListEdgesOfAccounts(ctx context.Context, tx uow.Tx, ids []string) ([]graph.Edge, error)
+	// ListEdgesBetween returns the edges between as[i] and bs[i], in either direction, ordered by
+	// follower and followee.
+	ListEdgesBetween(ctx context.Context, tx uow.Tx, as, bs []string) ([]graph.Edge, error)
+	// FollowsByIDs returns the follows of ids that exist, by ID, as Follow returns one.
+	FollowsByIDs(ctx context.Context, tx uow.Tx, ids []string) (map[string]graph.Follow, error)
+	// InsertTerminations records the ends of the follows of followIDs with one reason and time.
+	// It fails with ErrAlreadyRecorded when one of them has ended.
+	InsertTerminations(ctx context.Context, tx uow.Tx, followIDs []string, reason graph.TerminationReason, at time.Time) error
+	// DeleteEdgesOfFollows deletes the edge of each follow of edges, when it is in the state of
+	// the edge given, and returns how many it deleted.
+	DeleteEdgesOfFollows(ctx context.Context, tx uow.Tx, edges []graph.Edge) (int, error)
+	// AddManyCounters is AddCounters of the deltas of many accounts, by account.
+	AddManyCounters(ctx context.Context, tx uow.Tx, deltas map[string]CounterDelta) error
+
+	// The writes and reads that start many follows at once (the migration of a moved account's
+	// followers), each as those of one follow do for every follow it names, with one statement.
+
+	// InsertFollows is InsertFollow of each of fs.
+	InsertFollows(ctx context.Context, tx uow.Tx, fs []graph.Follow) error
+	// UpsertManyPreferences is UpsertPreferences of each of ps.
+	UpsertManyPreferences(ctx context.Context, tx uow.Tx, ps []graph.Preferences) error
+	// InsertAutoAcceptances is InsertAcceptance of an automatic acceptance at at of each follow
+	// of followIDs; it fails with ErrAlreadyRecorded when one is accepted.
+	InsertAutoAcceptances(ctx context.Context, tx uow.Tx, followIDs []string, at time.Time) error
+	// InsertEdges is InsertEdge of each of es, and returns how many it inserted.
+	InsertEdges(ctx context.Context, tx uow.Tx, es []graph.Edge) (int, error)
+	// PreferencesOf is Preferences of each follow of followIDs that has them, by follow.
+	PreferencesOf(ctx context.Context, tx uow.Tx, followIDs []string) (map[string]graph.Preferences, error)
+	// DomainMutersAmong returns those of accountIDs that mute any of domains, as MutesAnyDomain
+	// tells of one.
+	DomainMutersAmong(ctx context.Context, accountIDs, domains []string) (map[string]bool, error)
+	// BlockEdgesWithTx reads inside tx the blocks between accountID and each of others: by other,
+	// whether accountID blocks it (blocking) and whether it blocks accountID (blockedBy).
+	BlockEdgesWithTx(ctx context.Context, tx uow.Tx, accountID string, others []string) (blocking, blockedBy map[string]bool, err error)
+	// NotificationRelationsFromTx is NotificationRelationsTx of one recipient and many sources,
+	// by source.
+	NotificationRelationsFromTx(ctx context.Context, tx uow.Tx, recipientID string, sourceIDs []string, now time.Time) (NotificationRelations, error)
 	UpsertCounters(ctx context.Context, tx uow.Tx, c graph.Counters) error
 	DeleteAllCounters(ctx context.Context, tx uow.Tx) error
 	// BlockEdge returns the edge from blocker to blocked.
 	BlockEdge(ctx context.Context, tx uow.Tx, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error)
 	// InsertBlockEdge inserts an edge and reports false, writing nothing, when the pair already has one.
 	InsertBlockEdge(ctx context.Context, tx uow.Tx, e graph.BlockEdge) (bool, error)
+	// InsertBlockEdges is InsertBlockEdge of the edge of each of bs, and returns how many it
+	// inserted.
+	InsertBlockEdges(ctx context.Context, tx uow.Tx, bs []graph.Block) (int, error)
 	// DeleteBlockEdge deletes the pair's edge when it belongs to blockID.
 	DeleteBlockEdge(ctx context.Context, tx uow.Tx, blockerAccountID, blockedAccountID, blockID string) error
 	DeleteAllBlockEdges(ctx context.Context, tx uow.Tx) error
@@ -139,6 +199,12 @@ type Repository interface {
 	// ListFollowers returns the edges into followeeAccountID in state, newest follow first,
 	// starting after the follow ID before ("" for the newest) and returning at most limit edges.
 	ListFollowers(ctx context.Context, followeeAccountID string, state graph.State, before string, limit int) ([]graph.Edge, error)
+	// ListFollowEdgesFromAmong returns the edges into accountID from those of followerIDs that
+	// have one, in follower order, with one query.
+	ListFollowEdgesFromAmong(ctx context.Context, accountID string, followerIDs []string) ([]graph.Edge, error)
+	// ListFolloweesAmong returns the accounts among accountIDs that an edge in state goes into,
+	// each once, with one query.
+	ListFolloweesAmong(ctx context.Context, accountIDs []string, state graph.State) ([]string, error)
 	// ListFollowing is ListFollowers for the edges out of followerAccountID.
 	ListFollowing(ctx context.Context, followerAccountID string, state graph.State, before string, limit int) ([]graph.Edge, error)
 	FindBlockEdge(ctx context.Context, blockerAccountID, blockedAccountID string) (graph.BlockEdge, error)
@@ -157,6 +223,15 @@ type Repository interface {
 	// FindMute returns accountID's mute of targetAccountID; ErrNotFound means none, or one that
 	// has expired at now.
 	FindMute(ctx context.Context, accountID, targetAccountID string, now time.Time) (graph.Mute, error)
+	// FindRelationshipParts reads, of accountID and each of targetIDs, what FindEdge (both ways),
+	// FindPreferences of the edge out of accountID, FindBlockEdge (both ways), and FindMute read
+	// of one pair, with one query per part whatever the number of targets.
+	FindRelationshipParts(ctx context.Context, accountID string, targetIDs []string, now time.Time) (RelationshipParts, error)
+	// FindPreferencesOf is FindPreferences of each follow of followIDs that has them, by follow.
+	FindPreferencesOf(ctx context.Context, followIDs []string) (map[string]graph.Preferences, error)
+	// FindMutesOn returns the mutes of targetID by those of accountIDs that have not expired at
+	// now, by account, as FindMute reads one.
+	FindMutesOn(ctx context.Context, targetID string, accountIDs []string, now time.Time) (map[string]graph.Mute, error)
 	// ListMutes returns accountID's mutes that have not expired at now, newest first by creation
 	// and then target account ID, starting after before (the zero cursor for the newest) and
 	// returning at most limit mutes.
@@ -164,11 +239,22 @@ type Repository interface {
 	// ListDomainMutes returns accountID's domain mutes in the order of their domains, starting
 	// after the domain after ("" for the first) and returning at most limit mutes.
 	ListDomainMutes(ctx context.Context, accountID, after string, limit int) ([]graph.DomainMute, error)
+	// FindNote returns accountID's private note on targetAccountID; ErrNotFound when it has none.
+	FindNote(ctx context.Context, accountID, targetAccountID string) (graph.Note, error)
+	// FindNotesOn returns accountID's notes on those of targetIDs that it keeps one on, by target.
+	FindNotesOn(ctx context.Context, accountID string, targetIDs []string) (map[string]graph.Note, error)
+	// ListNotesBy returns every note of accountID, oldest first by update and then target.
+	ListNotesBy(ctx context.Context, accountID string) ([]graph.Note, error)
 	// MutesAnyDomain reports whether accountID mutes one of domains.
 	MutesAnyDomain(ctx context.Context, accountID string, domains []string) (bool, error)
 	// RelationsAmong returns the relations of accountID with the accounts among ids, with the
 	// mutes that have not expired at now.
 	RelationsAmong(ctx context.Context, accountID string, ids []string, now time.Time) (RelationsAmong, error)
+	// NotificationRelationsTx reads inside tx, of sourceID and each of recipientIDs, what
+	// HidesNotifications and Follows read of one recipient: the blocks between them either way,
+	// the recipient's mute of the source that has not expired at now, and the recipient's follow
+	// edge to the source, with one query per part.
+	NotificationRelationsTx(ctx context.Context, tx uow.Tx, sourceID string, recipientIDs []string, now time.Time) (NotificationRelations, error)
 }
 
 // RelationsAmong are the relations of one account with some others, each list in ID order: the
@@ -177,6 +263,15 @@ type Repository interface {
 type RelationsAmong struct {
 	Blocked, BlockedBy, Muted, Following []string
 	Counters                             []graph.Counters
+}
+
+// NotificationRelations are the relations of the recipients of a notification with its source,
+// by recipient (Repository.NotificationRelationsTx): whether a block stands between them either
+// way, the recipient's mute of the source, and the recipient's follow edge to the source.
+type NotificationRelations struct {
+	Blocked map[string]bool
+	Mutes   map[string]graph.Mute
+	Follows map[string]graph.Edge
 }
 
 // MuteCursor is the position of a mute in a list of mutes: its creation and target account.
@@ -189,4 +284,20 @@ type MuteCursor struct {
 // MuteCursorOf returns the position of m, to continue a list after it.
 func MuteCursorOf(m graph.Mute) MuteCursor {
 	return MuteCursor{CreatedAt: m.CreatedAt, TargetAccountID: m.TargetAccountID}
+}
+
+// RelationshipParts are the parts of the relationships of one account with others, by the other
+// account's ID (Repository.FindRelationshipParts). Preferences are by follow ID.
+type RelationshipParts struct {
+	Following   map[string]graph.Edge
+	FollowedBy  map[string]graph.Edge
+	Preferences map[string]graph.Preferences
+	Blocking    map[string]graph.BlockEdge
+	BlockedBy   map[string]graph.BlockEdge
+	Mutes       map[string]graph.Mute
+}
+
+// CounterDelta is what Repository.AddManyCounters adds to the counters of one account.
+type CounterDelta struct {
+	Followers, Following int64
 }

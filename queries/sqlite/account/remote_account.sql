@@ -11,18 +11,18 @@ ON CONFLICT (account_id) DO NOTHING;
 INSERT INTO remote_account_snapshots (
   id, account_id, preferred_username, profile_url, inbox_url, shared_inbox_url, outbox_url,
   followers_url, following_url, featured_url, followers_total, following_total, statuses_total,
-  document_digest, fetched_at
+  document_digest, fetched_at, featured_tags_url
 ) VALUES (
   @id, @account_id, @preferred_username, @profile_url, @inbox_url, @shared_inbox_url, @outbox_url,
   @followers_url, @following_url, @featured_url, @followers_total, @following_total, @statuses_total,
-  @document_digest, @fetched_at
+  @document_digest, @fetched_at, @featured_tags_url
 );
 
 -- GetLatestRemoteAccountSnapshot returns the newest snapshot of an actor.
 -- name: GetLatestRemoteAccountSnapshot :one
 SELECT id, account_id, preferred_username, profile_url, inbox_url, shared_inbox_url, outbox_url,
   followers_url, following_url, featured_url, followers_total, following_total, statuses_total,
-  document_digest, fetched_at
+  document_digest, fetched_at, featured_tags_url
 FROM remote_account_snapshots WHERE account_id = @account_id ORDER BY id DESC LIMIT 1;
 
 -- ListRemoteProfileURLs returns the profile page (url) of the current snapshot of each actor in
@@ -47,6 +47,11 @@ ON CONFLICT (account_id) DO UPDATE SET
 -- name: GetRemoteAccountHead :one
 SELECT account_id, snapshot_id, inbox_url, shared_inbox_url, last_fetched_at, consecutive_fetch_failures
 FROM remote_account_heads WHERE account_id = @account_id;
+
+-- The heads of the remote actors of account_ids that have one, as GetRemoteAccountHead reads one.
+-- name: ListRemoteAccountHeadsByIDs :many
+SELECT account_id, snapshot_id, inbox_url, shared_inbox_url, last_fetched_at, consecutive_fetch_failures
+FROM remote_account_heads WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT)));
 
 -- ListStaleRemoteAccountHeads returns the actors fetched before @fetched_before, the least
 -- recently fetched first, after the cursor (@after_fetched_at, @after_account_id), for the

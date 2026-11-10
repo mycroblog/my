@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-22
 - Deciders: @rosylilly
-- Issue: #873, #883, #914, #925, #1206
+- Issue: #873, #883, #914, #925, #1206, #2612
 
 ## Decision（決定）
 
@@ -129,6 +129,7 @@ type IncomeMovement struct {
     Kind           IncomeKind // payment, refund, chargeback, chargeback_reversal, fee
     ParentID       string    // refund / chargeback / reversal: ProviderID of the payment; "" otherwise
     SubscriptionID string    // our subscription id (ADR-0072); "" for fees not tied to one subscription
+    Source         IncomeSource // subscription, one_time (a tip, ADR-0162), unknown
     OccurredAt     time.Time // when the provider booked it (UTC)
     OccurredOn     Date      // OccurredAt as a date in the provider's reporting time zone (§13)
     Covers         DateRange // payment: the billing period it pays for; others: zero
@@ -157,6 +158,7 @@ type IncomeMovement struct {
 
 - **Stripe の Billing の手数料**は収入から差し引く: Billing の 0.7%・Stripe Tax・Radar の手数料は決済ごとの `fee` に入らず、別の `stripe_fee` の balance transaction として載る。
   ADR-0074 の照合のジョブがこれも取り込み、`fee` の種類の行（`subscription_id` を持たない）としてその日の収入から引く。加入ごとに割り当てられるかは **要検証** だが、割り当てなくても期間の net は正しい。
+- 出どころ: 各行は `source` で、こちらの加入の動き（`subscription`）、チップの動き（`one_time`、ADR-0162）、どちらでもない動き（`unknown`）を見分ける。`subscription_id` の NULL だけではチップと `my` の外の支払いを見分けられないため。
 - 個人ごとの支払いの扱い: `income_movements` は `subscription_id` だけを持ち、利用者の ID・名前・メールアドレスを持たない。誰の加入かは `SupporterDirectory` を通して管理画面だけが引く。アカウントの消去で加入のモジュールが利用者との結び付きを消せば、収入の行は額だけを残し、集計は変わらない。
 
 ### 13. 収入の日付と期間
@@ -215,7 +217,7 @@ type IncomeMovement struct {
 
 | テーブル | 分類 | 内容 |
 | --- | --- | --- |
-| `income_movements` | イベント | `id`, `provider`（`enum(stripe, payjp, fake)`。事業者を足すときに値を足す）, `provider_movement_id`（`string(255)`）, `kind`（`enum(payment, refund, chargeback, chargeback_reversal, fee)`）, `parent_movement_id`（NULL 可。`refund`・`chargeback`・`chargeback_reversal` は元の `payment` の行）, `subscription_id`（NULL 可 = `fee`。ADR-0072 の加入の ID への論理参照で、外部キーを付けない）, `occurred_at`, `occurred_on`（`date`）, `covers_starts_on`・`covers_ends_on`（`date`、NULL 可。`payment` だけが持つ。`CHECK`）, `gross_minor`・`fee_minor`・`net_minor`（`bigint`、負も可。`net_minor = gross_minor − fee_minor` の `CHECK`）, `currency`（`string(3)`）, `recorded_at`。一意 `(provider, provider_id)`。インデックス `(occurred_on)` |
+| `income_movements` | イベント | `id`, `provider`（`enum(stripe, payjp, fake)`。事業者を足すときに値を足す）, `provider_movement_id`（`string(255)`）, `kind`（`enum(payment, refund, chargeback, chargeback_reversal, fee)`）, `parent_movement_id`（NULL 可。`refund`・`chargeback`・`chargeback_reversal` は元の `payment` の行）, `subscription_id`（NULL 可 = `fee`。ADR-0072 の加入の ID への論理参照で、外部キーを付けない）, `source`（`enum(subscription, one_time, unknown)`。加入の支払い・チップ（ADR-0162）の支払い・どちらでもない動き（`my` の外で受けた支払いと、加入に結び付かない手数料）。値の決め方は ADR-0162 §16）, `occurred_at`, `occurred_on`（`date`）, `covers_starts_on`・`covers_ends_on`（`date`、NULL 可。`payment` だけが持つ。`CHECK`）, `gross_minor`・`fee_minor`・`net_minor`（`bigint`、負も可。`net_minor = gross_minor − fee_minor` の `CHECK`）, `currency`（`string(3)`）, `recorded_at`。一意 `(provider, provider_id)`。インデックス `(occurred_on)` |
 
 - 投影を持たず、集計は読み取りのときに計算する（§1）。数百人 × 年 12 回の規模で、期間の範囲の行を読んで按分しても軽い。
 - 元の支払いより先に返金が来たとき（照合の順序）は、ADR-0074 のジョブが元の支払いを事業者から取り直して先に渡す。`RecordIncome` は元の行がない返金を受けず、ジョブの再試行に任せる。
@@ -276,6 +278,8 @@ M4.2（Supporters、Epic #925）で、課金のプランの支払いを収入と
 当初「ほかのモジュールは `finance` を呼ばない」としていたが、期間・按分・通貨の関数を共有して収支を 1 か所で計算するため、加入のモジュールから `finance` を呼ぶ向きを許した。`/about` の区画も、費用か収入のどちらかが公開なら出すようにした。
 
 Stripe の事実は spike #909 の[調査報告](https://github.com/mycroblog/my/issues/909#issuecomment-6326974258)（2026-10-22 に公式の文書で確認）による。決済・返金・dispute はそれぞれ balance transaction になり、`amount`（総額）・`fee`・`net` = `amount` − `fee` を入金の通貨で持つ。返金で処理の手数料は返らず、dispute は ¥1,500 の手数料が勝っても返らない。Billing の 0.7%・Stripe Tax・Radar の手数料は別の `stripe_fee` の取引として載る。Paddle は利用規約（AUP）の懸念で外した。
+
+チップ（ADR-0162、#2612）の支払いも加入のない収入として入るので、`subscription_id` の NULL がチップと `my` の外の支払いの両方を意味しないよう、出どころの列 `source` を `income_movements` に足した（§12・§18）。
 
 内訳は当初 `provider_normalized` をそのまま事業者として返していたので、`ConoHa` が `conoha`、`Amazon SES` が `amazon ses`、取り込んだ `Google Cloud` が `google cloud` と出た（#1206）。まとめ方は変えず、表記を入力どおりにした（§20）。
 

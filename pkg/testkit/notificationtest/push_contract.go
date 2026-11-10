@@ -191,6 +191,17 @@ func pushSubscriptionIDs(t *testing.T, e *pushEnv) {
 	if got := ids("01890a5d-ac96-774b-bcce-b302099a8058", notification.TypeMention); len(got) != 0 {
 		t.Errorf("another account = %v", got)
 	}
+	other := "01890a5d-ac96-774b-bcce-b302099a8058"
+	var of map[string][]string
+	if err := e.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) (err error) {
+		of, err = e.h.Push.PushSubscriptionIDsOf(t.Context(), tx, []string{contractPushAcct, other}, notification.TypeMention)
+		return err
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if want := map[string][]string{contractPushAcct: {a.ID, b.ID}}; !reflect.DeepEqual(of, want) {
+		t.Errorf("PushSubscriptionIDsOf(mention) = %v, want %v, as PushSubscriptionIDs", of, want)
+	}
 	err := e.h.UnitOfWork.Tx(t.Context(), func(tx uow.Tx) error {
 		deleted, err := e.h.Push.DeletePushSubscription(t.Context(), tx, a.ID)
 		if err == nil && !deleted {

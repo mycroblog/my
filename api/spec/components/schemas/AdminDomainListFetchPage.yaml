@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: A page of the fetches of a subscription, newest first.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./AdminDomainListFetch.yaml

@@ -68,6 +68,7 @@ const (
 	GroupAdminErrorGroup         Group = "admin_error_group"
 	GroupAdminHookFailing        Group = "admin_hook_failing"
 	GroupAdminHookAppeal         Group = "admin_hook_appeal"
+	GroupAdminDomainListFailing  Group = "admin_domain_list_failing"
 
 	// GroupModeration is moderation_notice, report_resolved, appeal_decided,
 	// relationships_severed, custom_emoji_request_decided, and hook_appeal_decided.
@@ -83,6 +84,13 @@ const (
 	// (ADR-0151 §7): posts are about to go for good, so it is emailed by default, even to those who
 	// rarely sign in, and the user may turn either channel off.
 	GroupAutoDeleteLimit Group = "auto_delete_limit"
+	// GroupInteractionRequest is the requests of replies, boosts, and quotes that wait for the
+	// recipient's approval, and the answers to the recipient's own (ADR-0155 §10): in the app, on
+	// by default, without email.
+	GroupInteractionRequest Group = "interaction_request"
+	// GroupScheduledStatusFailed is the scheduled posts that could not be published (ADR-0156 §8):
+	// in the app, on by default, and the user may turn it off; it has no email channel.
+	GroupScheduledStatusFailed Group = "scheduled_status_failed"
 )
 
 // Section is the kind of a group, which decides its defaults and how its emails are sent.
@@ -186,9 +194,15 @@ var Groups = []GroupSpec{
 	ordinary(GroupPollClosed), ordinary(GroupAccountMoved),
 	ordinary(GroupVoice, TypeVoiceRoomStarted, TypeVoiceRoomInvited),
 	{Group: GroupStatus, Section: SectionOrdinary, Types: []Type{TypeStatus}, InApp: ordinaryRules[0], Email: Rule{Absent: true}},
+	{
+		Group: GroupInteractionRequest, Section: SectionOrdinary,
+		Types: []Type{TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected},
+		InApp: ordinaryRules[0], Email: Rule{Absent: true},
+	},
 	moderator(TypeAdminReport), moderator(TypeAdminSignUp), moderator(TypeAdminAppeal), moderator(TypeAdminWebhookDisabled),
 	moderator(TypeAdminCustomEmojiRequest), moderator(TypeAdminAccountMoved), moderator(TypeAdminServiceClosureDue),
 	moderator(TypeAdminErrorGroup), moderator(TypeAdminHookFailing), moderator(TypeAdminHookAppeal),
+	moderator(TypeAdminDomainListFailing),
 	{
 		Group: GroupModeration, Section: SectionInstance,
 		Types: []Type{
@@ -213,6 +227,10 @@ var Groups = []GroupSpec{
 	{
 		Group: GroupAutoDeleteLimit, Section: SectionInstance, Types: []Type{TypeAutoDeleteLimit},
 		InApp: Rule{Default: true}, Email: Rule{Default: true},
+	},
+	{
+		Group: GroupScheduledStatusFailed, Section: SectionInstance, Types: []Type{TypeScheduledStatusFailed},
+		InApp: Rule{Default: true}, Email: Rule{Absent: true},
 	},
 }
 

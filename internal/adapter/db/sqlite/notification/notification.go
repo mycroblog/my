@@ -4,6 +4,8 @@ package notification
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"strings"
 	"time"
 
@@ -65,7 +67,7 @@ func (r *Repository) InsertNotification(ctx context.Context, tx uow.Tx, n notifi
 		ServiceClosureEventID: sqlite.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: sqlite.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: sqlite.ToNullString(n.VoiceRoomID),
 		ErrorGroupChange: sqlite.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: sqlite.ToNullString(n.ErrorGroupID), ErrorGroupHour: sqlite.ToNullTime(n.ErrorGroupHour),
 		AnnouncementID: sqlite.ToNullString(n.AnnouncementID), HookAppealID: sqlite.ToNullString(n.HookAppealID),
-		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DedupeKey: n.DedupeKey, CreatedAt: sqlite.ToMillis(n.CreatedAt),
+		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DraftScheduleID: sqlite.ToNullString(n.DraftScheduleID), DedupeKey: n.DedupeKey, CreatedAt: sqlite.ToMillis(n.CreatedAt),
 	})
 	if err != nil {
 		return false, sqlite.Wrap(err, "insert notification")
@@ -84,6 +86,18 @@ func (r *Repository) Notification(ctx context.Context, tx uow.Tx, id string) (no
 		return notification.Notification{}, sqlite.NotFound(err, appnotification.ErrNotFound, "notification "+id)
 	}
 	return notificationFrom(row), nil
+}
+
+// DismissByDedupeKey implements notification.Repository.
+func (r *Repository) DismissByDedupeKey(ctx context.Context, tx uow.Tx, recipientAccountID, dedupeKey string, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	_, err = q.DismissNotificationByDedupeKey(ctx, notificationgen.DismissNotificationByDedupeKeyParams{
+		DismissedAt: sqlite.ToMillis(at), RecipientAccountID: recipientAccountID, DedupeKey: dedupeKey,
+	})
+	return sqlite.Wrap(err, "dismiss notification by dedupe key")
 }
 
 // InsertDismissal implements notification.Repository.
@@ -170,6 +184,39 @@ func (r *Repository) DomainExcluded(ctx context.Context, tx uow.Tx, viewerAccoun
 	return excluded, sqlite.Wrap(err, "check notification domain exclusion")
 }
 
+// RecordDeletedStatuses implements notification.Repository.
+func (r *Repository) RecordDeletedStatuses(ctx context.Context, tx uow.Tx, statusIDs []string) error {
+	if len(statusIDs) == 0 {
+		return nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	list, err := sqlite.JSONList(statusIDs)
+	if err != nil {
+		return err
+	}
+	rows, err := q.NotifiedStatusesAmong(ctx, list)
+	if err != nil {
+		return sqlite.Wrap(err, "list the notified statuses")
+	}
+	var notified []string
+	for _, id := range rows {
+		if id.Valid {
+			notified = append(notified, id.String)
+		}
+	}
+	if len(notified) == 0 {
+		return nil
+	}
+	notifiedList, err := sqlite.JSONList(notified)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertNotificationDeletedStatuses(ctx, notifiedList), "insert notification deleted statuses")
+}
+
 // InsertDeletedStatus implements notification.Repository.
 func (r *Repository) InsertDeletedStatus(ctx context.Context, tx uow.Tx, statusID string) error {
 	q, err := r.db.queries(tx)
@@ -246,7 +293,7 @@ func notificationFrom(row notificationgen.Notification) notification.Notificatio
 		ServiceClosureEventID: row.ServiceClosureEventID.String, ServiceClosureChange: notification.ClosureChange(row.ServiceClosureChange.String), VoiceRoomID: row.VoiceRoomID.String,
 		ErrorGroupChange: notification.ErrorGroupChange(row.ErrorGroupChange.String), ErrorGroupID: row.ErrorGroupID.String, ErrorGroupHour: sqlite.FromNullTime(row.ErrorGroupHour),
 		AnnouncementID: row.AnnouncementID.String, HookAppealID: row.HookAppealID.String,
-		AutoDeleteLimitNoticeID: row.AutoDeleteLimitNoticeID.String, DedupeKey: row.DedupeKey, CreatedAt: sqlite.FromMillis(row.CreatedAt),
+		AutoDeleteLimitNoticeID: row.AutoDeleteLimitNoticeID.String, DraftScheduleID: row.DraftScheduleID.String, DedupeKey: row.DedupeKey, CreatedAt: sqlite.FromMillis(row.CreatedAt),
 	}
 }
 
@@ -315,4 +362,154 @@ func typeSet(types []notification.Type) string {
 		set += string(t) + ","
 	}
 	return set
+}
+
+// InsertNotificationsFor implements notification.Repository.
+func (r *Repository) InsertNotificationsFor(ctx context.Context, tx uow.Tx, n notification.Notification, ids, recipients []string) (map[string]bool, error) {
+	out := make(map[string]bool, len(recipients))
+	if len(recipients) == 0 {
+		return out, nil
+	}
+	if len(ids) != len(recipients) {
+		return nil, fmt.Errorf("insert notifications: %d IDs for %d recipients", len(ids), len(recipients))
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	type row struct {
+		ID        string `json:"id"`
+		Recipient string `json:"recipient"`
+	}
+	rows := make([]row, len(ids))
+	for i, id := range ids {
+		rows[i] = row{ID: id, Recipient: recipients[i]}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return nil, err
+	}
+	arg := notificationgen.InsertNotificationsForParams{
+		Type:            string(n.Type),
+		SourceAccountID: sqlite.ToNullString(n.SourceAccountID), SourceDomain: sqlite.ToNullString(n.SourceDomain), StatusID: sqlite.ToNullString(n.StatusID),
+		ModerationActionID: sqlite.ToNullString(n.ModerationActionID), ReportID: sqlite.ToNullString(n.ReportID),
+		SubjectUserID: sqlite.ToNullString(n.SubjectUserID), SeveranceID: sqlite.ToNullString(n.SeveranceID), AppealID: sqlite.ToNullString(n.AppealID),
+		CustomEmojiRequestID: sqlite.ToNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: sqlite.ToNullString(n.SupporterSubscriptionID),
+		ReactionEmoji: sqlite.ToNullString(n.ReactionEmoji), ReactionCustomEmojiID: sqlite.ToNullString(n.ReactionCustomEmojiID),
+		AccountMoveID: sqlite.ToNullString(n.AccountMoveID), AccountMoveOutcome: sqlite.ToNullString(string(n.AccountMoveOutcome)),
+		ServiceClosureEventID: sqlite.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: sqlite.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: sqlite.ToNullString(n.VoiceRoomID),
+		ErrorGroupChange: sqlite.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: sqlite.ToNullString(n.ErrorGroupID), ErrorGroupHour: sqlite.ToNullTime(n.ErrorGroupHour),
+		AnnouncementID: sqlite.ToNullString(n.AnnouncementID), HookAppealID: sqlite.ToNullString(n.HookAppealID),
+		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DraftScheduleID: sqlite.ToNullString(n.DraftScheduleID), DedupeKey: n.DedupeKey, CreatedAt: sqlite.ToMillis(n.CreatedAt),
+		Recipients: string(list),
+	}
+	inserted, err := q.InsertNotificationsFor(ctx, arg)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "insert notifications")
+	}
+	for _, id := range inserted {
+		out[id] = true
+	}
+	return out, nil
+}
+
+// InsertNotificationsForEach implements notification.Repository.
+func (r *Repository) InsertNotificationsForEach(ctx context.Context, tx uow.Tx, ns []notification.Notification) (map[string]bool, error) {
+	out := make(map[string]bool, len(ns))
+	if len(ns) == 0 {
+		return out, nil
+	}
+	n := ns[0]
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	type row struct {
+		ID              string `json:"id"`
+		Recipient       string `json:"recipient"`
+		SeveranceID     string `json:"severance_id"`
+		DedupeKey       string `json:"dedupe_key"`
+		SourceAccountID string `json:"source_account_id"`
+		SourceDomain    string `json:"source_domain"`
+		CreatedAt       int64  `json:"created_at"`
+	}
+	rows := make([]row, len(ns))
+	for i, m := range ns {
+		rows[i] = row{ID: m.ID, Recipient: m.RecipientAccountID, SeveranceID: m.SeveranceID, DedupeKey: m.DedupeKey,
+			SourceAccountID: m.SourceAccountID, SourceDomain: m.SourceDomain, CreatedAt: sqlite.ToMillis(m.CreatedAt)}
+	}
+	list, err := json.Marshal(rows)
+	if err != nil {
+		return nil, err
+	}
+	arg := notificationgen.InsertNotificationsForEachParams{
+		Type:               string(n.Type),
+		StatusID:           sqlite.ToNullString(n.StatusID),
+		ModerationActionID: sqlite.ToNullString(n.ModerationActionID), ReportID: sqlite.ToNullString(n.ReportID),
+		SubjectUserID: sqlite.ToNullString(n.SubjectUserID), AppealID: sqlite.ToNullString(n.AppealID),
+		CustomEmojiRequestID: sqlite.ToNullString(n.CustomEmojiRequestID), SupporterSubscriptionID: sqlite.ToNullString(n.SupporterSubscriptionID),
+		ReactionEmoji: sqlite.ToNullString(n.ReactionEmoji), ReactionCustomEmojiID: sqlite.ToNullString(n.ReactionCustomEmojiID),
+		AccountMoveID: sqlite.ToNullString(n.AccountMoveID), AccountMoveOutcome: sqlite.ToNullString(string(n.AccountMoveOutcome)),
+		ServiceClosureEventID: sqlite.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: sqlite.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: sqlite.ToNullString(n.VoiceRoomID),
+		ErrorGroupChange: sqlite.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: sqlite.ToNullString(n.ErrorGroupID), ErrorGroupHour: sqlite.ToNullTime(n.ErrorGroupHour),
+		AnnouncementID: sqlite.ToNullString(n.AnnouncementID), HookAppealID: sqlite.ToNullString(n.HookAppealID),
+		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DraftScheduleID: sqlite.ToNullString(n.DraftScheduleID),
+		Recipients: string(list),
+	}
+	inserted, err := q.InsertNotificationsForEach(ctx, arg)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "insert notifications")
+	}
+	for _, id := range inserted {
+		out[id] = true
+	}
+	return out, nil
+}
+
+// DomainExcludedAmong implements notification.Repository.
+func (r *Repository) DomainExcludedAmong(ctx context.Context, tx uow.Tx, viewerAccountIDs []string, domain string) (map[string]bool, error) {
+	out := make(map[string]bool, len(viewerAccountIDs))
+	if len(viewerAccountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := sqlite.JSONList(viewerAccountIDs)
+	if err != nil {
+		return nil, err
+	}
+	ids, err := q.DomainsExcludedAmong(ctx, notificationgen.DomainsExcludedAmongParams{ViewerAccountIds: list, Domain: domain})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "check notification domain exclusions")
+	}
+	for _, id := range ids {
+		out[id] = true
+	}
+	return out, nil
+}
+
+// NotificationSettingsOfTx implements notification.Repository.
+func (r *Repository) NotificationSettingsOfTx(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string][]notification.Setting, error) {
+	out := make(map[string][]notification.Setting, len(accountIDs))
+	if len(accountIDs) == 0 {
+		return out, nil
+	}
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return nil, err
+	}
+	list, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	all, err := notificationSettings(q.ListNotificationSettingsOf(ctx, list))
+	if err != nil {
+		return nil, err
+	}
+	for _, st := range all {
+		out[st.AccountID] = append(out[st.AccountID], st)
+	}
+	return out, nil
 }

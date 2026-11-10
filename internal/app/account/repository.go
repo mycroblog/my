@@ -103,10 +103,30 @@ type Repository interface {
 	Account(ctx context.Context, tx uow.Tx, id string) (account.Account, error)
 	// FindAccountByURI returns the account with an ActivityPub id.
 	FindAccountByURI(ctx context.Context, uri string) (account.Account, error)
+	// FindAccountsByURIs returns the accounts of uris that exist, by URI, as FindAccountByURI
+	// returns one, with one query.
+	FindAccountsByURIs(ctx context.Context, uris []string) (map[string]account.Account, error)
 	// AnyAccountOnDomain reports whether one of the accounts ids is on domain.
 	AnyAccountOnDomain(ctx context.Context, domain string, ids []string) (bool, error)
 	// ExistingAccountIDs returns, in ID order, the accounts among ids that exist.
 	ExistingAccountIDs(ctx context.Context, ids []string) ([]string, error)
+	// FindActorParts reads the parts of the actors of ids that FindAccount, FindLocalAccount,
+	// FindHandleOf, FindCurrentProfile, ListKeys, and FindLifecycleState read of one, with one
+	// query per part whatever the number of ids. An ID without an account, or without a part,
+	// has no entry in that part's map.
+	FindActorParts(ctx context.Context, ids []string) (ActorParts, error)
+	// FindAccounts returns the accounts of ids that exist, by ID, as FindAccount returns one, with
+	// one query.
+	FindAccounts(ctx context.Context, ids []string) (map[string]account.Account, error)
+	// FindHandles returns the handles of names that exist, by name, as FindHandle returns each,
+	// with one query.
+	FindHandles(ctx context.Context, names []HandleName) (map[HandleName]account.Handle, error)
+	// FindLifecycleStates returns the lifecycle states of the accounts of ids that have one, by
+	// account, as FindLifecycleState returns one, with one query.
+	FindLifecycleStates(ctx context.Context, ids []string) (map[string]account.LifecycleState, error)
+	// FindLocalAccountsByUsers returns the local accounts of the users of userIDs that have one, by
+	// user ID, as FindLocalAccountByUser returns one, with one query.
+	FindLocalAccountsByUsers(ctx context.Context, userIDs []string) (map[string]account.LocalAccount, error)
 	// AccountsOnDomain returns inside tx, in ID order, the accounts among ids that are on domain
 	// or one of its subdomains.
 	AccountsOnDomain(ctx context.Context, tx uow.Tx, domain string, ids []string) ([]string, error)
@@ -143,8 +163,14 @@ type Repository interface {
 	// FindRemoteHead returns the head of a remote actor; ErrNotFound means the account is local
 	// or has never been fetched.
 	FindRemoteHead(ctx context.Context, accountID string) (account.RemoteHead, error)
+	// FindRemoteHeads returns the heads of the remote actors of accountIDs that have one, by
+	// account, as FindRemoteHead returns one, with one query.
+	FindRemoteHeads(ctx context.Context, accountIDs []string) (map[string]account.RemoteHead, error)
 	// ListKeys returns an account's public keys, oldest first.
 	ListKeys(ctx context.Context, accountID string) ([]account.Key, error)
+	// ListKeysWithSealed returns the keys of an account as ListKeys does, each with its sealed
+	// private key as FindSealedPrivateKey reads it (nil for a key without one), with one query.
+	ListKeysWithSealed(ctx context.Context, accountID string) ([]KeyWithSealed, error)
 	// FindSealedPrivateKey returns the sealed private key of a local actor's key.
 	FindSealedPrivateKey(ctx context.Context, accountKeyID string) ([]byte, error)
 	// IsMediaReferenced reports whether any profile revision uses a media file as its avatar
@@ -176,7 +202,33 @@ type TxReads interface {
 	FindHandleOfTx(ctx context.Context, tx uow.Tx, accountID string) (account.Handle, error)
 	FindCurrentProfileTx(ctx context.Context, tx uow.Tx, accountID string) (account.ProfileRevision, error)
 	FindLifecycleStateTx(ctx context.Context, tx uow.Tx, accountID string) (account.LifecycleState, error)
+	// FindAccountsTx and FindLifecycleStatesTx are FindAccounts and FindLifecycleStates inside tx.
+	FindAccountsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]account.Account, error)
+	FindLifecycleStatesTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]account.LifecycleState, error)
 	ListKeysTx(ctx context.Context, tx uow.Tx, accountID string) ([]account.Key, error)
 	ListRemoteProfileURLsTx(ctx context.Context, tx uow.Tx, accountIDs []string) (map[string]string, error)
 	CountLocalAccountsTx(ctx context.Context, tx uow.Tx) (int, error)
+}
+
+// ActorParts are the parts of many actors, by account ID (Repository.FindActorParts).
+type ActorParts struct {
+	Accounts  map[string]account.Account
+	Locals    map[string]account.LocalAccount
+	Handles   map[string]account.Handle
+	Profiles  map[string]account.ProfileRevision
+	Keys      map[string][]account.Key
+	Lifecycle map[string]account.LifecycleState
+}
+
+// KeyWithSealed is a key with its sealed private key, nil for a key without one.
+type KeyWithSealed struct {
+	Key    account.Key
+	Sealed []byte
+}
+
+// HandleName names a handle by its normalized username and its domain (account.LocalDomain for a
+// local account), as FindHandle takes it.
+type HandleName struct {
+	UsernameNormalized string
+	Domain             string
 }
