@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getTag
+  summary: Get a hashtag
+  description: |
+    The hashtag and whether the user follows it. A hashtag that no post has used yet is
+    answered too, so that it can be followed.
+  tags: [statuses]
+  security:
+    - {}
+    - oauth2: ["read:follows"]
+  parameters:
+    - $ref: ../components/parameters/HashtagName.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Hashtag.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

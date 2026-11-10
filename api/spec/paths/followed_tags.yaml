@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listFollowedTags
+  summary: List the hashtags the user follows
+  description: Every hashtag that the user follows (at most 100), the latest followed first.
+  tags: [statuses]
+  security:
+    - oauth2: ["read:follows"]
+  responses:
+    "200":
+      $ref: ../components/responses/FollowedHashtagCollection.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

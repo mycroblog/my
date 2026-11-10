@@ -627,6 +627,10 @@
     "defaultMessage": "このサーバーの管理者はこのアカウントだけです。先に別のユーザーを管理者にしてください。",
     "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
   },
+  "errors.followed_tags.too_many": {
+    "defaultMessage": "フォローできるハッシュタグの数が上限に達しています。先にどれかのフォローを解除してください。",
+    "description": "API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags."
+  },
   "errors.list_members.not_followed": {
     "defaultMessage": "リストに追加できるのはフォロー中のアカウントだけです。",
     "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."

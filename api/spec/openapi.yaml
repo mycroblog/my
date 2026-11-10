@@ -356,6 +356,12 @@ paths:
     $ref: ./paths/accounts_{id}_statuses.yaml
   /tags/search:
     $ref: ./paths/tags_search.yaml
+  /tags/{hashtag}:
+    $ref: ./paths/tags_{hashtag}.yaml
+  /tags/{hashtag}/follow:
+    $ref: ./paths/tags_{hashtag}_follow.yaml
+  /followed_tags:
+    $ref: ./paths/followed_tags.yaml
   /timelines/home:
     $ref: ./paths/timelines_home.yaml
   /timelines/local:
@@ -804,7 +810,7 @@ components:
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
             "read:direct": Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
             "read:finance": Read the totals of the instance's costs and income, as far as the user's roles allow.
-            "read:follows": Read follows, follow requests, lists, and the accounts whose new posts notify the user.
+            "read:follows": Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
             "read:mutes": Read the accounts and domains the user mutes.
             "read:notifications": Read the user's notifications.
             "read:reports": Read the reports the user filed and whether they are resolved.
@@ -816,7 +822,7 @@ components:
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
             "write:favourites": Favourite posts and react to them with emoji, and take both back.
-            "write:follows": Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts.
+            "write:follows": Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
             "write:media": Upload media, read their state while they process, and change their descriptions.
             "write:mutes": Mute and unmute accounts and domains.
             "write:notifications": Mark notifications read and dismiss them.
@@ -884,6 +890,8 @@ components:
       $ref: ./components/parameters/ListAccountId.yaml
     ListId:
       $ref: ./components/parameters/ListId.yaml
+    HashtagName:
+      $ref: ./components/parameters/HashtagName.yaml
     OAuthAppId:
       $ref: ./components/parameters/OAuthAppId.yaml
     RegistrationId:
@@ -1017,6 +1025,10 @@ components:
       $ref: ./components/responses/List.yaml
     ListCollection:
       $ref: ./components/responses/ListCollection.yaml
+    Hashtag:
+      $ref: ./components/responses/Hashtag.yaml
+    FollowedHashtagCollection:
+      $ref: ./components/responses/FollowedHashtagCollection.yaml
   schemas:
     AdminBrandImage:
       $ref: ./components/schemas/AdminBrandImage.yaml
@@ -1712,6 +1724,12 @@ components:
       $ref: ./components/schemas/List.yaml
     ListCollection:
       $ref: ./components/schemas/ListCollection.yaml
+    Hashtag:
+      $ref: ./components/schemas/Hashtag.yaml
+    FollowedHashtag:
+      $ref: ./components/schemas/FollowedHashtag.yaml
+    FollowedHashtagCollection:
+      $ref: ./components/schemas/FollowedHashtagCollection.yaml
     ListRequest:
       $ref: ./components/schemas/ListRequest.yaml
     MediaAnimatedVariants:

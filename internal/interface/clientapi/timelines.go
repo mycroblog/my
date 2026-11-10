@@ -50,9 +50,11 @@ func timelineViewer(ctx context.Context) (appcontent.Viewer, *Viewer) {
 }
 
 // statusItem is one item of a page of statuses: a post (BoostID "") or a boost of StatusID.
+// FollowedTags are the names of the followed hashtags that brought a post to home.
 type statusItem struct {
-	StatusID string
-	BoostID  string
+	StatusID     string
+	BoostID      string
+	FollowedTags []string
 }
 
 // statuses presents items in order as viewer sees them. An item whose status, boost, or
@@ -113,6 +115,9 @@ func (s *Server) statuses(ctx context.Context, viewer appcontent.Viewer, items [
 			continue
 		}
 		if it.BoostID == "" {
+			if len(it.FollowedTags) > 0 {
+				st.FollowedTags = &it.FollowedTags
+			}
 			out = append(out, st)
 			continue
 		}
@@ -177,7 +182,7 @@ func (s *Server) statusPage(ctx context.Context, v *Viewer, items []statusItem, 
 func entryItems(entries []apptimeline.Entry) []statusItem {
 	items := make([]statusItem, 0, len(entries))
 	for _, e := range entries {
-		it := statusItem{StatusID: e.StatusID}
+		it := statusItem{StatusID: e.StatusID, FollowedTags: e.FollowedTags}
 		if e.Kind == timeline.KindBoost {
 			it.BoostID = e.ID
 		}

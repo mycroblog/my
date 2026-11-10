@@ -151,6 +151,9 @@ type Options struct {
 	// Lists keeps the viewer's lists and reads their timelines; nil answers their operations
 	// with 404.
 	Lists Lists
+	// FollowedTags keeps the hashtags that the viewer follows; nil answers their operations with
+	// 404, and lists none.
+	FollowedTags FollowedTags
 	// Conversations reads and keeps the viewer's direct messages by conversation and tells the
 	// streams how a conversation shows; nil answers their operations with 404 and streams no
 	// conversation events.
