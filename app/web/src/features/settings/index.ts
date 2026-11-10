@@ -11,6 +11,8 @@ export { badgeChoicesQueryOptions } from "./api/badges";
 export { BadgeSettings } from "./components/BadgeSettings";
 export { blocksQueryOptions, followRequestsQueryOptions, mutesQueryOptions } from "./api/relationships";
 export { BlockedAccounts, FollowRequests, MutedAccounts } from "./components/AccountLists";
+export { interactionRequestsQueryOptions } from "./api/interactionRequests";
+export { InteractionRequests } from "./components/InteractionRequests";
 // The domains the user mutes (FR-304).
 export { domainMutesQueryOptions } from "./api/domainMutes";
 export { DomainMutes } from "./components/DomainMutes";

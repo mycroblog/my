@@ -1364,7 +1364,13 @@ describe("the settings page", () => {
     expectMenuGroups(menu, {
       "Profile and community": ["/settings/profile", "/settings/badges"],
       "Display and notifications": ["/settings/preferences", "/settings/notifications"],
-      Relationships: ["/settings/follow-requests", "/settings/blocks", "/settings/mutes", "/settings/domain-mutes"],
+      Relationships: [
+        "/settings/follow-requests",
+        "/settings/interaction-requests",
+        "/settings/blocks",
+        "/settings/mutes",
+        "/settings/domain-mutes",
+      ],
       Security: [
         "/settings/password",
         "/settings/two-factor",

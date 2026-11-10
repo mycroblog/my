@@ -466,5 +466,9 @@
   "notifications.type.interaction_rejected": {
     "defaultMessage": "{name} declined your reply, boost, or quote",
     "description": "Notification sentence. {name} is the display name of the author of the post, which the notification shows, who declined the user's reply to it, boost of it, or quote of it."
+  },
+  "notifications.link.interaction_requests": {
+    "defaultMessage": "Review the requests",
+    "description": "Link in a notification that someone's reply, boost, or quote waits for the user's approval, to the page of the approval requests."
   }
 }

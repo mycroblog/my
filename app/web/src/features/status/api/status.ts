@@ -454,6 +454,30 @@ export function cacheInteractionPolicyAnswer(queryClient: QueryClient, answer: S
   );
 }
 
+/** A reply to, boost of, or quote of a post of the viewer that waits for their approval (ADR-0155 §10). */
+export type InteractionRequest = components["schemas"]["InteractionRequest"];
+
+/**
+ * Puts what the answer to an approval request changed into the cache (S1): the counts of the viewer's post and the
+ * interacting post in every cached copy, and the threads, which an approved reply joins (it may be deep in the thread of any post above it), are
+ * marked stale and the shown ones read again. A thread therefore shows the approved reply without a reload.
+ */
+export async function cacheAnsweredRequest(queryClient: QueryClient, request: InteractionRequest): Promise<void> {
+  const { replies_count, boosts_count } = request.status;
+  updateCachedStatuses(
+    queryClient,
+    forPost(request.status.id, (status) => ({ ...status, replies_count, boosts_count })),
+  );
+  // The reply or the quoting post as it is now: an approved quote shows the viewer's post.
+  const interacting = request.interacting_status;
+  if (interacting !== undefined)
+    updateCachedStatuses(
+      queryClient,
+      forPost(interacting.id, () => interacting),
+    );
+  await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/statuses/{id}/context" });
+}
+
 /**
  * Revokes the approval of the quote `quotingId` of the viewer's post `quotedId`
  * (DELETE /statuses/{id}/quotes/{quote_id}/approval, ADR-0069 §3): the quote shows the post no more.

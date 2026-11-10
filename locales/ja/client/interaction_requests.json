@@ -1,0 +1,70 @@
+{
+  "interaction_requests.title": {
+    "defaultMessage": "承認の依頼",
+    "description": "Title of the settings page, and its menu item, that lists the replies, boosts, and quotes of the user's posts that wait for the user's approval."
+  },
+  "interaction_requests.empty": {
+    "defaultMessage": "依頼はありません",
+    "description": "Heading of the empty list of approval requests."
+  },
+  "interaction_requests.empty.description": {
+    "defaultMessage": "承認を待っている、あなたの投稿への返信・ブースト・引用がここに表示されます。",
+    "description": "Description of the empty list of approval requests."
+  },
+  "interaction_requests.kind.reply": {
+    "defaultMessage": "あなたの投稿への返信の承認を求めています",
+    "description": "Under the account in an approval request for a reply."
+  },
+  "interaction_requests.kind.announce": {
+    "defaultMessage": "あなたの投稿のブーストの承認を求めています",
+    "description": "Under the account in an approval request for a boost."
+  },
+  "interaction_requests.kind.quote": {
+    "defaultMessage": "あなたの投稿の引用の承認を求めています",
+    "description": "Under the account in an approval request for a quote."
+  },
+  "interaction_requests.interacting.reply": {
+    "defaultMessage": "相手の返信",
+    "description": "Accessible name of the box of the reply that waits for the user's approval."
+  },
+  "interaction_requests.interacting.quote": {
+    "defaultMessage": "相手の投稿",
+    "description": "Accessible name of the box of the post that quotes the user's post and waits for the approval."
+  },
+  "interaction_requests.own_post": {
+    "defaultMessage": "あなたの投稿",
+    "description": "Accessible name of the box of the user's post that an approval request is about."
+  },
+  "interaction_requests.accept": {
+    "defaultMessage": "承認する",
+    "description": "Button of an approval request that approves the reply, boost, or quote."
+  },
+  "interaction_requests.reject": {
+    "defaultMessage": "断る",
+    "description": "Button of an approval request that refuses the reply, boost, or quote."
+  },
+  "interaction_requests.accepted.reply": {
+    "defaultMessage": "{name} さんの返信を承認しました",
+    "description": "Announced after the user approved a reply. {name} is the display name, or the username, of its author."
+  },
+  "interaction_requests.accepted.announce": {
+    "defaultMessage": "{name} さんのブーストを承認しました",
+    "description": "Announced after the user approved a boost. {name} is the display name, or the username, of the booster."
+  },
+  "interaction_requests.accepted.quote": {
+    "defaultMessage": "{name} さんの引用を承認しました",
+    "description": "Announced after the user approved a quote. {name} is the display name, or the username, of the quoting author."
+  },
+  "interaction_requests.rejected.reply": {
+    "defaultMessage": "{name} さんの返信を断りました",
+    "description": "Announced after the user refused a reply. {name} is the display name, or the username, of its author."
+  },
+  "interaction_requests.rejected.announce": {
+    "defaultMessage": "{name} さんのブーストを断りました",
+    "description": "Announced after the user refused a boost. {name} is the display name, or the username, of the booster."
+  },
+  "interaction_requests.rejected.quote": {
+    "defaultMessage": "{name} さんの引用を断りました",
+    "description": "Announced after the user refused a quote. {name} is the display name, or the username, of the quoting author."
+  }
+}

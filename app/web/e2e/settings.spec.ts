@@ -43,6 +43,56 @@ const bob = {
   display_name: "Bob",
 };
 
+/** A post of `account`, as the approval requests show the posts. */
+function postOf(account: typeof viewer, n: number, text: string) {
+  const id = `0192f0c4-7a8e-7000-8000-${String(n).padStart(12, "0")}`;
+  return {
+    id,
+    uri: `https://my.example/ap/statuses/${id}`,
+    url: `https://my.example/@${account.username}/status/${id}`,
+    account,
+    content: `<p>${text}</p>`,
+    spoiler_text: "",
+    sensitive: false,
+    visibility: "public",
+    language: "en",
+    created_at: "2026-10-17T10:00:00Z",
+    media_attachments: [],
+    mentions: [],
+    tags: [],
+    emojis: [],
+    replies_count: 0,
+    boosts_count: 0,
+    favourites_count: 0,
+    reactions: [],
+  };
+}
+
+/** A reply and a boost of the viewer's post that wait for the viewer's approval. */
+const interactionRequests = [
+  {
+    id: "0192f0c4-7a8e-7000-8000-0000000009a1",
+    kind: "reply",
+    state: "pending",
+    created_at: "2026-10-17T11:00:00Z",
+    account: bob,
+    status: postOf(viewer, 0x9a2, "A post whose replies the author approves."),
+    interacting_status: postOf(
+      bob,
+      0x9a3,
+      "A reply that waits for the approval, long enough to wrap on a narrow phone.",
+    ),
+  },
+  {
+    id: "0192f0c4-7a8e-7000-8000-0000000009a4",
+    kind: "announce",
+    state: "pending",
+    created_at: "2026-10-17T10:30:00Z",
+    account: bob,
+    status: postOf(viewer, 0x9a2, "A post whose replies the author approves."),
+  },
+];
+
 /** A cell of the notification settings (NotificationSettingCell). */
 type Cell = { enabled: boolean; fixed: boolean };
 
@@ -326,6 +376,8 @@ async function signedInServer(
         });
       case "GET /follow_requests":
         return json(route, { items: [bob] });
+      case "GET /interaction_requests":
+        return json(route, { items: interactionRequests });
       case "GET /exports":
         return json(route, {
           items: [
@@ -476,6 +528,7 @@ const pages = [
   "/settings/preferences",
   "/settings/notifications",
   "/settings/follow-requests",
+  "/settings/interaction-requests",
   "/settings/blocks",
   "/settings/mutes",
   "/settings/domain-mutes",
