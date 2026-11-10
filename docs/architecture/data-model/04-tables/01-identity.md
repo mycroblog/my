@@ -312,7 +312,7 @@
 
 | テーブル | 分類 | カラム |
 | --- | --- | --- |
-| `data_imports` | リソース | `id`, `user_id`, `account_id`, `kind`（`enum(following, blocks, mutes, domain_mutes, bookmarks)`）, `mode`（`enum(merge, overwrite)`）, `created_at`。インデックス `(user_id, id DESC)`、`(created_at)` |
+| `data_imports` | リソース | `id`, `user_id`, `account_id`, `kind`（`enum(following, blocks, mutes, domain_mutes, bookmarks, followed_tags)`）, `mode`（`enum(merge, overwrite)`）, `created_at`。インデックス `(user_id, id DESC)`、`(created_at)` |
 | `data_import_items` | リソース（インポートの子） | `import_id`, `position`（PK は `(import_id, position)`）, `action`（`enum(add, remove)`）, `target`, `show_boosts`, `notify`, `hide_notifications` |
 | `data_import_item_results` | イベント（項目の子） | `import_id`, `position`（PK）, `outcome`（`enum(done, failed)`）, `failure`（NULL 可。`failed` のときだけ `enum(unresolvable, unavailable, blocked, restricted, self, limit)`）, `processed_at` |
 | `data_import_item_failures` | イベント（項目の子） | `import_id`, `position`, `attempt`（PK は `(import_id, position, attempt)`。項目ごとに 1 から数える）, `failed_at`。再試行に値するエラーで項目を行えなかった実行 |
@@ -320,14 +320,15 @@
 - 本人のフォロー・ブロック・ミュート・ミュートしたドメイン・ブックマークを、Mastodon の「インポートとエクスポート」と同じ CSV で読み書きします（FR-008）。Mastodon が書き出した CSV をこちらで、こちらが書き出した CSV を Mastodon で読み込めます。
   - フォローは `following_accounts.csv`（`Account address,Show boosts,Notify on new posts,Languages`。承認済みのフォローだけ）、ブロックは `blocked_accounts.csv`（1 行に 1 アドレス、見出しなし）、ミュートは `muted_accounts.csv`（`Account address,Hide notifications`。期限の過ぎていないもの）、ミュートしたドメインは `blocked_domains.csv`（1 行に 1 ドメイン、見出しなし。読み込みでは Mastodon の見出し `#domain` も受け付ける。Mastodon の利用者単位のドメインブロックはこちらのドメインのミュートになる、FR-304）、ブックマークは `bookmarks.csv`（1 行に投稿の URI 1 つ、見出しなし。今も見られる投稿だけ）です。
   - アドレスは `username@domain` で、このサーバーのアカウントはアカウントドメインを付けます。handle を確かめていないリモートのアカウントは書き出しません。
-  - エクスポートは要求のたびにその時点の内容から作り（`GET /api/v1/csv_exports/{kind}`）、テーブルを持ちません。データのアーカイブにも同じ 5 つのファイルを入れます。
+  - フォローしたハッシュタグ（ADR-0013 §27）は Mastodon に書き出しのファイルが無いので、同じ形の `followed_hashtags.csv`（1 行に 1 タグ、`#` なし、見出しなし。新しくフォローしたものが先）を独自に書き出し、読み込みます。Mastodon はこのファイルを読みません。
+  - エクスポートは要求のたびにその時点の内容から作り（`GET /api/v1/csv_exports/{kind}`）、テーブルを持ちません。データのアーカイブにも同じ 6 つのファイルを入れます。
 - 読み込みは Mastodon の読み方に合わせます（`identity.ParseImportCSV`）。見出しの行は任意で、最初の欄が既知の見出し（`Account address` など）なら見出し、そうでなければ種類の既定の列とします。アドレスの先頭の `@` は落とし、空行は無視し、省いた設定は Mastodon と同じ既定（ブーストを表示する・新しい投稿を通知しない・ミュートした相手の通知を隠す）にします。フォローの `Languages` は使いません。
-  アドレス（ブックマークは `http(s)` の URL、ミュートしたドメインはホスト名）でない行は `invalid`、前の行と同じ相手（ユーザー名とドメインの大文字小文字を区別しない）は `duplicate` として飛ばします。1 ファイルは 10,000 件まで（`identity.MaxImportEntries`）です。
+  アドレス（ブックマークは `http(s)` の URL、ミュートしたドメインはホスト名、ハッシュタグは先頭の `#` を落とした空白・区切りの記号を含まない名前）でない行は `invalid`、前の行と同じ相手（ユーザー名とドメインの大文字小文字を区別しない）は `duplicate` として飛ばします。1 ファイルは 10,000 件まで（`identity.MaxImportEntries`）です。
 - 開始（`POST /api/v1/imports`）は、ファイルの各項目を `add` の項目に、`overwrite` では今あるもののうちファイルにないもの（アドレスを同じ規則で、ドメインは IDNA の A ラベルの小文字にして比べる）を `remove` の項目にし、`data_imports` の行・項目・最初のジョブ `identity.process_import` を 1 つのトランザクションで書きます。
-  `remove` の項目の `target` は相手のアカウントか投稿の ID かドメイン、`add` の項目の `target` はファイルに書かれたアドレスか URL です。プレビュー（`POST /api/v1/imports/preview`）は同じ比較をして件数を返し、何も書きません。
+  `remove` の項目の `target` は相手のアカウントか投稿の ID かドメインかハッシュタグの名前、`add` の項目の `target` はファイルに書かれたアドレスか URL かハッシュタグです。プレビュー（`POST /api/v1/imports/preview`）は同じ比較をして件数を返し、何も書きません。
   結果のない項目が残るインポートがあるあいだは、次のインポートを受け付けません（`409`）。確認と挿入はデータエクスポートと同じく利用者の行をロックした同じトランザクションで行うので、同時の開始でも進行中のインポートは 1 件までです。
 - ジョブは結果のない項目を 20 件ずつ順に行い、項目ごとに結果を記録してから次の 20 件のジョブを積みます（冪等キーは次の位置を含み、順序キーでインポートごとに 1 本ずつ流す）。
-  リモートのアカウントは WebFinger と Actor の取得で解決し（検索と同じ `federation.RemoteActors.ResolveHandle`）、投稿は URL で解決して（`federation.Resolver`）、フォロー・ブロック・ミュート・ブックマークの各ユースケースを呼びます。リモートへの `Follow` の配送は、フォローのイベントから連合のモジュールが積むジョブが行います。
+  リモートのアカウントは WebFinger と Actor の取得で解決し（検索と同じ `federation.RemoteActors.ResolveHandle`）、投稿は URL で解決して（`federation.Resolver`）、フォロー・ブロック・ミュート・ブックマーク・ハッシュタグのフォローの各ユースケースを呼びます（ハッシュタグでない名前は `unresolvable`、フォローの上限（100）を超えるものは `limit`）。リモートへの `Follow` の配送は、フォローのイベントから連合のモジュールが積むジョブが行います。
   同じ項目をもう一度行っても変わらない操作なので、ジョブの再実行は安全です。見つからない・処分された・ブロックで妨げられた・自分自身・ミュートできないドメイン（このサーバーのドメインは `unresolvable`、上限を超えたものは `limit`）などの項目は `failed` を記録して先へ進みます。それ以外のエラーは `data_import_item_failures` に記録してバッチを止め、同じトランザクションで遅延付きのジョブ（30 秒から失敗ごとに倍）を積んでその項目からやり直します。失敗は項目ごとに数えるので、ほかの項目の失敗やジョブ自体の再試行が項目の回数を使うことはありません。5 回目の失敗で項目を `failed`（`unavailable`）にして、インポートが止まらないようにします。
   結果と失敗の記録はインポートの行を `FOR KEY SHARE` でロックしてから行い（SQLite は書き込みのトランザクションが直列）、インポートの削除はインポートの行を先に消すので、期限切れやアカウントの消去で消えたインポートに結果が残ることはありません。消えていればジョブはそこで止まります。
 - 状態は件数から求めます: 項目の数とすべての結果の数が等しければ `finished`、そうでなければ `in_progress`。

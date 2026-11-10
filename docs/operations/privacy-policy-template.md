@@ -291,7 +291,7 @@ Passwords are stored as Argon2id hashes. Two-factor secrets and the keys that si
 
 {{ADJUST TO THE RIGHTS OF YOUR JURISDICTION. Under the GDPR these are access, rectification, erasure, restriction, objection, and portability, and the right to withdraw consent.}}
 
-- **See and take your data:** your settings offer a data export (your profile, your posts, and your moderation records) and CSV files of follows, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
+- **See and take your data:** your settings offer a data export (your profile, your posts, and your moderation records) and CSV files of follows, followed hashtags, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
 - **Correct it:** edit your profile and account settings, or write to us.
 - **Delete it:** delete your account in your settings, or deactivate it first. This is what section 3 and section 5 describe.
 - **Move:** you can move your followers to an account on another server.

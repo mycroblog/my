@@ -17,7 +17,7 @@ From the top of the diagram down:
 1. **Add an alias.** On the new account, add the old account under "Aliases".
 2. **Move account.** On the old account, choose "Move account" and name the new account.
 3. **What moves.** Your followers follow the new account. The old account shows "Your account has moved": you can still sign in, read, and export your data there.
-4. **What stays here.** Your posts, the accounts you follow, and your blocks, mutes, and bookmarks stay on the old account. Your posts do not move. Carry the rest yourself: export your follows, blocks, mutes, and bookmarks as CSV files with "Import and export" on the old account, and import them on the new one ([taking your follows with you](#taking-your-follows-with-you)).
+4. **What stays here.** Your posts, the accounts and hashtags you follow, and your blocks, mutes, and bookmarks stay on the old account. Your posts do not move. Carry the rest yourself: export your follows, followed hashtags, blocks, mutes, and bookmarks as CSV files with "Import and export" on the old account, and import them on the new one ([taking your follows with you](#taking-your-follows-with-you)).
 
 ## Moving from this account
 
@@ -43,11 +43,13 @@ changes nothing; it only allows the other account to move its followers to you. 
 ## Taking your follows with you
 
 "Import and export", under "Account and data" in the settings, exports and imports CSV files in the format Mastodon uses.
-You can export "Follows", "Blocked accounts", "Muted accounts", "Muted domains", and "Bookmarks", and import them on the
-new account. "Merge" keeps what you have and adds what the file lists; "Overwrite" makes the list exactly what the file
+You can export "Follows", "Followed hashtags", "Blocked accounts", "Muted accounts", "Muted domains", and "Bookmarks", and
+import them on the new account. Mastodon has no file of followed hashtags, so only a server that runs the same software as
+this one imports that file. "Merge" keeps what you have and adds what the file lists; "Overwrite" makes the list exactly what the file
 lists. Accounts and posts on other servers are looked up in the background, which can take a while.
 
-"Archive and deletion" prepares a ZIP archive of your posts, your profile, and your follows, blocks, mutes, and bookmarks.
+"Archive and deletion" prepares a ZIP archive of your posts, your profile, and your follows, followed hashtags, blocks,
+mutes, muted domains, and bookmarks.
 
 ## When an account you follow moves
 
