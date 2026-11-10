@@ -462,6 +462,16 @@ func (r *Repository) ListProfile(ctx context.Context, pq apptimeline.ProfileQuer
 		}
 		return 0
 	}
+	if pq.TagID != "" {
+		rows, err := r.db.reader().ListProfileTagEntries(ctx, timelinegen.ListProfileTagEntriesParams{
+			Author: pq.AuthorAccountID, TagID: pq.TagID, Before: pq.Before,
+			IncludePublic: has(appcontent.VisibilityPublic), IncludeLocal: has(appcontent.VisibilityLocal),
+			IncludeUnlisted: has(appcontent.VisibilityUnlisted), IncludePrivate: has(appcontent.VisibilityPrivate),
+			IncludeDirect: sqlite.BoolToInt(pq.IncludeDirect), Viewer: pq.ViewerAccountID,
+			ExcludeReplies: sqlite.BoolToInt(pq.ExcludeReplies), AllLanguages: all, Languages: langs, PageLimit: int64(pq.Limit),
+		})
+		return entriesFrom(rows, err, "list profile tag entries")
+	}
 	rows, err := r.db.reader().ListProfileEntries(ctx, timelinegen.ListProfileEntriesParams{
 		Author: pq.AuthorAccountID, Before: pq.Before,
 		IncludePublic: has(appcontent.VisibilityPublic), IncludeLocal: has(appcontent.VisibilityLocal),

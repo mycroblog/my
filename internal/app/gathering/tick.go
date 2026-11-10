@@ -12,8 +12,9 @@ import (
 )
 
 // JobTick is the periodic job of the events (ADR-0161 §12): it reads only the events whose next
-// due time came (gathering_dues), enqueues through the outbox the jobs of the reminders and of the
-// start that came since, and writes the next due time. No payload.
+// due time came (gathering_dues), enqueues through the outbox the jobs of the reminders, of the
+// check of the voice chat room one day before the start, and of the start and the opening of its
+// room that came since, and writes the next due time. No payload.
 const JobTick = "gathering.tick"
 
 // TickInterval is the period of the JobTick schedule. A reminder or a start is late by up to the
@@ -72,6 +73,7 @@ func (s *Service) tickOne(ctx context.Context, id string, now time.Time) error {
 			return err
 		}
 		var ps []notifyPayload
+		var rooms []roomPayload
 		for _, d := range gathering.DuesBetween(dues, since, now) {
 			p := notifyPayload{Gathering: id, Ref: rec.Confirmation.ID, Source: rec.OrganizerAccountID, At: d.At}
 			switch d.Kind {
@@ -79,10 +81,19 @@ func (s *Service) tickOne(ctx context.Context, id string, now time.Time) error {
 				p.Kind, p.Minutes = appnotification.EventReminder, d.MinutesBefore
 			case gathering.DueStart:
 				p.Kind = appnotification.EventStarted
+				if rec.HasVoice() {
+					rooms = append(rooms, roomPayload{Gathering: id, Ref: rec.Confirmation.ID, Checkpoint: gathering.CheckpointStart})
+				}
+			case gathering.DueRoomCheck:
+				rooms = append(rooms, roomPayload{Gathering: id, Ref: rec.Confirmation.ID, Checkpoint: gathering.CheckpointDayBefore})
+				continue
 			}
 			ps = append(ps, p)
 		}
 		if err := s.enqueueNotify(ctx, tx, ps...); err != nil {
+			return err
+		}
+		if err := s.enqueueRoom(ctx, tx, rooms...); err != nil {
 			return err
 		}
 		next, ok := gathering.NextDue(dues, now)

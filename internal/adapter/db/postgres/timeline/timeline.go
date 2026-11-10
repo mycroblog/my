@@ -450,6 +450,16 @@ func (r *Repository) ListProfile(ctx context.Context, pq apptimeline.ProfileQuer
 		return nil, err
 	}
 	has := func(v appcontent.Visibility) bool { return slices.Contains(pq.Visibilities, v) }
+	if pq.TagID != "" {
+		rows, err := r.db.reader().ListProfileTagEntries(ctx, timelinegen.ListProfileTagEntriesParams{
+			Author: pq.AuthorAccountID, TagID: pq.TagID, Before: postgres.ToNullString(pq.Before),
+			IncludePublic: has(appcontent.VisibilityPublic), IncludeLocal: has(appcontent.VisibilityLocal),
+			IncludeUnlisted: has(appcontent.VisibilityUnlisted), IncludePrivate: has(appcontent.VisibilityPrivate),
+			IncludeDirect: pq.IncludeDirect, Viewer: postgres.ToNullString(pq.ViewerAccountID),
+			ExcludeReplies: pq.ExcludeReplies, AllLanguages: all, Languages: langs, PageLimit: limit,
+		})
+		return entriesFrom(rows, err, "list profile tag entries")
+	}
 	rows, err := r.db.reader().ListProfileEntries(ctx, timelinegen.ListProfileEntriesParams{
 		Author: pq.AuthorAccountID, Before: postgres.ToNullString(pq.Before),
 		IncludePublic: has(appcontent.VisibilityPublic), IncludeLocal: has(appcontent.VisibilityLocal),

@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Why the voice chat room of an event could not open at its start: `disabled` the voice chat is
+  off on this server, `not_eligible` the organizer may not host voice chat rooms, `too_many_rooms`
+  as many rooms were open as the server allows, and `hosting_elsewhere` the organizer was hosting
+  another room. The event itself goes on.
+type: string
+enum: [disabled, not_eligible, too_many_rooms, hosting_elsewhere]

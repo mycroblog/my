@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The drafts page (web-client/screens/drafts.md): one list of drafts, scheduled or not, and what its rows do. Opening a
 // draft reads it again for its ETag and puts it in the new-post form (the compose feature), asking first when the form
-// holds something else. Cancelling a schedule, moving it, and deleting a draft are sent at once; each marks both lists
+// holds something else; an article's draft opens in the article editor instead. Cancelling a schedule, moving it, and deleting a draft are sent at once; each marks both lists
 // stale and says what happened once those on screen are fetched again (S1).
 import { useNotice } from "@my/ui";
 import { useMutation, useQueryClient, useSuspenseInfiniteQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useIntl } from "react-intl";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -60,6 +61,7 @@ export function useDrafts(scheduled: boolean): DraftList {
   const notice = useNotice();
   const queryClient = useQueryClient();
   const compose = useOpenDraft();
+  const navigate = useNavigate();
   const query = useSuspenseInfiniteQuery(draftsQueryOptions(api, scheduled));
   const [replacing, setReplacing] = useState<DraftVersion | null>(null);
 
@@ -88,6 +90,11 @@ export function useDrafts(scheduled: boolean): DraftList {
     },
     pending,
     edit: (draft) => {
+      // An article's draft goes on in the article editor, which reads it afresh itself (ADR-0160 §8).
+      if (draft.article !== undefined) {
+        void navigate({ to: "/articles/new", search: { draft: draft.id } });
+        return;
+      }
       if (compose === null) return;
       open.mutate(draft.id, {
         onSuccess: (version) => {

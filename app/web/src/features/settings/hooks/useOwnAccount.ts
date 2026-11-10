@@ -19,7 +19,7 @@ import { confirmationFailure } from "../api/password";
 import { confirmationErrorMessage } from "./passkeyConfirmation";
 import { type ExternalConfirmation, useExternalConfirmation } from "./useExternalConfirmation";
 import { useHasPassword } from "./usePasswordChange";
-import { saveFile } from "./saveFile";
+import { saveFile } from "../../../lib/saveFile";
 
 /** How often a pending archive is checked, in ms. */
 const pendingPollInterval = 5000;

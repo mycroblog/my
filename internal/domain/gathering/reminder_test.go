@@ -31,7 +31,7 @@ func TestNormalizeReminders(t *testing.T) {
 
 func TestDues(t *testing.T) {
 	start := time.Date(2026, 12, 5, 12, 0, 0, 0, time.UTC)
-	dues := Dues(start, []int{60, 1440, 60, 0})
+	dues := Dues(start, []int{60, 1440, 60, 0}, false)
 	want := []Due{
 		{Kind: DueReminder, At: start.Add(-24 * time.Hour), MinutesBefore: 1440},
 		{Kind: DueReminder, At: start.Add(-time.Hour), MinutesBefore: 60},
@@ -55,5 +55,33 @@ func TestDues(t *testing.T) {
 	}
 	if got := DuesBetween(dues, start.Add(-time.Minute), start.Add(time.Minute)); len(got) != 1 || got[0].Kind != DueStart {
 		t.Errorf("DuesBetween around the start = %+v, want the start", got)
+	}
+}
+
+func TestDuesWithRoom(t *testing.T) {
+	start := time.Date(2026, 12, 5, 12, 0, 0, 0, time.UTC)
+	got := Dues(start, []int{1440, 60}, true)
+	want := []Due{
+		{Kind: DueReminder, At: start.Add(-24 * time.Hour), MinutesBefore: 1440},
+		{Kind: DueRoomCheck, At: start.Add(-RoomCheckBefore)},
+		{Kind: DueReminder, At: start.Add(-time.Hour), MinutesBefore: 60},
+		{Kind: DueStart, At: start},
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("Dues = %+v, want %+v", got, want)
+	}
+}
+
+func TestRoomReasonValid(t *testing.T) {
+	for _, r := range []RoomReason{RoomDisabled, RoomNotEligible, RoomTooManyRooms, RoomHostingElsewhere, RoomUnattended} {
+		if !r.Valid() {
+			t.Errorf("%q.Valid() = false", r)
+		}
+	}
+	if RoomReason("other").Valid() {
+		t.Error(`"other".Valid() = true`)
+	}
+	if !RoomTooManyRooms.AtStart() || RoomUnattended.AtStart() {
+		t.Error("AtStart: want the reasons that keep a room shut at the start, and not unattended")
 	}
 }

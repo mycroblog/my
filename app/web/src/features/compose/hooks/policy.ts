@@ -95,7 +95,7 @@ export const maxAttachments = 4;
 export const maxDescriptionLength = 1500;
 
 /** The image types the server accepts (the uploadMedia operation). */
-const acceptedImageTypes: readonly string[] = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+export const acceptedImageTypes: readonly string[] = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 /** The video types the server accepts: MP4, QuickTime, and WebM (the uploadMedia operation, ADR-0005 §9). */
 const acceptedVideoTypes: readonly string[] = ["video/mp4", "video/quicktime", "video/webm", "video/x-m4v"];

@@ -194,6 +194,7 @@ type Repository interface {
 	PollRepository
 	ModerationRepository
 	RecordsRepository
+	RoomRepository
 
 	// InsertGathering records an event.
 	InsertGathering(ctx context.Context, tx uow.Tx, g Gathering) error

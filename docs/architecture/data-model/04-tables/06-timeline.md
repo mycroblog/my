@@ -6,7 +6,7 @@
 | --- | --- | --- | --- |
 | `feed_entries` | `id`（= 投稿の `status_id` またはブーストの `boost_id`）, `kind`（`enum(post, boost)`）, `status_id`, `author_account_id`（投稿者またはブーストした人）, `author_domain`, `original_author_account_id`（元投稿の作者。投稿なら `author_account_id` と同じ）, `original_author_domain`, `visibility`, `is_local`（投稿者またはブーストした人がローカルか）, `language`（`lang`。現在版の言語）, `revision_seq`（`int`。現在版の `seq`）, `is_reply`（`bool`。投稿が返信か。ブーストは常に偽） | PK `(id)`。インデックス `(author_account_id, id)`、`(status_id)`（版・削除での更新）、部分インデックス `(id) WHERE is_local AND kind = 'post' AND visibility IN ('public','local')`（ローカル）、`(id) WHERE kind = 'post' AND visibility = 'public'`（連合） | 投稿・版（言語）・削除・ブースト・ブースト取り消し。インデックス `(original_author_account_id)` |
 | `feed_direct_recipients` | `entry_id`, `recipient_account_id` | PK `(recipient_account_id, entry_id)`、インデックス `(entry_id)`。`direct` 投稿の宛先（現在版のメンション） | 投稿・版・削除 |
-| `feed_tag_entries` | `tag_id`, `entry_id`, `author_account_id`, `visibility`, `is_local`, `revised_at`（現在版の `revised_at`） | PK `(tag_id, entry_id)`、インデックス `(entry_id)`、部分インデックス `(tag_id, revised_at) WHERE visibility IN ('public','local','unlisted')`（`tag_usage.last_used_at`）、`(author_account_id, tag_id, revised_at) WHERE visibility IN ('public','unlisted')`（注目のハッシュタグの数）。現在版のタグ。公開範囲は不変なので非正規化してよい（FR-203） | 投稿・版・削除 |
+| `feed_tag_entries` | `tag_id`, `entry_id`, `author_account_id`, `visibility`, `is_local`, `revised_at`（現在版の `revised_at`） | PK `(tag_id, entry_id)`、インデックス `(entry_id)`、部分インデックス `(tag_id, revised_at) WHERE visibility IN ('public','local','unlisted')`（`tag_usage.last_used_at`）、`(author_account_id, tag_id, revised_at) WHERE visibility IN ('public','unlisted')`（注目のハッシュタグの数）、`(author_account_id, tag_id, entry_id)`（プロフィールのハッシュタグで絞った投稿、`GET /accounts/{id}/statuses?tagged=`）。現在版のタグ。公開範囲は不変なので非正規化してよい（FR-203） | 投稿・版・削除 |
 | `tag_usage` | `tag_id`, `statuses_count`（`bigint`、1 以上）, `last_used_at` | PK `(tag_id)`。タグごとの `public` / `local` / `unlisted` の投稿の数と、それらの `feed_tag_entries.revised_at` の最大。ハッシュタグの前方一致の検索（FR-119, FR-306, ADR-0092 §1） | 投稿・版・削除（`feed_tag_entries` と同じ更新） |
 | `feed_tag_follows` | `account_id`, `tag_id`, `followed_at` | PK `(account_id, tag_id)`、インデックス `(tag_id)`（消去）。現在値。利用者がフォローしたハッシュタグ（1 人 100 まで、ADR-0013 §27） | 利用者のコマンドが書く（投影ではない） |
 | `featured_tags` | `account_id`, `tag_id`, `ordinal`（`int`、1〜10。持ち主の順）, `featured_at` | PK `(account_id, tag_id)`、一意インデックス `(account_id, ordinal)`。現在値。プロフィールの注目のハッシュタグ（1 人 10 まで、ADR-0006 §17） | ローカルは利用者のコマンド、リモートは `featuredTags` の取得が書く（投影ではない） |
@@ -37,6 +37,7 @@
   タグは `content` の `tags` に同じトランザクションで作るので（`EnsureTagTx`）、まだ投稿に使われていないタグも載せられます。
   投稿の数と最後の使用は保存せず、読むたびに `feed_tag_entries` の部分インデックス `(author_account_id, tag_id, revised_at)` から、そのアカウントの `public` / `unlisted` の投稿だけを数えます（`private` / `direct` / `local` の投稿は、数から存在が漏れるので数えません）。リモートのアカウントも、このサーバーが受け取った投稿だけを数えます。
   アカウントの消去（§8）で本人の行を消します。
+- プロフィールのハッシュタグで絞った投稿（`tagged`）は、`feed_tag_entries` の `(author_account_id, tag_id, entry_id)` を新しい順に読み、`feed_entries` と結んで、プロフィールと同じ公開範囲（閲覧者との関係と処分で許される公開範囲、宛先に閲覧者を含む `direct`）と返信の条件（`exclude_replies`）で絞ります。ブーストはタグを持たないので出ません。
 - 将来 fan-out-on-write に切り替える場合も、`home_feed`（閲覧者 × エントリ）をこのモジュールの投影として追加するだけで済みます（ADR-0013）。
 
 #### リスト

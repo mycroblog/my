@@ -59,3 +59,17 @@ type GatheringRevisionPlace struct {
 	Url        string
 	Speakers   string
 }
+
+type GatheringVoiceRoom struct {
+	GatheringID    string
+	ConfirmationID string
+	RoomID         string
+	OpenedAt       time.Time
+}
+
+type GatheringVoiceRoomFailure struct {
+	GatheringID    string
+	ConfirmationID string
+	Reason         string
+	FailedAt       time.Time
+}

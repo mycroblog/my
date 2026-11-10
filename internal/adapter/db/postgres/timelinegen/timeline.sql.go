@@ -1756,6 +1756,91 @@ func (q *Queries) ListProfileEntries(ctx context.Context, arg ListProfileEntries
 	return items, nil
 }
 
+const listProfileTagEntries = `-- name: ListProfileTagEntries :many
+SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+FROM feed_tag_entries t
+JOIN feed_entries e ON e.id = t.entry_id
+WHERE t.author_account_id = $1 AND t.tag_id = $2
+  AND ($3::uuid IS NULL OR t.entry_id < $3::uuid)
+  AND ((t.visibility = 'public' AND $4::boolean)
+    OR (t.visibility = 'local' AND $5::boolean)
+    OR (t.visibility = 'unlisted' AND $6::boolean)
+    OR (t.visibility = 'private' AND $7::boolean)
+    OR ($8::boolean
+    AND t.visibility = 'direct' AND (t.author_account_id = $9::uuid OR EXISTS (
+      SELECT 1 FROM feed_direct_recipients d WHERE d.recipient_account_id = $9::uuid AND d.entry_id = t.entry_id))))
+  AND ($10::boolean OR e.language = 'und' OR e.language = ANY($11::text[]))
+  AND (NOT $12::boolean OR NOT e.is_reply)
+ORDER BY t.entry_id DESC
+LIMIT $13
+`
+
+type ListProfileTagEntriesParams struct {
+	Author          string
+	TagID           string
+	Before          *string
+	IncludePublic   bool
+	IncludeLocal    bool
+	IncludeUnlisted bool
+	IncludePrivate  bool
+	IncludeDirect   bool
+	Viewer          *string
+	AllLanguages    bool
+	Languages       []string
+	ExcludeReplies  bool
+	PageLimit       int32
+}
+
+// ListProfileTagEntries is ListProfileEntries narrowed to the author's posts with the hashtag
+// tag_id (the posts of a profile tagged with it): no boosts, which carry no hashtags of their own.
+func (q *Queries) ListProfileTagEntries(ctx context.Context, arg ListProfileTagEntriesParams) ([]FeedEntry, error) {
+	rows, err := q.db.Query(ctx, listProfileTagEntries,
+		arg.Author,
+		arg.TagID,
+		arg.Before,
+		arg.IncludePublic,
+		arg.IncludeLocal,
+		arg.IncludeUnlisted,
+		arg.IncludePrivate,
+		arg.IncludeDirect,
+		arg.Viewer,
+		arg.AllLanguages,
+		arg.Languages,
+		arg.ExcludeReplies,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeedEntry{}
+	for rows.Next() {
+		var i FeedEntry
+		if err := rows.Scan(
+			&i.ID,
+			&i.Kind,
+			&i.StatusID,
+			&i.AuthorAccountID,
+			&i.AuthorDomain,
+			&i.OriginalAuthorAccountID,
+			&i.OriginalAuthorDomain,
+			&i.Visibility,
+			&i.IsLocal,
+			&i.Language,
+			&i.RevisionSeq,
+			&i.IsReply,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPublicEntries = `-- name: ListPublicEntries :many
 SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
   e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply

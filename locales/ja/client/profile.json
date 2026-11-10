@@ -271,6 +271,14 @@
     "defaultMessage": "{name} の投稿",
     "description": "Accessible name of the tab list that switches between the posts of a profile. {name} is the account's display name."
   },
+  "profile.tagged.all": {
+    "defaultMessage": "#{tag} のすべての投稿",
+    "description": "Link from the page with an account's posts that carry a hashtag to the page with every post that carries it. {tag} is the hashtag without the #."
+  },
+  "profile.tagged.title": {
+    "defaultMessage": "{name} の #{tag} の投稿",
+    "description": "Heading and document title of the page with an account's posts that carry one hashtag. {name} is the account's display name; {tag} is the hashtag without the #."
+  },
   "profile.tag.bot": {
     "defaultMessage": "ボット",
     "description": "Label on a profile: the account is automated."

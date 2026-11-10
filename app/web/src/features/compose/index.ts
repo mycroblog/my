@@ -29,14 +29,37 @@ export { useDirectMessage, useOpenDraft, useQuote, useReply } from "./hooks/useC
  */
 export {
   cacheDraftChange,
+  createDraft,
   deleteDraft,
+  type DraftRequest,
+  type DraftVersion,
   draftsQueryOptions,
   getDraft,
+  isDraftConflict,
   isDraftGone,
+  publishDraft,
   scheduleDraft,
   type ServerDraft,
   unscheduleDraft,
+  updateDraft,
 } from "./api/drafts";
+/**
+ * What the article editor (features/articles) shares with the form (ADR-0160): who may write articles, the uploads of
+ * its images, the limits and preferences it follows, and the cache of a published post.
+ */
+export { useCanWriteArticles } from "./hooks/useCanWriteArticles";
+export {
+  cacheUploadedMedia,
+  cachePostedStatus,
+  instanceQueryOptions,
+  type MediaAttachment,
+  mediaQueryOptions,
+  preferencesQueryOptions,
+  uploadMedia,
+  type Visibility,
+} from "./api/compose";
+export { acceptedImageTypes } from "./hooks/policy";
+export { prepareImage } from "./hooks/prepareImage";
 export { SchedulePicker } from "./components/SchedulePicker";
 export { useFormatRemaining } from "./hooks/useFormatRemaining";
 /** The one definition of the visibilities (ADR-0017) that the preferences and the post cards use too. */

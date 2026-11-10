@@ -26,6 +26,8 @@ export { DomainMutes } from "./components/DomainMutes";
 export { CsvExportsSection, ImportExport } from "./components/ImportExport";
 export { DataExportsSection, OwnAccount } from "./components/OwnAccount";
 export { PreferencesForm } from "./components/PreferencesForm";
+// The time zones named in the display language, for the time zone of an event (features/events).
+export { useTimeZoneOptions } from "./hooks/timeZones";
 // The notification settings: in the app, Web Push on this device, email, and the sound of this device (FR-210, ADR-0086).
 export { notificationSettingsQueryOptions } from "./api/notificationSettings";
 export { notificationPolicyQueryOptions } from "./api/notificationPolicy";

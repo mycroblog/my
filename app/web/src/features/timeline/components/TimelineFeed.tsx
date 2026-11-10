@@ -240,5 +240,12 @@ function TimelineEmpty({ timeline, origin }: { timeline: Timeline; origin: Timel
           {...(origin !== undefined && { description: origin.notice, action: origin.link })}
         />
       );
+    case "tagged":
+      return (
+        <EmptyState
+          heading={t("client:timeline.empty.account.tagged.heading", { tag: timeline.tag })}
+          {...(origin !== undefined && { description: origin.notice, action: origin.link })}
+        />
+      );
   }
 }

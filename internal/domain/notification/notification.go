@@ -160,7 +160,7 @@ const (
 	// TypeEventStarted tells the attendees who answered going or maybe that an event started.
 	TypeEventStarted Type = "event_started"
 	// TypeEventRoomUnavailable tells the organizer that the voice chat room of an event cannot
-	// open, or could not.
+	// open, or could not. It is the server's notice, with no source account.
 	TypeEventRoomUnavailable Type = "event_room_unavailable"
 )
 
@@ -449,8 +449,11 @@ func (n Notification) Validate() error {
 	if failed := n.Type == TypeScheduledStatusFailed; failed != (n.DraftScheduleID != "") || (failed && n.SourceAccountID != "") {
 		return errors.New("notification: a scheduled_status_failed, and only it, names a draft schedule, and it has no source account")
 	}
-	if event := n.Type.Event(); event != (n.GatheringID != "") || (event && n.SourceAccountID == "") {
-		return errors.New("notification: the notifications of an event, and only they, name an event, and they have a source account")
+	// An event_room_unavailable is the server's notice to the organizer of its own event, from
+	// nobody; the others are from an account (ADR-0161 §11).
+	if event := n.Type.Event(); event != (n.GatheringID != "") ||
+		(event && (n.SourceAccountID == "") != (n.Type == TypeEventRoomUnavailable)) {
+		return errors.New("notification: the notifications of an event, and only they, name an event, and they have a source account but an event_room_unavailable, which has none")
 	}
 	switch {
 	case n.Type == TypeAdminReport && (n.ReportID == "" || n.SourceAccountID != ""),

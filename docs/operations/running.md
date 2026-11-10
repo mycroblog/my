@@ -526,7 +526,7 @@ With `queue = cloudtasks` the jobs stay in the database (`database = postgres`),
 ### How late periodic jobs run
 
 A periodic job runs up to one period of its trigger after its time, plus the time the platform takes to start it. This is what
-decides how late the reminders and start notifications of events arrive, since `gathering.tick` sends them: a reminder is
+decides how late the reminders and start notifications of events arrive and their voice chat rooms open, since `gathering.tick` starts them: a reminder is
 late by up to the interval in the table. The values are what the scheduler code and each platform's trigger give; they were
 not measured on a running server.
 

@@ -46,15 +46,19 @@ type notifyPayload struct {
 	// Ref is what the notification is about: the invitation of an invited, the revision or the
 	// confirmation of a changed, and the confirmation of a reminder and of a started.
 	Ref string `json:"ref,omitempty"`
-	// To is the invitee of an invited.
+	// To is the invitee of an invited, and the organizer of a room_unavailable.
 	To string `json:"to,omitempty"`
 	// Source is the account the notification is from, and Actor the account that made the change,
 	// which is not notified of it.
 	Source string `json:"source"`
 	Actor  string `json:"actor,omitempty"`
 	// Minutes is how long before the start a reminder is.
-	Minutes int       `json:"minutes,omitempty"`
-	At      time.Time `json:"at"`
+	Minutes int `json:"minutes,omitempty"`
+	// Reason and Checkpoint are why the room of a room_unavailable cannot open, or could not, and
+	// when the server found it out.
+	Reason     gathering.RoomReason     `json:"reason,omitempty"`
+	Checkpoint gathering.RoomCheckpoint `json:"checkpoint,omitempty"`
+	At         time.Time                `json:"at"`
 }
 
 // key returns the idempotency key of the first job of p.
@@ -67,6 +71,8 @@ func (p notifyPayload) key() string {
 		return JobNotify + ":" + string(p.Kind) + ":" + p.Ref + ":" + strconv.Itoa(p.Minutes)
 	case appnotification.EventCancelled:
 		return JobNotify + ":" + string(p.Kind) + ":" + p.Gathering
+	case appnotification.EventRoomUnavailable:
+		return JobNotify + ":" + string(p.Kind) + ":" + p.Ref + ":" + string(p.Reason) + ":" + string(p.Checkpoint)
 	}
 	return JobNotify + ":" + string(p.Kind) + ":" + p.Ref
 }
@@ -180,7 +186,7 @@ func (s *Service) Notify(ctx context.Context, j queue.Job) queue.Result {
 }
 
 func (s *Service) notify(ctx context.Context, p notifyPayload) error {
-	if p.Kind == appnotification.EventInvited {
+	if p.Kind == appnotification.EventInvited || p.Kind == appnotification.EventRoomUnavailable {
 		return s.notifyBatch(ctx, p, []string{p.To})
 	}
 	fan := queue.FanOut{
@@ -221,6 +227,9 @@ func current(p notifyPayload, rec Record, inv *InvitationRecord, now time.Time) 
 		return !cancelled && rec.Confirmation.ID == p.Ref && now.Before(rec.Confirmation.Schedule.StartsAt)
 	case appnotification.EventStarted:
 		return !cancelled && rec.Confirmation.ID == p.Ref && now.Before(rec.Confirmation.Schedule.EndsAt)
+	case appnotification.EventRoomUnavailable:
+		// A room that the organizer removed, or of an old date, is of no concern.
+		return !cancelled && rec.Confirmation.ID == p.Ref && rec.HasVoice()
 	}
 	return !cancelled
 }
@@ -236,6 +245,10 @@ func (s *Service) notifyBatch(ctx context.Context, p notifyPayload, ids []string
 		return err
 	}
 	ids = slices.DeleteFunc(slices.Clone(ids), func(id string) bool {
+		if p.Kind == appnotification.EventRoomUnavailable {
+			// The one notification to the organizer, of its own event (ADR-0161 §11).
+			return id != rec.OrganizerAccountID
+		}
 		// Nobody is notified of what they did, and the organizer of its own event.
 		return id == "" || id == p.Source || id == p.Actor || id == rec.OrganizerAccountID
 	})
@@ -288,6 +301,7 @@ func noticeOf(p notifyPayload, rec Record) appnotification.EventNotice {
 	}
 	return appnotification.EventNotice{
 		Kind: p.Kind, GatheringID: rec.ID, SourceAccountID: p.Source, Ref: p.Ref, At: p.At,
+		Reason: string(p.Reason), Checkpoint: string(p.Checkpoint),
 		Mail: appnotification.EventMail{
 			Title: rec.Revision.Settings.Title, StartsAt: rec.Confirmation.Schedule.StartsAt, TimeZone: rec.Revision.Settings.TimeZone,
 			OrganizerID: rec.OrganizerAccountID, CoorganizerIDs: co, MinutesBefore: p.Minutes,

@@ -15,6 +15,7 @@ import {
   PiAirplaneTilt,
   PiArrowsClockwise,
   PiCaretDown,
+  PiCalendarBlank,
   PiCellSignalFull,
   PiCellSignalLow,
   PiHeadphones,
@@ -250,6 +251,8 @@ export const iconTable = {
   VoiceIcon: { off: glyph(PiHeadset, "PiHeadset") },
   // The user's lists of the accounts they follow (ADR-0013): a person beside lines.
   ListsIcon: { off: glyph(PiUserList, "PiUserList") },
+  // The events of the local users (ADR-0161): a calendar, which has no direction.
+  EventIcon: { off: glyph(PiCalendarBlank, "PiCalendarBlank") },
   // The grouped menus of the settings and of the admin and moderation mode (ADR-0110 §5): one icon per page.
   BadgeIcon: { off: glyph(PiSealCheck, "PiSealCheck") },
   SupporterIcon: { off: glyph(PiHandHeart, "PiHandHeart") },
@@ -655,6 +658,11 @@ export function VoiceIcon() {
 /** A person beside lines, for the user's lists of the accounts they follow. */
 export function ListsIcon() {
   return renderIcon(iconTable.ListsIcon);
+}
+
+/** A calendar, for the events of the local users. */
+export function EventIcon() {
+  return renderIcon(iconTable.EventIcon);
 }
 
 /** A seal with a check, for the badges shown on the user's profile. */

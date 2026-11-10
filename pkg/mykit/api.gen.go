@@ -2429,6 +2429,30 @@ func (e EventPlaceKind) Valid() bool {
 	}
 }
 
+// Defines values for EventRoomUnavailableReason.
+const (
+	EventRoomUnavailableReasonDisabled         EventRoomUnavailableReason = "disabled"
+	EventRoomUnavailableReasonHostingElsewhere EventRoomUnavailableReason = "hosting_elsewhere"
+	EventRoomUnavailableReasonNotEligible      EventRoomUnavailableReason = "not_eligible"
+	EventRoomUnavailableReasonTooManyRooms     EventRoomUnavailableReason = "too_many_rooms"
+)
+
+// Valid indicates whether the value is a known member of the EventRoomUnavailableReason enum.
+func (e EventRoomUnavailableReason) Valid() bool {
+	switch e {
+	case EventRoomUnavailableReasonDisabled:
+		return true
+	case EventRoomUnavailableReasonHostingElsewhere:
+		return true
+	case EventRoomUnavailableReasonNotEligible:
+		return true
+	case EventRoomUnavailableReasonTooManyRooms:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EventState.
 const (
 	EventStateCancelled   EventState = "cancelled"
@@ -11382,6 +11406,15 @@ type EventPlace struct {
 	// Name Up to 100 characters on one line.
 	Name *string `json:"name,omitempty"`
 
+	// RoomId For a `voice` place, the voice chat room that the start of the event's current date
+	// opened (`GET /voice/rooms/{id}`), which may have ended since; omitted before the room opens.
+	// Ignored in a request.
+	RoomId *Id `json:"room_id,omitempty"`
+
+	// RoomUnavailable For a `voice` place, why the room of the event's current date could not open at the
+	// start; omitted otherwise. Ignored in a request.
+	RoomUnavailable *EventRoomUnavailableReason `json:"room_unavailable,omitempty"`
+
 	// Speakers Who may speak without asking in the room; `manual` when omitted.
 	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
 	Url      *string            `json:"url,omitempty"`
@@ -11422,6 +11455,12 @@ type EventRemindersUpdate struct {
 	// (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
 	MinutesBefore *[]int `json:"minutes_before,omitempty"`
 }
+
+// EventRoomUnavailableReason Why the voice chat room of an event could not open at its start: `disabled` the voice chat is
+// off on this server, `not_eligible` the organizer may not host voice chat rooms, `too_many_rooms`
+// as many rooms were open as the server allows, and `hosting_elsewhere` the organizer was hosting
+// another room. The event itself goes on.
+type EventRoomUnavailableReason string
 
 // EventState Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
 // `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
@@ -17612,6 +17651,10 @@ type ListAccountStatusesParams struct {
 	// Articles List only the account's articles; `pinned` takes precedence.
 	Articles *bool `form:"articles,omitempty" json:"articles,omitempty"`
 
+	// Tagged List only the account's posts with this hashtag, by its name with or without `#` and in any
+	// case; a name that no post used lists nothing. `pinned` and `articles` take precedence.
+	Tagged *string `form:"tagged,omitempty" json:"tagged,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -18138,6 +18181,9 @@ type UpdateDraftParams struct {
 
 // ListEventsParams defines parameters for ListEvents.
 type ListEventsParams struct {
+	// OrganizerId An account whose organized events to list, such as for its profile.
+	OrganizerId *Id `form:"organizer_id,omitempty" json:"organizer_id,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -21177,11 +21223,14 @@ type ClientInterface interface {
 	// followers, and its direct posts addressed to the viewer. With `pinned`, the page lists
 	// the account's pinned posts instead, newest pin first, in a single page. With `articles`, the page
 	// lists only the account's articles, newest first, and `exclude_replies` and `exclude_boosts`
-	// change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. A
-	// reply whose parent the viewer may not see has no `in_reply_to_id`.
+	// change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. With
+	// `tagged`, the page lists only the account's posts that carry that hashtag now, newest first,
+	// with the visibility of the profile: no boosts, so `exclude_boosts` changes nothing, while
+	// `exclude_replies` still applies. `pinned` takes precedence over `articles`, and `articles` over
+	// `tagged`. A reply whose parent the viewer may not see has no `in_reply_to_id`.
 	//
 	// The page lists only the posts this server has received. For a remote account, the first
-	// page (no `cursor`, no `pinned`, no `articles`) of a logged-in viewer may start fetching the account's
+	// page (no `cursor`, no `pinned`, no `articles`, no `tagged`) of a logged-in viewer may start fetching the account's
 	// recent public posts from its server in the background; `remote_fetch_started` tells
 	// that it did. It does at most once a day per account, for at most 30 accounts per viewer
 	// in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
@@ -24815,8 +24864,9 @@ type ClientInterface interface {
 
 	// ListEvents List the upcoming events
 	//
-	// The events that the user sees and that have not ended, the nearest start first. A page may
-	// hold fewer events than `limit` and still have a `next_cursor`.
+	// The events that the user sees and that have not ended, the nearest start first; with
+	// `organizer_id`, only those that the account organizes. A page may hold fewer events than
+	// `limit` and still have a `next_cursor`.
 	//
 	// Corresponds with GET /events (the `ListEvents` operationId).
 	ListEvents(ctx context.Context, params *ListEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -28947,11 +28997,14 @@ func (c *Client) SetAccountNote(ctx context.Context, id AccountId, body SetAccou
 // followers, and its direct posts addressed to the viewer. With `pinned`, the page lists
 // the account's pinned posts instead, newest pin first, in a single page. With `articles`, the page
 // lists only the account's articles, newest first, and `exclude_replies` and `exclude_boosts`
-// change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. A
-// reply whose parent the viewer may not see has no `in_reply_to_id`.
+// change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. With
+// `tagged`, the page lists only the account's posts that carry that hashtag now, newest first,
+// with the visibility of the profile: no boosts, so `exclude_boosts` changes nothing, while
+// `exclude_replies` still applies. `pinned` takes precedence over `articles`, and `articles` over
+// `tagged`. A reply whose parent the viewer may not see has no `in_reply_to_id`.
 //
 // The page lists only the posts this server has received. For a remote account, the first
-// page (no `cursor`, no `pinned`, no `articles`) of a logged-in viewer may start fetching the account's
+// page (no `cursor`, no `pinned`, no `articles`, no `tagged`) of a logged-in viewer may start fetching the account's
 // recent public posts from its server in the background; `remote_fetch_started` tells
 // that it did. It does at most once a day per account, for at most 30 accounts per viewer
 // in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
@@ -35495,8 +35548,9 @@ func (c *Client) ScheduleDraft(ctx context.Context, id DraftId, body ScheduleDra
 
 // ListEvents List the upcoming events
 //
-// The events that the user sees and that have not ended, the nearest start first. A page may
-// hold fewer events than `limit` and still have a `next_cursor`.
+// The events that the user sees and that have not ended, the nearest start first; with
+// `organizer_id`, only those that the account organizes. A page may hold fewer events than
+// `limit` and still have a `next_cursor`.
 //
 // Corresponds with GET /events (the `ListEvents` operationId).
 func (c *Client) ListEvents(ctx context.Context, params *ListEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -42462,6 +42516,18 @@ func NewListAccountStatusesRequest(server string, id Id, params *ListAccountStat
 		if params.Articles != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "articles", *params.Articles, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Tagged != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "tagged", *params.Tagged, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
 				return nil, err
 			} else {
 				for _, qp := range strings.Split(queryFrag, "&") {
@@ -52516,6 +52582,18 @@ func NewListEventsRequest(server string, params *ListEventsParams) (*http.Reques
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
+		if params.OrganizerId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "organizer_id", *params.OrganizerId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.Cursor != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
@@ -61700,11 +61778,14 @@ type ClientWithResponsesInterface interface {
 	// followers, and its direct posts addressed to the viewer. With `pinned`, the page lists
 	// the account's pinned posts instead, newest pin first, in a single page. With `articles`, the page
 	// lists only the account's articles, newest first, and `exclude_replies` and `exclude_boosts`
-	// change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. A
-	// reply whose parent the viewer may not see has no `in_reply_to_id`.
+	// change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. With
+	// `tagged`, the page lists only the account's posts that carry that hashtag now, newest first,
+	// with the visibility of the profile: no boosts, so `exclude_boosts` changes nothing, while
+	// `exclude_replies` still applies. `pinned` takes precedence over `articles`, and `articles` over
+	// `tagged`. A reply whose parent the viewer may not see has no `in_reply_to_id`.
 	//
 	// The page lists only the posts this server has received. For a remote account, the first
-	// page (no `cursor`, no `pinned`, no `articles`) of a logged-in viewer may start fetching the account's
+	// page (no `cursor`, no `pinned`, no `articles`, no `tagged`) of a logged-in viewer may start fetching the account's
 	// recent public posts from its server in the background; `remote_fetch_started` tells
 	// that it did. It does at most once a day per account, for at most 30 accounts per viewer
 	// in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
@@ -65656,8 +65737,9 @@ type ClientWithResponsesInterface interface {
 
 	// ListEventsWithResponse List the upcoming events
 	//
-	// The events that the user sees and that have not ended, the nearest start first. A page may
-	// hold fewer events than `limit` and still have a `next_cursor`.
+	// The events that the user sees and that have not ended, the nearest start first; with
+	// `organizer_id`, only those that the account organizes. A page may hold fewer events than
+	// `limit` and still have a `next_cursor`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -99262,11 +99344,14 @@ func (c *ClientWithResponses) SetAccountNoteWithResponse(ctx context.Context, id
 // followers, and its direct posts addressed to the viewer. With `pinned`, the page lists
 // the account's pinned posts instead, newest pin first, in a single page. With `articles`, the page
 // lists only the account's articles, newest first, and `exclude_replies` and `exclude_boosts`
-// change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. A
-// reply whose parent the viewer may not see has no `in_reply_to_id`.
+// change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. With
+// `tagged`, the page lists only the account's posts that carry that hashtag now, newest first,
+// with the visibility of the profile: no boosts, so `exclude_boosts` changes nothing, while
+// `exclude_replies` still applies. `pinned` takes precedence over `articles`, and `articles` over
+// `tagged`. A reply whose parent the viewer may not see has no `in_reply_to_id`.
 //
 // The page lists only the posts this server has received. For a remote account, the first
-// page (no `cursor`, no `pinned`, no `articles`) of a logged-in viewer may start fetching the account's
+// page (no `cursor`, no `pinned`, no `articles`, no `tagged`) of a logged-in viewer may start fetching the account's
 // recent public posts from its server in the background; `remote_fetch_started` tells
 // that it did. It does at most once a day per account, for at most 30 accounts per viewer
 // in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
@@ -104964,8 +105049,9 @@ func (c *ClientWithResponses) ScheduleDraftWithResponse(ctx context.Context, id 
 
 // ListEventsWithResponse List the upcoming events
 //
-// The events that the user sees and that have not ended, the nearest start first. A page may
-// hold fewer events than `limit` and still have a `next_cursor`.
+// The events that the user sees and that have not ended, the nearest start first; with
+// `organizer_id`, only those that the account organizes. A page may hold fewer events than
+// `limit` and still have a `next_cursor`.
 //
 // Returns a wrapper object for the known response body format(s).
 //

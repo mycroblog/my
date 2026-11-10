@@ -1091,6 +1091,7 @@ test.describe("navigation", () => {
         "/profile",
         "/bookmarks",
         "/settings",
+        "/events",
         "/announcements",
         "/lists",
       ]);
@@ -1110,6 +1111,7 @@ test.describe("navigation", () => {
         "/direct-messages",
         "/bookmarks",
         "/settings",
+        "/events",
         "/announcements",
         "/lists",
       ]);
@@ -1129,6 +1131,7 @@ test.describe("navigation", () => {
         "/direct-messages",
         "/bookmarks",
         "/settings",
+        "/events",
         "/announcements",
         "/lists",
       ]);

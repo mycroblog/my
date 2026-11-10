@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The profile feature: an account's profile with its posts and the viewer's relationship with it (features/relationship), and
-// the lists of the accounts it follows and that follow it (FR-204, FR-301 to FR-303), and the follow
+// the lists of the accounts it follows and that follow it (FR-204, FR-301 to FR-303), its posts with a hashtag, and the follow
 // button that other features show next to an account. Routes and other features use it through this file
 // only (web-client/README.md A3).
 export { refreshRelationship, useRelationship } from "../relationship";
@@ -11,4 +11,5 @@ export { FollowListSkeleton } from "./components/FollowListSkeleton";
 export { FollowListHidden, FollowListView } from "./components/FollowListView";
 export { ProfileView } from "./components/ProfileView";
 export { RelationshipActions } from "./components/RelationshipActions";
+export { TaggedPostsSkeleton, TaggedPostsView } from "./components/TaggedPostsView";
 export { isolate } from "./hooks/useProfile";

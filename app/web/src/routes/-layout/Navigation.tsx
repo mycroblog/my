@@ -25,7 +25,7 @@
 // member category, such as view_finance) shows neither. A viewer with view_finance has Finances, after the user's
 // items and before the staff's areas, in the rail, the sidebar and the menu's sheet, never in the tab bar.
 // While the server has voice chat on (ADR-0100 §2), Voice chat, the list of the open rooms, comes right after the
-// user's items the same way, and Announcements, the list of the server's announcements (ADR-0125 §4), after it, with
+// user's items the same way, then Events, the upcoming events of the local users (ADR-0161 §9), and Announcements, the list of the server's announcements (ADR-0125 §4), after it, with
 // the number of the unread ones that show now as a badge ("Announcements, 2 unread").
 // Lists (`/lists`, the user's lists and a list's timeline under it) comes after Announcements.
 // While open reports, registrations or appeals await the moderators (FR-712), Moderation shows
@@ -52,6 +52,7 @@ import {
   AboutIcon,
   AdminIcon,
   AnnouncementIcon,
+  EventIcon,
   AppNav,
   AppNavAccount,
   AppNavAction,
@@ -115,6 +116,7 @@ export const navigationSections = [
   "/bookmarks",
   "/settings",
   "/voice",
+  "/events",
   "/announcements",
   "/lists",
   "/finance",
@@ -178,6 +180,19 @@ const voiceItem: NavigationItem = {
   section: "/voice",
   label: "client:voice.title",
   icon: <VoiceIcon />,
+  shows: "rail",
+};
+
+/**
+ * The upcoming events of the local users (ADR-0161 §9): after Voice chat in the rail and in the menu's sheet, never in
+ * the tab bar. An event's page and its editor (`/events/{id}`, `/events/new`) are in its section.
+ */
+const eventsItem: NavigationItem = {
+  id: "events",
+  href: "/events",
+  section: "/events",
+  label: "client:events.title",
+  icon: <EventIcon />,
   shows: "rail",
 };
 
@@ -362,6 +377,7 @@ export function Navigation() {
     items = [
       ...userItems,
       ...(voiceAvailable ? [voiceItem] : []),
+      eventsItem,
       announcementsItem,
       listsItem,
       ...(financeEntry.available ? [financeItem] : []),

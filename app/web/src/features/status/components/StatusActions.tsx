@@ -214,6 +214,10 @@ export function StatusActions({
               {t("client:status.action.edit")}
             </MenuItem>
           )}
+          {/* An article is edited in the article editor (ADR-0160 §8); it keeps the edit item's place. */}
+          {actions.articleEditPath !== null && (
+            <MenuItem href={actions.articleEditPath}>{t("client:status.action.edit")}</MenuItem>
+          )}
           {actions.revokeQuote !== null && (
             <MenuItem onAction={actions.revokeQuote}>{t("client:status.quote.revoke.action")}</MenuItem>
           )}

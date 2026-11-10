@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {
-  Box,
   Button,
   Checkbox,
+  Cluster,
   Dialog,
   DialogActions,
   FileDropZone,
@@ -23,6 +23,7 @@ import { maxAttachments } from "../hooks/policy";
 import { type ComposeController, composeTextId } from "../hooks/useCompose";
 import { blockerMessages } from "../hooks/blockerMessages";
 import { type ReadyComposeForm, useComposeForm } from "../hooks/useComposeForm";
+import { useCanWriteArticles } from "../hooks/useCanWriteArticles";
 import { useFormatRemaining } from "../hooks/useFormatRemaining";
 import { AttachmentList } from "./AttachmentList";
 import { CompletionTextArea, CompletionTextField } from "./CompletionFields";
@@ -85,6 +86,7 @@ function ReadyForm({ form, labelledBy, autoFocus, onLeave }: ReadyFormProps) {
   const locale = useLocale();
   const formatRemaining = useFormatRemaining();
   const shortcodes = useCustomEmojiShortcodes();
+  const canWriteArticles = useCanWriteArticles();
   const { draft, attachments } = form;
   const barMessage = form.blocked !== null ? t(blockerMessages[form.blocked]) : form.serverDraft.message;
   const onSubmit = (event: SubmitEvent<HTMLFormElement>) => {
@@ -218,12 +220,18 @@ function ReadyForm({ form, labelledBy, autoFocus, onLeave }: ReadyFormProps) {
           </FormActionBar>
         </Stack>
       </FileDropZone>
-      {/* The drafts saved on the server and the scheduled posts, on their own page (web-client/screens/drafts.md). */}
-      <Box self="start">
+      {/* The drafts saved on the server and the scheduled posts, on their own page (web-client/screens/drafts.md), and
+          the article editor for a long post (web-client/screens/article-editor.md), while the viewer may write one. */}
+      <Cluster gap="4">
         <Link href="/drafts" variant="standalone" onPress={onLeave}>
           {t("client:drafts.title")}
         </Link>
-      </Box>
+        {canWriteArticles && (
+          <Link href="/articles/new" variant="standalone" onPress={onLeave}>
+            {t("client:articles.editor.write")}
+          </Link>
+        )}
+      </Cluster>
       {/* The result of the last send when the automated review refused it; outside the form (RejectionNotice.tsx). */}
       {form.rejection !== null && (
         // Another refusal is another appeal: its dialog starts afresh.

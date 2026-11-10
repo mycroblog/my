@@ -170,6 +170,26 @@ CREATE TABLE gathering_cancellations (
   cancelled_at timestamptz NOT NULL
 );
 
+-- Resource: the voice chat room (voice_rooms.id) that the start of a date of an event opened,
+-- one per date.
+CREATE TABLE gathering_voice_rooms (
+  gathering_id uuid NOT NULL,
+  confirmation_id uuid NOT NULL,
+  room_id uuid NOT NULL,
+  opened_at timestamptz NOT NULL,
+  PRIMARY KEY (gathering_id, confirmation_id)
+);
+CREATE UNIQUE INDEX gathering_voice_rooms_room_id ON gathering_voice_rooms (room_id);
+
+-- Event: the voice chat room of a date of an event that could not open at its start, once per date.
+CREATE TABLE gathering_voice_room_failures (
+  gathering_id uuid NOT NULL,
+  confirmation_id uuid NOT NULL,
+  reason text NOT NULL CHECK (reason IN ('disabled', 'not_eligible', 'too_many_rooms', 'hosting_elsewhere')),
+  failed_at timestamptz NOT NULL,
+  PRIMARY KEY (gathering_id, confirmation_id)
+);
+
 -- Projection: the current revision and date of each event, whether it was cancelled, and how
 -- many attendees answer going. The list reads it. An event without a confirmed date is
 -- unscheduled: it has no confirmation_id, and starts_at and ends_at span the candidates of its

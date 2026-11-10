@@ -8,12 +8,14 @@
 export * as about from "../../features/about/test/handlers";
 export * as admin from "../../features/admin/test/handlers";
 export * as announcements from "../../features/announcements/test/handlers";
+export * as articles from "../../features/articles/test/handlers";
 export * as compose from "../../features/compose/test/handlers";
 export * as costs from "../../features/costs/test/handlers";
 export * as core from "./http";
 export * as customEmojis from "../../features/custom-emojis/test/handlers";
 export * as directMessages from "../../features/direct-messages/test/handlers";
 export * as emoji from "../../features/emoji/test/handlers";
+export * as events from "../../features/events/test/handlers";
 export * as filters from "../../features/filters/test/handlers";
 export * as hashtags from "../../features/hashtags/test/handlers";
 export * as landing from "../../features/landing/test/handlers";

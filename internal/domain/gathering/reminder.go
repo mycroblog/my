@@ -56,9 +56,15 @@ type DueKind string
 const (
 	// DueReminder reminds the attendees whose reminders include its minutes.
 	DueReminder DueKind = "reminder"
-	// DueStart tells the attendees that the event starts.
+	// DueStart tells the attendees that the event starts, and opens its voice chat room.
 	DueStart DueKind = "start"
+	// DueRoomCheck checks, RoomCheckBefore the start, that the voice chat room of an event can
+	// open, so that its organizer can fix in time what would keep it shut (ADR-0161 §10).
+	DueRoomCheck DueKind = "room_check"
 )
+
+// RoomCheckBefore is how long before the start of an event with a voice place DueRoomCheck is.
+const RoomCheckBefore = 24 * time.Hour
 
 // Due is one thing that gathering.tick does for an event, at At.
 type Due struct {
@@ -69,9 +75,10 @@ type Due struct {
 }
 
 // Dues returns what an event that starts at start has to do, from the earliest: a reminder for
-// each of reminders (minutes before the start, the union of its attendees' choices) and the start.
-func Dues(start time.Time, reminders []int) []Due {
-	out := make([]Due, 0, len(reminders)+1)
+// each of reminders (minutes before the start, the union of its attendees' choices), the check of
+// its voice chat room when room is set, and the start.
+func Dues(start time.Time, reminders []int, room bool) []Due {
+	out := make([]Due, 0, len(reminders)+2)
 	seen := map[int]bool{}
 	for _, m := range reminders {
 		if m <= 0 || seen[m] {
@@ -79,6 +86,9 @@ func Dues(start time.Time, reminders []int) []Due {
 		}
 		seen[m] = true
 		out = append(out, Due{Kind: DueReminder, At: start.Add(-time.Duration(m) * time.Minute), MinutesBefore: m})
+	}
+	if room {
+		out = append(out, Due{Kind: DueRoomCheck, At: start.Add(-RoomCheckBefore)})
 	}
 	out = append(out, Due{Kind: DueStart, At: start})
 	slices.SortStableFunc(out, func(a, b Due) int { return a.At.Compare(b.At) })

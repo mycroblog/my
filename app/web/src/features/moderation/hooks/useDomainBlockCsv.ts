@@ -8,6 +8,7 @@ import { type SyntheticEvent, useState } from "react";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { type Translate, useT } from "../../../lib/i18n";
+import { saveFile } from "../../../lib/saveFile";
 import {
   cacheImportedDomainBlocks,
   type DomainBlockImportResult,
@@ -18,21 +19,6 @@ import {
   importDomainBlocksMutation,
   previewDomainBlockImportMutation,
 } from "../api/domainBlocks";
-
-/** How long the address of a saved file stays valid: long enough for the browser to start the download. */
-const downloadUrlLifetime = 60_000;
-
-/** Saves `blob` as a file named `name` through a temporary link, as the browser's download does. */
-function saveFile(blob: Blob, name: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  link.click();
-  setTimeout(() => {
-    URL.revokeObjectURL(url);
-  }, downloadUrlLifetime);
-}
 
 /** What the export button needs. */
 export type DomainBlockExport = {

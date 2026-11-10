@@ -2431,6 +2431,30 @@ func (e EventPlaceKind) Valid() bool {
 	}
 }
 
+// Defines values for EventRoomUnavailableReason.
+const (
+	EventRoomUnavailableReasonDisabled         EventRoomUnavailableReason = "disabled"
+	EventRoomUnavailableReasonHostingElsewhere EventRoomUnavailableReason = "hosting_elsewhere"
+	EventRoomUnavailableReasonNotEligible      EventRoomUnavailableReason = "not_eligible"
+	EventRoomUnavailableReasonTooManyRooms     EventRoomUnavailableReason = "too_many_rooms"
+)
+
+// Valid indicates whether the value is a known member of the EventRoomUnavailableReason enum.
+func (e EventRoomUnavailableReason) Valid() bool {
+	switch e {
+	case EventRoomUnavailableReasonDisabled:
+		return true
+	case EventRoomUnavailableReasonHostingElsewhere:
+		return true
+	case EventRoomUnavailableReasonNotEligible:
+		return true
+	case EventRoomUnavailableReasonTooManyRooms:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EventState.
 const (
 	EventStateCancelled   EventState = "cancelled"
@@ -11381,6 +11405,15 @@ type EventPlace struct {
 	// Name Up to 100 characters on one line.
 	Name *string `json:"name,omitempty"`
 
+	// RoomId For a `voice` place, the voice chat room that the start of the event's current date
+	// opened (`GET /voice/rooms/{id}`), which may have ended since; omitted before the room opens.
+	// Ignored in a request.
+	RoomId *Id `json:"room_id,omitempty"`
+
+	// RoomUnavailable For a `voice` place, why the room of the event's current date could not open at the
+	// start; omitted otherwise. Ignored in a request.
+	RoomUnavailable *EventRoomUnavailableReason `json:"room_unavailable,omitempty"`
+
 	// Speakers Who may speak without asking in the room; `manual` when omitted.
 	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
 	Url      *string            `json:"url,omitempty"`
@@ -11421,6 +11454,12 @@ type EventRemindersUpdate struct {
 	// (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
 	MinutesBefore *[]int `json:"minutes_before,omitempty"`
 }
+
+// EventRoomUnavailableReason Why the voice chat room of an event could not open at its start: `disabled` the voice chat is
+// off on this server, `not_eligible` the organizer may not host voice chat rooms, `too_many_rooms`
+// as many rooms were open as the server allows, and `hosting_elsewhere` the organizer was hosting
+// another room. The event itself goes on.
+type EventRoomUnavailableReason string
 
 // EventState Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
 // `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
@@ -17603,6 +17642,10 @@ type ListAccountStatusesParams struct {
 	// Articles List only the account's articles; `pinned` takes precedence.
 	Articles *bool `form:"articles,omitempty" json:"articles,omitempty"`
 
+	// Tagged List only the account's posts with this hashtag, by its name with or without `#` and in any
+	// case; a name that no post used lists nothing. `pinned` and `articles` take precedence.
+	Tagged *string `form:"tagged,omitempty" json:"tagged,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -18129,6 +18172,9 @@ type UpdateDraftParams struct {
 
 // ListEventsParams defines parameters for ListEvents.
 type ListEventsParams struct {
+	// OrganizerId An account whose organized events to list, such as for its profile.
+	OrganizerId *Id `form:"organizer_id,omitempty" json:"organizer_id,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -21140,6 +21186,19 @@ func (siw *ServerInterfaceWrapper) ListAccountStatuses(w http.ResponseWriter, r 
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "articles"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "articles", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "tagged" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "tagged", r.URL.Query(), &params.Tagged, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "tagged"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "tagged", Err: err})
 		}
 		return
 	}
@@ -27867,6 +27926,19 @@ func (siw *ServerInterfaceWrapper) ListEvents(w http.ResponseWriter, r *http.Req
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListEventsParams
+
+	// ------------- Optional query parameter "organizer_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "organizer_id", r.URL.Query(), &params.OrganizerId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "organizer_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizer_id", Err: err})
+		}
+		return
+	}
 
 	// ------------- Optional query parameter "cursor" -------------
 

@@ -41,6 +41,7 @@ func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 		{"ListsTheLocalAndFederatedTimelines", timelineRepoPublic},
 		{"ListsTheHashtagTimeline", timelineRepoTag},
 		{"ListsTheProfileTimeline", timelineRepoProfile},
+		{"ListsTheTaggedPostsOfAProfile", timelineRepoProfileTagged},
 		{"FiltersLanguagesAndPages", timelineRepoLanguagesAndPages},
 		{"AnswersFactsAndMutedDomains", timelineRepoFacts},
 		{"KeepsListsAndMembers", timelineRepoLists},
@@ -558,6 +559,43 @@ func timelineRepoProfile(t *testing.T, r *timelineRepo) {
 	})
 	got, err = profile(viewer, apptimeline.ProfileQuery{Visibilities: []appcontent.Visibility{appcontent.VisibilityPublic}})
 	checkTimeline(t, "ListProfile(excluded originals)", got, err, pub, reply)
+}
+
+func timelineRepoProfileTagged(t *testing.T, r *timelineRepo) {
+	ctx := t.Context()
+	alice, viewer, stranger, bob := r.local(), r.local(), r.local(), r.local()
+	tag, other := r.ids.NewID(), r.ids.NewID()
+	pub := r.post(t, alice, appcontent.VisibilityPublic, entryOpts{tags: []string{tag}})
+	r.post(t, alice, appcontent.VisibilityPublic, entryOpts{tags: []string{other}})
+	r.post(t, alice, appcontent.VisibilityPublic, entryOpts{})
+	priv := r.post(t, alice, appcontent.VisibilityPrivate, entryOpts{tags: []string{tag}})
+	toViewer := r.post(t, alice, appcontent.VisibilityDirect, entryOpts{tags: []string{tag}, direct: []string{viewer.id}})
+	toStranger := r.post(t, alice, appcontent.VisibilityDirect, entryOpts{tags: []string{tag}, direct: []string{stranger.id}})
+	reply := r.post(t, alice, appcontent.VisibilityUnlisted, entryOpts{tags: []string{tag}, reply: true})
+	bobs := r.post(t, bob, appcontent.VisibilityPublic, entryOpts{tags: []string{tag}})
+	// A boost of a post with the tag is not a post of alice with it.
+	r.boost(t, alice, bobs)
+
+	profile := func(v timelineAuthor, q apptimeline.ProfileQuery) ([]apptimeline.Entry, error) {
+		q.Window, q.AuthorAccountID, q.TagID = r.window(v), alice.id, tag
+		return r.repo.ListProfile(ctx, q)
+	}
+	everyVisibility := []appcontent.Visibility{
+		appcontent.VisibilityPublic, appcontent.VisibilityLocal, appcontent.VisibilityUnlisted, appcontent.VisibilityPrivate,
+	}
+	got, err := profile(viewer, apptimeline.ProfileQuery{Visibilities: everyVisibility, IncludeDirect: true})
+	checkTimeline(t, "ListProfile(tagged, every visibility)", got, err, pub, priv, toViewer, reply)
+	got, err = profile(alice, apptimeline.ProfileQuery{Visibilities: everyVisibility, IncludeDirect: true})
+	checkTimeline(t, "ListProfile(tagged, by the author)", got, err, pub, priv, toViewer, toStranger, reply)
+	got, err = profile(stranger, apptimeline.ProfileQuery{Visibilities: []appcontent.Visibility{appcontent.VisibilityPublic, appcontent.VisibilityUnlisted}})
+	checkTimeline(t, "ListProfile(tagged, public and unlisted)", got, err, pub, reply)
+	got, err = profile(viewer, apptimeline.ProfileQuery{Visibilities: everyVisibility, ExcludeReplies: true})
+	checkTimeline(t, "ListProfile(tagged, no replies)", got, err, pub, priv)
+	page, err := r.repo.ListProfile(ctx, apptimeline.ProfileQuery{
+		Window:          apptimeline.Window{ViewerAccountID: viewer.id, Limit: 1, Before: reply.ID, Now: r.clock.Now()},
+		AuthorAccountID: alice.id, TagID: tag, Visibilities: everyVisibility, IncludeDirect: true,
+	})
+	checkTimeline(t, "ListProfile(tagged, page)", page, err, toViewer)
 }
 
 func timelineRepoLanguagesAndPages(t *testing.T, r *timelineRepo) {

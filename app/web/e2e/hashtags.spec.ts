@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Followed hashtags in every width × locale project (ADR-0013 §24–§28; web-client/screens/tag.md, home.md): the viewer
 // opens a hashtag from a post of the home timeline, follows it, and goes back to find on home, without loading the page
-// again, a post of someone they do not follow with the mark of the followed hashtag. `vite preview` has no API, so the
+// again, a post of someone they do not follow with the mark of the followed hashtag; and a featured hashtag of a profile
+// lists that account's posts with it (web-client/screens/profile-tagged.md). `vite preview` has no API, so the
 // spec answers the token refresh and the client API with `page.route`, as a signed-in user's server would. Names come
 // from the project's catalog, so the spec finds the same elements in every locale.
 import type { Page } from "@playwright/test";
@@ -11,6 +12,7 @@ import { readCatalog } from "./catalog.ts";
 
 type Account = components["schemas"]["Account"];
 type Status = components["schemas"]["Status"];
+type Relationship = components["schemas"]["Relationship"];
 
 /** The client message `key` in the project's locale. */
 function message(key: string): string {
@@ -134,5 +136,79 @@ test.describe("following a hashtag", () => {
     expect(await page.evaluate(() => performance.getEntriesByType("navigation").length)).toBe(loads);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
+  });
+});
+
+/** The message `key` with its arguments, each in the first-strong isolate the app puts user text in (lib/handle.ts, isolate). */
+function isolated(key: string, args: Record<string, string>): string {
+  return message(key).replace(/\{(\w+)\}/gu, (whole, name: string) => {
+    const value = args[name];
+    return value === undefined ? whole : `⁨${value}⁩`;
+  });
+}
+
+const ok = (body: unknown) => ({ status: 200, contentType: "application/json", body: JSON.stringify(body) });
+
+/** Answers Bob's profile: he features #bread, which only the newer of his two posts carries. */
+async function bobsProfile(page: Page) {
+  await page.route("**/api/v1/accounts/lookup*", (route) =>
+    new URL(route.request().url()).searchParams.get("acct") === bob.acct
+      ? route.fulfill(ok(bob))
+      : route.fulfill({
+          status: 404,
+          contentType: "application/problem+json",
+          body: JSON.stringify({ type: "about:blank", title: "Not Found", status: 404 }),
+        }),
+  );
+  const relationship: Relationship = {
+    id: bob.id,
+    following: false,
+    requested: false,
+    followed_by: false,
+    requested_by: false,
+    show_boosts: true,
+    notify: false,
+    blocking: false,
+    muting: false,
+    muting_notifications: false,
+    note: "",
+  };
+  await page.route("**/api/v1/accounts/relationships*", (route) => route.fulfill(ok({ items: [relationship] })));
+  await page.route(`**/api/v1/accounts/${bob.id}/featured_tags`, (route) =>
+    route.fulfill(ok({ items: [{ name: "bread", url: "https://my.example/tags/bread", statuses_count: 1 }] })),
+  );
+  await page.route(`**/api/v1/accounts/${bob.id}/statuses*`, (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("pinned") === "true") return route.fulfill(ok({ items: [] }));
+    const bread = breadPost(3, bob, url.origin, "Rye today.");
+    const plain: Status = { ...breadPost(4, bob, url.origin, ""), content: "<p>No hashtag here.</p>", tags: [] };
+    return route.fulfill(ok({ items: url.searchParams.get("tagged") === "bread" ? [bread] : [bread, plain] }));
+  });
+}
+
+test.describe("an account's posts with a featured hashtag", () => {
+  test.beforeEach(async ({ page }) => {
+    await signedInServer(page);
+    await bobsProfile(page);
+    await page.goto("/@bob");
+  });
+
+  test("are listed under the account's name, and lead to every post with the hashtag", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const featured = page.getByRole("region", { name: message("tag.featured.title") });
+    await featured.getByRole("link", { name: "#bread" }).click();
+
+    const title = isolated("profile.tagged.title", { name: bob.display_name, tag: "bread" });
+    await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+    await expect(page.getByRole("feed", { name: title }).getByRole("article")).toHaveCount(1);
+    await expect(page).toHaveURL(/\/@bob\/tagged\/bread$/u);
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+
+    await page.getByRole("link", { name: isolated("profile.tagged.all", { tag: "bread" }) }).click();
+    await expect(page.getByRole("button", { name: message("tag.follow") })).toBeVisible();
+    await expect(page).toHaveURL(/\/tags\/bread$/u);
   });
 });

@@ -135,6 +135,10 @@
     "defaultMessage": "引用",
     "description": "In a row of the drafts page: the draft quotes a post."
   },
+  "drafts.row.article": {
+    "defaultMessage": "記事",
+    "description": "In a row of the drafts page: the draft is of an article, whose title the row shows; editing it opens the article editor."
+  },
   "drafts.action": {
     "defaultMessage": "{action}: {excerpt}",
     "description": "Accessible name of a button of a row of the drafts page. {action} is the button's visible text (for example 'Edit'), {excerpt} the start of the draft's text."

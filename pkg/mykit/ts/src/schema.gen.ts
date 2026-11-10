@@ -3630,11 +3630,14 @@ export interface paths {
          *     followers, and its direct posts addressed to the viewer. With `pinned`, the page lists
          *     the account's pinned posts instead, newest pin first, in a single page. With `articles`, the page
          *     lists only the account's articles, newest first, and `exclude_replies` and `exclude_boosts`
-         *     change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. A
-         *     reply whose parent the viewer may not see has no `in_reply_to_id`.
+         *     change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. With
+         *     `tagged`, the page lists only the account's posts that carry that hashtag now, newest first,
+         *     with the visibility of the profile: no boosts, so `exclude_boosts` changes nothing, while
+         *     `exclude_replies` still applies. `pinned` takes precedence over `articles`, and `articles` over
+         *     `tagged`. A reply whose parent the viewer may not see has no `in_reply_to_id`.
          *
          *     The page lists only the posts this server has received. For a remote account, the first
-         *     page (no `cursor`, no `pinned`, no `articles`) of a logged-in viewer may start fetching the account's
+         *     page (no `cursor`, no `pinned`, no `articles`, no `tagged`) of a logged-in viewer may start fetching the account's
          *     recent public posts from its server in the background; `remote_fetch_started` tells
          *     that it did. It does at most once a day per account, for at most 30 accounts per viewer
          *     in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
@@ -5203,8 +5206,9 @@ export interface paths {
         };
         /**
          * List the upcoming events
-         * @description The events that the user sees and that have not ended, the nearest start first. A page may
-         *     hold fewer events than `limit` and still have a `next_cursor`.
+         * @description The events that the user sees and that have not ended, the nearest start first; with
+         *     `organizer_id`, only those that the account organizes. A page may hold fewer events than
+         *     `limit` and still have a `next_cursor`.
          */
         get: operations["listEvents"];
         put?: never;
@@ -14410,6 +14414,17 @@ export interface components {
             url?: string;
             /** @description Who may speak without asking in the room; `manual` when omitted. */
             speakers?: components["schemas"]["VoiceRoomSpeakers"];
+            /**
+             * @description For a `voice` place, the voice chat room that the start of the event's current date
+             *     opened (`GET /voice/rooms/{id}`), which may have ended since; omitted before the room opens.
+             *     Ignored in a request.
+             */
+            readonly room_id?: components["schemas"]["Id"];
+            /**
+             * @description For a `voice` place, why the room of the event's current date could not open at the
+             *     start; omitted otherwise. Ignored in a request.
+             */
+            readonly room_unavailable?: components["schemas"]["EventRoomUnavailableReason"];
         };
         /**
          * @description Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
@@ -14448,6 +14463,14 @@ export interface components {
              */
             defaults: boolean;
         };
+        /**
+         * @description Why the voice chat room of an event could not open at its start: `disabled` the voice chat is
+         *     off on this server, `not_eligible` the organizer may not host voice chat rooms, `too_many_rooms`
+         *     as many rooms were open as the server allows, and `hosting_elsewhere` the organizer was hosting
+         *     another room. The event itself goes on.
+         * @enum {string}
+         */
+        EventRoomUnavailableReason: "disabled" | "not_eligible" | "too_many_rooms" | "hosting_elsewhere";
         /** @description An answer to an event. */
         EventRSVP: {
             answer: components["schemas"]["EventAnswer"];
@@ -23765,6 +23788,11 @@ export interface operations {
                 pinned?: boolean;
                 /** @description List only the account's articles; `pinned` takes precedence. */
                 articles?: boolean;
+                /**
+                 * @description List only the account's posts with this hashtag, by its name with or without `#` and in any
+                 *     case; a name that no post used lists nothing. `pinned` and `articles` take precedence.
+                 */
+                tagged?: string;
                 /** @description The `next_cursor` of the previous page; omitted for the first page. */
                 cursor?: components["parameters"]["Cursor"];
                 /** @description The maximum number of items in the page. */
@@ -25438,6 +25466,8 @@ export interface operations {
     listEvents: {
         parameters: {
             query?: {
+                /** @description An account whose organized events to list, such as for its profile. */
+                organizer_id?: components["schemas"]["Id"];
                 /** @description The `next_cursor` of the previous page; omitted for the first page. */
                 cursor?: components["parameters"]["Cursor"];
                 /** @description The maximum number of items in the page. */

@@ -14,9 +14,10 @@ import (
 
 // The notifications of the events of the local users (ADR-0161 §11): the gathering module calls
 // GatheringNotifier inside the transactions of its jobs, which decide the recipients when they
-// run and check that each one sees the event. Every notification of an event is from an account
-// (the organizer, or the account that invited), so the exclusions of the other notifications from
-// accounts apply: none to the source itself or to a remote or deactivated account, none when
+// run and check that each one sees the event. Every notification of an event but
+// event_room_unavailable, the server's notice to the organizer of its own event, is from an
+// account (the organizer, or the account that invited), so the exclusions of the other
+// notifications from accounts apply: none to the source itself or to a remote or deactivated account, none when
 // either blocks the other or the recipient mutes the source with hide_notifications, none from a
 // source with unsolicited_reach to a recipient who does not follow it. The notification policy
 // (ADR-0158) does not hold them: they are about events the recipient answered or was invited to.

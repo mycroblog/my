@@ -14,6 +14,7 @@ reference is there too. The contributing and design documents below are read her
 - [Keyword filters](guide/keyword-filters.md) (folding or hiding posts by their words, and how words match)
 - [Moving your account](guide/moving-your-account.md)
 - [Voice chat](guide/voice-chat.md)
+- [Events](guide/events.md) (planning a gathering, answering it, and its places)
 
 ## Operation
 

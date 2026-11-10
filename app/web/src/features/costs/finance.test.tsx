@@ -71,6 +71,7 @@ describe("a user with view_finance", () => {
       "/profile",
       "/bookmarks",
       "/settings",
+      "/events",
       "/announcements",
       "/lists",
       "/finance",

@@ -26,7 +26,9 @@ const (
 // calls. The physical place stays hidden from the viewer.
 type fakeEvents struct {
 	clientapi.Events
-	err     error
+	err error
+	// room is the room of the voice place, nil for none.
+	room    *appgathering.RoomState
 	created []appgathering.CreateInput
 	patches []appgathering.Patch
 	answers []gathering.Answer
@@ -59,6 +61,41 @@ func (f *fakeEvents) view() appgathering.View {
 		Viewer:       appgathering.ViewerState{Answer: gathering.AnswerMaybe},
 		Places:       []gathering.Place{{Kind: gathering.PlaceVoice, Speakers: gathering.SpeakersManual}},
 		HiddenPlaces: []gathering.PlaceKind{gathering.PlacePhysical},
+		Room:         f.room,
+	}
+}
+
+// TestEventRoom checks that the voice place of an event carries the room of its current date: its
+// ID once it opened, the reason once it could not open, and neither before (ADR-0161 §10).
+func TestEventRoom(t *testing.T) {
+	const roomID = "01890a5d-ac96-774b-bcce-b302099a8403"
+	for _, tc := range []struct {
+		name   string
+		room   *appgathering.RoomState
+		id     string
+		reason string
+	}{
+		{"before the start", &appgathering.RoomState{}, "", ""},
+		{"opened", &appgathering.RoomState{RoomID: roomID}, roomID, ""},
+		{"could not open", &appgathering.RoomState{Unavailable: gathering.RoomHostingElsewhere}, "", "hosting_elsewhere"},
+	} {
+		e := newEventsEnv(t, &fakeEvents{room: tc.room})
+		ev := decode[clientapi.Event](t, e.send(t, http.MethodGet, "/events/"+eventID, "read-events", ""))
+		if len(ev.Places) != 1 {
+			t.Fatalf("%s: places = %+v", tc.name, ev.Places)
+		}
+		p := ev.Places[0]
+		if got := deref(p.RoomId); got != tc.id {
+			t.Errorf("%s: room_id = %q, want %q", tc.name, got, tc.id)
+		}
+		if got := ""; p.RoomUnavailable != nil {
+			got = string(*p.RoomUnavailable)
+			if got != tc.reason {
+				t.Errorf("%s: room_unavailable = %q, want %q", tc.name, got, tc.reason)
+			}
+		} else if tc.reason != "" {
+			t.Errorf("%s: room_unavailable missing, want %q", tc.name, tc.reason)
+		}
 	}
 }
 
@@ -133,6 +170,12 @@ func TestEvents(t *testing.T) {
 	}
 	if res := e.send(t, http.MethodGet, "/events?cursor=broken", "read-events", ""); res.StatusCode != http.StatusBadRequest {
 		t.Errorf("a broken cursor = %d, want 400", res.StatusCode)
+	}
+	if res := e.send(t, http.MethodGet, "/events?organizer_id="+aliceAccountID, "read-events", ""); res.StatusCode != http.StatusOK {
+		t.Errorf("the events of an organizer = %d", res.StatusCode)
+	}
+	if q := f.queries[len(f.queries)-1]; q.OrganizerID != aliceAccountID {
+		t.Errorf("the organizer's query = %+v", q)
 	}
 
 	res = e.sendJSON(t, http.MethodPost, "/events", "events", `{"title":"Picnic","starts_at":"2026-12-01T21:00:00+09:00","ends_at":"2026-12-01T23:00:00+09:00",`+

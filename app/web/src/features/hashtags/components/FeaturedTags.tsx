@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The featured hashtags of a profile (ADR-0006 §17; web-client/screens/profile.md): a titled region under the profile's
-// header, in the owner's order, each hashtag a link to its page with how many of the account's posts carry it. A profile
+// header, in the owner's order, each hashtag a link to the account's posts with it, with how many of them there are. A profile
 // that features none has no region.
 import { Box, Hint, Link, Section, Stack, Text } from "@my/ui";
 import { useT } from "../../../lib/i18n";
 import { useAccountFeaturedTags } from "../hooks/useFeaturedTags";
 
 export type FeaturedTagsProps = {
-  /** The account whose profile it is. */
+  /** The account whose profile it is, and its handle (`acct`). */
   accountId: string;
+  acct: string;
 };
 
-export function FeaturedTags({ accountId }: FeaturedTagsProps) {
+export function FeaturedTags({ accountId, acct }: FeaturedTagsProps) {
   const t = useT();
-  const tags = useAccountFeaturedTags(accountId);
+  const tags = useAccountFeaturedTags(accountId, acct);
   if (tags.length === 0) return null;
   return (
     // Inset like the profile's other notes under its header.

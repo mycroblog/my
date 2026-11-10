@@ -222,6 +222,10 @@ func TestValidateScheduledStatusFailed(t *testing.T) {
 func TestValidateEventNotifications(t *testing.T) {
 	for _, typ := range EventTypes {
 		ok := Notification{ID: idN, RecipientAccountID: idA, SourceAccountID: idB, Type: typ, GatheringID: idR, DedupeKey: "k"}
+		if typ == TypeEventRoomUnavailable {
+			// The server's notice to the organizer, from nobody.
+			ok.SourceAccountID = ""
+		}
 		if err := ok.Validate(); err != nil {
 			t.Errorf("Validate(%+v) = %v", ok, err)
 		}
@@ -233,6 +237,7 @@ func TestValidateEventNotifications(t *testing.T) {
 		{ID: idN, RecipientAccountID: idA, SourceAccountID: idB, Type: TypeEventReminder, DedupeKey: "k"},
 		{ID: idN, RecipientAccountID: idA, Type: TypeEventReminder, GatheringID: idR, DedupeKey: "k"},
 		{ID: idN, RecipientAccountID: idA, SourceAccountID: idB, Type: TypeFollow, GatheringID: idR, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, SourceAccountID: idB, Type: TypeEventRoomUnavailable, GatheringID: idR, DedupeKey: "k"},
 	} {
 		if err := n.Validate(); err == nil {
 			t.Errorf("Validate(%+v) = nil, want an error", n)

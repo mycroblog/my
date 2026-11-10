@@ -15,6 +15,10 @@
     "defaultMessage": "No articles yet",
     "description": "Shown instead of the articles of the articles tab of a profile when it has none."
   },
+  "timeline.empty.account.tagged.heading": {
+    "defaultMessage": "No posts with #{tag} yet",
+    "description": "Shown instead of the posts of an account that carry a hashtag when it has none. {tag} is the hashtag without the #."
+  },
   "timeline.empty.bookmarks.description": {
     "defaultMessage": "Posts you bookmark appear here. Only you can see your bookmarks.",
     "description": "Text under the heading of the empty list of bookmarks."

@@ -310,6 +310,27 @@ WHERE e.author_account_id = sqlc.arg(author)
 ORDER BY e.id DESC
 LIMIT sqlc.arg(page_limit);
 
+-- ListProfileTagEntries is ListProfileEntries narrowed to the author's posts with the hashtag
+-- tag_id (the posts of a profile tagged with it): no boosts, which carry no hashtags of their own.
+-- name: ListProfileTagEntries :many
+SELECT e.id, e.kind, e.status_id, e.author_account_id, e.author_domain, e.original_author_account_id,
+  e.original_author_domain, e.visibility, e.is_local, e.language, e.revision_seq, e.is_reply
+FROM feed_tag_entries t
+JOIN feed_entries e ON e.id = t.entry_id
+WHERE t.author_account_id = sqlc.arg(author) AND t.tag_id = sqlc.arg(tag_id)
+  AND (CAST(sqlc.arg(before) AS TEXT) = '' OR t.entry_id < CAST(sqlc.arg(before) AS TEXT))
+  AND ((t.visibility = 'public' AND CAST(sqlc.arg(include_public) AS INTEGER) = 1)
+    OR (t.visibility = 'local' AND CAST(sqlc.arg(include_local) AS INTEGER) = 1)
+    OR (t.visibility = 'unlisted' AND CAST(sqlc.arg(include_unlisted) AS INTEGER) = 1)
+    OR (t.visibility = 'private' AND CAST(sqlc.arg(include_private) AS INTEGER) = 1)
+    OR (CAST(sqlc.arg(include_direct) AS INTEGER) = 1
+    AND t.visibility = 'direct' AND (t.author_account_id = sqlc.arg(viewer) OR EXISTS (
+      SELECT 1 FROM feed_direct_recipients d WHERE d.recipient_account_id = sqlc.arg(viewer) AND d.entry_id = t.entry_id))))
+  AND (CAST(sqlc.arg(all_languages) AS INTEGER) = 1 OR e.language = 'und' OR e.language IN (SELECT value FROM json_each(CAST(sqlc.arg(languages) AS TEXT))))
+  AND (CAST(sqlc.arg(exclude_replies) AS INTEGER) = 0 OR e.is_reply = 0)
+ORDER BY t.entry_id DESC
+LIMIT sqlc.arg(page_limit);
+
 -- Relation facts of a page, for re-applying CanView ---------------------------------------------
 
 -- name: ListFeedFollowedAmong :many

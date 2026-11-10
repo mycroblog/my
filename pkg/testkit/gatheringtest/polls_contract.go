@@ -120,6 +120,14 @@ func createsPoll(t *testing.T, e *dueEnv) {
 	if err != nil || len(views) != 1 || views[0].ID != v.ID {
 		t.Errorf("List = %d events, %v; want the unscheduled event", len(views), err)
 	}
+	views, _, err = e.svc.List(ctx, bob, appgathering.ListQuery{Limit: 10, OrganizerID: alice})
+	if err != nil || len(views) != 1 || views[0].ID != v.ID {
+		t.Errorf("List of the organizer = %d events, %v; want the organizer's event", len(views), err)
+	}
+	views, _, err = e.svc.List(ctx, bob, appgathering.ListQuery{Limit: 10, OrganizerID: bob})
+	if err != nil || len(views) != 0 {
+		t.Errorf("List of another organizer = %d events, %v; want none", len(views), err)
+	}
 	_, err = e.svc.Answer(ctx, bob, v.ID, gathering.AnswerGoing)
 	wantErr(t, "answer before a date", err, appgathering.ErrUnscheduled)
 
@@ -270,7 +278,8 @@ func confirms(t *testing.T, e *dueEnv) {
 
 	// The reminders and the start follow the confirmed date.
 	start := chosen.Schedule.StartsAt
-	wantDue(t, "confirmed without attendees", e.due(t, v.ID), start)
+	// The voice place of the settings adds the check of its room one day before.
+	wantDue(t, "confirmed without attendees", e.due(t, v.ID), start.Add(-gathering.RoomCheckBefore))
 	e.answer(t, bob, v.ID, gathering.AnswerGoing)
 	wantDue(t, "bob going", e.due(t, v.ID), start.Add(-24*time.Hour))
 
@@ -306,7 +315,7 @@ func confirmsByUpdate(t *testing.T, e *dueEnv) {
 	if jobs, want := e.notifyJobs(t), []string{"schedule_confirmed"}; !reflect.DeepEqual(jobs, want) {
 		t.Errorf("jobs = %v, want %v", jobs, want)
 	}
-	wantDue(t, "confirmed by the update", e.due(t, v.ID), sc.StartsAt)
+	wantDue(t, "confirmed by the update", e.due(t, v.ID), sc.StartsAt.Add(-gathering.RoomCheckBefore))
 	for _, c := range e.candidateList(t, alice, v.ID) {
 		if c.Confirmed {
 			t.Errorf("candidate %+v confirmed by a date without a candidate", c)

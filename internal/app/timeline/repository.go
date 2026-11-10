@@ -194,6 +194,9 @@ type ProfileQuery struct {
 	// ExcludeReplies leaves out the posts that reply to a status; ExcludeBoosts the boosts.
 	ExcludeReplies bool
 	ExcludeBoosts  bool
+	// TagID, unless "", keeps only the author's posts with that hashtag (feed_tag_entries): no
+	// boosts, so ExcludeBoosts changes nothing.
+	TagID string
 }
 
 // FactsQuery asks for what holds between a viewer and the accounts, domains, and entries of a

@@ -47,6 +47,18 @@ func TestPollContract(t *testing.T) {
 	})
 }
 
+func TestRoomContract(t *testing.T) {
+	t.Parallel()
+	gatheringtest.RoomContract(t, func(t *testing.T, opts uow.Options) gatheringtest.Harness {
+		db, err := sqlite.Open(t.Context(), sqlitetest.NewFile(t), opts)
+		if err != nil {
+			t.Fatalf("Open: %v", err)
+		}
+		t.Cleanup(func() { _ = db.Close() })
+		return gatheringtest.Harness{UnitOfWork: db, Gathering: NewRepository(db)}
+	})
+}
+
 func TestModerationContract(t *testing.T) {
 	t.Parallel()
 	gatheringtest.ModerationContract(t, func(t *testing.T, opts uow.Options) gatheringtest.Harness {
