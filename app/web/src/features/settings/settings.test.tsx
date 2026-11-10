@@ -818,6 +818,7 @@ describe("profile", () => {
       "Followers and bots",
       "Discovery",
       "Search engines and AI",
+      "Feeds",
     ]);
     // A form saved by its button has no switch (web-client/21-experience-principles.md §21.4).
     expect(screen.queryByRole("switch")).not.toBeInTheDocument();
@@ -977,6 +978,52 @@ describe("profile", () => {
 
     expect((await screen.findAllByText("Your profile has been saved.")).length).toBeGreaterThan(0);
     expect(changes).toEqual([expect.objectContaining({ indexable: false, ai_opt_out: true })]);
+  });
+
+  test("the feed follows the search setting until it is chosen, and then is saved as its own choice", async () => {
+    const changes = profileServer();
+    server.use(
+      http.get(`${apiBase}/accounts/verify_credentials`, () =>
+        HttpResponse.json({ ...viewerFixture, indexable: false, feed_enabled: false, feed_follows_indexable: true }),
+      ),
+    );
+    const { user } = await renderApp({ path: "/settings/profile" });
+    const feeds = await screen.findByRole("region", { name: "Feeds" });
+    const feed = within(feeds).getByRole("checkbox", { name: "Publish a feed of my public posts" });
+    expect(feed).not.toBeChecked();
+    expect(
+      within(feeds).getByText("Until you change it, this follows your choice about search above."),
+    ).toBeInTheDocument();
+    expect(within(feeds).queryByText(/Feed address/)).not.toBeInTheDocument();
+
+    // Allowing search turns the feed on while there is no choice of its own, and saves no choice.
+    const crawlers = screen.getByRole("region", { name: "Search engines and AI" });
+    await user.click(
+      within(crawlers).getByRole("checkbox", { name: "Let search engines index my profile and public posts" }),
+    );
+    expect(feed).toBeChecked();
+    expect(within(feeds).getByText(`${viewerFixture.url}.atom`)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+    expect((await screen.findAllByText("Your profile has been saved.")).length).toBeGreaterThan(0);
+    expect(changes.at(-1)).not.toHaveProperty("feed_enabled");
+
+    // Turning the feed off is the owner's choice, which the next search setting leaves as it is.
+    await user.click(feed);
+    expect(feed).not.toBeChecked();
+    expect(
+      within(feeds).queryByText("Until you change it, this follows your choice about search above."),
+    ).not.toBeInTheDocument();
+    await user.click(
+      within(crawlers).getByRole("checkbox", { name: "Let search engines index my profile and public posts" }),
+    );
+    await user.click(
+      within(crawlers).getByRole("checkbox", { name: "Let search engines index my profile and public posts" }),
+    );
+    expect(feed).not.toBeChecked();
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+    await waitFor(() => {
+      expect(changes.at(-1)).toEqual(expect.objectContaining({ indexable: true, feed_enabled: false }));
+    });
   });
 
   test.each([

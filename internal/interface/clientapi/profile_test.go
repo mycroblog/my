@@ -113,7 +113,7 @@ func TestVerifyAccountCredentialsHasTheSource(t *testing.T) {
 	avatar, mediaID, followers, following := processedVariants(avatarID), avatarID, 2, 1
 	want := clientapi.CredentialAccount{
 		Id: aliceAccountID, Username: "alice", Acct: "alice", DisplayName: "Alice", Note: "<p>hi</p>",
-		Url: "https://social.example/@alice", Locked: true, Discoverable: true, CreatedAt: createdAt, Avatar: &avatar,
+		Url: "https://social.example/@alice", Locked: true, Discoverable: true, FeedFollowsIndexable: true, CreatedAt: createdAt, Avatar: &avatar,
 		FollowersCount: &followers, FollowingCount: &following, Emojis: []clientapi.CustomEmoji{}, Badges: []clientapi.AccountBadge{},
 		Fields: []clientapi.ProfileField{{Name: "web", Value: `<p><a href="https://alice.example">alice.example</a></p>`}},
 		Source: clientapi.AccountSource{
@@ -216,7 +216,7 @@ func TestUpdateAccountCredentials(t *testing.T) {
 		o.Media = profileMedia()
 	})
 	res := e.sendJSON(t, http.MethodPatch, "/accounts/update_credentials", "write",
-		`{"display_name":"Alice A.","note":"hello","fields":[{"name":"pronouns","value":"she/her"}],"bot":true}`)
+		`{"display_name":"Alice A.","note":"hello","fields":[{"name":"pronouns","value":"she/her"}],"bot":true,"feed_enabled":false}`)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200", res.StatusCode)
 	}
@@ -235,7 +235,7 @@ func TestUpdateAccountCredentials(t *testing.T) {
 		t.Fatalf("UpdateProfile called %d times", len(profiles.got))
 	}
 	in := profiles.got[0]
-	if in.Bot == nil || !*in.Bot || in.Locked != nil || in.AvatarMediaID != nil || in.Fields == nil {
+	if in.Bot == nil || !*in.Bot || in.FeedEnabled == nil || *in.FeedEnabled || in.Locked != nil || in.Indexable != nil || in.AvatarMediaID != nil || in.Fields == nil {
 		t.Errorf("update = %+v, want only the sent properties", in)
 	}
 

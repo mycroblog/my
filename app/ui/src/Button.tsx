@@ -10,8 +10,9 @@ import { tv, type VariantProps } from "tailwind-variants";
 
 const button = tv({
   base: [
-    "inline-flex cursor-default items-center justify-center gap-2 rounded-full text-center font-extrabold select-none",
-    "data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait",
+    "inline-flex cursor-pointer items-center justify-center gap-2 rounded-full text-center font-extrabold select-none",
+    // The pointer over a control (web-client/16-look-states-and-wording.md G26): the hand, not-allowed while disabled, wait while pending.
+    "data-disabled:cursor-not-allowed data-disabled:opacity-50 data-focus-visible:focus-ring data-pending:cursor-wait",
     "motion-safe:transition-[color,background-color,box-shadow,translate,scale] motion-safe:duration-fast motion-safe:ease-standard",
     // The button sizes a child icon, which sets no size of its own (web-client/16-look-states-and-wording.md G11).
     "pointer-coarse:min-h-11 [&>svg]:shrink-0",
@@ -41,7 +42,10 @@ const button = tv({
       subtle:
         "text-fg-muted data-hovered:bg-surface-sunken data-pressed:bg-surface-sunken motion-safe:data-pressed:scale-95",
       /** Destructive actions: filled with the danger color, raised. */
-      danger: "bg-danger text-danger-fg shadow-soft-raised data-pressed:shadow-soft-inset",
+      danger: [
+        "bg-danger text-danger-fg shadow-soft-raised data-hovered:brightness-110 motion-safe:data-hovered:-translate-y-px",
+        "data-pressed:shadow-soft-inset data-pressed:brightness-95",
+      ],
     },
     size: {
       sm: "min-h-8 px-3 text-sm [&>svg]:size-4",

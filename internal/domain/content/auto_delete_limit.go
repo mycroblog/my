@@ -31,10 +31,11 @@ type AutoDeleteLimit struct {
 	// AllowPinned lets the pins keep posts, KeptPins of them, the newest pins first.
 	AllowPinned bool
 	KeptPins    int
-	// AllowBookmarked, AllowFavourited, AllowMedia, and AllowPolls let those exceptions keep
-	// posts; AllowVisibilities the kept visibilities, and AllowThresholds the thresholds of
-	// boosts and favourites.
+	// AllowBookmarked, AllowFavourited, AllowMedia, AllowPolls, and AllowArticles let those
+	// exceptions keep posts; AllowVisibilities the kept visibilities, and AllowThresholds the
+	// thresholds of boosts and favourites.
 	AllowBookmarked, AllowFavourited, AllowMedia, AllowPolls bool
+	AllowArticles                                            bool
 	AllowVisibilities, AllowThresholds                       bool
 	// GraceDays is how many days after the notice a newly bound account is held to the maximum
 	// (§5).
@@ -76,6 +77,8 @@ func (l AutoDeleteLimit) Check(p AutoDeletePolicy) error {
 		return over("keep_media")
 	case p.KeepPolls && !l.AllowPolls:
 		return over("keep_polls")
+	case p.KeepArticles && !l.AllowArticles:
+		return over("keep_articles")
 	case len(p.KeepVisibilities) > 0 && !l.AllowVisibilities:
 		return over("keep_visibilities")
 	case p.KeepMinBoosts > 0 && !l.AllowThresholds:
@@ -110,6 +113,7 @@ func EffectiveAutoDeletePolicy(saved AutoDeletePolicy, limit AutoDeleteLimit, ex
 	p.KeepFavourited = saved.KeepFavourited && limit.AllowFavourited
 	p.KeepMedia = saved.KeepMedia && limit.AllowMedia
 	p.KeepPolls = saved.KeepPolls && limit.AllowPolls
+	p.KeepArticles = saved.KeepArticles && limit.AllowArticles
 	if !limit.AllowVisibilities {
 		p.KeepVisibilities = nil
 	}
@@ -133,7 +137,7 @@ func AutoDeleteBound(saved, effective AutoDeletePolicy, pins int) bool {
 func (p AutoDeletePolicy) sameRules(q AutoDeletePolicy) bool {
 	return p.Enabled == q.Enabled && p.MinAgeDays == q.MinAgeDays &&
 		p.KeepPinned == q.KeepPinned && p.KeepBookmarked == q.KeepBookmarked && p.KeepFavourited == q.KeepFavourited &&
-		p.KeepMedia == q.KeepMedia && p.KeepPolls == q.KeepPolls && slices.Equal(p.KeepVisibilities, q.KeepVisibilities) &&
+		p.KeepMedia == q.KeepMedia && p.KeepPolls == q.KeepPolls && p.KeepArticles == q.KeepArticles && slices.Equal(p.KeepVisibilities, q.KeepVisibilities) &&
 		p.KeepMinBoosts == q.KeepMinBoosts && p.KeepMinFavourites == q.KeepMinFavourites
 }
 

@@ -391,6 +391,84 @@ describe("the menu of a profile", () => {
   });
 });
 
+describe("the private note of a profile", () => {
+  /** Answers PUT /accounts/{id}/note with the note it got, or with `failure`; returns the notes the server received. */
+  function noteServer(failure?: Response) {
+    const notes: string[] = [];
+    server.use(
+      http.put(`${apiBase}/accounts/:id/note`, async ({ params, request }) => {
+        const { note } = (await request.json()) as { note: string };
+        notes.push(note);
+        return failure ?? HttpResponse.json(relationshipFixture(String(params["id"]), { note }));
+      }),
+    );
+    return { notes };
+  }
+
+  test("writes a note that the profile shows, and removes it when saved empty", async () => {
+    server.use(resumableSession());
+    bobServer();
+    const { notes } = noteServer();
+    const { user } = await renderApp({ path: "/@bob" });
+
+    const region = await within(await screen.findByRole("main")).findByRole("region", { name: "Private note" });
+    expect(within(region).getByText("Only you can see it.")).toBeInTheDocument();
+    expect(within(region).getByText("You have no note on \u2068Bob\u2069.")).toBeInTheDocument();
+    await user.click(within(region).getByRole("button", { name: "Add note" }));
+    const dialog = await screen.findByRole("dialog", { name: "Private note on \u2068Bob\u2069" });
+    const field = within(dialog).getByRole("textbox", { name: "Note" });
+    expect(field).toHaveFocus();
+    await user.type(field, "Met at the meetup");
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    expect(await within(region).findByText("Met at the meetup")).toBeInTheDocument();
+    expect(await screen.findByText("Saved your note on \u2068Bob\u2069.")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Private note on \u2068Bob\u2069" })).not.toBeInTheDocument();
+    });
+    // The dialog gives focus back to the button that opened it, which now edits the note.
+    await waitFor(() => {
+      expect(within(region).getByRole("button", { name: "Edit note" })).toHaveFocus();
+    });
+
+    await user.click(within(region).getByRole("button", { name: "Edit note" }));
+    const again = await screen.findByRole("dialog", { name: "Private note on \u2068Bob\u2069" });
+    await user.clear(within(again).getByRole("textbox", { name: "Note" }));
+    await user.click(within(again).getByRole("button", { name: "Save" }));
+
+    expect(await within(region).findByText("You have no note on \u2068Bob\u2069.")).toBeInTheDocument();
+    expect(await screen.findByText("Removed your note on \u2068Bob\u2069.")).toBeInTheDocument();
+    expect(notes).toEqual(["Met at the meetup", ""]);
+  });
+
+  test("keeps the dialog open and says why when the note could not be saved", async () => {
+    server.use(resumableSession());
+    bobServer({ note: "Likes tea" });
+    noteServer(problem(422, "about:blank", "Unprocessable Content"));
+    const { user } = await renderApp({ path: "/@bob" });
+
+    const region = await within(await screen.findByRole("main")).findByRole("region", { name: "Private note" });
+    expect(within(region).getByText("Likes tea")).toBeInTheDocument();
+    await user.click(within(region).getByRole("button", { name: "Edit note" }));
+    const dialog = await screen.findByRole("dialog", { name: "Private note on \u2068Bob\u2069" });
+    expect(within(dialog).getByRole("textbox", { name: "Note" })).toHaveValue("Likes tea");
+    await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(/^Couldn't save the note: /);
+    expect(within(region).getByText("Likes tea")).toBeInTheDocument();
+  });
+
+  test("is not on the viewer's own profile", async () => {
+    server.use(resumableSession());
+    await renderApp({ path: `/@${viewerFixture.acct}` });
+
+    expect(
+      await within(await screen.findByRole("main")).findByRole("link", { name: "Edit profile" }),
+    ).toBeInTheDocument();
+    expect(within(main()).queryByRole("region", { name: "Private note" })).not.toBeInTheDocument();
+  });
+});
+
 describe("the bell of a profile", () => {
   /** Carol of another server, with the viewer's relationship with her; returns the changes the server received. */
   function carolServer(relationship: Partial<Relationship> = {}) {

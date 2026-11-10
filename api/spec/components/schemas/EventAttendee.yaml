@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: An attendee of an event, who answered `going` or `maybe`.
+type: object
+required: [account, answer, approved]
+properties:
+  account:
+    $ref: ./Account.yaml
+  answer:
+    $ref: ./EventAnswer.yaml
+  approved:
+    description: Whether the organizer or a co-organizer approved the answer.
+    type: boolean

@@ -21,8 +21,9 @@ const mediaLoadFailure = tv({
     base: "absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-surface-sunken p-2 text-center text-sm text-fg",
     icon: "text-fg-muted [&>svg]:size-6",
     retry: [
-      "min-h-9 cursor-default rounded-full bg-surface-raised px-3 font-extrabold shadow-sm pointer-coarse:min-h-11",
-      "data-focus-visible:focus-ring data-hovered:bg-soft motion-safe:transition-colors",
+      "min-h-9 cursor-pointer rounded-full bg-surface-raised px-3 font-extrabold shadow-sm pointer-coarse:min-h-11",
+      "data-focus-visible:focus-ring data-hovered:bg-soft data-pressed:bg-soft",
+      "motion-safe:transition-[background-color,scale] motion-safe:duration-fast motion-safe:data-pressed:scale-95",
     ],
   },
 });

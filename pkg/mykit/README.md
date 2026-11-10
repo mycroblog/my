@@ -172,6 +172,18 @@ and `write:voice`. mykit has no audio connection: the room's event stream (`GET 
 signaling (`POST /voice/rooms/{id}/signals`) belong to the WebRTC connection of a client, so the Go client leaves them
 out and the library does not read the stream.
 
+## Events
+
+The operations of the events of the local users (`/events/...`) are generated like every other operation, for example
+`CreateEventWithResponse`, `ListEventsWithResponse`, `AnswerEventWithResponse`, and `InviteToEventWithResponse` in Go,
+and `api.POST("/events")` in TypeScript. They need the scopes `read:events` and `write:events`.
+
+- Times are in UTC. Show them in the user's time zone, and next to it in the event's `time_zone` when the two differ.
+- `places` holds only the places the user sees. The kinds of the others are in `hidden_places`: an address or a link
+  that the organizers show only to the approved attendees never reaches the client before that.
+- An answer of `going` to a full event is a 409 problem `/api/v1/problems/event-full`; `maybe` and `declined` are never
+  refused. Answers end when the event starts.
+
 ## Drafts and scheduled posts
 
 The drafts operations (`/drafts/...`) are generated like every other operation: `CreateDraftWithResponse`,

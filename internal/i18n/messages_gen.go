@@ -193,6 +193,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadDirect() string {
 	return l.format("server:auth.authorize.scope.read_direct", nil)
 }
 
+// ServerAuthAuthorizeScopeReadEvents formats "server:auth.authorize.scope.read_events". Permission (OAuth scope read:events) listed on the authorization page.
+//
+//	en: Read the events you can see
+func (l *Localizer) ServerAuthAuthorizeScopeReadEvents() string {
+	return l.format("server:auth.authorize.scope.read_events", nil)
+}
+
 // ServerAuthAuthorizeScopeReadFilters formats "server:auth.authorize.scope.read_filters". Permission (OAuth scope read:filters) listed on the authorization page.
 //
 //	en: Read your keyword filters
@@ -289,6 +296,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteBookmarks() string {
 //	en: Request new custom emoji, and change and delete the ones you made
 func (l *Localizer) ServerAuthAuthorizeScopeWriteCustomEmojis() string {
 	return l.format("server:auth.authorize.scope.write_custom_emojis", nil)
+}
+
+// ServerAuthAuthorizeScopeWriteEvents formats "server:auth.authorize.scope.write_events". Permission (OAuth scope write:events) listed on the authorization page.
+//
+//	en: Create, change, and cancel events, answer them, and invite people to them
+func (l *Localizer) ServerAuthAuthorizeScopeWriteEvents() string {
+	return l.format("server:auth.authorize.scope.write_events", nil)
 }
 
 // ServerAuthAuthorizeScopeWriteFavourites formats "server:auth.authorize.scope.write_favourites". Permission (OAuth scope write:favourites) listed on the authorization page.
@@ -1820,6 +1834,83 @@ func (l *Localizer) ServerErrorsEmailNotSuppressed() string {
 	return l.format("server:errors.email.not_suppressed", nil)
 }
 
+// ServerErrorsEventAlreadyInvited formats "server:errors.event.already_invited". API error title for HTTP 409 when an organizer invites a user to an event a second time (a user is invited once, even after a revocation).
+//
+//	en: That user is already invited to the event.
+func (l *Localizer) ServerErrorsEventAlreadyInvited() string {
+	return l.format("server:errors.event.already_invited", nil)
+}
+
+// ServerErrorsEventClosed formats "server:errors.event.closed". API error title for HTTP 409 when an event was cancelled, or an answer comes after it started.
+//
+//	en: The event takes no more changes.
+func (l *Localizer) ServerErrorsEventClosed() string {
+	return l.format("server:errors.event.closed", nil)
+}
+
+// ServerErrorsEventFull formats "server:errors.event.full". API error title for HTTP 409 when a user answers going to an event whose attendees who answer going reached its capacity.
+//
+//	en: The event is full.
+func (l *Localizer) ServerErrorsEventFull() string {
+	return l.format("server:errors.event.full", nil)
+}
+
+// ServerErrorsEventInvalidCoorganizer formats "server:errors.event.invalid_coorganizer". API error title for HTTP 422 when the named co-organizer is not a local, active user, is the organizer, or is in a block relation with an organizer.
+//
+//	en: That user cannot co-organize the event.
+func (l *Localizer) ServerErrorsEventInvalidCoorganizer() string {
+	return l.format("server:errors.event.invalid_coorganizer", nil)
+}
+
+// ServerErrorsEventInvalidInvitee formats "server:errors.event.invalid_invitee". API error title for HTTP 422 when the invited user is not a local, active user, organizes the event, or is in a block relation with an organizer.
+//
+//	en: That user cannot be invited to the event.
+func (l *Localizer) ServerErrorsEventInvalidInvitee() string {
+	return l.format("server:errors.event.invalid_invitee", nil)
+}
+
+// ServerErrorsEventNotAttending formats "server:errors.event.not_attending". API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event.
+//
+//	en: That user has not answered going or maybe.
+func (l *Localizer) ServerErrorsEventNotAttending() string {
+	return l.format("server:errors.event.not_attending", nil)
+}
+
+// ServerErrorsEventNotEligible formats "server:errors.event.not_eligible". API error title for HTTP 403 when a user who may not organize events creates or revises one (ADR-0161 §3: a local, unrestricted account, with the create_events permission unless everyone may create events).
+//
+//	en: You may not create events.
+func (l *Localizer) ServerErrorsEventNotEligible() string {
+	return l.format("server:errors.event.not_eligible", nil)
+}
+
+// ServerErrorsEventNotOrganizer formats "server:errors.event.not_organizer". API error title for HTTP 403 when someone who neither organizes nor co-organizes an event revises it, invites to it, or approves its attendees.
+//
+//	en: Only the organizer or a co-organizer of the event may do this.
+func (l *Localizer) ServerErrorsEventNotOrganizer() string {
+	return l.format("server:errors.event.not_organizer", nil)
+}
+
+// ServerErrorsEventOrganizerOnly formats "server:errors.event.organizer_only". API error title for HTTP 403 when a co-organizer of an event changes its visibility, names or removes a co-organizer, or cancels it.
+//
+//	en: Only the organizer of the event may do this.
+func (l *Localizer) ServerErrorsEventOrganizerOnly() string {
+	return l.format("server:errors.event.organizer_only", nil)
+}
+
+// ServerErrorsEventTooManyCoorganizers formats "server:errors.event.too_many_coorganizers". API error title for HTTP 409 when the organizer names a co-organizer past the limit of three.
+//
+//	en: The event has as many co-organizers as it may.
+func (l *Localizer) ServerErrorsEventTooManyCoorganizers() string {
+	return l.format("server:errors.event.too_many_coorganizers", nil)
+}
+
+// ServerErrorsEventVoiceUnavailable formats "server:errors.event.voice_unavailable". API error title for HTTP 422 when an event gets a voice chat room as a place while voice chat is off or its organizer may not host rooms.
+//
+//	en: The event cannot be held in a voice chat room.
+func (l *Localizer) ServerErrorsEventVoiceUnavailable() string {
+	return l.format("server:errors.event.voice_unavailable", nil)
+}
+
 // ServerErrorsExportInProgress formats "server:errors.export.in_progress". API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built.
 //
 //	en: An archive of your data is already being prepared. Wait until it is ready.
@@ -2506,6 +2597,55 @@ func (l *Localizer) ServerErrorsStatusAlreadyDeleted() string {
 	return l.format("server:errors.status.already_deleted", nil)
 }
 
+// ServerErrorsStatusArticleDirect formats "server:errors.status.article_direct". Detail of the HTTP 422 API error when a new article has the visibility direct, which articles never have.
+//
+//	en: An article cannot be a direct post.
+func (l *Localizer) ServerErrorsStatusArticleDirect() string {
+	return l.format("server:errors.status.article_direct", nil)
+}
+
+// ServerErrorsStatusArticleEditedAsPost formats "server:errors.status.article_edited_as_post". Detail of the HTTP 422 API error when the user edits an article as a short post.
+//
+//	en: An article is edited as an article.
+func (l *Localizer) ServerErrorsStatusArticleEditedAsPost() string {
+	return l.format("server:errors.status.article_edited_as_post", nil)
+}
+
+// ServerErrorsStatusArticleSummaryInvalid formats "server:errors.status.article_summary_invalid". Detail of the HTTP 422 API error when the summary of an article is too long. {max} is the maximum number of characters.
+//
+//	en: {max, plural, one {The summary of an article must be at most # character.} other {The summary of an article must be at most # characters.}}
+func (l *Localizer) ServerErrorsStatusArticleSummaryInvalid(max int) string {
+	return l.format("server:errors.status.article_summary_invalid", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTitleInvalid formats "server:errors.status.article_title_invalid". Detail of the HTTP 422 API error when the title of an article is blank or too long. {max} is the maximum number of characters.
+//
+//	en: {max, plural, one {The title of an article must be 1 character.} other {The title of an article must be 1 to # characters.}}
+func (l *Localizer) ServerErrorsStatusArticleTitleInvalid(max int) string {
+	return l.format("server:errors.status.article_title_invalid", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTooLong formats "server:errors.status.article_too_long". Detail of the HTTP 422 API error when the body of an article renders to more HTML than the instance allows. {max} is the maximum number of bytes.
+//
+//	en: {max, plural, one {The body of an article must make at most # byte of HTML.} other {The body of an article must make at most # bytes of HTML.}}
+func (l *Localizer) ServerErrorsStatusArticleTooLong(max int) string {
+	return l.format("server:errors.status.article_too_long", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTooManyImages formats "server:errors.status.article_too_many_images". Detail of the HTTP 422 API error when the body of an article shows more of the user's images than the instance allows. {max} is the maximum number of images.
+//
+//	en: {max, plural, one {The body of an article can show at most # image.} other {The body of an article can show at most # images.}}
+func (l *Localizer) ServerErrorsStatusArticleTooManyImages(max int) string {
+	return l.format("server:errors.status.article_too_many_images", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTooManyTags formats "server:errors.status.article_too_many_tags". Detail of the HTTP 422 API error when an article is given more hashtags than allowed. {max} is the maximum number of hashtags.
+//
+//	en: {max, plural, one {An article can have at most # hashtag.} other {An article can have at most # hashtags.}}
+func (l *Localizer) ServerErrorsStatusArticleTooManyTags(max int) string {
+	return l.format("server:errors.status.article_too_many_tags", map[string]any{"max": max})
+}
+
 // ServerErrorsStatusBoostNotAllowed formats "server:errors.status.boost_not_allowed". Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them.
 //
 //	en: The author of this post does not let you boost it.
@@ -2532,6 +2672,13 @@ func (l *Localizer) ServerErrorsStatusEditRejectedDetail() string {
 //	en: The post has no text.
 func (l *Localizer) ServerErrorsStatusEmptyText() string {
 	return l.format("server:errors.status.empty_text", nil)
+}
+
+// ServerErrorsStatusInvalidHashtag formats "server:errors.status.invalid_hashtag". Detail of the HTTP 422 API error when a hashtag given to an article has characters that a hashtag cannot have.
+//
+//	en: A hashtag of the article is not a hashtag.
+func (l *Localizer) ServerErrorsStatusInvalidHashtag() string {
+	return l.format("server:errors.status.invalid_hashtag", nil)
 }
 
 // ServerErrorsStatusInvalidLanguage formats "server:errors.status.invalid_language". Detail of the HTTP 422 API error when a post's language is not a well-formed BCP 47 tag such as en or ja.
@@ -2588,6 +2735,13 @@ func (l *Localizer) ServerErrorsStatusMediaNotReady() string {
 //	en: This server requires a description (alt text) for every image. Add one to each image before posting.
 func (l *Localizer) ServerErrorsStatusMissingMediaDescription() string {
 	return l.format("server:errors.status.missing_media_description", nil)
+}
+
+// ServerErrorsStatusNotArticle formats "server:errors.status.not_article". Detail of the HTTP 422 API error when the user edits a post as an article.
+//
+//	en: This post is not an article.
+func (l *Localizer) ServerErrorsStatusNotArticle() string {
+	return l.format("server:errors.status.not_article", nil)
 }
 
 // ServerErrorsStatusNotAuthor formats "server:errors.status.not_author". Detail of the HTTP 403 API error when a user tries to edit or delete another account's post.
@@ -3176,6 +3330,36 @@ func (l *Localizer) ServerErrorsWebhookInvalidDetail(reason string) string {
 //	en: The password is wrong.
 func (l *Localizer) ServerErrorsWrongPassword() string {
 	return l.format("server:errors.wrong_password", nil)
+}
+
+// ServerFeedContentWarning formats "server:feed.content_warning". Text of a post in an Atom feed when the post has a content warning: the feed shows only the warning, and the body and the media stay on the post's page. {warning} is the warning, written by the author.
+//
+//	en: Content warning: {warning}. Open the post to read it.
+func (l *Localizer) ServerFeedContentWarning(warning string) string {
+	return l.format("server:feed.content_warning", map[string]any{"warning": warning})
+}
+
+// ServerFeedTagTitleArgs holds the arguments of ServerFeedTagTitle, passed by name.
+//
+//exhaustruct:enforce
+type ServerFeedTagTitleArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Tag      string
+}
+
+// ServerFeedTagTitle formats "server:feed.tag_title". Title of the Atom feed of a hashtag, and of the link to it in the hashtag's page. {tag} is the hashtag without #; {instance} is the name of the server.
+//
+//	en: #{tag} on {instance}
+func (l *Localizer) ServerFeedTagTitle(args ServerFeedTagTitleArgs) string {
+	return l.format("server:feed.tag_title", map[string]any{"instance": args.Instance, "tag": args.Tag})
+}
+
+// ServerFeedUntitled formats "server:feed.untitled". Title of a post in an Atom feed when the post has no text to take its title from (pictures only, say). {name} is the author's display name, or the username when there is none.
+//
+//	en: Post by {name}
+func (l *Localizer) ServerFeedUntitled(name string) string {
+	return l.format("server:feed.untitled", map[string]any{"name": name})
 }
 
 // ServerHealthUnavailable formats "server:health.unavailable". Body of the readiness check response (HTTP 503) while a dependency such as the database is unavailable.

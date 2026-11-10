@@ -81,6 +81,7 @@ func AccountFlows(t *testing.T, newHarness AccountFactory) {
 		{"ReportsMissingAccounts", accountReportsMissing},
 		{"RevisesProfiles", accountRevisesProfiles},
 		{"UpdatesLocalProfiles", accountUpdatesLocalProfiles},
+		{"KeepsTheFeedChoiceApartFromIndexable", accountKeepsFeedChoice},
 		{"KeepsConcurrentPartialProfileUpdates", accountKeepsConcurrentProfileUpdates},
 		{"RecordsLifecycleEvents", accountRecordsLifecycle},
 		{"ExecutesScheduledDeletions", accountExecutesDeletions},
@@ -529,7 +530,7 @@ func accountRevisesProfiles(t *testing.T, e *AccountEnv) {
 	ctx := t.Context()
 	reg := e.Register(t, "dave")
 	in := appaccount.ProfileInput{
-		DisplayName: "Dave", NoteHTML: "<p>hi</p>", Locked: true, Bot: true, Discoverable: true, Indexable: true, AIOptOut: true,
+		DisplayName: "Dave", NoteHTML: "<p>hi</p>", Locked: true, Bot: true, Discoverable: true, Indexable: true, AIOptOut: true, Feed: account.FeedDisabled,
 		AvatarMediaID: "0192f3a4-0000-7000-8000-000000000001",
 		Fields:        []account.ProfileField{{Name: "web", ValueHTML: "<a>x</a>"}, {Name: "pronouns", ValueHTML: "he/him"}},
 	}
@@ -585,6 +586,45 @@ func accountRevisesProfiles(t *testing.T, e *AccountEnv) {
 // or header.
 const contractProfileImage = "0192f3a4-0000-7000-8000-0000000000aa"
 
+// accountKeepsFeedChoice checks the feed setting of UpdateProfile (FR-213): until the owner
+// chooses, the feed follows indexable; once chosen, a change of indexable leaves it as it is.
+func accountKeepsFeedChoice(t *testing.T, e *AccountEnv) {
+	ctx := t.Context()
+	reg := e.Register(t, "feeder")
+	yes, no := true, false
+	update := func(in appaccount.ProfileUpdate) account.ProfileRevision {
+		t.Helper()
+		e.Clock.Advance(time.Second)
+		if _, err := e.Accounts.UpdateProfile(ctx, reg.AccountID, in); err != nil {
+			t.Fatalf("UpdateProfile(%+v) = %v", in, err)
+		}
+		// Read it back, so that the stored revision is what is checked.
+		a, err := e.Accounts.FindByID(ctx, reg.AccountID)
+		if err != nil || a.Profile == nil {
+			t.Fatalf("FindByID = %+v, %v", a, err)
+		}
+		return *a.Profile
+	}
+	for _, step := range []struct {
+		name               string
+		in                 appaccount.ProfileUpdate
+		enabled, following bool
+	}{
+		{"indexable", appaccount.ProfileUpdate{Indexable: &yes}, true, true},
+		{"not indexable", appaccount.ProfileUpdate{Indexable: &no}, false, true},
+		{"feed chosen", appaccount.ProfileUpdate{FeedEnabled: &yes}, true, false},
+		{"indexable changed after the choice", appaccount.ProfileUpdate{Indexable: &yes}, true, false},
+		{"indexable changed again", appaccount.ProfileUpdate{Indexable: &no}, true, false},
+		{"feed turned off", appaccount.ProfileUpdate{FeedEnabled: &no, Indexable: &yes}, false, false},
+	} {
+		p := update(step.in)
+		if p.FeedEnabled() != step.enabled || p.FeedFollowsIndexable() != step.following {
+			t.Errorf("%s: FeedEnabled = %v, FeedFollowsIndexable = %v (feed %q, indexable %v); want %v, %v",
+				step.name, p.FeedEnabled(), p.FeedFollowsIndexable(), p.Feed, p.Indexable, step.enabled, step.following)
+		}
+	}
+}
+
 // accountUpdatesLocalProfiles checks UpdateProfile: every update is a new revision holding the
 // typed text as its source, properties left out keep their values, and invalid content and
 // unusable images change nothing.
@@ -603,7 +643,7 @@ func accountUpdatesLocalProfiles(t *testing.T, e *AccountEnv) {
 	}
 	want := account.ProfileRevision{
 		ID: got.Profile.ID, AccountID: reg.AccountID, Seq: 2, DisplayName: "Fern", NoteHTML: "<p>rendered hello\nworld</p>",
-		Locked: true, Discoverable: true, AvatarMediaID: contractProfileImage, RevisedAt: e.Clock.Now(),
+		Locked: true, Discoverable: true, Feed: account.FeedFollowIndexable, AvatarMediaID: contractProfileImage, RevisedAt: e.Clock.Now(),
 		Fields: []account.ProfileField{
 			{Position: 0, Name: "web", ValueHTML: "<p>rendered https://fern.example</p>"},
 			{Position: 1, Name: "pronouns", ValueHTML: "<p>rendered she/her</p>"},

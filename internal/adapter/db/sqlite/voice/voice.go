@@ -603,3 +603,83 @@ func (r *Repository) LockRoom(context.Context, uow.Tx, string) error { return ni
 
 // LockOpening implements appvoice.Repository; see LockRoom.
 func (r *Repository) LockOpening(context.Context, uow.Tx) error { return nil }
+
+// InsertSchedule implements appvoice.Repository.
+func (r *Repository) InsertSchedule(ctx context.Context, tx uow.Tx, sc appvoice.Schedule) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	return sqlite.Wrap(q.InsertVoiceRoomSchedule(ctx, voicegen.InsertVoiceRoomScheduleParams{
+		RoomID: sc.RoomID, ScheduleKey: sc.Key, WaitEndsAt: sqlite.ToMillis(sc.WaitEndsAt),
+	}), "insert voice room schedule")
+}
+
+func scheduleOf(row voicegen.VoiceRoomSchedule) appvoice.Schedule {
+	return appvoice.Schedule{RoomID: row.RoomID, Key: row.ScheduleKey, WaitEndsAt: sqlite.FromMillis(row.WaitEndsAt)}
+}
+
+// FindSchedule implements appvoice.Repository.
+func (r *Repository) FindSchedule(ctx context.Context, tx uow.Tx, roomID string) (appvoice.Schedule, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return appvoice.Schedule{}, err
+	}
+	row, err := q.GetVoiceRoomSchedule(ctx, roomID)
+	if err != nil {
+		return appvoice.Schedule{}, sqlite.NotFound(err, appvoice.ErrNotFound, "voice room schedule")
+	}
+	return scheduleOf(row), nil
+}
+
+// FindScheduleByKey implements appvoice.Repository.
+func (r *Repository) FindScheduleByKey(ctx context.Context, tx uow.Tx, key string) (appvoice.Schedule, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return appvoice.Schedule{}, err
+	}
+	row, err := q.GetVoiceRoomScheduleByKey(ctx, key)
+	if err != nil {
+		return appvoice.Schedule{}, sqlite.NotFound(err, appvoice.ErrNotFound, "voice room schedule")
+	}
+	return scheduleOf(row), nil
+}
+
+// InsertCohostCandidates implements appvoice.Repository.
+func (r *Repository) InsertCohostCandidates(ctx context.Context, tx uow.Tx, roomID string, accountIDs []string) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	for i, id := range accountIDs {
+		if err := q.InsertVoiceRoomCohostCandidate(ctx, voicegen.InsertVoiceRoomCohostCandidateParams{
+			RoomID: roomID, AccountID: id, Position: int64(i),
+		}); err != nil {
+			return sqlite.Wrap(err, "insert voice room co-host candidate")
+		}
+	}
+	return nil
+}
+
+// FindCohostCandidate implements appvoice.Repository.
+func (r *Repository) FindCohostCandidate(ctx context.Context, tx uow.Tx, roomID, accountID string) (appvoice.CohostCandidate, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return appvoice.CohostCandidate{}, err
+	}
+	row, err := q.GetVoiceRoomCohostCandidate(ctx, voicegen.GetVoiceRoomCohostCandidateParams{RoomID: roomID, AccountID: accountID})
+	if err != nil {
+		return appvoice.CohostCandidate{}, sqlite.NotFound(err, appvoice.ErrNotFound, "voice room co-host candidate")
+	}
+	return appvoice.CohostCandidate{Position: int(row.Position), Removed: row.Removed != 0}, nil
+}
+
+// Attended implements appvoice.Repository.
+func (r *Repository) Attended(ctx context.Context, tx uow.Tx, roomID string) (bool, error) {
+	q, err := r.q(tx)
+	if err != nil {
+		return false, err
+	}
+	n, err := q.IsVoiceRoomAttended(ctx, roomID)
+	return n != 0, sqlite.Wrap(err, "find voice room participation")
+}

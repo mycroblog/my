@@ -85,6 +85,9 @@ type StatusView struct {
 	InReplyTo *content.Status
 	// Attachments are the attached media that finished processing, in order.
 	Attachments []MediaView
+	// Cover is the cover image of an article (Revision.Article), nil for none or one that cannot be
+	// shown.
+	Cover *MediaView
 	// Mentions are the mentioned accounts that exist, in the revision's order.
 	Mentions []appaccount.Actor
 	Tags     []content.Tag
@@ -146,10 +149,12 @@ type MediaView struct {
 // poll with its counts as an anonymous viewer sees them, nil when the revision has none.
 type RevisionParts struct {
 	Attachments []MediaView
-	Mentions    []appaccount.Actor
-	Tags        []content.Tag
-	Emojis      []EmojiTag
-	Poll        *PollView
+	// Cover is the cover image of an article's revision, nil for none or one that cannot be shown.
+	Cover    *MediaView
+	Mentions []appaccount.Actor
+	Tags     []content.Tag
+	Emojis   []EmojiTag
+	Poll     *PollView
 }
 
 // RevisionView is one revision of a status, for its edit history.
@@ -400,18 +405,18 @@ func (r *Reader) History(ctx context.Context, viewer Viewer, statusID string) ([
 	return out, nil
 }
 
-// Source returns the current revision of a local account's own status, whose Source holds
-// what the author typed. Another account's status, or one hidden from viewer, fails with
-// ErrNotFound, like a missing one.
-func (r *Reader) Source(ctx context.Context, viewer Viewer, statusID string) (content.Revision, error) {
+// Source returns a local account's own status with its current revision, whose Source holds
+// what the author typed (and, for an article, its Article and the hashtags in Tags). Another
+// account's status, or one hidden from viewer, fails with ErrNotFound, like a missing one.
+func (r *Reader) Source(ctx context.Context, viewer Viewer, statusID string) (StatusView, error) {
 	view, err := r.View(ctx, viewer, statusID)
 	if err != nil {
-		return content.Revision{}, err
+		return StatusView{}, err
 	}
 	if view.Status.AuthorAccountID != viewer.AccountID || view.Revision.Source == nil {
-		return content.Revision{}, fmt.Errorf("source of %s: %w", statusID, ErrNotFound)
+		return StatusView{}, fmt.Errorf("source of %s: %w", statusID, ErrNotFound)
 	}
-	return view.Revision, nil
+	return view, nil
 }
 
 // Bookmarks returns a page of the bookmarked statuses of the local account viewer, newest
@@ -476,14 +481,15 @@ func (r *Reader) presentWith(ctx context.Context, viewer Viewer, st content.Stat
 	if err != nil {
 		return StatusView{}, err
 	}
-	out.Attachments, out.Mentions, out.Tags = parts.Attachments, parts.Mentions, parts.Tags
+	out.Attachments, out.Cover, out.Mentions, out.Tags = parts.Attachments, parts.Cover, parts.Mentions, parts.Tags
 	if r.d.LinkCards != nil {
 		if out.Card, err = r.d.LinkCards.View(ctx, st, rev); err != nil {
 			return StatusView{}, err
 		}
 	}
-	// The image of a card is shown as sensitive as the attachments are (ADR-0062 §7).
-	if (len(out.Attachments) > 0 || out.Card != nil && out.Card.Image != nil) && !out.Revision.Sensitive {
+	// The image of a card and the cover of an article are shown as sensitive as the attachments
+	// are (ADR-0062 §7).
+	if (len(out.Attachments) > 0 || out.Cover != nil || out.Card != nil && out.Card.Image != nil) && !out.Revision.Sensitive {
 		if out.Revision.Sensitive, err = r.forcedSensitive(ctx, st); err != nil {
 			return StatusView{}, err
 		}
@@ -554,6 +560,15 @@ func (r *Reader) viewParts(ctx context.Context, rev content.Revision) (RevisionP
 	var err error
 	if out.Attachments, err = r.attachments(ctx, rev.Attachments); err != nil {
 		return RevisionParts{}, err
+	}
+	if a := rev.Article; a != nil && a.Cover != nil {
+		cover, err := r.attachments(ctx, []content.Attachment{{MediaID: a.Cover.MediaID, Description: a.Cover.Description}})
+		if err != nil {
+			return RevisionParts{}, err
+		}
+		if len(cover) > 0 {
+			out.Cover = &cover[0]
+		}
 	}
 	if len(rev.MentionedAccountIDs) > 0 {
 		mentioned, err := r.d.Accounts.FindByIDs(ctx, rev.MentionedAccountIDs)

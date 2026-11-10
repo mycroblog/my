@@ -113,6 +113,12 @@ tags:
       a `read:voice` or `write:voice` scope, except the summary of a room for the visitors who
       do not see it. Every operation answers 404 while the voice chat is off on the server, and
       for a room that the user does not see.
+  - name: events
+    description: |
+      The events of the local users: creating, changing, and cancelling them, answering them,
+      the attendees and their approval, the invitations, and the co-organizers. Nothing of them
+      is federated. The operations need a `read:events` or `write:events` scope, and answer 404
+      for an event that the user does not see.
   - name: client-errors
     description: The uncaught errors of the web client, which it reports to its own server.
   - name: admin-moderation
@@ -1490,7 +1496,9 @@ paths:
         Starts building a ZIP archive of the user's data: `actor.json` (the actor),
         `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
         activities), `moderation.json` (the moderation actions on the account, its appeals, and
-        the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+        the reports it filed), `keyword_filters.json` (the user's keyword filters),
+        `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+        URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
         `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
         `pending` until the archive is built. While
         another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -2888,6 +2896,49 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
+  /accounts/{id}/note:
+    put:
+      operationId: setAccountNote
+      summary: Write a private note on an account
+      description: |
+        Replaces the viewer's private note on the account, a local or a remote one. Only the
+        viewer reads the note (`Relationship.note`); the account is not told, and the note does
+        not leave this server. An empty `note` removes the note. A note on the viewer's own
+        account is a 422.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountNoteUpdate'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteAccountNote
+      summary: Remove the private note on an account
+      description: Without a note it changes nothing. It also works on an account that blocks the user.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:accounts
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Relationship'
+        default:
+          $ref: '#/components/responses/Problem'
   /accounts/{id}/follower:
     delete:
       operationId: removeFollower
@@ -4072,6 +4123,131 @@ paths:
           $ref: '#/components/responses/StatusRejectedProblem'
         default:
           $ref: '#/components/responses/Problem'
+  /articles:
+    post:
+      operationId: createArticle
+      summary: Post an article
+      description: |
+        Posts an article as the authenticated user (201): a long post with a title, a summary, and
+        a cover, whose body is Markdown. The server renders the body once, now, and the article is
+        a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+        deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+        `getStatus` does.
+
+        The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+        Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+        second level of heading (the title is the first). An image whose destination is
+        `media:` followed by the ID of one of the user's own uploads that finished processing
+        (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+        so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+        nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+
+        A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+        than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+        posting. An article is never `direct` (422). While the instance lets only some users write
+        articles (`Instance.article_authoring` is `permission`), a user without the permission
+        `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+        with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+        does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+        server's automated review refuses the article, nothing is posted and the answer is a 422
+        `/api/v1/problems/status-rejected`, as for a post.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateArticleRequest'
+      responses:
+        '201':
+          description: The posted article.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        '422':
+          $ref: '#/components/responses/StatusRejectedProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+  /articles/preview:
+    post:
+      operationId: previewArticle
+      summary: Preview the body of an article
+      description: |
+        Renders the Markdown body of an article of the authenticated user as `createArticle` would
+        store it, without storing anything: the same HTML that the published article has, the
+        summary it would get, and the size and images of the body with their limits. A body over
+        the limits still renders, so that the editor can say by how much.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:statuses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticlePreviewRequest'
+      responses:
+        '200':
+          description: The rendered body.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticlePreview'
+        default:
+          $ref: '#/components/responses/Problem'
+  /articles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/StatusId'
+    put:
+      operationId: editArticle
+      summary: Edit the authenticated user's article
+      description: |
+        Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+        article, checked and rendered as `createArticle` does; the previous revision stays in the
+        edit history. The visibility never changes, and who may reply to, boost, and quote it
+        changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+        with `editStatus`), and so is a body over the limits. When the server's automated review
+        refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+        to appeal, and the article stays as it was. Another account's status is a 403 when the user
+        may see it and a 404 otherwise.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:statuses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditArticleRequest'
+      responses:
+        '200':
+          description: The edited article, with its body in `content`.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        default:
+          $ref: '#/components/responses/Problem'
   /drafts:
     get:
       operationId: listDrafts
@@ -4320,7 +4496,9 @@ paths:
     get:
       operationId: getStatus
       summary: Get a status
-      description: A status that the viewer may not see is a 404, the same as a missing one.
+      description: |
+        A status that the viewer may not see is a 404, the same as a missing one. An article comes
+        with its body in `content`.
       tags:
         - statuses
       security:
@@ -4346,7 +4524,8 @@ paths:
         Replaces the text, content warning, sensitivity, language, and media of a status; the
         previous content stays in the edit history. The visibility and reply target never
         change. Attached media must be the user's own uploads that finished processing (422
-        otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+        otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+        article is edited with `editArticle` (422 here).
         When the server's automated review refuses the edit, the answer is a 422
         `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
         status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -6128,7 +6307,7 @@ paths:
         `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
         leaves the room the user was in. Invalid settings are a 422.
         With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-        room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+        room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
         status for a post that cannot be posted. The local followers of the user who see the room
         get a `voice_room_started` notification.
       tags:
@@ -6964,6 +7143,412 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/VoiceRoomHistoryPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events:
+    get:
+      operationId: listEvents
+      summary: List the upcoming events
+      description: |
+        The events that the user sees and that have not ended, the nearest start first. A page may
+        hold fewer events than `limit` and still have a `next_cursor`.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the events.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createEvent
+      summary: Create an event
+      description: |
+        Creates an event that the user organizes, with a fixed date. The user must be a local,
+        unrestricted user who may create events (the instance setting `event_creators`, or the
+        `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+        place needs the voice chat on and a user who may host its rooms: a 422
+        `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+        (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+        the past are a 422.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreate'
+      responses:
+        '201':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      operationId: getEvent
+      summary: Get an event
+      description: |
+        The event, as the user sees it: the places that the user does not see are left out. A 404
+        for an event that the user does not see.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateEvent
+      summary: Change an event
+      description: |
+        Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+        organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+        `voice` place needs the organizer to be able to host rooms (a 422
+        `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdate'
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    post:
+      operationId: cancelEvent
+      summary: Cancel an event
+      description: |
+        Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+        more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+        A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCancelRequest'
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/rsvp:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    put:
+      operationId: answerEvent
+      summary: Answer an event
+      description: |
+        Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+        starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+        reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+        answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+        `declined` are never refused. `declined` ends an approval. A 409
+        `/api/v1/problems/event-closed` for an event that started or was cancelled.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRSVP'
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/attendees:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      operationId: listEventAttendees
+      summary: List the attendees of an event
+      description: |
+        The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
+        sees the event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the attendees.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAttendeePage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/attendees/{account_id}/approval:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventAccountId'
+    put:
+      operationId: approveEventAttendee
+      summary: Approve an attendee of an event
+      description: |
+        Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
+        co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
+        the approved. An approval ends when the attendee answers `declined`. A 422
+        `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
+        A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '200':
+          description: The attendee.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAttendee'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: revokeEventAttendeeApproval
+      summary: Revoke the approval of an attendee of an event
+      description: |
+        Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
+        did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '200':
+          description: The attendee.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAttendee'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/invitations:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      operationId: listEventInvitations
+      summary: List the invitations of an event
+      description: |
+        The invitations of the event that were not revoked, oldest first, for the organizer and the
+        co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the invitations.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInvitationPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: inviteToEvent
+      summary: Invite a user to an event
+      description: |
+        Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+        from now on, whatever its visibility. A user is invited to an event once (a 409
+        `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+        `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+        the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+        most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventInvitationCreate'
+      responses:
+        '201':
+          description: The invitation.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInvitation'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/invitations/{account_id}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventAccountId'
+    delete:
+      operationId: revokeEventInvitation
+      summary: Revoke an invitation to an event
+      description: |
+        Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
+        only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
+        invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '204':
+          description: Done.
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/coorganizers/{account_id}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventAccountId'
+    put:
+      operationId: assignEventCoorganizer
+      summary: Name a co-organizer of an event
+      description: |
+        Names a local user a co-organizer of the event, by its organizer: a co-organizer changes the
+        event, invites, and approves attendees, and sees every place. An event has at most 3
+        co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
+        `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
+        organizer, or is in a block relation with the organizer or a co-organizer. A 403
+        `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: removeEventCoorganizer
+      summary: Remove a co-organizer of an event
+      description: |
+        Removes a co-organizer of the event, by its organizer. A 403
+        `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
         default:
           $ref: '#/components/responses/Problem'
   /client_errors:
@@ -12699,6 +13284,7 @@ components:
             read:bookmarks: Read the user's bookmarks.
             read:custom_emojis: Read the custom emoji the user made and their requests for new ones.
             read:direct: Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
+            read:events: Read the events the user sees, their attendees, and the invitations of the events the user organizes.
             read:filters: Read the user's keyword filters.
             read:finance: Read the totals of the instance's costs and income, as far as the user's roles allow.
             read:follows: Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
@@ -12712,6 +13298,7 @@ components:
             write:blocks: Block and unblock accounts.
             write:bookmarks: Bookmark posts and remove bookmarks.
             write:custom_emojis: Request new custom emoji, and change and delete the ones the user made.
+            write:events: Create, change, and cancel events, answer them, approve their attendees, invite to them, and name their co-organizers.
             write:favourites: Favourite posts and react to them with emoji, and take both back.
             write:filters: Create, change, and delete the user's keyword filters.
             write:follows: Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
@@ -12841,6 +13428,20 @@ components:
       in: path
       required: true
       description: The ID of the error group.
+      schema:
+        $ref: '#/components/schemas/Id'
+    EventAccountId:
+      name: account_id
+      in: path
+      required: true
+      description: The ID of the account.
+      schema:
+        $ref: '#/components/schemas/Id'
+    EventId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the event.
       schema:
         $ref: '#/components/schemas/Id'
     DomainActionId:
@@ -14467,6 +15068,18 @@ components:
             - blocking
             - blocked_by
             - domain_muted
+    AccountNoteUpdate:
+      description: The viewer's private note on an account.
+      type: object
+      required:
+        - note
+      properties:
+        note:
+          description: |
+            The note, up to 2,000 characters (Unicode code points). An empty note removes the one
+            the viewer has.
+          type: string
+          maxLength: 2000
     AccountFieldSource:
       description: A metadata field of a profile as the user typed it.
       type: object
@@ -18896,6 +19509,9 @@ components:
         allow_polls:
           description: Whether the posts with a poll may be kept (`keep_polls`).
           type: boolean
+        allow_articles:
+          description: Whether articles may be kept (`keep_articles`); always given.
+          type: boolean
         allow_visibilities:
           description: Whether posts may be kept by their visibility (`keep_visibilities`).
           type: boolean
@@ -18942,6 +19558,11 @@ components:
           type: boolean
         keep_polls:
           description: Keep the posts with a poll.
+          type: boolean
+        keep_articles:
+          description: |
+            Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+            (on for a user who never saved a policy).
           type: boolean
         keep_visibilities:
           description: Keep the posts with these visibilities, from the widest audience to the narrowest; empty keeps none for their visibility.
@@ -20048,6 +20669,8 @@ components:
             - discoverable
             - indexable
             - ai_opt_out
+            - feed_enabled
+            - feed_follows_indexable
             - source
             - posting
             - permissions
@@ -20070,6 +20693,19 @@ components:
               description: |
                 Whether the account's pages state that AI may neither train on nor use them, whatever the instance's `ai_usage`. The statement is made by the
                 pages of this instance only; other servers and the media files do not carry it.
+              type: boolean
+            feed_enabled:
+              description: |
+                Whether the owner lets the Atom feed of the account's public posts be served at the
+                profile's `url` followed by `.atom`, and its public posts appear in the Atom feeds of
+                hashtags. It is the owner's own choice once made, and `indexable` until then
+                (`feed_follows_indexable`). A restricted or moved account has no feed whatever it says.
+              type: boolean
+            feed_follows_indexable:
+              description: |
+                Whether the owner has not chosen about the feed yet, so that `feed_enabled` follows
+                `indexable`. Setting `feed_enabled` makes the choice, and a later change of `indexable`
+                leaves it as it is.
               type: boolean
             source:
               $ref: '#/components/schemas/AccountSource'
@@ -21020,6 +21656,378 @@ components:
         - open
         - resolved
         - muted
+    Event:
+      description: |
+        An event of the local users of this server, as the user sees it. Times are in UTC;
+        `time_zone` is the event's own time zone, to show next to the user's. `places` holds only the
+        places that the user sees: `hidden_places` lists the kinds of the others, whose details never
+        reach the client.
+      type: object
+      required:
+        - id
+        - organizer
+        - coorganizers
+        - title
+        - description
+        - visibility
+        - time_zone
+        - place_disclosure
+        - capacity
+        - places
+        - hidden_places
+        - starts_at
+        - ends_at
+        - state
+        - going_count
+        - created_at
+        - revised_at
+        - revision_count
+        - viewer
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        organizer:
+          $ref: '#/components/schemas/Account'
+        coorganizers:
+          description: The co-organizers, in the order the organizer named them; up to 3.
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        title:
+          type: string
+        description:
+          description: Plain text; empty for none.
+          type: string
+        visibility:
+          $ref: '#/components/schemas/EventVisibility'
+        time_zone:
+          description: The IANA name of the event's time zone, such as `Asia/Tokyo`.
+          type: string
+        place_disclosure:
+          $ref: '#/components/schemas/EventPlaceDisclosure'
+        capacity:
+          description: How many attendees may answer `going`; 0 for no limit.
+          type: integer
+        places:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventPlace'
+        hidden_places:
+          description: The kinds of the places that the user does not see.
+          type: array
+          items:
+            $ref: '#/components/schemas/EventPlaceKind'
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        state:
+          $ref: '#/components/schemas/EventState'
+        cancellation:
+          $ref: '#/components/schemas/EventCancellation'
+        going_count:
+          description: How many attendees answer `going`.
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        revised_at:
+          description: When the settings were last changed (the creation for an event never changed).
+          type: string
+          format: date-time
+        revision_count:
+          description: How many versions the settings have had, the first included.
+          type: integer
+        viewer:
+          $ref: '#/components/schemas/EventViewer'
+    EventAnswer:
+      description: An answer to an event.
+      type: string
+      enum:
+        - going
+        - maybe
+        - declined
+    EventAttendee:
+      description: An attendee of an event, who answered `going` or `maybe`.
+      type: object
+      required:
+        - account
+        - answer
+        - approved
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        answer:
+          $ref: '#/components/schemas/EventAnswer'
+        approved:
+          description: Whether the organizer or a co-organizer approved the answer.
+          type: boolean
+    EventAttendeePage:
+      description: A page of the attendees of an event, in the order of their answers.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/EventAttendee'
+    EventCancelReason:
+      description: |
+        Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+        suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+      type: string
+      enum:
+        - organizer
+        - moderator
+        - organizer_suspended
+        - organizer_deleted
+    EventCancelRequest:
+      description: The cancellation of an event by its organizer.
+      type: object
+      properties:
+        note:
+          description: The reason, up to 500 characters, shown with the event; omitted for none.
+          type: string
+    EventCancellation:
+      description: The cancellation of an event.
+      type: object
+      required:
+        - reason
+        - cancelled_at
+      properties:
+        reason:
+          $ref: '#/components/schemas/EventCancelReason'
+        note:
+          description: The reason given for the cancellation; omitted for none.
+          type: string
+        cancelled_at:
+          type: string
+          format: date-time
+    EventCreate:
+      description: A new event with a fixed date.
+      type: object
+      required:
+        - title
+        - starts_at
+        - ends_at
+      properties:
+        title:
+          description: 1 to 100 characters on one line.
+          type: string
+        description:
+          description: Up to 3,000 characters of plain text; line breaks are kept.
+          type: string
+        visibility:
+          description: Who sees the event; `public` when omitted.
+          allOf:
+            - $ref: '#/components/schemas/EventVisibility'
+        time_zone:
+          description: The IANA name of the event's time zone; the user's time zone when omitted.
+          type: string
+        place_disclosure:
+          description: Who sees the `physical` and `url` places; `approved` when omitted.
+          allOf:
+            - $ref: '#/components/schemas/EventPlaceDisclosure'
+        capacity:
+          description: How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
+          type: integer
+        places:
+          description: Up to 3 places, one of each kind.
+          type: array
+          items:
+            $ref: '#/components/schemas/EventPlace'
+        starts_at:
+          description: After now and at most a year ahead.
+          type: string
+          format: date-time
+        ends_at:
+          description: After `starts_at` and at most 7 days later.
+          type: string
+          format: date-time
+    EventInvitation:
+      description: |
+        An invitation to an event. The invited user sees the event until the invitation is revoked,
+        whatever its visibility.
+      type: object
+      required:
+        - id
+        - account
+        - invited_by_id
+        - invited_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        account:
+          $ref: '#/components/schemas/Account'
+        invited_by_id:
+          $ref: '#/components/schemas/Id'
+        invited_at:
+          type: string
+          format: date-time
+    EventInvitationCreate:
+      description: An invitation of a user to an event.
+      type: object
+      required:
+        - account_id
+      properties:
+        account_id:
+          $ref: '#/components/schemas/Id'
+    EventInvitationPage:
+      description: A page of the invitations of an event that were not revoked, oldest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/EventInvitation'
+    EventPage:
+      description: A page of the events that the user sees and that have not ended, the nearest start first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Event'
+    EventPlace:
+      description: |
+        A place of an event. A `physical` place has a `name`, an `address`, and an optional map link in
+        `url`; a `url` place has a `name` and a `url`; a `voice` place has `speakers`, who may speak
+        without asking in the voice chat room that opens when the event starts. A URL is an `http` or
+        `https` URL of up to 2,000 characters, which the server never fetches. The fields that a kind
+        does not have are omitted.
+      type: object
+      required:
+        - kind
+      properties:
+        kind:
+          $ref: '#/components/schemas/EventPlaceKind'
+        name:
+          description: Up to 100 characters on one line.
+          type: string
+        address:
+          description: Up to 500 characters; line breaks are kept.
+          type: string
+        url:
+          type: string
+        speakers:
+          description: Who may speak without asking in the room; `manual` when omitted.
+          allOf:
+            - $ref: '#/components/schemas/VoiceRoomSpeakers'
+    EventPlaceDisclosure:
+      description: |
+        Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+        organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+        and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+        event.
+      type: string
+      enum:
+        - approved
+        - viewers
+    EventPlaceKind:
+      description: |
+        The kind of a place: `voice` a voice chat room of this server, `physical` a place to meet in
+        person, and `url` a link such as a stream or a meeting of another service.
+      type: string
+      enum:
+        - voice
+        - physical
+        - url
+    EventRSVP:
+      description: An answer to an event.
+      type: object
+      required:
+        - answer
+      properties:
+        answer:
+          $ref: '#/components/schemas/EventAnswer'
+    EventState:
+      description: |
+        Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
+        `ends_at` is in the past.
+      type: string
+      enum:
+        - scheduled
+        - cancelled
+    EventUpdate:
+      description: |
+        Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
+        date (`starts_at` and `ends_at` together) is checked as a new event's.
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        visibility:
+          $ref: '#/components/schemas/EventVisibility'
+        time_zone:
+          type: string
+        place_disclosure:
+          $ref: '#/components/schemas/EventPlaceDisclosure'
+        capacity:
+          type: integer
+        places:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventPlace'
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+    EventViewer:
+      description: What an event says of the user who reads it.
+      type: object
+      required:
+        - organizer
+        - coorganizer
+        - invited
+        - approved
+      properties:
+        organizer:
+          description: Whether the user organizes the event.
+          type: boolean
+        coorganizer:
+          description: Whether the user co-organizes the event.
+          type: boolean
+        invited:
+          description: Whether the user has an invitation that was not revoked.
+          type: boolean
+        answer:
+          description: The user's answer; omitted before the user answers.
+          allOf:
+            - $ref: '#/components/schemas/EventAnswer'
+        approved:
+          description: Whether the organizer or a co-organizer approved the user's answer.
+          type: boolean
+    EventVisibility:
+      description: |
+        Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+        `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+        whom the organizer follows, and `invited` the invited users only. The organizer, the
+        co-organizers, the invited users, and the users who answered always see it, unless a block
+        separates them from the organizer or a co-organizer.
+      type: string
+      enum:
+        - public
+        - followers
+        - following
+        - mutuals
+        - invited
     ExternalAuthorizationStart:
       description: Where the browser goes to sign in at a login provider.
       type: object
@@ -21632,6 +22640,14 @@ components:
             Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
             they are off, and clients then show no entry to them.
           type: boolean
+        article_authoring:
+          description: |
+            Who may write new articles (`createArticle`): `everyone` (every local user who is not
+            limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+          type: string
+          enum:
+            - everyone
+            - permission
         voice_room_starters:
           description: |
             Who may open voice chat rooms: `everyone` (every local user who is not limited) or
@@ -21924,6 +22940,8 @@ components:
           type: boolean
         drafts:
           $ref: '#/components/schemas/InstanceDraftLimits'
+        articles:
+          $ref: '#/components/schemas/InstanceArticleLimits'
     InstanceRegistrations:
       description: How people sign up on the instance.
       type: object
@@ -22156,6 +23174,12 @@ components:
         - max_scheduled_posts_per_day
         - scheduled_post_min_lead_minutes
         - scheduled_post_max_lead_days
+        - article_authoring
+        - max_article_bytes
+        - max_article_images
+        - auto_delete_default_keep_articles
+        - auto_delete_max_allow_articles
+        - event_creators
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -24300,8 +25324,12 @@ components:
         `permitted`, a member permission (only the built-in admin role by default).
         `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
         deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
-        permission (only the built-in admin role by default). The others guard no client API
-        operation yet.
+        permission (only the built-in admin role by default). `create_articles`: writing new
+        articles with `createArticle` while the instance setting `article_authoring` is
+        `permission`, a member permission (only the built-in admin role by default).
+        `create_events`: creating events on `POST /events` while the instance setting
+        `event_creators` is `permitted`, a member permission (only the built-in admin role by
+        default). The others guard no client API operation yet.
       type: string
       enum:
         - manage_reports
@@ -24328,6 +25356,8 @@ components:
         - manage_login_providers
         - create_invites
         - keep_posts_longer
+        - create_articles
+        - create_events
     PickerCustomEmoji:
       description: |
         A local custom emoji that the picker offers. Picking it inserts
@@ -24824,6 +25854,20 @@ components:
         - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
           co-hosts of the room.
         - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+        - `/api/v1/problems/event-not-eligible` (403): the user may not create events.
+        - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
+          co-organizers of the event.
+        - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
+        - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+        - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
+        - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
+          room: the voice chat is off, or its organizer may not host rooms.
+        - `/api/v1/problems/event-already-invited` (409): the account is already invited to the event.
+        - `/api/v1/problems/event-invalid-invitee` (422): the account cannot be invited to the event.
+        - `/api/v1/problems/event-invalid-coorganizer` (422): the account cannot co-organize the event.
+        - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
+          it can.
+        - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
         - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
           be searched (`Instance.full_text_search.available`).
         - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
@@ -25234,7 +26278,7 @@ components:
         rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
         `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
         `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
-        `read:mutes` or `write:mutes`.
+        `read:mutes` or `write:mutes`; `note` needs `read:accounts` or `write:accounts`.
       type: object
       required:
         - id
@@ -25271,6 +26315,12 @@ components:
         muting_notifications:
           description: Whether the viewer's mute also hides the account's notifications.
           type: boolean
+        note:
+          description: |
+            The viewer's private note on the account (`setAccountNote`), empty without one. Only the
+            viewer reads it.
+          type: string
+          maxLength: 2000
     RelationshipSeverance:
       description: |
         The follows that a `relationships_severed` tells of: the user lost them when the
@@ -25699,6 +26749,216 @@ components:
     SpoilerText:
       description: The content warning; omitted or empty for none. It counts toward `max_post_characters`.
       type: string
+    ArticleCoverInput:
+      description: |
+        The cover image of an article: one of the user's own uploads that finished processing (422
+        otherwise), with its alternative text; omitted for none.
+      allOf:
+        - $ref: '#/components/schemas/StatusMediaItem'
+    ArticlePreview:
+      description: The body of an article as publishing it would store it.
+      type: object
+      required:
+        - content
+        - summary
+        - summary_from_body
+        - bytes
+        - max_bytes
+        - images
+        - max_images
+      properties:
+        content:
+          description: The body as sanitized HTML, the same as the published article's `content`.
+          type: string
+        summary:
+          description: The summary the article would get.
+          type: string
+        summary_from_body:
+          description: Whether `summary` is made from the body, because the one sent was blank.
+          type: boolean
+        bytes:
+          description: The UTF-8 bytes of `content`; over `max_bytes`, publishing is a 422.
+          type: integer
+          minimum: 0
+        max_bytes:
+          description: The most bytes of `content` (`Instance.limits.articles.max_bytes`).
+          type: integer
+          minimum: 1
+        images:
+          description: The number of the user's own uploads that the body shows as images; over `max_images`, publishing is a 422.
+          type: integer
+          minimum: 0
+        max_images:
+          description: The most images of the body (`Instance.limits.articles.max_images`).
+          type: integer
+          minimum: 0
+    ArticlePreviewRequest:
+      description: The body of an article to preview.
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          description: The body in Markdown, as `createArticle` takes it.
+          type: string
+        summary:
+          $ref: '#/components/schemas/ArticleSummary'
+    ArticleSource:
+      description: What the author wrote of an article besides its Markdown body, for editing it.
+      type: object
+      required:
+        - title
+        - summary
+        - tags
+      properties:
+        title:
+          description: The title.
+          type: string
+        summary:
+          description: The summary the author wrote; empty when the server made it from the body.
+          type: string
+        cover:
+          description: The cover image; omitted when there is none.
+          allOf:
+            - $ref: '#/components/schemas/StatusMediaItem'
+        tags:
+          description: The hashtags, without `#`.
+          type: array
+          items:
+            type: string
+    ArticleSummary:
+      description: |
+        The summary of an article, as plain text. Omitted or blank, the server makes one from the
+        start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+        summary, never a content warning.
+      type: string
+      maxLength: 500
+    ArticleTagsInput:
+      description: |
+        The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+        article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+      type: array
+      maxItems: 10
+      items:
+        type: string
+        minLength: 1
+        maxLength: 257
+    ArticleText:
+      description: |
+        The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+        `Instance.limits.articles.max_bytes` bytes.
+      type: string
+      minLength: 1
+    ArticleTitle:
+      description: The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+      type: string
+      minLength: 1
+      maxLength: 200
+    CreateArticleRequest:
+      description: A new article.
+      type: object
+      required:
+        - title
+        - text
+        - visibility
+      properties:
+        title:
+          $ref: '#/components/schemas/ArticleTitle'
+        summary:
+          $ref: '#/components/schemas/ArticleSummary'
+        cover:
+          $ref: '#/components/schemas/ArticleCoverInput'
+        text:
+          $ref: '#/components/schemas/ArticleText'
+        tags:
+          $ref: '#/components/schemas/ArticleTagsInput'
+        language:
+          $ref: '#/components/schemas/StatusLanguageInput'
+        visibility:
+          description: The visibility; an article is never `direct` (422).
+          allOf:
+            - $ref: '#/components/schemas/Visibility'
+        sensitive:
+          description: Whether the body and the cover are folded behind the title and the summary.
+          type: boolean
+        interaction_policy:
+          description: |
+            Who may reply to, boost, and quote the new article; the kinds left out take the user's
+            `default_interaction_policy`.
+          allOf:
+            - $ref: '#/components/schemas/InteractionPolicyChange'
+    EditArticleRequest:
+      description: The new content of an article.
+      type: object
+      required:
+        - title
+        - text
+      properties:
+        title:
+          $ref: '#/components/schemas/ArticleTitle'
+        summary:
+          $ref: '#/components/schemas/ArticleSummary'
+        cover:
+          $ref: '#/components/schemas/ArticleCoverInput'
+        text:
+          $ref: '#/components/schemas/ArticleText'
+        tags:
+          $ref: '#/components/schemas/ArticleTagsInput'
+        language:
+          $ref: '#/components/schemas/StatusLanguageInput'
+        sensitive:
+          description: Whether the body and the cover are folded behind the title and the summary.
+          type: boolean
+    InstanceArticleLimits:
+      description: |
+        The limits of the body of an article (the instance settings `max_article_bytes` and
+        `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+      type: object
+      required:
+        - max_bytes
+        - max_images
+      properties:
+        max_bytes:
+          description: The most UTF-8 bytes of the HTML that the body renders to.
+          type: integer
+          minimum: 1
+        max_images:
+          description: The most images of the user's own uploads in the body, besides the cover.
+          type: integer
+          minimum: 0
+    StatusArticle:
+      description: |
+        What makes a status an article: its title, summary, and cover. The summary is never a content
+        warning; a `sensitive` article shows the title and the summary and folds the body and the
+        cover.
+      type: object
+      required:
+        - title
+        - summary
+      properties:
+        title:
+          description: The title, as plain text.
+          type: string
+        summary:
+          description: The summary, as plain text; the server makes one from the body when the author writes none.
+          type: string
+        cover:
+          description: The cover image; omitted when there is none or it cannot be shown.
+          allOf:
+            - $ref: '#/components/schemas/MediaAttachment'
+    StatusEditArticle:
+      description: The title and summary of one revision of an article.
+      type: object
+      required:
+        - title
+        - summary
+      properties:
+        title:
+          description: The title of the revision.
+          type: string
+        summary:
+          description: The summary of the revision.
+          type: string
     Status:
       description: |
         A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
@@ -25710,6 +26970,11 @@ components:
         `visibility` and `language` are those of the boosted status, its `content`,
         `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
         empty, its `card` and `quote` are omitted, and its counts are zero.
+
+        An article (`article` is given) is read as its title, summary, and cover everywhere, and
+        its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+        and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+        carry no body. An article has no content warning, media attachments, or poll.
       type: object
       required:
         - id
@@ -25748,8 +27013,11 @@ components:
         content:
           description: |
             The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-            remote status is what the server's sanitizer kept of the received document.
+            remote status is what the server's sanitizer kept of the received document. For an
+            article, its rendered body, or empty in lists (see above).
           type: string
+        article:
+          $ref: '#/components/schemas/StatusArticle'
         spoiler_text:
           description: The content warning; empty when there is none.
           type: string
@@ -25925,8 +27193,12 @@ components:
         - emojis
       properties:
         content:
-          description: The text of the revision as sanitized HTML.
+          description: The text of the revision as sanitized HTML; for an article, its body.
           type: string
+        article:
+          description: The title and summary of the revision of an article; omitted for a post.
+          allOf:
+            - $ref: '#/components/schemas/StatusEditArticle'
         spoiler_text:
           description: The content warning of the revision; empty when there is none.
           type: string
@@ -26087,7 +27359,7 @@ components:
         id:
           $ref: '#/components/schemas/Id'
         text:
-          description: The plain text.
+          description: The plain text; for an article, its Markdown body.
           type: string
         spoiler_text:
           description: The content warning; empty when there is none.
@@ -26095,6 +27367,10 @@ components:
         language:
           description: The BCP 47 language tag; `und` when it is unknown.
           type: string
+        article:
+          description: The rest of what the author wrote of an article; omitted for a post.
+          allOf:
+            - $ref: '#/components/schemas/ArticleSource'
     StatusTranslation:
       description: A post in another language. It belongs to the version of the post that was current when it was asked for.
       type: object
@@ -26678,6 +27954,11 @@ components:
         ai_opt_out:
           description: Whether the account's pages state that AI may neither train on nor use them.
           type: boolean
+        feed_enabled:
+          description: |
+            Whether the Atom feed of the account's public posts may be served. Setting it makes the
+            owner's choice, which a later change of `indexable` leaves as it is.
+          type: boolean
     UpdateCustomEmojiRequest:
       description: The settings of a custom emoji to change; absent ones stay.
       type: object
@@ -26925,7 +28206,9 @@ components:
         Why a voice chat room ended: `host` the host ended it, `empty` nobody was left in it,
         `host_disconnected` the host lost the connection and nobody took over, `host_ineligible` the
         host may no longer host, `moderator` a moderator ended it, `time_limit` it reached the limit
-        of its duration, and `disabled` the voice chat was turned off.
+        of its duration, `disabled` the voice chat was turned off, `host_absent` the host of a room
+        opened for a scheduled time did not come by the end of its wait and nobody took over, and
+        `unattended` nobody came to such a room by the end of its wait.
       type: string
       enum:
         - host
@@ -26935,6 +28218,8 @@ components:
         - moderator
         - time_limit
         - disabled
+        - host_absent
+        - unattended
     VoiceGrant:
       description: |
         What the client of a session needs to connect to the audio of a room. `kind` is the method
@@ -27304,11 +28589,12 @@ components:
     VoiceRoomSpeakers:
       description: |
         Who may become a speaker without asking: `everyone`, `followers` of the current host,
-        `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+        `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
       type: string
       enum:
         - everyone
         - followers
+        - following
         - mutuals
         - manual
     VoiceRoomSummary:
@@ -27368,13 +28654,14 @@ components:
     VoiceRoomVisibility:
       description: |
         Who sees a voice chat room and may join it: `local` every local user, `followers` the
-        followers of the current host, `mutuals` those who follow the host and whom the host follows,
-        and `invited` only the invited users. The host, the co-hosts, the participants, and the
+        followers of the current host, `following` those whom the host follows, `mutuals` those who
+        follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
         invited users always see it, and a block with the host or a co-host always hides it.
       type: string
       enum:
         - local
         - followers
+        - following
         - mutuals
         - invited
     VoiceSession:
@@ -27392,8 +28679,8 @@ components:
         `write:statuses` scope besides `write:voice`, or the request is a 403
         `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
         the `local` visibility and `private` for a room of the `followers` visibility, federated like
-        any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
-        visibility has no start post.
+        any other post, and the host deletes it like any other. A room of the `following`, `mutuals`,
+        or `invited` visibility has no start post.
       type: object
       properties:
         text:
@@ -27449,7 +28736,8 @@ components:
         which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
         `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
         `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
-        `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
+        `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`, `host_absent`,
+        `unattended`).
       type: object
       required:
         - reason
@@ -27472,6 +28760,8 @@ components:
             - moderator
             - time_limit
             - disabled
+            - host_absent
+            - unattended
     VoiceStreamGrant:
       title: grant
       description: The data of a `grant` event of a voice chat room stream.

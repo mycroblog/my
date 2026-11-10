@@ -300,3 +300,30 @@ SELECT pg_advisory_xact_lock(hashtextextended(sqlc.arg(lock_key)::text, 0));
 -- ListVoiceRoomParticipantsAmong returns the participants among account_ids.
 -- name: ListVoiceRoomParticipantsAmong :many
 SELECT account_id FROM voice_room_participants WHERE account_id = ANY(sqlc.arg(account_ids)::uuid[]) ORDER BY account_id;
+
+-- Scheduled rooms (ADR-0100 section 16) ------------------------------------------------------
+
+-- name: InsertVoiceRoomSchedule :exec
+INSERT INTO voice_room_schedules (room_id, schedule_key, wait_ends_at) VALUES ($1, $2, $3);
+
+-- name: GetVoiceRoomSchedule :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE room_id = $1;
+
+-- name: GetVoiceRoomScheduleByKey :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE schedule_key = $1;
+
+-- name: InsertVoiceRoomCohostCandidate :exec
+INSERT INTO voice_room_cohost_candidates (room_id, account_id, position) VALUES ($1, $2, $3)
+ON CONFLICT (room_id, account_id) DO NOTHING;
+
+-- GetVoiceRoomCohostCandidate returns the position of a co-host candidate of a room and whether
+-- the account was ever removed as a co-host of it.
+-- name: GetVoiceRoomCohostCandidate :one
+SELECT c.position,
+  EXISTS (SELECT 1 FROM voice_room_cohost_changes x WHERE x.room_id = c.room_id AND x.account_id = c.account_id AND x.change = 'removed') AS removed
+FROM voice_room_cohost_candidates c
+WHERE c.room_id = $1 AND c.account_id = $2;
+
+-- IsVoiceRoomAttended reports whether anybody ever joined a room.
+-- name: IsVoiceRoomAttended :one
+SELECT EXISTS (SELECT 1 FROM voice_room_participations WHERE room_id = $1) AS attended;

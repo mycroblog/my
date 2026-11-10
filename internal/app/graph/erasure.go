@@ -29,14 +29,17 @@ type ErasureRepository interface {
 	// EraseMutesOf deletes up to limit mutes by the account and up to limit mutes of it, and
 	// returns the more of the two counts.
 	EraseMutesOf(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error)
+	// EraseNotesOf deletes up to limit private notes by the account and up to limit notes on
+	// it, and returns the more of the two counts.
+	EraseNotesOf(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error)
 	// EraseCountersOf deletes the follow counters of the account.
 	EraseCountersOf(ctx context.Context, tx uow.Tx, accountID string) error
 }
 
-// Eraser erases a deleted local account's follows, blocks, and mutes (data-model §8). The live
+// Eraser erases a deleted account's follows, blocks, mutes, and private notes (data-model §8). The live
 // follows end first with the reason account_deleted, which counts them out of the other
 // accounts' counters and tells no server (the Delete of the actor did); then the follows, blocks,
-// and mutes go with their events and projections.
+// and mutes go with their events and projections, and the notes by and on the account go.
 type Eraser struct {
 	uow     uow.UnitOfWork
 	repo    Repository
@@ -73,7 +76,11 @@ func (e *Eraser) EraseAccountData(ctx context.Context, t appaccount.ErasureTarge
 		if err != nil {
 			return err
 		}
-		done = len(edges) < limit && follows < int64(limit) && blocks < int64(limit) && mutes < int64(limit)
+		notes, err := e.erasure.EraseNotesOf(ctx, tx, t.AccountID, limit)
+		if err != nil {
+			return err
+		}
+		done = len(edges) < limit && follows < int64(limit) && blocks < int64(limit) && mutes < int64(limit) && notes < int64(limit)
 		if !done {
 			return nil
 		}

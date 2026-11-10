@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+  organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+  and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+  event.
+type: string
+enum: [approved, viewers]

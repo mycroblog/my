@@ -9,8 +9,8 @@ INSERT INTO local_accounts (account_id, user_id, username, username_normalized) 
 -- name: InsertProfileRevision :exec
 INSERT INTO account_profile_revisions (
   id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+  avatar_media_id, header_media_id, revised_at, feed
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
 
 -- name: InsertProfileField :exec
 INSERT INTO account_profile_fields (revision_id, position, name, value_html) VALUES ($1, $2, $3, $4);
@@ -147,7 +147,7 @@ SELECT account_id, username, username_normalized, domain FROM account_handles WH
 
 -- name: GetProfileRevision :one
 SELECT id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at
+  avatar_media_id, header_media_id, revised_at, feed
 FROM account_profile_revisions WHERE id = $1;
 
 -- name: ListProfileFields :many

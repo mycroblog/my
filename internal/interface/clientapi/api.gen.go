@@ -2341,6 +2341,135 @@ func (e ErrorGroupState) Valid() bool {
 	}
 }
 
+// Defines values for EventAnswer.
+const (
+	EventAnswerDeclined EventAnswer = "declined"
+	EventAnswerGoing    EventAnswer = "going"
+	EventAnswerMaybe    EventAnswer = "maybe"
+)
+
+// Valid indicates whether the value is a known member of the EventAnswer enum.
+func (e EventAnswer) Valid() bool {
+	switch e {
+	case EventAnswerDeclined:
+		return true
+	case EventAnswerGoing:
+		return true
+	case EventAnswerMaybe:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventCancelReason.
+const (
+	EventCancelReasonModerator          EventCancelReason = "moderator"
+	EventCancelReasonOrganizer          EventCancelReason = "organizer"
+	EventCancelReasonOrganizerDeleted   EventCancelReason = "organizer_deleted"
+	EventCancelReasonOrganizerSuspended EventCancelReason = "organizer_suspended"
+)
+
+// Valid indicates whether the value is a known member of the EventCancelReason enum.
+func (e EventCancelReason) Valid() bool {
+	switch e {
+	case EventCancelReasonModerator:
+		return true
+	case EventCancelReasonOrganizer:
+		return true
+	case EventCancelReasonOrganizerDeleted:
+		return true
+	case EventCancelReasonOrganizerSuspended:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventPlaceDisclosure.
+const (
+	EventPlaceDisclosureApproved EventPlaceDisclosure = "approved"
+	EventPlaceDisclosureViewers  EventPlaceDisclosure = "viewers"
+)
+
+// Valid indicates whether the value is a known member of the EventPlaceDisclosure enum.
+func (e EventPlaceDisclosure) Valid() bool {
+	switch e {
+	case EventPlaceDisclosureApproved:
+		return true
+	case EventPlaceDisclosureViewers:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventPlaceKind.
+const (
+	EventPlaceKindPhysical EventPlaceKind = "physical"
+	EventPlaceKindUrl      EventPlaceKind = "url"
+	EventPlaceKindVoice    EventPlaceKind = "voice"
+)
+
+// Valid indicates whether the value is a known member of the EventPlaceKind enum.
+func (e EventPlaceKind) Valid() bool {
+	switch e {
+	case EventPlaceKindPhysical:
+		return true
+	case EventPlaceKindUrl:
+		return true
+	case EventPlaceKindVoice:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventState.
+const (
+	EventStateCancelled EventState = "cancelled"
+	EventStateScheduled EventState = "scheduled"
+)
+
+// Valid indicates whether the value is a known member of the EventState enum.
+func (e EventState) Valid() bool {
+	switch e {
+	case EventStateCancelled:
+		return true
+	case EventStateScheduled:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventVisibility.
+const (
+	EventVisibilityFollowers EventVisibility = "followers"
+	EventVisibilityFollowing EventVisibility = "following"
+	EventVisibilityInvited   EventVisibility = "invited"
+	EventVisibilityMutuals   EventVisibility = "mutuals"
+	EventVisibilityPublic    EventVisibility = "public"
+)
+
+// Valid indicates whether the value is a known member of the EventVisibility enum.
+func (e EventVisibility) Valid() bool {
+	switch e {
+	case EventVisibilityFollowers:
+		return true
+	case EventVisibilityFollowing:
+		return true
+	case EventVisibilityInvited:
+		return true
+	case EventVisibilityMutuals:
+		return true
+	case EventVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FederationScopeImpactScope.
 const (
 	FederationScopeImpactScopeAllowlist FederationScopeImpactScope = "allowlist"
@@ -2650,6 +2779,24 @@ func (e IncomeVisibility) Valid() bool {
 	}
 }
 
+// Defines values for InstanceArticleAuthoring.
+const (
+	InstanceArticleAuthoringEveryone   InstanceArticleAuthoring = "everyone"
+	InstanceArticleAuthoringPermission InstanceArticleAuthoring = "permission"
+)
+
+// Valid indicates whether the value is a known member of the InstanceArticleAuthoring enum.
+func (e InstanceArticleAuthoring) Valid() bool {
+	switch e {
+	case InstanceArticleAuthoringEveryone:
+		return true
+	case InstanceArticleAuthoringPermission:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceVoiceRoomStarters.
 const (
 	InstanceVoiceRoomStartersEveryone  InstanceVoiceRoomStarters = "everyone"
@@ -2780,9 +2927,11 @@ func (e InstanceRegistrationsMode) Valid() bool {
 const (
 	InstanceSettingKeyAiUsage                            InstanceSettingKey = "ai_usage"
 	InstanceSettingKeyAppealWindowDays                   InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyArticleAuthoring                   InstanceSettingKey = "article_authoring"
 	InstanceSettingKeyAuditLogRetentionDays              InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                    InstanceSettingKey = "authorized_fetch"
 	InstanceSettingKeyAutoDeleteDefaultEnabled           InstanceSettingKey = "auto_delete_default_enabled"
+	InstanceSettingKeyAutoDeleteDefaultKeepArticles      InstanceSettingKey = "auto_delete_default_keep_articles"
 	InstanceSettingKeyAutoDeleteDefaultKeepBookmarked    InstanceSettingKey = "auto_delete_default_keep_bookmarked"
 	InstanceSettingKeyAutoDeleteDefaultKeepDirect        InstanceSettingKey = "auto_delete_default_keep_direct"
 	InstanceSettingKeyAutoDeleteDefaultKeepFavourited    InstanceSettingKey = "auto_delete_default_keep_favourited"
@@ -2798,6 +2947,7 @@ const (
 	InstanceSettingKeyAutoDeleteDefaultMinAgeDays        InstanceSettingKey = "auto_delete_default_min_age_days"
 	InstanceSettingKeyAutoDeleteGraceDays                InstanceSettingKey = "auto_delete_grace_days"
 	InstanceSettingKeyAutoDeleteMaxAgeDays               InstanceSettingKey = "auto_delete_max_age_days"
+	InstanceSettingKeyAutoDeleteMaxAllowArticles         InstanceSettingKey = "auto_delete_max_allow_articles"
 	InstanceSettingKeyAutoDeleteMaxAllowBookmarked       InstanceSettingKey = "auto_delete_max_allow_bookmarked"
 	InstanceSettingKeyAutoDeleteMaxAllowFavourited       InstanceSettingKey = "auto_delete_max_allow_favourited"
 	InstanceSettingKeyAutoDeleteMaxAllowMedia            InstanceSettingKey = "auto_delete_max_allow_media"
@@ -2812,6 +2962,7 @@ const (
 	InstanceSettingKeyDomainActionsRationaleVisibility   InstanceSettingKey = "domain_actions_rationale_visibility"
 	InstanceSettingKeyDomainActionsVisibility            InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration          InstanceSettingKey = "dynamic_client_registration"
+	InstanceSettingKeyEventCreators                      InstanceSettingKey = "event_creators"
 	InstanceSettingKeyFeaturedAccounts                   InstanceSettingKey = "featured_accounts"
 	InstanceSettingKeyFederatedTimelineVisibility        InstanceSettingKey = "federated_timeline_visibility"
 	InstanceSettingKeyFederationMode                     InstanceSettingKey = "federation_mode"
@@ -2844,6 +2995,8 @@ const (
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt           InstanceSettingKey = "link_cards_ignore_robots_txt"
 	InstanceSettingKeyLocalTimelineVisibility            InstanceSettingKey = "local_timeline_visibility"
 	InstanceSettingKeyLoginProvidersOnly                 InstanceSettingKey = "login_providers_only"
+	InstanceSettingKeyMaxArticleBytes                    InstanceSettingKey = "max_article_bytes"
+	InstanceSettingKeyMaxArticleImages                   InstanceSettingKey = "max_article_images"
 	InstanceSettingKeyMaxDrafts                          InstanceSettingKey = "max_drafts"
 	InstanceSettingKeyMaxScheduledPosts                  InstanceSettingKey = "max_scheduled_posts"
 	InstanceSettingKeyMaxScheduledPostsPerDay            InstanceSettingKey = "max_scheduled_posts_per_day"
@@ -2895,11 +3048,15 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyAppealWindowDays:
 		return true
+	case InstanceSettingKeyArticleAuthoring:
+		return true
 	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
 		return true
 	case InstanceSettingKeyAutoDeleteDefaultEnabled:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepArticles:
 		return true
 	case InstanceSettingKeyAutoDeleteDefaultKeepBookmarked:
 		return true
@@ -2931,6 +3088,8 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyAutoDeleteMaxAgeDays:
 		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowArticles:
+		return true
 	case InstanceSettingKeyAutoDeleteMaxAllowBookmarked:
 		return true
 	case InstanceSettingKeyAutoDeleteMaxAllowFavourited:
@@ -2958,6 +3117,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyDomainActionsVisibility:
 		return true
 	case InstanceSettingKeyDynamicClientRegistration:
+		return true
+	case InstanceSettingKeyEventCreators:
 		return true
 	case InstanceSettingKeyFeaturedAccounts:
 		return true
@@ -3022,6 +3183,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyLocalTimelineVisibility:
 		return true
 	case InstanceSettingKeyLoginProvidersOnly:
+		return true
+	case InstanceSettingKeyMaxArticleBytes:
+		return true
+	case InstanceSettingKeyMaxArticleImages:
 		return true
 	case InstanceSettingKeyMaxDrafts:
 		return true
@@ -4059,7 +4224,9 @@ func (e PaymentStatusWarnings) Valid() bool {
 
 // Defines values for Permission.
 const (
+	PermissionCreateArticles       Permission = "create_articles"
 	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
+	PermissionCreateEvents         Permission = "create_events"
 	PermissionCreateInvites        Permission = "create_invites"
 	PermissionKeepPostsLonger      Permission = "keep_posts_longer"
 	PermissionManageAccounts       Permission = "manage_accounts"
@@ -4088,7 +4255,11 @@ const (
 // Valid indicates whether the value is a known member of the Permission enum.
 func (e Permission) Valid() bool {
 	switch e {
+	case PermissionCreateArticles:
+		return true
 	case PermissionCreateCustomEmojis:
+		return true
+	case PermissionCreateEvents:
 		return true
 	case PermissionCreateInvites:
 		return true
@@ -4776,10 +4947,12 @@ const (
 	VoiceEndReasonDisabled         VoiceEndReason = "disabled"
 	VoiceEndReasonEmpty            VoiceEndReason = "empty"
 	VoiceEndReasonHost             VoiceEndReason = "host"
+	VoiceEndReasonHostAbsent       VoiceEndReason = "host_absent"
 	VoiceEndReasonHostDisconnected VoiceEndReason = "host_disconnected"
 	VoiceEndReasonHostIneligible   VoiceEndReason = "host_ineligible"
 	VoiceEndReasonModerator        VoiceEndReason = "moderator"
 	VoiceEndReasonTimeLimit        VoiceEndReason = "time_limit"
+	VoiceEndReasonUnattended       VoiceEndReason = "unattended"
 )
 
 // Valid indicates whether the value is a known member of the VoiceEndReason enum.
@@ -4791,6 +4964,8 @@ func (e VoiceEndReason) Valid() bool {
 		return true
 	case VoiceEndReasonHost:
 		return true
+	case VoiceEndReasonHostAbsent:
+		return true
 	case VoiceEndReasonHostDisconnected:
 		return true
 	case VoiceEndReasonHostIneligible:
@@ -4798,6 +4973,8 @@ func (e VoiceEndReason) Valid() bool {
 	case VoiceEndReasonModerator:
 		return true
 	case VoiceEndReasonTimeLimit:
+		return true
+	case VoiceEndReasonUnattended:
 		return true
 	default:
 		return false
@@ -4865,6 +5042,7 @@ func (e VoiceRoomEntryRole) Valid() bool {
 const (
 	VoiceRoomSpeakersEveryone  VoiceRoomSpeakers = "everyone"
 	VoiceRoomSpeakersFollowers VoiceRoomSpeakers = "followers"
+	VoiceRoomSpeakersFollowing VoiceRoomSpeakers = "following"
 	VoiceRoomSpeakersManual    VoiceRoomSpeakers = "manual"
 	VoiceRoomSpeakersMutuals   VoiceRoomSpeakers = "mutuals"
 )
@@ -4875,6 +5053,8 @@ func (e VoiceRoomSpeakers) Valid() bool {
 	case VoiceRoomSpeakersEveryone:
 		return true
 	case VoiceRoomSpeakersFollowers:
+		return true
+	case VoiceRoomSpeakersFollowing:
 		return true
 	case VoiceRoomSpeakersManual:
 		return true
@@ -4906,6 +5086,7 @@ func (e VoiceRoomSummaryState) Valid() bool {
 // Defines values for VoiceRoomVisibility.
 const (
 	VoiceRoomVisibilityFollowers VoiceRoomVisibility = "followers"
+	VoiceRoomVisibilityFollowing VoiceRoomVisibility = "following"
 	VoiceRoomVisibilityInvited   VoiceRoomVisibility = "invited"
 	VoiceRoomVisibilityLocal     VoiceRoomVisibility = "local"
 	VoiceRoomVisibilityMutuals   VoiceRoomVisibility = "mutuals"
@@ -4915,6 +5096,8 @@ const (
 func (e VoiceRoomVisibility) Valid() bool {
 	switch e {
 	case VoiceRoomVisibilityFollowers:
+		return true
+	case VoiceRoomVisibilityFollowing:
 		return true
 	case VoiceRoomVisibilityInvited:
 		return true
@@ -4958,6 +5141,7 @@ const (
 	VoiceStreamEndReasonDisconnected     VoiceStreamEndReason = "disconnected"
 	VoiceStreamEndReasonEmpty            VoiceStreamEndReason = "empty"
 	VoiceStreamEndReasonHost             VoiceStreamEndReason = "host"
+	VoiceStreamEndReasonHostAbsent       VoiceStreamEndReason = "host_absent"
 	VoiceStreamEndReasonHostDisconnected VoiceStreamEndReason = "host_disconnected"
 	VoiceStreamEndReasonHostIneligible   VoiceStreamEndReason = "host_ineligible"
 	VoiceStreamEndReasonLeft             VoiceStreamEndReason = "left"
@@ -4968,6 +5152,7 @@ const (
 	VoiceStreamEndReasonRoomEnded        VoiceStreamEndReason = "room_ended"
 	VoiceStreamEndReasonSuspended        VoiceStreamEndReason = "suspended"
 	VoiceStreamEndReasonTimeLimit        VoiceStreamEndReason = "time_limit"
+	VoiceStreamEndReasonUnattended       VoiceStreamEndReason = "unattended"
 )
 
 // Valid indicates whether the value is a known member of the VoiceStreamEndReason enum.
@@ -4982,6 +5167,8 @@ func (e VoiceStreamEndReason) Valid() bool {
 	case VoiceStreamEndReasonEmpty:
 		return true
 	case VoiceStreamEndReasonHost:
+		return true
+	case VoiceStreamEndReasonHostAbsent:
 		return true
 	case VoiceStreamEndReasonHostDisconnected:
 		return true
@@ -5002,6 +5189,8 @@ func (e VoiceStreamEndReason) Valid() bool {
 	case VoiceStreamEndReasonSuspended:
 		return true
 	case VoiceStreamEndReasonTimeLimit:
+		return true
+	case VoiceStreamEndReasonUnattended:
 		return true
 	default:
 		return false
@@ -5357,6 +5546,13 @@ type AccountMove struct {
 // when the user blocks `target` (`blocking`), `target` blocks the user (`blocked_by`), or
 // the user mutes the server of `target` (`domain_muted`).
 type AccountMoveOutcome string
+
+// AccountNoteUpdate The viewer's private note on an account.
+type AccountNoteUpdate struct {
+	// Note The note, up to 2,000 characters (Unicode code points). An empty note removes the one
+	// the viewer has.
+	Note string `json:"note"`
+}
 
 // AccountPage A page of accounts.
 type AccountPage struct {
@@ -7400,6 +7596,11 @@ type AdminReportStatus struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	Status Status `json:"status"`
 }
 
@@ -8025,12 +8226,12 @@ type AdminVoiceRoomRevision struct {
 	RevisedByAccountId Id `json:"revised_by_account_id"`
 
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers VoiceRoomSpeakers `json:"speakers"`
 
 	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// followers of the current host, `following` those whom the host follows, `mutuals` those who
+	// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 	// invited users always see it, and a block with the host or a co-host always hides it.
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
@@ -8240,6 +8441,76 @@ type AppealModerationActionRequest struct {
 	Text string `json:"text"`
 }
 
+// ArticleCoverInput The cover image of an article: one of the user's own uploads that finished processing (422
+// otherwise), with its alternative text; omitted for none.
+type ArticleCoverInput = StatusMediaItem
+
+// ArticlePreview The body of an article as publishing it would store it.
+type ArticlePreview struct {
+	// Bytes The UTF-8 bytes of `content`; over `max_bytes`, publishing is a 422.
+	Bytes int `json:"bytes"`
+
+	// Content The body as sanitized HTML, the same as the published article's `content`.
+	Content string `json:"content"`
+
+	// Images The number of the user's own uploads that the body shows as images; over `max_images`, publishing is a 422.
+	Images int `json:"images"`
+
+	// MaxBytes The most bytes of `content` (`Instance.limits.articles.max_bytes`).
+	MaxBytes int `json:"max_bytes"`
+
+	// MaxImages The most images of the body (`Instance.limits.articles.max_images`).
+	MaxImages int `json:"max_images"`
+
+	// Summary The summary the article would get.
+	Summary string `json:"summary"`
+
+	// SummaryFromBody Whether `summary` is made from the body, because the one sent was blank.
+	SummaryFromBody bool `json:"summary_from_body"`
+}
+
+// ArticlePreviewRequest The body of an article to preview.
+type ArticlePreviewRequest struct {
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Text The body in Markdown, as `createArticle` takes it.
+	Text string `json:"text"`
+}
+
+// ArticleSource What the author wrote of an article besides its Markdown body, for editing it.
+type ArticleSource struct {
+	// Cover The cover image; omitted when there is none.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Summary The summary the author wrote; empty when the server made it from the body.
+	Summary string `json:"summary"`
+
+	// Tags The hashtags, without `#`.
+	Tags []string `json:"tags"`
+
+	// Title The title.
+	Title string `json:"title"`
+}
+
+// ArticleSummary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+// summary, never a content warning.
+type ArticleSummary = string
+
+// ArticleTagsInput The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+type ArticleTagsInput = []string
+
+// ArticleText The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+// `Instance.limits.articles.max_bytes` bytes.
+type ArticleText = string
+
+// ArticleTitle The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+type ArticleTitle = string
+
 // AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
 // work. The name and the website are what the app says about itself; `registration`,
 // `client_id` and `registered_by` are what the server knows.
@@ -8296,6 +8567,9 @@ type AuthorizedAppList struct {
 // at most `max_age_days` days after its publication, and keeps posts only by the exceptions that
 // the operator allows.
 type AutoDeleteLimit struct {
+	// AllowArticles Whether articles may be kept (`keep_articles`); always given.
+	AllowArticles *bool `json:"allow_articles,omitempty"`
+
 	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
 	AllowBookmarked bool `json:"allow_bookmarked"`
 
@@ -8331,6 +8605,10 @@ type AutoDeleteLimit struct {
 type AutoDeletePolicy struct {
 	// Enabled Whether old posts are deleted.
 	Enabled bool `json:"enabled"`
+
+	// KeepArticles Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+	// (on for a user who never saved a policy).
+	KeepArticles *bool `json:"keep_articles,omitempty"`
 
 	// KeepBookmarked Keep the posts that the user bookmarked.
 	KeepBookmarked bool `json:"keep_bookmarked"`
@@ -8376,6 +8654,9 @@ type AutoDeletePreview struct {
 // AutoDeleteServerLimit The server maximum as it applies to the authenticated user, and the policy that the automatic
 // deletion uses under it.
 type AutoDeleteServerLimit struct {
+	// AllowArticles Whether articles may be kept (`keep_articles`); always given.
+	AllowArticles *bool `json:"allow_articles,omitempty"`
+
 	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
 	AllowBookmarked bool `json:"allow_bookmarked"`
 
@@ -8424,6 +8705,10 @@ type AutoDeleteServerLimit struct {
 type AutoDeleteSettings struct {
 	// Enabled Whether old posts are deleted.
 	Enabled bool `json:"enabled"`
+
+	// KeepArticles Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+	// (on for a user who never saved a policy).
+	KeepArticles *bool `json:"keep_articles,omitempty"`
 
 	// KeepBookmarked Keep the posts that the user bookmarked.
 	KeepBookmarked bool `json:"keep_bookmarked"`
@@ -9126,6 +9411,42 @@ type CreateAccountActionRequest struct {
 	StatusIds *[]Id `json:"status_ids,omitempty"`
 }
 
+// CreateArticleRequest A new article.
+type CreateArticleRequest struct {
+	// Cover The cover image of an article: one of the user's own uploads that finished processing (422
+	// otherwise), with its alternative text; omitted for none.
+	Cover *ArticleCoverInput `json:"cover,omitempty"`
+
+	// InteractionPolicy Who may reply to, boost, and quote the new article; the kinds left out take the user's
+	// `default_interaction_policy`.
+	InteractionPolicy *InteractionPolicyChange `json:"interaction_policy,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Sensitive Whether the body and the cover are folded behind the title and the summary.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+	// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+	Tags *ArticleTagsInput `json:"tags,omitempty"`
+
+	// Text The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+	// `Instance.limits.articles.max_bytes` bytes.
+	Text ArticleText `json:"text"`
+
+	// Title The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+	Title ArticleTitle `json:"title"`
+
+	// Visibility The visibility; an article is never `direct` (422).
+	Visibility Visibility `json:"visibility"`
+}
+
 // CreateCustomEmojiRequest A new local custom emoji.
 type CreateCustomEmojiRequest struct {
 	// Aliases Other names, each following the rules of a shortcode; at most 10.
@@ -9486,6 +9807,17 @@ type CredentialAccount struct {
 	// Emojis The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text.
 	Emojis []CustomEmoji `json:"emojis"`
+
+	// FeedEnabled Whether the owner lets the Atom feed of the account's public posts be served at the
+	// profile's `url` followed by `.atom`, and its public posts appear in the Atom feeds of
+	// hashtags. It is the owner's own choice once made, and `indexable` until then
+	// (`feed_follows_indexable`). A restricted or moved account has no feed whatever it says.
+	FeedEnabled bool `json:"feed_enabled"`
+
+	// FeedFollowsIndexable Whether the owner has not chosen about the feed yet, so that `feed_enabled` follows
+	// `indexable`. Setting `feed_enabled` makes the choice, and a later change of `indexable`
+	// leaves it as it is.
+	FeedFollowsIndexable bool `json:"feed_follows_indexable"`
 
 	// Fields The profile's metadata fields, in their order; empty when there are none.
 	Fields []ProfileField `json:"fields"`
@@ -10226,6 +10558,35 @@ type DraftScheduleRequest struct {
 	PublishAt time.Time `json:"publish_at"`
 }
 
+// EditArticleRequest The new content of an article.
+type EditArticleRequest struct {
+	// Cover The cover image of an article: one of the user's own uploads that finished processing (422
+	// otherwise), with its alternative text; omitted for none.
+	Cover *ArticleCoverInput `json:"cover,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Sensitive Whether the body and the cover are folded behind the title and the summary.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+	// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+	Tags *ArticleTagsInput `json:"tags,omitempty"`
+
+	// Text The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+	// `Instance.limits.articles.max_bytes` bytes.
+	Text ArticleText `json:"text"`
+
+	// Title The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+	Title ArticleTitle `json:"title"`
+}
+
 // EditStatusRequest The new content of a status.
 type EditStatusRequest struct {
 	// Language A BCP 47 language tag; omitted means the user's default post language.
@@ -10475,6 +10836,280 @@ type ErrorGroupSource string
 // `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 // it to `open`), or `muted` (it notifies nobody until it is unmuted).
 type ErrorGroupState string
+
+// Event An event of the local users of this server, as the user sees it. Times are in UTC;
+// `time_zone` is the event's own time zone, to show next to the user's. `places` holds only the
+// places that the user sees: `hidden_places` lists the kinds of the others, whose details never
+// reach the client.
+type Event struct {
+	// Cancellation The cancellation of an event.
+	Cancellation *EventCancellation `json:"cancellation,omitempty"`
+
+	// Capacity How many attendees may answer `going`; 0 for no limit.
+	Capacity int `json:"capacity"`
+
+	// Coorganizers The co-organizers, in the order the organizer named them; up to 3.
+	Coorganizers []Account `json:"coorganizers"`
+	CreatedAt    time.Time `json:"created_at"`
+
+	// Description Plain text; empty for none.
+	Description string    `json:"description"`
+	EndsAt      time.Time `json:"ends_at"`
+
+	// GoingCount How many attendees answer `going`.
+	GoingCount int `json:"going_count"`
+
+	// HiddenPlaces The kinds of the places that the user does not see.
+	HiddenPlaces []EventPlaceKind `json:"hidden_places"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Organizer An account, as clients show it.
+	Organizer Account `json:"organizer"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+	// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+	// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+	// event.
+	PlaceDisclosure EventPlaceDisclosure `json:"place_disclosure"`
+	Places          []EventPlace         `json:"places"`
+
+	// RevisedAt When the settings were last changed (the creation for an event never changed).
+	RevisedAt time.Time `json:"revised_at"`
+
+	// RevisionCount How many versions the settings have had, the first included.
+	RevisionCount int       `json:"revision_count"`
+	StartsAt      time.Time `json:"starts_at"`
+
+	// State Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
+	// `ends_at` is in the past.
+	State EventState `json:"state"`
+
+	// TimeZone The IANA name of the event's time zone, such as `Asia/Tokyo`.
+	TimeZone string `json:"time_zone"`
+	Title    string `json:"title"`
+
+	// Viewer What an event says of the user who reads it.
+	Viewer EventViewer `json:"viewer"`
+
+	// Visibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+	// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+	// whom the organizer follows, and `invited` the invited users only. The organizer, the
+	// co-organizers, the invited users, and the users who answered always see it, unless a block
+	// separates them from the organizer or a co-organizer.
+	Visibility EventVisibility `json:"visibility"`
+}
+
+// EventAnswer An answer to an event.
+type EventAnswer string
+
+// EventAttendee An attendee of an event, who answered `going` or `maybe`.
+type EventAttendee struct {
+	// Account An account, as clients show it.
+	Account Account `json:"account"`
+
+	// Answer An answer to an event.
+	Answer EventAnswer `json:"answer"`
+
+	// Approved Whether the organizer or a co-organizer approved the answer.
+	Approved bool `json:"approved"`
+}
+
+// EventAttendeePage A page of the attendees of an event, in the order of their answers.
+type EventAttendeePage struct {
+	Items []EventAttendee `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventCancelReason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+type EventCancelReason string
+
+// EventCancelRequest The cancellation of an event by its organizer.
+type EventCancelRequest struct {
+	// Note The reason, up to 500 characters, shown with the event; omitted for none.
+	Note *string `json:"note,omitempty"`
+}
+
+// EventCancellation The cancellation of an event.
+type EventCancellation struct {
+	CancelledAt time.Time `json:"cancelled_at"`
+
+	// Note The reason given for the cancellation; omitted for none.
+	Note *string `json:"note,omitempty"`
+
+	// Reason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+	// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+	Reason EventCancelReason `json:"reason"`
+}
+
+// EventCreate A new event with a fixed date.
+type EventCreate struct {
+	// Capacity How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
+	Capacity *int `json:"capacity,omitempty"`
+
+	// Description Up to 3,000 characters of plain text; line breaks are kept.
+	Description *string `json:"description,omitempty"`
+
+	// EndsAt After `starts_at` and at most 7 days later.
+	EndsAt time.Time `json:"ends_at"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places; `approved` when omitted.
+	PlaceDisclosure *EventPlaceDisclosure `json:"place_disclosure,omitempty"`
+
+	// Places Up to 3 places, one of each kind.
+	Places *[]EventPlace `json:"places,omitempty"`
+
+	// StartsAt After now and at most a year ahead.
+	StartsAt time.Time `json:"starts_at"`
+
+	// TimeZone The IANA name of the event's time zone; the user's time zone when omitted.
+	TimeZone *string `json:"time_zone,omitempty"`
+
+	// Title 1 to 100 characters on one line.
+	Title string `json:"title"`
+
+	// Visibility Who sees the event; `public` when omitted.
+	Visibility *EventVisibility `json:"visibility,omitempty"`
+}
+
+// EventInvitation An invitation to an event. The invited user sees the event until the invitation is revoked,
+// whatever its visibility.
+type EventInvitation struct {
+	// Account An account, as clients show it.
+	Account Account `json:"account"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id        Id        `json:"id"`
+	InvitedAt time.Time `json:"invited_at"`
+
+	// InvitedById The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	InvitedById Id `json:"invited_by_id"`
+}
+
+// EventInvitationCreate An invitation of a user to an event.
+type EventInvitationCreate struct {
+	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	AccountId Id `json:"account_id"`
+}
+
+// EventInvitationPage A page of the invitations of an event that were not revoked, oldest first.
+type EventInvitationPage struct {
+	Items []EventInvitation `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventPage A page of the events that the user sees and that have not ended, the nearest start first.
+type EventPage struct {
+	Items []Event `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventPlace A place of an event. A `physical` place has a `name`, an `address`, and an optional map link in
+// `url`; a `url` place has a `name` and a `url`; a `voice` place has `speakers`, who may speak
+// without asking in the voice chat room that opens when the event starts. A URL is an `http` or
+// `https` URL of up to 2,000 characters, which the server never fetches. The fields that a kind
+// does not have are omitted.
+type EventPlace struct {
+	// Address Up to 500 characters; line breaks are kept.
+	Address *string `json:"address,omitempty"`
+
+	// Kind The kind of a place: `voice` a voice chat room of this server, `physical` a place to meet in
+	// person, and `url` a link such as a stream or a meeting of another service.
+	Kind EventPlaceKind `json:"kind"`
+
+	// Name Up to 100 characters on one line.
+	Name *string `json:"name,omitempty"`
+
+	// Speakers Who may speak without asking in the room; `manual` when omitted.
+	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
+	Url      *string            `json:"url,omitempty"`
+}
+
+// EventPlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+// event.
+type EventPlaceDisclosure string
+
+// EventPlaceKind The kind of a place: `voice` a voice chat room of this server, `physical` a place to meet in
+// person, and `url` a link such as a stream or a meeting of another service.
+type EventPlaceKind string
+
+// EventRSVP An answer to an event.
+type EventRSVP struct {
+	// Answer An answer to an event.
+	Answer EventAnswer `json:"answer"`
+}
+
+// EventState Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
+// `ends_at` is in the past.
+type EventState string
+
+// EventUpdate Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
+// date (`starts_at` and `ends_at` together) is checked as a new event's.
+type EventUpdate struct {
+	Capacity    *int       `json:"capacity,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	EndsAt      *time.Time `json:"ends_at,omitempty"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+	// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+	// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+	// event.
+	PlaceDisclosure *EventPlaceDisclosure `json:"place_disclosure,omitempty"`
+	Places          *[]EventPlace         `json:"places,omitempty"`
+	StartsAt        *time.Time            `json:"starts_at,omitempty"`
+	TimeZone        *string               `json:"time_zone,omitempty"`
+	Title           *string               `json:"title,omitempty"`
+
+	// Visibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+	// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+	// whom the organizer follows, and `invited` the invited users only. The organizer, the
+	// co-organizers, the invited users, and the users who answered always see it, unless a block
+	// separates them from the organizer or a co-organizer.
+	Visibility *EventVisibility `json:"visibility,omitempty"`
+}
+
+// EventViewer What an event says of the user who reads it.
+type EventViewer struct {
+	// Answer The user's answer; omitted before the user answers.
+	Answer *EventAnswer `json:"answer,omitempty"`
+
+	// Approved Whether the organizer or a co-organizer approved the user's answer.
+	Approved bool `json:"approved"`
+
+	// Coorganizer Whether the user co-organizes the event.
+	Coorganizer bool `json:"coorganizer"`
+
+	// Invited Whether the user has an invitation that was not revoked.
+	Invited bool `json:"invited"`
+
+	// Organizer Whether the user organizes the event.
+	Organizer bool `json:"organizer"`
+}
+
+// EventVisibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+// whom the organizer follows, and `invited` the invited users only. The organizer, the
+// co-organizers, the invited users, and the users who answered always see it, unless a block
+// separates them from the organizer or a co-organizer.
+type EventVisibility string
 
 // ExternalAuthorizationStart Where the browser goes to sign in at a login provider.
 type ExternalAuthorizationStart struct {
@@ -10964,6 +11599,10 @@ type Instance struct {
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
+	// ArticleAuthoring Who may write new articles (`createArticle`): `everyone` (every local user who is not
+	// limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+	ArticleAuthoring *InstanceArticleAuthoring `json:"article_authoring,omitempty"`
+
 	// AutoDeleteLimit The server maximum of the automatic deletion of old posts, which the about page shows so
 	// that people know it before they sign up; absent when the server sets none.
 	AutoDeleteLimit *AutoDeleteLimit `json:"auto_delete_limit,omitempty"`
@@ -11163,10 +11802,24 @@ type Instance struct {
 	VoiceRoomStarters InstanceVoiceRoomStarters `json:"voice_room_starters"`
 }
 
+// InstanceArticleAuthoring Who may write new articles (`createArticle`): `everyone` (every local user who is not
+// limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+type InstanceArticleAuthoring string
+
 // InstanceVoiceRoomStarters Who may open voice chat rooms: `everyone` (every local user who is not limited) or
 // `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
 // voice chat is off.
 type InstanceVoiceRoomStarters string
+
+// InstanceArticleLimits The limits of the body of an article (the instance settings `max_article_bytes` and
+// `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+type InstanceArticleLimits struct {
+	// MaxBytes The most UTF-8 bytes of the HTML that the body renders to.
+	MaxBytes int `json:"max_bytes"`
+
+	// MaxImages The most images of the user's own uploads in the body, besides the cover.
+	MaxImages int `json:"max_images"`
+}
 
 // InstanceAudience Who may read something public about the instance, the value of the instance settings
 // `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
@@ -11383,6 +12036,10 @@ type InstanceFullTextSearch struct {
 
 // InstanceLimits Limits that clients check before sending a request.
 type InstanceLimits struct {
+	// Articles The limits of the body of an article (the instance settings `max_article_bytes` and
+	// `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+	Articles *InstanceArticleLimits `json:"articles,omitempty"`
+
 	// Drafts The limits of drafts and scheduled posts (the instance settings of the same names). A save or a
 	// schedule past one is a 422 that names it; lowering a limit deletes no draft and cancels no
 	// schedule.
@@ -13434,8 +14091,12 @@ type PaymentStatusWarnings string
 // `permitted`, a member permission (only the built-in admin role by default).
 // `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
 // deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
-// permission (only the built-in admin role by default). The others guard no client API
-// operation yet.
+// permission (only the built-in admin role by default). `create_articles`: writing new
+// articles with `createArticle` while the instance setting `article_authoring` is
+// `permission`, a member permission (only the built-in admin role by default).
+// `create_events`: creating events on `POST /events` while the instance setting
+// `event_creators` is `permitted`, a member permission (only the built-in admin role by
+// default). The others guard no client API operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts
@@ -13851,6 +14512,20 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
 //     co-hosts of the room.
 //   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+//   - `/api/v1/problems/event-not-eligible` (403): the user may not create events.
+//   - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
+//     co-organizers of the event.
+//   - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
+//   - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+//   - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
+//   - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
+//     room: the voice chat is off, or its organizer may not host rooms.
+//   - `/api/v1/problems/event-already-invited` (409): the account is already invited to the event.
+//   - `/api/v1/problems/event-invalid-invitee` (422): the account cannot be invited to the event.
+//   - `/api/v1/problems/event-invalid-coorganizer` (422): the account cannot co-organize the event.
+//   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
+//     it can.
+//   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
 //   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
 //     be searched (`Instance.full_text_search.available`).
 //   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
@@ -14011,7 +14686,7 @@ type RejectCustomEmojiRequestRequest struct {
 // rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
 // `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
 // `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
-// `read:mutes` or `write:mutes`.
+// `read:mutes` or `write:mutes`; `note` needs `read:accounts` or `write:accounts`.
 type Relationship struct {
 	// Blocking Whether the viewer blocks the account.
 	Blocking *bool `json:"blocking,omitempty"`
@@ -14032,6 +14707,10 @@ type Relationship struct {
 
 	// MutingNotifications Whether the viewer's mute also hides the account's notifications.
 	MutingNotifications *bool `json:"muting_notifications,omitempty"`
+
+	// Note The viewer's private note on the account (`setAccountNote`), empty without one. Only the
+	// viewer reads it.
+	Note *string `json:"note,omitempty"`
 
 	// Notify Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
 	// without a follow. A subscription asked for with a follow request to an account on another
@@ -14430,6 +15109,11 @@ type SpoilerText = string
 // `visibility` and `language` are those of the boosted status, its `content`,
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
+//
+// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+// carry no body. An article has no content warning, media attachments, or poll.
 type Status struct {
 	// Account An account, as clients show it.
 	Account Account `json:"account"`
@@ -14438,6 +15122,11 @@ type Status struct {
 	// given; given only to the author of the reply, and omitted for a reply that needs no
 	// approval or has it. A `pending` reply is shown to its author alone.
 	Approval *InteractionApprovalState `json:"approval,omitempty"`
+
+	// Article What makes a status an article: its title, summary, and cover. The summary is never a content
+	// warning; a `sensitive` article shows the title and the summary and folds the body and the
+	// cover.
+	Article *StatusArticle `json:"article,omitempty"`
 
 	// Bookmarked Whether the authenticated user bookmarked the status.
 	Bookmarked *bool `json:"bookmarked,omitempty"`
@@ -14451,6 +15140,11 @@ type Status struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	Boost *Status `json:"boost,omitempty"`
 
 	// BoostApproval The approval of the authenticated user's boost of the status by its author, while it is
@@ -14478,7 +15172,8 @@ type Status struct {
 	Card *LinkCard `json:"card,omitempty"`
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-	// remote status is what the server's sanitizer kept of the received document.
+	// remote status is what the server's sanitizer kept of the received document. For an
+	// article, its rendered body, or empty in lists (see above).
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -14596,6 +15291,20 @@ type Status struct {
 	Visibility Visibility `json:"visibility"`
 }
 
+// StatusArticle What makes a status an article: its title, summary, and cover. The summary is never a content
+// warning; a `sensitive` article shows the title and the summary and folds the body and the
+// cover.
+type StatusArticle struct {
+	// Cover The cover image; omitted when there is none or it cannot be shown.
+	Cover *MediaAttachment `json:"cover,omitempty"`
+
+	// Summary The summary, as plain text; the server makes one from the body when the author writes none.
+	Summary string `json:"summary"`
+
+	// Title The title, as plain text.
+	Title string `json:"title"`
+}
+
 // StatusContext The thread around a status.
 type StatusContext struct {
 	// Ancestors The statuses the status replies to, oldest first.
@@ -14607,7 +15316,10 @@ type StatusContext struct {
 
 // StatusEdit One revision of a status.
 type StatusEdit struct {
-	// Content The text of the revision as sanitized HTML.
+	// Article The title and summary of the revision of an article; omitted for a post.
+	Article *StatusEditArticle `json:"article,omitempty"`
+
+	// Content The text of the revision as sanitized HTML; for an article, its body.
 	Content string `json:"content"`
 
 	// CreatedAt When the revision was made; the first one is when the status was posted.
@@ -14624,6 +15336,15 @@ type StatusEdit struct {
 
 	// SpoilerText The content warning of the revision; empty when there is none.
 	SpoilerText string `json:"spoiler_text"`
+}
+
+// StatusEditArticle The title and summary of one revision of an article.
+type StatusEditArticle struct {
+	// Summary The summary of the revision.
+	Summary string `json:"summary"`
+
+	// Title The title of the revision.
+	Title string `json:"title"`
 }
 
 // StatusHistory The revisions of a status.
@@ -14689,6 +15410,11 @@ type StatusQuote struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	QuotedStatus *Status `json:"quoted_status,omitempty"`
 
 	// State The state of a quote as the viewer sees it, with the values of Mastodon's
@@ -14786,6 +15512,9 @@ type StatusRejectedProblem struct {
 
 // StatusSource What the author typed, for editing a status.
 type StatusSource struct {
+	// Article The rest of what the author wrote of an article; omitted for a post.
+	Article *ArticleSource `json:"article,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -14797,7 +15526,7 @@ type StatusSource struct {
 	// SpoilerText The content warning; empty when there is none.
 	SpoilerText string `json:"spoiler_text"`
 
-	// Text The plain text.
+	// Text The plain text; for an article, its Markdown body.
 	Text string `json:"text"`
 }
 
@@ -15239,6 +15968,10 @@ type UpdateCredentialsRequest struct {
 	// DisplayName The display name, at most 30 characters; empty removes it.
 	DisplayName *string `json:"display_name,omitempty"`
 
+	// FeedEnabled Whether the Atom feed of the account's public posts may be served. Setting it makes the
+	// owner's choice, which a later change of `indexable` leaves as it is.
+	FeedEnabled *bool `json:"feed_enabled,omitempty"`
+
 	// Fields The metadata fields, replacing the current ones; at most 4.
 	Fields *[]AccountFieldSource `json:"fields,omitempty"`
 
@@ -15425,7 +16158,9 @@ type Visibility string
 // VoiceEndReason Why a voice chat room ended: `host` the host ended it, `empty` nobody was left in it,
 // `host_disconnected` the host lost the connection and nobody took over, `host_ineligible` the
 // host may no longer host, `moderator` a moderator ended it, `time_limit` it reached the limit
-// of its duration, and `disabled` the voice chat was turned off.
+// of its duration, `disabled` the voice chat was turned off, `host_absent` the host of a room
+// opened for a scheduled time did not come by the end of its wait and nobody took over, and
+// `unattended` nobody came to such a room by the end of its wait.
 type VoiceEndReason string
 
 // VoiceGrant What the client of a session needs to connect to the audio of a room. `kind` is the method
@@ -15520,12 +16255,12 @@ type VoiceRoom struct {
 	ParticipantsCount int `json:"participants_count"`
 
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers VoiceRoomSpeakers `json:"speakers"`
 
 	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// followers of the current host, `following` those whom the host follows, `mutuals` those who
+	// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 	// invited users always see it, and a block with the host or a co-host always hides it.
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
@@ -15707,8 +16442,8 @@ type VoiceRoomSettings struct {
 	// `write:statuses` scope besides `write:voice`, or the request is a 403
 	// `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 	// the `local` visibility and `private` for a room of the `followers` visibility, federated like
-	// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
-	// visibility has no start post.
+	// any other post, and the host deletes it like any other. A room of the `following`, `mutuals`,
+	// or `invited` visibility has no start post.
 	Post *VoiceStartPost `json:"post,omitempty"`
 
 	// Speakers Who may become a speaker without asking; `manual` when omitted.
@@ -15719,7 +16454,7 @@ type VoiceRoomSettings struct {
 }
 
 // VoiceRoomSpeakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 type VoiceRoomSpeakers string
 
 // VoiceRoomSummary What the page of a voice chat room shows to a visitor who does not see the room, such as a
@@ -15768,19 +16503,19 @@ type VoiceRoomUpdate struct {
 	Name *string `json:"name,omitempty"`
 
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
 
 	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// followers of the current host, `following` those whom the host follows, `mutuals` those who
+	// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 	// invited users always see it, and a block with the host or a co-host always hides it.
 	Visibility *VoiceRoomVisibility `json:"visibility,omitempty"`
 }
 
 // VoiceRoomVisibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+// followers of the current host, `following` those whom the host follows, `mutuals` those who
+// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 // invited users always see it, and a block with the host or a co-host always hides it.
 type VoiceRoomVisibility string
 
@@ -15819,8 +16554,8 @@ type VoiceSignalKind string
 // `write:statuses` scope besides `write:voice`, or the request is a 403
 // `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 // the `local` visibility and `private` for a room of the `followers` visibility, federated like
-// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
-// visibility has no start post.
+// any other post, and the host deletes it like any other. A room of the `following`, `mutuals`,
+// or `invited` visibility has no start post.
 type VoiceStartPost struct {
 	// Language A BCP 47 language tag; the user's default post language when omitted.
 	Language *string `json:"language,omitempty"`
@@ -15834,7 +16569,8 @@ type VoiceStartPost struct {
 // which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
 // `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
 // `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
-// `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
+// `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`, `host_absent`,
+// `unattended`).
 type VoiceStreamEnd struct {
 	Reason VoiceStreamEndReason `json:"reason"`
 }
@@ -16144,6 +16880,16 @@ type DraftId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type ErrorGroupId = Id
 
+// EventAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type EventAccountId = Id
+
+// EventId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type EventId = Id
+
 // HashtagName defines model for HashtagName.
 type HashtagName = string
 
@@ -16280,6 +17026,11 @@ type AccountProfile = Account
 // `visibility` and `language` are those of the boosted status, its `content`,
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
+//
+// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+// carry no body. An article has no content warning, media attachments, or poll.
 type StatusAfterAction = Status
 
 // RemoveAccountAliasParams defines parameters for RemoveAccountAlias.
@@ -16790,6 +17541,14 @@ type ListAnnouncementHistoryParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateArticleParams defines parameters for CreateArticle.
+type CreateArticleParams struct {
+	// IdempotencyKey A key the client chooses per new status; a retry with the same key returns the status
+	// posted with it instead of posting again. A key longer than 256 characters, or one
+	// that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListBlocksParams defines parameters for ListBlocks.
 type ListBlocksParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -16862,6 +17621,33 @@ type UpdateDraftParams struct {
 	// since, the answer is a 412 and nothing is saved, so that a save on one device never silently
 	// overwrites one made on another; read the draft again and merge. Without it, the save is a 428.
 	IfMatch *IfMatch `json:"If-Match,omitempty"`
+}
+
+// ListEventsParams defines parameters for ListEvents.
+type ListEventsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListEventAttendeesParams defines parameters for ListEventAttendees.
+type ListEventAttendeesParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListEventInvitationsParams defines parameters for ListEventInvitations.
+type ListEventInvitationsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // GetFinanceCostTotalsParams defines parameters for GetFinanceCostTotals.
@@ -17212,6 +17998,9 @@ type FollowAccountJSONRequestBody = FollowAccountRequest
 // MuteAccountJSONRequestBody defines body for MuteAccount for application/json ContentType.
 type MuteAccountJSONRequestBody = MuteAccountRequest
 
+// SetAccountNoteJSONRequestBody defines body for SetAccountNote for application/json ContentType.
+type SetAccountNoteJSONRequestBody = AccountNoteUpdate
+
 // LiftAccountActionJSONRequestBody defines body for LiftAccountAction for application/json ContentType.
 type LiftAccountActionJSONRequestBody = LiftAccountActionRequest
 
@@ -17383,6 +18172,15 @@ type CreateWebhookJSONRequestBody = CreateWebhookRequest
 // UpdateWebhookJSONRequestBody defines body for UpdateWebhook for application/json ContentType.
 type UpdateWebhookJSONRequestBody = UpdateWebhookRequest
 
+// CreateArticleJSONRequestBody defines body for CreateArticle for application/json ContentType.
+type CreateArticleJSONRequestBody = CreateArticleRequest
+
+// PreviewArticleJSONRequestBody defines body for PreviewArticle for application/json ContentType.
+type PreviewArticleJSONRequestBody = ArticlePreviewRequest
+
+// EditArticleJSONRequestBody defines body for EditArticle for application/json ContentType.
+type EditArticleJSONRequestBody = EditArticleRequest
+
 // CreateCustomEmojiRequestJSONRequestBody defines body for CreateCustomEmojiRequest for application/json ContentType.
 type CreateCustomEmojiRequestJSONRequestBody = NewCustomEmojiRequest
 
@@ -17400,6 +18198,21 @@ type UpdateDraftJSONRequestBody = DraftRequest
 
 // ScheduleDraftJSONRequestBody defines body for ScheduleDraft for application/json ContentType.
 type ScheduleDraftJSONRequestBody = DraftScheduleRequest
+
+// CreateEventJSONRequestBody defines body for CreateEvent for application/json ContentType.
+type CreateEventJSONRequestBody = EventCreate
+
+// UpdateEventJSONRequestBody defines body for UpdateEvent for application/json ContentType.
+type UpdateEventJSONRequestBody = EventUpdate
+
+// CancelEventJSONRequestBody defines body for CancelEvent for application/json ContentType.
+type CancelEventJSONRequestBody = EventCancelRequest
+
+// InviteToEventJSONRequestBody defines body for InviteToEvent for application/json ContentType.
+type InviteToEventJSONRequestBody = EventInvitationCreate
+
+// AnswerEventJSONRequestBody defines body for AnswerEvent for application/json ContentType.
+type AnswerEventJSONRequestBody = EventRSVP
 
 // SetFeaturedTagsJSONRequestBody defines body for SetFeaturedTags for application/json ContentType.
 type SetFeaturedTagsJSONRequestBody = SetFeaturedTagsRequest
@@ -17640,6 +18453,12 @@ type ServerInterface interface {
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(w http.ResponseWriter, r *http.Request, id AccountId)
+	// DeleteAccountNote Remove the private note on an account
+	// (DELETE /accounts/{id}/note)
+	DeleteAccountNote(w http.ResponseWriter, r *http.Request, id AccountId)
+	// SetAccountNote Write a private note on an account
+	// (PUT /accounts/{id}/note)
+	SetAccountNote(w http.ResponseWriter, r *http.Request, id AccountId)
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(w http.ResponseWriter, r *http.Request, id Id, params ListAccountStatusesParams)
@@ -18225,6 +19044,15 @@ type ServerInterface interface {
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(w http.ResponseWriter, r *http.Request, id AnnouncementId)
+	// CreateArticle Post an article
+	// (POST /articles)
+	CreateArticle(w http.ResponseWriter, r *http.Request, params CreateArticleParams)
+	// PreviewArticle Preview the body of an article
+	// (POST /articles/preview)
+	PreviewArticle(w http.ResponseWriter, r *http.Request)
+	// EditArticle Edit the authenticated user's article
+	// (PUT /articles/{id})
+	EditArticle(w http.ResponseWriter, r *http.Request, id StatusId)
 	// ListAuthorizedApps List the apps the authenticated user authorized
 	// (GET /authorized_apps)
 	ListAuthorizedApps(w http.ResponseWriter, r *http.Request)
@@ -18306,6 +19134,48 @@ type ServerInterface interface {
 	// ScheduleDraft Schedule a draft, or move its schedule
 	// (PUT /drafts/{id}/schedule)
 	ScheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId)
+	// ListEvents List the upcoming events
+	// (GET /events)
+	ListEvents(w http.ResponseWriter, r *http.Request, params ListEventsParams)
+	// CreateEvent Create an event
+	// (POST /events)
+	CreateEvent(w http.ResponseWriter, r *http.Request)
+	// GetEvent Get an event
+	// (GET /events/{id})
+	GetEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	// UpdateEvent Change an event
+	// (PATCH /events/{id})
+	UpdateEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	// ListEventAttendees List the attendees of an event
+	// (GET /events/{id}/attendees)
+	ListEventAttendees(w http.ResponseWriter, r *http.Request, id EventId, params ListEventAttendeesParams)
+	// RevokeEventAttendeeApproval Revoke the approval of an attendee of an event
+	// (DELETE /events/{id}/attendees/{account_id}/approval)
+	RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// ApproveEventAttendee Approve an attendee of an event
+	// (PUT /events/{id}/attendees/{account_id}/approval)
+	ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// CancelEvent Cancel an event
+	// (POST /events/{id}/cancel)
+	CancelEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	// RemoveEventCoorganizer Remove a co-organizer of an event
+	// (DELETE /events/{id}/coorganizers/{account_id})
+	RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// AssignEventCoorganizer Name a co-organizer of an event
+	// (PUT /events/{id}/coorganizers/{account_id})
+	AssignEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// ListEventInvitations List the invitations of an event
+	// (GET /events/{id}/invitations)
+	ListEventInvitations(w http.ResponseWriter, r *http.Request, id EventId, params ListEventInvitationsParams)
+	// InviteToEvent Invite a user to an event
+	// (POST /events/{id}/invitations)
+	InviteToEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	// RevokeEventInvitation Revoke an invitation to an event
+	// (DELETE /events/{id}/invitations/{account_id})
+	RevokeEventInvitation(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// AnswerEvent Answer an event
+	// (PUT /events/{id}/rsvp)
+	AnswerEvent(w http.ResponseWriter, r *http.Request, id EventId)
 	// ListDataExports List the authenticated user's data exports
 	// (GET /exports)
 	ListDataExports(w http.ResponseWriter, r *http.Request)
@@ -19576,6 +20446,58 @@ func (siw *ServerInterfaceWrapper) MuteAccount(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.MuteAccount(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteAccountNote operation middleware
+func (siw *ServerInterfaceWrapper) DeleteAccountNote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteAccountNote(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetAccountNote operation middleware
+func (siw *ServerInterfaceWrapper) SetAccountNote(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id AccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetAccountNote(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -25431,6 +26353,87 @@ func (siw *ServerInterfaceWrapper) MarkAnnouncementRead(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// CreateArticle operation middleware
+func (siw *ServerInterfaceWrapper) CreateArticle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateArticleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateArticle(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PreviewArticle operation middleware
+func (siw *ServerInterfaceWrapper) PreviewArticle(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreviewArticle(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EditArticle operation middleware
+func (siw *ServerInterfaceWrapper) EditArticle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id StatusId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EditArticle(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListAuthorizedApps operation middleware
 func (siw *ServerInterfaceWrapper) ListAuthorizedApps(w http.ResponseWriter, r *http.Request) {
 
@@ -26241,6 +27244,481 @@ func (siw *ServerInterfaceWrapper) ScheduleDraft(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ScheduleDraft(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListEvents operation middleware
+func (siw *ServerInterfaceWrapper) ListEvents(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListEventsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEvents(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateEvent operation middleware
+func (siw *ServerInterfaceWrapper) CreateEvent(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateEvent(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetEvent operation middleware
+func (siw *ServerInterfaceWrapper) GetEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEvent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateEvent operation middleware
+func (siw *ServerInterfaceWrapper) UpdateEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateEvent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListEventAttendees operation middleware
+func (siw *ServerInterfaceWrapper) ListEventAttendees(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListEventAttendeesParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEventAttendees(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeEventAttendeeApproval operation middleware
+func (siw *ServerInterfaceWrapper) RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeEventAttendeeApproval(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApproveEventAttendee operation middleware
+func (siw *ServerInterfaceWrapper) ApproveEventAttendee(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApproveEventAttendee(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelEvent operation middleware
+func (siw *ServerInterfaceWrapper) CancelEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelEvent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveEventCoorganizer operation middleware
+func (siw *ServerInterfaceWrapper) RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveEventCoorganizer(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AssignEventCoorganizer operation middleware
+func (siw *ServerInterfaceWrapper) AssignEventCoorganizer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AssignEventCoorganizer(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListEventInvitations operation middleware
+func (siw *ServerInterfaceWrapper) ListEventInvitations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListEventInvitationsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEventInvitations(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// InviteToEvent operation middleware
+func (siw *ServerInterfaceWrapper) InviteToEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.InviteToEvent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeEventInvitation operation middleware
+func (siw *ServerInterfaceWrapper) RevokeEventInvitation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeEventInvitation(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AnswerEvent operation middleware
+func (siw *ServerInterfaceWrapper) AnswerEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AnswerEvent(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31248,6 +32726,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/{id}/featured_tags", wrapper.ListAccountFeaturedTags)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.UnmuteAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/mute", wrapper.MuteAccount)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/note", wrapper.DeleteAccountNote)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/accounts/{id}/note", wrapper.SetAccountNote)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/follower", wrapper.RemoveFollower)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.UnsubscribeAccount)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/accounts/{id}/subscribe", wrapper.SubscribeAccount)
@@ -31293,6 +32773,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/push/subscription", wrapper.PutPushSubscription)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/bookmarks", wrapper.ListBookmarks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statuses", wrapper.CreateStatus)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/articles", wrapper.CreateArticle)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/articles/preview", wrapper.PreviewArticle)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/articles/{id}", wrapper.EditArticle)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/drafts", wrapper.ListDrafts)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/drafts", wrapper.CreateDraft)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/drafts/{id}", wrapper.DeleteDraft)
@@ -31393,6 +32876,20 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/reactions", wrapper.ReactInVoiceRoom)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/voice/rooms/{id}/summary", wrapper.GetVoiceRoomSummary)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/voice/history", wrapper.ListVoiceHistory)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events", wrapper.ListEvents)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events", wrapper.CreateEvent)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}", wrapper.GetEvent)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/events/{id}", wrapper.UpdateEvent)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/cancel", wrapper.CancelEvent)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/rsvp", wrapper.AnswerEvent)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/attendees", wrapper.ListEventAttendees)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/attendees/{account_id}/approval", wrapper.RevokeEventAttendeeApproval)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/attendees/{account_id}/approval", wrapper.ApproveEventAttendee)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/invitations", wrapper.ListEventInvitations)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/invitations", wrapper.InviteToEvent)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/invitations/{account_id}", wrapper.RevokeEventInvitation)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/coorganizers/{account_id}", wrapper.RemoveEventCoorganizer)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/coorganizers/{account_id}", wrapper.AssignEventCoorganizer)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/queue", wrapper.GetAdminQueue)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs", wrapper.ListAdminJobs)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs/{id}", wrapper.GetAdminJob)
@@ -33769,6 +35266,117 @@ type MuteAccountdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response MuteAccountdefaultApplicationProblemPlusJSONResponse) VisitMuteAccountResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAccountNoteRequestObject struct {
+	Id AccountId `json:"id"`
+}
+
+type DeleteAccountNoteResponseObject interface {
+	VisitDeleteAccountNoteResponse(w http.ResponseWriter) error
+}
+
+type DeleteAccountNote200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response DeleteAccountNote200JSONResponse) VisitDeleteAccountNoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DeleteAccountNotedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response DeleteAccountNotedefaultApplicationProblemPlusJSONResponse) VisitDeleteAccountNoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountNoteRequestObject struct {
+	Id   AccountId `json:"id"`
+	Body *SetAccountNoteJSONRequestBody
+}
+
+type SetAccountNoteResponseObject interface {
+	VisitSetAccountNoteResponse(w http.ResponseWriter) error
+}
+
+type SetAccountNote200JSONResponse struct{ RelationshipJSONResponse }
+
+func (response SetAccountNote200JSONResponse) VisitSetAccountNoteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetAccountNotedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SetAccountNotedefaultApplicationProblemPlusJSONResponse) VisitSetAccountNoteResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -45535,6 +47143,216 @@ func (response MarkAnnouncementReaddefaultApplicationProblemPlusJSONResponse) Vi
 	return err
 }
 
+type CreateArticleRequestObject struct {
+	Params CreateArticleParams
+	Body   *CreateArticleJSONRequestBody
+}
+
+type CreateArticleResponseObject interface {
+	VisitCreateArticleResponse(w http.ResponseWriter) error
+}
+
+type CreateArticle201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type CreateArticle201JSONResponse struct {
+	Body    Status
+	Headers CreateArticle201ResponseHeaders
+}
+
+func (response CreateArticle201JSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateArticle422ApplicationProblemPlusJSONResponse struct {
+	StatusRejectedProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateArticle422ApplicationProblemPlusJSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateArticledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CreateArticledefaultApplicationProblemPlusJSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewArticleRequestObject struct {
+	Body *PreviewArticleJSONRequestBody
+}
+
+type PreviewArticleResponseObject interface {
+	VisitPreviewArticleResponse(w http.ResponseWriter) error
+}
+
+type PreviewArticle200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type PreviewArticle200JSONResponse struct {
+	Body    ArticlePreview
+	Headers PreviewArticle200ResponseHeaders
+}
+
+func (response PreviewArticle200JSONResponse) VisitPreviewArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewArticledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response PreviewArticledefaultApplicationProblemPlusJSONResponse) VisitPreviewArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditArticleRequestObject struct {
+	Id   StatusId `json:"id"`
+	Body *EditArticleJSONRequestBody
+}
+
+type EditArticleResponseObject interface {
+	VisitEditArticleResponse(w http.ResponseWriter) error
+}
+
+type EditArticle200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type EditArticle200JSONResponse struct {
+	Body    Status
+	Headers EditArticle200ResponseHeaders
+}
+
+func (response EditArticle200JSONResponse) VisitEditArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditArticledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response EditArticledefaultApplicationProblemPlusJSONResponse) VisitEditArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListAuthorizedAppsRequestObject struct {
 }
 
@@ -47117,6 +48935,869 @@ type ScheduleDraftdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response ScheduleDraftdefaultApplicationProblemPlusJSONResponse) VisitScheduleDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventsRequestObject struct {
+	Params ListEventsParams
+}
+
+type ListEventsResponseObject interface {
+	VisitListEventsResponse(w http.ResponseWriter) error
+}
+
+type ListEvents200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListEvents200JSONResponse struct {
+	Body    EventPage
+	Headers ListEvents200ResponseHeaders
+}
+
+func (response ListEvents200JSONResponse) VisitListEventsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListEventsdefaultApplicationProblemPlusJSONResponse) VisitListEventsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEventRequestObject struct {
+	Body *CreateEventJSONRequestBody
+}
+
+type CreateEventResponseObject interface {
+	VisitCreateEventResponse(w http.ResponseWriter) error
+}
+
+type CreateEvent201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type CreateEvent201JSONResponse struct {
+	Body    Event
+	Headers CreateEvent201ResponseHeaders
+}
+
+func (response CreateEvent201JSONResponse) VisitCreateEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CreateEventdefaultApplicationProblemPlusJSONResponse) VisitCreateEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEventRequestObject struct {
+	Id EventId `json:"id"`
+}
+
+type GetEventResponseObject interface {
+	VisitGetEventResponse(w http.ResponseWriter) error
+}
+
+type GetEvent200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetEvent200JSONResponse struct {
+	Body    Event
+	Headers GetEvent200ResponseHeaders
+}
+
+func (response GetEvent200JSONResponse) VisitGetEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetEventdefaultApplicationProblemPlusJSONResponse) VisitGetEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEventRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *UpdateEventJSONRequestBody
+}
+
+type UpdateEventResponseObject interface {
+	VisitUpdateEventResponse(w http.ResponseWriter) error
+}
+
+type UpdateEvent200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type UpdateEvent200JSONResponse struct {
+	Body    Event
+	Headers UpdateEvent200ResponseHeaders
+}
+
+func (response UpdateEvent200JSONResponse) VisitUpdateEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UpdateEventdefaultApplicationProblemPlusJSONResponse) VisitUpdateEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventAttendeesRequestObject struct {
+	Id     EventId `json:"id"`
+	Params ListEventAttendeesParams
+}
+
+type ListEventAttendeesResponseObject interface {
+	VisitListEventAttendeesResponse(w http.ResponseWriter) error
+}
+
+type ListEventAttendees200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListEventAttendees200JSONResponse struct {
+	Body    EventAttendeePage
+	Headers ListEventAttendees200ResponseHeaders
+}
+
+func (response ListEventAttendees200JSONResponse) VisitListEventAttendeesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventAttendeesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListEventAttendeesdefaultApplicationProblemPlusJSONResponse) VisitListEventAttendeesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeEventAttendeeApprovalRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type RevokeEventAttendeeApprovalResponseObject interface {
+	VisitRevokeEventAttendeeApprovalResponse(w http.ResponseWriter) error
+}
+
+type RevokeEventAttendeeApproval200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RevokeEventAttendeeApproval200JSONResponse struct {
+	Body    EventAttendee
+	Headers RevokeEventAttendeeApproval200ResponseHeaders
+}
+
+func (response RevokeEventAttendeeApproval200JSONResponse) VisitRevokeEventAttendeeApprovalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeEventAttendeeApprovaldefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeEventAttendeeApprovaldefaultApplicationProblemPlusJSONResponse) VisitRevokeEventAttendeeApprovalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveEventAttendeeRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type ApproveEventAttendeeResponseObject interface {
+	VisitApproveEventAttendeeResponse(w http.ResponseWriter) error
+}
+
+type ApproveEventAttendee200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ApproveEventAttendee200JSONResponse struct {
+	Body    EventAttendee
+	Headers ApproveEventAttendee200ResponseHeaders
+}
+
+func (response ApproveEventAttendee200JSONResponse) VisitApproveEventAttendeeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveEventAttendeedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ApproveEventAttendeedefaultApplicationProblemPlusJSONResponse) VisitApproveEventAttendeeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelEventRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *CancelEventJSONRequestBody
+}
+
+type CancelEventResponseObject interface {
+	VisitCancelEventResponse(w http.ResponseWriter) error
+}
+
+type CancelEvent200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type CancelEvent200JSONResponse struct {
+	Body    Event
+	Headers CancelEvent200ResponseHeaders
+}
+
+func (response CancelEvent200JSONResponse) VisitCancelEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CancelEventdefaultApplicationProblemPlusJSONResponse) VisitCancelEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveEventCoorganizerRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type RemoveEventCoorganizerResponseObject interface {
+	VisitRemoveEventCoorganizerResponse(w http.ResponseWriter) error
+}
+
+type RemoveEventCoorganizer200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RemoveEventCoorganizer200JSONResponse struct {
+	Body    Event
+	Headers RemoveEventCoorganizer200ResponseHeaders
+}
+
+func (response RemoveEventCoorganizer200JSONResponse) VisitRemoveEventCoorganizerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveEventCoorganizerdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveEventCoorganizerdefaultApplicationProblemPlusJSONResponse) VisitRemoveEventCoorganizerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AssignEventCoorganizerRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type AssignEventCoorganizerResponseObject interface {
+	VisitAssignEventCoorganizerResponse(w http.ResponseWriter) error
+}
+
+type AssignEventCoorganizer200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type AssignEventCoorganizer200JSONResponse struct {
+	Body    Event
+	Headers AssignEventCoorganizer200ResponseHeaders
+}
+
+func (response AssignEventCoorganizer200JSONResponse) VisitAssignEventCoorganizerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AssignEventCoorganizerdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AssignEventCoorganizerdefaultApplicationProblemPlusJSONResponse) VisitAssignEventCoorganizerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventInvitationsRequestObject struct {
+	Id     EventId `json:"id"`
+	Params ListEventInvitationsParams
+}
+
+type ListEventInvitationsResponseObject interface {
+	VisitListEventInvitationsResponse(w http.ResponseWriter) error
+}
+
+type ListEventInvitations200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListEventInvitations200JSONResponse struct {
+	Body    EventInvitationPage
+	Headers ListEventInvitations200ResponseHeaders
+}
+
+func (response ListEventInvitations200JSONResponse) VisitListEventInvitationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventInvitationsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListEventInvitationsdefaultApplicationProblemPlusJSONResponse) VisitListEventInvitationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InviteToEventRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *InviteToEventJSONRequestBody
+}
+
+type InviteToEventResponseObject interface {
+	VisitInviteToEventResponse(w http.ResponseWriter) error
+}
+
+type InviteToEvent201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type InviteToEvent201JSONResponse struct {
+	Body    EventInvitation
+	Headers InviteToEvent201ResponseHeaders
+}
+
+func (response InviteToEvent201JSONResponse) VisitInviteToEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InviteToEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response InviteToEventdefaultApplicationProblemPlusJSONResponse) VisitInviteToEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeEventInvitationRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type RevokeEventInvitationResponseObject interface {
+	VisitRevokeEventInvitationResponse(w http.ResponseWriter) error
+}
+
+type RevokeEventInvitation204Response struct {
+}
+
+func (response RevokeEventInvitation204Response) VisitRevokeEventInvitationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeEventInvitationdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeEventInvitationdefaultApplicationProblemPlusJSONResponse) VisitRevokeEventInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnswerEventRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *AnswerEventJSONRequestBody
+}
+
+type AnswerEventResponseObject interface {
+	VisitAnswerEventResponse(w http.ResponseWriter) error
+}
+
+type AnswerEvent200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type AnswerEvent200JSONResponse struct {
+	Body    Event
+	Headers AnswerEvent200ResponseHeaders
+}
+
+func (response AnswerEvent200JSONResponse) VisitAnswerEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnswerEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AnswerEventdefaultApplicationProblemPlusJSONResponse) VisitAnswerEventResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -57452,6 +60133,12 @@ type StrictServerInterface interface {
 	// MuteAccount Mute an account
 	// (POST /accounts/{id}/mute)
 	MuteAccount(ctx context.Context, request MuteAccountRequestObject) (MuteAccountResponseObject, error)
+	// DeleteAccountNote Remove the private note on an account
+	// (DELETE /accounts/{id}/note)
+	DeleteAccountNote(ctx context.Context, request DeleteAccountNoteRequestObject) (DeleteAccountNoteResponseObject, error)
+	// SetAccountNote Write a private note on an account
+	// (PUT /accounts/{id}/note)
+	SetAccountNote(ctx context.Context, request SetAccountNoteRequestObject) (SetAccountNoteResponseObject, error)
 	// ListAccountStatuses List the posts and boosts of an account
 	// (GET /accounts/{id}/statuses)
 	ListAccountStatuses(ctx context.Context, request ListAccountStatusesRequestObject) (ListAccountStatusesResponseObject, error)
@@ -58037,6 +60724,15 @@ type StrictServerInterface interface {
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(ctx context.Context, request MarkAnnouncementReadRequestObject) (MarkAnnouncementReadResponseObject, error)
+	// CreateArticle Post an article
+	// (POST /articles)
+	CreateArticle(ctx context.Context, request CreateArticleRequestObject) (CreateArticleResponseObject, error)
+	// PreviewArticle Preview the body of an article
+	// (POST /articles/preview)
+	PreviewArticle(ctx context.Context, request PreviewArticleRequestObject) (PreviewArticleResponseObject, error)
+	// EditArticle Edit the authenticated user's article
+	// (PUT /articles/{id})
+	EditArticle(ctx context.Context, request EditArticleRequestObject) (EditArticleResponseObject, error)
 	// ListAuthorizedApps List the apps the authenticated user authorized
 	// (GET /authorized_apps)
 	ListAuthorizedApps(ctx context.Context, request ListAuthorizedAppsRequestObject) (ListAuthorizedAppsResponseObject, error)
@@ -58118,6 +60814,48 @@ type StrictServerInterface interface {
 	// ScheduleDraft Schedule a draft, or move its schedule
 	// (PUT /drafts/{id}/schedule)
 	ScheduleDraft(ctx context.Context, request ScheduleDraftRequestObject) (ScheduleDraftResponseObject, error)
+	// ListEvents List the upcoming events
+	// (GET /events)
+	ListEvents(ctx context.Context, request ListEventsRequestObject) (ListEventsResponseObject, error)
+	// CreateEvent Create an event
+	// (POST /events)
+	CreateEvent(ctx context.Context, request CreateEventRequestObject) (CreateEventResponseObject, error)
+	// GetEvent Get an event
+	// (GET /events/{id})
+	GetEvent(ctx context.Context, request GetEventRequestObject) (GetEventResponseObject, error)
+	// UpdateEvent Change an event
+	// (PATCH /events/{id})
+	UpdateEvent(ctx context.Context, request UpdateEventRequestObject) (UpdateEventResponseObject, error)
+	// ListEventAttendees List the attendees of an event
+	// (GET /events/{id}/attendees)
+	ListEventAttendees(ctx context.Context, request ListEventAttendeesRequestObject) (ListEventAttendeesResponseObject, error)
+	// RevokeEventAttendeeApproval Revoke the approval of an attendee of an event
+	// (DELETE /events/{id}/attendees/{account_id}/approval)
+	RevokeEventAttendeeApproval(ctx context.Context, request RevokeEventAttendeeApprovalRequestObject) (RevokeEventAttendeeApprovalResponseObject, error)
+	// ApproveEventAttendee Approve an attendee of an event
+	// (PUT /events/{id}/attendees/{account_id}/approval)
+	ApproveEventAttendee(ctx context.Context, request ApproveEventAttendeeRequestObject) (ApproveEventAttendeeResponseObject, error)
+	// CancelEvent Cancel an event
+	// (POST /events/{id}/cancel)
+	CancelEvent(ctx context.Context, request CancelEventRequestObject) (CancelEventResponseObject, error)
+	// RemoveEventCoorganizer Remove a co-organizer of an event
+	// (DELETE /events/{id}/coorganizers/{account_id})
+	RemoveEventCoorganizer(ctx context.Context, request RemoveEventCoorganizerRequestObject) (RemoveEventCoorganizerResponseObject, error)
+	// AssignEventCoorganizer Name a co-organizer of an event
+	// (PUT /events/{id}/coorganizers/{account_id})
+	AssignEventCoorganizer(ctx context.Context, request AssignEventCoorganizerRequestObject) (AssignEventCoorganizerResponseObject, error)
+	// ListEventInvitations List the invitations of an event
+	// (GET /events/{id}/invitations)
+	ListEventInvitations(ctx context.Context, request ListEventInvitationsRequestObject) (ListEventInvitationsResponseObject, error)
+	// InviteToEvent Invite a user to an event
+	// (POST /events/{id}/invitations)
+	InviteToEvent(ctx context.Context, request InviteToEventRequestObject) (InviteToEventResponseObject, error)
+	// RevokeEventInvitation Revoke an invitation to an event
+	// (DELETE /events/{id}/invitations/{account_id})
+	RevokeEventInvitation(ctx context.Context, request RevokeEventInvitationRequestObject) (RevokeEventInvitationResponseObject, error)
+	// AnswerEvent Answer an event
+	// (PUT /events/{id}/rsvp)
+	AnswerEvent(ctx context.Context, request AnswerEventRequestObject) (AnswerEventResponseObject, error)
 	// ListDataExports List the authenticated user's data exports
 	// (GET /exports)
 	ListDataExports(ctx context.Context, request ListDataExportsRequestObject) (ListDataExportsResponseObject, error)
@@ -59502,6 +62240,65 @@ func (sh *strictHandler) MuteAccount(w http.ResponseWriter, r *http.Request, id 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MuteAccountResponseObject); ok {
 		if err := validResponse.VisitMuteAccountResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteAccountNote operation middleware
+func (sh *strictHandler) DeleteAccountNote(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request DeleteAccountNoteRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteAccountNote(ctx, request.(DeleteAccountNoteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteAccountNote")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteAccountNoteResponseObject); ok {
+		if err := validResponse.VisitDeleteAccountNoteResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetAccountNote operation middleware
+func (sh *strictHandler) SetAccountNote(w http.ResponseWriter, r *http.Request, id AccountId) {
+	var request SetAccountNoteRequestObject
+
+	request.Id = id
+
+	var body SetAccountNoteJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetAccountNote(ctx, request.(SetAccountNoteRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetAccountNote")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetAccountNoteResponseObject); ok {
+		if err := validResponse.VisitSetAccountNoteResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -64927,6 +67724,103 @@ func (sh *strictHandler) MarkAnnouncementRead(w http.ResponseWriter, r *http.Req
 	}
 }
 
+// CreateArticle operation middleware
+func (sh *strictHandler) CreateArticle(w http.ResponseWriter, r *http.Request, params CreateArticleParams) {
+	var request CreateArticleRequestObject
+
+	request.Params = params
+
+	var body CreateArticleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateArticle(ctx, request.(CreateArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateArticleResponseObject); ok {
+		if err := validResponse.VisitCreateArticleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PreviewArticle operation middleware
+func (sh *strictHandler) PreviewArticle(w http.ResponseWriter, r *http.Request) {
+	var request PreviewArticleRequestObject
+
+	var body PreviewArticleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PreviewArticle(ctx, request.(PreviewArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PreviewArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PreviewArticleResponseObject); ok {
+		if err := validResponse.VisitPreviewArticleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EditArticle operation middleware
+func (sh *strictHandler) EditArticle(w http.ResponseWriter, r *http.Request, id StatusId) {
+	var request EditArticleRequestObject
+
+	request.Id = id
+
+	var body EditArticleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EditArticle(ctx, request.(EditArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EditArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EditArticleResponseObject); ok {
+		if err := validResponse.VisitEditArticleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListAuthorizedApps operation middleware
 func (sh *strictHandler) ListAuthorizedApps(w http.ResponseWriter, r *http.Request) {
 	var request ListAuthorizedAppsRequestObject
@@ -65655,6 +68549,413 @@ func (sh *strictHandler) ScheduleDraft(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ScheduleDraftResponseObject); ok {
 		if err := validResponse.VisitScheduleDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEvents operation middleware
+func (sh *strictHandler) ListEvents(w http.ResponseWriter, r *http.Request, params ListEventsParams) {
+	var request ListEventsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEvents(ctx, request.(ListEventsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEvents")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEventsResponseObject); ok {
+		if err := validResponse.VisitListEventsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateEvent operation middleware
+func (sh *strictHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
+	var request CreateEventRequestObject
+
+	var body CreateEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateEvent(ctx, request.(CreateEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateEventResponseObject); ok {
+		if err := validResponse.VisitCreateEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetEvent operation middleware
+func (sh *strictHandler) GetEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request GetEventRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEvent(ctx, request.(GetEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEventResponseObject); ok {
+		if err := validResponse.VisitGetEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateEvent operation middleware
+func (sh *strictHandler) UpdateEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request UpdateEventRequestObject
+
+	request.Id = id
+
+	var body UpdateEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateEvent(ctx, request.(UpdateEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateEventResponseObject); ok {
+		if err := validResponse.VisitUpdateEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEventAttendees operation middleware
+func (sh *strictHandler) ListEventAttendees(w http.ResponseWriter, r *http.Request, id EventId, params ListEventAttendeesParams) {
+	var request ListEventAttendeesRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEventAttendees(ctx, request.(ListEventAttendeesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEventAttendees")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEventAttendeesResponseObject); ok {
+		if err := validResponse.VisitListEventAttendeesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeEventAttendeeApproval operation middleware
+func (sh *strictHandler) RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request RevokeEventAttendeeApprovalRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeEventAttendeeApproval(ctx, request.(RevokeEventAttendeeApprovalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeEventAttendeeApproval")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeEventAttendeeApprovalResponseObject); ok {
+		if err := validResponse.VisitRevokeEventAttendeeApprovalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApproveEventAttendee operation middleware
+func (sh *strictHandler) ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request ApproveEventAttendeeRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApproveEventAttendee(ctx, request.(ApproveEventAttendeeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApproveEventAttendee")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApproveEventAttendeeResponseObject); ok {
+		if err := validResponse.VisitApproveEventAttendeeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelEvent operation middleware
+func (sh *strictHandler) CancelEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request CancelEventRequestObject
+
+	request.Id = id
+
+	var body CancelEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelEvent(ctx, request.(CancelEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelEventResponseObject); ok {
+		if err := validResponse.VisitCancelEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveEventCoorganizer operation middleware
+func (sh *strictHandler) RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request RemoveEventCoorganizerRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveEventCoorganizer(ctx, request.(RemoveEventCoorganizerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveEventCoorganizer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveEventCoorganizerResponseObject); ok {
+		if err := validResponse.VisitRemoveEventCoorganizerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AssignEventCoorganizer operation middleware
+func (sh *strictHandler) AssignEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request AssignEventCoorganizerRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AssignEventCoorganizer(ctx, request.(AssignEventCoorganizerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AssignEventCoorganizer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AssignEventCoorganizerResponseObject); ok {
+		if err := validResponse.VisitAssignEventCoorganizerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEventInvitations operation middleware
+func (sh *strictHandler) ListEventInvitations(w http.ResponseWriter, r *http.Request, id EventId, params ListEventInvitationsParams) {
+	var request ListEventInvitationsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEventInvitations(ctx, request.(ListEventInvitationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEventInvitations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEventInvitationsResponseObject); ok {
+		if err := validResponse.VisitListEventInvitationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// InviteToEvent operation middleware
+func (sh *strictHandler) InviteToEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request InviteToEventRequestObject
+
+	request.Id = id
+
+	var body InviteToEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.InviteToEvent(ctx, request.(InviteToEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "InviteToEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(InviteToEventResponseObject); ok {
+		if err := validResponse.VisitInviteToEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeEventInvitation operation middleware
+func (sh *strictHandler) RevokeEventInvitation(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request RevokeEventInvitationRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeEventInvitation(ctx, request.(RevokeEventInvitationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeEventInvitation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeEventInvitationResponseObject); ok {
+		if err := validResponse.VisitRevokeEventInvitationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AnswerEvent operation middleware
+func (sh *strictHandler) AnswerEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request AnswerEventRequestObject
+
+	request.Id = id
+
+	var body AnswerEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AnswerEvent(ctx, request.(AnswerEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AnswerEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AnswerEventResponseObject); ok {
+		if err := validResponse.VisitAnswerEventResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

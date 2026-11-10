@@ -14,6 +14,11 @@
       "use": "Create an account",
       "avoid": ["\\bCreate account\\b"],
       "note": "The label of the action that creates an account."
+    },
+    {
+      "use": "event",
+      "avoid": ["\\b[Gg]atherings?\\b"],
+      "note": "A gathering of the local users with a date and places. The code calls it a gathering; users read event."
     }
   ],
   "ja": [
@@ -41,6 +46,11 @@
       "use": "試してください",
       "avoid": ["お試し"],
       "note": "Matches the retry button もう一度試す (web-client G16, G18)."
+    },
+    {
+      "use": "イベント",
+      "avoid": ["催し", "集い"],
+      "note": "A gathering of the local users with a date and places (event in en)."
     }
   ],
   "zh-CN": [

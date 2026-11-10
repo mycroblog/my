@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: |
+  An invitation to an event. The invited user sees the event until the invitation is revoked,
+  whatever its visibility.
+type: object
+required: [id, account, invited_by_id, invited_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  account:
+    $ref: ./Account.yaml
+  invited_by_id:
+    $ref: ./Id.yaml
+  invited_at:
+    type: string
+    format: date-time

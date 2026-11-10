@@ -99,6 +99,7 @@ func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusI
 	steps := []func(context.Context, []string) error{
 		q.PurgeStatusSensitivityOverrides, q.PurgeStatusRevisionBodies, q.PurgeStatusRevisionSources, q.PurgeStatusRevisionAttachments,
 		q.PurgeStatusRevisionMentions, q.PurgeStatusRevisionTags, q.PurgeStatusRevisionEmojis,
+		q.PurgeStatusRevisionArticles, q.PurgeStatusRevisionArticleCovers, q.PurgeStatusRevisionArticleImages, q.PurgeStatusArticles,
 		q.PurgeRemoteStatusRevisions, q.PurgePollTallyObservationCounts, q.PurgePollTallyObservations,
 		q.PurgePollVotes, q.PurgePollTallies, q.PurgePollOptions, q.PurgePolls, q.PurgeStatusRevisions,
 		q.PurgeRemoteBoostRetractions, q.PurgeRemoteBoosts, q.PurgeRelayedStatuses, q.PurgeInteractionRequestEvents,

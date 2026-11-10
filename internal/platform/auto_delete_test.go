@@ -94,7 +94,7 @@ func TestAutoDeleteServerDefault(t *testing.T) {
 	bob, _ := app.register("bob")
 	want := content.AutoDeletePolicy{
 		AccountID: bob, Enabled: true, MinAgeDays: 7, KeepPinned: true, KeepBookmarked: true, KeepFavourited: true,
-		KeepMedia: true, KeepVisibilities: []content.Visibility{content.VisibilityPrivate}, KeepMinBoosts: 10,
+		KeepMedia: true, KeepArticles: true, KeepVisibilities: []content.Visibility{content.VisibilityPrivate}, KeepMinBoosts: 10,
 	}
 	if got := app.policy(bob); !sameRules(got, want) {
 		t.Errorf("bob's policy = %+v, want the server default %+v", got, want)
@@ -128,9 +128,10 @@ func TestAutoDeleteServerMaximum(t *testing.T) {
 		instance.SettingAutoDeleteDefaultMinAgeDays: "60",
 	})
 
-	// bob signs up under the maximum: the default of 60 days becomes 30, enabled, keeping pins only.
+	// bob signs up under the maximum: the default of 60 days becomes 30, enabled, keeping pins and
+	// articles only.
 	bob, _ := app.register("bob")
-	want := content.AutoDeletePolicy{AccountID: bob, Enabled: true, MinAgeDays: 30, KeepPinned: true, KeepVisibilities: []content.Visibility{}}
+	want := content.AutoDeletePolicy{AccountID: bob, Enabled: true, MinAgeDays: 30, KeepPinned: true, KeepArticles: true, KeepVisibilities: []content.Visibility{}}
 	if v, err := app.AutoDelete.AutoDeletePolicy(ctx, bob); err != nil || !sameRules(v.Policy, want) || v.Limit == nil || v.Limit.Bound {
 		t.Errorf("bob's policy under the maximum = %+v, %v; want %+v within it", v, err, want)
 	}

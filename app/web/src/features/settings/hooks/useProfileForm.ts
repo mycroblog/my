@@ -76,6 +76,11 @@ export function useProfileForm() {
   const [discoverable, setDiscoverable] = useState(account.discoverable);
   const [indexable, setIndexable] = useState(account.indexable);
   const [aiOptOut, setAiOptOut] = useState(account.ai_opt_out);
+  // The owner's own choice about the Atom feed (FR-213), undefined while there is none: the feed then follows
+  // `indexable`, the one being edited included, and the change leaves the choice out.
+  const [feedChoice, setFeedChoice] = useState<boolean | undefined>(
+    account.feed_follows_indexable ? undefined : account.feed_enabled,
+  );
   // How many edits the form has had, and how many it had when it was last submitted: the result of a save shows
   // until the next edit.
   const [edits, setEdits] = useState(0);
@@ -113,6 +118,7 @@ export function useProfileForm() {
     discoverable,
     indexable,
     ai_opt_out: aiOptOut,
+    ...(feedChoice === undefined ? {} : { feed_enabled: feedChoice }),
     ...avatar.change("avatar_media_id"),
     ...header.change("header_media_id"),
   });
@@ -127,6 +133,8 @@ export function useProfileForm() {
     draft.discoverable !== account.discoverable ||
     draft.indexable !== account.indexable ||
     draft.ai_opt_out !== account.ai_opt_out ||
+    (draft.feed_enabled !== undefined &&
+      (account.feed_follows_indexable || draft.feed_enabled !== account.feed_enabled)) ||
     draft.avatar_media_id !== undefined ||
     draft.header_media_id !== undefined ||
     !sameFields(draft.fields ?? [], account.source.fields);
@@ -174,6 +182,12 @@ export function useProfileForm() {
     discoverable: { isSelected: discoverable, onChange: edit(setDiscoverable) },
     indexable: { isSelected: indexable, onChange: edit(setIndexable) },
     aiOptOut: { isSelected: aiOptOut, onChange: edit(setAiOptOut) },
+    /** Whether the Atom feed is served: the owner's choice, or `indexable` until there is one. */
+    feed: { isSelected: feedChoice ?? indexable, onChange: edit(setFeedChoice) },
+    /** Whether the feed still follows `indexable`, which the form says. */
+    feedFollowsIndexable: feedChoice === undefined,
+    /** The address of the profile's feed: its page's, followed by `.atom`. */
+    feedUrl: `${account.url}.atom`,
     serverPolicy,
     featuredTags: {
       rows: featuredTags.rows,

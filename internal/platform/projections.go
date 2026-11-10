@@ -10,6 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/graph"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -44,6 +45,7 @@ type projectionRepositories struct {
 	finance       finance.Repository
 	supporters    supporters.Repository
 	voice         voice.Repository
+	gatherings    gathering.Repository
 	diagnostics   diagnostics.Repository
 	drafts        content.DraftRepository
 }
@@ -53,7 +55,7 @@ func (r *repositories) projectionRepositories() projectionRepositories {
 	return projectionRepositories{
 		accounts: r.accounts, instances: r.instances, follows: r.follows, statuses: r.statuses, interactions: r.interactions, emojis: r.emojis,
 		feeds: r.feeds, notifications: r.notifs, moderation: r.mods, decisions: r.decisions, identities: r.identities, webhooks: r.hooks, relays: r.feds,
-		finance: r.finance, quotes: r.quotes, supporters: r.supporters, voice: r.voice,
+		finance: r.finance, quotes: r.quotes, supporters: r.supporters, voice: r.voice, gatherings: r.gatherings,
 		diagnostics: r.diagnostics, drafts: r.drafts,
 	}
 }
@@ -240,6 +242,13 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				Tables: []string{"voice_room_heads", "voice_room_participants"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return voice.RebuildProjections(ctx, u, r.voice)
+				},
+			},
+			{
+				Name: "gathering", Module: "gathering",
+				Tables: []string{"gathering_attendees", "gathering_heads", "gathering_coorganizers"},
+				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+					return gathering.RebuildProjections(ctx, u, r.gatherings)
 				},
 			},
 			{

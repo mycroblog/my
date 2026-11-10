@@ -95,7 +95,7 @@ These names are used under the activities below. List each one you use.
 | --- | --- |
 | Purposes | Publishing profiles and posts, and the interactions people ask for |
 | Data subjects | People with an account, people they mention |
-| Personal data | Profile and its versions, featured hashtags, posts and their versions, media, favourites, reactions, boosts, bookmarks, pins, poll votes, follows, followed hashtags, blocks, mutes, lists, keyword filters. Posts can hold any data a person writes, including special categories. `{{IF post review}}` The text of a refused post that its author sends with an appeal |
+| Personal data | Profile and its versions, featured hashtags, posts and their versions, media, favourites, reactions, boosts, bookmarks, pins, poll votes, follows, followed hashtags, blocks, mutes, lists, keyword filters, private notes on accounts. Posts can hold any data a person writes, including special categories. `{{IF post review}}` The text of a refused post that its author sends with an appeal |
 | Recipients | Hosting, CDN, media review service (a small processed copy of each upload), other users, the public web for public content, federated servers (activity 4), search engines and AI crawlers under `search_indexing` and `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, apps the person authorized, `{{IF post review}}` the post review service for the `public`, `local`, and `unlisted` posts of new accounts and their edits (their text as typed and as rendered, content warning, language, sensitive flag, poll options, image descriptions, hashtags, and number of mentions, their address and the addresses of the posts they reply to or quote, the author's address and username, and when the account was created; no media), `{{IF profile review}}` the profile review service for the profile changes of new accounts (the display name, the bio as typed and as rendered, the profile fields, whether the avatar or header changed, the account's address and username, and when the account was created; no images) |
 | Erasure | When the person deletes it, by their automatic deletion policy, or at account erasure. `{{IF auto_delete_max_age_days}}` At most `{{auto_delete_max_age_days}}` days after publication, for the accounts without `keep_posts_longer`. Uploads attached to nothing `{{24 hours}}`. Old versions of images after a newer version replaces them `{{30 days}}`. The record of a deleted post's URI stays. `{{IF post review}}` An appeal goes with its decision (`hook_decisions_retention_days`, kept while it can be appealed or waits for review) or at account erasure |
 | Legal basis | {{e.g. contract}} |
@@ -206,6 +206,17 @@ Delete this activity when `translation_providers` is empty.
 | Recipients | Translation providers, as your processors: `public`, `local`, and `unlisted` posts by default. {{IF translation to private and direct}} Also `private` and `direct` posts, for {{THE PROVIDERS YOU ALLOWED}}. {{IF translation of reports}} The comments of reports, for the providers allowed `private` posts, and the posts reports name, when a moderator asks |
 | Erasure | Translations `{{30 days}}` from the translation, and with the post when it is deleted. Characters per account until the end of the following month, or at account erasure. At the providers: what was sent cannot be recalled. {{THEIR PERIODS}} |
 | Legal basis | {{e.g. legitimate interests}} |
+
+### 13. Events
+
+| | |
+| --- | --- |
+| Purposes | Planning events of the local users, with their dates, places, invitations, and answers |
+| Data subjects | Organizers, co-organizers, invited users, and attendees |
+| Personal data | Title, description, date, time zone, and places (a meeting place's address, a link) of each version of an event; organizers and co-organizers; invitations; answers and their approval; cancellations with their reason. Events are not federated |
+| Recipients | Hosting, the local users who see the event (the address and the link only to the approved attendees, unless the organizer shows them to all) |
+| Erasure | The title, description, and places of the versions an account wrote at its erasure. Events, their dates, invitations, and answers have no automatic end: {{PERIOD}} |
+| Legal basis | {{e.g. contract, legitimate interests}} |
 
 ### Security measures (Article 30(1)(g))
 

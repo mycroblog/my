@@ -442,7 +442,7 @@ func (r *Repository) ListTag(ctx context.Context, tq apptimeline.TagQuery) ([]ap
 		return nil, err
 	}
 	rows, err := r.db.reader().ListTagEntries(ctx, timelinegen.ListTagEntriesParams{
-		TagID: tq.TagID, IncludeLocal: sqlite.BoolToInt(tq.IncludeLocal), Before: tq.Before, Now: sqlite.ToMillis(tq.Now),
+		TagID: tq.TagID, IncludeLocal: sqlite.BoolToInt(tq.IncludeLocal), LocalOnly: sqlite.BoolToInt(tq.LocalOnly), ExcludeReplies: sqlite.BoolToInt(tq.ExcludeReplies), Before: tq.Before, Now: sqlite.ToMillis(tq.Now),
 		Viewer: tq.ViewerAccountID, AllLanguages: all, Languages: langs, PageLimit: int64(tq.Limit),
 	})
 	return entriesFrom(rows, err, "list tag entries")

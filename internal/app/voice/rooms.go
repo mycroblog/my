@@ -70,14 +70,9 @@ func (s *Service) Open(ctx context.Context, accountID string, in SettingsInput) 
 				return err
 			}
 		}
-		if limit := s.d.Config.MaxOpenRooms; limit > 0 {
-			open, err := s.d.Repository.OpenRooms(ctx, tx, "")
-			if err != nil {
-				return err
-			}
-			if len(open) >= limit {
-				return ErrTooManyRooms
-			}
+		// A host of a scheduled room that waits for them is in none of its participations.
+		if err := s.checkOpeningTx(ctx, tx, accountID); err != nil {
+			return err
 		}
 		if err := s.moveTx(ctx, tx, accountID, "", prev, now); err != nil {
 			return err

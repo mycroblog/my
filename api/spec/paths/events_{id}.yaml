@@ -1,0 +1,53 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/EventId.yaml
+get:
+  operationId: getEvent
+  summary: Get an event
+  description: |
+    The event, as the user sees it: the places that the user does not see are left out. A 404
+    for an event that the user does not see.
+  tags: [events]
+  security:
+    - oauth2: ["read:events"]
+  responses:
+    "200":
+      description: The event.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Event.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+patch:
+  operationId: updateEvent
+  summary: Change an event
+  description: |
+    Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+    organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+    `voice` place needs the organizer to be able to host rooms (a 422
+    `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+  tags: [events]
+  security:
+    - oauth2: ["write:events"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/EventUpdate.yaml
+  responses:
+    "200":
+      description: The event.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Event.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

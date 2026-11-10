@@ -185,7 +185,13 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 	now := s.now()
 	part := Participation{ID: s.d.IDs.NewID(), RoomID: roomID, AccountID: accountID, JoinedAt: now}
 	session := newSessionID()
-	g, err := s.grant(ctx, roomID, Session{ID: session, AccountID: accountID}, false)
+	// The host of a scheduled room who comes after others joins as a speaker, as the host who
+	// opens a room does (ADR-0100 §16).
+	role := voice.RoleListener
+	if accountID == v.Head.HostAccountID {
+		role = voice.RoleSpeaker
+	}
+	g, err := s.grant(ctx, roomID, Session{ID: session, AccountID: accountID}, role == voice.RoleSpeaker)
 	if err != nil {
 		return Joined{}, err
 	}
@@ -224,7 +230,17 @@ func (s *Service) Join(ctx context.Context, accountID, roomID string) (Joined, e
 		if err := s.moveTx(ctx, tx, accountID, roomID, prev, now); err != nil {
 			return err
 		}
-		return s.startParticipationTx(ctx, tx, part, voice.RoleListener)
+		scheduled, first, err := s.scheduledJoinTx(ctx, tx, rec.ID)
+		if err != nil {
+			return err
+		}
+		if err := s.startParticipationTx(ctx, tx, part, role); err != nil {
+			return err
+		}
+		if !scheduled {
+			return nil
+		}
+		return s.joinScheduledTx(ctx, tx, rec, part, first)
 	})
 	if err != nil {
 		return Joined{}, s.joinFailed(ctx, part.ID, session, err)

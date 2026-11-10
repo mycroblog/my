@@ -1,0 +1,58 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/EventId.yaml
+get:
+  operationId: listEventInvitations
+  summary: List the invitations of an event
+  description: |
+    The invitations of the event that were not revoked, oldest first, for the organizer and the
+    co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+  tags: [events]
+  security:
+    - oauth2: ["read:events"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the invitations.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/EventInvitationPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: inviteToEvent
+  summary: Invite a user to an event
+  description: |
+    Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+    from now on, whatever its visibility. A user is invited to an event once (a 409
+    `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+    `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+    the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+    most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+  tags: [events]
+  security:
+    - oauth2: ["write:events"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/EventInvitationCreate.yaml
+  responses:
+    "201":
+      description: The invitation.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/EventInvitation.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

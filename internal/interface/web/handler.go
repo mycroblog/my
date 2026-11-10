@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/i18n"
 )
@@ -84,6 +85,11 @@ type Options struct {
 	// post pages (/@alice/status/{id}) describe in their link preview meta tags; nil serves the
 	// generic shell there.
 	Previews Previews
+	// Feeds reads the Atom feeds of profiles (/@alice.atom) and hashtags (/tags/{tag}.atom), FR-213;
+	// nil serves none, and the pages then link to none.
+	Feeds Feeds
+	// FeedCache keeps the rendered feeds for a minute; nil renders each request.
+	FeedCache kernel.KeyValueStore
 	// Documents reads which of the instance's documents are published, for the link previews of
 	// their pages (/about/terms, /about/privacy, /about/commerce); nil serves the generic shell
 	// there. It is called per request, so that publishing a document applies at once.
@@ -386,23 +392,10 @@ func (h *Handler) siteMeta(ctx context.Context, locale string) (siteMeta, error)
 // no URL: one copy serves every path, and the 404 of a hidden page stays the same as any other
 // generic shell (ADR-0028 §1, §2).
 func (h *Handler) render(locale, name string, theme themeState, brand brandState, policy instance.CrawlerPolicy, site siteMeta) (*localizedDocuments, error) {
-	crawlers := directivesOf(policy)
-	shell, err := renderShell(shellData{
-		Lang: locale, Dir: i18n.Direction(locale), Title: name, Theme: theme, Brand: brand.Icon, Crawlers: crawlers,
-		HasIcon: h.hasIcon, HasAppleTouchIcon: h.hasAppleTouchIcon, HasThemeScript: h.hasThemeScript, ViteClient: viteClient(h.o.DevViteOrigin), Entry: h.tags,
-		Config: h.runtimeConfig(locale, name, brand),
-		Preview: &previewMeta{
-			Type: ogTypeWebsite, SiteName: name, Title: name, Description: site.summary,
-			Locale: ogLocale(locale), Image: site.img, Card: card(site.img),
-		},
-	})
+	shell, err := h.renderGeneric(locale, name, theme, brand, policy, site, nil)
 	if err != nil {
 		return nil, err
 	}
-	shell.crawlers = &crawlers
-	// The headers state more than the meta tags (Content-Usage tells deny_training from deny), so
-	// the ETag covers the policy too.
-	shell.etag = etag([]byte(string(shell.body) + "\x00" + string(policy.Search) + "\x00" + string(policy.AI)))
 	manifest, err := renderWebManifest(locale, name, theme, h.manifestIcons(brand))
 	if err != nil {
 		return nil, err
@@ -410,6 +403,29 @@ func (h *Handler) render(locale, name string, theme themeState, brand brandState
 	d := &localizedDocuments{name: name, theme: theme, brand: brand.Version, policy: policy, site: site, shell: shell, manifest: manifest}
 	h.localized.Store(locale, d)
 	return d, nil
+}
+
+// renderGeneric renders the generic shell of render, with the link to an Atom feed when feed is
+// not nil (the pages of hashtags, FR-213).
+func (h *Handler) renderGeneric(locale, name string, theme themeState, brand brandState, policy instance.CrawlerPolicy, site siteMeta, feed *feedLink) (document, error) {
+	crawlers := directivesOf(policy)
+	shell, err := renderShell(shellData{
+		Lang: locale, Dir: i18n.Direction(locale), Title: name, Theme: theme, Brand: brand.Icon, Crawlers: crawlers,
+		HasIcon: h.hasIcon, HasAppleTouchIcon: h.hasAppleTouchIcon, HasThemeScript: h.hasThemeScript, ViteClient: viteClient(h.o.DevViteOrigin), Entry: h.tags,
+		Config: h.runtimeConfig(locale, name, brand),
+		Preview: &previewMeta{
+			Type: ogTypeWebsite, SiteName: name, Title: name, Description: site.summary,
+			Locale: ogLocale(locale), Image: site.img, Card: card(site.img), Feed: feed,
+		},
+	})
+	if err != nil {
+		return document{}, err
+	}
+	shell.crawlers = &crawlers
+	// The headers state more than the meta tags (Content-Usage tells deny_training from deny), so
+	// the ETag covers the policy too.
+	shell.etag = etag([]byte(string(shell.body) + "\x00" + string(policy.Search) + "\x00" + string(policy.AI)))
+	return shell, nil
 }
 
 // runtimeConfig returns the runtime config of the shell for the default locale, the instance's
@@ -492,7 +508,9 @@ func (h *Handler) Register(r Router) {
 // ServeHTTP serves a GET request for an SPA route: a file at the root of the build when one
 // has the requested name, the server's 404 under the paths of other endpoints, the shell with
 // link preview meta tags at the pages about the instance (/, /about, and /about/crawler), at the pages of its
-// published documents, and at profile and post pages, and the generic shell otherwise.
+// published documents, and at profile and post pages, the Atom feeds of profiles and hashtags
+// (/@alice.atom, /tags/{tag}.atom), the generic shell with the link to its feed at the pages of
+// hashtags, and the generic shell otherwise.
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p := r.URL.Path
 	if (r.Method != http.MethodGet && r.Method != http.MethodHead) || reserved(p) {
@@ -520,6 +538,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if page, ok := documentPages[p]; ok && h.o.Documents != nil {
 		h.serveDocumentPage(w, r, p, page)
 		return
+	}
+	if h.o.Feeds != nil {
+		if kind, name, ok := h.feedRoute(p); ok {
+			h.serveFeed(w, r, kind, name)
+			return
+		}
+		if tag, ok := tagPage(p); ok {
+			h.serveTagPage(w, r, tag)
+			return
+		}
 	}
 	if h.o.Previews != nil {
 		if route, ok := h.parsePreviewRoute(p); ok {

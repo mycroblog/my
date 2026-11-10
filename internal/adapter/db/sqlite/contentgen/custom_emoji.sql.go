@@ -80,6 +80,8 @@ DELETE FROM remote_media
 WHERE remote_media.media_id = ?1
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = ?1)
   AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = ?1)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = ?1)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = ?1)
 `
 
 // DeleteUnreferencedRemoteMedia deletes the remote subtype of a remote media file while no

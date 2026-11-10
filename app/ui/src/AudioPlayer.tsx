@@ -11,8 +11,9 @@ const audioPlayer = tv({
   slots: {
     base: "relative flex items-center gap-3 rounded-lg bg-surface-sunken p-4",
     play: [
-      "grid size-11 shrink-0 cursor-default place-items-center rounded-full bg-accent-fill text-accent-fill-fg",
-      "data-focus-visible:focus-ring data-hovered:bg-accent-fill-hover motion-safe:transition-colors [&>svg]:size-5",
+      "grid size-11 shrink-0 cursor-pointer place-items-center rounded-full bg-accent-fill text-accent-fill-fg",
+      "data-focus-visible:focus-ring data-hovered:bg-accent-fill-hover data-pressed:bg-accent-fill-hover [&>svg]:size-5",
+      "motion-safe:transition-[background-color,scale] motion-safe:duration-fast motion-safe:data-pressed:scale-95",
       // From the press until the sound starts, the button pulses where it was pressed (ADR-0110 P2).
       "data-waiting:cursor-wait motion-safe:data-waiting:animate-pulse",
     ],

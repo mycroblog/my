@@ -101,6 +101,8 @@ DELETE FROM poll_votes WHERE poll_votes.id IN (
 SELECT r.media_id FROM remote_media r
 WHERE r.owner_account_id = sqlc.arg(account_id)
   AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = r.media_id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = r.media_id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = r.media_id)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = r.media_id)
 ORDER BY r.media_id LIMIT sqlc.arg(lim);
 

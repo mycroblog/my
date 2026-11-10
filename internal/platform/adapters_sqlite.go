@@ -14,6 +14,7 @@ import (
 	sqlitediagnostics "github.com/mycroblog/my/internal/adapter/db/sqlite/diagnostics"
 	sqlitefederation "github.com/mycroblog/my/internal/adapter/db/sqlite/federation"
 	sqlitefinance "github.com/mycroblog/my/internal/adapter/db/sqlite/finance"
+	sqlitegathering "github.com/mycroblog/my/internal/adapter/db/sqlite/gathering"
 	sqlitegraph "github.com/mycroblog/my/internal/adapter/db/sqlite/graph"
 	sqlitehook "github.com/mycroblog/my/internal/adapter/db/sqlite/hook"
 	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
@@ -64,7 +65,7 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 		medias: sqlitecontent.NewMediaRepository(d), emojis: sqlitecontent.NewCustomEmojiRepository(d),
 		feds: sqlitefederation.NewRepository(d), mods: sqlitemoderation.NewRepository(d), hooks: sqlitewebhook.NewRepository(d),
 		finance: sqlitefinance.NewRepository(d), payments: sqlitesupporters.NewPaymentRepository(d), supporters: sqlitesupporters.NewSupporterRepository(d),
-		voice: sqlitevoice.NewRepository(d), diagnostics: sqlitediagnostics.NewRepository(d), translations: sqlitetranslation.NewRepository(d), search: sqlitesearch.NewRepository(d),
+		voice: sqlitevoice.NewRepository(d), gatherings: sqlitegathering.NewRepository(d), diagnostics: sqlitediagnostics.NewRepository(d), translations: sqlitetranslation.NewRepository(d), search: sqlitesearch.NewRepository(d),
 		decisions: sqlitehook.NewRepository(d), existingStatuses: sqlitecontent.NewStatusRepository(d), drafts: sqlitecontent.NewStatusRepository(d),
 		retention: retentionRepositories{
 			statuses: sqlitecontent.NewStatusRepository(d), purges: sqlitefederation.NewRepository(d), profiles: sqliteaccount.NewRepository(d), emojis: sqlitecontent.NewCustomEmojiRepository(d),

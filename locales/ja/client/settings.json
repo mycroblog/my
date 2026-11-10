@@ -559,6 +559,26 @@
     "defaultMessage": "{usage, select, deny_training {このサーバーはすべてのページで AI の学習を拒否しています。この設定では、AI の検索やアシスタントによる利用も拒否します。} other {このサーバーはすべてのページで AI の学習と利用を拒否しています。}}",
     "description": "Note shown when the server already denies AI training (deny_training) or both training and use (deny)."
   },
+  "settings.profile.feeds": {
+    "defaultMessage": "フィード",
+    "description": "Heading of the part of the profile form about the Atom feed of the user's public posts."
+  },
+  "settings.profile.feed_enabled": {
+    "defaultMessage": "公開投稿のフィードを出す",
+    "description": "Label of the checkbox that lets feed readers follow the user's public posts in an Atom feed, and lets them appear in the feeds of hashtags."
+  },
+  "settings.profile.feed_enabled.description": {
+    "defaultMessage": "fediverse のアカウントを持たない人も、フィードリーダーであなたの公開投稿を読めるようになります。返信・ブースト・ほかの公開範囲の投稿は載りません。公開投稿は、そのハッシュタグのフィードにも載ります。",
+    "description": "Help text of the feed checkbox."
+  },
+  "settings.profile.feed_enabled.follows_indexable": {
+    "defaultMessage": "変えるまでは、上の検索の設定に従います。",
+    "description": "Note shown while the user has not chosen about the feed, which then follows the indexable checkbox."
+  },
+  "settings.profile.feed_enabled.address": {
+    "defaultMessage": "フィードのアドレス: {url}",
+    "description": "The address of the user's Atom feed, shown while the feed is on. {url} is the address, which reads left to right."
+  },
   "settings.profile.characters_left": {
     "defaultMessage": "{count, plural, other {残り # 文字}}",
     "description": "Character count under the bio field while the text is within the limit."

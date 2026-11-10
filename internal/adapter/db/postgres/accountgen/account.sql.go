@@ -257,7 +257,7 @@ func (q *Queries) GetProfileHead(ctx context.Context, accountID string) (GetProf
 
 const getProfileRevision = `-- name: GetProfileRevision :one
 SELECT id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at
+  avatar_media_id, header_media_id, revised_at, feed
 FROM account_profile_revisions WHERE id = $1
 `
 
@@ -278,6 +278,7 @@ func (q *Queries) GetProfileRevision(ctx context.Context, id string) (AccountPro
 		&i.AvatarMediaID,
 		&i.HeaderMediaID,
 		&i.RevisedAt,
+		&i.Feed,
 	)
 	return i, err
 }
@@ -448,8 +449,8 @@ func (q *Queries) InsertProfileFieldSource(ctx context.Context, arg InsertProfil
 const insertProfileRevision = `-- name: InsertProfileRevision :exec
 INSERT INTO account_profile_revisions (
   id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+  avatar_media_id, header_media_id, revised_at, feed
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 `
 
 type InsertProfileRevisionParams struct {
@@ -466,6 +467,7 @@ type InsertProfileRevisionParams struct {
 	AvatarMediaID *string
 	HeaderMediaID *string
 	RevisedAt     time.Time
+	Feed          string
 }
 
 func (q *Queries) InsertProfileRevision(ctx context.Context, arg InsertProfileRevisionParams) error {
@@ -483,6 +485,7 @@ func (q *Queries) InsertProfileRevision(ctx context.Context, arg InsertProfileRe
 		arg.AvatarMediaID,
 		arg.HeaderMediaID,
 		arg.RevisedAt,
+		arg.Feed,
 	)
 	return err
 }

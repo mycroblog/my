@@ -39,22 +39,36 @@ const mediaViewer = tv({
     figure: "m-0",
     // At most its own size, and scaled down to the panel's width and to the height the screen leaves it.
     image: "block size-auto max-h-[calc(85svh-4rem)] max-w-full object-contain",
-    // The two round buttons over the picture's corners.
+    // The two round buttons over the picture's corners. Under the pointer a light ring rims them, whatever the picture
+    // behind; pressed, they also shrink a little (web-client/16-look-states-and-wording.md G27). Forced-colors mode
+    // drops the ring and the fills, so there they take the system's highlight.
     corner: [
-      "absolute z-20 grid size-10 place-items-center rounded-full shadow-md outline-none",
+      "absolute z-20 grid size-10 cursor-pointer place-items-center rounded-full shadow-md outline-none",
+      "data-hovered:ring-2 data-hovered:ring-toast-fg data-pressed:ring-2 data-pressed:ring-toast-fg",
+      "motion-safe:transition-[box-shadow,scale] motion-safe:duration-fast motion-safe:data-pressed:scale-90",
+      "forced-colors:data-hovered:bg-[Highlight] forced-colors:data-hovered:text-[HighlightText]",
+      "forced-colors:data-pressed:bg-[Highlight] forced-colors:data-pressed:text-[HighlightText]",
       "data-focus-visible:focus-ring pointer-coarse:size-11 [&>svg]:size-5",
     ],
     close: "inset-e-2.5 top-2.5 bg-toast text-toast-fg",
     // Turns light while the description is shown, so that it stands out from the dark ground it sits on.
-    altToggle:
+    altToggle: [
       "inset-e-2.5 bottom-2.5 bg-toast text-toast-fg data-[expanded=true]:bg-toast-fg data-[expanded=true]:text-toast",
+      "data-[expanded=true]:data-hovered:ring-toast data-[expanded=true]:data-pressed:ring-toast",
+    ],
     // Over the whole picture; the room at the end is the toggle's.
     alt: "absolute inset-0 z-10 m-0 overflow-y-auto overscroll-contain bg-alt-overlay px-6 py-10 pe-10 text-base/8 wrap-break-word whitespace-pre-line text-toast-fg",
     // While the picture loads: its blur, or the frame's surface, with a spinner in the middle.
     loading: "pointer-events-none absolute inset-0 z-10 grid place-items-center",
     blur: "absolute inset-0 size-full",
     nav: "flex items-center gap-3",
-    navButton: "w-10 bg-surface-raised px-0 shadow-md pointer-coarse:w-11",
+    // A ghost IconButton on the raised surface: the sunken fill under the pointer and while pressed, and the system's
+    // highlight in forced-colors mode, which drops the fills.
+    navButton: [
+      "w-10 bg-surface-raised px-0 shadow-md pointer-coarse:w-11",
+      "forced-colors:data-hovered:bg-[Highlight] forced-colors:data-hovered:text-[HighlightText]",
+      "forced-colors:data-pressed:bg-[Highlight] forced-colors:data-pressed:text-[HighlightText]",
+    ],
     count: "rounded-full bg-toast px-3 py-1 text-sm font-extrabold text-toast-fg tabular-nums",
   },
 });

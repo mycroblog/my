@@ -114,6 +114,9 @@ const shellSource = `<!doctype html>
 {{- if .ActivityPubID}}
 <link rel="alternate" type="application/activity+json" href="{{.ActivityPubID}}">
 {{- end}}
+{{- with .Feed}}
+<link rel="alternate" type="application/atom+xml" title="{{.Title}}" href="{{.URL}}">
+{{- end}}
 {{- end}}
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="{{.Theme.Light}}">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="{{.Theme.Dark}}">

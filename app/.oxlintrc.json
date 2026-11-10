@@ -979,6 +979,40 @@
         ]
       }
     },
+    // G26, G27: a pressable control of the kit shows the hand, not the arrow, and answers the pointer with a hover state
+    // (web-client/16-look-states-and-wording.md). A recipe (tv) that gives the hand also has a hover state (data-hovered:,
+    // hover:, or data-focused: of a list item, which the pointer focuses), and in a file built on a React Aria button,
+    // toggle, tab or item, one with a hover or pressed state gives a pointer shape too (a link with href shows the hand
+    // by itself, and the kit's Button and Link give it to the recipes that restyle them).
+    {
+      "files": [
+        "ui/src/**/*.tsx"
+      ],
+      "excludeFiles": [
+        "**/*.test.tsx",
+        "**/*.stories.tsx"
+      ],
+      "jsPlugins": [
+        "./oxlint/restrictions.js"
+      ],
+      "rules": {
+        "restrict/pressable": [
+          "error",
+          {
+            "selector": "Literal[value=/(^|[\\s:])cursor-default(\\s|$)/]",
+            "message": "A pressable control shows the hand (cursor-pointer), not the arrow, and cursor-not-allowed while disabled (web-client/16-look-states-and-wording.md G26)."
+          },
+          {
+            "selector": "CallExpression[callee.name='tv']:has(Literal[value=/(^|\\s)cursor-(pointer|zoom-in)(\\s|$)/]):not(:has(Literal[value=/(hover|hovered|focused)[:/]/]))",
+            "message": "A control that shows the hand answers the pointer too: give it a hover state (data-hovered:) and a pressed one (data-pressed:) (web-client/16-look-states-and-wording.md G27)."
+          },
+          {
+            "selector": "Program:has(ImportDeclaration[source.value='react-aria-components'] > ImportSpecifier[imported.name=/^(Button|ToggleButton|MenuItem|ListBoxItem|Tab|GridListItem|CheckboxButton|RadioButton|SwitchButton)$/]) CallExpression[callee.name='tv']:has(Literal[value=/(^|[\\s:])data-(hovered|pressed):/]):not(:has(Literal[value=/(^|\\s)cursor-(pointer|zoom-in)(\\s|$)/]))",
+            "message": "A control built on a React Aria button, toggle, tab or item shows the hand over it (cursor-pointer) (web-client/16-look-states-and-wording.md G26)."
+          }
+        ]
+      }
+    },
     // D2: components use container queries; viewport breakpoints belong to the app shell, whose look is in the kit's
     // AppShell and AppNavigation, and ToastProvider's region, which stands clear of the tab bar they draw.
     {

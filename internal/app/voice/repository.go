@@ -176,6 +176,25 @@ type HostGrace struct {
 	EndsAt time.Time
 }
 
+// Schedule is the schedule of a room that another module opened by its schedule
+// (voice_room_schedules, ADR-0100 §16).
+type Schedule struct {
+	RoomID string
+	// Key is the caller's key of the schedule, unique among the rooms.
+	Key string
+	// WaitEndsAt is the end of the wait for the first participant and the host.
+	WaitEndsAt time.Time
+}
+
+// CohostCandidate is a co-host candidate of a scheduled room (voice_room_cohost_candidates).
+type CohostCandidate struct {
+	// Position is the order of the nomination, from 0.
+	Position int
+	// Removed reports that the account was removed as a co-host of the room once, by the host
+	// or as it became the host: such a candidate does not become a co-host again on its own.
+	Removed bool
+}
+
 // RoomRecord is a room with its head, its current revision, and its ending.
 type RoomRecord struct {
 	Room
@@ -240,6 +259,21 @@ type Repository interface {
 	// HostGraces returns the host graces of the rooms of roomIDs that have one, by room, with one
 	// query.
 	HostGraces(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]HostGrace, error)
+
+	// InsertSchedule records the schedule of a scheduled room.
+	InsertSchedule(ctx context.Context, tx uow.Tx, sc Schedule) error
+	// FindSchedule returns the schedule of a room; ErrNotFound for a room that no schedule opened.
+	FindSchedule(ctx context.Context, tx uow.Tx, roomID string) (Schedule, error)
+	// FindScheduleByKey returns the schedule of a key; ErrNotFound without one.
+	FindScheduleByKey(ctx context.Context, tx uow.Tx, key string) (Schedule, error)
+	// InsertCohostCandidates records the co-host candidates of a scheduled room in the order of
+	// accountIDs; a candidate recorded already keeps its position.
+	InsertCohostCandidates(ctx context.Context, tx uow.Tx, roomID string, accountIDs []string) error
+	// FindCohostCandidate returns an account as a co-host candidate of a room; ErrNotFound when
+	// it is none.
+	FindCohostCandidate(ctx context.Context, tx uow.Tx, roomID, accountID string) (CohostCandidate, error)
+	// Attended reports whether anybody ever joined a room.
+	Attended(ctx context.Context, tx uow.Tx, roomID string) (bool, error)
 
 	// FindRoom returns a room with its head, its current revision, and its ending; ErrNotFound
 	// for an unknown room.

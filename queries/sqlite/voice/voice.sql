@@ -294,3 +294,30 @@ WHERE NOT EXISTS (SELECT 1 FROM voice_room_participation_ends e WHERE e.particip
 -- ListVoiceRoomParticipantsAmong returns the participants among account_ids, a JSON array.
 -- name: ListVoiceRoomParticipantsAmong :many
 SELECT account_id FROM voice_room_participants WHERE account_id IN (SELECT value FROM json_each(CAST(sqlc.arg(account_ids) AS TEXT))) ORDER BY account_id;
+
+-- Scheduled rooms (ADR-0100 section 16) ------------------------------------------------------
+
+-- name: InsertVoiceRoomSchedule :exec
+INSERT INTO voice_room_schedules (room_id, schedule_key, wait_ends_at) VALUES (?, ?, ?);
+
+-- name: GetVoiceRoomSchedule :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE room_id = ?;
+
+-- name: GetVoiceRoomScheduleByKey :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE schedule_key = ?;
+
+-- name: InsertVoiceRoomCohostCandidate :exec
+INSERT INTO voice_room_cohost_candidates (room_id, account_id, position) VALUES (?, ?, ?)
+ON CONFLICT (room_id, account_id) DO NOTHING;
+
+-- GetVoiceRoomCohostCandidate returns the position of a co-host candidate of a room and whether
+-- the account was ever removed as a co-host of it.
+-- name: GetVoiceRoomCohostCandidate :one
+SELECT c.position,
+  CAST(EXISTS (SELECT 1 FROM voice_room_cohost_changes x WHERE x.room_id = c.room_id AND x.account_id = c.account_id AND x.change = 'removed') AS INTEGER) AS removed
+FROM voice_room_cohost_candidates c
+WHERE c.room_id = ? AND c.account_id = ?;
+
+-- IsVoiceRoomAttended reports whether anybody ever joined a room.
+-- name: IsVoiceRoomAttended :one
+SELECT CAST(EXISTS (SELECT 1 FROM voice_room_participations WHERE room_id = ?) AS INTEGER) AS attended;

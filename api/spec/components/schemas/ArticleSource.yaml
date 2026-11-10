@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: What the author wrote of an article besides its Markdown body, for editing it.
+type: object
+required: [title, summary, tags]
+properties:
+  title:
+    description: The title.
+    type: string
+  summary:
+    description: The summary the author wrote; empty when the server made it from the body.
+    type: string
+  cover:
+    description: The cover image; omitted when there is none.
+    allOf:
+      - $ref: ./StatusMediaItem.yaml
+  tags:
+    description: The hashtags, without `#`.
+    type: array
+    items:
+      type: string

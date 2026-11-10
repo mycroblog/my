@@ -249,6 +249,7 @@ const (
 	ScopeReadBookmarks      = "read:bookmarks"
 	ScopeReadCustomEmojis   = "read:custom_emojis"
 	ScopeReadDirect         = "read:direct"
+	ScopeReadEvents         = "read:events"
 	ScopeReadFilters        = "read:filters"
 	ScopeReadFinance        = "read:finance"
 	ScopeReadFollows        = "read:follows"
@@ -262,6 +263,7 @@ const (
 	ScopeWriteBlocks        = "write:blocks"
 	ScopeWriteBookmarks     = "write:bookmarks"
 	ScopeWriteCustomEmojis  = "write:custom_emojis"
+	ScopeWriteEvents        = "write:events"
 	ScopeWriteFavourites    = "write:favourites"
 	ScopeWriteFilters       = "write:filters"
 	ScopeWriteFollows       = "write:follows"
@@ -281,10 +283,10 @@ var broadScopes = []string{ScopeAdmin, ScopeFollow, ScopePush, ScopeRead, ScopeW
 var fixedScopes = []string{
 	ScopeAdmin, ScopeAdminRead, ScopeAdminWrite,
 	ScopeFollow, ScopePush, ScopeRead,
-	ScopeReadAccounts, ScopeReadBlocks, ScopeReadBookmarks, ScopeReadCustomEmojis, ScopeReadDirect, ScopeReadFilters, ScopeReadFinance,
+	ScopeReadAccounts, ScopeReadBlocks, ScopeReadBookmarks, ScopeReadCustomEmojis, ScopeReadDirect, ScopeReadEvents, ScopeReadFilters, ScopeReadFinance,
 	ScopeReadFollows, ScopeReadMutes, ScopeReadNotifications, ScopeReadReports, ScopeReadStatuses, ScopeReadSupporters, ScopeReadVoice,
 	ScopeWrite,
-	ScopeWriteAccounts, ScopeWriteBlocks, ScopeWriteBookmarks, ScopeWriteCustomEmojis, ScopeWriteFavourites, ScopeWriteFilters, ScopeWriteFollows,
+	ScopeWriteAccounts, ScopeWriteBlocks, ScopeWriteBookmarks, ScopeWriteCustomEmojis, ScopeWriteEvents, ScopeWriteFavourites, ScopeWriteFilters, ScopeWriteFollows,
 	ScopeWriteMedia, ScopeWriteMutes, ScopeWriteNotifications, ScopeWriteReports, ScopeWriteStatuses, ScopeWriteSupporters, ScopeWriteVoice,
 }
 

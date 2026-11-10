@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/EventId.yaml
+put:
+  operationId: answerEvent
+  summary: Answer an event
+  description: |
+    Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+    starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+    reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+    answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+    `declined` are never refused. `declined` ends an approval. A 409
+    `/api/v1/problems/event-closed` for an event that started or was cancelled.
+  tags: [events]
+  security:
+    - oauth2: ["write:events"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/EventRSVP.yaml
+  responses:
+    "200":
+      description: The event.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Event.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

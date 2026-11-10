@@ -559,6 +559,26 @@
     "defaultMessage": "{usage, select, deny_training {This server already denies AI training on every page; this also denies the use by AI search and assistants.} other {This server already denies AI training and use on every page.}}",
     "description": "Note shown when the server already denies AI training (deny_training) or both training and use (deny)."
   },
+  "settings.profile.feeds": {
+    "defaultMessage": "Feeds",
+    "description": "Heading of the part of the profile form about the Atom feed of the user's public posts."
+  },
+  "settings.profile.feed_enabled": {
+    "defaultMessage": "Publish a feed of my public posts",
+    "description": "Label of the checkbox that lets feed readers follow the user's public posts in an Atom feed, and lets them appear in the feeds of hashtags."
+  },
+  "settings.profile.feed_enabled.description": {
+    "defaultMessage": "People without an account on the fediverse can follow your public posts in a feed reader. Replies, boosts, and posts of other visibilities are never in it. Your public posts also appear in the feeds of their hashtags.",
+    "description": "Help text of the feed checkbox."
+  },
+  "settings.profile.feed_enabled.follows_indexable": {
+    "defaultMessage": "Until you change it, this follows your choice about search above.",
+    "description": "Note shown while the user has not chosen about the feed, which then follows the indexable checkbox."
+  },
+  "settings.profile.feed_enabled.address": {
+    "defaultMessage": "Feed address: {url}",
+    "description": "The address of the user's Atom feed, shown while the feed is on. {url} is the address, which reads left to right."
+  },
   "settings.profile.characters_left": {
     "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
     "description": "Character count under the bio field while the text is within the limit."

@@ -119,6 +119,19 @@ CREATE TABLE account_domain_mutes (
   PRIMARY KEY (account_id, domain)
 ) STRICT;
 
+-- Current value: an account's private note on another account (FR-310), read only by the account
+-- that wrote it. Writing another note replaces it and an empty note deletes the row; it keeps no
+-- history and federates nothing.
+CREATE TABLE account_notes (
+  account_id TEXT NOT NULL,
+  target_account_id TEXT NOT NULL,
+  note TEXT NOT NULL CHECK (note <> '' AND length(note) <= 2000),
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (account_id, target_account_id)
+) STRICT;
+-- The erasure of a deleted account (data-model §8) deletes the notes on it.
+CREATE INDEX account_notes_target_account_id ON account_notes (target_account_id);
+
 -- graph and federation: re-sent Follows and early Undo Follows (data-model §4.5, §4.8) ----------
 
 -- Event: a Follow received again, under another URI, for a follow that is already active. The

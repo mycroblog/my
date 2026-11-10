@@ -330,10 +330,19 @@ const kvMediaReopened = "voice.media_reopened"
 //     (takeAway), so that the evaluation of voice.sweep disconnects it (a host enters the grace)
 //     even if its client still sends heartbeats;
 //   - a session on the media path that is not a live session of the room is removed from it.
+//
+// A room that nobody ever joined, as a scheduled room that waits, has no media path to reconcile.
 func (s *Service) reconcile(ctx context.Context, rec RoomRecord) error {
 	t := s.d.Transport
 	if !s.Enabled() || !t.Capabilities().ServerEnforced || rec.Transport != s.d.Config.Transport || rec.Head.State != voice.StateOpen {
 		return nil
+	}
+	if rec.Head.ParticipantsCount == 0 {
+		// A scheduled room that nobody joined yet has no media path (ADR-0100 §16).
+		attended, err := s.d.Repository.Attended(ctx, nil, rec.ID)
+		if err != nil || !attended {
+			return err
+		}
 	}
 	room := RoomRef{ID: rec.ID}
 	media, err := t.Sessions(ctx, room)

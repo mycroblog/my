@@ -1848,48 +1848,55 @@ FROM feed_tag_entries t
 JOIN feed_entries e ON e.id = t.entry_id
 WHERE t.tag_id = $1 AND t.visibility IN ('public', 'local')
   AND ($2::boolean OR t.visibility = 'public')
-  AND ($3::uuid IS NULL OR t.entry_id < $3::uuid)
+  AND (NOT $3::boolean OR t.is_local)
+  AND (NOT $4::boolean OR NOT e.is_reply)
+  AND ($5::uuid IS NULL OR t.entry_id < $5::uuid)
   AND NOT EXISTS (
     SELECT 1 FROM feed_author_restrictions r
     WHERE r.account_id = t.author_account_id
       AND r.restriction IN ('public_discovery', 'visibility_ceiling_private', 'profile_view')
-      AND (r.effective_until IS NULL OR r.effective_until > $4::timestamptz))
+      AND (r.effective_until IS NULL OR r.effective_until > $6::timestamptz))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_restrictions dr
     WHERE dr.restriction IN ('public_discovery', 'profile_view')
-      AND (dr.effective_until IS NULL OR dr.effective_until > $4::timestamptz)
+      AND (dr.effective_until IS NULL OR dr.effective_until > $6::timestamptz)
       AND (dr.domain = e.author_domain OR right(e.author_domain, length(dr.domain) + 1) = '.' || dr.domain))
   AND NOT EXISTS (
     SELECT 1 FROM feed_exclusions x
-    WHERE x.viewer_account_id = $5::uuid AND x.target_account_id = t.author_account_id
-      AND (x.expires_at IS NULL OR x.expires_at > $4::timestamptz))
+    WHERE x.viewer_account_id = $7::uuid AND x.target_account_id = t.author_account_id
+      AND (x.expires_at IS NULL OR x.expires_at > $6::timestamptz))
   AND NOT EXISTS (
     SELECT 1 FROM feed_domain_mutes dm
-    WHERE dm.viewer_account_id = $5::uuid
+    WHERE dm.viewer_account_id = $7::uuid
       AND (dm.domain = e.author_domain OR right(e.author_domain, length(dm.domain) + 1) = '.' || dm.domain))
-  AND ($6::boolean OR e.language = 'und' OR e.language = ANY($7::text[]))
+  AND ($8::boolean OR e.language = 'und' OR e.language = ANY($9::text[]))
 ORDER BY t.entry_id DESC
-LIMIT $8
+LIMIT $10
 `
 
 type ListTagEntriesParams struct {
-	TagID        string
-	IncludeLocal bool
-	Before       *string
-	Now          time.Time
-	Viewer       *string
-	AllLanguages bool
-	Languages    []string
-	PageLimit    int32
+	TagID          string
+	IncludeLocal   bool
+	LocalOnly      bool
+	ExcludeReplies bool
+	Before         *string
+	Now            time.Time
+	Viewer         *string
+	AllLanguages   bool
+	Languages      []string
+	PageLimit      int32
 }
 
 // ListTagEntries is the timeline of a hashtag (FR-203): the public and local posts with the tag
-// (public only when include_local is 0), with the exclusions of ListLocalEntries and of the
-// author's domain.
+// (public only when include_local is false), with the exclusions of ListLocalEntries and of the
+// author's domain. local_only keeps the posts of local authors, and exclude_replies leaves out
+// the posts that reply to a status (the Atom feed of a hashtag, FR-213).
 func (q *Queries) ListTagEntries(ctx context.Context, arg ListTagEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.Query(ctx, listTagEntries,
 		arg.TagID,
 		arg.IncludeLocal,
+		arg.LocalOnly,
+		arg.ExcludeReplies,
 		arg.Before,
 		arg.Now,
 		arg.Viewer,

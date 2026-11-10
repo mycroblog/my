@@ -82,6 +82,14 @@ const (
 	// permission (ADR-0070 §1): it decides only about the holder's own posts, so a supporter plan
 	// may grant it (ADR-0072 §5).
 	PermKeepPostsLonger Permission = "keep_posts_longer"
+	// PermCreateArticles: write new articles while the instance setting article_authoring is
+	// permission (ADR-0160 §3). It is a member permission (ADR-0070 §1): it decides only about the
+	// holder's own posts, so a supporter plan may grant it (ADR-0072 §5).
+	PermCreateArticles Permission = "create_articles"
+	// PermCreateEvents: create events of one's own and organize them, while the instance setting
+	// event_creators is permitted (ADR-0161 §3). It is a member permission (ADR-0070 §1): it
+	// makes only the holder's own events, so a supporter plan may grant it (ADR-0072 §5).
+	PermCreateEvents Permission = "create_events"
 )
 
 // AllPermissions lists every permission.
@@ -92,7 +100,7 @@ func AllPermissions() []Permission {
 		PermManageLoginRecovery, PermManageCustomEmojis, PermManageWebhooks, PermManageAnnouncements,
 		PermManageFinance, PermViewFinance, PermManageSupporters, PermCreateCustomEmojis, PermManageOAuthApps,
 		PermManageServiceClosure, PermStartVoiceRooms, PermManageErrors, PermManageLoginProviders, PermCreateInvites,
-		PermKeepPostsLonger,
+		PermKeepPostsLonger, PermCreateArticles, PermCreateEvents,
 	}
 }
 
@@ -116,7 +124,7 @@ func (p Permission) Category() PermissionCategory {
 	switch p {
 	case PermManageReports, PermManageAccounts, PermManageDomains, PermManageInvites, PermViewAudit:
 		return CategoryModeration
-	case PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms, PermCreateInvites, PermKeepPostsLonger:
+	case PermViewFinance, PermCreateCustomEmojis, PermStartVoiceRooms, PermCreateInvites, PermKeepPostsLonger, PermCreateArticles, PermCreateEvents:
 		return CategoryMember
 	default:
 		return CategoryServer

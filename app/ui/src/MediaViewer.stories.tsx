@@ -122,3 +122,39 @@ export const WithoutDescription: Story = {
 export const Animated: Story = {
   args: { items: [animation] },
 };
+
+/**
+ * What the pointer meets (web-client/16-look-states-and-wording.md G26, G27): the hand over each button, a light ring
+ * around a corner button under the pointer, which shrinks a little while pressed, and the sunken fill of the pager.
+ */
+export const PointerStates: Story = {
+  tags: ["no-screenshot"],
+  args: { items: [sunset, meadow], index: 0 },
+  // The story's own userEvent keeps the button held between the press and the release.
+  play: async ({ canvasElement, userEvent }) => {
+    const body = within(canvasElement.ownerDocument.body);
+    await body.findByRole("dialog", { name: "Image 1 of 2" });
+    const close = body.getByRole("button", { name: "Close" });
+    const toggle = body.getByRole("button", { name: "Description" });
+    const next = body.getByRole("button", { name: "Next image" });
+    for (const button of [close, toggle, next]) await expect(getComputedStyle(button).cursor).toBe("pointer");
+
+    const resting = getComputedStyle(close).boxShadow;
+    await userEvent.hover(close);
+    await waitFor(() => expect(close).toHaveAttribute("data-hovered", "true"));
+    await waitFor(() => expect(getComputedStyle(close).boxShadow).not.toBe(resting));
+    await userEvent.unhover(close);
+
+    await userEvent.pointer({ keys: "[MouseLeft>]", target: toggle });
+    await expect(toggle).toHaveAttribute("data-pressed", "true");
+    await waitFor(() => expect(getComputedStyle(toggle).scale).toBe("0.9"));
+    await userEvent.pointer({ keys: "[/MouseLeft]", target: toggle });
+    await waitFor(() => expect(toggle).not.toHaveAttribute("data-pressed"));
+    await userEvent.unhover(toggle);
+
+    const raised = getComputedStyle(next).backgroundColor;
+    await userEvent.hover(next);
+    await waitFor(() => expect(getComputedStyle(next).backgroundColor).not.toBe(raised));
+    await userEvent.unhover(next);
+  },
+};

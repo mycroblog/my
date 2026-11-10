@@ -177,6 +177,10 @@ type TagQuery struct {
 	Window
 	TagID        string
 	IncludeLocal bool
+	// LocalOnly keeps only the posts of local authors, and ExcludeReplies leaves out the posts
+	// that reply to a status (the Atom feed of a hashtag, FR-213).
+	LocalOnly      bool
+	ExcludeReplies bool
 }
 
 // ProfileQuery selects a page of the profile timeline of an author.

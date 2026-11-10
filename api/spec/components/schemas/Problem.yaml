@@ -251,6 +251,20 @@ description: |
   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
     co-hosts of the room.
   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+  - `/api/v1/problems/event-not-eligible` (403): the user may not create events.
+  - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
+    co-organizers of the event.
+  - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
+  - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+  - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
+  - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
+    room: the voice chat is off, or its organizer may not host rooms.
+  - `/api/v1/problems/event-already-invited` (409): the account is already invited to the event.
+  - `/api/v1/problems/event-invalid-invitee` (422): the account cannot be invited to the event.
+  - `/api/v1/problems/event-invalid-coorganizer` (422): the account cannot co-organize the event.
+  - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
+    it can.
+  - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
     be searched (`Instance.full_text_search.available`).
   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of

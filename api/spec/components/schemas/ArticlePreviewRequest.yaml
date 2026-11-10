@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The body of an article to preview.
+type: object
+required: [text]
+properties:
+  text:
+    description: The body in Markdown, as `createArticle` takes it.
+    type: string
+  summary:
+    $ref: ./ArticleSummary.yaml

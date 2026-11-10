@@ -52,7 +52,9 @@ CREATE TABLE account_profile_revisions (
   ai_opt_out INTEGER NOT NULL CHECK (ai_opt_out IN (0, 1)),
   avatar_media_id TEXT,
   header_media_id TEXT,
-  revised_at INTEGER NOT NULL
+  revised_at INTEGER NOT NULL,
+  -- The owner's choice about the Atom feed (FR-213): follow indexable, or enabled / disabled.
+  feed TEXT NOT NULL DEFAULT 'follow_indexable' CHECK (feed IN ('follow_indexable', 'enabled', 'disabled'))
 ) STRICT;
 CREATE UNIQUE INDEX account_profile_revisions_account_id_seq ON account_profile_revisions (account_id, seq);
 

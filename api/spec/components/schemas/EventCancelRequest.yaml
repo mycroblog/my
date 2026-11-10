@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: The cancellation of an event by its organizer.
+type: object
+properties:
+  note:
+    description: The reason, up to 500 characters, shown with the event; omitted for none.
+    type: string

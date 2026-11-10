@@ -39,7 +39,7 @@ func (r *StatusRepository) SaveAutoDeletePolicy(ctx context.Context, tx uow.Tx, 
 	err = q.UpsertStatusAutoDeletePolicy(ctx, contentgen.UpsertStatusAutoDeletePolicyParams{
 		AccountID: p.AccountID, Enabled: p.Enabled, MinAgeDays: ints[0],
 		KeepPinned: p.KeepPinned, KeepBookmarked: p.KeepBookmarked, KeepFavourited: p.KeepFavourited,
-		KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls,
+		KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls, KeepArticles: p.KeepArticles,
 		KeepMinBoosts: ints[1], KeepMinFavourites: ints[2], UpdatedAt: p.UpdatedAt,
 	})
 	if err != nil {
@@ -123,7 +123,7 @@ func (r *StatusRepository) ListStatusesToAutoDelete(ctx context.Context, tx uow.
 	rows, err := q.ListStatusesToAutoDelete(ctx, contentgen.ListStatusesToAutoDeleteParams{
 		AccountID: p.AccountID, IDBefore: kernel.UUIDv7Floor(before.Add(time.Millisecond)), PublishedBefore: before,
 		KeptVisibilities: kept, KeepPinned: p.KeepPinned, KeepBookmarked: p.KeepBookmarked,
-		KeepFavourited: p.KeepFavourited, KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls,
+		KeepFavourited: p.KeepFavourited, KeepMedia: p.KeepMedia, KeepPolls: p.KeepPolls, KeepArticles: p.KeepArticles,
 		KeepMinBoosts: ints[1], KeepMinFavourites: ints[2], MaxKeptPins: pins, BatchLimit: n,
 	})
 	if err != nil {
@@ -144,7 +144,7 @@ func autoDeletePolicyFrom(ctx context.Context, q *contentgen.Queries, row conten
 	p := content.AutoDeletePolicy{
 		AccountID: row.AccountID, Enabled: row.Enabled, MinAgeDays: int(row.MinAgeDays),
 		KeepPinned: row.KeepPinned, KeepBookmarked: row.KeepBookmarked, KeepFavourited: row.KeepFavourited,
-		KeepMedia: row.KeepMedia, KeepPolls: row.KeepPolls,
+		KeepMedia: row.KeepMedia, KeepPolls: row.KeepPolls, KeepArticles: row.KeepArticles,
 		KeepMinBoosts: int(row.KeepMinBoosts), KeepMinFavourites: int(row.KeepMinFavourites), UpdatedAt: row.UpdatedAt.UTC(),
 		KeepVisibilities: make([]content.Visibility, 0, len(vs)),
 	}

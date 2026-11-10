@@ -377,6 +377,7 @@ type StatusAutoDeletePolicy struct {
 	KeepMinBoosts     int32
 	KeepMinFavourites int32
 	UpdatedAt         time.Time
+	KeepArticles      bool
 }
 
 type StatusCounter struct {
@@ -455,6 +456,26 @@ type StatusRevision struct {
 	Sensitive   bool
 	Language    string
 	RevisedAt   time.Time
+}
+
+type StatusRevisionArticle struct {
+	RevisionID    string
+	Title         string
+	Summary       string
+	SummaryOrigin string
+}
+
+type StatusRevisionArticleCover struct {
+	RevisionID  string
+	MediaID     string
+	Description string
+}
+
+type StatusRevisionArticleImage struct {
+	RevisionID  string
+	Position    int32
+	MediaID     string
+	Description string
 }
 
 type StatusRevisionAttachment struct {

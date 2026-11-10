@@ -107,6 +107,19 @@ sql:
         <<: *sqlite-go
         package: financegen
         out: internal/adapter/db/sqlite/financegen
+  - name: sqlite-gathering
+    engine: sqlite
+    schema:
+      - schema/02-account/sqlite.sql
+      - schema/10-infrastructure/sqlite.sql
+      - schema/16-hook/sqlite.sql
+      - schema/19-gathering/sqlite.sql
+    queries: queries/sqlite/gathering
+    gen:
+      go:
+        <<: *sqlite-go
+        package: gatheringgen
+        out: internal/adapter/db/sqlite/gatheringgen
   - name: sqlite-graph
     engine: sqlite
     schema:
@@ -405,6 +418,19 @@ sql:
         <<: *postgres-go
         package: financegen
         out: internal/adapter/db/postgres/financegen
+  - name: postgres-gathering
+    engine: postgresql
+    schema:
+      - schema/02-account/postgres.sql
+      - schema/10-infrastructure/postgres.sql
+      - schema/16-hook/postgres.sql
+      - schema/19-gathering/postgres.sql
+    queries: queries/postgres/gathering
+    gen:
+      go:
+        <<: *postgres-go
+        package: gatheringgen
+        out: internal/adapter/db/postgres/gatheringgen
   - name: postgres-graph
     engine: postgresql
     schema:

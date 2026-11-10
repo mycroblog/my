@@ -231,6 +231,12 @@ The utility is not named `text-*` because `tailwind-variants` would read that as
   initials. All other UI is sans in heavy weights; the serif stays light.
 - States: hover is a `surface-sunken` fill or `accent-hover`; selected is `accent` plus a change of shape; invalid is a `danger` border plus a
   message with a warning icon; disabled is half opacity; pending is a `Spinner` while the control keeps its focus.
+- Pressable controls ([web-client G26, G27](../../docs/architecture/web-client/16-look-states-and-wording.md#166-押せるものの手がかり)):
+  the pointer is the hand (`cursor-pointer`) over every enabled one, `cursor-not-allowed` while disabled, `cursor-wait` while pending,
+  and `cursor-zoom-in` over a picture that opens the viewer; never the arrow (`cursor-default`). Each answers the pointer with a hover
+  state and a press with a pressed one (`data-hovered:` / `data-pressed:`; `hover:` on native elements). A checkbox, radio or switch
+  rings its box with a `soft` halo; the round buttons over a picture (`MediaViewer`) take a light ring, and the system's
+  `Highlight` in forced-colors mode. Oxlint (`restrict/pressable`) rejects the arrow and a recipe with the hand but no hover state.
 - Status messages, `RegionError` and `OfflineBanner` are tinted boxes with an icon, not a start-edge bar; `Toast` and `Tooltip` are dark pills.
 
 ## Focus

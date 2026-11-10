@@ -101,6 +101,7 @@ type AccountProfileRevision struct {
 	AvatarMediaID *string
 	HeaderMediaID *string
 	RevisedAt     time.Time
+	Feed          string
 }
 
 type AccountProfileRevisionEmoji struct {

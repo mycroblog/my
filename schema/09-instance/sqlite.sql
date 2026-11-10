@@ -49,7 +49,8 @@ CREATE TABLE instance_setting_revisions (
     'hook_inbound_status_unfollowed_direct',
     'hook_decisions_retention_days',
     'single_user',
-    'max_drafts', 'max_scheduled_posts', 'max_scheduled_posts_per_day', 'scheduled_post_min_lead_minutes', 'scheduled_post_max_lead_days'
+    'max_drafts', 'max_scheduled_posts', 'max_scheduled_posts_per_day', 'scheduled_post_min_lead_minutes', 'scheduled_post_max_lead_days',
+    'article_authoring', 'max_article_bytes', 'max_article_images', 'auto_delete_default_keep_articles', 'auto_delete_max_allow_articles', 'event_creators'
   )),
   value TEXT NOT NULL,
   revised_by_user_id TEXT,

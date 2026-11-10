@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: previewArticle
+  summary: Preview the body of an article
+  description: |
+    Renders the Markdown body of an article of the authenticated user as `createArticle` would
+    store it, without storing anything: the same HTML that the published article has, the
+    summary it would get, and the size and images of the body with their limits. A body over
+    the limits still renders, so that the editor can say by how much.
+  tags: [statuses]
+  security:
+    - oauth2: ["write:statuses"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/ArticlePreviewRequest.yaml
+  responses:
+    "200":
+      description: The rendered body.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ArticlePreview.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

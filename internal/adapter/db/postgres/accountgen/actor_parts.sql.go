@@ -211,7 +211,7 @@ func (q *Queries) ListAccountsByURIs(ctx context.Context, uris []string) ([]Acco
 
 const listCurrentProfileRevisions = `-- name: ListCurrentProfileRevisions :many
 SELECT r.id, r.account_id, r.seq, r.display_name, r.note_html, r.locked, r.bot, r.discoverable, r.indexable, r.ai_opt_out,
-  r.avatar_media_id, r.header_media_id, r.revised_at
+  r.avatar_media_id, r.header_media_id, r.revised_at, r.feed
 FROM account_profile_heads h JOIN account_profile_revisions r ON r.id = h.revision_id
 WHERE h.account_id = ANY($1::uuid[]) ORDER BY r.account_id
 `
@@ -239,6 +239,7 @@ func (q *Queries) ListCurrentProfileRevisions(ctx context.Context, ids []string)
 			&i.AvatarMediaID,
 			&i.HeaderMediaID,
 			&i.RevisedAt,
+			&i.Feed,
 		); err != nil {
 			return nil, err
 		}

@@ -175,8 +175,21 @@ type Deps struct {
 	// MediaReview acts on the decisions of the hook media.check on the files a post attaches; nil
 	// acts on none.
 	MediaReview *MediaReview
-	Clock       kernel.Clock
-	IDs         kernel.IDGenerator
+	// ArticleRenderer renders the Markdown of articles (ADR-0160 §4); nil writes no article.
+	ArticleRenderer ArticleRenderer
+	// ArticleImage returns the image that the body of an article of accountID shows for the
+	// upload mediaID ((*MediaService).ArticleImage): false unless it is an upload of accountID
+	// with a still image that finished processing. Nil shows no image.
+	ArticleImage func(ctx context.Context, accountID, mediaID string) (ArticleImageSource, bool, error)
+	// ArticleLimits returns the current max_article_bytes and max_article_images, read per
+	// command; nil means their defaults.
+	ArticleLimits func(ctx context.Context) (ArticleLimits, error)
+	// MayWriteArticles reports whether a local user may write new articles (ADR-0160 §3): every
+	// user while article_authoring is everyone, the holders of create_articles otherwise. Nil lets
+	// everyone.
+	MayWriteArticles func(ctx context.Context, userID string) (bool, error)
+	Clock            kernel.Clock
+	IDs              kernel.IDGenerator
 	// Host is the serving domain of the status URIs and pages (ADR-0018).
 	Host string
 	// AccountDomain is the domain of local handles; @user@AccountDomain and @user@Host mention a
@@ -301,6 +314,13 @@ func (s *Service) create(ctx context.Context, in CreateInput, before func(ctx co
 	if err != nil {
 		return Post{}, err
 	}
+	return s.commitCreate(ctx, author, p, in.IdempotencyKey, before)
+}
+
+// commitCreate asks the decision hook local.status about the status that p prepared and writes
+// it, running before first inside the transaction; a concurrent request with the same
+// Idempotency-Key key returns the status that it posted.
+func (s *Service) commitCreate(ctx context.Context, author appaccount.Actor, p PreparedCreate, key string, before func(ctx context.Context, tx uow.Tx) error) (Post, error) {
 	review, err := s.review(ctx, author, p)
 	if err != nil {
 		return Post{}, err
@@ -327,7 +347,7 @@ func (s *Service) create(ctx context.Context, in CreateInput, before func(ctx co
 	})
 	if errors.Is(err, ErrIdempotencyKeyUsed) {
 		// A concurrent request with the same key won.
-		return s.replay(ctx, in.AuthorAccountID, in.IdempotencyKey)
+		return s.replay(ctx, author.Account.ID, key)
 	}
 	if err != nil {
 		return Post{}, err
@@ -428,6 +448,11 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 	}
 	if err := repo.InsertLocalStatus(ctx, tx, p.local); err != nil {
 		return Post{}, err
+	}
+	if p.rev.Article != nil {
+		if err := repo.InsertArticle(ctx, tx, content.Article{StatusID: p.st.ID, AuthorAccountID: p.st.AuthorAccountID}); err != nil {
+			return Post{}, err
+		}
 	}
 	rev := p.rev
 	if rev.TagIDs, err = ensureTags(ctx, tx, repo, p.tags); err != nil {
@@ -543,7 +568,7 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 			ID: s.d.IDs.NewID(), PollID: poll.ID, VotersCount: &none, ObservedAt: now, Votes: make([]int64, len(poll.Options)),
 		}
 	}
-	verdicts, err := s.attachmentVerdicts(ctx, in.AuthorAccountID, rev.Attachments, nil)
+	verdicts, err := s.attachmentVerdicts(ctx, in.AuthorAccountID, reviewedMedia(rev), nil)
 	if err != nil {
 		return PreparedCreate{}, err
 	}
@@ -649,6 +674,10 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 		// The votes are of the poll of the current revision; a new revision would leave them.
 		return Post{}, fmt.Errorf("status %s: %w", st.ID, ErrPollNotEditable)
 	}
+	if current.Article != nil {
+		// An article stays an article: it is edited as one (EditArticle).
+		return Post{}, fmt.Errorf("status %s: %w", st.ID, ErrArticleEditedAsPost)
+	}
 	if _, err := s.postingRestrictions(ctx, in.AccountID); err != nil {
 		return Post{}, err
 	}
@@ -656,15 +685,21 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 	if err != nil {
 		return Post{}, err
 	}
+	return s.commitEdit(ctx, author, st, current, body, in.DetachQuote)
+}
+
+// commitEdit asks local.status about the edit of st, whose current revision is current, to the
+// content body, and records it as the new head.
+func (s *Service) commitEdit(ctx context.Context, author appaccount.Actor, st content.Status, current content.Revision, body preparedText, detachQuote bool) (Post, error) {
 	now := s.d.Clock.Now()
 	rev := body.revision(s.d.IDs.NewID(), st.ID, 0, now)
 	tags := body.tags(s.d.IDs, now)
 	// The files the current revision attaches were acted on when it was stored.
-	verdicts, err := s.attachmentVerdicts(ctx, in.AccountID, rev.Attachments, current.Attachments)
+	verdicts, err := s.attachmentVerdicts(ctx, st.AuthorAccountID, reviewedMedia(rev), reviewedMedia(current))
 	if err != nil {
 		return Post{}, err
 	}
-	review, err := s.reviewEdit(ctx, author, st, rev, tags, in.DetachQuote)
+	review, err := s.reviewEdit(ctx, author, st, rev, tags, detachQuote)
 	if err != nil {
 		return Post{}, err
 	}
@@ -716,7 +751,7 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 		if err := s.reviewed(ctx, tx, verdict, Post{Status: st, Revision: rev}); err != nil {
 			return err
 		}
-		if in.DetachQuote {
+		if detachQuote {
 			return s.detachQuote(ctx, tx, st)
 		}
 		return nil
@@ -873,6 +908,10 @@ type preparedText struct {
 	mentions    []string // account IDs, sorted
 	hashtags    []Hashtag
 	emojis      []string // custom emoji IDs, sorted
+	// format is the markup of in.Text, SourceTextPlain unless it is the Markdown of an article.
+	format content.SourceFormat
+	// article is the article child of the revision, nil for a post.
+	article *content.ArticleRevision
 }
 
 // CountCharacters returns the length of a post as max_status_length counts it: the characters
@@ -928,6 +967,7 @@ func (s *Service) prepareText(ctx context.Context, author appaccount.Actor, in T
 		mentions:    mentions,
 		hashtags:    parsed.Hashtags(),
 		emojis:      emojis,
+		format:      content.SourceTextPlain,
 	}, nil
 }
 
@@ -935,17 +975,28 @@ func (s *Service) prepareText(ctx context.Context, author appaccount.Actor, in T
 // the HTML and the IDs of the mentioned accounts, sorted. It may do network I/O through
 // RemoteMentions, so it never runs inside a transaction.
 func (s *Service) render(ctx context.Context, parsed ParsedText) (string, []string, error) {
+	targets, mentions, err := s.resolveMentions(ctx, parsed.Mentions())
+	if err != nil {
+		return "", nil, err
+	}
+	return parsed.HTML(RenderOptions{Host: s.d.Host, Mentions: targets}), mentions, nil
+}
+
+// resolveMentions resolves handles to active accounts: the target of each handle that resolves,
+// and the IDs of their accounts, sorted. It may do network I/O through RemoteMentions, so it
+// never runs inside a transaction.
+func (s *Service) resolveMentions(ctx context.Context, handles []MentionHandle) (map[MentionHandle]MentionTarget, []string, error) {
 	targets := map[MentionHandle]MentionTarget{}
 	var mentions []string
 	r := &mentionResolver{s: s}
 	defer r.close()
-	if err := r.preload(ctx, parsed.Mentions()); err != nil {
-		return "", nil, err
+	if err := r.preload(ctx, handles); err != nil {
+		return nil, nil, err
 	}
-	for _, h := range parsed.Mentions() {
+	for _, h := range handles {
 		target, id, ok, err := r.resolve(ctx, h)
 		if err != nil {
-			return "", nil, err
+			return nil, nil, err
 		}
 		if !ok {
 			continue
@@ -956,7 +1007,7 @@ func (s *Service) render(ctx context.Context, parsed ParsedText) (string, []stri
 		}
 	}
 	slices.Sort(mentions)
-	return parsed.HTML(RenderOptions{Host: s.d.Host, Mentions: targets}), mentions, nil
+	return targets, mentions, nil
 }
 
 // RenderProfileText renders the typed note or field value of a local profile to HTML through
@@ -1069,10 +1120,11 @@ func (p preparedText) revision(id, statusID string, seq int, at time.Time) conte
 		Language:            p.language,
 		RevisedAt:           at,
 		Bodies:              []content.Body{{Language: p.language, ContentHTML: p.html}},
-		Source:              &content.Source{Text: p.in.Text, Format: content.SourceTextPlain},
+		Source:              &content.Source{Text: p.in.Text, Format: p.format},
 		Attachments:         p.attachments,
 		MentionedAccountIDs: p.mentions,
 		EmojiIDs:            p.emojis,
+		Article:             p.article,
 	}
 }
 

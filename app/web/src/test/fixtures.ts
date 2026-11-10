@@ -55,6 +55,8 @@ export const viewerFixture: Schemas["CredentialAccount"] = {
   discoverable: true,
   indexable: true,
   ai_opt_out: false,
+  feed_enabled: true,
+  feed_follows_indexable: true,
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: [],
@@ -139,6 +141,7 @@ export function relationshipFixture(
     blocking: false,
     muting: false,
     muting_notifications: false,
+    note: "",
     ...overrides,
   };
 }

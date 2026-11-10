@@ -146,6 +146,9 @@ func (r *StatusRepository) InsertRevision(ctx context.Context, tx uow.Tx, rev co
 			return sqlite.Wrap(err, "insert status revision emoji")
 		}
 	}
+	if err := insertRevisionArticle(ctx, q, rev); err != nil {
+		return err
+	}
 	return insertRemoteRevisionParts(ctx, q, rev)
 }
 
@@ -700,6 +703,9 @@ func findRevision(ctx context.Context, q *contentgen.Queries, id string) (conten
 	default:
 		rr.remote = &remote
 	}
+	if err := readRevisionArticle(ctx, q, &rr); err != nil {
+		return content.Revision{}, err
+	}
 	return rr.revision(), nil
 }
 
@@ -714,6 +720,9 @@ type revisionRows struct {
 	poll                   *contentgen.Poll
 	options                []contentgen.PollOption
 	remote                 *contentgen.RemoteStatusRevision
+	article                *contentgen.StatusRevisionArticle
+	cover                  *contentgen.StatusRevisionArticleCover
+	images                 []contentgen.StatusRevisionArticleImage
 }
 
 func (rr revisionRows) revision() content.Revision {
@@ -744,6 +753,7 @@ func (rr revisionRows) revision() content.Revision {
 			OmittedAttachments: int(rr.remote.OmittedAttachmentCount),
 		}
 	}
+	rev.Article = rr.articleRevision()
 	return rev
 }
 

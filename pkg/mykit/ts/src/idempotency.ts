@@ -10,6 +10,7 @@ export const idempotencyKeyHeader = "Idempotency-Key";
  */
 export const idempotencyKeyOperations: readonly { readonly method: string; readonly path: string }[] = [
   { method: "POST", path: "/statuses" },
+  { method: "POST", path: "/articles" },
 ];
 
 /** Whether the request to the spec path `schemaPath` is one of idempotencyKeyOperations. */

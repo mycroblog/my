@@ -16,7 +16,7 @@ import (
 )
 
 // Graph is the part of the graph module's public API that the client API uses: follows,
-// follow requests, blocks, and mutes of local accounts (FR-301〜303). *appgraph.Service
+// follow requests, blocks, mutes, and private notes of local accounts (FR-301〜303, FR-310). *appgraph.Service
 // implements it.
 type Graph interface {
 	Relationship(ctx context.Context, accountID, targetID string) (appgraph.Relationship, error)
@@ -34,6 +34,8 @@ type Graph interface {
 	Unblock(ctx context.Context, blockerID, blockedID string) (appgraph.Relationship, error)
 	Mute(ctx context.Context, accountID, targetID string, in appgraph.MuteInput) (appgraph.Relationship, error)
 	Unmute(ctx context.Context, accountID, targetID string) (appgraph.Relationship, error)
+	SetNote(ctx context.Context, accountID, targetID, text string) (appgraph.Relationship, error)
+	DeleteNote(ctx context.Context, accountID, targetID string) (appgraph.Relationship, error)
 
 	Followers(ctx context.Context, accountID string, p appgraph.Page) ([]graph.Edge, error)
 	Following(ctx context.Context, accountID string, p appgraph.Page) ([]graph.Edge, error)
@@ -56,7 +58,8 @@ const maxMuteSeconds = 365 * 24 * 60 * 60
 // newRelationship presents a relationship as the Relationship schema for the token scope, with
 // notify, whether the account subscribes to the target's new posts. A token sees the fields of the
 // lists that its scopes read or change: the follows, the blocks, and the mutes each have their own
-// scopes, and a relationship must not show one list to a token of another. It leaves out
+// scopes, and a relationship must not show one list to a token of another; the viewer's private
+// note goes with the account scopes. It leaves out
 // BlockedBy: an account that blocks the viewer is not found at all.
 func newRelationship(scope identity.Scope, r appgraph.Relationship, notify bool) Relationship {
 	out := Relationship{Id: r.TargetAccountID}
@@ -75,6 +78,9 @@ func newRelationship(scope identity.Scope, r appgraph.Relationship, notify bool)
 		out.Muting = new(r.Muting)
 		out.MutingNotifications = new(r.MutingNotifications)
 	}
+	if scope.Grants(identity.ScopeReadAccounts) || scope.Grants(identity.ScopeWriteAccounts) {
+		out.Note = new(r.Note)
+	}
 	return out
 }
 
@@ -88,7 +94,8 @@ func relationshipResponse(scope identity.Scope, r appgraph.Relationship, notify 
 func (s *Server) graphProblem(ctx context.Context, err error) (problem, bool) {
 	l := s.Localizer(ctx)
 	switch {
-	case errors.Is(err, graph.ErrSelfFollow), errors.Is(err, graph.ErrSelfBlock), errors.Is(err, graph.ErrSelfMute):
+	case errors.Is(err, graph.ErrSelfFollow), errors.Is(err, graph.ErrSelfBlock), errors.Is(err, graph.ErrSelfMute),
+		errors.Is(err, graph.ErrSelfNote):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsSelfRelationship()), true
 	case errors.Is(err, appgraph.ErrRemoteAccount):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsRemoteAccount()), true
@@ -386,4 +393,39 @@ func (s *Server) UnmuteAccount(ctx context.Context, req UnmuteAccountRequestObje
 		return UnmuteAccountdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}
 	return UnmuteAccount200JSONResponse{*res}, nil
+}
+
+// SetAccountNote serves PUT /api/v1/accounts/{id}/note.
+func (s *Server) SetAccountNote(ctx context.Context, req SetAccountNoteRequestObject) (SetAccountNoteResponseObject, error) {
+	if req.Body == nil {
+		return SetAccountNotedefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "note")), nil
+	}
+	text := req.Body.Note
+	if text != "" && graph.ValidateNoteText(text) != nil {
+		return SetAccountNotedefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "note")), nil
+	}
+	res, p, err := s.relate(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
+		return s.o.Graph.SetNote(ctx, v.AccountID, req.Id, text)
+	})
+	switch {
+	case err != nil:
+		return nil, err
+	case p != nil:
+		return SetAccountNotedefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	return SetAccountNote200JSONResponse{*res}, nil
+}
+
+// DeleteAccountNote serves DELETE /api/v1/accounts/{id}/note.
+func (s *Server) DeleteAccountNote(ctx context.Context, req DeleteAccountNoteRequestObject) (DeleteAccountNoteResponseObject, error) {
+	res, p, err := s.relateDespiteBlock(ctx, req.Id, func(v Viewer) (appgraph.Relationship, error) {
+		return s.o.Graph.DeleteNote(ctx, v.AccountID, req.Id)
+	})
+	switch {
+	case err != nil:
+		return nil, err
+	case p != nil:
+		return DeleteAccountNotedefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	return DeleteAccountNote200JSONResponse{*res}, nil
 }

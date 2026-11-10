@@ -9,6 +9,11 @@ description: |
   `visibility` and `language` are those of the boosted status, its `content`,
   `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
   empty, its `card` and `quote` are omitted, and its counts are zero.
+
+  An article (`article` is given) is read as its title, summary, and cover everywhere, and
+  its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+  and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+  carry no body. An article has no content warning, media attachments, or poll.
 type: object
 required:
   - id
@@ -47,8 +52,11 @@ properties:
   content:
     description: |
       The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-      remote status is what the server's sanitizer kept of the received document.
+      remote status is what the server's sanitizer kept of the received document. For an
+      article, its rendered body, or empty in lists (see above).
     type: string
+  article:
+    $ref: ./StatusArticle.yaml
   spoiler_text:
     description: The content warning; empty when there is none.
     type: string

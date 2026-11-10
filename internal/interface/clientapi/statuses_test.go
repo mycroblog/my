@@ -124,12 +124,8 @@ func (f *fakeStatuses) History(_ context.Context, v appcontent.Viewer, id string
 	return []appcontent.RevisionView{{Revision: view.Revision, Attachments: view.Attachments}}, nil
 }
 
-func (f *fakeStatuses) Source(_ context.Context, v appcontent.Viewer, id string) (content.Revision, error) {
-	view, err := f.View(context.Background(), v, id)
-	if err != nil {
-		return content.Revision{}, err
-	}
-	return view.Revision, nil
+func (f *fakeStatuses) Source(_ context.Context, v appcontent.Viewer, id string) (appcontent.StatusView, error) {
+	return f.View(context.Background(), v, id)
 }
 
 func (f *fakeStatuses) Bookmarks(_ context.Context, v appcontent.Viewer, _ string, limit int) (appcontent.BookmarkPage, error) {

@@ -59,6 +59,7 @@
 | `block_edges` | 投影 | `blocker_account_id`, `blocked_account_id`, `block_id` | PK `(blocker_account_id, blocked_account_id)`。インデックス `(blocked_account_id)`、`(blocker_account_id, block_id)`（ブロック中の一覧。`block_id` のキーセットで新しい順に引く）。取り消しで行を消す |
 | `mutes` | 現在値 | `account_id`, `target_account_id`, `hide_notifications`（`bool`）, `expires_at`（NULL 可。NULL は解除まで）, `created_at` | PK `(account_id, target_account_id)`。`expires_at > created_at`。インデックス `(account_id, created_at, target_account_id)`（ミュート中の一覧。`(created_at, target_account_id)` のキーセットで新しい順に引く）、`(expires_at)`（期限切れの削除）。インデックス `(target_account_id)` |
 | `account_domain_mutes` | 現在値 | `account_id`, `domain`（正規化したホスト。IDNA の A ラベルの小文字）, `created_at` | PK `(account_id, domain)`（FR-304。一覧はドメインの順に PK で引く）。1 アカウント 1000 件まで |
+| `account_notes` | 現在値 | `account_id`, `target_account_id`, `note`（1〜2,000 文字）, `updated_at` | PK `(account_id, target_account_id)`（FR-310）。インデックス `(target_account_id)`（消去） |
 
 - ブロックは連合（`Block` / `Undo Block`）やフォロー関係の終了と連動し、嫌がらせの調査にも使うので、イベントとして持ちます。
 - ブロックすると、同じトランザクションで 2 人の間のフォローを両方向とも（承認待ちも含めて）`follow_terminations`（`reason = blocked`）で終了します。
@@ -71,6 +72,9 @@
 - ローカルのアカウントは、ローカルのアカウントもリモートのアカウントもブロックできます（存在すれば有効でなくてもよい）。リモートのアカウントへのブロックは `federation` が `Block` / `Undo Block` として配送します。
 - リモートのアカウントがローカルのアカウントをブロックしたことは、受信した `Block` から `graph.ReceiveBlock` が記録します（`blocks.uri` は `Block` の `id`）。同じ `uri` の `Block` の再受信と、ブロックが有効な組への `Block` は何もしません。`Undo Block` は `graph.RetractRemoteBlock` が、`uri`（`id` の無い `Block` は 2 人の組）で引いて取り消します。
 - ミュートは本人だけに効き、履歴にも意味がないので現在値です（ADR-0020 規約 5）。ミュートし直すと設定・期限・`created_at` を置き換えます。
+- アカウントへの非公開のメモ（`account_notes`、FR-310）も、書いた本人だけが読み、履歴に意味がないので現在値です（ADR-0020 規約 5）。書き直すと `note` と `updated_at` を置き換え、空のメモは行を消します（`graph.Service.SetNote`）。イベントは発行せず、連合もしません。
+  クライアント API の `Relationship.note` は `graph.Service.Relationship` / `Relationships` が本人の行だけを読んで返し、`RelationshipsWith`（多くのアカウントと 1 つの相手の関係）は読みません。
+  メモの相手はローカルでもリモートでもよく、削除済みのアカウントには書けません。どちらかのアカウントの消去（§8）で行を消し、データのエクスポート（FR-008）のアーカイブに `account_notes.json` として入れます（`graph.Service.WriteNotes`）。
 - 期限付きのミュートは、読み取り時に `expires_at > 現在時刻` で絞り込むので、期限が来た時点で書き込み無しに無効になります。
   期限切れの行は、1 時間ごとの消去ジョブ `graph.expire_mutes` が、1 トランザクションあたり件数を区切って削除し、削除した行ごとに `graph.unmuted` を発行します（FR-803）。
 - ミュートの対象はリモートのアカウントでもかまいません。`graph` 自身はミュートを読み取り時に `expires_at` で絞り込み、他のモジュールの投影（`feed_exclusions`、`notification_exclusions`）のために `graph.muted` / `graph.unmuted` を発行します。

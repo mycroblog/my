@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What makes a status an article: its title, summary, and cover. The summary is never a content
+  warning; a `sensitive` article shows the title and the summary and folds the body and the
+  cover.
+type: object
+required: [title, summary]
+properties:
+  title:
+    description: The title, as plain text.
+    type: string
+  summary:
+    description: The summary, as plain text; the server makes one from the body when the author writes none.
+    type: string
+  cover:
+    description: The cover image; omitted when there is none or it cannot be shown.
+    allOf:
+      - $ref: ./MediaAttachment.yaml

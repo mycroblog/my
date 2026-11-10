@@ -142,6 +142,9 @@ type Options struct {
 	Statuses     Statuses
 	StatusReader StatusReader
 	Interactions Interactions
+	// Articles writes the viewer's articles and previews their bodies (the articles operations);
+	// nil answers them 404.
+	Articles Articles
 	// Drafts runs the viewer's drafts and scheduled posts (the drafts operations); nil answers
 	// them 404.
 	Drafts Drafts
@@ -388,6 +391,8 @@ type Options struct {
 	// Voice runs the voice chat rooms (voice.go); nil, while the voice chat is off, answers 404
 	// to their operations.
 	Voice VoiceRooms
+	// Events runs the events of the local users (events.go); nil answers 404 to their operations.
+	Events Events
 	// VoiceModeration reports the rooms, ends them for the moderators, and reads their records
 	// for the reports (admin_voice.go), with the voice chat off too; nil reports no room.
 	VoiceModeration VoiceModeration

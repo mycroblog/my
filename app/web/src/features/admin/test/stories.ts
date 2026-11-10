@@ -41,6 +41,8 @@ export const everyPermission: Schemas["Permission"][] = [
   "manage_login_providers",
   "create_invites",
   "keep_posts_longer",
+  "create_articles",
+  "create_events",
 ];
 
 /** The signed-in viewer: the server's administrator, with every permission. */

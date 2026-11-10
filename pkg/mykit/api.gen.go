@@ -2339,6 +2339,135 @@ func (e ErrorGroupState) Valid() bool {
 	}
 }
 
+// Defines values for EventAnswer.
+const (
+	EventAnswerDeclined EventAnswer = "declined"
+	EventAnswerGoing    EventAnswer = "going"
+	EventAnswerMaybe    EventAnswer = "maybe"
+)
+
+// Valid indicates whether the value is a known member of the EventAnswer enum.
+func (e EventAnswer) Valid() bool {
+	switch e {
+	case EventAnswerDeclined:
+		return true
+	case EventAnswerGoing:
+		return true
+	case EventAnswerMaybe:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventCancelReason.
+const (
+	EventCancelReasonModerator          EventCancelReason = "moderator"
+	EventCancelReasonOrganizer          EventCancelReason = "organizer"
+	EventCancelReasonOrganizerDeleted   EventCancelReason = "organizer_deleted"
+	EventCancelReasonOrganizerSuspended EventCancelReason = "organizer_suspended"
+)
+
+// Valid indicates whether the value is a known member of the EventCancelReason enum.
+func (e EventCancelReason) Valid() bool {
+	switch e {
+	case EventCancelReasonModerator:
+		return true
+	case EventCancelReasonOrganizer:
+		return true
+	case EventCancelReasonOrganizerDeleted:
+		return true
+	case EventCancelReasonOrganizerSuspended:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventPlaceDisclosure.
+const (
+	EventPlaceDisclosureApproved EventPlaceDisclosure = "approved"
+	EventPlaceDisclosureViewers  EventPlaceDisclosure = "viewers"
+)
+
+// Valid indicates whether the value is a known member of the EventPlaceDisclosure enum.
+func (e EventPlaceDisclosure) Valid() bool {
+	switch e {
+	case EventPlaceDisclosureApproved:
+		return true
+	case EventPlaceDisclosureViewers:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventPlaceKind.
+const (
+	EventPlaceKindPhysical EventPlaceKind = "physical"
+	EventPlaceKindUrl      EventPlaceKind = "url"
+	EventPlaceKindVoice    EventPlaceKind = "voice"
+)
+
+// Valid indicates whether the value is a known member of the EventPlaceKind enum.
+func (e EventPlaceKind) Valid() bool {
+	switch e {
+	case EventPlaceKindPhysical:
+		return true
+	case EventPlaceKindUrl:
+		return true
+	case EventPlaceKindVoice:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventState.
+const (
+	EventStateCancelled EventState = "cancelled"
+	EventStateScheduled EventState = "scheduled"
+)
+
+// Valid indicates whether the value is a known member of the EventState enum.
+func (e EventState) Valid() bool {
+	switch e {
+	case EventStateCancelled:
+		return true
+	case EventStateScheduled:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventVisibility.
+const (
+	EventVisibilityFollowers EventVisibility = "followers"
+	EventVisibilityFollowing EventVisibility = "following"
+	EventVisibilityInvited   EventVisibility = "invited"
+	EventVisibilityMutuals   EventVisibility = "mutuals"
+	EventVisibilityPublic    EventVisibility = "public"
+)
+
+// Valid indicates whether the value is a known member of the EventVisibility enum.
+func (e EventVisibility) Valid() bool {
+	switch e {
+	case EventVisibilityFollowers:
+		return true
+	case EventVisibilityFollowing:
+		return true
+	case EventVisibilityInvited:
+		return true
+	case EventVisibilityMutuals:
+		return true
+	case EventVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FederationScopeImpactScope.
 const (
 	FederationScopeImpactScopeAllowlist FederationScopeImpactScope = "allowlist"
@@ -2648,6 +2777,24 @@ func (e IncomeVisibility) Valid() bool {
 	}
 }
 
+// Defines values for InstanceArticleAuthoring.
+const (
+	InstanceArticleAuthoringEveryone   InstanceArticleAuthoring = "everyone"
+	InstanceArticleAuthoringPermission InstanceArticleAuthoring = "permission"
+)
+
+// Valid indicates whether the value is a known member of the InstanceArticleAuthoring enum.
+func (e InstanceArticleAuthoring) Valid() bool {
+	switch e {
+	case InstanceArticleAuthoringEveryone:
+		return true
+	case InstanceArticleAuthoringPermission:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceVoiceRoomStarters.
 const (
 	InstanceVoiceRoomStartersEveryone  InstanceVoiceRoomStarters = "everyone"
@@ -2778,9 +2925,11 @@ func (e InstanceRegistrationsMode) Valid() bool {
 const (
 	InstanceSettingKeyAiUsage                            InstanceSettingKey = "ai_usage"
 	InstanceSettingKeyAppealWindowDays                   InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyArticleAuthoring                   InstanceSettingKey = "article_authoring"
 	InstanceSettingKeyAuditLogRetentionDays              InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                    InstanceSettingKey = "authorized_fetch"
 	InstanceSettingKeyAutoDeleteDefaultEnabled           InstanceSettingKey = "auto_delete_default_enabled"
+	InstanceSettingKeyAutoDeleteDefaultKeepArticles      InstanceSettingKey = "auto_delete_default_keep_articles"
 	InstanceSettingKeyAutoDeleteDefaultKeepBookmarked    InstanceSettingKey = "auto_delete_default_keep_bookmarked"
 	InstanceSettingKeyAutoDeleteDefaultKeepDirect        InstanceSettingKey = "auto_delete_default_keep_direct"
 	InstanceSettingKeyAutoDeleteDefaultKeepFavourited    InstanceSettingKey = "auto_delete_default_keep_favourited"
@@ -2796,6 +2945,7 @@ const (
 	InstanceSettingKeyAutoDeleteDefaultMinAgeDays        InstanceSettingKey = "auto_delete_default_min_age_days"
 	InstanceSettingKeyAutoDeleteGraceDays                InstanceSettingKey = "auto_delete_grace_days"
 	InstanceSettingKeyAutoDeleteMaxAgeDays               InstanceSettingKey = "auto_delete_max_age_days"
+	InstanceSettingKeyAutoDeleteMaxAllowArticles         InstanceSettingKey = "auto_delete_max_allow_articles"
 	InstanceSettingKeyAutoDeleteMaxAllowBookmarked       InstanceSettingKey = "auto_delete_max_allow_bookmarked"
 	InstanceSettingKeyAutoDeleteMaxAllowFavourited       InstanceSettingKey = "auto_delete_max_allow_favourited"
 	InstanceSettingKeyAutoDeleteMaxAllowMedia            InstanceSettingKey = "auto_delete_max_allow_media"
@@ -2810,6 +2960,7 @@ const (
 	InstanceSettingKeyDomainActionsRationaleVisibility   InstanceSettingKey = "domain_actions_rationale_visibility"
 	InstanceSettingKeyDomainActionsVisibility            InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration          InstanceSettingKey = "dynamic_client_registration"
+	InstanceSettingKeyEventCreators                      InstanceSettingKey = "event_creators"
 	InstanceSettingKeyFeaturedAccounts                   InstanceSettingKey = "featured_accounts"
 	InstanceSettingKeyFederatedTimelineVisibility        InstanceSettingKey = "federated_timeline_visibility"
 	InstanceSettingKeyFederationMode                     InstanceSettingKey = "federation_mode"
@@ -2842,6 +2993,8 @@ const (
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt           InstanceSettingKey = "link_cards_ignore_robots_txt"
 	InstanceSettingKeyLocalTimelineVisibility            InstanceSettingKey = "local_timeline_visibility"
 	InstanceSettingKeyLoginProvidersOnly                 InstanceSettingKey = "login_providers_only"
+	InstanceSettingKeyMaxArticleBytes                    InstanceSettingKey = "max_article_bytes"
+	InstanceSettingKeyMaxArticleImages                   InstanceSettingKey = "max_article_images"
 	InstanceSettingKeyMaxDrafts                          InstanceSettingKey = "max_drafts"
 	InstanceSettingKeyMaxScheduledPosts                  InstanceSettingKey = "max_scheduled_posts"
 	InstanceSettingKeyMaxScheduledPostsPerDay            InstanceSettingKey = "max_scheduled_posts_per_day"
@@ -2893,11 +3046,15 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyAppealWindowDays:
 		return true
+	case InstanceSettingKeyArticleAuthoring:
+		return true
 	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
 		return true
 	case InstanceSettingKeyAutoDeleteDefaultEnabled:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepArticles:
 		return true
 	case InstanceSettingKeyAutoDeleteDefaultKeepBookmarked:
 		return true
@@ -2929,6 +3086,8 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyAutoDeleteMaxAgeDays:
 		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowArticles:
+		return true
 	case InstanceSettingKeyAutoDeleteMaxAllowBookmarked:
 		return true
 	case InstanceSettingKeyAutoDeleteMaxAllowFavourited:
@@ -2956,6 +3115,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyDomainActionsVisibility:
 		return true
 	case InstanceSettingKeyDynamicClientRegistration:
+		return true
+	case InstanceSettingKeyEventCreators:
 		return true
 	case InstanceSettingKeyFeaturedAccounts:
 		return true
@@ -3020,6 +3181,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyLocalTimelineVisibility:
 		return true
 	case InstanceSettingKeyLoginProvidersOnly:
+		return true
+	case InstanceSettingKeyMaxArticleBytes:
+		return true
+	case InstanceSettingKeyMaxArticleImages:
 		return true
 	case InstanceSettingKeyMaxDrafts:
 		return true
@@ -4057,7 +4222,9 @@ func (e PaymentStatusWarnings) Valid() bool {
 
 // Defines values for Permission.
 const (
+	PermissionCreateArticles       Permission = "create_articles"
 	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
+	PermissionCreateEvents         Permission = "create_events"
 	PermissionCreateInvites        Permission = "create_invites"
 	PermissionKeepPostsLonger      Permission = "keep_posts_longer"
 	PermissionManageAccounts       Permission = "manage_accounts"
@@ -4086,7 +4253,11 @@ const (
 // Valid indicates whether the value is a known member of the Permission enum.
 func (e Permission) Valid() bool {
 	switch e {
+	case PermissionCreateArticles:
+		return true
 	case PermissionCreateCustomEmojis:
+		return true
+	case PermissionCreateEvents:
 		return true
 	case PermissionCreateInvites:
 		return true
@@ -4774,10 +4945,12 @@ const (
 	VoiceEndReasonDisabled         VoiceEndReason = "disabled"
 	VoiceEndReasonEmpty            VoiceEndReason = "empty"
 	VoiceEndReasonHost             VoiceEndReason = "host"
+	VoiceEndReasonHostAbsent       VoiceEndReason = "host_absent"
 	VoiceEndReasonHostDisconnected VoiceEndReason = "host_disconnected"
 	VoiceEndReasonHostIneligible   VoiceEndReason = "host_ineligible"
 	VoiceEndReasonModerator        VoiceEndReason = "moderator"
 	VoiceEndReasonTimeLimit        VoiceEndReason = "time_limit"
+	VoiceEndReasonUnattended       VoiceEndReason = "unattended"
 )
 
 // Valid indicates whether the value is a known member of the VoiceEndReason enum.
@@ -4789,6 +4962,8 @@ func (e VoiceEndReason) Valid() bool {
 		return true
 	case VoiceEndReasonHost:
 		return true
+	case VoiceEndReasonHostAbsent:
+		return true
 	case VoiceEndReasonHostDisconnected:
 		return true
 	case VoiceEndReasonHostIneligible:
@@ -4796,6 +4971,8 @@ func (e VoiceEndReason) Valid() bool {
 	case VoiceEndReasonModerator:
 		return true
 	case VoiceEndReasonTimeLimit:
+		return true
+	case VoiceEndReasonUnattended:
 		return true
 	default:
 		return false
@@ -4863,6 +5040,7 @@ func (e VoiceRoomEntryRole) Valid() bool {
 const (
 	VoiceRoomSpeakersEveryone  VoiceRoomSpeakers = "everyone"
 	VoiceRoomSpeakersFollowers VoiceRoomSpeakers = "followers"
+	VoiceRoomSpeakersFollowing VoiceRoomSpeakers = "following"
 	VoiceRoomSpeakersManual    VoiceRoomSpeakers = "manual"
 	VoiceRoomSpeakersMutuals   VoiceRoomSpeakers = "mutuals"
 )
@@ -4873,6 +5051,8 @@ func (e VoiceRoomSpeakers) Valid() bool {
 	case VoiceRoomSpeakersEveryone:
 		return true
 	case VoiceRoomSpeakersFollowers:
+		return true
+	case VoiceRoomSpeakersFollowing:
 		return true
 	case VoiceRoomSpeakersManual:
 		return true
@@ -4904,6 +5084,7 @@ func (e VoiceRoomSummaryState) Valid() bool {
 // Defines values for VoiceRoomVisibility.
 const (
 	VoiceRoomVisibilityFollowers VoiceRoomVisibility = "followers"
+	VoiceRoomVisibilityFollowing VoiceRoomVisibility = "following"
 	VoiceRoomVisibilityInvited   VoiceRoomVisibility = "invited"
 	VoiceRoomVisibilityLocal     VoiceRoomVisibility = "local"
 	VoiceRoomVisibilityMutuals   VoiceRoomVisibility = "mutuals"
@@ -4913,6 +5094,8 @@ const (
 func (e VoiceRoomVisibility) Valid() bool {
 	switch e {
 	case VoiceRoomVisibilityFollowers:
+		return true
+	case VoiceRoomVisibilityFollowing:
 		return true
 	case VoiceRoomVisibilityInvited:
 		return true
@@ -4956,6 +5139,7 @@ const (
 	VoiceStreamEndReasonDisconnected     VoiceStreamEndReason = "disconnected"
 	VoiceStreamEndReasonEmpty            VoiceStreamEndReason = "empty"
 	VoiceStreamEndReasonHost             VoiceStreamEndReason = "host"
+	VoiceStreamEndReasonHostAbsent       VoiceStreamEndReason = "host_absent"
 	VoiceStreamEndReasonHostDisconnected VoiceStreamEndReason = "host_disconnected"
 	VoiceStreamEndReasonHostIneligible   VoiceStreamEndReason = "host_ineligible"
 	VoiceStreamEndReasonLeft             VoiceStreamEndReason = "left"
@@ -4966,6 +5150,7 @@ const (
 	VoiceStreamEndReasonRoomEnded        VoiceStreamEndReason = "room_ended"
 	VoiceStreamEndReasonSuspended        VoiceStreamEndReason = "suspended"
 	VoiceStreamEndReasonTimeLimit        VoiceStreamEndReason = "time_limit"
+	VoiceStreamEndReasonUnattended       VoiceStreamEndReason = "unattended"
 )
 
 // Valid indicates whether the value is a known member of the VoiceStreamEndReason enum.
@@ -4980,6 +5165,8 @@ func (e VoiceStreamEndReason) Valid() bool {
 	case VoiceStreamEndReasonEmpty:
 		return true
 	case VoiceStreamEndReasonHost:
+		return true
+	case VoiceStreamEndReasonHostAbsent:
 		return true
 	case VoiceStreamEndReasonHostDisconnected:
 		return true
@@ -5000,6 +5187,8 @@ func (e VoiceStreamEndReason) Valid() bool {
 	case VoiceStreamEndReasonSuspended:
 		return true
 	case VoiceStreamEndReasonTimeLimit:
+		return true
+	case VoiceStreamEndReasonUnattended:
 		return true
 	default:
 		return false
@@ -5355,6 +5544,13 @@ type AccountMove struct {
 // when the user blocks `target` (`blocking`), `target` blocks the user (`blocked_by`), or
 // the user mutes the server of `target` (`domain_muted`).
 type AccountMoveOutcome string
+
+// AccountNoteUpdate The viewer's private note on an account.
+type AccountNoteUpdate struct {
+	// Note The note, up to 2,000 characters (Unicode code points). An empty note removes the one
+	// the viewer has.
+	Note string `json:"note"`
+}
 
 // AccountPage A page of accounts.
 type AccountPage struct {
@@ -7398,6 +7594,11 @@ type AdminReportStatus struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	Status Status `json:"status"`
 }
 
@@ -8023,12 +8224,12 @@ type AdminVoiceRoomRevision struct {
 	RevisedByAccountId Id `json:"revised_by_account_id"`
 
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers VoiceRoomSpeakers `json:"speakers"`
 
 	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// followers of the current host, `following` those whom the host follows, `mutuals` those who
+	// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 	// invited users always see it, and a block with the host or a co-host always hides it.
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
@@ -8238,6 +8439,76 @@ type AppealModerationActionRequest struct {
 	Text string `json:"text"`
 }
 
+// ArticleCoverInput The cover image of an article: one of the user's own uploads that finished processing (422
+// otherwise), with its alternative text; omitted for none.
+type ArticleCoverInput = StatusMediaItem
+
+// ArticlePreview The body of an article as publishing it would store it.
+type ArticlePreview struct {
+	// Bytes The UTF-8 bytes of `content`; over `max_bytes`, publishing is a 422.
+	Bytes int `json:"bytes"`
+
+	// Content The body as sanitized HTML, the same as the published article's `content`.
+	Content string `json:"content"`
+
+	// Images The number of the user's own uploads that the body shows as images; over `max_images`, publishing is a 422.
+	Images int `json:"images"`
+
+	// MaxBytes The most bytes of `content` (`Instance.limits.articles.max_bytes`).
+	MaxBytes int `json:"max_bytes"`
+
+	// MaxImages The most images of the body (`Instance.limits.articles.max_images`).
+	MaxImages int `json:"max_images"`
+
+	// Summary The summary the article would get.
+	Summary string `json:"summary"`
+
+	// SummaryFromBody Whether `summary` is made from the body, because the one sent was blank.
+	SummaryFromBody bool `json:"summary_from_body"`
+}
+
+// ArticlePreviewRequest The body of an article to preview.
+type ArticlePreviewRequest struct {
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Text The body in Markdown, as `createArticle` takes it.
+	Text string `json:"text"`
+}
+
+// ArticleSource What the author wrote of an article besides its Markdown body, for editing it.
+type ArticleSource struct {
+	// Cover The cover image; omitted when there is none.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Summary The summary the author wrote; empty when the server made it from the body.
+	Summary string `json:"summary"`
+
+	// Tags The hashtags, without `#`.
+	Tags []string `json:"tags"`
+
+	// Title The title.
+	Title string `json:"title"`
+}
+
+// ArticleSummary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+// summary, never a content warning.
+type ArticleSummary = string
+
+// ArticleTagsInput The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+type ArticleTagsInput = []string
+
+// ArticleText The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+// `Instance.limits.articles.max_bytes` bytes.
+type ArticleText = string
+
+// ArticleTitle The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+type ArticleTitle = string
+
 // AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
 // work. The name and the website are what the app says about itself; `registration`,
 // `client_id` and `registered_by` are what the server knows.
@@ -8294,6 +8565,9 @@ type AuthorizedAppList struct {
 // at most `max_age_days` days after its publication, and keeps posts only by the exceptions that
 // the operator allows.
 type AutoDeleteLimit struct {
+	// AllowArticles Whether articles may be kept (`keep_articles`); always given.
+	AllowArticles *bool `json:"allow_articles,omitempty"`
+
 	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
 	AllowBookmarked bool `json:"allow_bookmarked"`
 
@@ -8329,6 +8603,10 @@ type AutoDeleteLimit struct {
 type AutoDeletePolicy struct {
 	// Enabled Whether old posts are deleted.
 	Enabled bool `json:"enabled"`
+
+	// KeepArticles Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+	// (on for a user who never saved a policy).
+	KeepArticles *bool `json:"keep_articles,omitempty"`
 
 	// KeepBookmarked Keep the posts that the user bookmarked.
 	KeepBookmarked bool `json:"keep_bookmarked"`
@@ -8374,6 +8652,9 @@ type AutoDeletePreview struct {
 // AutoDeleteServerLimit The server maximum as it applies to the authenticated user, and the policy that the automatic
 // deletion uses under it.
 type AutoDeleteServerLimit struct {
+	// AllowArticles Whether articles may be kept (`keep_articles`); always given.
+	AllowArticles *bool `json:"allow_articles,omitempty"`
+
 	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
 	AllowBookmarked bool `json:"allow_bookmarked"`
 
@@ -8422,6 +8703,10 @@ type AutoDeleteServerLimit struct {
 type AutoDeleteSettings struct {
 	// Enabled Whether old posts are deleted.
 	Enabled bool `json:"enabled"`
+
+	// KeepArticles Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+	// (on for a user who never saved a policy).
+	KeepArticles *bool `json:"keep_articles,omitempty"`
 
 	// KeepBookmarked Keep the posts that the user bookmarked.
 	KeepBookmarked bool `json:"keep_bookmarked"`
@@ -9125,6 +9410,42 @@ type CreateAccountActionRequest struct {
 	StatusIds *[]Id `json:"status_ids,omitempty"`
 }
 
+// CreateArticleRequest A new article.
+type CreateArticleRequest struct {
+	// Cover The cover image of an article: one of the user's own uploads that finished processing (422
+	// otherwise), with its alternative text; omitted for none.
+	Cover *ArticleCoverInput `json:"cover,omitempty"`
+
+	// InteractionPolicy Who may reply to, boost, and quote the new article; the kinds left out take the user's
+	// `default_interaction_policy`.
+	InteractionPolicy *InteractionPolicyChange `json:"interaction_policy,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Sensitive Whether the body and the cover are folded behind the title and the summary.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+	// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+	Tags *ArticleTagsInput `json:"tags,omitempty"`
+
+	// Text The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+	// `Instance.limits.articles.max_bytes` bytes.
+	Text ArticleText `json:"text"`
+
+	// Title The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+	Title ArticleTitle `json:"title"`
+
+	// Visibility The visibility; an article is never `direct` (422).
+	Visibility Visibility `json:"visibility"`
+}
+
 // CreateCustomEmojiRequest A new local custom emoji.
 type CreateCustomEmojiRequest struct {
 	// Aliases Other names, each following the rules of a shortcode; at most 10.
@@ -9485,6 +9806,17 @@ type CredentialAccount struct {
 	// Emojis The custom emoji of the display name, the note, and the fields' names and values. Clients show each `:shortcode:` of those texts that is in this list as its
 	// image, and the rest as text.
 	Emojis []CustomEmoji `json:"emojis"`
+
+	// FeedEnabled Whether the owner lets the Atom feed of the account's public posts be served at the
+	// profile's `url` followed by `.atom`, and its public posts appear in the Atom feeds of
+	// hashtags. It is the owner's own choice once made, and `indexable` until then
+	// (`feed_follows_indexable`). A restricted or moved account has no feed whatever it says.
+	FeedEnabled bool `json:"feed_enabled"`
+
+	// FeedFollowsIndexable Whether the owner has not chosen about the feed yet, so that `feed_enabled` follows
+	// `indexable`. Setting `feed_enabled` makes the choice, and a later change of `indexable`
+	// leaves it as it is.
+	FeedFollowsIndexable bool `json:"feed_follows_indexable"`
 
 	// Fields The profile's metadata fields, in their order; empty when there are none.
 	Fields []ProfileField `json:"fields"`
@@ -10227,6 +10559,35 @@ type DraftScheduleRequest struct {
 	PublishAt time.Time `json:"publish_at"`
 }
 
+// EditArticleRequest The new content of an article.
+type EditArticleRequest struct {
+	// Cover The cover image of an article: one of the user's own uploads that finished processing (422
+	// otherwise), with its alternative text; omitted for none.
+	Cover *ArticleCoverInput `json:"cover,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Sensitive Whether the body and the cover are folded behind the title and the summary.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+	// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+	Tags *ArticleTagsInput `json:"tags,omitempty"`
+
+	// Text The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+	// `Instance.limits.articles.max_bytes` bytes.
+	Text ArticleText `json:"text"`
+
+	// Title The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+	Title ArticleTitle `json:"title"`
+}
+
 // EditStatusRequest The new content of a status.
 type EditStatusRequest struct {
 	// Language A BCP 47 language tag; omitted means the user's default post language.
@@ -10476,6 +10837,280 @@ type ErrorGroupSource string
 // `resolved` (an administrator marked it fixed; an occurrence on another version regresses
 // it to `open`), or `muted` (it notifies nobody until it is unmuted).
 type ErrorGroupState string
+
+// Event An event of the local users of this server, as the user sees it. Times are in UTC;
+// `time_zone` is the event's own time zone, to show next to the user's. `places` holds only the
+// places that the user sees: `hidden_places` lists the kinds of the others, whose details never
+// reach the client.
+type Event struct {
+	// Cancellation The cancellation of an event.
+	Cancellation *EventCancellation `json:"cancellation,omitempty"`
+
+	// Capacity How many attendees may answer `going`; 0 for no limit.
+	Capacity int `json:"capacity"`
+
+	// Coorganizers The co-organizers, in the order the organizer named them; up to 3.
+	Coorganizers []Account `json:"coorganizers"`
+	CreatedAt    time.Time `json:"created_at"`
+
+	// Description Plain text; empty for none.
+	Description string    `json:"description"`
+	EndsAt      time.Time `json:"ends_at"`
+
+	// GoingCount How many attendees answer `going`.
+	GoingCount int `json:"going_count"`
+
+	// HiddenPlaces The kinds of the places that the user does not see.
+	HiddenPlaces []EventPlaceKind `json:"hidden_places"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Organizer An account, as clients show it.
+	Organizer Account `json:"organizer"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+	// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+	// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+	// event.
+	PlaceDisclosure EventPlaceDisclosure `json:"place_disclosure"`
+	Places          []EventPlace         `json:"places"`
+
+	// RevisedAt When the settings were last changed (the creation for an event never changed).
+	RevisedAt time.Time `json:"revised_at"`
+
+	// RevisionCount How many versions the settings have had, the first included.
+	RevisionCount int       `json:"revision_count"`
+	StartsAt      time.Time `json:"starts_at"`
+
+	// State Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
+	// `ends_at` is in the past.
+	State EventState `json:"state"`
+
+	// TimeZone The IANA name of the event's time zone, such as `Asia/Tokyo`.
+	TimeZone string `json:"time_zone"`
+	Title    string `json:"title"`
+
+	// Viewer What an event says of the user who reads it.
+	Viewer EventViewer `json:"viewer"`
+
+	// Visibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+	// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+	// whom the organizer follows, and `invited` the invited users only. The organizer, the
+	// co-organizers, the invited users, and the users who answered always see it, unless a block
+	// separates them from the organizer or a co-organizer.
+	Visibility EventVisibility `json:"visibility"`
+}
+
+// EventAnswer An answer to an event.
+type EventAnswer string
+
+// EventAttendee An attendee of an event, who answered `going` or `maybe`.
+type EventAttendee struct {
+	// Account An account, as clients show it.
+	Account Account `json:"account"`
+
+	// Answer An answer to an event.
+	Answer EventAnswer `json:"answer"`
+
+	// Approved Whether the organizer or a co-organizer approved the answer.
+	Approved bool `json:"approved"`
+}
+
+// EventAttendeePage A page of the attendees of an event, in the order of their answers.
+type EventAttendeePage struct {
+	Items []EventAttendee `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventCancelReason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+type EventCancelReason string
+
+// EventCancelRequest The cancellation of an event by its organizer.
+type EventCancelRequest struct {
+	// Note The reason, up to 500 characters, shown with the event; omitted for none.
+	Note *string `json:"note,omitempty"`
+}
+
+// EventCancellation The cancellation of an event.
+type EventCancellation struct {
+	CancelledAt time.Time `json:"cancelled_at"`
+
+	// Note The reason given for the cancellation; omitted for none.
+	Note *string `json:"note,omitempty"`
+
+	// Reason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+	// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+	Reason EventCancelReason `json:"reason"`
+}
+
+// EventCreate A new event with a fixed date.
+type EventCreate struct {
+	// Capacity How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
+	Capacity *int `json:"capacity,omitempty"`
+
+	// Description Up to 3,000 characters of plain text; line breaks are kept.
+	Description *string `json:"description,omitempty"`
+
+	// EndsAt After `starts_at` and at most 7 days later.
+	EndsAt time.Time `json:"ends_at"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places; `approved` when omitted.
+	PlaceDisclosure *EventPlaceDisclosure `json:"place_disclosure,omitempty"`
+
+	// Places Up to 3 places, one of each kind.
+	Places *[]EventPlace `json:"places,omitempty"`
+
+	// StartsAt After now and at most a year ahead.
+	StartsAt time.Time `json:"starts_at"`
+
+	// TimeZone The IANA name of the event's time zone; the user's time zone when omitted.
+	TimeZone *string `json:"time_zone,omitempty"`
+
+	// Title 1 to 100 characters on one line.
+	Title string `json:"title"`
+
+	// Visibility Who sees the event; `public` when omitted.
+	Visibility *EventVisibility `json:"visibility,omitempty"`
+}
+
+// EventInvitation An invitation to an event. The invited user sees the event until the invitation is revoked,
+// whatever its visibility.
+type EventInvitation struct {
+	// Account An account, as clients show it.
+	Account Account `json:"account"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id        Id        `json:"id"`
+	InvitedAt time.Time `json:"invited_at"`
+
+	// InvitedById The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	InvitedById Id `json:"invited_by_id"`
+}
+
+// EventInvitationCreate An invitation of a user to an event.
+type EventInvitationCreate struct {
+	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	AccountId Id `json:"account_id"`
+}
+
+// EventInvitationPage A page of the invitations of an event that were not revoked, oldest first.
+type EventInvitationPage struct {
+	Items []EventInvitation `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventPage A page of the events that the user sees and that have not ended, the nearest start first.
+type EventPage struct {
+	Items []Event `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventPlace A place of an event. A `physical` place has a `name`, an `address`, and an optional map link in
+// `url`; a `url` place has a `name` and a `url`; a `voice` place has `speakers`, who may speak
+// without asking in the voice chat room that opens when the event starts. A URL is an `http` or
+// `https` URL of up to 2,000 characters, which the server never fetches. The fields that a kind
+// does not have are omitted.
+type EventPlace struct {
+	// Address Up to 500 characters; line breaks are kept.
+	Address *string `json:"address,omitempty"`
+
+	// Kind The kind of a place: `voice` a voice chat room of this server, `physical` a place to meet in
+	// person, and `url` a link such as a stream or a meeting of another service.
+	Kind EventPlaceKind `json:"kind"`
+
+	// Name Up to 100 characters on one line.
+	Name *string `json:"name,omitempty"`
+
+	// Speakers Who may speak without asking in the room; `manual` when omitted.
+	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
+	Url      *string            `json:"url,omitempty"`
+}
+
+// EventPlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+// event.
+type EventPlaceDisclosure string
+
+// EventPlaceKind The kind of a place: `voice` a voice chat room of this server, `physical` a place to meet in
+// person, and `url` a link such as a stream or a meeting of another service.
+type EventPlaceKind string
+
+// EventRSVP An answer to an event.
+type EventRSVP struct {
+	// Answer An answer to an event.
+	Answer EventAnswer `json:"answer"`
+}
+
+// EventState Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
+// `ends_at` is in the past.
+type EventState string
+
+// EventUpdate Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
+// date (`starts_at` and `ends_at` together) is checked as a new event's.
+type EventUpdate struct {
+	Capacity    *int       `json:"capacity,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	EndsAt      *time.Time `json:"ends_at,omitempty"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+	// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+	// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+	// event.
+	PlaceDisclosure *EventPlaceDisclosure `json:"place_disclosure,omitempty"`
+	Places          *[]EventPlace         `json:"places,omitempty"`
+	StartsAt        *time.Time            `json:"starts_at,omitempty"`
+	TimeZone        *string               `json:"time_zone,omitempty"`
+	Title           *string               `json:"title,omitempty"`
+
+	// Visibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+	// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+	// whom the organizer follows, and `invited` the invited users only. The organizer, the
+	// co-organizers, the invited users, and the users who answered always see it, unless a block
+	// separates them from the organizer or a co-organizer.
+	Visibility *EventVisibility `json:"visibility,omitempty"`
+}
+
+// EventViewer What an event says of the user who reads it.
+type EventViewer struct {
+	// Answer The user's answer; omitted before the user answers.
+	Answer *EventAnswer `json:"answer,omitempty"`
+
+	// Approved Whether the organizer or a co-organizer approved the user's answer.
+	Approved bool `json:"approved"`
+
+	// Coorganizer Whether the user co-organizes the event.
+	Coorganizer bool `json:"coorganizer"`
+
+	// Invited Whether the user has an invitation that was not revoked.
+	Invited bool `json:"invited"`
+
+	// Organizer Whether the user organizes the event.
+	Organizer bool `json:"organizer"`
+}
+
+// EventVisibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+// whom the organizer follows, and `invited` the invited users only. The organizer, the
+// co-organizers, the invited users, and the users who answered always see it, unless a block
+// separates them from the organizer or a co-organizer.
+type EventVisibility string
 
 // ExternalAuthorizationStart Where the browser goes to sign in at a login provider.
 type ExternalAuthorizationStart struct {
@@ -10965,6 +11600,10 @@ type Instance struct {
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
+	// ArticleAuthoring Who may write new articles (`createArticle`): `everyone` (every local user who is not
+	// limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+	ArticleAuthoring *InstanceArticleAuthoring `json:"article_authoring,omitempty"`
+
 	// AutoDeleteLimit The server maximum of the automatic deletion of old posts, which the about page shows so
 	// that people know it before they sign up; absent when the server sets none.
 	AutoDeleteLimit *AutoDeleteLimit `json:"auto_delete_limit,omitempty"`
@@ -11164,10 +11803,24 @@ type Instance struct {
 	VoiceRoomStarters InstanceVoiceRoomStarters `json:"voice_room_starters"`
 }
 
+// InstanceArticleAuthoring Who may write new articles (`createArticle`): `everyone` (every local user who is not
+// limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+type InstanceArticleAuthoring string
+
 // InstanceVoiceRoomStarters Who may open voice chat rooms: `everyone` (every local user who is not limited) or
 // `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
 // voice chat is off.
 type InstanceVoiceRoomStarters string
+
+// InstanceArticleLimits The limits of the body of an article (the instance settings `max_article_bytes` and
+// `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+type InstanceArticleLimits struct {
+	// MaxBytes The most UTF-8 bytes of the HTML that the body renders to.
+	MaxBytes int `json:"max_bytes"`
+
+	// MaxImages The most images of the user's own uploads in the body, besides the cover.
+	MaxImages int `json:"max_images"`
+}
 
 // InstanceAudience Who may read something public about the instance, the value of the instance settings
 // `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
@@ -11384,6 +12037,10 @@ type InstanceFullTextSearch struct {
 
 // InstanceLimits Limits that clients check before sending a request.
 type InstanceLimits struct {
+	// Articles The limits of the body of an article (the instance settings `max_article_bytes` and
+	// `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+	Articles *InstanceArticleLimits `json:"articles,omitempty"`
+
 	// Drafts The limits of drafts and scheduled posts (the instance settings of the same names). A save or a
 	// schedule past one is a 422 that names it; lowering a limit deletes no draft and cancels no
 	// schedule.
@@ -13436,8 +14093,12 @@ type PaymentStatusWarnings string
 // `permitted`, a member permission (only the built-in admin role by default).
 // `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
 // deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
-// permission (only the built-in admin role by default). The others guard no client API
-// operation yet.
+// permission (only the built-in admin role by default). `create_articles`: writing new
+// articles with `createArticle` while the instance setting `article_authoring` is
+// `permission`, a member permission (only the built-in admin role by default).
+// `create_events`: creating events on `POST /events` while the instance setting
+// `event_creators` is `permitted`, a member permission (only the built-in admin role by
+// default). The others guard no client API operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts
@@ -13853,6 +14514,20 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
 //     co-hosts of the room.
 //   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+//   - `/api/v1/problems/event-not-eligible` (403): the user may not create events.
+//   - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
+//     co-organizers of the event.
+//   - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
+//   - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+//   - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
+//   - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
+//     room: the voice chat is off, or its organizer may not host rooms.
+//   - `/api/v1/problems/event-already-invited` (409): the account is already invited to the event.
+//   - `/api/v1/problems/event-invalid-invitee` (422): the account cannot be invited to the event.
+//   - `/api/v1/problems/event-invalid-coorganizer` (422): the account cannot co-organize the event.
+//   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
+//     it can.
+//   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
 //   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
 //     be searched (`Instance.full_text_search.available`).
 //   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
@@ -14014,7 +14689,7 @@ type RejectCustomEmojiRequestRequest struct {
 // rest are absent, which tells nothing about them: `following`, `requested`, `followed_by`,
 // `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`;
 // `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need
-// `read:mutes` or `write:mutes`.
+// `read:mutes` or `write:mutes`; `note` needs `read:accounts` or `write:accounts`.
 type Relationship struct {
 	// Blocking Whether the viewer blocks the account.
 	Blocking *bool `json:"blocking,omitempty"`
@@ -14035,6 +14710,10 @@ type Relationship struct {
 
 	// MutingNotifications Whether the viewer's mute also hides the account's notifications.
 	MutingNotifications *bool `json:"muting_notifications,omitempty"`
+
+	// Note The viewer's private note on the account (`setAccountNote`), empty without one. Only the
+	// viewer reads it.
+	Note *string `json:"note,omitempty"`
 
 	// Notify Whether the viewer subscribes to the account's new posts (`subscribeAccount`), with or
 	// without a follow. A subscription asked for with a follow request to an account on another
@@ -14435,6 +15114,11 @@ type SpoilerText = string
 // `visibility` and `language` are those of the boosted status, its `content`,
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
+//
+// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+// carry no body. An article has no content warning, media attachments, or poll.
 type Status struct {
 	// Account An account, as clients show it.
 	Account Account `json:"account"`
@@ -14443,6 +15127,11 @@ type Status struct {
 	// given; given only to the author of the reply, and omitted for a reply that needs no
 	// approval or has it. A `pending` reply is shown to its author alone.
 	Approval *InteractionApprovalState `json:"approval,omitempty"`
+
+	// Article What makes a status an article: its title, summary, and cover. The summary is never a content
+	// warning; a `sensitive` article shows the title and the summary and folds the body and the
+	// cover.
+	Article *StatusArticle `json:"article,omitempty"`
 
 	// Bookmarked Whether the authenticated user bookmarked the status.
 	Bookmarked *bool `json:"bookmarked,omitempty"`
@@ -14456,6 +15145,11 @@ type Status struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	Boost *Status `json:"boost,omitempty"`
 
 	// BoostApproval The approval of the authenticated user's boost of the status by its author, while it is
@@ -14483,7 +15177,8 @@ type Status struct {
 	Card *LinkCard `json:"card,omitempty"`
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-	// remote status is what the server's sanitizer kept of the received document.
+	// remote status is what the server's sanitizer kept of the received document. For an
+	// article, its rendered body, or empty in lists (see above).
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -14601,6 +15296,20 @@ type Status struct {
 	Visibility Visibility `json:"visibility"`
 }
 
+// StatusArticle What makes a status an article: its title, summary, and cover. The summary is never a content
+// warning; a `sensitive` article shows the title and the summary and folds the body and the
+// cover.
+type StatusArticle struct {
+	// Cover The cover image; omitted when there is none or it cannot be shown.
+	Cover *MediaAttachment `json:"cover,omitempty"`
+
+	// Summary The summary, as plain text; the server makes one from the body when the author writes none.
+	Summary string `json:"summary"`
+
+	// Title The title, as plain text.
+	Title string `json:"title"`
+}
+
 // StatusContext The thread around a status.
 type StatusContext struct {
 	// Ancestors The statuses the status replies to, oldest first.
@@ -14612,7 +15321,10 @@ type StatusContext struct {
 
 // StatusEdit One revision of a status.
 type StatusEdit struct {
-	// Content The text of the revision as sanitized HTML.
+	// Article The title and summary of the revision of an article; omitted for a post.
+	Article *StatusEditArticle `json:"article,omitempty"`
+
+	// Content The text of the revision as sanitized HTML; for an article, its body.
 	Content string `json:"content"`
 
 	// CreatedAt When the revision was made; the first one is when the status was posted.
@@ -14629,6 +15341,15 @@ type StatusEdit struct {
 
 	// SpoilerText The content warning of the revision; empty when there is none.
 	SpoilerText string `json:"spoiler_text"`
+}
+
+// StatusEditArticle The title and summary of one revision of an article.
+type StatusEditArticle struct {
+	// Summary The summary of the revision.
+	Summary string `json:"summary"`
+
+	// Title The title of the revision.
+	Title string `json:"title"`
 }
 
 // StatusHistory The revisions of a status.
@@ -14694,6 +15415,11 @@ type StatusQuote struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	QuotedStatus *Status `json:"quoted_status,omitempty"`
 
 	// State The state of a quote as the viewer sees it, with the values of Mastodon's
@@ -14792,6 +15518,9 @@ type StatusRejectedProblem struct {
 
 // StatusSource What the author typed, for editing a status.
 type StatusSource struct {
+	// Article The rest of what the author wrote of an article; omitted for a post.
+	Article *ArticleSource `json:"article,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -14803,7 +15532,7 @@ type StatusSource struct {
 	// SpoilerText The content warning; empty when there is none.
 	SpoilerText string `json:"spoiler_text"`
 
-	// Text The plain text.
+	// Text The plain text; for an article, its Markdown body.
 	Text string `json:"text"`
 }
 
@@ -15247,6 +15976,10 @@ type UpdateCredentialsRequest struct {
 	// DisplayName The display name, at most 30 characters; empty removes it.
 	DisplayName *string `json:"display_name,omitempty"`
 
+	// FeedEnabled Whether the Atom feed of the account's public posts may be served. Setting it makes the
+	// owner's choice, which a later change of `indexable` leaves as it is.
+	FeedEnabled *bool `json:"feed_enabled,omitempty"`
+
 	// Fields The metadata fields, replacing the current ones; at most 4.
 	Fields *[]AccountFieldSource `json:"fields,omitempty"`
 
@@ -15433,7 +16166,9 @@ type Visibility string
 // VoiceEndReason Why a voice chat room ended: `host` the host ended it, `empty` nobody was left in it,
 // `host_disconnected` the host lost the connection and nobody took over, `host_ineligible` the
 // host may no longer host, `moderator` a moderator ended it, `time_limit` it reached the limit
-// of its duration, and `disabled` the voice chat was turned off.
+// of its duration, `disabled` the voice chat was turned off, `host_absent` the host of a room
+// opened for a scheduled time did not come by the end of its wait and nobody took over, and
+// `unattended` nobody came to such a room by the end of its wait.
 type VoiceEndReason string
 
 // VoiceGrant What the client of a session needs to connect to the audio of a room. `kind` is the method
@@ -15528,12 +16263,12 @@ type VoiceRoom struct {
 	ParticipantsCount int `json:"participants_count"`
 
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers VoiceRoomSpeakers `json:"speakers"`
 
 	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// followers of the current host, `following` those whom the host follows, `mutuals` those who
+	// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 	// invited users always see it, and a block with the host or a co-host always hides it.
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
@@ -15715,8 +16450,8 @@ type VoiceRoomSettings struct {
 	// `write:statuses` scope besides `write:voice`, or the request is a 403
 	// `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 	// the `local` visibility and `private` for a room of the `followers` visibility, federated like
-	// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
-	// visibility has no start post.
+	// any other post, and the host deletes it like any other. A room of the `following`, `mutuals`,
+	// or `invited` visibility has no start post.
 	Post *VoiceStartPost `json:"post,omitempty"`
 
 	// Speakers Who may become a speaker without asking; `manual` when omitted.
@@ -15727,7 +16462,7 @@ type VoiceRoomSettings struct {
 }
 
 // VoiceRoomSpeakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 type VoiceRoomSpeakers string
 
 // VoiceRoomSummary What the page of a voice chat room shows to a visitor who does not see the room, such as a
@@ -15776,19 +16511,19 @@ type VoiceRoomUpdate struct {
 	Name *string `json:"name,omitempty"`
 
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
 
 	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// followers of the current host, `following` those whom the host follows, `mutuals` those who
+	// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 	// invited users always see it, and a block with the host or a co-host always hides it.
 	Visibility *VoiceRoomVisibility `json:"visibility,omitempty"`
 }
 
 // VoiceRoomVisibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+// followers of the current host, `following` those whom the host follows, `mutuals` those who
+// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 // invited users always see it, and a block with the host or a co-host always hides it.
 type VoiceRoomVisibility string
 
@@ -15827,8 +16562,8 @@ type VoiceSignalKind string
 // `write:statuses` scope besides `write:voice`, or the request is a 403
 // `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 // the `local` visibility and `private` for a room of the `followers` visibility, federated like
-// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
-// visibility has no start post.
+// any other post, and the host deletes it like any other. A room of the `following`, `mutuals`,
+// or `invited` visibility has no start post.
 type VoiceStartPost struct {
 	// Language A BCP 47 language tag; the user's default post language when omitted.
 	Language *string `json:"language,omitempty"`
@@ -15842,7 +16577,8 @@ type VoiceStartPost struct {
 // which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
 // `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
 // `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
-// `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
+// `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`, `host_absent`,
+// `unattended`).
 type VoiceStreamEnd struct {
 	Reason VoiceStreamEndReason `json:"reason"`
 }
@@ -16153,6 +16889,16 @@ type DraftId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type ErrorGroupId = Id
 
+// EventAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type EventAccountId = Id
+
+// EventId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type EventId = Id
+
 // HashtagName defines model for HashtagName.
 type HashtagName = string
 
@@ -16289,6 +17035,11 @@ type AccountProfile = Account
 // `visibility` and `language` are those of the boosted status, its `content`,
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
+//
+// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+// carry no body. An article has no content warning, media attachments, or poll.
 type StatusAfterAction = Status
 
 // RemoveAccountAliasParams defines parameters for RemoveAccountAlias.
@@ -16799,6 +17550,14 @@ type ListAnnouncementHistoryParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// CreateArticleParams defines parameters for CreateArticle.
+type CreateArticleParams struct {
+	// IdempotencyKey A key the client chooses per new status; a retry with the same key returns the status
+	// posted with it instead of posting again. A key longer than 256 characters, or one
+	// that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
+}
+
 // ListBlocksParams defines parameters for ListBlocks.
 type ListBlocksParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -16871,6 +17630,33 @@ type UpdateDraftParams struct {
 	// since, the answer is a 412 and nothing is saved, so that a save on one device never silently
 	// overwrites one made on another; read the draft again and merge. Without it, the save is a 428.
 	IfMatch *IfMatch `json:"If-Match,omitempty"`
+}
+
+// ListEventsParams defines parameters for ListEvents.
+type ListEventsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListEventAttendeesParams defines parameters for ListEventAttendees.
+type ListEventAttendeesParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListEventInvitationsParams defines parameters for ListEventInvitations.
+type ListEventInvitationsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // GetFinanceCostTotalsParams defines parameters for GetFinanceCostTotals.
@@ -17221,6 +18007,9 @@ type FollowAccountJSONRequestBody = FollowAccountRequest
 // MuteAccountJSONRequestBody defines body for MuteAccount for application/json ContentType.
 type MuteAccountJSONRequestBody = MuteAccountRequest
 
+// SetAccountNoteJSONRequestBody defines body for SetAccountNote for application/json ContentType.
+type SetAccountNoteJSONRequestBody = AccountNoteUpdate
+
 // LiftAccountActionJSONRequestBody defines body for LiftAccountAction for application/json ContentType.
 type LiftAccountActionJSONRequestBody = LiftAccountActionRequest
 
@@ -17392,6 +18181,15 @@ type CreateWebhookJSONRequestBody = CreateWebhookRequest
 // UpdateWebhookJSONRequestBody defines body for UpdateWebhook for application/json ContentType.
 type UpdateWebhookJSONRequestBody = UpdateWebhookRequest
 
+// CreateArticleJSONRequestBody defines body for CreateArticle for application/json ContentType.
+type CreateArticleJSONRequestBody = CreateArticleRequest
+
+// PreviewArticleJSONRequestBody defines body for PreviewArticle for application/json ContentType.
+type PreviewArticleJSONRequestBody = ArticlePreviewRequest
+
+// EditArticleJSONRequestBody defines body for EditArticle for application/json ContentType.
+type EditArticleJSONRequestBody = EditArticleRequest
+
 // CreateCustomEmojiRequestJSONRequestBody defines body for CreateCustomEmojiRequest for application/json ContentType.
 type CreateCustomEmojiRequestJSONRequestBody = NewCustomEmojiRequest
 
@@ -17409,6 +18207,21 @@ type UpdateDraftJSONRequestBody = DraftRequest
 
 // ScheduleDraftJSONRequestBody defines body for ScheduleDraft for application/json ContentType.
 type ScheduleDraftJSONRequestBody = DraftScheduleRequest
+
+// CreateEventJSONRequestBody defines body for CreateEvent for application/json ContentType.
+type CreateEventJSONRequestBody = EventCreate
+
+// UpdateEventJSONRequestBody defines body for UpdateEvent for application/json ContentType.
+type UpdateEventJSONRequestBody = EventUpdate
+
+// CancelEventJSONRequestBody defines body for CancelEvent for application/json ContentType.
+type CancelEventJSONRequestBody = EventCancelRequest
+
+// InviteToEventJSONRequestBody defines body for InviteToEvent for application/json ContentType.
+type InviteToEventJSONRequestBody = EventInvitationCreate
+
+// AnswerEventJSONRequestBody defines body for AnswerEvent for application/json ContentType.
+type AnswerEventJSONRequestBody = EventRSVP
 
 // SetFeaturedTagsJSONRequestBody defines body for SetFeaturedTags for application/json ContentType.
 type SetFeaturedTagsJSONRequestBody = SetFeaturedTagsRequest
@@ -19785,6 +20598,37 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/mute (the `MuteAccount` operationId).
 	MuteAccount(ctx context.Context, id AccountId, body MuteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteAccountNote Remove the private note on an account
+	//
+	// Without a note it changes nothing. It also works on an account that blocks the user.
+	//
+	// Corresponds with DELETE /accounts/{id}/note (the `DeleteAccountNote` operationId).
+	DeleteAccountNote(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetAccountNoteWithBody Write a private note on an account
+	//
+	// Replaces the viewer's private note on the account, a local or a remote one. Only the
+	// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+	// not leave this server. An empty `note` removes the note. A note on the viewer's own
+	// account is a 422.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+	SetAccountNoteWithBody(ctx context.Context, id AccountId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetAccountNote Write a private note on an account
+	//
+	// Replaces the viewer's private note on the account, a local or a remote one. Only the
+	// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+	// not leave this server. An empty `note` removes the note. A note on the viewer's own
+	// account is a 422.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+	SetAccountNote(ctx context.Context, id AccountId, body SetAccountNoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListAccountStatuses List the posts and boosts of an account
 	//
@@ -22898,6 +23742,124 @@ type ClientInterface interface {
 	// Corresponds with POST /announcements/{id}/read (the `MarkAnnouncementRead` operationId).
 	MarkAnnouncementRead(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// CreateArticleWithBody Post an article
+	//
+	// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+	// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+	// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+	// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+	// `getStatus` does.
+	//
+	// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+	// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+	// second level of heading (the title is the first). An image whose destination is
+	// `media:` followed by the ID of one of the user's own uploads that finished processing
+	// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+	// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+	// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+	//
+	// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+	// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+	// posting. An article is never `direct` (422). While the instance lets only some users write
+	// articles (`Instance.article_authoring` is `permission`), a user without the permission
+	// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+	// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+	// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+	// server's automated review refuses the article, nothing is posted and the answer is a 422
+	// `/api/v1/problems/status-rejected`, as for a post.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /articles (the `CreateArticle` operationId).
+	CreateArticleWithBody(ctx context.Context, params *CreateArticleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateArticle Post an article
+	//
+	// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+	// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+	// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+	// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+	// `getStatus` does.
+	//
+	// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+	// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+	// second level of heading (the title is the first). An image whose destination is
+	// `media:` followed by the ID of one of the user's own uploads that finished processing
+	// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+	// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+	// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+	//
+	// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+	// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+	// posting. An article is never `direct` (422). While the instance lets only some users write
+	// articles (`Instance.article_authoring` is `permission`), a user without the permission
+	// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+	// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+	// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+	// server's automated review refuses the article, nothing is posted and the answer is a 422
+	// `/api/v1/problems/status-rejected`, as for a post.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /articles (the `CreateArticle` operationId).
+	CreateArticle(ctx context.Context, params *CreateArticleParams, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PreviewArticleWithBody Preview the body of an article
+	//
+	// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+	// store it, without storing anything: the same HTML that the published article has, the
+	// summary it would get, and the size and images of the body with their limits. A body over
+	// the limits still renders, so that the editor can say by how much.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+	PreviewArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PreviewArticle Preview the body of an article
+	//
+	// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+	// store it, without storing anything: the same HTML that the published article has, the
+	// summary it would get, and the size and images of the body with their limits. A body over
+	// the limits still renders, so that the editor can say by how much.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+	PreviewArticle(ctx context.Context, body PreviewArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EditArticleWithBody Edit the authenticated user's article
+	//
+	// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+	// article, checked and rendered as `createArticle` does; the previous revision stays in the
+	// edit history. The visibility never changes, and who may reply to, boost, and quote it
+	// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+	// with `editStatus`), and so is a body over the limits. When the server's automated review
+	// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+	// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+	// may see it and a 404 otherwise.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+	EditArticleWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EditArticle Edit the authenticated user's article
+	//
+	// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+	// article, checked and rendered as `createArticle` does; the previous revision stays in the
+	// edit history. The visibility never changes, and who may reply to, boost, and quote it
+	// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+	// with `editStatus`), and so is a body over the limits. When the server's automated review
+	// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+	// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+	// may see it and a 404 otherwise.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+	EditArticle(ctx context.Context, id StatusId, body EditArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAuthorizedApps List the apps the authenticated user authorized
 	//
 	// One entry per client for which the user holds a grant that still works, most recently used
@@ -23269,6 +24231,218 @@ type ClientInterface interface {
 	// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
 	ScheduleDraft(ctx context.Context, id DraftId, body ScheduleDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListEvents List the upcoming events
+	//
+	// The events that the user sees and that have not ended, the nearest start first. A page may
+	// hold fewer events than `limit` and still have a `next_cursor`.
+	//
+	// Corresponds with GET /events (the `ListEvents` operationId).
+	ListEvents(ctx context.Context, params *ListEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateEventWithBody Create an event
+	//
+	// Creates an event that the user organizes, with a fixed date. The user must be a local,
+	// unrestricted user who may create events (the instance setting `event_creators`, or the
+	// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+	// place needs the voice chat on and a user who may host its rooms: a 422
+	// `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+	// (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+	// the past are a 422.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /events (the `CreateEvent` operationId).
+	CreateEventWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateEvent Create an event
+	//
+	// Creates an event that the user organizes, with a fixed date. The user must be a local,
+	// unrestricted user who may create events (the instance setting `event_creators`, or the
+	// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+	// place needs the voice chat on and a user who may host its rooms: a 422
+	// `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+	// (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+	// the past are a 422.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /events (the `CreateEvent` operationId).
+	CreateEvent(ctx context.Context, body CreateEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetEvent Get an event
+	//
+	// The event, as the user sees it: the places that the user does not see are left out. A 404
+	// for an event that the user does not see.
+	//
+	// Corresponds with GET /events/{id} (the `GetEvent` operationId).
+	GetEvent(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateEventWithBody Change an event
+	//
+	// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+	// `voice` place needs the organizer to be able to host rooms (a 422
+	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /events/{id} (the `UpdateEvent` operationId).
+	UpdateEventWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateEvent Change an event
+	//
+	// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+	// `voice` place needs the organizer to be able to host rooms (a 422
+	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /events/{id} (the `UpdateEvent` operationId).
+	UpdateEvent(ctx context.Context, id EventId, body UpdateEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListEventAttendees List the attendees of an event
+	//
+	// The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
+	// sees the event.
+	//
+	// Corresponds with GET /events/{id}/attendees (the `ListEventAttendees` operationId).
+	ListEventAttendees(ctx context.Context, id EventId, params *ListEventAttendeesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeEventAttendeeApproval Revoke the approval of an attendee of an event
+	//
+	// Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
+	// did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Corresponds with DELETE /events/{id}/attendees/{account_id}/approval (the `RevokeEventAttendeeApproval` operationId).
+	RevokeEventAttendeeApproval(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ApproveEventAttendee Approve an attendee of an event
+	//
+	// Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
+	// co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
+	// the approved. An approval ends when the attendee answers `declined`. A 422
+	// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
+	ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CancelEventWithBody Cancel an event
+	//
+	// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+	// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
+	CancelEventWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CancelEvent Cancel an event
+	//
+	// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+	// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
+	CancelEvent(ctx context.Context, id EventId, body CancelEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveEventCoorganizer Remove a co-organizer of an event
+	//
+	// Removes a co-organizer of the event, by its organizer. A 403
+	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Corresponds with DELETE /events/{id}/coorganizers/{account_id} (the `RemoveEventCoorganizer` operationId).
+	RemoveEventCoorganizer(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AssignEventCoorganizer Name a co-organizer of an event
+	//
+	// Names a local user a co-organizer of the event, by its organizer: a co-organizer changes the
+	// event, invites, and approves attendees, and sees every place. An event has at most 3
+	// co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
+	// `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
+	// organizer, or is in a block relation with the organizer or a co-organizer. A 403
+	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Corresponds with PUT /events/{id}/coorganizers/{account_id} (the `AssignEventCoorganizer` operationId).
+	AssignEventCoorganizer(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListEventInvitations List the invitations of an event
+	//
+	// The invitations of the event that were not revoked, oldest first, for the organizer and the
+	// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	//
+	// Corresponds with GET /events/{id}/invitations (the `ListEventInvitations` operationId).
+	ListEventInvitations(ctx context.Context, id EventId, params *ListEventInvitationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// InviteToEventWithBody Invite a user to an event
+	//
+	// Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+	// from now on, whatever its visibility. A user is invited to an event once (a 409
+	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /events/{id}/invitations (the `InviteToEvent` operationId).
+	InviteToEventWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// InviteToEvent Invite a user to an event
+	//
+	// Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+	// from now on, whatever its visibility. A user is invited to an event once (a 409
+	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /events/{id}/invitations (the `InviteToEvent` operationId).
+	InviteToEvent(ctx context.Context, id EventId, body InviteToEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RevokeEventInvitation Revoke an invitation to an event
+	//
+	// Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
+	// only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
+	// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Corresponds with DELETE /events/{id}/invitations/{account_id} (the `RevokeEventInvitation` operationId).
+	RevokeEventInvitation(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AnswerEventWithBody Answer an event
+	//
+	// Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+	// starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+	// `declined` are never refused. `declined` ends an approval. A 409
+	// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /events/{id}/rsvp (the `AnswerEvent` operationId).
+	AnswerEventWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AnswerEvent Answer an event
+	//
+	// Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+	// starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+	// `declined` are never refused. `declined` ends an approval. A 409
+	// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /events/{id}/rsvp (the `AnswerEvent` operationId).
+	AnswerEvent(ctx context.Context, id EventId, body AnswerEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListDataExports List the authenticated user's data exports
 	//
 	// Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -23282,7 +24456,9 @@ type ClientInterface interface {
 	// Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 	// `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 	// activities), `moderation.json` (the moderation actions on the account, its appeals, and
-	// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+	// the reports it filed), `keyword_filters.json` (the user's keyword filters),
+	// `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+	// URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
 	// `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
 	// `pending` until the archive is built. While
 	// another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -24879,7 +26055,8 @@ type ClientInterface interface {
 
 	// GetStatus Get a status
 	//
-	// A status that the viewer may not see is a 404, the same as a missing one.
+	// A status that the viewer may not see is a 404, the same as a missing one. An article comes
+	// with its body in `content`.
 	//
 	// Corresponds with GET /statuses/{id} (the `GetStatus` operationId).
 	GetStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -24889,7 +26066,8 @@ type ClientInterface interface {
 	// Replaces the text, content warning, sensitivity, language, and media of a status; the
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
-	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+	// article is edited with `editArticle` (422 here).
 	// When the server's automated review refuses the edit, the answer is a 422
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -24905,7 +26083,8 @@ type ClientInterface interface {
 	// Replaces the text, content warning, sensitivity, language, and media of a status; the
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
-	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+	// article is edited with `editArticle` (422 here).
 	// When the server's automated review refuses the edit, the answer is a 422
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -25555,7 +26734,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 	// leaves the room the user was in. Invalid settings are a 422.
 	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+	// room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
 	// status for a post that cannot be posted. The local followers of the user who see the room
 	// get a `voice_room_started` notification.
 	//
@@ -25574,7 +26753,7 @@ type ClientInterface interface {
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 	// leaves the room the user was in. Invalid settings are a 422.
 	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+	// room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
 	// status for a post that cannot be posted. The local followers of the user who see the room
 	// get a `voice_room_started` notification.
 	//
@@ -26931,6 +28110,67 @@ func (c *Client) MuteAccountWithBody(ctx context.Context, id AccountId, contentT
 // Corresponds with POST /accounts/{id}/mute (the `MuteAccount` operationId).
 func (c *Client) MuteAccount(ctx context.Context, id AccountId, body MuteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewMuteAccountRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteAccountNote Remove the private note on an account
+//
+// Without a note it changes nothing. It also works on an account that blocks the user.
+//
+// Corresponds with DELETE /accounts/{id}/note (the `DeleteAccountNote` operationId).
+func (c *Client) DeleteAccountNote(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteAccountNoteRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetAccountNoteWithBody Write a private note on an account
+//
+// Replaces the viewer's private note on the account, a local or a remote one. Only the
+// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+// not leave this server. An empty `note` removes the note. A note on the viewer's own
+// account is a 422.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+func (c *Client) SetAccountNoteWithBody(ctx context.Context, id AccountId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetAccountNoteRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetAccountNote Write a private note on an account
+//
+// Replaces the viewer's private note on the account, a local or a remote one. Only the
+// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+// not leave this server. An empty `note` removes the note. A note on the viewer's own
+// account is a 422.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+func (c *Client) SetAccountNote(ctx context.Context, id AccountId, body SetAccountNoteJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetAccountNoteRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -32553,6 +33793,184 @@ func (c *Client) MarkAnnouncementRead(ctx context.Context, id AnnouncementId, re
 	return c.Client.Do(req)
 }
 
+// CreateArticleWithBody Post an article
+//
+// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+// `getStatus` does.
+//
+// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+// second level of heading (the title is the first). An image whose destination is
+// `media:` followed by the ID of one of the user's own uploads that finished processing
+// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+//
+// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+// posting. An article is never `direct` (422). While the instance lets only some users write
+// articles (`Instance.article_authoring` is `permission`), a user without the permission
+// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+// server's automated review refuses the article, nothing is posted and the answer is a 422
+// `/api/v1/problems/status-rejected`, as for a post.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /articles (the `CreateArticle` operationId).
+func (c *Client) CreateArticleWithBody(ctx context.Context, params *CreateArticleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateArticleRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateArticle Post an article
+//
+// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+// `getStatus` does.
+//
+// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+// second level of heading (the title is the first). An image whose destination is
+// `media:` followed by the ID of one of the user's own uploads that finished processing
+// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+//
+// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+// posting. An article is never `direct` (422). While the instance lets only some users write
+// articles (`Instance.article_authoring` is `permission`), a user without the permission
+// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+// server's automated review refuses the article, nothing is posted and the answer is a 422
+// `/api/v1/problems/status-rejected`, as for a post.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /articles (the `CreateArticle` operationId).
+func (c *Client) CreateArticle(ctx context.Context, params *CreateArticleParams, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateArticleRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PreviewArticleWithBody Preview the body of an article
+//
+// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+// store it, without storing anything: the same HTML that the published article has, the
+// summary it would get, and the size and images of the body with their limits. A body over
+// the limits still renders, so that the editor can say by how much.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+func (c *Client) PreviewArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPreviewArticleRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PreviewArticle Preview the body of an article
+//
+// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+// store it, without storing anything: the same HTML that the published article has, the
+// summary it would get, and the size and images of the body with their limits. A body over
+// the limits still renders, so that the editor can say by how much.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+func (c *Client) PreviewArticle(ctx context.Context, body PreviewArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPreviewArticleRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EditArticleWithBody Edit the authenticated user's article
+//
+// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+// article, checked and rendered as `createArticle` does; the previous revision stays in the
+// edit history. The visibility never changes, and who may reply to, boost, and quote it
+// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+// with `editStatus`), and so is a body over the limits. When the server's automated review
+// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+// may see it and a 404 otherwise.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+func (c *Client) EditArticleWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEditArticleRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EditArticle Edit the authenticated user's article
+//
+// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+// article, checked and rendered as `createArticle` does; the previous revision stays in the
+// edit history. The visibility never changes, and who may reply to, boost, and quote it
+// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+// with `editStatus`), and so is a body over the limits. When the server's automated review
+// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+// may see it and a 404 otherwise.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+func (c *Client) EditArticle(ctx context.Context, id StatusId, body EditArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEditArticleRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListAuthorizedApps List the apps the authenticated user authorized
 //
 // One entry per client for which the user holds a grant that still works, most recently used
@@ -33254,6 +34672,408 @@ func (c *Client) ScheduleDraft(ctx context.Context, id DraftId, body ScheduleDra
 	return c.Client.Do(req)
 }
 
+// ListEvents List the upcoming events
+//
+// The events that the user sees and that have not ended, the nearest start first. A page may
+// hold fewer events than `limit` and still have a `next_cursor`.
+//
+// Corresponds with GET /events (the `ListEvents` operationId).
+func (c *Client) ListEvents(ctx context.Context, params *ListEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListEventsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateEventWithBody Create an event
+//
+// Creates an event that the user organizes, with a fixed date. The user must be a local,
+// unrestricted user who may create events (the instance setting `event_creators`, or the
+// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+// place needs the voice chat on and a user who may host its rooms: a 422
+// `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+// (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+// the past are a 422.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /events (the `CreateEvent` operationId).
+func (c *Client) CreateEventWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateEventRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateEvent Create an event
+//
+// Creates an event that the user organizes, with a fixed date. The user must be a local,
+// unrestricted user who may create events (the instance setting `event_creators`, or the
+// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+// place needs the voice chat on and a user who may host its rooms: a 422
+// `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+// (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+// the past are a 422.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /events (the `CreateEvent` operationId).
+func (c *Client) CreateEvent(ctx context.Context, body CreateEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateEventRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetEvent Get an event
+//
+// The event, as the user sees it: the places that the user does not see are left out. A 404
+// for an event that the user does not see.
+//
+// Corresponds with GET /events/{id} (the `GetEvent` operationId).
+func (c *Client) GetEvent(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEventRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateEventWithBody Change an event
+//
+// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+// `voice` place needs the organizer to be able to host rooms (a 422
+// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /events/{id} (the `UpdateEvent` operationId).
+func (c *Client) UpdateEventWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateEventRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateEvent Change an event
+//
+// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+// `voice` place needs the organizer to be able to host rooms (a 422
+// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /events/{id} (the `UpdateEvent` operationId).
+func (c *Client) UpdateEvent(ctx context.Context, id EventId, body UpdateEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateEventRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListEventAttendees List the attendees of an event
+//
+// The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
+// sees the event.
+//
+// Corresponds with GET /events/{id}/attendees (the `ListEventAttendees` operationId).
+func (c *Client) ListEventAttendees(ctx context.Context, id EventId, params *ListEventAttendeesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListEventAttendeesRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RevokeEventAttendeeApproval Revoke the approval of an attendee of an event
+//
+// Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
+// did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Corresponds with DELETE /events/{id}/attendees/{account_id}/approval (the `RevokeEventAttendeeApproval` operationId).
+func (c *Client) RevokeEventAttendeeApproval(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeEventAttendeeApprovalRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ApproveEventAttendee Approve an attendee of an event
+//
+// Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
+// co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
+// the approved. An approval ends when the attendee answers `declined`. A 422
+// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
+func (c *Client) ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewApproveEventAttendeeRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CancelEventWithBody Cancel an event
+//
+// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
+func (c *Client) CancelEventWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelEventRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CancelEvent Cancel an event
+//
+// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
+func (c *Client) CancelEvent(ctx context.Context, id EventId, body CancelEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCancelEventRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RemoveEventCoorganizer Remove a co-organizer of an event
+//
+// Removes a co-organizer of the event, by its organizer. A 403
+// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Corresponds with DELETE /events/{id}/coorganizers/{account_id} (the `RemoveEventCoorganizer` operationId).
+func (c *Client) RemoveEventCoorganizer(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveEventCoorganizerRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AssignEventCoorganizer Name a co-organizer of an event
+//
+// Names a local user a co-organizer of the event, by its organizer: a co-organizer changes the
+// event, invites, and approves attendees, and sees every place. An event has at most 3
+// co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
+// `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
+// organizer, or is in a block relation with the organizer or a co-organizer. A 403
+// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Corresponds with PUT /events/{id}/coorganizers/{account_id} (the `AssignEventCoorganizer` operationId).
+func (c *Client) AssignEventCoorganizer(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAssignEventCoorganizerRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListEventInvitations List the invitations of an event
+//
+// The invitations of the event that were not revoked, oldest first, for the organizer and the
+// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+//
+// Corresponds with GET /events/{id}/invitations (the `ListEventInvitations` operationId).
+func (c *Client) ListEventInvitations(ctx context.Context, id EventId, params *ListEventInvitationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListEventInvitationsRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// InviteToEventWithBody Invite a user to an event
+//
+// Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+// from now on, whatever its visibility. A user is invited to an event once (a 409
+// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /events/{id}/invitations (the `InviteToEvent` operationId).
+func (c *Client) InviteToEventWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewInviteToEventRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// InviteToEvent Invite a user to an event
+//
+// Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+// from now on, whatever its visibility. A user is invited to an event once (a 409
+// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /events/{id}/invitations (the `InviteToEvent` operationId).
+func (c *Client) InviteToEvent(ctx context.Context, id EventId, body InviteToEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewInviteToEventRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RevokeEventInvitation Revoke an invitation to an event
+//
+// Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
+// only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
+// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Corresponds with DELETE /events/{id}/invitations/{account_id} (the `RevokeEventInvitation` operationId).
+func (c *Client) RevokeEventInvitation(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRevokeEventInvitationRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AnswerEventWithBody Answer an event
+//
+// Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+// starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+// `declined` are never refused. `declined` ends an approval. A 409
+// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /events/{id}/rsvp (the `AnswerEvent` operationId).
+func (c *Client) AnswerEventWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAnswerEventRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AnswerEvent Answer an event
+//
+// Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+// starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+// `declined` are never refused. `declined` ends an approval. A 409
+// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /events/{id}/rsvp (the `AnswerEvent` operationId).
+func (c *Client) AnswerEvent(ctx context.Context, id EventId, body AnswerEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAnswerEventRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListDataExports List the authenticated user's data exports
 //
 // Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -33277,7 +35097,9 @@ func (c *Client) ListDataExports(ctx context.Context, reqEditors ...RequestEdito
 // Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 // `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 // activities), `moderation.json` (the moderation actions on the account, its appeals, and
-// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+// the reports it filed), `keyword_filters.json` (the user's keyword filters),
+// `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+// URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
 // `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
 // `pending` until the archive is built. While
 // another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -36154,7 +37976,8 @@ func (c *Client) DeleteStatus(ctx context.Context, id StatusId, reqEditors ...Re
 
 // GetStatus Get a status
 //
-// A status that the viewer may not see is a 404, the same as a missing one.
+// A status that the viewer may not see is a 404, the same as a missing one. An article comes
+// with its body in `content`.
 //
 // Corresponds with GET /statuses/{id} (the `GetStatus` operationId).
 func (c *Client) GetStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -36174,7 +37997,8 @@ func (c *Client) GetStatus(ctx context.Context, id StatusId, reqEditors ...Reque
 // Replaces the text, content warning, sensitivity, language, and media of a status; the
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
-// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+// article is edited with `editArticle` (422 here).
 // When the server's automated review refuses the edit, the answer is a 422
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -36200,7 +38024,8 @@ func (c *Client) EditStatusWithBody(ctx context.Context, id StatusId, contentTyp
 // Replaces the text, content warning, sensitivity, language, and media of a status; the
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
-// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+// article is edited with `editArticle` (422 here).
 // When the server's automated review refuses the edit, the answer is a 422
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -37410,7 +39235,7 @@ func (c *Client) ListVoiceRooms(ctx context.Context, params *ListVoiceRoomsParam
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 // leaves the room the user was in. Invalid settings are a 422.
 // With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+// room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
 // status for a post that cannot be posted. The local followers of the user who see the room
 // get a `voice_room_started` notification.
 //
@@ -37439,7 +39264,7 @@ func (c *Client) OpenVoiceRoomWithBody(ctx context.Context, contentType string, 
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 // leaves the room the user was in. Invalid settings are a 422.
 // With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+// room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
 // status for a post that cannot be posted. The local followers of the user who see the room
 // get a `voice_room_started` notification.
 //
@@ -39351,6 +41176,87 @@ func NewMuteAccountRequestWithBody(server string, id AccountId, contentType stri
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteAccountNoteRequest constructs an http.Request for the DeleteAccountNote method
+func NewDeleteAccountNoteRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/note", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSetAccountNoteRequest calls the generic SetAccountNote builder with application/json body
+func NewSetAccountNoteRequest(server string, id AccountId, body SetAccountNoteJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetAccountNoteRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewSetAccountNoteRequestWithBody constructs an http.Request for the SetAccountNote method, with any body, and a specified content type
+func NewSetAccountNoteRequestWithBody(server string, id AccountId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/note", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -48047,6 +49953,148 @@ func NewMarkAnnouncementReadRequest(server string, id AnnouncementId) (*http.Req
 	return req, nil
 }
 
+// NewCreateArticleRequest calls the generic CreateArticle builder with application/json body
+func NewCreateArticleRequest(server string, params *CreateArticleParams, body CreateArticleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateArticleRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewCreateArticleRequestWithBody constructs an http.Request for the CreateArticle method, with any body, and a specified content type
+func NewCreateArticleRequestWithBody(server string, params *CreateArticleParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/articles")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.IdempotencyKey != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", *params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Idempotency-Key", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewPreviewArticleRequest calls the generic PreviewArticle builder with application/json body
+func NewPreviewArticleRequest(server string, body PreviewArticleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPreviewArticleRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPreviewArticleRequestWithBody constructs an http.Request for the PreviewArticle method, with any body, and a specified content type
+func NewPreviewArticleRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/articles/preview")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewEditArticleRequest calls the generic EditArticle builder with application/json body
+func NewEditArticleRequest(server string, id StatusId, body EditArticleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewEditArticleRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewEditArticleRequestWithBody constructs an http.Request for the EditArticle method, with any body, and a specified content type
+func NewEditArticleRequestWithBody(server string, id StatusId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/articles/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListAuthorizedAppsRequest constructs an http.Request for the ListAuthorizedApps method
 func NewListAuthorizedAppsRequest(server string) (*http.Request, error) {
 	var err error
@@ -49240,6 +51288,685 @@ func NewScheduleDraftRequestWithBody(server string, id DraftId, contentType stri
 	}
 
 	operationPath := fmt.Sprintf("/drafts/%s/schedule", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListEventsRequest constructs an http.Request for the ListEvents method
+func NewListEventsRequest(server string, params *ListEventsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateEventRequest calls the generic CreateEvent builder with application/json body
+func NewCreateEventRequest(server string, body CreateEventJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateEventRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateEventRequestWithBody constructs an http.Request for the CreateEvent method, with any body, and a specified content type
+func NewCreateEventRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetEventRequest constructs an http.Request for the GetEvent method
+func NewGetEventRequest(server string, id EventId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateEventRequest calls the generic UpdateEvent builder with application/json body
+func NewUpdateEventRequest(server string, id EventId, body UpdateEventJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateEventRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewUpdateEventRequestWithBody constructs an http.Request for the UpdateEvent method, with any body, and a specified content type
+func NewUpdateEventRequestWithBody(server string, id EventId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListEventAttendeesRequest constructs an http.Request for the ListEventAttendees method
+func NewListEventAttendeesRequest(server string, id EventId, params *ListEventAttendeesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/attendees", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewRevokeEventAttendeeApprovalRequest constructs an http.Request for the RevokeEventAttendeeApproval method
+func NewRevokeEventAttendeeApprovalRequest(server string, id EventId, accountId EventAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/attendees/%s/approval", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewApproveEventAttendeeRequest constructs an http.Request for the ApproveEventAttendee method
+func NewApproveEventAttendeeRequest(server string, id EventId, accountId EventAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/attendees/%s/approval", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCancelEventRequest calls the generic CancelEvent builder with application/json body
+func NewCancelEventRequest(server string, id EventId, body CancelEventJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCancelEventRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewCancelEventRequestWithBody constructs an http.Request for the CancelEvent method, with any body, and a specified content type
+func NewCancelEventRequestWithBody(server string, id EventId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/cancel", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRemoveEventCoorganizerRequest constructs an http.Request for the RemoveEventCoorganizer method
+func NewRemoveEventCoorganizerRequest(server string, id EventId, accountId EventAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/coorganizers/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAssignEventCoorganizerRequest constructs an http.Request for the AssignEventCoorganizer method
+func NewAssignEventCoorganizerRequest(server string, id EventId, accountId EventAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/coorganizers/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListEventInvitationsRequest constructs an http.Request for the ListEventInvitations method
+func NewListEventInvitationsRequest(server string, id EventId, params *ListEventInvitationsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/invitations", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewInviteToEventRequest calls the generic InviteToEvent builder with application/json body
+func NewInviteToEventRequest(server string, id EventId, body InviteToEventJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewInviteToEventRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewInviteToEventRequestWithBody constructs an http.Request for the InviteToEvent method, with any body, and a specified content type
+func NewInviteToEventRequestWithBody(server string, id EventId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/invitations", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRevokeEventInvitationRequest constructs an http.Request for the RevokeEventInvitation method
+func NewRevokeEventInvitationRequest(server string, id EventId, accountId EventAccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "account_id", accountId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/invitations/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAnswerEventRequest calls the generic AnswerEvent builder with application/json body
+func NewAnswerEventRequest(server string, id EventId, body AnswerEventJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAnswerEventRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAnswerEventRequestWithBody constructs an http.Request for the AnswerEvent method, with any body, and a specified content type
+func NewAnswerEventRequestWithBody(server string, id EventId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/rsvp", pathParam0)
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -57286,6 +60013,39 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /accounts/{id}/mute (the `MuteAccount` operationId).
 	MuteAccountWithResponse(ctx context.Context, id AccountId, body MuteAccountJSONRequestBody, reqEditors ...RequestEditorFn) (*MuteAccountResponse, error)
 
+	// DeleteAccountNoteWithResponse Remove the private note on an account
+	//
+	// Without a note it changes nothing. It also works on an account that blocks the user.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /accounts/{id}/note (the `DeleteAccountNote` operationId).
+	DeleteAccountNoteWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*DeleteAccountNoteResponse, error)
+
+	// SetAccountNoteWithBodyWithResponse Write a private note on an account
+	//
+	// Replaces the viewer's private note on the account, a local or a remote one. Only the
+	// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+	// not leave this server. An empty `note` removes the note. A note on the viewer's own
+	// account is a 422.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+	SetAccountNoteWithBodyWithResponse(ctx context.Context, id AccountId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAccountNoteResponse, error)
+
+	// SetAccountNoteWithResponse Write a private note on an account
+	//
+	// Replaces the viewer's private note on the account, a local or a remote one. Only the
+	// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+	// not leave this server. An empty `note` removes the note. A note on the viewer's own
+	// account is a 422.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+	SetAccountNoteWithResponse(ctx context.Context, id AccountId, body SetAccountNoteJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAccountNoteResponse, error)
+
 	// ListAccountStatusesWithResponse List the posts and boosts of an account
 	//
 	// The account's posts and boosts that the viewer may see, newest first: its public and unlisted posts
@@ -60674,6 +63434,124 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /announcements/{id}/read (the `MarkAnnouncementRead` operationId).
 	MarkAnnouncementReadWithResponse(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*MarkAnnouncementReadResponse, error)
 
+	// CreateArticleWithBodyWithResponse Post an article
+	//
+	// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+	// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+	// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+	// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+	// `getStatus` does.
+	//
+	// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+	// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+	// second level of heading (the title is the first). An image whose destination is
+	// `media:` followed by the ID of one of the user's own uploads that finished processing
+	// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+	// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+	// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+	//
+	// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+	// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+	// posting. An article is never `direct` (422). While the instance lets only some users write
+	// articles (`Instance.article_authoring` is `permission`), a user without the permission
+	// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+	// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+	// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+	// server's automated review refuses the article, nothing is posted and the answer is a 422
+	// `/api/v1/problems/status-rejected`, as for a post.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /articles (the `CreateArticle` operationId).
+	CreateArticleWithBodyWithResponse(ctx context.Context, params *CreateArticleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error)
+
+	// CreateArticleWithResponse Post an article
+	//
+	// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+	// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+	// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+	// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+	// `getStatus` does.
+	//
+	// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+	// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+	// second level of heading (the title is the first). An image whose destination is
+	// `media:` followed by the ID of one of the user's own uploads that finished processing
+	// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+	// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+	// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+	//
+	// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+	// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+	// posting. An article is never `direct` (422). While the instance lets only some users write
+	// articles (`Instance.article_authoring` is `permission`), a user without the permission
+	// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+	// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+	// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+	// server's automated review refuses the article, nothing is posted and the answer is a 422
+	// `/api/v1/problems/status-rejected`, as for a post.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /articles (the `CreateArticle` operationId).
+	CreateArticleWithResponse(ctx context.Context, params *CreateArticleParams, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error)
+
+	// PreviewArticleWithBodyWithResponse Preview the body of an article
+	//
+	// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+	// store it, without storing anything: the same HTML that the published article has, the
+	// summary it would get, and the size and images of the body with their limits. A body over
+	// the limits still renders, so that the editor can say by how much.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+	PreviewArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PreviewArticleResponse, error)
+
+	// PreviewArticleWithResponse Preview the body of an article
+	//
+	// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+	// store it, without storing anything: the same HTML that the published article has, the
+	// summary it would get, and the size and images of the body with their limits. A body over
+	// the limits still renders, so that the editor can say by how much.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+	PreviewArticleWithResponse(ctx context.Context, body PreviewArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*PreviewArticleResponse, error)
+
+	// EditArticleWithBodyWithResponse Edit the authenticated user's article
+	//
+	// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+	// article, checked and rendered as `createArticle` does; the previous revision stays in the
+	// edit history. The visibility never changes, and who may reply to, boost, and quote it
+	// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+	// with `editStatus`), and so is a body over the limits. When the server's automated review
+	// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+	// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+	// may see it and a 404 otherwise.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+	EditArticleWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EditArticleResponse, error)
+
+	// EditArticleWithResponse Edit the authenticated user's article
+	//
+	// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+	// article, checked and rendered as `createArticle` does; the previous revision stays in the
+	// edit history. The visibility never changes, and who may reply to, boost, and quote it
+	// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+	// with `editStatus`), and so is a body over the limits. When the server's automated review
+	// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+	// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+	// may see it and a 404 otherwise.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+	EditArticleWithResponse(ctx context.Context, id StatusId, body EditArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*EditArticleResponse, error)
+
 	// ListAuthorizedAppsWithResponse List the apps the authenticated user authorized
 	//
 	// One entry per client for which the user holds a grant that still works, most recently used
@@ -61087,6 +63965,236 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
 	ScheduleDraftWithResponse(ctx context.Context, id DraftId, body ScheduleDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*ScheduleDraftResponse, error)
 
+	// ListEventsWithResponse List the upcoming events
+	//
+	// The events that the user sees and that have not ended, the nearest start first. A page may
+	// hold fewer events than `limit` and still have a `next_cursor`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /events (the `ListEvents` operationId).
+	ListEventsWithResponse(ctx context.Context, params *ListEventsParams, reqEditors ...RequestEditorFn) (*ListEventsResponse, error)
+
+	// CreateEventWithBodyWithResponse Create an event
+	//
+	// Creates an event that the user organizes, with a fixed date. The user must be a local,
+	// unrestricted user who may create events (the instance setting `event_creators`, or the
+	// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+	// place needs the voice chat on and a user who may host its rooms: a 422
+	// `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+	// (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+	// the past are a 422.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events (the `CreateEvent` operationId).
+	CreateEventWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateEventResponse, error)
+
+	// CreateEventWithResponse Create an event
+	//
+	// Creates an event that the user organizes, with a fixed date. The user must be a local,
+	// unrestricted user who may create events (the instance setting `event_creators`, or the
+	// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+	// place needs the voice chat on and a user who may host its rooms: a 422
+	// `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+	// (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+	// the past are a 422.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events (the `CreateEvent` operationId).
+	CreateEventWithResponse(ctx context.Context, body CreateEventJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateEventResponse, error)
+
+	// GetEventWithResponse Get an event
+	//
+	// The event, as the user sees it: the places that the user does not see are left out. A 404
+	// for an event that the user does not see.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /events/{id} (the `GetEvent` operationId).
+	GetEventWithResponse(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*GetEventResponse, error)
+
+	// UpdateEventWithBodyWithResponse Change an event
+	//
+	// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+	// `voice` place needs the organizer to be able to host rooms (a 422
+	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /events/{id} (the `UpdateEvent` operationId).
+	UpdateEventWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateEventResponse, error)
+
+	// UpdateEventWithResponse Change an event
+	//
+	// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+	// `voice` place needs the organizer to be able to host rooms (a 422
+	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /events/{id} (the `UpdateEvent` operationId).
+	UpdateEventWithResponse(ctx context.Context, id EventId, body UpdateEventJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateEventResponse, error)
+
+	// ListEventAttendeesWithResponse List the attendees of an event
+	//
+	// The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
+	// sees the event.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /events/{id}/attendees (the `ListEventAttendees` operationId).
+	ListEventAttendeesWithResponse(ctx context.Context, id EventId, params *ListEventAttendeesParams, reqEditors ...RequestEditorFn) (*ListEventAttendeesResponse, error)
+
+	// RevokeEventAttendeeApprovalWithResponse Revoke the approval of an attendee of an event
+	//
+	// Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
+	// did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /events/{id}/attendees/{account_id}/approval (the `RevokeEventAttendeeApproval` operationId).
+	RevokeEventAttendeeApprovalWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*RevokeEventAttendeeApprovalResponse, error)
+
+	// ApproveEventAttendeeWithResponse Approve an attendee of an event
+	//
+	// Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
+	// co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
+	// the approved. An approval ends when the attendee answers `declined`. A 422
+	// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
+	ApproveEventAttendeeWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*ApproveEventAttendeeResponse, error)
+
+	// CancelEventWithBodyWithResponse Cancel an event
+	//
+	// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+	// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
+	CancelEventWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelEventResponse, error)
+
+	// CancelEventWithResponse Cancel an event
+	//
+	// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+	// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
+	CancelEventWithResponse(ctx context.Context, id EventId, body CancelEventJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelEventResponse, error)
+
+	// RemoveEventCoorganizerWithResponse Remove a co-organizer of an event
+	//
+	// Removes a co-organizer of the event, by its organizer. A 403
+	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /events/{id}/coorganizers/{account_id} (the `RemoveEventCoorganizer` operationId).
+	RemoveEventCoorganizerWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*RemoveEventCoorganizerResponse, error)
+
+	// AssignEventCoorganizerWithResponse Name a co-organizer of an event
+	//
+	// Names a local user a co-organizer of the event, by its organizer: a co-organizer changes the
+	// event, invites, and approves attendees, and sees every place. An event has at most 3
+	// co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
+	// `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
+	// organizer, or is in a block relation with the organizer or a co-organizer. A 403
+	// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /events/{id}/coorganizers/{account_id} (the `AssignEventCoorganizer` operationId).
+	AssignEventCoorganizerWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*AssignEventCoorganizerResponse, error)
+
+	// ListEventInvitationsWithResponse List the invitations of an event
+	//
+	// The invitations of the event that were not revoked, oldest first, for the organizer and the
+	// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /events/{id}/invitations (the `ListEventInvitations` operationId).
+	ListEventInvitationsWithResponse(ctx context.Context, id EventId, params *ListEventInvitationsParams, reqEditors ...RequestEditorFn) (*ListEventInvitationsResponse, error)
+
+	// InviteToEventWithBodyWithResponse Invite a user to an event
+	//
+	// Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+	// from now on, whatever its visibility. A user is invited to an event once (a 409
+	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events/{id}/invitations (the `InviteToEvent` operationId).
+	InviteToEventWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*InviteToEventResponse, error)
+
+	// InviteToEventWithResponse Invite a user to an event
+	//
+	// Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+	// from now on, whatever its visibility. A user is invited to an event once (a 409
+	// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+	// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+	// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+	// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events/{id}/invitations (the `InviteToEvent` operationId).
+	InviteToEventWithResponse(ctx context.Context, id EventId, body InviteToEventJSONRequestBody, reqEditors ...RequestEditorFn) (*InviteToEventResponse, error)
+
+	// RevokeEventInvitationWithResponse Revoke an invitation to an event
+	//
+	// Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
+	// only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
+	// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /events/{id}/invitations/{account_id} (the `RevokeEventInvitation` operationId).
+	RevokeEventInvitationWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*RevokeEventInvitationResponse, error)
+
+	// AnswerEventWithBodyWithResponse Answer an event
+	//
+	// Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+	// starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+	// `declined` are never refused. `declined` ends an approval. A 409
+	// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /events/{id}/rsvp (the `AnswerEvent` operationId).
+	AnswerEventWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AnswerEventResponse, error)
+
+	// AnswerEventWithResponse Answer an event
+	//
+	// Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+	// starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+	// `declined` are never refused. `declined` ends an approval. A 409
+	// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /events/{id}/rsvp (the `AnswerEvent` operationId).
+	AnswerEventWithResponse(ctx context.Context, id EventId, body AnswerEventJSONRequestBody, reqEditors ...RequestEditorFn) (*AnswerEventResponse, error)
+
 	// ListDataExportsWithResponse List the authenticated user's data exports
 	//
 	// Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -61102,7 +64210,9 @@ type ClientWithResponsesInterface interface {
 	// Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 	// `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 	// activities), `moderation.json` (the moderation actions on the account, its appeals, and
-	// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+	// the reports it filed), `keyword_filters.json` (the user's keyword filters),
+	// `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+	// URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
 	// `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
 	// `pending` until the archive is built. While
 	// another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -62837,7 +65947,8 @@ type ClientWithResponsesInterface interface {
 
 	// GetStatusWithResponse Get a status
 	//
-	// A status that the viewer may not see is a 404, the same as a missing one.
+	// A status that the viewer may not see is a 404, the same as a missing one. An article comes
+	// with its body in `content`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -62849,7 +65960,8 @@ type ClientWithResponsesInterface interface {
 	// Replaces the text, content warning, sensitivity, language, and media of a status; the
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
-	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+	// article is edited with `editArticle` (422 here).
 	// When the server's automated review refuses the edit, the answer is a 422
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -62865,7 +65977,8 @@ type ClientWithResponsesInterface interface {
 	// Replaces the text, content warning, sensitivity, language, and media of a status; the
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
-	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+	// article is edited with `editArticle` (422 here).
 	// When the server's automated review refuses the edit, the answer is a 422
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -63589,7 +66702,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 	// leaves the room the user was in. Invalid settings are a 422.
 	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+	// room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
 	// status for a post that cannot be posted. The local followers of the user who see the room
 	// get a `voice_room_started` notification.
 	//
@@ -63608,7 +66721,7 @@ type ClientWithResponsesInterface interface {
 	// `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 	// leaves the room the user was in. Invalid settings are a 422.
 	// With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-	// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+	// room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
 	// status for a post that cannot be posted. The local followers of the user who see the room
 	// get a `voice_room_started` notification.
 	//
@@ -65860,6 +68973,136 @@ func (r MuteAccountResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r MuteAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeleteAccountNoteResponse200Headers the declared response headers of an HTTP 200 response for DeleteAccountNote
+type DeleteAccountNoteResponse200Headers struct {
+	CacheControl *string
+}
+
+// DeleteAccountNoteResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteAccountNote
+type DeleteAccountNoteResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeleteAccountNoteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *DeleteAccountNoteResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeleteAccountNoteResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r DeleteAccountNoteResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeleteAccountNoteResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteAccountNoteResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteAccountNoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteAccountNoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteAccountNoteResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SetAccountNoteResponse200Headers the declared response headers of an HTTP 200 response for SetAccountNote
+type SetAccountNoteResponse200Headers struct {
+	CacheControl *string
+}
+
+// SetAccountNoteResponseDefaultHeaders the declared response headers of an HTTP default response for SetAccountNote
+type SetAccountNoteResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SetAccountNoteResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Relationship
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SetAccountNoteResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SetAccountNoteResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetAccountNoteResponse) GetJSON200() *Relationship {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SetAccountNoteResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SetAccountNoteResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetAccountNoteResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetAccountNoteResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetAccountNoteResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -78659,6 +81902,216 @@ func (r MarkAnnouncementReadResponse) ContentType() string {
 	return ""
 }
 
+// CreateArticleResponse201Headers the declared response headers of an HTTP 201 response for CreateArticle
+type CreateArticleResponse201Headers struct {
+	CacheControl *string
+}
+
+// CreateArticleResponse422Headers the declared response headers of an HTTP 422 response for CreateArticle
+type CreateArticleResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// CreateArticleResponseDefaultHeaders the declared response headers of an HTTP default response for CreateArticle
+type CreateArticleResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Status
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *StatusRejectedProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateArticleResponse201Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *CreateArticleResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateArticleResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateArticleResponse) GetJSON201() *Status {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r CreateArticleResponse) GetApplicationproblemJSON422() *StatusRejectedProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateArticleResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateArticleResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateArticleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// PreviewArticleResponse200Headers the declared response headers of an HTTP 200 response for PreviewArticle
+type PreviewArticleResponse200Headers struct {
+	CacheControl *string
+}
+
+// PreviewArticleResponseDefaultHeaders the declared response headers of an HTTP default response for PreviewArticle
+type PreviewArticleResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type PreviewArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ArticlePreview
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *PreviewArticleResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *PreviewArticleResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r PreviewArticleResponse) GetJSON200() *ArticlePreview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r PreviewArticleResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r PreviewArticleResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r PreviewArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PreviewArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PreviewArticleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// EditArticleResponse200Headers the declared response headers of an HTTP 200 response for EditArticle
+type EditArticleResponse200Headers struct {
+	CacheControl *string
+}
+
+// EditArticleResponseDefaultHeaders the declared response headers of an HTTP default response for EditArticle
+type EditArticleResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type EditArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Status
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *EditArticleResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *EditArticleResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r EditArticleResponse) GetJSON200() *Status {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r EditArticleResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r EditArticleResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r EditArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EditArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EditArticleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListAuthorizedAppsResponse200Headers the declared response headers of an HTTP 200 response for ListAuthorizedApps
 type ListAuthorizedAppsResponse200Headers struct {
 	CacheControl *string
@@ -80385,6 +83838,902 @@ func (r ScheduleDraftResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ScheduleDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListEventsResponse200Headers the declared response headers of an HTTP 200 response for ListEvents
+type ListEventsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListEventsResponseDefaultHeaders the declared response headers of an HTTP default response for ListEvents
+type ListEventsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListEventsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListEventsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListEventsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListEventsResponse) GetJSON200() *EventPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListEventsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListEventsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListEventsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListEventsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListEventsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CreateEventResponse201Headers the declared response headers of an HTTP 201 response for CreateEvent
+type CreateEventResponse201Headers struct {
+	CacheControl *string
+}
+
+// CreateEventResponseDefaultHeaders the declared response headers of an HTTP default response for CreateEvent
+type CreateEventResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateEventResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Event
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateEventResponse201Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateEventResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateEventResponse) GetJSON201() *Event {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateEventResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateEventResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateEventResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateEventResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateEventResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetEventResponse200Headers the declared response headers of an HTTP 200 response for GetEvent
+type GetEventResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetEventResponseDefaultHeaders the declared response headers of an HTTP default response for GetEvent
+type GetEventResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetEventResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Event
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetEventResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetEventResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetEventResponse) GetJSON200() *Event {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetEventResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetEventResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetEventResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetEventResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetEventResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateEventResponse200Headers the declared response headers of an HTTP 200 response for UpdateEvent
+type UpdateEventResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateEventResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateEvent
+type UpdateEventResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateEventResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Event
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateEventResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateEventResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateEventResponse) GetJSON200() *Event {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateEventResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateEventResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateEventResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateEventResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateEventResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListEventAttendeesResponse200Headers the declared response headers of an HTTP 200 response for ListEventAttendees
+type ListEventAttendeesResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListEventAttendeesResponseDefaultHeaders the declared response headers of an HTTP default response for ListEventAttendees
+type ListEventAttendeesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListEventAttendeesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventAttendeePage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListEventAttendeesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListEventAttendeesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListEventAttendeesResponse) GetJSON200() *EventAttendeePage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListEventAttendeesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListEventAttendeesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListEventAttendeesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListEventAttendeesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListEventAttendeesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RevokeEventAttendeeApprovalResponse200Headers the declared response headers of an HTTP 200 response for RevokeEventAttendeeApproval
+type RevokeEventAttendeeApprovalResponse200Headers struct {
+	CacheControl *string
+}
+
+// RevokeEventAttendeeApprovalResponseDefaultHeaders the declared response headers of an HTTP default response for RevokeEventAttendeeApproval
+type RevokeEventAttendeeApprovalResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RevokeEventAttendeeApprovalResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventAttendee
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RevokeEventAttendeeApprovalResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RevokeEventAttendeeApprovalResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RevokeEventAttendeeApprovalResponse) GetJSON200() *EventAttendee {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RevokeEventAttendeeApprovalResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RevokeEventAttendeeApprovalResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeEventAttendeeApprovalResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeEventAttendeeApprovalResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RevokeEventAttendeeApprovalResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ApproveEventAttendeeResponse200Headers the declared response headers of an HTTP 200 response for ApproveEventAttendee
+type ApproveEventAttendeeResponse200Headers struct {
+	CacheControl *string
+}
+
+// ApproveEventAttendeeResponseDefaultHeaders the declared response headers of an HTTP default response for ApproveEventAttendee
+type ApproveEventAttendeeResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ApproveEventAttendeeResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventAttendee
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ApproveEventAttendeeResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ApproveEventAttendeeResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ApproveEventAttendeeResponse) GetJSON200() *EventAttendee {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ApproveEventAttendeeResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ApproveEventAttendeeResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ApproveEventAttendeeResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ApproveEventAttendeeResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ApproveEventAttendeeResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CancelEventResponse200Headers the declared response headers of an HTTP 200 response for CancelEvent
+type CancelEventResponse200Headers struct {
+	CacheControl *string
+}
+
+// CancelEventResponseDefaultHeaders the declared response headers of an HTTP default response for CancelEvent
+type CancelEventResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CancelEventResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Event
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *CancelEventResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CancelEventResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r CancelEventResponse) GetJSON200() *Event {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CancelEventResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CancelEventResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CancelEventResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CancelEventResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CancelEventResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RemoveEventCoorganizerResponse200Headers the declared response headers of an HTTP 200 response for RemoveEventCoorganizer
+type RemoveEventCoorganizerResponse200Headers struct {
+	CacheControl *string
+}
+
+// RemoveEventCoorganizerResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveEventCoorganizer
+type RemoveEventCoorganizerResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RemoveEventCoorganizerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Event
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RemoveEventCoorganizerResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RemoveEventCoorganizerResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RemoveEventCoorganizerResponse) GetJSON200() *Event {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RemoveEventCoorganizerResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveEventCoorganizerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveEventCoorganizerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveEventCoorganizerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveEventCoorganizerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// AssignEventCoorganizerResponse200Headers the declared response headers of an HTTP 200 response for AssignEventCoorganizer
+type AssignEventCoorganizerResponse200Headers struct {
+	CacheControl *string
+}
+
+// AssignEventCoorganizerResponseDefaultHeaders the declared response headers of an HTTP default response for AssignEventCoorganizer
+type AssignEventCoorganizerResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type AssignEventCoorganizerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Event
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *AssignEventCoorganizerResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *AssignEventCoorganizerResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AssignEventCoorganizerResponse) GetJSON200() *Event {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AssignEventCoorganizerResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AssignEventCoorganizerResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AssignEventCoorganizerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AssignEventCoorganizerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AssignEventCoorganizerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListEventInvitationsResponse200Headers the declared response headers of an HTTP 200 response for ListEventInvitations
+type ListEventInvitationsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListEventInvitationsResponseDefaultHeaders the declared response headers of an HTTP default response for ListEventInvitations
+type ListEventInvitationsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListEventInvitationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventInvitationPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListEventInvitationsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListEventInvitationsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListEventInvitationsResponse) GetJSON200() *EventInvitationPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListEventInvitationsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListEventInvitationsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListEventInvitationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListEventInvitationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListEventInvitationsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// InviteToEventResponse201Headers the declared response headers of an HTTP 201 response for InviteToEvent
+type InviteToEventResponse201Headers struct {
+	CacheControl *string
+}
+
+// InviteToEventResponseDefaultHeaders the declared response headers of an HTTP default response for InviteToEvent
+type InviteToEventResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type InviteToEventResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *EventInvitation
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *InviteToEventResponse201Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *InviteToEventResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r InviteToEventResponse) GetJSON201() *EventInvitation {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r InviteToEventResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r InviteToEventResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r InviteToEventResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r InviteToEventResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r InviteToEventResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RevokeEventInvitationResponseDefaultHeaders the declared response headers of an HTTP default response for RevokeEventInvitation
+type RevokeEventInvitationResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RevokeEventInvitationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RevokeEventInvitationResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RevokeEventInvitationResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RevokeEventInvitationResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RevokeEventInvitationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RevokeEventInvitationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RevokeEventInvitationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// AnswerEventResponse200Headers the declared response headers of an HTTP 200 response for AnswerEvent
+type AnswerEventResponse200Headers struct {
+	CacheControl *string
+}
+
+// AnswerEventResponseDefaultHeaders the declared response headers of an HTTP default response for AnswerEvent
+type AnswerEventResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type AnswerEventResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Event
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *AnswerEventResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *AnswerEventResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AnswerEventResponse) GetJSON200() *Event {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AnswerEventResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AnswerEventResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AnswerEventResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AnswerEventResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AnswerEventResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -92294,6 +96643,57 @@ func (c *ClientWithResponses) MuteAccountWithResponse(ctx context.Context, id Ac
 	return ParseMuteAccountResponse(rsp)
 }
 
+// DeleteAccountNoteWithResponse Remove the private note on an account
+//
+// Without a note it changes nothing. It also works on an account that blocks the user.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /accounts/{id}/note (the `DeleteAccountNote` operationId).
+func (c *ClientWithResponses) DeleteAccountNoteWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*DeleteAccountNoteResponse, error) {
+	rsp, err := c.DeleteAccountNote(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteAccountNoteResponse(rsp)
+}
+
+// SetAccountNoteWithBodyWithResponse Write a private note on an account
+//
+// Replaces the viewer's private note on the account, a local or a remote one. Only the
+// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+// not leave this server. An empty `note` removes the note. A note on the viewer's own
+// account is a 422.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+func (c *ClientWithResponses) SetAccountNoteWithBodyWithResponse(ctx context.Context, id AccountId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetAccountNoteResponse, error) {
+	rsp, err := c.SetAccountNoteWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetAccountNoteResponse(rsp)
+}
+
+// SetAccountNoteWithResponse Write a private note on an account
+//
+// Replaces the viewer's private note on the account, a local or a remote one. Only the
+// viewer reads the note (`Relationship.note`); the account is not told, and the note does
+// not leave this server. An empty `note` removes the note. A note on the viewer's own
+// account is a 422.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /accounts/{id}/note (the `SetAccountNote` operationId).
+func (c *ClientWithResponses) SetAccountNoteWithResponse(ctx context.Context, id AccountId, body SetAccountNoteJSONRequestBody, reqEditors ...RequestEditorFn) (*SetAccountNoteResponse, error) {
+	rsp, err := c.SetAccountNote(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetAccountNoteResponse(rsp)
+}
+
 // ListAccountStatusesWithResponse List the posts and boosts of an account
 //
 // The account's posts and boosts that the viewer may see, newest first: its public and unlisted posts
@@ -97182,6 +101582,160 @@ func (c *ClientWithResponses) MarkAnnouncementReadWithResponse(ctx context.Conte
 	return ParseMarkAnnouncementReadResponse(rsp)
 }
 
+// CreateArticleWithBodyWithResponse Post an article
+//
+// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+// `getStatus` does.
+//
+// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+// second level of heading (the title is the first). An image whose destination is
+// `media:` followed by the ID of one of the user's own uploads that finished processing
+// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+//
+// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+// posting. An article is never `direct` (422). While the instance lets only some users write
+// articles (`Instance.article_authoring` is `permission`), a user without the permission
+// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+// server's automated review refuses the article, nothing is posted and the answer is a 422
+// `/api/v1/problems/status-rejected`, as for a post.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /articles (the `CreateArticle` operationId).
+func (c *ClientWithResponses) CreateArticleWithBodyWithResponse(ctx context.Context, params *CreateArticleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error) {
+	rsp, err := c.CreateArticleWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateArticleResponse(rsp)
+}
+
+// CreateArticleWithResponse Post an article
+//
+// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+// `getStatus` does.
+//
+// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+// second level of heading (the title is the first). An image whose destination is
+// `media:` followed by the ID of one of the user's own uploads that finished processing
+// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+//
+// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+// posting. An article is never `direct` (422). While the instance lets only some users write
+// articles (`Instance.article_authoring` is `permission`), a user without the permission
+// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+// server's automated review refuses the article, nothing is posted and the answer is a 422
+// `/api/v1/problems/status-rejected`, as for a post.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /articles (the `CreateArticle` operationId).
+func (c *ClientWithResponses) CreateArticleWithResponse(ctx context.Context, params *CreateArticleParams, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error) {
+	rsp, err := c.CreateArticle(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateArticleResponse(rsp)
+}
+
+// PreviewArticleWithBodyWithResponse Preview the body of an article
+//
+// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+// store it, without storing anything: the same HTML that the published article has, the
+// summary it would get, and the size and images of the body with their limits. A body over
+// the limits still renders, so that the editor can say by how much.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+func (c *ClientWithResponses) PreviewArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PreviewArticleResponse, error) {
+	rsp, err := c.PreviewArticleWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePreviewArticleResponse(rsp)
+}
+
+// PreviewArticleWithResponse Preview the body of an article
+//
+// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+// store it, without storing anything: the same HTML that the published article has, the
+// summary it would get, and the size and images of the body with their limits. A body over
+// the limits still renders, so that the editor can say by how much.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+func (c *ClientWithResponses) PreviewArticleWithResponse(ctx context.Context, body PreviewArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*PreviewArticleResponse, error) {
+	rsp, err := c.PreviewArticle(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePreviewArticleResponse(rsp)
+}
+
+// EditArticleWithBodyWithResponse Edit the authenticated user's article
+//
+// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+// article, checked and rendered as `createArticle` does; the previous revision stays in the
+// edit history. The visibility never changes, and who may reply to, boost, and quote it
+// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+// with `editStatus`), and so is a body over the limits. When the server's automated review
+// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+// may see it and a 404 otherwise.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+func (c *ClientWithResponses) EditArticleWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EditArticleResponse, error) {
+	rsp, err := c.EditArticleWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEditArticleResponse(rsp)
+}
+
+// EditArticleWithResponse Edit the authenticated user's article
+//
+// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+// article, checked and rendered as `createArticle` does; the previous revision stays in the
+// edit history. The visibility never changes, and who may reply to, boost, and quote it
+// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+// with `editStatus`), and so is a body over the limits. When the server's automated review
+// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+// may see it and a 404 otherwise.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+func (c *ClientWithResponses) EditArticleWithResponse(ctx context.Context, id StatusId, body EditArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*EditArticleResponse, error) {
+	rsp, err := c.EditArticle(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEditArticleResponse(rsp)
+}
+
 // ListAuthorizedAppsWithResponse List the apps the authenticated user authorized
 //
 // One entry per client for which the user holds a grant that still works, most recently used
@@ -97793,6 +102347,350 @@ func (c *ClientWithResponses) ScheduleDraftWithResponse(ctx context.Context, id 
 	return ParseScheduleDraftResponse(rsp)
 }
 
+// ListEventsWithResponse List the upcoming events
+//
+// The events that the user sees and that have not ended, the nearest start first. A page may
+// hold fewer events than `limit` and still have a `next_cursor`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /events (the `ListEvents` operationId).
+func (c *ClientWithResponses) ListEventsWithResponse(ctx context.Context, params *ListEventsParams, reqEditors ...RequestEditorFn) (*ListEventsResponse, error) {
+	rsp, err := c.ListEvents(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListEventsResponse(rsp)
+}
+
+// CreateEventWithBodyWithResponse Create an event
+//
+// Creates an event that the user organizes, with a fixed date. The user must be a local,
+// unrestricted user who may create events (the instance setting `event_creators`, or the
+// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+// place needs the voice chat on and a user who may host its rooms: a 422
+// `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+// (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+// the past are a 422.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events (the `CreateEvent` operationId).
+func (c *ClientWithResponses) CreateEventWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateEventResponse, error) {
+	rsp, err := c.CreateEventWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateEventResponse(rsp)
+}
+
+// CreateEventWithResponse Create an event
+//
+// Creates an event that the user organizes, with a fixed date. The user must be a local,
+// unrestricted user who may create events (the instance setting `event_creators`, or the
+// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+// place needs the voice chat on and a user who may host its rooms: a 422
+// `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+// (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+// the past are a 422.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events (the `CreateEvent` operationId).
+func (c *ClientWithResponses) CreateEventWithResponse(ctx context.Context, body CreateEventJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateEventResponse, error) {
+	rsp, err := c.CreateEvent(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateEventResponse(rsp)
+}
+
+// GetEventWithResponse Get an event
+//
+// The event, as the user sees it: the places that the user does not see are left out. A 404
+// for an event that the user does not see.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /events/{id} (the `GetEvent` operationId).
+func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*GetEventResponse, error) {
+	rsp, err := c.GetEvent(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetEventResponse(rsp)
+}
+
+// UpdateEventWithBodyWithResponse Change an event
+//
+// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+// `voice` place needs the organizer to be able to host rooms (a 422
+// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /events/{id} (the `UpdateEvent` operationId).
+func (c *ClientWithResponses) UpdateEventWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateEventResponse, error) {
+	rsp, err := c.UpdateEventWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateEventResponse(rsp)
+}
+
+// UpdateEventWithResponse Change an event
+//
+// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+// `voice` place needs the organizer to be able to host rooms (a 422
+// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /events/{id} (the `UpdateEvent` operationId).
+func (c *ClientWithResponses) UpdateEventWithResponse(ctx context.Context, id EventId, body UpdateEventJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateEventResponse, error) {
+	rsp, err := c.UpdateEvent(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateEventResponse(rsp)
+}
+
+// ListEventAttendeesWithResponse List the attendees of an event
+//
+// The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
+// sees the event.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /events/{id}/attendees (the `ListEventAttendees` operationId).
+func (c *ClientWithResponses) ListEventAttendeesWithResponse(ctx context.Context, id EventId, params *ListEventAttendeesParams, reqEditors ...RequestEditorFn) (*ListEventAttendeesResponse, error) {
+	rsp, err := c.ListEventAttendees(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListEventAttendeesResponse(rsp)
+}
+
+// RevokeEventAttendeeApprovalWithResponse Revoke the approval of an attendee of an event
+//
+// Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
+// did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /events/{id}/attendees/{account_id}/approval (the `RevokeEventAttendeeApproval` operationId).
+func (c *ClientWithResponses) RevokeEventAttendeeApprovalWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*RevokeEventAttendeeApprovalResponse, error) {
+	rsp, err := c.RevokeEventAttendeeApproval(ctx, id, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeEventAttendeeApprovalResponse(rsp)
+}
+
+// ApproveEventAttendeeWithResponse Approve an attendee of an event
+//
+// Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
+// co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
+// the approved. An approval ends when the attendee answers `declined`. A 422
+// `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
+func (c *ClientWithResponses) ApproveEventAttendeeWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*ApproveEventAttendeeResponse, error) {
+	rsp, err := c.ApproveEventAttendee(ctx, id, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseApproveEventAttendeeResponse(rsp)
+}
+
+// CancelEventWithBodyWithResponse Cancel an event
+//
+// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
+func (c *ClientWithResponses) CancelEventWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CancelEventResponse, error) {
+	rsp, err := c.CancelEventWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelEventResponse(rsp)
+}
+
+// CancelEventWithResponse Cancel an event
+//
+// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+// more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+// A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
+func (c *ClientWithResponses) CancelEventWithResponse(ctx context.Context, id EventId, body CancelEventJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelEventResponse, error) {
+	rsp, err := c.CancelEvent(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCancelEventResponse(rsp)
+}
+
+// RemoveEventCoorganizerWithResponse Remove a co-organizer of an event
+//
+// Removes a co-organizer of the event, by its organizer. A 403
+// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /events/{id}/coorganizers/{account_id} (the `RemoveEventCoorganizer` operationId).
+func (c *ClientWithResponses) RemoveEventCoorganizerWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*RemoveEventCoorganizerResponse, error) {
+	rsp, err := c.RemoveEventCoorganizer(ctx, id, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveEventCoorganizerResponse(rsp)
+}
+
+// AssignEventCoorganizerWithResponse Name a co-organizer of an event
+//
+// Names a local user a co-organizer of the event, by its organizer: a co-organizer changes the
+// event, invites, and approves attendees, and sees every place. An event has at most 3
+// co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
+// `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
+// organizer, or is in a block relation with the organizer or a co-organizer. A 403
+// `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /events/{id}/coorganizers/{account_id} (the `AssignEventCoorganizer` operationId).
+func (c *ClientWithResponses) AssignEventCoorganizerWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*AssignEventCoorganizerResponse, error) {
+	rsp, err := c.AssignEventCoorganizer(ctx, id, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAssignEventCoorganizerResponse(rsp)
+}
+
+// ListEventInvitationsWithResponse List the invitations of an event
+//
+// The invitations of the event that were not revoked, oldest first, for the organizer and the
+// co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /events/{id}/invitations (the `ListEventInvitations` operationId).
+func (c *ClientWithResponses) ListEventInvitationsWithResponse(ctx context.Context, id EventId, params *ListEventInvitationsParams, reqEditors ...RequestEditorFn) (*ListEventInvitationsResponse, error) {
+	rsp, err := c.ListEventInvitations(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListEventInvitationsResponse(rsp)
+}
+
+// InviteToEventWithBodyWithResponse Invite a user to an event
+//
+// Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+// from now on, whatever its visibility. A user is invited to an event once (a 409
+// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events/{id}/invitations (the `InviteToEvent` operationId).
+func (c *ClientWithResponses) InviteToEventWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*InviteToEventResponse, error) {
+	rsp, err := c.InviteToEventWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseInviteToEventResponse(rsp)
+}
+
+// InviteToEventWithResponse Invite a user to an event
+//
+// Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+// from now on, whatever its visibility. A user is invited to an event once (a 409
+// `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+// `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+// the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+// most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events/{id}/invitations (the `InviteToEvent` operationId).
+func (c *ClientWithResponses) InviteToEventWithResponse(ctx context.Context, id EventId, body InviteToEventJSONRequestBody, reqEditors ...RequestEditorFn) (*InviteToEventResponse, error) {
+	rsp, err := c.InviteToEvent(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseInviteToEventResponse(rsp)
+}
+
+// RevokeEventInvitationWithResponse Revoke an invitation to an event
+//
+// Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
+// only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
+// invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /events/{id}/invitations/{account_id} (the `RevokeEventInvitation` operationId).
+func (c *ClientWithResponses) RevokeEventInvitationWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*RevokeEventInvitationResponse, error) {
+	rsp, err := c.RevokeEventInvitation(ctx, id, accountId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRevokeEventInvitationResponse(rsp)
+}
+
+// AnswerEventWithBodyWithResponse Answer an event
+//
+// Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+// starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+// `declined` are never refused. `declined` ends an approval. A 409
+// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /events/{id}/rsvp (the `AnswerEvent` operationId).
+func (c *ClientWithResponses) AnswerEventWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AnswerEventResponse, error) {
+	rsp, err := c.AnswerEventWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAnswerEventResponse(rsp)
+}
+
+// AnswerEventWithResponse Answer an event
+//
+// Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+// starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+// `declined` are never refused. `declined` ends an approval. A 409
+// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /events/{id}/rsvp (the `AnswerEvent` operationId).
+func (c *ClientWithResponses) AnswerEventWithResponse(ctx context.Context, id EventId, body AnswerEventJSONRequestBody, reqEditors ...RequestEditorFn) (*AnswerEventResponse, error) {
+	rsp, err := c.AnswerEvent(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAnswerEventResponse(rsp)
+}
+
 // ListDataExportsWithResponse List the authenticated user's data exports
 //
 // Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -97814,7 +102712,9 @@ func (c *ClientWithResponses) ListDataExportsWithResponse(ctx context.Context, r
 // Starts building a ZIP archive of the user's data: `actor.json` (the actor),
 // `outbox.json` (every post as an ActivityStreams `OrderedCollection` of `Create`
 // activities), `moderation.json` (the moderation actions on the account, its appeals, and
-// the reports it filed), and the CSV files of `exportCsv` (`following_accounts.csv`,
+// the reports it filed), `keyword_filters.json` (the user's keyword filters),
+// `account_notes.json` (the user's private notes on accounts, with each account's ID and actor
+// URI), and the CSV files of `exportCsv` (`following_accounts.csv`,
 // `blocked_accounts.csv`, `muted_accounts.csv`, `blocked_domains.csv`, `bookmarks.csv`). The export is
 // `pending` until the archive is built. While
 // another export is `pending` the request is a 409 `/api/v1/problems/export-in-progress`;
@@ -100317,7 +105217,8 @@ func (c *ClientWithResponses) DeleteStatusWithResponse(ctx context.Context, id S
 
 // GetStatusWithResponse Get a status
 //
-// A status that the viewer may not see is a 404, the same as a missing one.
+// A status that the viewer may not see is a 404, the same as a missing one. An article comes
+// with its body in `content`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -100335,7 +105236,8 @@ func (c *ClientWithResponses) GetStatusWithResponse(ctx context.Context, id Stat
 // Replaces the text, content warning, sensitivity, language, and media of a status; the
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
-// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+// article is edited with `editArticle` (422 here).
 // When the server's automated review refuses the edit, the answer is a 422
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -100357,7 +105259,8 @@ func (c *ClientWithResponses) EditStatusWithBodyWithResponse(ctx context.Context
 // Replaces the text, content warning, sensitivity, language, and media of a status; the
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
-// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+// article is edited with `editArticle` (422 here).
 // When the server's automated review refuses the edit, the answer is a 422
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -101417,7 +106320,7 @@ func (c *ClientWithResponses) ListVoiceRoomsWithResponse(ctx context.Context, pa
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 // leaves the room the user was in. Invalid settings are a 422.
 // With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+// room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
 // status for a post that cannot be posted. The local followers of the user who see the room
 // get a `voice_room_started` notification.
 //
@@ -101442,7 +106345,7 @@ func (c *ClientWithResponses) OpenVoiceRoomWithBodyWithResponse(ctx context.Cont
 // `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
 // leaves the room the user was in. Invalid settings are a 422.
 // With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-// room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+// room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
 // status for a post that cannot be posted. The local followers of the user who see the room
 // get a `voice_room_started` notification.
 //
@@ -104223,6 +109126,160 @@ func ParseMuteAccountResponse(rsp *http.Response) (*MuteAccountResponse, error) 
 		response.Headers200 = &headers
 	case true:
 		var headers MuteAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeleteAccountNoteResponse parses an HTTP response from a DeleteAccountNoteWithResponse call
+func ParseDeleteAccountNoteResponse(rsp *http.Response) (*DeleteAccountNoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteAccountNoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers DeleteAccountNoteResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers DeleteAccountNoteResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSetAccountNoteResponse parses an HTTP response from a SetAccountNoteWithResponse call
+func ParseSetAccountNoteResponse(rsp *http.Response) (*SetAccountNoteResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetAccountNoteResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Relationship
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SetAccountNoteResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers SetAccountNoteResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -119636,6 +124693,261 @@ func ParseMarkAnnouncementReadResponse(rsp *http.Response) (*MarkAnnouncementRea
 	return response, nil
 }
 
+// ParseCreateArticleResponse parses an HTTP response from a CreateArticleWithResponse call
+func ParseCreateArticleResponse(rsp *http.Response) (*CreateArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Status
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StatusRejectedProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers CreateArticleResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case rsp.StatusCode == 422:
+		var headers CreateArticleResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers CreateArticleResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParsePreviewArticleResponse parses an HTTP response from a PreviewArticleWithResponse call
+func ParsePreviewArticleResponse(rsp *http.Response) (*PreviewArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PreviewArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArticlePreview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers PreviewArticleResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers PreviewArticleResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseEditArticleResponse parses an HTTP response from a EditArticleWithResponse call
+func ParseEditArticleResponse(rsp *http.Response) (*EditArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EditArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Status
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers EditArticleResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers EditArticleResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseListAuthorizedAppsResponse parses an HTTP response from a ListAuthorizedAppsWithResponse call
 func ParseListAuthorizedAppsResponse(rsp *http.Response) (*ListAuthorizedAppsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -121697,6 +127009,1070 @@ func ParseScheduleDraftResponse(rsp *http.Response) (*ScheduleDraftResponse, err
 		response.Headers200 = &headers
 	case true:
 		var headers ScheduleDraftResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListEventsResponse parses an HTTP response from a ListEventsWithResponse call
+func ParseListEventsResponse(rsp *http.Response) (*ListEventsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListEventsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListEventsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListEventsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCreateEventResponse parses an HTTP response from a CreateEventWithResponse call
+func ParseCreateEventResponse(rsp *http.Response) (*CreateEventResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateEventResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers CreateEventResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case true:
+		var headers CreateEventResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetEventResponse parses an HTTP response from a GetEventWithResponse call
+func ParseGetEventResponse(rsp *http.Response) (*GetEventResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetEventResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetEventResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetEventResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateEventResponse parses an HTTP response from a UpdateEventWithResponse call
+func ParseUpdateEventResponse(rsp *http.Response) (*UpdateEventResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateEventResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateEventResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateEventResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListEventAttendeesResponse parses an HTTP response from a ListEventAttendeesWithResponse call
+func ParseListEventAttendeesResponse(rsp *http.Response) (*ListEventAttendeesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListEventAttendeesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventAttendeePage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListEventAttendeesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListEventAttendeesResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRevokeEventAttendeeApprovalResponse parses an HTTP response from a RevokeEventAttendeeApprovalWithResponse call
+func ParseRevokeEventAttendeeApprovalResponse(rsp *http.Response) (*RevokeEventAttendeeApprovalResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeEventAttendeeApprovalResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventAttendee
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers RevokeEventAttendeeApprovalResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers RevokeEventAttendeeApprovalResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseApproveEventAttendeeResponse parses an HTTP response from a ApproveEventAttendeeWithResponse call
+func ParseApproveEventAttendeeResponse(rsp *http.Response) (*ApproveEventAttendeeResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ApproveEventAttendeeResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventAttendee
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ApproveEventAttendeeResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ApproveEventAttendeeResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCancelEventResponse parses an HTTP response from a CancelEventWithResponse call
+func ParseCancelEventResponse(rsp *http.Response) (*CancelEventResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CancelEventResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers CancelEventResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers CancelEventResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRemoveEventCoorganizerResponse parses an HTTP response from a RemoveEventCoorganizerWithResponse call
+func ParseRemoveEventCoorganizerResponse(rsp *http.Response) (*RemoveEventCoorganizerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveEventCoorganizerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers RemoveEventCoorganizerResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers RemoveEventCoorganizerResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseAssignEventCoorganizerResponse parses an HTTP response from a AssignEventCoorganizerWithResponse call
+func ParseAssignEventCoorganizerResponse(rsp *http.Response) (*AssignEventCoorganizerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AssignEventCoorganizerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers AssignEventCoorganizerResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers AssignEventCoorganizerResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListEventInvitationsResponse parses an HTTP response from a ListEventInvitationsWithResponse call
+func ParseListEventInvitationsResponse(rsp *http.Response) (*ListEventInvitationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListEventInvitationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventInvitationPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListEventInvitationsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListEventInvitationsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseInviteToEventResponse parses an HTTP response from a InviteToEventWithResponse call
+func ParseInviteToEventResponse(rsp *http.Response) (*InviteToEventResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &InviteToEventResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest EventInvitation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers InviteToEventResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case true:
+		var headers InviteToEventResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRevokeEventInvitationResponse parses an HTTP response from a RevokeEventInvitationWithResponse call
+func ParseRevokeEventInvitationResponse(rsp *http.Response) (*RevokeEventInvitationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RevokeEventInvitationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers RevokeEventInvitationResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseAnswerEventResponse parses an HTTP response from a AnswerEventWithResponse call
+func ParseAnswerEventResponse(rsp *http.Response) (*AnswerEventResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AnswerEventResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers AnswerEventResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers AnswerEventResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

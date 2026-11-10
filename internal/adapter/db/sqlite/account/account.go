@@ -81,6 +81,7 @@ func (r *Repository) InsertProfileRevision(ctx context.Context, tx uow.Tx, rev a
 		AvatarMediaID: sqlite.ToNullString(rev.AvatarMediaID),
 		HeaderMediaID: sqlite.ToNullString(rev.HeaderMediaID),
 		RevisedAt:     sqlite.ToMillis(rev.RevisedAt),
+		Feed:          string(rev.Feed.Normalize()),
 	})
 	if err != nil {
 		return sqlite.Wrap(err, "insert profile revision")
@@ -604,6 +605,7 @@ func profileRow(row accountgen.AccountProfileRevision) account.ProfileRevision {
 		AvatarMediaID: row.AvatarMediaID.String,
 		HeaderMediaID: row.HeaderMediaID.String,
 		RevisedAt:     sqlite.FromMillis(row.RevisedAt),
+		Feed:          account.FeedSetting(row.Feed),
 	}
 }
 

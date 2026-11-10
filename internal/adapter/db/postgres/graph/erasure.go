@@ -77,6 +77,20 @@ func (r *Repository) EraseMutesOf(ctx context.Context, tx uow.Tx, accountID stri
 	return max(by, of, domains), postgres.Wrap(err, "erase domain mutes")
 }
 
+// EraseNotesOf implements graph.ErasureRepository.
+func (r *Repository) EraseNotesOf(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	by, err := q.EraseAccountNotesBy(ctx, graphgen.EraseAccountNotesByParams{AccountID: accountID, Lim: postgres.BatchLimit(limit)})
+	if err != nil {
+		return 0, postgres.Wrap(err, "erase account notes")
+	}
+	of, err := q.EraseAccountNotesOf(ctx, graphgen.EraseAccountNotesOfParams{AccountID: accountID, Lim: postgres.BatchLimit(limit)})
+	return max(by, of), postgres.Wrap(err, "erase account notes")
+}
+
 // EraseCountersOf implements graph.ErasureRepository.
 func (r *Repository) EraseCountersOf(ctx context.Context, tx uow.Tx, accountID string) error {
 	q, err := r.db.queries(tx)

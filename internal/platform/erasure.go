@@ -8,6 +8,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
+	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/graph"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -29,7 +30,7 @@ import (
 // graph, timeline, notification, and media services, the blob store, and the data exports and imports.
 func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository, statuses content.Repository,
 	follows graph.Repository, feeds timeline.Repository, notifs notification.Repository, medias content.MediaRepository,
-	rooms appvoice.Repository, translations translation.Repository,
+	rooms appvoice.Repository, translations translation.Repository, gatherings appgathering.Repository,
 ) error {
 	identities, okI := ids.(identity.ErasureRepository)
 	profiles, okA := accounts.(account.ErasureRepository)
@@ -74,6 +75,8 @@ func (a *App) setUpErasure(ids identity.Repository, accounts account.Repository,
 			a.Supporters,
 			// The names and descriptions of the revisions of the rooms it wrote (ADR-0100 §13).
 			appvoice.NewEraser(a.UnitOfWork, rooms),
+			// The titles, descriptions, and places of the revisions of the events it wrote (ADR-0161 §14).
+			appgathering.NewEraser(a.UnitOfWork, gatherings),
 			// The characters it sent to translation providers (ADR-0148 §10).
 			translation.NewEraser(a.UnitOfWork, translations),
 			// A job for its documents in the search index, never a call of the engine (ADR-0149 §11).

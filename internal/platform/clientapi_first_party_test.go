@@ -263,6 +263,7 @@ func TestRelationshipFieldsFollowTheScopes(t *testing.T) {
 	follows := []string{"following", "requested", "followed_by", "requested_by", "show_boosts", "notify"}
 	blocks := []string{"blocking"}
 	mutes := []string{"muting", "muting_notifications"}
+	notes := []string{"note"}
 	wantFields := func(name string, got map[string]any, groups ...[]string) {
 		t.Helper()
 		want := []string{"id"}
@@ -308,12 +309,13 @@ func TestRelationshipFieldsFollowTheScopes(t *testing.T) {
 		{"read:follows", [][]string{follows}},
 		{"read:follows read:blocks", [][]string{follows, blocks}},
 		{"read:follows read:mutes", [][]string{follows, mutes}},
-		{"read", [][]string{follows, blocks, mutes}},
+		{"read:follows read:accounts", [][]string{follows, notes}},
+		{"read", [][]string{follows, blocks, mutes, notes}},
 		{"follow", [][]string{follows, blocks, mutes}},
 	} {
 		wantFields(tc.scope, read(c.appToken("alice", tc.scope)), tc.groups...)
 	}
-	wantFields("the first-party client", read("alice"), follows, blocks, mutes)
+	wantFields("the first-party client", read("alice"), follows, blocks, mutes, notes)
 	if r := read(c.appToken("alice", "read:follows read:blocks read:mutes")); r["blocking"] != true || r["muting"] != true {
 		t.Errorf("the state with every scope = %v", r)
 	}
@@ -336,6 +338,14 @@ func TestRelationshipFieldsFollowTheScopes(t *testing.T) {
 	wantFields("write:follows", followed, follows)
 	if followed["following"] != true {
 		t.Errorf("the answer of the follow = %v", followed)
+	}
+	var noted map[string]any
+	if res := c.do(c.appToken("alice", "write:accounts"), http.MethodPut, "/accounts/"+bob+"/note", map[string]any{"note": "Bob"}, &noted); res.StatusCode != http.StatusOK {
+		t.Fatalf("note = %d", res.StatusCode)
+	}
+	wantFields("write:accounts", noted, notes)
+	if noted["note"] != "Bob" {
+		t.Errorf("the answer of the note = %v", noted)
 	}
 }
 

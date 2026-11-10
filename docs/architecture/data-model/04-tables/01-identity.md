@@ -150,13 +150,13 @@
 `admin`（`position` 1000）はすべての権限、`moderator`（`position` 100）は最初 `manage_reports`・`manage_accounts`・`view_audit` を持ちます。
 組み込みロールは `my serve` の起動時（どの `role` のプロセスでも）、`my admin create`、`my admin role` のたびに作り直すので、版を上げても手作業は要りません。作り直すときは、ない組み込みロールを足し、`admin` にすべての権限（新しい版で増えた権限を含む）を持たせ、`moderator` の権限と位置は管理者が変えたまま残します。
 権限は区分（[ADR-0058](../../../adr/0058-moderation-admin-separation.md)、[ADR-0070](../../../adr/0070-permission-split-emoji-finance.md)）を持ちます。モデレーションは `manage_reports`・`manage_accounts`・`manage_domains`・`manage_invites`・`view_audit`、
-利用者の機能は `view_finance`・`create_custom_emojis`・`start_voice_rooms`・`create_invites`・`keep_posts_longer`、サーバー管理はそれ以外のすべて（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs` など）です。区分は列に持たず、`internal/domain/identity` の `Permission.Category` が返します
+利用者の機能は `view_finance`・`create_custom_emojis`・`start_voice_rooms`・`create_invites`・`keep_posts_longer`・`create_articles`・`create_events`、サーバー管理はそれ以外のすべて（`manage_settings`・`manage_rules`・`manage_roles`・`manage_jobs` など）です。区分は列に持たず、`internal/domain/identity` の `Permission.Category` が返します
 （Web クライアントのナビゲーションの出し分けと `my admin role list` の表示が使う）。
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `roles` | リソース | `id`, `key`（`string(64)`）, `position`（`int`）, `created_at` | 一意 `(key)` |
-| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure, start_voice_rooms, manage_errors, manage_login_providers, create_invites, keep_posts_longer)`） | PK `(role_id, permission)` |
+| `role_permissions` | 現在値 | `role_id`, `permission`（`enum(manage_reports, manage_accounts, manage_domains, manage_rules, manage_settings, manage_roles, manage_invites, view_audit, manage_jobs, manage_login_recovery, manage_custom_emojis, manage_webhooks, manage_announcements, manage_finance, view_finance, manage_supporters, create_custom_emojis, manage_oauth_apps, manage_service_closure, start_voice_rooms, manage_errors, manage_login_providers, create_invites, keep_posts_longer, create_articles, create_events)`） | PK `(role_id, permission)` |
 | `user_role_grants` | イベント | `id`, `user_id`, `role_id`, `granted_by_user_id`（NULL 可 = CLI による付与。最初の管理者など）, `granted_at` | |
 | `user_role_revocations` | イベント | `grant_id`（PK）, `revoked_by_user_id`（NULL 可 = CLI による剥奪）, `revoked_at` | |
 | `user_roles` | 投影 | `user_id`, `role_id`, `grant_id` | PK `(user_id, role_id)` |
@@ -301,7 +301,7 @@
 
 - 本人のデータのアーカイブ（FR-008）です。要求（`POST /api/v1/exports`）が `data_exports` の行とジョブ `identity.build_export` を同じトランザクションで積みます。作成中（結果のない行）の要求があるあいだは、次の要求を受け付けません（`409`）。
   確認と挿入は同じトランザクションで、利用者の行（`users`）を `FOR UPDATE` でロックしてから行うので（SQLite は書き込みのトランザクションが直列）、同時の要求でも作成中の要求は 1 件までです。インポートの開始も同じ行をロックします。
-- ジョブは ZIP のアーカイブを Blob の非公開のキー `exports/{user_id}/{export_id}/{試行ごとの ID}.zip` に書き、そのキーを持つ `ready` の結果を記録します。中身は `actor.json`（Actor）、`outbox.json`（本人の削除されていない投稿すべてを、公開範囲に関わらず `Create` の `OrderedCollection` にしたもの。ブーストは含めない）、`moderation.json`（本人への処分と異議申し立て、本人が出した通報。非公開のメモと通報者は含めない。ADR-0058）、`keyword_filters.json`（本人のキーワードフィルタすべて。期限の過ぎたものも含め古い順に、名前・動作・文脈・期限・期限切れか・作成時刻と、入力したとおりの語と「単語全体」の指定。クライアント API の `KeywordFilter` と同じ名前。ADR-0157 §8）と、下の「CSV のエクスポートとインポート」の 4 つの CSV です。
+- ジョブは ZIP のアーカイブを Blob の非公開のキー `exports/{user_id}/{export_id}/{試行ごとの ID}.zip` に書き、そのキーを持つ `ready` の結果を記録します。中身は `actor.json`（Actor）、`outbox.json`（本人の削除されていない投稿すべてを、公開範囲に関わらず `Create` の `OrderedCollection` にしたもの。ブーストは含めない）、`moderation.json`（本人への処分と異議申し立て、本人が出した通報。非公開のメモと通報者は含めない。ADR-0058）、`keyword_filters.json`（本人のキーワードフィルタすべて。期限の過ぎたものも含め古い順に、名前・動作・文脈・期限・期限切れか・作成時刻と、入力したとおりの語と「単語全体」の指定。クライアント API の `KeywordFilter` と同じ名前。ADR-0157 §8）、`account_notes.json`（本人が書いたアカウントへの非公開のメモすべて。古い順に、相手の ID と Actor の URI、メモ、更新時刻。FR-310）と、下の「CSV のエクスポートとインポート」の 4 つの CSV です。
   結果のある行は作り直さないので、再実行してよい。キーは試行ごとに別なので、重なって走った試行が記録済みのアーカイブを上書きしたり消したりすることはなく、記録された `blob_key` と `file_size` は常に同じ Blob を指します。結果を記録できなかった試行（先に別の試行が記録した、要求が消された）は自分の Blob を消します。
   結果の記録は要求の行を `FOR KEY SHARE` でロックしてから行い、要求の削除は要求の行を先に消すので、消された要求に結果が残ることはありません。
   5 回目の構築が失敗すると `failed` を記録します。記録にも失敗したときは、その後の最大 3 回の実行が記録だけをやり直し、それでも結果のない要求は 1 時間ごとのジョブ `identity.expire_exports` が要求から 24 時間後（`identity.ExportStaleAfter`）に `failed` にするので、作成中のまま残りません。
