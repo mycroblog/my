@@ -584,7 +584,7 @@ func (o *Objects) pageParts(ctx context.Context, views []appcontent.StatusView) 
 	}
 	out := make(map[string]appcontent.RevisionParts, len(views))
 	for _, v := range views {
-		parts := appcontent.RevisionParts{Attachments: v.Attachments, Mentions: v.Mentions, Tags: v.Tags, Poll: v.Poll}
+		parts := appcontent.RevisionParts{Attachments: v.Attachments, Cover: v.Cover, Mentions: v.Mentions, Tags: v.Tags, Poll: v.Poll}
 		for _, t := range tags {
 			if slices.Contains(v.Revision.EmojiIDs, t.ID) {
 				parts.Emojis = append(parts.Emojis, t)

@@ -246,9 +246,15 @@ func (o ObjectDocument) TopLevel() TopLevelObject {
 // publishes them; Summary and ContentMap are left out when empty.
 type NoteDocument struct {
 	ObjectDocument
-	// Summary is the content warning.
-	Summary   string `json:"summary,omitempty"`
-	Sensitive bool   `json:"sensitive"`
+	// Name is the title of an Article (AsArticle), left out of a Note.
+	Name string `json:"name,omitempty"`
+	// NameMap and SummaryMap are the title and the summary of an Article whose body has one
+	// language, keyed by it (AsArticle); a Note never has them.
+	NameMap map[string]string `json:"nameMap,omitempty"`
+	// Summary is the content warning of a Note, and the summary of an Article.
+	Summary    string            `json:"summary,omitempty"`
+	SummaryMap map[string]string `json:"summaryMap,omitempty"`
+	Sensitive  bool              `json:"sensitive"`
 	// Content is the HTML of the revision's language; ContentMap has the HTML per language
 	// (NFR-I18N-5), without the undetermined language "und".
 	Content    string               `json:"content"`
@@ -279,6 +285,8 @@ type NoteDocument struct {
 	ReplyAuthorization IRI `json:"replyAuthorization,omitempty"`
 	// InteractionPolicy says who may reply to, boost, and quote the status.
 	InteractionPolicy *InteractionPolicy `json:"interactionPolicy,omitempty"`
+	// Image is the cover of an Article (AsArticle), left out of a Note.
+	Image *ImageDocument `json:"image,omitempty"`
 }
 
 // InteractionPolicy is the interactionPolicy of a status (GoToSocial's interaction policies,
@@ -416,11 +424,13 @@ func (n NoteDocument) TopLevel() TopLevelNote {
 // and audio alike as Document, and the other implementations read the kind from MediaType.
 const AttachmentType ObjectType = "Document"
 
-// ImageDocument is an image of an actor: its icon (avatar) or image (header).
+// ImageDocument is an image of an actor (its icon, the avatar, or image, the header) or the
+// cover of an Article, whose Name is its alternative text.
 type ImageDocument struct {
 	Type      ObjectType `json:"type"`
 	MediaType string     `json:"mediaType,omitempty"`
 	URL       string     `json:"url"`
+	Name      string     `json:"name,omitempty"`
 }
 
 // ImageType is the type of an ImageDocument.

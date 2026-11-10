@@ -84,6 +84,7 @@ func FederationFlows(t *testing.T, newHarness FederationFactory) {
 		{"UpdatesTheActorOnFeaturedTags", fedUpdatesTheActorOnFeaturedTags},
 		{"PropagatesSuspensionsOfLocalActors", fedPropagatesSuspensions},
 		{"BuildsTheNoteOfTheRevision", fedBuildsTheNote},
+		{"SendsArticlesAsArticle", fedSendsTheArticle},
 		{"SendsVideoAndAudioWithPosterAndDuration", fedSendsVideoAndAudio},
 		{"LeavesNonFollowersOutOfTheTagOfLocalStatuses", fedLeavesNonFollowersOutOfLocalTags},
 		{"DeliversTheStoredDeleteAfterThePurge", fedDeliversTheStoredDelete},
@@ -144,7 +145,7 @@ func newFedEnv(t *testing.T, newHarness FederationFactory) *fedEnv {
 		suspensions: &fedSuspensions{accounts: map[string]bool{}},
 		reports:     &fedReports{reports: map[string]appmoderation.Report{}},
 	}
-	e.parts = &fedParts{accounts: e.accounts, tags: map[string]content.Tag{}, media: map[string][]appcontent.MediaView{}}
+	e.parts = &fedParts{accounts: e.accounts, tags: map[string]content.Tag{}, media: map[string][]appcontent.MediaView{}, covers: map[string]appcontent.MediaView{}}
 	outbox := queue.AfterCommit(projectors, e.jobs, nil)
 	e.outbox = outbox
 	appfederation.RegisterOutboundProjectors(projectors, appfederation.RecorderDeps{
