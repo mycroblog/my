@@ -18172,6 +18172,9 @@ type UpdateDraftParams struct {
 
 // ListEventsParams defines parameters for ListEvents.
 type ListEventsParams struct {
+	// OrganizerId An account whose organized events to list, such as for its profile.
+	OrganizerId *Id `form:"organizer_id,omitempty" json:"organizer_id,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -27923,6 +27926,19 @@ func (siw *ServerInterfaceWrapper) ListEvents(w http.ResponseWriter, r *http.Req
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListEventsParams
+
+	// ------------- Optional query parameter "organizer_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "organizer_id", r.URL.Query(), &params.OrganizerId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "organizer_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "organizer_id", Err: err})
+		}
+		return
+	}
 
 	// ------------- Optional query parameter "cursor" -------------
 

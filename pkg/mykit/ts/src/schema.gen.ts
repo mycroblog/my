@@ -5206,8 +5206,9 @@ export interface paths {
         };
         /**
          * List the upcoming events
-         * @description The events that the user sees and that have not ended, the nearest start first. A page may
-         *     hold fewer events than `limit` and still have a `next_cursor`.
+         * @description The events that the user sees and that have not ended, the nearest start first; with
+         *     `organizer_id`, only those that the account organizes. A page may hold fewer events than
+         *     `limit` and still have a `next_cursor`.
          */
         get: operations["listEvents"];
         put?: never;
@@ -25465,6 +25466,8 @@ export interface operations {
     listEvents: {
         parameters: {
             query?: {
+                /** @description An account whose organized events to list, such as for its profile. */
+                organizer_id?: components["schemas"]["Id"];
                 /** @description The `next_cursor` of the previous page; omitted for the first page. */
                 cursor?: components["parameters"]["Cursor"];
                 /** @description The maximum number of items in the page. */

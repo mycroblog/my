@@ -18181,6 +18181,9 @@ type UpdateDraftParams struct {
 
 // ListEventsParams defines parameters for ListEvents.
 type ListEventsParams struct {
+	// OrganizerId An account whose organized events to list, such as for its profile.
+	OrganizerId *Id `form:"organizer_id,omitempty" json:"organizer_id,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -24861,8 +24864,9 @@ type ClientInterface interface {
 
 	// ListEvents List the upcoming events
 	//
-	// The events that the user sees and that have not ended, the nearest start first. A page may
-	// hold fewer events than `limit` and still have a `next_cursor`.
+	// The events that the user sees and that have not ended, the nearest start first; with
+	// `organizer_id`, only those that the account organizes. A page may hold fewer events than
+	// `limit` and still have a `next_cursor`.
 	//
 	// Corresponds with GET /events (the `ListEvents` operationId).
 	ListEvents(ctx context.Context, params *ListEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -35544,8 +35548,9 @@ func (c *Client) ScheduleDraft(ctx context.Context, id DraftId, body ScheduleDra
 
 // ListEvents List the upcoming events
 //
-// The events that the user sees and that have not ended, the nearest start first. A page may
-// hold fewer events than `limit` and still have a `next_cursor`.
+// The events that the user sees and that have not ended, the nearest start first; with
+// `organizer_id`, only those that the account organizes. A page may hold fewer events than
+// `limit` and still have a `next_cursor`.
 //
 // Corresponds with GET /events (the `ListEvents` operationId).
 func (c *Client) ListEvents(ctx context.Context, params *ListEventsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -52577,6 +52582,18 @@ func NewListEventsRequest(server string, params *ListEventsParams) (*http.Reques
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
+		if params.OrganizerId != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "organizer_id", *params.OrganizerId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.Cursor != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
@@ -65720,8 +65737,9 @@ type ClientWithResponsesInterface interface {
 
 	// ListEventsWithResponse List the upcoming events
 	//
-	// The events that the user sees and that have not ended, the nearest start first. A page may
-	// hold fewer events than `limit` and still have a `next_cursor`.
+	// The events that the user sees and that have not ended, the nearest start first; with
+	// `organizer_id`, only those that the account organizes. A page may hold fewer events than
+	// `limit` and still have a `next_cursor`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -105031,8 +105049,9 @@ func (c *ClientWithResponses) ScheduleDraftWithResponse(ctx context.Context, id 
 
 // ListEventsWithResponse List the upcoming events
 //
-// The events that the user sees and that have not ended, the nearest start first. A page may
-// hold fewer events than `limit` and still have a `next_cursor`.
+// The events that the user sees and that have not ended, the nearest start first; with
+// `organizer_id`, only those that the account organizes. A page may hold fewer events than
+// `limit` and still have a `next_cursor`.
 //
 // Returns a wrapper object for the known response body format(s).
 //

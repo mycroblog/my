@@ -7282,14 +7282,20 @@ paths:
       operationId: listEvents
       summary: List the upcoming events
       description: |
-        The events that the user sees and that have not ended, the nearest start first. A page may
-        hold fewer events than `limit` and still have a `next_cursor`.
+        The events that the user sees and that have not ended, the nearest start first; with
+        `organizer_id`, only those that the account organizes. A page may hold fewer events than
+        `limit` and still have a `next_cursor`.
       tags:
         - events
       security:
         - oauth2:
             - read:events
       parameters:
+        - name: organizer_id
+          in: query
+          description: An account whose organized events to list, such as for its profile.
+          schema:
+            $ref: '#/components/schemas/Id'
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Limit'
       responses:

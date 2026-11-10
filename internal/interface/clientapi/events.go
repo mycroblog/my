@@ -284,7 +284,7 @@ func (s *Server) ListEvents(ctx context.Context, req ListEventsRequestObject) (L
 	if q.problem != nil {
 		return ListEventsdefaultApplicationProblemPlusJSONResponse(*q.problem), nil
 	}
-	lq := appgathering.ListQuery{Limit: q.limit}
+	lq := appgathering.ListQuery{Limit: q.limit, OrganizerID: deref(req.Params.OrganizerId)}
 	if q.before != "" {
 		k, _ := decodeEventCursor(q.before)
 		lq.After = &k

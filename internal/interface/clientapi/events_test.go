@@ -171,6 +171,12 @@ func TestEvents(t *testing.T) {
 	if res := e.send(t, http.MethodGet, "/events?cursor=broken", "read-events", ""); res.StatusCode != http.StatusBadRequest {
 		t.Errorf("a broken cursor = %d, want 400", res.StatusCode)
 	}
+	if res := e.send(t, http.MethodGet, "/events?organizer_id="+aliceAccountID, "read-events", ""); res.StatusCode != http.StatusOK {
+		t.Errorf("the events of an organizer = %d", res.StatusCode)
+	}
+	if q := f.queries[len(f.queries)-1]; q.OrganizerID != aliceAccountID {
+		t.Errorf("the organizer's query = %+v", q)
+	}
 
 	res = e.sendJSON(t, http.MethodPost, "/events", "events", `{"title":"Picnic","starts_at":"2026-12-01T21:00:00+09:00","ends_at":"2026-12-01T23:00:00+09:00",`+
 		`"visibility":"mutuals","places":[{"kind":"url","name":"Stream","url":"https://stream.example/live"}]}`)

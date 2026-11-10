@@ -336,6 +336,8 @@ type ListQuery struct {
 	// After is the position of the last event of the previous page, nil for the first page.
 	After *ListKey
 	Limit int
+	// OrganizerID, when not empty, keeps only the events that this account organizes.
+	OrganizerID string
 }
 
 // listBatch is how many events a list reads at a time, and listScans how many batches it reads
@@ -361,7 +363,7 @@ func (s *Service) List(ctx context.Context, accountID string, q ListQuery) ([]Vi
 		if err != nil {
 			return nil, nil, err
 		}
-		views, err := s.present(ctx, viewer, recs)
+		views, err := s.present(ctx, viewer, organizedBy(recs, q.OrganizerID))
 		if err != nil {
 			return nil, nil, err
 		}
@@ -379,4 +381,19 @@ func (s *Service) List(ctx context.Context, accountID string, q ListQuery) ([]Vi
 	}
 	// The scans ran out before the page filled: the next page goes on after the last event read.
 	return out, after, nil
+}
+
+// organizedBy returns the records of the events that organizerID organizes, all of them when it
+// is empty.
+func organizedBy(recs []Record, organizerID string) []Record {
+	if organizerID == "" {
+		return recs
+	}
+	out := make([]Record, 0, len(recs))
+	for _, r := range recs {
+		if r.OrganizerAccountID == organizerID {
+			out = append(out, r)
+		}
+	}
+	return out
 }

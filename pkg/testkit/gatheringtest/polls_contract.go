@@ -120,6 +120,14 @@ func createsPoll(t *testing.T, e *dueEnv) {
 	if err != nil || len(views) != 1 || views[0].ID != v.ID {
 		t.Errorf("List = %d events, %v; want the unscheduled event", len(views), err)
 	}
+	views, _, err = e.svc.List(ctx, bob, appgathering.ListQuery{Limit: 10, OrganizerID: alice})
+	if err != nil || len(views) != 1 || views[0].ID != v.ID {
+		t.Errorf("List of the organizer = %d events, %v; want the organizer's event", len(views), err)
+	}
+	views, _, err = e.svc.List(ctx, bob, appgathering.ListQuery{Limit: 10, OrganizerID: bob})
+	if err != nil || len(views) != 0 {
+		t.Errorf("List of another organizer = %d events, %v; want none", len(views), err)
+	}
 	_, err = e.svc.Answer(ctx, bob, v.ID, gathering.AnswerGoing)
 	wantErr(t, "answer before a date", err, appgathering.ErrUnscheduled)
 
