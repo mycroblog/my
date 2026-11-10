@@ -143,6 +143,11 @@ These tools come back in most of the runbook entries below.
 - **The logs**: JSON lines on standard error. Each HTTP request ends with a line whose `msg` is `http request`, each job run with a line whose `msg` is `job`
   (`INFO` for success, `WARN` for a retry, `ERROR` for a job that failed for good, with the `error`, `job_id`, and `my.job.type`).
   Lines inside a request carry its `request_id`, which the client sees as `X-Request-Id`.
+  - The line of a `federation.deliver` run also says where the delivery went and how it ended: `my.delivery.domain` (the remote server's domain),
+    `activity.type` (for example `Create`), `my.delivery.outcome` (`succeeded`, `retryable_failure`, `permanent_failure`, or `skipped`), and
+    `http.response.status_code` (the inbox's answer, absent when it gave none or nothing was sent). `my.outcome` stays the outcome of the job run.
+    The line never names the sender, the activity, or the inbox URL.
+    Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.job.type"="federation.deliver" AND jsonPayload."my.delivery.domain"="remote.example"`
   - Docker Compose: `docker compose logs my | jq -c 'select(.msg == "job" and ."my.outcome" == "dead")'`
   - Cloud Logging: `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   - CloudWatch Logs Insights: ``filter msg = "job" and `my.outcome` = "dead"``
