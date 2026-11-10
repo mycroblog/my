@@ -164,20 +164,23 @@ function useSwipe(ref: RefObject<HTMLElement | null>, onSwipe: ((by: 1 | -1) => 
   useEffect(() => {
     const element = ref.current;
     if (element === null || !enabled) return;
-    let start: { x: number; y: number } | null = null;
+    // Where the current gesture started, null outside one. A property, not a reassigned variable, which React Compiler
+    // rejects in a function that runs after render.
+    const gesture: { start: { x: number; y: number } | null } = { start: null };
     const down = (event: PointerEvent) => {
-      start = event.pointerType === "mouse" ? null : { x: event.clientX, y: event.clientY };
+      gesture.start = event.pointerType === "mouse" ? null : { x: event.clientX, y: event.clientY };
     };
     const up = (event: PointerEvent) => {
+      const { start } = gesture;
       if (start === null) return;
       const dx = event.clientX - start.x;
       const dy = event.clientY - start.y;
-      start = null;
+      gesture.start = null;
       if (Math.abs(dx) < swipeDistance || Math.abs(dx) < Math.abs(dy)) return;
       onSwipeEvent((direction === "ltr" ? dx < 0 : dx > 0) ? 1 : -1);
     };
     const cancel = () => {
-      start = null;
+      gesture.start = null;
     };
     element.addEventListener("pointerdown", down);
     element.addEventListener("pointerup", up);
