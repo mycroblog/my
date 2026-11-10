@@ -1,0 +1,198 @@
+{
+  "drafts.title": {
+    "defaultMessage": "下書きと予約投稿",
+    "description": "Heading and document title of the page that lists the user's drafts saved on the server and their scheduled posts; also the link to it under the new-post form."
+  },
+  "drafts.save": {
+    "defaultMessage": "下書きに保存",
+    "description": "Button beside the submit button of the new-post form: saves what is written as a draft on the server, which opens on any device, and empties the form."
+  },
+  "drafts.saved": {
+    "defaultMessage": "下書きを保存しました",
+    "description": "Toast after the new-post form saved a draft on the server; the form is empty again."
+  },
+  "drafts.save.blocked.empty": {
+    "defaultMessage": "保存する内容がありません。",
+    "description": "Beside the save-draft button of the new-post form, after it was pressed with no text, content warning, attachment, or poll: why nothing was saved."
+  },
+  "drafts.save.blocked.uploading": {
+    "defaultMessage": "添付のアップロードが終わってから保存してください。",
+    "description": "Beside the save-draft button of the new-post form, after it was pressed while a file is still uploading: why nothing was saved."
+  },
+  "drafts.save.blocked.upload_failed": {
+    "defaultMessage": "アップロードに失敗した添付を外してから保存してください。",
+    "description": "Beside the save-draft button of the new-post form, after it was pressed while an attachment failed to upload: why nothing was saved."
+  },
+  "drafts.save.conflict": {
+    "defaultMessage": "ほかの端末でこの下書きが変わりました。もう一度保存すると、新しい下書きとして保存します。",
+    "description": "Beside the save-draft button of the new-post form: the draft being edited was saved on another device since it was opened, so it was not overwritten. Saving again makes a new draft."
+  },
+  "drafts.save.failed": {
+    "defaultMessage": "下書きを保存できませんでした: {reason}",
+    "description": "Beside the save-draft button of the new-post form when saving failed. {reason} is the server's or the network's localized reason."
+  },
+  "drafts.editing": {
+    "defaultMessage": "保存した下書きを編集しています。",
+    "description": "Line above the tools of the new-post form while it holds a draft opened from the drafts page: saving replaces that draft, and posting deletes it."
+  },
+  "drafts.editing.scheduled": {
+    "defaultMessage": "この下書きは{date}に公開する予約があります。",
+    "description": "Line above the tools of the new-post form while it holds a scheduled draft. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.schedule.label": {
+    "defaultMessage": "投稿を予約",
+    "description": "Accessible name and tooltip of the tool button of the new-post form that opens the date and time to publish the post at; also the title of that popover."
+  },
+  "drafts.schedule.label.scheduled": {
+    "defaultMessage": "投稿を予約: {date}",
+    "description": "Tooltip and accessible name of the schedule button of the new-post form while the draft is scheduled. {date} is the formatted date and time it is scheduled for."
+  },
+  "drafts.schedule.date": {
+    "defaultMessage": "日付",
+    "description": "Label of the date field of the schedule popover."
+  },
+  "drafts.schedule.time": {
+    "defaultMessage": "時刻",
+    "description": "Label of the time field of the schedule popover."
+  },
+  "drafts.schedule.time_zone": {
+    "defaultMessage": "日付と時刻は、あなたのタイムゾーン ({zone}) のものです。",
+    "description": "Description of the schedule popover's fields. {zone} is the name of the user's time zone (for example 'Japan Standard Time'), which the settings choose."
+  },
+  "drafts.schedule.submit": {
+    "defaultMessage": "予約する",
+    "description": "Button of the schedule popover: saves the draft and schedules it for the chosen date and time."
+  },
+  "drafts.schedule.invalid": {
+    "defaultMessage": "日付と時刻を入力してください。",
+    "description": "Error under the fields of the schedule popover when the date or the time is missing or not a valid one."
+  },
+  "drafts.schedule.too_soon": {
+    "defaultMessage": "今から{minutes, plural, other {#分}}より後の時刻を選んでください。",
+    "description": "Error under the fields of the schedule popover: the time is in the past or sooner than the server allows. {minutes} is the server's least lead time."
+  },
+  "drafts.schedule.too_far": {
+    "defaultMessage": "今から{days, plural, other {#日}}以内の時刻を選んでください。",
+    "description": "Error under the fields of the schedule popover: the time is further ahead than the server allows. {days} is the server's most lead time."
+  },
+  "drafts.schedule.scheduled": {
+    "defaultMessage": "{date}に予約しました",
+    "description": "Toast and announcement after a post was scheduled. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.schedule.failed": {
+    "defaultMessage": "予約できませんでした: {reason}",
+    "description": "Error in the schedule popover when the server refused or the network failed. {reason} is the localized reason."
+  },
+  "drafts.scheduled.heading": {
+    "defaultMessage": "予約投稿",
+    "description": "Heading of the section of the drafts page that lists the drafts scheduled to be published; also the name of its list."
+  },
+  "drafts.scheduled.empty": {
+    "defaultMessage": "予約した投稿はありません",
+    "description": "Empty state of the scheduled posts of the drafts page."
+  },
+  "drafts.scheduled.empty.description": {
+    "defaultMessage": "投稿のフォームで予約すると、選んだ時刻に公開されます。",
+    "description": "Description of the empty state of the scheduled posts of the drafts page."
+  },
+  "drafts.unscheduled.heading": {
+    "defaultMessage": "下書き",
+    "description": "Heading of the section of the drafts page that lists the drafts without a schedule; also the name of its list."
+  },
+  "drafts.unscheduled.empty": {
+    "defaultMessage": "下書きはありません",
+    "description": "Empty state of the drafts of the drafts page."
+  },
+  "drafts.unscheduled.empty.description": {
+    "defaultMessage": "投稿のフォームの「下書きに保存」で、書きかけの投稿を残し、どの端末からでも続きを書けます。",
+    "description": "Description of the empty state of the drafts of the drafts page. The quoted words are the label of the save-draft button."
+  },
+  "drafts.row.no_text": {
+    "defaultMessage": "(本文なし)",
+    "description": "In a row of the drafts page, in place of the text of a draft that has no text and no content warning."
+  },
+  "drafts.row.publish_at": {
+    "defaultMessage": "{date}に公開",
+    "description": "In a row of the scheduled posts: when it is published. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.row.updated_at": {
+    "defaultMessage": "{date}に保存",
+    "description": "In a row of the drafts: when the draft was last saved. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.row.media": {
+    "defaultMessage": "添付{count, plural, other {#件}}",
+    "description": "In a row of the drafts page: how many files the draft attaches."
+  },
+  "drafts.row.poll": {
+    "defaultMessage": "投票",
+    "description": "In a row of the drafts page: the draft has a poll."
+  },
+  "drafts.row.reply": {
+    "defaultMessage": "返信",
+    "description": "In a row of the drafts page: the draft replies to a post."
+  },
+  "drafts.row.quote": {
+    "defaultMessage": "引用",
+    "description": "In a row of the drafts page: the draft quotes a post."
+  },
+  "drafts.action": {
+    "defaultMessage": "{action}: {excerpt}",
+    "description": "Accessible name of a button of a row of the drafts page. {action} is the button's visible text (for example 'Edit'), {excerpt} the start of the draft's text."
+  },
+  "drafts.edit": {
+    "defaultMessage": "編集する",
+    "description": "Button of a row of the drafts page: opens the draft in the new-post form."
+  },
+  "drafts.reschedule": {
+    "defaultMessage": "時刻を変える",
+    "description": "Button of a row of the scheduled posts: opens the popover that moves the schedule to another date and time."
+  },
+  "drafts.unschedule": {
+    "defaultMessage": "予約を取り消す",
+    "description": "Button of a row of the scheduled posts: cancels the schedule; the draft stays, among the drafts."
+  },
+  "drafts.unscheduled": {
+    "defaultMessage": "予約を取り消しました",
+    "description": "Announcement after a schedule was cancelled; the draft moved to the drafts."
+  },
+  "drafts.delete": {
+    "defaultMessage": "削除する",
+    "description": "Button of a row of the drafts page, and the confirm button of its dialog: deletes the draft and its schedule."
+  },
+  "drafts.delete.title": {
+    "defaultMessage": "この下書きを削除しますか？",
+    "description": "Title of the dialog that confirms deleting a draft."
+  },
+  "drafts.delete.body": {
+    "defaultMessage": "下書きはどの端末からも消え、予約も取り消されます。元に戻せません。",
+    "description": "Body of the dialog that confirms deleting a draft."
+  },
+  "drafts.deleted": {
+    "defaultMessage": "下書きを削除しました",
+    "description": "Announcement after a draft was deleted."
+  },
+  "drafts.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The way out of the dialogs of the drafts page (delete, replace)."
+  },
+  "drafts.replace.title": {
+    "defaultMessage": "書きかけの投稿を置き換えますか？",
+    "description": "Title of the dialog shown when a draft is opened while the new-post form holds something else."
+  },
+  "drafts.replace.body": {
+    "defaultMessage": "投稿のフォームに書きかけの投稿があります。この下書きを開くと、それは消えます。",
+    "description": "Body of the dialog shown when a draft is opened while the new-post form holds something else."
+  },
+  "drafts.replace.confirm": {
+    "defaultMessage": "置き換える",
+    "description": "Confirm button of the dialog that replaces what the new-post form holds with the opened draft."
+  },
+  "drafts.gone": {
+    "defaultMessage": "この下書きはもうありません。ほかの端末で公開されたか、削除された可能性があります。",
+    "description": "Announcement when a draft to open, schedule, or delete is gone from the server."
+  },
+  "drafts.notification_link": {
+    "defaultMessage": "下書きを開く",
+    "description": "Link in the notification that a scheduled post could not be published, to the drafts page where the draft is kept."
+  }
+}

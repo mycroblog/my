@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The new-post form (a dialog from lg, a sheet below; FR-101) in the states of ADR-0079 §13: empty, written with a
 // content warning and a poll, too long, sent empty with Ctrl+Enter, with files dragged over it, a reply, a quote, a
-// post the server failed to take, and a post its automated review refused, with the appeal.
+// post the server failed to take, a post its automated review refused, with the appeal, the schedule popover, and a
+// save with nothing written.
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect, userEvent, waitFor, within } from "storybook/test";
@@ -183,6 +184,27 @@ export const Rejected: Story = {
     await expect(await dialog.findByText("This post was not published.")).toBeInTheDocument();
     await expect(dialog.getByRole("button", { name: "Appeal" })).toBeVisible();
     await expect(dialog.getByRole("textbox", { name: "Your post" })).toHaveValue("Fresh bread, half price today.");
+  },
+};
+
+/** The schedule popover over a written post: the date and the time in the user's time zone (ADR-0156). */
+export const Scheduling: Story = {
+  play: async (context) => {
+    const { userEvent } = context;
+    const dialog = within(await openCompose(context));
+    await userEvent.type(dialog.getByRole("textbox", { name: "Your post" }), "The market opens at nine tomorrow.");
+    await userEvent.click(dialog.getByRole("button", { name: "Schedule the post" }));
+    await expect(await within(document.body).findByRole("dialog", { name: "Schedule the post" })).toBeVisible();
+  },
+};
+
+/** Saving with nothing written: the send bar says why nothing was saved. */
+export const SaveWhileEmpty: Story = {
+  play: async (context) => {
+    const { userEvent } = context;
+    const dialog = within(await openCompose(context));
+    await userEvent.click(dialog.getByRole("button", { name: "Save draft" }));
+    await expect(await dialog.findByText("There is nothing to save yet.")).toBeVisible();
   },
 };
 

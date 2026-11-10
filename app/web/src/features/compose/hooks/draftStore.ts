@@ -25,6 +25,12 @@ export type AttachmentDraft = {
   error: string | null;
 };
 
+/**
+ * The draft on the server that a draft continues (ADR-0156): its ID, the `ETag` of the version it started from (the
+ * `If-Match` of the next save), and when it is scheduled to be published (null while it is not).
+ */
+export type SavedDraft = { id: string; etag: string; scheduledAt: string | null };
+
 export type Draft = {
   text: string;
   hasWarning: boolean;
@@ -47,6 +53,8 @@ export type Draft = {
    * so sending it again cannot post it twice, and dropped by any edit.
    */
   idempotencyKey: string | null;
+  /** The draft on the server it continues, or null for one only in this tab. Edits keep it; saving or posting ends it. */
+  saved: SavedDraft | null;
 };
 
 /** A post that was handed to the server and has not been confirmed yet: what is sent, and the draft it came from. */
@@ -71,7 +79,8 @@ export type ComposeState = {
   rejection: Rejection | null;
 };
 
-const emptyDraft: Draft = {
+/** A draft with nothing in it, following every default. */
+export const emptyDraft: Draft = {
   text: "",
   hasWarning: false,
   spoilerText: "",
@@ -84,6 +93,7 @@ const emptyDraft: Draft = {
   attachments: [],
   poll: null,
   idempotencyKey: null,
+  saved: null,
 };
 
 /** Whether the draft has nothing the user would miss. */
@@ -94,7 +104,8 @@ export function isEmptyDraft(draft: Draft): boolean {
     draft.attachments.length === 0 &&
     draft.poll === null &&
     draft.replyToId === null &&
-    draft.quoteId === null
+    draft.quoteId === null &&
+    draft.saved === null
   );
 }
 
@@ -193,6 +204,24 @@ export class DraftStore {
       rejection: null,
     });
     return item;
+  }
+
+  /**
+   * Replaces the draft with `draft`, one the user opened from the drafts saved on the server or that was just saved
+   * there (the form then starts empty, keeping the chosen visibility, language and interaction policy, as after a send).
+   */
+  replace(draft: Draft | null) {
+    const { visibility, language, interactionPolicy, replyToId } = this.#state.draft;
+    this.#set({
+      ...this.#state,
+      draft: draft ?? {
+        ...emptyDraft,
+        visibility: replyToId === null ? visibility : null,
+        language,
+        interactionPolicy,
+      },
+      error: null,
+    });
   }
 
   /** Drops a post from the outbox: it was posted, or the user discarded it. */

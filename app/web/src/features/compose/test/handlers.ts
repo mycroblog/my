@@ -1,9 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The default MSW handlers of the compose feature (web-client/README.md §7, web-client/12-compose.md §12): the preferences, posting,
-// appealing a refused post, the media uploads, and the searches of the completion, which find nothing unless a test offers results with
+// appealing a refused post, the media uploads, the drafts saved on the server (none, until a test saves one), and the searches of the completion, which find nothing unless a test offers results with
 // `server.use(accountSearchHandler(...))` or `server.use(tagSearchHandler(...))`.
 import { http, HttpResponse } from "msw";
-import { mediaFixture, preferencesFixture, type Schemas, viewerStatusFixture } from "../../../test/fixtures";
+import {
+  draftFixture,
+  mediaFixture,
+  preferencesFixture,
+  type Schemas,
+  viewerStatusFixture,
+} from "../../../test/fixtures";
 import { apiBase, authorized, unauthenticated, withViewer } from "../../../test/msw/http";
 
 /** The ID the default POST /media handler gives an upload. */
@@ -26,7 +32,52 @@ export function tagSearchHandler(tags: Schemas["TagSuggestion"][]) {
   );
 }
 
+/** The ID the default POST /drafts handler gives a new draft. */
+export const savedDraftId = "0192f0c4-7a8e-7000-8000-0000000004a1";
+
+/** A draft's answer with its ETag, as every draft operation but the list sends it. */
+export function draftResponse(draft: Schemas["Draft"], etag: string, status = 200) {
+  return HttpResponse.json(draft, { status, headers: { ETag: etag } });
+}
+
 export const handlers = [
+  // operationId listDrafts: no draft is saved.
+  http.get(`${apiBase}/drafts`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["DraftPage"])),
+  ),
+  // operationId createDraft.
+  http.post(`${apiBase}/drafts`, async ({ request }) => {
+    if (!authorized(request)) return unauthenticated(request);
+    const body = (await request.json()) as Schemas["DraftRequest"];
+    return draftResponse(draftFixture(savedDraftId, body), '"v1"', 201);
+  }),
+  // operationId getDraft: any draft has some text.
+  http.get(`${apiBase}/drafts/:id`, ({ request, params }) =>
+    withViewer(request, () => draftResponse(draftFixture(String(params["id"]), { text: "A saved draft" }), '"v1"')),
+  ),
+  // operationId updateDraft.
+  http.put(`${apiBase}/drafts/:id`, async ({ request, params }) => {
+    if (!authorized(request)) return unauthenticated(request);
+    const body = (await request.json()) as Schemas["DraftRequest"];
+    return draftResponse(draftFixture(String(params["id"]), body), '"v2"');
+  }),
+  // operationId deleteDraft.
+  http.delete(`${apiBase}/drafts/:id`, ({ request }) =>
+    withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  // operationId scheduleDraft.
+  http.put(`${apiBase}/drafts/:id/schedule`, async ({ request, params }) => {
+    if (!authorized(request)) return unauthenticated(request);
+    const { publish_at: publishAt } = (await request.json()) as Schemas["DraftScheduleRequest"];
+    return draftResponse(
+      draftFixture(String(params["id"]), { text: "A saved draft" }, { scheduled_at: publishAt }),
+      '"v1"',
+    );
+  }),
+  // operationId unscheduleDraft.
+  http.delete(`${apiBase}/drafts/:id/schedule`, ({ request, params }) =>
+    withViewer(request, () => draftResponse(draftFixture(String(params["id"]), { text: "A saved draft" }), '"v1"')),
+  ),
   // operationIds searchAccounts and searchTags.
   accountSearchHandler([]),
   tagSearchHandler([]),

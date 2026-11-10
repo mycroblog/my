@@ -6,7 +6,9 @@ import { registerReloadBlocker } from "../../../lib/reloadSafety";
 import { composeKey } from "../../../lib/storage";
 import { useViewer } from "../../session";
 import { cacheReplyTarget, type Status } from "../api/compose";
-import { type ComposeState, DraftStore, hasUnuploadedAttachment } from "./draftStore";
+import type { DraftVersion } from "../api/drafts";
+import { type ComposeState, DraftStore, hasUnuploadedAttachment, isEmptyDraft } from "./draftStore";
+import { draftOfServer } from "./serverDraft";
 import { directMessageText, replyMentions } from "./policy";
 
 /** The id of the post's text area, which a reply focuses. Only one form is on the page at a time. */
@@ -24,6 +26,10 @@ export type ComposeController = {
   quote: (status: Status) => void;
   /** Starts a direct message to the account `acct`: the form mentions it with the direct visibility, then gets focus. */
   directMessage: (acct: string) => void;
+  /** Puts a draft read from the server into the form in place of what it holds, then opens the sheet (ADR-0156). */
+  openDraft: (version: DraftVersion) => void;
+  /** Whether the form holds something that opening a draft would replace. */
+  isWriting: () => boolean;
 };
 
 export const ComposeContext = createContext<ComposeController | null>(null);
@@ -79,6 +85,13 @@ export function useComposeController(): ComposeController | null {
       });
       setIsSheetOpen(true);
     },
+    openDraft(version) {
+      draftStore.replace(draftOfServer(version));
+      setIsSheetOpen(true);
+    },
+    isWriting() {
+      return !isEmptyDraft(draftStore.getSnapshot().draft);
+    },
   };
 }
 
@@ -90,6 +103,15 @@ export function useComposeContext(): ComposeController | null {
 /** The compose state of the controller's store. */
 export function useComposeState(store: DraftStore): ComposeState {
   return useSyncExternalStore(store.subscribe, store.getSnapshot);
+}
+
+/**
+ * Opening a draft saved on the server in the form, for the drafts page; null while nobody is signed in. `isWriting`
+ * says whether the form holds something the draft would replace, which the page asks about first.
+ */
+export function useOpenDraft(): Pick<ComposeController, "openDraft" | "isWriting"> | null {
+  const controller = useComposeContext();
+  return controller === null ? null : { openDraft: controller.openDraft, isWriting: controller.isWriting };
 }
 
 /**

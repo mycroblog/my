@@ -7,6 +7,7 @@ import {
   ImageIcon,
   LanguageIcon,
   PollIcon,
+  ScheduleIcon,
   Select,
   SelectItem,
   Tooltip,
@@ -15,10 +16,13 @@ import {
   WarningIcon,
 } from "@my/ui";
 import { useId } from "react";
+import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
+import { blockerMessages } from "../hooks/blockerMessages";
 import { acceptedMediaTypes, maxAttachments } from "../hooks/policy";
 import type { ReadyComposeForm } from "../hooks/useComposeForm";
 import { InteractionPolicyPicker } from "./InteractionPolicyPicker";
+import { SchedulePicker } from "./SchedulePicker";
 import { VisibilityPicker } from "./VisibilityPicker";
 
 export type ComposeToolsProps = { form: ReadyComposeForm };
@@ -26,7 +30,8 @@ export type ComposeToolsProps = { form: ReadyComposeForm };
 /**
  * The tools of the form, in one row under the text, by weight (web-client/screens/compose.md): first the visibility,
  * which decides most about the post, as a `secondary` button with the chosen level's icon and name; then, after a
- * rule, images, poll, content warning, who may reply to, boost, and quote the post (ADR-0155) and language as `ghost` buttons
+ * rule, images, poll, content warning, who may reply to, boost, and quote the post (ADR-0155), language, and the schedule
+ * (ADR-0156) as `ghost` buttons
  * (web-client/12-compose.md §12); the emoji picker is in the corner of the text (ADR-0091 §4).
  * Every control is a button of the same height, so the row stays level at every width. The icon-only buttons are named by aria-label and show the same words as a tooltip
  * (G12); each control also says its current value: the images attached (description), the poll and the warning
@@ -42,7 +47,15 @@ export function ComposeTools({ form }: ComposeToolsProps) {
   const addLabel = t("client:compose.media.add");
   const warningLabel = t("client:compose.warning.toggle");
   const pollLabel = t("client:compose.poll.toggle");
+  const intl = useIntl();
   const languageName = form.languages.find((option) => option.id === form.language)?.name ?? form.language;
+  const scheduledAt = form.saved?.scheduledAt ?? null;
+  const scheduleLabel =
+    scheduledAt === null
+      ? t("client:drafts.schedule.label")
+      : t("client:drafts.schedule.label.scheduled", {
+          date: intl.formatDate(scheduledAt, { dateStyle: "medium", timeStyle: "short" }),
+        });
   return (
     <Cluster align="center" gap="2" shrink>
       <VisibilityPicker
@@ -115,6 +128,19 @@ export function ComposeTools({ form }: ComposeToolsProps) {
             </SelectItem>
           )}
         </Select>
+        <SchedulePicker
+          scheduledAt={scheduledAt}
+          check={() => (form.scheduleBlocker === null ? null : t(blockerMessages[form.scheduleBlocker]))}
+          onSchedule={form.serverDraft.schedule}
+          trigger={(isOpen) => (
+            <TooltipTrigger isDisabled={isOpen}>
+              <Button variant="ghost" size="toolbar" aria-label={scheduleLabel}>
+                <ScheduleIcon />
+              </Button>
+              <Tooltip>{scheduleLabel}</Tooltip>
+            </TooltipTrigger>
+          )}
+        />
       </Cluster>
     </Cluster>
   );

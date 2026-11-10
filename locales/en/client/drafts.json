@@ -1,0 +1,198 @@
+{
+  "drafts.title": {
+    "defaultMessage": "Drafts and scheduled posts",
+    "description": "Heading and document title of the page that lists the user's drafts saved on the server and their scheduled posts; also the link to it under the new-post form."
+  },
+  "drafts.save": {
+    "defaultMessage": "Save draft",
+    "description": "Button beside the submit button of the new-post form: saves what is written as a draft on the server, which opens on any device, and empties the form."
+  },
+  "drafts.saved": {
+    "defaultMessage": "Draft saved",
+    "description": "Toast after the new-post form saved a draft on the server; the form is empty again."
+  },
+  "drafts.save.blocked.empty": {
+    "defaultMessage": "There is nothing to save yet.",
+    "description": "Beside the save-draft button of the new-post form, after it was pressed with no text, content warning, attachment, or poll: why nothing was saved."
+  },
+  "drafts.save.blocked.uploading": {
+    "defaultMessage": "Wait until the attachments have uploaded, then save.",
+    "description": "Beside the save-draft button of the new-post form, after it was pressed while a file is still uploading: why nothing was saved."
+  },
+  "drafts.save.blocked.upload_failed": {
+    "defaultMessage": "Remove the attachment that failed to upload, then save.",
+    "description": "Beside the save-draft button of the new-post form, after it was pressed while an attachment failed to upload: why nothing was saved."
+  },
+  "drafts.save.conflict": {
+    "defaultMessage": "This draft was changed on another device. Save again to keep this as a new draft.",
+    "description": "Beside the save-draft button of the new-post form: the draft being edited was saved on another device since it was opened, so it was not overwritten. Saving again makes a new draft."
+  },
+  "drafts.save.failed": {
+    "defaultMessage": "The draft could not be saved: {reason}",
+    "description": "Beside the save-draft button of the new-post form when saving failed. {reason} is the server's or the network's localized reason."
+  },
+  "drafts.editing": {
+    "defaultMessage": "You are editing a saved draft.",
+    "description": "Line above the tools of the new-post form while it holds a draft opened from the drafts page: saving replaces that draft, and posting deletes it."
+  },
+  "drafts.editing.scheduled": {
+    "defaultMessage": "This draft is scheduled to be published {date}.",
+    "description": "Line above the tools of the new-post form while it holds a scheduled draft. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.schedule.label": {
+    "defaultMessage": "Schedule the post",
+    "description": "Accessible name and tooltip of the tool button of the new-post form that opens the date and time to publish the post at; also the title of that popover."
+  },
+  "drafts.schedule.label.scheduled": {
+    "defaultMessage": "Schedule the post: {date}",
+    "description": "Tooltip and accessible name of the schedule button of the new-post form while the draft is scheduled. {date} is the formatted date and time it is scheduled for."
+  },
+  "drafts.schedule.date": {
+    "defaultMessage": "Date",
+    "description": "Label of the date field of the schedule popover."
+  },
+  "drafts.schedule.time": {
+    "defaultMessage": "Time",
+    "description": "Label of the time field of the schedule popover."
+  },
+  "drafts.schedule.time_zone": {
+    "defaultMessage": "The date and time are in your time zone, {zone}.",
+    "description": "Description of the schedule popover's fields. {zone} is the name of the user's time zone (for example 'Japan Standard Time'), which the settings choose."
+  },
+  "drafts.schedule.submit": {
+    "defaultMessage": "Schedule",
+    "description": "Button of the schedule popover: saves the draft and schedules it for the chosen date and time."
+  },
+  "drafts.schedule.invalid": {
+    "defaultMessage": "Enter a date and a time.",
+    "description": "Error under the fields of the schedule popover when the date or the time is missing or not a valid one."
+  },
+  "drafts.schedule.too_soon": {
+    "defaultMessage": "Choose a time at least {minutes, plural, one {# minute} other {# minutes}} from now.",
+    "description": "Error under the fields of the schedule popover: the time is in the past or sooner than the server allows. {minutes} is the server's least lead time."
+  },
+  "drafts.schedule.too_far": {
+    "defaultMessage": "Choose a time within {days, plural, one {# day} other {# days}} from now.",
+    "description": "Error under the fields of the schedule popover: the time is further ahead than the server allows. {days} is the server's most lead time."
+  },
+  "drafts.schedule.scheduled": {
+    "defaultMessage": "Scheduled for {date}",
+    "description": "Toast and announcement after a post was scheduled. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.schedule.failed": {
+    "defaultMessage": "The post could not be scheduled: {reason}",
+    "description": "Error in the schedule popover when the server refused or the network failed. {reason} is the localized reason."
+  },
+  "drafts.scheduled.heading": {
+    "defaultMessage": "Scheduled posts",
+    "description": "Heading of the section of the drafts page that lists the drafts scheduled to be published; also the name of its list."
+  },
+  "drafts.scheduled.empty": {
+    "defaultMessage": "No scheduled posts",
+    "description": "Empty state of the scheduled posts of the drafts page."
+  },
+  "drafts.scheduled.empty.description": {
+    "defaultMessage": "Schedule a post in the new-post form to publish it at a time you choose.",
+    "description": "Description of the empty state of the scheduled posts of the drafts page."
+  },
+  "drafts.unscheduled.heading": {
+    "defaultMessage": "Drafts",
+    "description": "Heading of the section of the drafts page that lists the drafts without a schedule; also the name of its list."
+  },
+  "drafts.unscheduled.empty": {
+    "defaultMessage": "No drafts",
+    "description": "Empty state of the drafts of the drafts page."
+  },
+  "drafts.unscheduled.empty.description": {
+    "defaultMessage": "Choose “Save draft” in the new-post form to keep a post and finish it later, on any device.",
+    "description": "Description of the empty state of the drafts of the drafts page. The quoted words are the label of the save-draft button."
+  },
+  "drafts.row.no_text": {
+    "defaultMessage": "(No text)",
+    "description": "In a row of the drafts page, in place of the text of a draft that has no text and no content warning."
+  },
+  "drafts.row.publish_at": {
+    "defaultMessage": "To be published {date}",
+    "description": "In a row of the scheduled posts: when it is published. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.row.updated_at": {
+    "defaultMessage": "Saved {date}",
+    "description": "In a row of the drafts: when the draft was last saved. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.row.media": {
+    "defaultMessage": "{count, plural, one {# attachment} other {# attachments}}",
+    "description": "In a row of the drafts page: how many files the draft attaches."
+  },
+  "drafts.row.poll": {
+    "defaultMessage": "Poll",
+    "description": "In a row of the drafts page: the draft has a poll."
+  },
+  "drafts.row.reply": {
+    "defaultMessage": "Reply",
+    "description": "In a row of the drafts page: the draft replies to a post."
+  },
+  "drafts.row.quote": {
+    "defaultMessage": "Quote",
+    "description": "In a row of the drafts page: the draft quotes a post."
+  },
+  "drafts.action": {
+    "defaultMessage": "{action}: {excerpt}",
+    "description": "Accessible name of a button of a row of the drafts page. {action} is the button's visible text (for example 'Edit'), {excerpt} the start of the draft's text."
+  },
+  "drafts.edit": {
+    "defaultMessage": "Edit",
+    "description": "Button of a row of the drafts page: opens the draft in the new-post form."
+  },
+  "drafts.reschedule": {
+    "defaultMessage": "Change time",
+    "description": "Button of a row of the scheduled posts: opens the popover that moves the schedule to another date and time."
+  },
+  "drafts.unschedule": {
+    "defaultMessage": "Cancel schedule",
+    "description": "Button of a row of the scheduled posts: cancels the schedule; the draft stays, among the drafts."
+  },
+  "drafts.unscheduled": {
+    "defaultMessage": "Schedule cancelled",
+    "description": "Announcement after a schedule was cancelled; the draft moved to the drafts."
+  },
+  "drafts.delete": {
+    "defaultMessage": "Delete",
+    "description": "Button of a row of the drafts page, and the confirm button of its dialog: deletes the draft and its schedule."
+  },
+  "drafts.delete.title": {
+    "defaultMessage": "Delete this draft?",
+    "description": "Title of the dialog that confirms deleting a draft."
+  },
+  "drafts.delete.body": {
+    "defaultMessage": "The draft is deleted on every device, and its schedule with it. This cannot be undone.",
+    "description": "Body of the dialog that confirms deleting a draft."
+  },
+  "drafts.deleted": {
+    "defaultMessage": "Draft deleted",
+    "description": "Announcement after a draft was deleted."
+  },
+  "drafts.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The way out of the dialogs of the drafts page (delete, replace)."
+  },
+  "drafts.replace.title": {
+    "defaultMessage": "Replace what you are writing?",
+    "description": "Title of the dialog shown when a draft is opened while the new-post form holds something else."
+  },
+  "drafts.replace.body": {
+    "defaultMessage": "The new-post form holds a post you are writing. Opening this draft replaces it.",
+    "description": "Body of the dialog shown when a draft is opened while the new-post form holds something else."
+  },
+  "drafts.replace.confirm": {
+    "defaultMessage": "Replace",
+    "description": "Confirm button of the dialog that replaces what the new-post form holds with the opened draft."
+  },
+  "drafts.gone": {
+    "defaultMessage": "This draft no longer exists. It may have been published or deleted on another device.",
+    "description": "Announcement when a draft to open, schedule, or delete is gone from the server."
+  },
+  "drafts.notification_link": {
+    "defaultMessage": "Open your drafts",
+    "description": "Link in the notification that a scheduled post could not be published, to the drafts page where the draft is kept."
+  }
+}

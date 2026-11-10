@@ -326,3 +326,27 @@ export const remoteStatusFixture: Schemas["Status"] = postFixture(
     ],
   },
 );
+
+/** A draft saved on the server as it answers it (operationId getDraft), from the content of a save (ADR-0156). */
+export function draftFixture(
+  id: string,
+  content: Partial<Schemas["DraftRequest"]> = {},
+  extra: Partial<Schemas["Draft"]> = {},
+): Schemas["Draft"] {
+  return {
+    id,
+    created_at: "2026-11-09T09:00:00Z",
+    updated_at: "2026-11-09T09:00:00Z",
+    text: content.text ?? "",
+    spoiler_text: content.spoiler_text ?? "",
+    sensitive: content.sensitive ?? false,
+    visibility: content.visibility ?? "public",
+    media: content.media ?? [],
+    ...(content.language === undefined ? {} : { language: content.language }),
+    ...(content.in_reply_to_id === undefined ? {} : { in_reply_to_id: content.in_reply_to_id }),
+    ...(content.quoted_status_id === undefined ? {} : { quoted_status_id: content.quoted_status_id }),
+    ...(content.interaction_policy === undefined ? {} : { interaction_policy: content.interaction_policy }),
+    ...(content.poll === undefined ? {} : { poll: content.poll }),
+    ...extra,
+  };
+}
