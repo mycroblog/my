@@ -389,6 +389,13 @@ func erasureRepoFeeds(t *testing.T, r *erasureRepo) {
 	notify(other, erased, "")
 	notify(other, third, erasedStatus)
 	notify(third, other, "")
+	conversation := r.ids.NewID()
+	for _, account := range []string{erased, other} {
+		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+			_, err := r.h.Notifications.InsertConversationMute(ctx, tx, notification.ConversationMute{AccountID: account, ConversationID: conversation, CreatedAt: r.clock.Now()})
+			return err
+		})
+	}
 	for i, want := range []int64{1, 1, 0} {
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 			n, err := r.h.NotificationErasure.EraseNotificationsOf(ctx, tx, erased, "", 1)
@@ -400,6 +407,8 @@ func erasureRepoFeeds(t *testing.T, r *erasureRepo) {
 	}
 	r.rows(t, "notifications", "recipient_account_id", erased, 0)
 	r.rows(t, "notifications", "source_account_id", erased, 0)
+	r.rows(t, "conversation_mutes", "account_id", erased, 0)
+	r.rows(t, "conversation_mutes", "account_id", other, 1)
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
 		return r.h.NotificationErasure.EraseStatusNotifications(ctx, tx, []string{erasedStatus})
 	})

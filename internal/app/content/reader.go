@@ -114,6 +114,8 @@ func (v StatusView) Edited() bool { return v.Revision.Seq > 1 }
 
 // ViewerRelation is what a local viewer did with a status.
 type ViewerRelation struct {
+	// AccountID is the viewer's account.
+	AccountID                       string
 	Favourited, Boosted, Bookmarked bool
 	// Author is whether the viewer is the author, who alone can pin the status.
 	Author bool
@@ -592,7 +594,7 @@ func (r *Reader) EmojiTags(ctx context.Context, ids []string) ([]EmojiTag, error
 // relation returns what accountID did with st.
 func (r *Reader) relation(ctx context.Context, accountID string, st content.Status) (*ViewerRelation, error) {
 	repo := r.d.Interactions
-	var rel ViewerRelation
+	rel := ViewerRelation{AccountID: accountID}
 	var err error
 	if rel.Favourited, err = found(repo.FindFavourite(ctx, accountID, st.ID)); err != nil {
 		return nil, err

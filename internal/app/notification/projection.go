@@ -56,7 +56,10 @@ type ProjectorDeps struct {
 	// Reach keeps the notifications of a source with unsolicited_reach from the recipients
 	// that do not follow it; nil restricts no source.
 	Reach ReachPolicy
-	IDs   kernel.IDGenerator
+	// Conversations reads the conversations of the statuses that the thread mutes are checked
+	// against (ADR-0158 §8); nil mutes no thread.
+	Conversations Conversations
+	IDs           kernel.IDGenerator
 	// Push enqueues the Web Push messages of the new notifications; nil pushes none.
 	Push *Pusher
 	// Email enqueues the emails of the new notifications whose recipients get them by email;
@@ -116,7 +119,9 @@ type ProjectorDeps struct {
 // A notification goes only to a local recipient other than its source, and not to a deactivated
 // recipient (ADR-0089 §16), or when either blocks the other, the recipient mutes the source with hide_notifications or mutes its domain
 // (FR-304), the source has unsolicited_reach (a limit on it or its domain) and the recipient
-// does not follow it, or the recipient turned the type's group off in the app (FR-210). Each notification
+// does not follow it, the recipient mutes the conversation of the status of a
+// notification.ThreadMuted type (the quoted status for a quote; ADR-0158 §8), or the recipient
+// turned the type's group off in the app (FR-210). Each notification
 // has a dedupe key unique per recipient (notification.FollowKey, MentionKey, InteractionKey,
 // ModerationNoticeKey),
 // so projecting an event again, or a repeated boost or favourite, creates nothing more. Each new
@@ -141,6 +146,9 @@ type ProjectorDeps struct {
 // mention, boost, and favourite notifications about a deleted status no longer appear. A
 // deleted status gets no notifications later, so one without them needs no row. Notifications
 // are events and stay until the erasure job deletes them.
+//
+// The projector of content.conversation_merged moves the thread mutes of the merged conversation
+// to the one it was merged into (registerThreadMuteProjector).
 //
 // The subscription projectors (registerSubscriptionProjectors) keep the subscriptions to new
 // posts in step with the follows and blocks, and enqueue the status notifications of a new post.
@@ -207,6 +215,7 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 		})
 	})
 	registerExclusionProjectors(r, d.Repository)
+	registerThreadMuteProjector(r, d.Repository)
 	// A reply held out of its thread mentions no one (ADR-0155 §6).
 	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.StatusCreated)
@@ -516,6 +525,10 @@ func (p *projector) quote(ctx context.Context, tx uow.Tx, quoting appcontent.Sta
 	if quoted == nil || !quoted.IsLocal {
 		return nil // a remote author is notified by its own server
 	}
+	// The thread of a quote is that of the status quoted (ADR-0158 §8).
+	if muted, err := p.threadMuted(ctx, tx, quoted.AuthorAccountID, quoted.ID); err != nil || muted {
+		return err
+	}
 	return p.notify(ctx, tx, notification.Notification{
 		RecipientAccountID: quoted.AuthorAccountID, SourceAccountID: quoting.AuthorAccountID, Type: notification.TypeQuote,
 		StatusID: quoting.ID, DedupeKey: notification.InteractionKey(notification.TypeQuote, quoting.ID, quoting.AuthorAccountID),
@@ -588,8 +601,8 @@ func (p *projector) interaction(ctx context.Context, tx uow.Tx, t notification.T
 
 // notify inserts n, with its source's domain, unless its recipient is its source, not local, or
 // deactivated, the relationship between them hides it, the source may reach only its followers and the
-// recipient is none, the recipient mutes the source's domain, or the recipient turned its group
-// off in the app. A notification with the same dedupe key leaves n out.
+// recipient is none, the recipient mutes the source's domain or the conversation of its status
+// (threadOf), or the recipient turned its group off in the app. A notification with the same dedupe key leaves n out.
 func (p *projector) notify(ctx context.Context, tx uow.Tx, n notification.Notification) error {
 	return p.notifyWith(ctx, tx, n, nil)
 }
@@ -626,6 +639,11 @@ func (p *projector) notifyWith(ctx context.Context, tx uow.Tx, n notification.No
 			if err != nil || muted {
 				return err
 			}
+		}
+	}
+	if threadOf(n) != "" {
+		if muted, err := p.threadMuted(ctx, tx, n.RecipientAccountID, threadOf(n)); err != nil || muted {
+			return err
 		}
 	}
 	choices, err := choicesTx(ctx, p.d.Repository, tx, n.RecipientAccountID)
@@ -720,6 +738,13 @@ func (p *projector) notifyAll(ctx context.Context, tx uow.Tx, n notification.Not
 			}
 			ids = slices.DeleteFunc(ids, func(id string) bool { return excluded[id] })
 		}
+	}
+	if threadOf(n) != "" && len(ids) > 0 {
+		muters, err := p.threadMuters(ctx, tx, threadOf(n), ids)
+		if err != nil {
+			return err
+		}
+		ids = slices.DeleteFunc(ids, func(id string) bool { return muters[id] })
 	}
 	if len(ids) == 0 {
 		return nil

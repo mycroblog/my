@@ -42,9 +42,12 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
 	}
 	deps := notification.ProjectorDeps{
-		Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Reach: a.AccountPolicy, IDs: a.IDs, Push: pusher,
-		PostJobs: outbox,
+		Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Reach: a.AccountPolicy, Conversations: a.Content,
+		IDs: a.IDs, Push: pusher, PostJobs: outbox,
 	}
+	a.ThreadMutes = notification.NewThreadMutes(notification.ThreadMuteDeps{
+		UnitOfWork: a.UnitOfWork, Repository: repo, Conversations: a.Content, Clock: a.Clock,
+	})
 	a.Subscriptions = notification.NewSubscriptions(notification.SubscriptionDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Clock: a.Clock,
 	})

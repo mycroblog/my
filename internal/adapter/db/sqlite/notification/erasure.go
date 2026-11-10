@@ -60,6 +60,9 @@ func (r *Repository) EraseNotificationsOf(ctx context.Context, tx uow.Tx, accoun
 	if err := sqlite.RunSteps(ctx, accountID, "erase post subscriptions", q.ErasePostSubscriptionsOf, q.ErasePostSubscriptionRequestsOf); err != nil {
 		return 0, err
 	}
+	if err := sqlite.RunSteps(ctx, accountID, "erase conversation mutes", q.EraseConversationMutesOf); err != nil {
+		return 0, err
+	}
 	subscribers, err := q.ErasePostSubscriptionsAsTarget(ctx, notificationgen.ErasePostSubscriptionsAsTargetParams{AccountID: accountID, Lim: lim})
 	if err != nil {
 		return 0, sqlite.Wrap(err, "erase post subscriptions")

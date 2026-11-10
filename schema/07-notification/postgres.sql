@@ -221,3 +221,19 @@ CREATE INDEX notifications_source_account_id ON notifications (source_account_id
 CREATE INDEX notifications_subject_user_id ON notifications (subject_user_id);
 
 CREATE INDEX notification_exclusions_target_account_id ON notification_exclusions (target_account_id);
+
+-- Thread mutes (ADR-0158 §8, §9).
+-- Current value: a local account's mute of a conversation (content's conversations, ADR-0154),
+-- which keeps the mention, boost, favourite, reaction, quote, and status notifications about the
+-- statuses of the conversation from being created; timelines still show them. The merge of a
+-- conversation (content.conversation_merged) moves its rows to the conversation it was merged
+-- into, keeping one row when the account muted both.
+CREATE TABLE conversation_mutes (
+  account_id uuid NOT NULL,
+  conversation_id uuid NOT NULL,
+  created_at timestamptz NOT NULL,
+  PRIMARY KEY (account_id, conversation_id)
+);
+-- The accounts that mute a conversation: the check of the recipients of a notification, and the
+-- merge.
+CREATE INDEX conversation_mutes_conversation_account ON conversation_mutes (conversation_id, account_id);

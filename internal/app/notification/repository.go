@@ -25,6 +25,7 @@ var ErrNotFound = errors.New("notification: not found")
 // any transaction. Lookups that find nothing return an error wrapping ErrNotFound.
 type Repository interface {
 	SubscriptionRepository
+	ThreadMuteRepository
 
 	// InsertNotification inserts a notification and reports false, writing nothing, when the
 	// recipient already has one with the same dedupe key.

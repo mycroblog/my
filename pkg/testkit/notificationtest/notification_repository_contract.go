@@ -26,7 +26,8 @@ import (
 // subdomains, and deleted statuses that hide notifications; the read marker, which only moves
 // forward; the settings, replaced per group and channel; the error group notices of an hour, also
 // added concurrently, and their prune; the projections emptied for a rebuild with the statuses
-// notified of; and the subscriptions to new posts and the requests for them. The notification use
+// notified of; the subscriptions to new posts and the requests for them; and the thread mutes,
+// inserted once, read by conversation and account, and moved by a merge. The notification use
 // cases on top of it are NotificationFlows, which internal/flowtest/notification runs once on
 // SQLite.
 func NotificationContract(t *testing.T, newHarness NotificationFactory) {
@@ -50,6 +51,7 @@ func NotificationContract(t *testing.T, newHarness NotificationFactory) {
 		{"InsertsEachForManyRecipients", notificationRepoInsertsForEach},
 		{"RecordsManyDeletedStatuses", notificationRepoDeletedStatuses},
 		{"UpsertsAndDeletesManyExclusions", notificationRepoManyExclusions},
+		{"KeepsThreadMutes", notificationRepoThreadMutes},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
