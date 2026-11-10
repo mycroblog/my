@@ -258,8 +258,7 @@ func (q *Queries) ListStatusAutoDeleteLimitNotices(ctx context.Context, ids []st
 }
 
 const listStatusesToAutoDelete = `-- name: ListStatusesToAutoDelete :many
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.author_account_id = ?1 AND s.id < CAST(?2 AS TEXT)
   AND s.is_local = 1 AND s.published_at < CAST(?3 AS INTEGER)
@@ -342,7 +341,6 @@ func (q *Queries) ListStatusesToAutoDelete(ctx context.Context, arg ListStatuses
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 		); err != nil {
 			return nil, err

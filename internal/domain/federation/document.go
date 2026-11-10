@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"html"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -16,7 +17,7 @@ import (
 // LDContext returns the JSON-LD context of the documents this server publishes: ActivityStreams,
 // the security vocabulary of publicKey, the Mastodon extensions in use (ADR-0006), and the
 // vocabulary of quotes (FEP-044f, GoToSocial's interaction policies, and the quote properties of
-// Misskey and Fedibird; ADR-0069 §3). Actor
+// Misskey and Fedibird; ADR-0069 §3), and ostatus:conversation (ADR-0154 §5). Actor
 // documents and outbound activities share it. Each call returns a new value, so callers may not
 // change what others send.
 func LDContext() []any {
@@ -41,6 +42,8 @@ func LDContext() []any {
 			"blurhash":                  "toot:blurhash",
 			"focalPoint":                map[string]string{"@container": "@list", "@id": "toot:focalPoint"},
 			"votersCount":               "toot:votersCount",
+			"ostatus":                   "http://ostatus.org#",
+			"conversation":              "ostatus:conversation",
 			"gts":                       "https://gotosocial.org/ns#",
 			"interactionPolicy":         map[string]string{"@id": "gts:interactionPolicy", "@type": "@id"},
 			"canQuote":                  map[string]string{"@id": "gts:canQuote", "@type": "@id"},
@@ -238,6 +241,10 @@ type NoteDocument struct {
 	ContentMap map[string]string    `json:"contentMap,omitempty"`
 	Attachment []AttachmentDocument `json:"attachment"`
 	Tag        []TagDocument        `json:"tag"`
+	// The conversation of the status (ADR-0154 §5): its IRI as FEP-7888's context when it is an
+	// https IRI, and as ostatus:conversation, which Mastodon reads, either way.
+	Context      IRI    `json:"context,omitempty"`
+	Conversation string `json:"conversation,omitempty"`
 	// The poll of a Question (FR-112), left out of a Note: the choices of a single-choice poll
 	// in OneOf or of a multiple-choice one in AnyOf, when it ends, when it ended (Closed, once
 	// it has), and how many voted, as Mastodon publishes them.
@@ -267,6 +274,16 @@ type InteractionPolicy struct {
 // automatically. This server approves no quote by hand.
 type QuoteApprovalPolicy struct {
 	AutomaticApproval []IRI `json:"automaticApproval"`
+}
+
+// InConversation returns n in the conversation uri: as conversation, and as context too unless
+// uri is not an https IRI (Mastodon's tag: URIs).
+func (n NoteDocument) InConversation(uri string) NoteDocument {
+	n.Conversation, n.Context = uri, ""
+	if strings.HasPrefix(uri, "https://") {
+		n.Context = IRI(uri)
+	}
+	return n
 }
 
 // WithQuote returns n quoting target: with quote and its aliases, the QuoteAuthorization

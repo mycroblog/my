@@ -36,6 +36,7 @@
                 "https://www.w3.org/ns/activitystreams#Public"
               ]
             },
+            "Conversation": "https://mastodon.example/contexts/117454924828888842-117454927826029191",
             "ID": "https://mastodon.example/ap/users/117454922805771612/statuses/117454927899945619",
             "InReplyTo": "https://remote.example/ap/objects/01a148a2-753a-7b02-b9bc-71380ccdfdd0",
             "Mentions": [

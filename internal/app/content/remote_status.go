@@ -39,6 +39,10 @@ type RemoteStatusInput struct {
 	// Visibility comes from the addressing; it is never local (ADR-0017).
 	Visibility   content.Visibility
 	InReplyToURI string
+	// Conversation is the IRI of the conversation that the post declares (its context, else its
+	// conversation; ADR-0154 §2), "" for none. A post that declares a conversation of this
+	// server joins it by its parent alone. Only IngestRemoteStatus reads it.
+	Conversation string
 	PublishedAt  time.Time
 	// RevisedAt is the AP updated time, or PublishedAt when there is none.
 	RevisedAt time.Time
@@ -107,8 +111,11 @@ type RemotePollInput struct {
 // IngestRemoteStatus stores a remote post inside tx (federation.md §3.4): the status with an ID
 // whose time is its published time (#71), and its first revision with the bodies sanitized, the
 // mentions, hashtags, custom emoji, the attachments' declared values, and the poll with its
-// counts. It emits StatusCreated, so that the projections, the timelines, and the notifications
-// see the post. The caller decides that the post is in scope (ADR-0006) and is not tombstoned.
+// counts. The post joins the conversation it declares, else its stored parent's, else a new one,
+// and the conversations that its reply links show to be its thread's are merged (ADR-0154 §2,
+// §3; insertStatus). It emits StatusCreated, so that the projections, the timelines, and the
+// notifications see the post. The caller decides that the post is in scope (ADR-0006) and is not
+// tombstoned.
 //
 // A URI that a status already has fails with ErrStatusExists; the transaction must then be
 // abandoned (the status is already there).
@@ -130,23 +137,8 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 		InReplyToURI:    in.InReplyToURI,
 		PublishedAt:     published,
 	}
-	st.ConversationURI = st.URI
-	if in.InReplyToURI != "" {
-		st.ConversationURI = ""
-		parent, err := s.d.Repository.FindLiveStatusByURI(ctx, tx, in.InReplyToURI)
-		switch {
-		case errors.Is(err, ErrNotFound):
-			// The thread is unknown until the parent arrives.
-		case err != nil:
-			return Post{}, err
-		default:
-			st.ConversationURI = parent.ConversationURI
-			if st.ConversationURI == "" {
-				st.ConversationURI = parent.URI
-			}
-		}
-	}
-	if err := s.d.Repository.InsertStatus(ctx, tx, st); err != nil {
+	parentStored, err := s.insertStatus(ctx, tx, st, in.Conversation)
+	if err != nil {
 		return Post{}, err
 	}
 	revisedAt := remoteRevisedAt(in.RevisedAt, published, now)
@@ -171,7 +163,7 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err := s.observePoll(ctx, tx, rev.Poll, in.Poll, now); err != nil {
 		return Post{}, err
 	}
-	return Post{Status: st, Revision: rev}, nil
+	return Post{Status: st, Revision: rev, ParentStored: parentStored}, nil
 }
 
 // ReviseRemoteStatus records a new revision of a remote post inside tx (federation.md §3.3,
@@ -287,11 +279,12 @@ func (s *Service) Tombstoned(ctx context.Context, uri string) (bool, error) {
 	return d.Tombstone(), nil
 }
 
-// LocalStatusInConversation reports whether a local status that is not deleted belongs to the
-// conversation conversationURI ("" is no conversation): a reply into it is in the scope of remote
-// content (ADR-0006).
-func (s *Service) LocalStatusInConversation(ctx context.Context, conversationURI string) (bool, error) {
-	return s.d.Repository.LocalStatusInConversation(ctx, conversationURI)
+// LocalStatusInConversationOf reports whether a local status that is not deleted belongs to the
+// conversation of the status statusID: a reply into it is in the scope of remote content
+// (ADR-0006). The conversation that a post declares does not count (ADR-0154 §2), so the caller
+// asks about the stored parent of the reply.
+func (s *Service) LocalStatusInConversationOf(ctx context.Context, statusID string) (bool, error) {
+	return s.d.Repository.LocalStatusInConversationOf(ctx, statusID)
 }
 
 func (s *Service) checkRemote(in RemoteStatusInput) error {

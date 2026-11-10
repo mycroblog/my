@@ -41,6 +41,7 @@ type Objects interface {
 	OutboxTotal(ctx context.Context, accountID string) (int64, error)
 	Outbox(ctx context.Context, accountID, before string) (appfederation.OutboxPage, error)
 	Featured(ctx context.Context, accountID string) ([]federation.NoteDocument, error)
+	Conversation(ctx context.Context, req appfederation.Requester, id string, paged bool, after string) (appfederation.ConversationCollection, error)
 }
 
 // Graph is what the followers and following collections need from the graph module;
@@ -190,6 +191,7 @@ func (h *Handler) Register(r Router) {
 	r.Handle("GET "+emojisPrefix+"{id}", publish(h.emoji))
 	r.Handle("GET "+quoteAuthorizationsPrefix+"{id}", publish(h.quoteAuthorization))
 	r.Handle("GET "+activitiesPrefix+"{id}", publish(h.activity))
+	r.Handle("GET "+contextsPrefix+"{id}", publish(h.conversation))
 	// A wildcard cannot share a path segment with "@", so every single-segment GET that no
 	// more specific pattern serves comes here; profilePage passes those that are not profile
 	// pages to the HTML handler.

@@ -45,8 +45,7 @@ LIMIT sqlc.arg(batch_limit)::integer;
 -- author's bookmark or favourite, media or a poll in the current revision, or at least
 -- @keep_min_boosts boosts or @keep_min_favourites favourites (0 for no threshold).
 -- name: ListStatusesToAutoDelete :many
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.author_account_id = sqlc.arg(account_id)::uuid AND s.id < sqlc.arg(id_before)::uuid
   AND s.is_local AND s.published_at < sqlc.arg(published_before)::timestamptz

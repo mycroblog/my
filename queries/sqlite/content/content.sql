@@ -2,8 +2,8 @@
 
 -- name: InsertStatus :exec
 INSERT INTO statuses (
-  id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+  id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: InsertLocalStatus :exec
 INSERT INTO local_statuses (status_id, author_account_id, oauth_client_id, idempotency_key) VALUES (?, ?, ?, ?);
@@ -66,14 +66,12 @@ DELETE FROM status_mention_index WHERE status_id = ?;
 SELECT EXISTS (SELECT 1 FROM status_deletions WHERE status_id = ?);
 
 -- name: GetLiveStatusByURI :one
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.uri = ? AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id);
 
 -- name: ListLiveRepliesTo :many
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.in_reply_to_uri = ? AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
 ORDER BY s.id;
@@ -237,16 +235,16 @@ ORDER BY id
 LIMIT sqlc.arg(page_limit);
 
 -- name: GetStatus :one
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE id = ?;
 
 -- ListStatusesByIDs reads what GetStatus reads, of many statuses at once; the ids are a JSON array.
 -- name: ListStatusesByIDs :many
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY id;
 
 -- name: GetStatusByURI :one
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE uri = ?;
 
 -- name: GetLocalStatus :one
@@ -305,8 +303,7 @@ SELECT account_id, statuses_count, last_status_at FROM account_post_counters WHE
 -- ListLiveStatusHeads returns every status that is not deleted (each has a head) with the ID of
 -- its current revision, ordered by ID.
 -- name: ListLiveStatusHeads :many
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at, h.revision_id
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at, h.revision_id
 FROM statuses s
 JOIN status_heads h ON h.status_id = s.id
 ORDER BY s.id;

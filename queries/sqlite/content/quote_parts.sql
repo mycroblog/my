@@ -14,5 +14,5 @@ SELECT status_id, state, authorization_uri FROM status_quote_states WHERE status
 SELECT status_id, policy, updated_at FROM status_quote_policies WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(status_ids) AS TEXT))) ORDER BY status_id;
 
 -- name: ListStatusesByURIs :many
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE uri IN (SELECT value FROM json_each(CAST(sqlc.arg(uris) AS TEXT))) ORDER BY id;

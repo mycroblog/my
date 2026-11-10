@@ -15,6 +15,7 @@
         "Language": "und"
       }
     ],
+    "Conversation": "https://akkoma.example/contexts/2c3ce4b4-18b1-4b1a-8965-3932027b5326",
     "Emojis": [
       {
         "ID": "https://akkoma.example/emoji/custom/joker_disapprove.png",

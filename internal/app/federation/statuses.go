@@ -40,7 +40,7 @@ type RemoteStatuses interface {
 	FindStatus(ctx context.Context, id string) (appcontent.Status, error)
 	FindStatusByURI(ctx context.Context, uri string) (appcontent.Status, error)
 	Tombstoned(ctx context.Context, uri string) (bool, error)
-	LocalStatusInConversation(ctx context.Context, conversationURI string) (bool, error)
+	LocalStatusInConversationOf(ctx context.Context, statusID string) (bool, error)
 }
 
 // RelayedStatuses records the remote posts that only a relay brought in, which are kept for
@@ -400,7 +400,7 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 		if relayed {
 			return h.recordRelayed(ctx, tx, p.Status, a.Relay)
 		}
-		return h.fetchParentTx(ctx, tx, p.Status)
+		return h.fetchParentTx(ctx, tx, p)
 	})
 	if errors.Is(err, appcontent.ErrStatusExists) {
 		return nil // a concurrent activity stored it
@@ -474,11 +474,8 @@ func (h *StatusHandlers) inScope(ctx context.Context, author appaccount.Actor, o
 	case parent.IsLocal:
 		return true, nil
 	}
-	conversation := parent.ConversationURI
-	if conversation == "" {
-		conversation = parent.URI
-	}
-	return h.d.Statuses.LocalStatusInConversation(ctx, conversation)
+	// The parent's conversation, not the one the post declares (ADR-0154 §2).
+	return h.d.Statuses.LocalStatusInConversationOf(ctx, parent.ID)
 }
 
 // followed reports whether a local account follows the remote author: its followers are local.
@@ -625,6 +622,7 @@ func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Au
 		AuthorDomain:        author.Account.Domain,
 		Visibility:          appcontent.Visibility(audience.Visibility(followers)),
 		InReplyToURI:        string(obj.InReplyTo),
+		Conversation:        string(obj.Conversation),
 		PublishedAt:         obj.Published,
 		RevisedAt:           obj.Updated,
 		ActivityURI:         activityURI,

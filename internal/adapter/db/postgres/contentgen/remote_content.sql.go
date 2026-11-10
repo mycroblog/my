@@ -80,24 +80,6 @@ func (q *Queries) DeleteRemoteMediaCache(ctx context.Context, arg DeleteRemoteMe
 	return result.RowsAffected(), nil
 }
 
-const existsLocalStatusInConversation = `-- name: ExistsLocalStatusInConversation :one
-SELECT EXISTS (
-  SELECT 1 FROM statuses s
-  WHERE s.conversation_uri = $1 AND s.is_local = true
-    AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
-)
-`
-
-// ExistsLocalStatusInConversation reports whether a local status that is not deleted belongs to
-// the conversation, for the scope of remote content (ADR-0006: replies in a thread that has a
-// local status).
-func (q *Queries) ExistsLocalStatusInConversation(ctx context.Context, conversationUri *string) (bool, error) {
-	row := q.db.QueryRow(ctx, existsLocalStatusInConversation, conversationUri)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
 const getCustomEmoji = `-- name: GetCustomEmoji :one
 SELECT id, shortcode, domain, uri, created_by_user_id, created_at FROM custom_emojis WHERE id = $1::uuid
 `

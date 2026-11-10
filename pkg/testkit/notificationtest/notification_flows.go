@@ -381,7 +381,7 @@ func notificationProjectsOnce(t *testing.T, e *notificationEnv) {
 	p := e.post(t, alice, "hi @bob")
 	follow := graph.Follow{ID: e.IDs.NewID(), FollowerAccountID: alice, FolloweeAccountID: bob, RequestedAt: e.Clock.Now()}
 	events := []uow.Event{
-		appcontent.StatusCreated(p),
+		appcontent.StatusCreated{Status: p.Status, Revision: p.Revision},
 		appgraph.FollowRequested{Follow: follow},
 		e.favourited(bob, alice, p.Status.ID),
 	}

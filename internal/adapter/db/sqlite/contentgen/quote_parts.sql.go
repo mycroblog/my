@@ -99,7 +99,7 @@ func (q *Queries) ListQuotesOfStatuses(ctx context.Context, statusIds string) ([
 }
 
 const listStatusesByURIs = `-- name: ListStatusesByURIs :many
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE uri IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY id
 `
 
@@ -120,7 +120,6 @@ func (q *Queries) ListStatusesByURIs(ctx context.Context, uris string) ([]Status
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 		); err != nil {
 			return nil, err

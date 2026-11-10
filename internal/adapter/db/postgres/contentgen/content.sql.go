@@ -257,8 +257,7 @@ func (q *Queries) GetAccountPostCounter(ctx context.Context, accountID string) (
 }
 
 const getLiveStatusByURI = `-- name: GetLiveStatusByURI :one
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.uri = $1 AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
 `
@@ -274,7 +273,6 @@ func (q *Queries) GetLiveStatusByURI(ctx context.Context, uri string) (Status, e
 		&i.IsLocal,
 		&i.Visibility,
 		&i.InReplyToUri,
-		&i.ConversationUri,
 		&i.PublishedAt,
 	)
 	return i, err
@@ -319,7 +317,7 @@ func (q *Queries) GetLocalStatusByIdempotencyKey(ctx context.Context, arg GetLoc
 }
 
 const getStatus = `-- name: GetStatus :one
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE id = $1
 `
 
@@ -334,14 +332,13 @@ func (q *Queries) GetStatus(ctx context.Context, id string) (Status, error) {
 		&i.IsLocal,
 		&i.Visibility,
 		&i.InReplyToUri,
-		&i.ConversationUri,
 		&i.PublishedAt,
 	)
 	return i, err
 }
 
 const getStatusByURI = `-- name: GetStatusByURI :one
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE uri = $1
 `
 
@@ -356,7 +353,6 @@ func (q *Queries) GetStatusByURI(ctx context.Context, uri string) (Status, error
 		&i.IsLocal,
 		&i.Visibility,
 		&i.InReplyToUri,
-		&i.ConversationUri,
 		&i.PublishedAt,
 	)
 	return i, err
@@ -535,8 +531,8 @@ func (q *Queries) InsertLocalStatus(ctx context.Context, arg InsertLocalStatusPa
 const insertStatus = `-- name: InsertStatus :exec
 
 INSERT INTO statuses (
-  id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+  id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type InsertStatusParams struct {
@@ -547,7 +543,6 @@ type InsertStatusParams struct {
 	IsLocal         bool
 	Visibility      string
 	InReplyToUri    *string
-	ConversationUri *string
 	PublishedAt     time.Time
 }
 
@@ -561,7 +556,6 @@ func (q *Queries) InsertStatus(ctx context.Context, arg InsertStatusParams) erro
 		arg.IsLocal,
 		arg.Visibility,
 		arg.InReplyToUri,
-		arg.ConversationUri,
 		arg.PublishedAt,
 	)
 	return err
@@ -823,8 +817,7 @@ func (q *Queries) ListLiveRemoteStatusIDsOfAuthor(ctx context.Context, arg ListL
 }
 
 const listLiveRepliesTo = `-- name: ListLiveRepliesTo :many
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.in_reply_to_uri = $1 AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
 ORDER BY s.id
@@ -847,7 +840,6 @@ func (q *Queries) ListLiveRepliesTo(ctx context.Context, inReplyToUri *string) (
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 		); err != nil {
 			return nil, err
@@ -862,8 +854,7 @@ func (q *Queries) ListLiveRepliesTo(ctx context.Context, inReplyToUri *string) (
 
 const listLiveStatusHeads = `-- name: ListLiveStatusHeads :many
 
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at, h.revision_id
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at, h.revision_id
 FROM statuses s
 JOIN status_heads h ON h.status_id = s.id
 ORDER BY s.id
@@ -877,7 +868,6 @@ type ListLiveStatusHeadsRow struct {
 	IsLocal         bool
 	Visibility      string
 	InReplyToUri    *string
-	ConversationUri *string
 	PublishedAt     time.Time
 	RevisionID      string
 }
@@ -902,7 +892,6 @@ func (q *Queries) ListLiveStatusHeads(ctx context.Context) ([]ListLiveStatusHead
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 			&i.RevisionID,
 		); err != nil {
@@ -1319,7 +1308,7 @@ func (q *Queries) ListStatusRevisions(ctx context.Context, statusID string) ([]S
 }
 
 const listStatusesByIDs = `-- name: ListStatusesByIDs :many
-SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, conversation_uri, published_at
+SELECT id, uri, url, author_account_id, is_local, visibility, in_reply_to_uri, published_at
 FROM statuses WHERE id = ANY($1::uuid[]) ORDER BY id
 `
 
@@ -1341,7 +1330,6 @@ func (q *Queries) ListStatusesByIDs(ctx context.Context, ids []string) ([]Status
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 		); err != nil {
 			return nil, err

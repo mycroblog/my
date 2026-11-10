@@ -43,7 +43,6 @@ func (r *StatusRepository) InsertStatus(ctx context.Context, tx uow.Tx, s conten
 		IsLocal:         s.IsLocal,
 		Visibility:      string(s.Visibility),
 		InReplyToUri:    postgres.ToNullString(s.InReplyToURI),
-		ConversationUri: postgres.ToNullString(s.ConversationURI),
 		PublishedAt:     s.PublishedAt,
 	})
 	if postgres.IsUniqueViolation(err, "statuses_uri") {
@@ -628,7 +627,7 @@ func (r *StatusRepository) ListCurrentPosts(ctx context.Context, tx uow.Tx) ([]a
 	for i, row := range rows {
 		out[i].Status = statusFrom(contentgen.Status{
 			ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
-			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri, ConversationUri: row.ConversationUri,
+			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri,
 			PublishedAt: row.PublishedAt,
 		})
 		if out[i].Revision, err = findRevision(ctx, q, row.RevisionID); err != nil {
@@ -872,7 +871,6 @@ func statusFrom(row contentgen.Status) content.Status {
 		IsLocal:         row.IsLocal,
 		Visibility:      content.Visibility(row.Visibility),
 		InReplyToURI:    postgres.FromNullString(row.InReplyToUri),
-		ConversationURI: postgres.FromNullString(row.ConversationUri),
 		PublishedAt:     postgres.UTC(row.PublishedAt),
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net/url"
 	"slices"
 	"strings"
@@ -94,6 +95,9 @@ type ObjectsDeps struct {
 	// Quotes reads the quotes and quote policies that Notes present, and the approvals this
 	// server gives (ADR-0069); nil presents none and serves no QuoteAuthorization.
 	Quotes ObjectQuotes
+	// Conversations reads the conversations whose IRIs Notes carry and whose collections are
+	// served (ADR-0154 §5, §9); nil leaves context out of Notes and serves no collection.
+	Conversations ObjectConversations
 	// Boosts reads the boosts whose Announce is served (ADR-0018 §16); nil serves none.
 	Boosts   ObjectBoosts
 	Statuses ObjectStatuses
@@ -141,7 +145,7 @@ func NewObjects(d ObjectsDeps) *Objects {
 	if d.AccountDomain == "" {
 		d.AccountDomain = d.Host
 	}
-	return &Objects{d: d, notes: notes{parts: d.Reader, graph: d.Graph, quotes: d.Quotes, host: d.Host, accountDomain: d.AccountDomain}}
+	return &Objects{d: d, notes: notes{parts: d.Reader, graph: d.Graph, quotes: d.Quotes, conversations: d.Conversations, host: d.Host, accountDomain: d.AccountDomain}}
 }
 
 // AuthorizedFetch reports whether authorized fetch (FR-408, federation.md §10) is on: GETs of
@@ -477,6 +481,10 @@ func (o *Objects) Featured(ctx context.Context, accountID string) ([]federation.
 func (o *Objects) viewNote(ctx context.Context, notes notes, v appcontent.StatusView, parts appcontent.RevisionParts) (federation.NoteDocument, error) {
 	note := statusNote(v.Status, v.Revision, v.Author, v.Status.Visibility, parts,
 		updatedOf(v.Revision), o.d.Host, o.d.AccountDomain)
+	note, err := notes.inConversation(ctx, note, v.Status)
+	if err != nil {
+		return federation.NoteDocument{}, err
+	}
 	return notes.withQuotes(ctx, note, v.Status, v.Author, v.Status.Visibility)
 }
 
@@ -489,13 +497,20 @@ func (o *Objects) pageNotes(ctx context.Context, views []appcontent.StatusView) 
 		return notes{}, nil, err
 	}
 	n := o.notes
-	b, ok := n.quotes.(noteQuoteBatch)
-	if !ok || len(views) == 0 {
-		return n, parts, nil
-	}
 	ids := make([]string, len(views))
 	for i, v := range views {
 		ids[i] = v.Status.ID
+	}
+	if n.conversations != nil && len(ids) > 0 {
+		convs, err := n.conversations.ConversationsOf(ctx, ids)
+		if err != nil {
+			return notes{}, nil, err
+		}
+		n.conversations = &pageConversations{NoteConversations: n.conversations, page: ids, read: convs}
+	}
+	b, ok := n.quotes.(noteQuoteBatch)
+	if !ok || len(views) == 0 {
+		return n, parts, nil
 	}
 	q, err := b.NoteQuotesOf(ctx, ids)
 	if err != nil {
@@ -574,6 +589,35 @@ func (p *pageNoteQuotes) FederatedQuotePage(ctx context.Context, uri string) (st
 		return l.Page, l.OK, nil
 	}
 	return p.NoteQuotes.FederatedQuotePage(ctx, uri)
+}
+
+// pageConversations answers the conversations of the statuses of a page from what
+// ConversationsOf read for them, and reads those of any other.
+type pageConversations struct {
+	NoteConversations
+	page []string
+	read map[string]appcontent.Conversation
+}
+
+func (p *pageConversations) ConversationsOf(ctx context.Context, statusIDs []string) (map[string]appcontent.Conversation, error) {
+	out := make(map[string]appcontent.Conversation, len(statusIDs))
+	var other []string
+	for _, id := range statusIDs {
+		if !slices.Contains(p.page, id) {
+			other = append(other, id)
+		} else if c, ok := p.read[id]; ok {
+			out[id] = c
+		}
+	}
+	if len(other) == 0 {
+		return out, nil
+	}
+	more, err := p.NoteConversations.ConversationsOf(ctx, other)
+	if err != nil {
+		return nil, err
+	}
+	maps.Copy(out, more)
+	return out, nil
 }
 
 // updatedOf returns when an edited status was last revised, zero for one never edited.

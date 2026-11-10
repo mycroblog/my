@@ -30,6 +30,12 @@ type NoteQuotes interface {
 	FederatedQuotePage(ctx context.Context, uri string) (string, bool, error)
 }
 
+// NoteConversations reads the conversations of statuses, whose IRI a Note carries as its context
+// and conversation (ADR-0154 §5). *appcontent.Service implements it.
+type NoteConversations interface {
+	ConversationsOf(ctx context.Context, statusIDs []string) (map[string]appcontent.Conversation, error)
+}
+
 // Relationships reads the relationship of an account with another; *appgraph.Service
 // implements it.
 type Relationships interface {
@@ -76,6 +82,8 @@ type notes struct {
 	graph Relationships
 	// quotes reads the quotes of statuses; nil leaves quotes and interactionPolicy out.
 	quotes NoteQuotes
+	// conversations reads the conversations of statuses; nil leaves context and conversation out.
+	conversations NoteConversations
 	// host serves the hashtag pages; accountDomain is the domain of local handles.
 	host, accountDomain string
 }
@@ -105,7 +113,28 @@ func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Re
 		}
 		parts.Mentions = kept
 	}
-	return n.withQuotes(ctx, statusNote(st, rev, author, vis, parts, updated, n.host, n.accountDomain), st, author, vis)
+	note, err := n.inConversation(ctx, statusNote(st, rev, author, vis, parts, updated, n.host, n.accountDomain), st)
+	if err != nil {
+		return federation.NoteDocument{}, err
+	}
+	return n.withQuotes(ctx, note, st, author, vis)
+}
+
+// inConversation adds to the Note of st the IRI of the conversation it belongs to now, the one
+// a merge kept (ADR-0154 §5). The IRI is opaque and names neither the author nor the text, so a
+// Note carries it whatever the visibility of the conversation's other statuses.
+func (n notes) inConversation(ctx context.Context, note federation.NoteDocument, st appcontent.Status) (federation.NoteDocument, error) {
+	if n.conversations == nil {
+		return note, nil
+	}
+	convs, err := n.conversations.ConversationsOf(ctx, []string{st.ID})
+	if err != nil {
+		return federation.NoteDocument{}, err
+	}
+	if c, ok := convs[st.ID]; ok {
+		note = note.InConversation(c.URI)
+	}
+	return note, nil
 }
 
 // withQuotes adds to the Note of the local status st its quote, unless the author took it away or

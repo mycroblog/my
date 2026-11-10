@@ -19,6 +19,7 @@
         "@id": "gts:canQuote",
         "@type": "@id"
       },
+      "conversation": "ostatus:conversation",
       "discoverable": "toot:discoverable",
       "featured": {
         "@id": "toot:featured",
@@ -51,6 +52,7 @@
         "@id": "as:movedTo",
         "@type": "@id"
       },
+      "ostatus": "http://ostatus.org#",
       "quote": {
         "@id": "https://w3id.org/fep/044f#quote",
         "@type": "@id"

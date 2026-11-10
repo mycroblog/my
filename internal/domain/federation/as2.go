@@ -284,6 +284,9 @@ type Object struct {
 	Converted    bool // Type is one of the converted types; Bodies holds the converted body
 	AttributedTo IRI
 	InReplyTo    IRI
+	// Conversation is the conversation that a post declares (FEP-7888's context, else
+	// ostatus:conversation; ADR-0154 §2), "" for none. It is an identifier, never fetched.
+	Conversation IRI
 	Audience     Audience
 	Published    time.Time
 	Updated      time.Time

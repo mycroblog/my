@@ -45,6 +45,19 @@ type BoostRetraction struct {
 	RetractedAt int64
 }
 
+type Conversation struct {
+	ID      string
+	Uri     string
+	IsLocal int64
+}
+
+type ConversationMerge struct {
+	MergedConversationID string
+	IntoConversationID   string
+	StatusID             string
+	MergedAt             int64
+}
+
 type CustomEmoji struct {
 	ID              string
 	Shortcode       string
@@ -252,7 +265,6 @@ type Status struct {
 	IsLocal         int64
 	Visibility      string
 	InReplyToUri    sql.NullString
-	ConversationUri sql.NullString
 	PublishedAt     int64
 }
 

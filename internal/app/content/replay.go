@@ -30,7 +30,7 @@ func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interacti
 	live := make(map[string]content.Status, len(posts))
 	for _, p := range posts {
 		live[p.Status.ID] = p.Status
-		if err := emit(StatusCreated(p)); err != nil {
+		if err := emit(StatusCreated{Status: p.Status, Revision: p.Revision}); err != nil {
 			return err
 		}
 	}

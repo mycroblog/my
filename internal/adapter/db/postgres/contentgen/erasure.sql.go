@@ -311,8 +311,7 @@ const listAuthorStatusesToErase = `-- name: ListAuthorStatusesToErase :many
 
 
 
-SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri,
-  s.conversation_uri, s.published_at,
+SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at,
   EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id) AS deleted
 FROM statuses s
 WHERE s.author_account_id = $1 AND s.id > COALESCE($2::uuid, '00000000-0000-0000-0000-000000000000')
@@ -334,7 +333,6 @@ type ListAuthorStatusesToEraseRow struct {
 	IsLocal         bool
 	Visibility      string
 	InReplyToUri    *string
-	ConversationUri *string
 	PublishedAt     time.Time
 	Deleted         bool
 }
@@ -363,7 +361,6 @@ func (q *Queries) ListAuthorStatusesToErase(ctx context.Context, arg ListAuthorS
 			&i.IsLocal,
 			&i.Visibility,
 			&i.InReplyToUri,
-			&i.ConversationUri,
 			&i.PublishedAt,
 			&i.Deleted,
 		); err != nil {
