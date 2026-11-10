@@ -155,7 +155,7 @@ func (s *Server) presentInteractionRequests(ctx context.Context, v Viewer, page 
 	}
 	byAccount := make(map[string]Account, len(accounts))
 	for _, a := range accounts {
-		byAccount[string(a.Id)] = a
+		byAccount[a.Id] = a
 	}
 	for _, r := range page.Requests {
 		target, ok := byURI[r.TargetURI]
@@ -164,7 +164,7 @@ func (s *Server) presentInteractionRequests(ctx context.Context, v Viewer, page 
 			continue
 		}
 		item := InteractionRequest{
-			Id: Id(r.ID), Kind: InteractionKind(r.Kind), State: InteractionRequestState(states[r.ID].State),
+			Id: r.ID, Kind: InteractionKind(r.Kind), State: InteractionRequestState(states[r.ID].State),
 			CreatedAt: r.CreatedAt, Account: account, Status: target,
 		}
 		if r.Kind != content.InteractionAnnounce {

@@ -2806,5 +2806,9 @@
   "settings.auto_delete.limit.pins.note": {
     "defaultMessage": "このサーバーで残るのは、ピン留めした時刻の新しい{count, plural, other {# 件}}だけです。",
     "description": "Note under the exception of pinned posts when the server's maximum keeps only the newest pins. {count} is how many."
+  },
+  "settings.notifications.group.interaction_request": {
+    "defaultMessage": "承認の依頼",
+    "description": "Row of the notification settings table: someone's reply, boost, or quote of the user's post that waits for the user's approval, and the answers to the user's own."
   }
 }

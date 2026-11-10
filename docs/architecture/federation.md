@@ -186,19 +186,21 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `Follow` | インスタンス Actor | 参加中のリレーの Actor からのものは `Accept` を、それ以外は `Reject` をインスタンス Actor が送る。フォローとしては記録しない（§13） |
 | `Follow` | ローカルの Actor | トランザクションの前に判定フック `inbound.follow`（ADR-0147。プラグインがなければ呼ばない）に尋ね、`drop` なら捨てる。尋ねるのは新しいフォローかフォローリクエストになる `Follow` だけで、承認済みか承認待ちのフォローがあるとき、ブロック関係があるときは尋ねない（`graph.ReceiveFollow` がいつも通り `Accept` の再送、無視、`Reject` で答える）。`drop` の取り消しは `federation.RequeueDropped` が受信した文書が残っている間だけ `federation.inbox` を積み直す。続けて `graph.ReceiveFollow`。`flag` なら、フォローを記録した後の別のトランザクションでフォロワーへの通報を起票し（`moderation.FileHookReport`、判定ごとに 1 件）、`hook_decision_applied` を残す。鍵アカウントでなければ承認し、`Accept` を配送する。鍵アカウントなら承認待ち + 通知。ブロック関係があれば `Reject` を配送する。承認済みのフォローがあれば `follow_resends` に記録して `Accept` を送り直す。移転したアカウントへの `Follow` は記録せず、`Reject`（`object_type = refusal`）を返す（ADR-0089） |
 | `Accept` / `Reject` | リレーへの `Follow`（`object` の `id` がリレーの現在の `Follow`） | リレーの状態を `accepted`（主体を記録）/ `rejected` にする（§13）。リレーの Actor でない主体のものは捨てる |
-| `Accept` | 自分が送った `Follow`（URI か埋め込み） | `graph.AcceptRemote`（`follow_acceptances`、`accepted_by = remote`）。`object` の `id` が主体をフォローされる側とするフォローに無ければ、埋め込みの `object.actor`（ローカル）と `actor`（相手）の承認待ち・承認済みのフォローで照合する。埋め込みが `Follow` 以外（GoToSocial の返信の承認など）なら捨てる |
+| `Accept` | 自分が送った `Follow`（URI か埋め込み） | `graph.AcceptRemote`（`follow_acceptances`、`accepted_by = remote`）。`object` の `id` が主体をフォローされる側とするフォローに無ければ、埋め込みの `object.actor`（ローカル）と `actor`（相手）の承認待ち・承認済みのフォローで照合する。埋め込みが `Follow` 以外なら捨てる（このサーバーが送った `QuoteRequest`・`ReplyRequest`・`AnnounceRequest` への答えは、その前に下の行で照合する） |
 | `Reject` | 自分が送った `Follow`、または承認済みのフォロー | `graph.RejectRemote`。照合は `Accept` と同じ。承認待ちなら `follow_rejections`（`rejected_by = remote`）、承認済みなら `follow_terminations`（`removed_by_followee`） |
 | `Undo` | `Follow` / `Like` / `EmojiReact` / `Announce` / `Block` / `Accept` | 対象の取り消し。`Undo Follow` は `graph.TerminateRemote`（`unfollowed`）で、`object` の `id` が主体のフォローに無ければ、埋め込みの `object.object`（ローカル）とのフォローで照合する（Misskey の `Undo` は送った `Follow` と違う `id` を持つ）。`Undo Accept` は `graph.RejectRemote` でフォローの終了として扱う。`Undo Like` / `Undo EmojiReact` は、主体が作った同じ URI の `reactions`、`favourites` の順に引き、どちらにも無ければ埋め込みの `object` を `Like` / `EmojiReact` の行と同じ規則で振り分けて、リアクションなら主体のその投稿への同じ絵文字のリアクションを、お気に入りなら主体のその投稿へのお気に入りを消す（ADR-0051 §6）。対象が URI だけなら、主体が作った同じ URI の `follows` / `reactions` / `favourites` / `boosts` / `blocks` を順に引く |
-| `Create` | `Note` / `Question` / `Article`（記事）。`Page` / `Event` / `Image` / `Video` / `Audio` は変換して取り込む | 取り込み範囲（ADR-0006）に入れば `content.IngestRemoteStatus`。オブジェクトの `id` は `actor` と同じオリジンで、`attributedTo` は（あれば）`actor` でなければならない。保存済みの投稿は何もせず、削除済みの投稿は捨てる。ローカルの投稿への返信は、作者が親を `ContextObjectFetch` で閲覧でき、ブロック関係がなく、親の返信の許可がすぐに認める（`content.MayInteract`、[ADR-0155](../adr/0155-interaction-policy.md) §3）ときだけスレッドに入る。それ以外の返信も保存するが、`held_replies` に記録して、スレッドと会話（`context`）の一覧・`status_reply_links`・`replies_count` に入れず、メンションの通知も作らない（その投稿の `Update` も同じ）。作者のプロフィールと投稿の個別の表示には出る。記録した後で許可を広げても、スレッドには戻さない |
+| `Create` | `Note` / `Question` / `Article`（記事）。`Page` / `Event` / `Image` / `Video` / `Audio` は変換して取り込む | 取り込み範囲（ADR-0006）に入れば `content.IngestRemoteStatus`。オブジェクトの `id` は `actor` と同じオリジンで、`attributedTo` は（あれば）`actor` でなければならない。保存済みの投稿は何もせず、削除済みの投稿は捨てる。返信の扱いは下の「返信とブーストの承認」のとおりで、承認されていない返信（返信の依頼が `accepted` でないもの）も保存するが、スレッドと会話（`context`）の一覧・`status_reply_links`・`replies_count` に入れず、メンションの通知も作らない（その投稿の `Update` も同じ）。作者のプロフィールと投稿の個別の表示には出る。承認されると（`content.status_released`）スレッドに入り、メンションを通知する。`replyAuthorization` を持つ、リモートの投稿へのリモートの返信は、取り込んだ後にその承認を確かめる（`StatusHandlers.verifyThirdPartyReply`） |
 | `Create` | `name` を持ち、投票のあるローカルの投稿への返信の `Note`（投票への回答。Mastodon・Misskey・Pleroma（Akkoma）・GoToSocial が送る形） | `content.RecordRemotePollVote`（FR-112）。`name` が選択肢の題で、投稿としては取り込まない。同じ `Note` は 1 票で、締め切り後・無い選択肢・単一選択の 2 つ目の回答・主体が見られない投稿への回答は捨てる。投票のない投稿への返信は投稿として扱う |
 | `Update` | 投稿 | `content.ReviseRemoteStatus`（新しい版）。投稿の作者とアクティビティの主体が一致し、オリジンが同じであること（[ActivityPub §7.3](https://www.w3.org/TR/activitypub/#update-activity-inbox)）。未知の投稿は §3.3 のとおり `Create` として扱う |
 | `Update` | Actor（自分自身） | `RemoteActors.ReceiveActorUpdate`。オリジンが同じ埋め込みの文書で `account.UpsertRemoteActor`（内容が変わればプロフィールの版が増える）。その前に、プロフィールが変わっていれば判定フック `inbound.actor` に尋ねる（§6.2）。埋め込みが無い・`id` が主体と一致しなければ取得し直す。削除済みの Actor の `Update` は捨てる |
 | `Delete` | 投稿・`Tombstone` | `content.DeleteRemoteStatus`（`origin = remote`）。未知の URI が、承認済みの引用の `QuoteAuthorization` なら、その引用を `content.RevokeQuoteAuthorization` で取り消す（ADR-0069 §2。承認を出した人、つまり主体が引用された投稿の作者である引用だけ）。どちらでもなければ tombstone |
-| `QuoteRequest` | ローカルの投稿（`object`）を引用する主体の投稿（`instrument`。主体と同じオリジン） | `content.AnswerQuoteRequest` が自動で答える（ADR-0069 §2）。主体がリモートで、投稿を `ContextObjectFetch` で閲覧でき、ブロック関係と交流の禁止（FR-708）がなく、投稿の引用の許可に当てはまり（`content.MayQuote`。`local` の投稿はリモートからは引用させない）、引用元の投稿が保存済みなら主体の投稿であるなら、`quote_authorizations` に承認を記録して、`result` にその `QuoteAuthorization` を付けた `Accept` を返す。同じ引用の 2 度目の依頼には同じ承認を返す。それ以外は `Reject`。どちらも依頼を埋め込み、主体の inbox だけに送る。引用元の投稿が保存済みなら、その引用を承認する |
+| `QuoteRequest` | ローカルの投稿（`object`）を引用する主体の投稿（`instrument`。主体と同じオリジン） | `content.AnswerQuoteRequest` が答える（ADR-0069 §2、[ADR-0155](../adr/0155-interaction-policy.md) §6）。主体がリモートで、投稿を `ContextObjectFetch` で閲覧でき、ブロック関係と交流の禁止（FR-708）がなく、投稿の引用の自動の許可に当てはまり（`content.MayInteract`。`local` の投稿はリモートからは引用させない）、引用元の投稿が保存済みなら主体の投稿であるなら、依頼（`interaction_requests`）と承認（`interaction_authorizations`）を記録して、`result` にその `QuoteAuthorization` を付けた `Accept` を返す。同じ引用の 2 度目の依頼には同じ承認を返す。承認の許可だけに当てはまれば依頼を `pending` で記録して作者に通知し、何も返さない（作者が答えると下の「作者の答え」で送る）。それ以外は `Reject`。どちらも依頼を埋め込み、主体の inbox だけに送る。引用元の投稿が保存済みなら、その引用を一緒に承認する。保存済みの引用元がほかの人の投稿なら、何も記録せずに `Reject` を返す |
+| `ReplyRequest` / `AnnounceRequest` | ローカルの投稿（`object`）への主体の返信、またはそのブーストの `Announce`（`instrument`。IRI か埋め込みで、主体と同じオリジン） | `content.ReceiveInteractionRequest`（ADR-0155 §6）。判定は `QuoteRequest` と同じ規則（`content.MayInteract`）で、自動の許可に当てはまれば依頼を `accepted` で記録し、`result` に `ReplyAuthorization` / `AnnounceAuthorization`（`/ap/reply_authorizations/{id}`・`/ap/announce_authorizations/{id}`）を付けた `Accept` を返す。承認の許可だけに当てはまれば `pending` で記録して作者に通知（`reply_request` / `boost_request`）し、何も返さない。それ以外は `rejected` で記録して `Reject`。どれも依頼を埋め込み、主体の inbox だけに送る。同じ依頼は `(種類, 交流, 対象)` で 1 つで、受け直しても答えた内容は変わらず、同じアクティビティへの答えは 1 度だけ（`received_activity_answers`）。依頼の後に届く返信の `Create`・`Announce` は、依頼の状態で扱う（`accepted` ならそのまま記録、それ以外は保留・不記録） |
 | `Accept` / `Reject` | このサーバーが送った `QuoteRequest`（`id` が `{引用元の IRI}/quote_request`） | `QuoteHandlers.ReceiveQuoteAnswer`。主体は引用先の作者でなければならない。`Accept` は `result` の `QuoteAuthorization` を取得し、§6.3 の引用先の検証と同じ規則で確かめてから `content.AcceptQuote` で承認する（承認は §7.1 の `Update` で伝わる）。`Reject` は `content.RejectQuote` で拒否にする。フォローへの答えより先に照合する |
+| `Accept` / `Reject` | このサーバーが送った `ReplyRequest` / `AnnounceRequest`（`id` が `/ap/interaction_requests/{依頼の id}`） | `QuoteHandlers.receiveInteractionAnswer`（ADR-0155 §7）。主体は対象の投稿の作者でなければならない。`Accept` は `result` の `ReplyAuthorization` / `AnnounceAuthorization` を取得し、ホストが作者のホストと同じで、`attributedTo` が作者、`interactingObject` がこちらの返信か `Announce`、`interactionTarget` が対象の投稿であることを確かめてから、`content.ReceiveInteractionAnswer` で承認する。承認した返信は保留から外れて `Create` を配送し（`replyAuthorization` を付ける）、ブーストは予約した `Announce` の IRI で記録して配送する（`announceAuthorization` を付ける）。`Reject` は拒否にし、交流は作者にだけ「断られた」と見える。どちらも交流した人に通知（`interaction_accepted` / `interaction_rejected`）。答え直しは何も変えない |
 | `Delete` | Actor（自分自身） | `RemoteActors.ReceiveActorDelete`。`account.MarkRemoteDeleted`（`remote_deleted`）で、プロフィールと投稿（タイムラインでは `feed_author_restrictions` の `profile_view`）がすぐに表示されなくなる。未知の Actor なら何もしない。7 日後に消去ジョブ（[data-model §8](data-model/08-deletion-and-purge.md#8-削除と消去)）がプロフィール・投稿（ローカルの利用者がブックマークや返信をした投稿を含む）・フォロー・ブーストなどを物理削除する。削除は取り消せず、以後その Actor のアクティビティは捨て、取得した文書も投稿も保存しない。取得への 410 で削除済みにした Actor も、この `Delete` で確定し、消去の前に聞き直さない（§6.2） |
 | `Announce` | 投稿（主体が参加中のリレーの Actor で `relay_id` の付いたもの） | 投稿をオリジンから取得し、`public` なら取り込んで `relayed_statuses` に記録する。ブーストとしては記録しない（§13） |
-| `Announce` | 投稿（URI か埋め込み） | `content.RecordRemoteBoost`。ローカルの投稿と保存済みの投稿は `id` で引く。保存していないリモートの投稿は、ブーストした人をローカルのアカウントがフォローしているときだけ取り込み（ADR-0006）、埋め込みの投稿は、オリジンが主体と同じでなければ `id` から取得し直す。ブーストの公開範囲は、`Announce` の宛先から決めた公開範囲と元投稿の公開範囲の狭いほう（`direct` になるものは捨てる）。`local` の投稿、ほかの人の `private` の投稿、主体が閲覧できないローカルの投稿と、ブーストの許可がすぐに認めないローカルの投稿（`content.MayInteract`、ADR-0155 §6）は捨てる。捨てたブーストは記録しないので、件数にも通知にも出ない |
+| `Announce` | 投稿（URI か埋め込み） | `content.RecordRemoteBoost`。ローカルの投稿と保存済みの投稿は `id` で引く。保存していないリモートの投稿は、ブーストした人をローカルのアカウントがフォローしているときだけ取り込み（ADR-0006）、埋め込みの投稿は、オリジンが主体と同じでなければ `id` から取得し直す。ブーストの公開範囲は、`Announce` の宛先から決めた公開範囲と元投稿の公開範囲の狭いほう（`direct` になるものは捨てる）。`local` の投稿、ほかの人の `private` の投稿、主体が閲覧できないローカルの投稿は捨てる。許可は下の「返信とブーストの承認」のとおりで、承認待ちと断ったブーストは記録しないので、件数にも通知にも出ない。`announceAuthorization` を持つ、許可が誰にもすぐには認めないリモートの投稿のブーストは、その承認を確かめてから記録する（`StatusHandlers.verifyAnnounce`） |
 | `EmojiReact` | ローカルの投稿 | `content.RecordRemoteReaction`（絵文字リアクション、FR-116、ADR-0051）。`content` が絵文字でなければ捨てる。絵文字は、1 つの Unicode 絵文字（`emoji-test.txt` の表で fully-qualified の形に正規化する）か、`:shortcode:` で `tag` に `name` が一致する（コロンと `@host` の接尾辞を問わない）`Emoji` がちょうど 1 つあるカスタム絵文字。カスタム絵文字のドメインは `Emoji` の `id` のホスト（`id` が無ければ主体のドメイン）。主体のドメインの絵文字は ADR-0051 の規則で `custom_emojis` に画像と取り込む。ほかのサーバーの絵文字は、そのサーバーの文書から記録済みのとき（このサーバーの絵文字はローカルの絵文字）だけ使い、行も画像も変えない。記録が無ければ捨てる（ADR-0051 の「他のサーバーの絵文字を偽れない」。ADR-0051 §6 の取り込みの文を置き換える推奨案は ADR-0051）。同じ主体・投稿・絵文字のリアクションは 1 つで、絵文字ごとに複数を記録する。主体が閲覧できない投稿（`ContextObjectFetch`）・ブロック関係・交流の禁止（FR-708）は捨てる |
 | `Like` | ローカルの投稿 | `_misskey_reaction`、無ければ `content` が `EmojiReact` と同じ規則で絵文字なら `content.RecordRemoteReaction`（Misskey のリアクション、FEP-c0e0）。それ以外は `content.RecordRemoteFavourite`（お気に入り）。主体が閲覧できない投稿（`ContextObjectFetch`）は捨てる |
 | `Block` | ローカルの Actor | `graph.ReceiveBlock`。両方向のフォローを終了し、相手の投稿を閲覧者から隠す（`feed_exclusions`）。対象がローカルの利用者の Actor でなければ捨てる |
@@ -213,8 +215,36 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - ジョブをもう一度動かしても、移ったフォロワーは移転元をフォローしておらず、ブロック・ミュートは既にあり、通知は移転ごとに 1 つ（重複排除キー）なので、何も増えません。
 - 移転元にこのサーバーの `limit` があれば（`moderation.FederationPolicy.AccountLimited`）、移転先へは引き継がず、`account.moved` から `manage_accounts` を持つモデレーターに通知 `admin_account_moved` を出します（§11）。
 - ブースト・お気に入り・絵文字リアクションのハンドラは `federation.RegisterInteractionHandlers` です。`Announce` の対象の取り込みは投稿のハンドラ（`StatusHandlers`）と同じ規則で行います。コントラクトテストは `federationtest.RemoteInteractionContract` で、主要実装のフィクスチャの `Announce` / `Like` / `EmojiReact` / `Undo` を受け取り、お気に入りと絵文字リアクションの `Like` / `Undo Like` を送ります（`Like` の枠の付け替えでは、外したものの `Undo` が新しい `Like` の前に記録され、同じ inbox へその順に届く。§7.2 の順序キー）。
-- 返信とブーストの許可（[ADR-0155](../adr/0155-interaction-policy.md) §3）は、どれも `content.MayInteract` で判定します。ローカルの人の返信（投稿の作成）とブーストは、ローカルの投稿でもリモートの投稿（宣言した `canReply`・`canAnnounce`。宣言の無い種類は誰でも）でも、許可がすぐに認めなければ断ります（client API は `422`）。承認の範囲に当てはまるだけの交流も、承認の依頼の手順（`ReplyRequest`・`AnnounceRequest`）を持つまでは同じく断り、リモートの人のそうした返信は保留の返信（`held_replies` の `pending`）として、ブーストは記録せずに扱います。ブロック・交流の禁止（FR-708）・公開範囲の制限は、許可の前にこれまでどおり効きます。リモートの投稿へのリモートの人の返信・ブースト（第三者の交流）は、許可で選り分けません。
+- 返信とブーストの許可（[ADR-0155](../adr/0155-interaction-policy.md) §3）は、どれも `content.MayInteract` で判定します。ブロック・交流の禁止（FR-708）・公開範囲の制限は、許可の前にこれまでどおり効きます。
+
 - リアクションの送信（ローカルの人のリアクション）はまだありません。リモートの人のリアクションはローカルの投稿へのものだけを記録し、何も送りません。
+
+### 3.5 返信・ブースト・引用の承認
+
+承認の要る交流は、種類によらない依頼（`interaction_requests`）・答え（`interaction_request_events`）・状態の投影（`interaction_request_states`）・このサーバーの承認（`interaction_authorizations`）で記録します（ADR-0155 §8、[data-model §4.4](data-model/04-tables/04-content.md#44-content)）。依頼は `(種類, 交流, 対象)` で一意なので、同じ依頼・同じ交流を受け直しても増えず、答えは状態が変わるときだけ記録します（冪等）。外への答えは送信トレイ経由で、トランザクションの中で外部の I/O はしません。
+
+- **受信: ローカルの投稿へのリモートの交流**（§6）
+  - `ReplyRequest` / `AnnounceRequest` / `QuoteRequest` は上の表のとおり、その場で答えるか、`pending` で作者を待ちます。
+  - 依頼の無い返信（Mastodon など）: 自動の許可に当てはまれば、そのままスレッドに入ります。`as:Public` 以外の理由（フォロワー・個別の Actor など）で認めたときは、承認を記録して、`object` に返信、`target` に親、`result` に `ReplyAuthorization` を付けた `Accept` を返信の作者へ送ります（宛先に `as:Public` を入れますが、配送は返信の作者の inbox だけです）。承認の許可だけに当てはまれば `pending` で作者を待ち、どれにも当てはまらなければ `Reject` を送ります。待つ返信と断った返信は保留です（上の表の `Create`）。
+  - 依頼の無いブースト: 自動の許可なら記録し、承認の許可だけなら記録せずに `pending` で作者を待ち（`Announce` の公開範囲を依頼に残す）、どれにも当てはまらなければ記録せずに `Reject` を送ります。
+  - 作者の答え: クライアント API の `acceptInteractionRequest` / `rejectInteractionRequest`（`content.AnswerInteractionRequest`）。承認は承認の IRI を作り、返信は保留から外し（`content.status_released`）、依頼の無かったブーストは記録し、引用は承認します。答えは、依頼を埋め込んだ（依頼の無い交流は交流と `target` の）`Accept` / `Reject` として交流した人の inbox へ送ります（`content.interaction_answered` の `Deferred`）。
+  - 引用の承認の取り消しは引用だけです（ADR-0069 §3）。返信とブーストの承認は取り消しません。
+- **送信: リモートの投稿へのローカルの交流**（§7）
+  - リモートの投稿の許可を判定し、自動の許可に `as:Public` があるか宣言が無ければ、これまでどおり `Create` / `Announce` を配送します。
+  - 承認の許可に当てはまるか、`as:Public` 以外の理由で自動の許可に当てはまるときは、依頼（`outbound`）を `pending` で記録します。返信は保留の投稿として作り、作者本人にだけ見せ（`content.StatusFacts.Unpublished`。ほかの人・リモートの取得・タイムライン・検索の結果には出ず、Webhook・メンションの通知・購読の通知・`Create` は承認まで送らない）、その `Note` を埋め込んだ `ReplyRequest`（`id` は `/ap/interaction_requests/{依頼の id}`、`object` は相手の投稿、`instrument` は返信）を相手の投稿の作者の inbox だけへ送ります。ブーストは記録せず、ブーストの IRI を予約した `Announce` を埋め込んだ `AnnounceRequest` を同じく送ります。
+  - 答えは上の表の `Accept` / `Reject` で受けます。承認された返信の `Note` は `replyAuthorization`、ブーストの `Announce` は `announceAuthorization` を持ちます。
+  - 引用は ADR-0069 §3 の手順のままで（`QuoteRequest`）、記録は同じ依頼の表です。
+- **第三者の交流**（リモートの投稿へのリモートの人の交流）: 対象の投稿の返信の許可が誰にもすぐには認めず、返信がその作者自身・対象がメンションした人・対象が返信した相手のどれでもないときは、依頼（`remote`）を `pending` で記録して保留にし、`replyAuthorization` が §7 の検証（`ReplyAuthorization`、上の表と同じ規則）を通れば承認して外します。ブーストは、`announceAuthorization` が検証を通ったときだけ記録します。
+- 連合の向き（§14）は `QuoteRequest` と同じで、`ReplyRequest` / `AnnounceRequest` は `publish` が通るときだけ受け、取り込みが通らないモードでは判定せずに `Reject` を返します。
+
+相互運用の確認（2026-11-10。ADR-0155 §12 の要検証）:
+
+| 相手 | 確かめたこと | 方法 |
+| --- | --- | --- |
+| GoToSocial 0.22 | `ReplyRequest` を埋め込んだ `Accept`（`result` の承認の IRI）を正規化して読み、こちらの依頼への答えとして照合できること | フィクスチャ（`pkg/testkit/fixtures/federation/gotosocial/0.22/accept-reply-request.json`）と正規化のゴールデン |
+| GoToSocial（Interaction Controls の文書） | 依頼の `object`・`instrument`、`Accept` の `result`、承認の文書の `attributedTo`・`interactingObject`・`interactionTarget`、`replyAuthorization`・`announceAuthorization` の形 | 文書と `federationtest.RemoteInteractionFlows` の往復（依頼への自動と手動の答え、依頼の無い返信の保留と承認、ローカルの返信・ブーストの依頼と承認による配送） |
+| Mastodon 4.5 | 引用（`QuoteRequest` と `QuoteAuthorization`）がこれまでどおり往復すること。依頼を送らない返信・ブーストは、上の「依頼の無い返信」「依頼の無いブースト」で扱う | Mastodon のフィクスチャと `federationtest` の引用の流れ（`QuotesLocalPostsWithApprovals`・`SendsQuoteRequestsAndTakesTheAnswers`・`AnswersQuoteRequestsAndRevokesApprovals`） |
+| GoToSocial 0.21〜0.22・Bonfire Social 1.0 の実機 | — | 未確認。ライブの相互運用テスト（§12、`test/federation-live/`）の GoToSocial に承認の往復のシナリオはまだ無く、Bonfire Social は構成に無い。シナリオを足して確かめたら、ここに記録する |
 
 ## 4. AS2 の正規化
 
@@ -240,7 +270,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | 投票 | `Question` の `oneOf` / `anyOf`（各 `name` と `replies.totalItems`）、`endTime`、`votersCount`（FR-112）。変換しない投稿の `name` は、投票への回答の選択肢の題として読む（§3.4） |
 | 会話 | `context`（FEP-7888。`https` の IRI だけ。文字列・`Link` の `href`・埋め込みの `id`）、無ければ `conversation`（`ostatus:conversation`。`https` か `tag:` の URI）を、投稿が宣言した会話の識別子として読む。どちらも取得しない。このサーバーの会話の IRI（`/ap/contexts/{uuid}`）は読み捨てる（[ADR-0154](../adr/0154-conversations.md) §2） |
 | 返信の一覧 | 投稿の `replies` はコレクションへの参照（IRI か埋め込み）として読む。`Collection` / `OrderedCollection` / `CollectionPage` / `OrderedCollectionPage` は、`items`（順序付きなら `orderedItems`）を 100 件まで、`first` と `next` をページへの参照として読む（Mastodon は最初のページを埋め込む） |
-| 方言 | Misskey の `_misskey_content`（MFM の原文）・`_misskey_summary` は使わず、`content` / `summary` を使う。引用（FR-114、[ADR-0069](../adr/0069-quote-posts.md) §2）は、FEP-044f の `quote`・`_misskey_quote`・`quoteUrl`・`quoteURL`・`quoteUri`・`rel` が `_misskey_quote` の IRI の FEP-e232 の `Link`（`mediaType` が AS2 の JSON-LD）の順に最初の 1 つを読む。`quote` なら形式は `fep_044f` で `quoteAuthorization` も読み、それ以外は `legacy`。`QuoteAuthorization` の文書は `attributedTo`・`interactingObject`・`interactionTarget` を読む。本文の `quote-inline` のフォールバックはそのまま残す。投稿の `interactionPolicy` の `canReply`・`canAnnounce`・`canQuote` は、`automaticApproval` と `manualApproval`（GoToSocial 0.20 より前の `always` と `approvalRequired` も）を分けたまま、IRI ごとに相手（`Public` は `everyone`、作者の followers / following は `followers` / `following`、作者自身は `author`、ほかは `account`）として読み、自動の相手が残らない種類は作者だけとする。`can*` が無い・`null`・`{}` の種類は宣言なしとする（[ADR-0155](../adr/0155-interaction-policy.md) §2、data-model §4.4）。`isCat` などの未知のプロパティは無視する |
+| 方言 | Misskey の `_misskey_content`（MFM の原文）・`_misskey_summary` は使わず、`content` / `summary` を使う。引用（FR-114、[ADR-0069](../adr/0069-quote-posts.md) §2）は、FEP-044f の `quote`・`_misskey_quote`・`quoteUrl`・`quoteURL`・`quoteUri`・`rel` が `_misskey_quote` の IRI の FEP-e232 の `Link`（`mediaType` が AS2 の JSON-LD）の順に最初の 1 つを読む。`quote` なら形式は `fep_044f` で `quoteAuthorization` も読み、それ以外は `legacy`。`QuoteAuthorization` の文書は `attributedTo`・`interactingObject`・`interactionTarget` を読む。本文の `quote-inline` のフォールバックはそのまま残す。返信の `replyAuthorization` と `Announce` の `announceAuthorization` を読み、`ReplyRequest`・`AnnounceRequest` は `QuoteRequest` と同じく `instrument` を読む（`ReplyAuthorization`・`AnnounceAuthorization` の文書も `attributedTo`・`interactingObject`・`interactionTarget` を読む）。投稿の `interactionPolicy` の `canReply`・`canAnnounce`・`canQuote` は、`automaticApproval` と `manualApproval`（GoToSocial 0.20 より前の `always` と `approvalRequired` も）を分けたまま、IRI ごとに相手（`Public` は `everyone`、作者の followers / following は `followers` / `following`、作者自身は `author`、ほかは `account`）として読み、自動の相手が残らない種類は作者だけとする。`can*` が無い・`null`・`{}` の種類は宣言なしとする（[ADR-0155](../adr/0155-interaction-policy.md) §2、data-model §4.4）。`isCat` などの未知のプロパティは無視する |
 | 未知のプロパティ | 無視する（[AS2 Core §5](https://www.w3.org/TR/activitystreams-core/#extensibility)）。原本は `received_activity_documents` に短期間残る |
 | 文字列 | 文書を読むとき、すべての文字列（キーを含む）のヌル文字（`\u0000`）を `U+FFFD` に置き換える。不正な UTF-8 と対になっていないサロゲートも JSON の復号で `U+FFFD` になるので、以降の値はどれもそのまま両方の方言の文字列の列に書ける（[data-model §1.2](data-model/01-conventions.md#12-論理型)）。取り除かずに置き換えるのは、前後の文字列がつながって別の値（`java\u0000script:` → `javascript:`）にならないようにするため。IRI では `%EF%BF%BD` になる |
 | 上限 | 文書のネストの深さ 16、`tag` 100 件、`to` / `cc` 合わせて 1,000 件、本文 HTML 100 KiB。超えたら、その文書を正規化できないものとして扱う |
@@ -336,7 +366,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
     2. `fep_044f` の引用で、引用先がリモートの投稿なら承認を確かめる。引用元と引用先の作者が同じなら、`QuoteAuthorization` なしで承認する。
        そうでなければ `quoteAuthorization` を取得し、`QuoteAuthorization` で、IRI のホストと `attributedTo` が引用先の作者のもの、`interactingObject` が引用元、`interactionTarget` が引用先のときだけ `content.AcceptQuote` で承認する（Mastodon の `VerifyQuoteService` と同じ）。
     3. 検証できない・取得できない承認は `info` のログを残してジョブを完了にし、引用は `pending` のまま残ります。`quoteAuthorization` を足す `Update` を受けると、新しいペイロードでもう一度確かめます。
-    ローカルの投稿への `fep_044f` の引用は、`quoteAuthorization` がこのサーバーの `quote_authorizations` の、取り消されていない承認で、引用元と引用先と、承認を受けた人（依頼の主体）が引用元の作者と一致するときだけ承認します（`content.VerifyLocalQuoteAuthorization`）。
+    ローカルの投稿への `fep_044f` の引用は、`quoteAuthorization` がこのサーバーの `interaction_authorizations`（`quote`）の、取り消されていない承認で、引用元と引用先と、承認を受けた人（依頼の主体）が引用元の作者と一致するときだけ承認します（`content.VerifyLocalQuoteAuthorization`）。
   - **スレッドを開いたとき**: `GET /api/v1/statuses/{id}/context` が、閲覧できた投稿について `StatusHandlers.FetchThread` を呼び、応答は待たずに保存済みのものだけを返します（取得したものは次に開いたときに出る）。返信先の無いローカルの投稿は何もしません（返信は配送で届く）。
     同じ投稿は 1 時間に 1 回だけです（KV の名前空間 `federation.thread_fetch`、キーは URI の SHA-256、`IncrBy` で最初の 1 回だけ投入する）。
   - `federation.fetch_object` のペイロードは `uri`、スレッドの起点の `thread`（受信時は空）、残りの祖先の深さ `ancestors`、残りの返信の深さ `replies`、祖先の取得の印 `up` で、冪等キーは `fetch_object:<ペイロードの SHA-256>` です。1 つのジョブは 1 つの投稿を扱います。
@@ -385,8 +415,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 
 | ドメインイベント | アクティビティ | 宛先 |
 | --- | --- | --- |
-| `content.status_created` | `Create` | §7.2 の公開範囲ごとの宛先 |
-| `content.status_revised` | `Update` | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー。[data-model §7](data-model/07-visibility-and-delivery.md#7-公開範囲と配送)） |
+| `content.status_created`（承認を待つローカルの返信を除く）、`content.status_released`（承認されたローカルの返信） | `Create` | §7.2 の公開範囲ごとの宛先 |
+| `content.status_revised`（承認を待つローカルの返信を除く） | `Update` | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー。[data-model §7](data-model/07-visibility-and-delivery.md#7-公開範囲と配送)） |
 | `content.status_deleted`（アカウントの消去による `origin = account_deletion` を除く。`Delete`（Actor）が代わりを務める） | `Delete`（`Tombstone`） | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー） |
 | `content.boosted` / `content.boost_retracted`（`Federates` のときだけ） | `Announce` / `Undo Announce` | ブーストした人のリモートフォロワー + 元投稿の作者（リモートなら） |
 | `content.favourited` / `content.unfavourited`（リモートの投稿だけ） | `Like` / `Undo Like`（本文は projector がイベントから組み立てて保存する。Mastodon と同じく宛先を持たない） | 投稿の作者の inbox |
@@ -409,6 +439,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `moderation.report_filed`（`forwarded` の通報だけ。§11） | `Flag`（主体はインスタンス Actor） | 通報されたアカウントの inbox |
 | `moderation.report_forwarded`（モデレーターの後からの転送。§11） | `Flag`（主体はインスタンス Actor。`content` はモデレーターの文） | 通報されたアカウントの inbox |
 | `content.quote_recorded`（ローカルの投稿の、引用の許可を宣言したリモートの投稿の `fep_044f` の引用。ADR-0069 §3） | `QuoteRequest`（`id` は `{引用元の IRI}/quote_request`、`object` は引用先、`instrument` は引用元。本文は projector が組み立てて保存する） | 引用先の作者の inbox |
+| `content.interaction_requested`（ローカルの人の、承認の要るリモートの投稿への返信・ブーストの依頼。ADR-0155 §7） | 返信は `ReplyRequest`（`object_type = status`。`instrument` に返信の `Note` を埋め込み、本文は展開が組み立てる）、ブーストは `AnnounceRequest`（`instrument` に予約した `Announce` を埋め込み、本文は projector が組み立てて保存する）。`id` はどちらも `/ap/interaction_requests/{依頼の id}` | 相手の投稿の作者の inbox |
+| `content.interaction_answered`（リモートの人のローカルの投稿への交流への、作者の答えと、依頼の無い交流への答え。`Deferred`） | `Accept`（`result` に承認）/ `Reject`。依頼があれば依頼を埋め込み、無ければ `object` に交流、`target` に対象の投稿。本文は projector が組み立てて保存する | 交流した人の inbox |
 | `content.quote_changed`（ローカルの投稿の引用が、リモートの `QuoteAuthorization` で承認されたとき）、`content.interaction_policy_changed`（返信・ブースト・引用のどれかの許可が変わったとき） | 現在の版の `Update`（`quoteAuthorization` と `interactionPolicy` が新しくなる。版が増えないので `updated` は版の時刻のまま） | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー） |
 | `content.quote_authorization_revoked`（引用元の作者がリモートのとき） | `Delete`（`object` は `QuoteAuthorization` の IRI。`to` は引用元の作者、`cc` は自分の followers。本文は projector が組み立てて保存する） | 引用元の作者の inbox + 引用先の作者のリモートフォロワーの inbox |
 
@@ -510,6 +542,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - `Mention` は `href` が Actor の IRI、`name` が `@user@domain`（ローカルのアカウントは設定 `account_domain`）、`Hashtag` は `href` が本文のリンクと同じ `https://{host}/tags/{正規化した名前}`（ADR-0018）、`name` が `#` と保存された表記です。
   - `Emoji`（[ADR-0051](../adr/0051-custom-emoji.md) §3）は、版の本文と CW で使った有効なカスタム絵文字です。`id` はローカルなら `https://{host}/ap/emojis/{uuid}`（リモートなら記録した `uri`、無ければ省く）、`name` は `:shortcode:`、`updated` は現在の画像を設定した時刻、`icon` は `Image` で、`url` と `mediaType` は `large` の版（アニメーションなら動く版の GIF、静止画は常に PNG）です。
     ローカルの投稿とプロフィールの絵文字は、保存のときに原文の `:shortcode:` から有効なローカルの絵文字だけを版に記録したものです（data-model §4.4）。リアクション（ADR-0051）も同じ形を使います（`federation.EmojiTag`）。
+- 承認された返信（ADR-0155 §7）は `replyAuthorization` に相手の投稿の作者の `ReplyAuthorization` を、承認されたブーストの `Announce` は `announceAuthorization` に `AnnounceAuthorization` を付けます。outbox と featured の頁は、頁の投稿の承認をまとめて 1 度で読みます。
 - 引用（FR-114、ADR-0069 §3）は、引用元の作者が外していなければ、`quote` と同じ IRI の `_misskey_quote`・`quoteUrl`・`quoteUri`、承認されていれば `quoteAuthorization` を付け、本文（`content` と `contentMap` のどの言語も）の前に `<p class="quote-inline">RE: <a href="{引用先の表示用 URL}">…</a></p>` を置きます（Mastodon と同じ形）。
   どの投稿にも `interactionPolicy` の `canReply`・`canAnnounce`・`canQuote` を付け、それぞれ `automaticApproval` と、承認の相手があれば `manualApproval` を持ちます（交流の許可は [ADR-0155](../adr/0155-interaction-policy.md) §9）。配送・投稿の GET・outbox・featured は同じ組み立てを通るので、同じ投稿の `Note` はどこでも同じ形です。相手ごとに、`everyone` は `Public`、`followers` は作者の followers とメンションした Actor と作者自身、`mentioned` はメンションした Actor と作者自身、`nobody` は作者自身です。公開範囲で決まる制限を値に反映し、`private` / `direct` の `canAnnounce`・`canQuote` と、`local` の 3 つはどれも作者自身です（`local` はリモートからはフォロワー限定に見えるため）。`canLike` は付けません。
 - 会話（[ADR-0154](../adr/0154-conversations.md) §5）は、投稿の会話（併合されていれば併合先）の IRI を `context` に、同じ値を `conversation` に載せます。Mastodon は受信で `conversation` だけを読むためです。IRI が `https` でない会話（Mastodon の `tag:` の URI）は `conversation` だけを載せます。併合のためだけの `Update` は送りません。
@@ -628,7 +661,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 
 ## 10. コレクションとオブジェクトの GET
 
-連合の向きが `publish` を通さないとき、投稿・`/activity`・ブーストの `Announce`・コレクション（outbox・followers・following・featured・会話）・カスタム絵文字・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
+連合の向きが `publish` を通さないとき、投稿・`/activity`・ブーストの `Announce`・コレクション（outbox・followers・following・featured・会話）・カスタム絵文字・返信・ブースト・引用の承認の GET は `404` です（`410` にしません）。ローカルの Actor・インスタンス Actor・WebFinger・host-meta・NodeInfo の扱いは [§14.2](#142-入口ごとの振る舞い) にあります。
 
 削除されたローカルの Actor（`deleted` を記録した時点から、消去の後も）の GET は、だれにでも `410 Gone` と `Tombstone`（`id` は Actor の URI）です。WebFinger（`acct:`・Actor の `id`・プロフィールの URL のどれでも）と `/@{username}` への ActivityPub の要求も `410` です（ADR-0018 §12）。`Delete` を受け損ねたサーバーが消えたと分かるためです。`deleted` より前の状態は変わりません（凍結中は最小の文書、それ以外の有効でない Actor は `404`）。存在しないユーザーとリモートの Actor も `404` です。HTML を求める要求は、削除された投稿と同じく `404` です。削除された Actor のコレクションと inbox は `404` です。連合の向きが `off` なら、削除されていても `404` です（§14.2）。サービスの終了の配送中も、削除済みの Actor は `410` です。
 
@@ -647,7 +680,7 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
   URL を貼った検索（FR-305）で、ほかのサーバーが投稿を引けるようにするためです。`id` の GET は上の規則で改めて判定します。
   ローカルの投稿の `url`（`Note` とクライアント API）は保存せず、読むときに作者の現在のユーザー名と投稿 ID から作ります。
 - 引用先が `local` の投稿のとき、連合する `Note` は `quote`・その別名・`quoteAuthorization`・代替リンクを持ちません。公開範囲が `local`・`private`・`direct` のローカルの投稿は、リモートの投稿を引用できないので、`QuoteRequest` も送りません（ADR-0018 §15）。
-- `GET /ap/quote_authorizations/{uuid}` は、このサーバーが出した引用の承認の `QuoteAuthorization`（`attributedTo` は引用先の作者、`interactingObject` は引用元、`interactionTarget` は引用先）を `@context` 付きで返します（ADR-0069 §1）。
+- `GET /ap/quote_authorizations/{uuid}`・`/ap/reply_authorizations/{uuid}`・`/ap/announce_authorizations/{uuid}` は、このサーバーが出した引用・返信・ブーストの承認の `QuoteAuthorization`・`ReplyAuthorization`・`AnnounceAuthorization`（`attributedTo` は対象の投稿の作者、`interactingObject` は引用元・返信・`Announce`、`interactionTarget` は対象の投稿）を `@context` 付きで返します（ADR-0069 §1、ADR-0155 §8）。承認の種類とパスが合わないものは `404` です。`/ap/interaction_requests/{uuid}`（このサーバーが送った `ReplyRequest`・`AnnounceRequest` の `id`）は GET で文書を返しません（`404`）。
   引用先が `local` の投稿の承認は、取り消しや削除の後も含めて `404` です（[ADR-0018](../adr/0018-federated-uris.md) §15）。
   引用元がすでに示しているものなので、だれにでも返し、`public, max-age=60` です（Authorized Fetch のときは署名を求める）。取り消した承認と、引用先が削除された承認は `410 Gone` と `Tombstone`、無いものは 404 です。
 - `GET /ap/activities/{uuid}` は、公開範囲が `public` / `unlisted` で取り消されていないローカルのブーストの `Announce` だけを、配送と同じ形で保存している事実から組み立てて返します（`federation.Objects.Announce`、[ADR-0018](../adr/0018-federated-uris.md) §16）。
@@ -851,12 +884,12 @@ NodeInfo の `metadata.serviceClosure` は、サービスの終了の状態（`s
 | 型 | 流れ |
 | --- | --- |
 | `Follow`（ローカルのアカウントへ） | `follow_in`（`inbound` は断る） |
-| `Accept` / `Reject` | `follow_out`、リレーの参加への応答、`QuoteRequest` への応答のどれかが通れば進み、ハンドラが自分の流れを確かめる |
+| `Accept` / `Reject` | `follow_out`、リレーの参加への応答、`QuoteRequest`・`ReplyRequest`・`AnnounceRequest` への応答のどれかが通れば進み、ハンドラが自分の流れを確かめる |
 | `Undo` | 取り消す型の流れ（`Follow` は `follow_in`、`Block` は `protect`、`Accept` は `follow_out`、反応は `ingest`） |
 | `Block`・`Flag`、外の Actor の自分自身の `Update` / `Delete` | `protect` |
 | `Like`・`EmojiReact` | `ingest` と `publish` の両方（外から見えないローカルの投稿への反応は捨てる） |
 | `Announce` | `ingest`。ローカルの投稿のブーストは `publish` も要る |
-| `QuoteRequest` | `publish`（取り込みが通らないモードでは `Reject` を返す） |
+| `QuoteRequest` / `ReplyRequest` / `AnnounceRequest` | `publish`（取り込みが通らないモードでは `Reject` を返す） |
 | `Move` | `follow_out` |
 | `Create`・`Update`・`Delete`・`Add`・`Remove`、ほか | `ingest` |
 

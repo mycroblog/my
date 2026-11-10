@@ -69,7 +69,7 @@ func (r *StatusRepository) FindQuoteState(ctx context.Context, statusID string) 
 	if err != nil {
 		return content.QuoteState{}, postgres.NotFound(err, appcontent.ErrNotFound, "quote state of "+statusID)
 	}
-	return quoteStateOf(quoteStateRow(row)), nil
+	return quoteStateOf(row.StatusID, row.Form, row.Detached, row.State, postgres.FromNullString(row.AuthorizationUri)), nil
 }
 
 // FindQuoteStateTx implements content.QuoteRepository.
@@ -89,7 +89,7 @@ func (r *StatusRepository) ListQuoteStatesByAuthorization(ctx context.Context, u
 	}
 	out := make([]content.QuoteState, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, quoteStateOf(quoteStateRow(row)))
+		out = append(out, quoteStateOf(row.StatusID, row.Form, row.Detached, row.State, postgres.FromNullString(row.AuthorizationUri)))
 	}
 	return out, nil
 }
@@ -98,23 +98,15 @@ func quoteFrom(row contentgen.StatusQuote) content.Quote {
 	return content.Quote{StatusID: row.StatusID, QuotedURI: row.QuotedUri, Form: content.QuoteForm(row.Form)}
 }
 
-// quoteStateRow is a row of the queries that derive the state of a quote.
-type quoteStateRow struct {
-	StatusID         string
-	Form             string
-	Detached         bool
-	State            string
-	AuthorizationUri *string
-}
-
-// quoteStateOf derives the state of a quote from its row (content.QuoteStateFrom).
-func quoteStateOf(row quoteStateRow) content.QuoteState {
-	q := content.Quote{StatusID: row.StatusID, Form: content.QuoteForm(row.Form)}
+// quoteStateOf derives the state of the quote of statusID of form from whether it is detached and
+// the state of its request, "" for none, with its authorization (content.QuoteStateFrom).
+func quoteStateOf(statusID, form string, detached bool, state, authorizationURI string) content.QuoteState {
+	q := content.Quote{StatusID: statusID, Form: content.QuoteForm(form)}
 	var req *content.InteractionState
-	if row.State != "" {
-		req = &content.InteractionState{State: content.InteractionRequestState(row.State), AuthorizationURI: postgres.FromNullString(row.AuthorizationUri)}
+	if state != "" {
+		req = &content.InteractionState{State: content.InteractionRequestState(state), AuthorizationURI: authorizationURI}
 	}
-	return content.QuoteStateFrom(q, row.Detached, req)
+	return content.QuoteStateFrom(q, detached, req)
 }
 
 // ListQuotesOf implements content.QuoteRepository.

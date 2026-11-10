@@ -446,5 +446,25 @@
   "notifications.link.auto_delete": {
     "defaultMessage": "削除される投稿を確かめる",
     "description": "Link in the notification of the server's maximum of the automatic deletion to the settings of the automatic deletion, which preview what goes."
+  },
+  "notifications.type.reply_request": {
+    "defaultMessage": "{name}さんがあなたの投稿への返信の承認を求めています",
+    "description": "Notification sentence. {name} is the display name of the account whose reply to the user's post waits for the user's approval."
+  },
+  "notifications.type.boost_request": {
+    "defaultMessage": "{name}さんがあなたの投稿のブーストの承認を求めています",
+    "description": "Notification sentence. {name} is the display name of the account whose boost of the user's post waits for the user's approval."
+  },
+  "notifications.type.quote_request": {
+    "defaultMessage": "{name}さんがあなたの投稿の引用の承認を求めています",
+    "description": "Notification sentence. {name} is the display name of the account whose quote of the user's post waits for the user's approval."
+  },
+  "notifications.type.interaction_accepted": {
+    "defaultMessage": "{name}さんがあなたの返信・ブースト・引用を承認しました",
+    "description": "Notification sentence. {name} is the display name of the author of the post, which the notification shows, who approved the user's reply to it, boost of it, or quote of it."
+  },
+  "notifications.type.interaction_rejected": {
+    "defaultMessage": "{name}さんがあなたの返信・ブースト・引用を断りました",
+    "description": "Notification sentence. {name} is the display name of the author of the post, which the notification shows, who declined the user's reply to it, boost of it, or quote of it."
   }
 }
