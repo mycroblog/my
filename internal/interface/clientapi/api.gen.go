@@ -17600,6 +17600,9 @@ type ListAccountStatusesParams struct {
 	// Pinned List only the account's pinned posts.
 	Pinned *bool `form:"pinned,omitempty" json:"pinned,omitempty"`
 
+	// Articles List only the account's articles; `pinned` takes precedence.
+	Articles *bool `form:"articles,omitempty" json:"articles,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -21124,6 +21127,19 @@ func (siw *ServerInterfaceWrapper) ListAccountStatuses(w http.ResponseWriter, r 
 			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "pinned"})
 		} else {
 			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "pinned", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "articles" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "articles", r.URL.Query(), &params.Articles, runtime.BindQueryParameterOptions{Type: "boolean", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "articles"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "articles", Err: err})
 		}
 		return
 	}

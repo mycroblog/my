@@ -76,6 +76,7 @@ type fakeViews struct {
 	boosts   map[string]content.Boost
 	tags     map[string]content.Tag
 	pinned   []string
+	articles []articlesCall // the calls of Articles
 	viewers  []appcontent.Viewer
 	requests [][]string // the ids of each call of Views
 }
@@ -115,6 +116,22 @@ func (f *fakeViews) Tag(_ context.Context, name string) (content.Tag, error) {
 
 func (f *fakeViews) Pinned(ctx context.Context, viewer appcontent.Viewer, _ string) ([]appcontent.StatusView, error) {
 	return f.Views(ctx, viewer, f.pinned)
+}
+
+// articlesCall is a call of fakeViews.Articles.
+type articlesCall struct {
+	accountID, before string
+	limit             int
+}
+
+// Articles serves the post postID as the only article, with a next page after the first.
+func (f *fakeViews) Articles(ctx context.Context, viewer appcontent.Viewer, accountID, before string, limit int) (appcontent.ArticlePage, error) {
+	f.articles = append(f.articles, articlesCall{accountID: accountID, before: before, limit: limit})
+	if before != "" {
+		return appcontent.ArticlePage{}, nil
+	}
+	views, err := f.Views(ctx, viewer, []string{postID})
+	return appcontent.ArticlePage{Statuses: views, Next: postID}, err
 }
 
 var (
@@ -533,6 +550,20 @@ func TestListAccountStatuses(t *testing.T) {
 	page = decodePage(t, e.get(t, "/accounts/"+aliceAccountID+"/statuses?pinned=true&cursor="+postID, nil))
 	if len(page.Items) != 0 || page.NextCursor != nil {
 		t.Errorf("pinned after the first page = %+v, want none", page)
+	}
+
+	// articles lists the account's articles, through no timeline; pinned takes precedence.
+	page = decodePage(t, e.get(t, "/accounts/"+aliceAccountID+"/statuses?articles=true&exclude_replies=true&limit=3", nil))
+	if len(page.Items) != 1 || page.Items[0].Id != postID || page.NextCursor == nil || *page.NextCursor != postID || len(e.timelines.calls) != 1 ||
+		!slices.Equal(e.views.articles, []articlesCall{{accountID: aliceAccountID, limit: 3}}) {
+		t.Errorf("articles = %+v after %+v, want the article and a next page", page, e.views.articles)
+	}
+	page = decodePage(t, e.get(t, "/accounts/"+aliceAccountID+"/statuses?articles=true&cursor="+postID, nil))
+	if len(page.Items) != 0 || page.NextCursor != nil || len(e.views.articles) != 2 || e.views.articles[1].before != postID {
+		t.Errorf("articles after the first page = %+v after %+v, want none", page, e.views.articles)
+	}
+	if decodePage(t, e.get(t, "/accounts/"+aliceAccountID+"/statuses?articles=true&pinned=true", nil)); len(e.views.articles) != 2 {
+		t.Errorf("articles with pinned read the articles: %+v", e.views.articles)
 	}
 
 	res := e.get(t, "/accounts/01890a5d-ac96-774b-bcce-b302099a80ff/statuses", map[string]string{"Accept-Language": "ja"})

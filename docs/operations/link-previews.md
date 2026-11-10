@@ -35,10 +35,10 @@ actor's `id`, and a post a signed-out visitor can see answers with a 302 to its 
 
 | Tag | Content |
 | --- | --- |
-| `og:title`, `<title>` | "Display name (@username@account domain)". The username if the display name is empty |
-| `og:type` | `profile` for a profile, `article` for a post |
+| `og:title`, `<title>` | "Display name (@username@account domain)". The username if the display name is empty. For an article, its title |
+| `og:type` | `profile` for a profile, `article` for a post and an article |
 | `og:url`, `<link rel="canonical">` | The canonical URL (the URL with the current username) |
-| `og:description` | The plain text of the post body (the bio for a profile) without tags, cut to 200 graphemes. For a post with a content warning, only the content warning text |
+| `og:description` | The plain text of the post body (the bio for a profile) without tags, cut to 200 graphemes. For a post with a content warning, only the content warning text. For an article, its summary, also when it is marked sensitive; the body of an article is never in the page |
 | `og:image`, `og:image:alt` / `width` / `height` | The image chosen in the order below |
 | `og:site_name` | The instance name (the text `name`, the same in every language; `host` when there is none; [name and domain](instance-settings.md#name-and-domain)) |
 | `og:locale`, `<html lang dir>` | The language of the post. When it is unset (`und`), the author's default posting language, and failing that the instance's `default_locale`. It does not change with `Accept-Language`. `og:locale` has the form `language_TERRITORY`: a language without a region gets its usual one (`ja` → `ja_JP`, `en` → `en_US`, `pt` → `pt_BR`), and `<html lang>` keeps the language tag as it is |
@@ -84,8 +84,8 @@ profile without a feed, and a hashtag no post has used, answer 404.
 
 `og:image` is chosen in this order.
 
-1. The first image attached to the post (its alt text goes into `og:image:alt`). It is not used for a post marked sensitive or
-   with a content warning.
+1. The first image attached to the post, or the cover of an article (its alt text goes into `og:image:alt`). It is not used
+   for a post or an article marked sensitive, or a post with a content warning.
 2. The profile's header image, or else the avatar (`og:image:alt` is "Header image of {name}" or "Avatar of {name}").
 3. The instance preview image (the instance setting `preview_image`, under "Link previews" on Settings → General of the
    administration; `og:image:alt` is the text `preview_image_alt`, or "Image of {instance name}" if there is none).

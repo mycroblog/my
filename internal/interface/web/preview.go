@@ -216,7 +216,8 @@ func (h *Handler) renderProfile(ctx context.Context, p appcontent.ProfilePreview
 	return h.renderPreview(ctx, lang, meta, policy, version)
 }
 
-// renderStatus renders the shell of a post page.
+// renderStatus renders the shell of a post page; an article's has its title, summary, and
+// cover.
 func (h *Handler) renderStatus(ctx context.Context, s appcontent.StatusPreview) (document, error) {
 	lang := h.previewLanguage(ctx, s.Language)
 	meta, version := h.authorMeta(ctx, lang, s.Author)
@@ -226,10 +227,18 @@ func (h *Handler) renderStatus(ctx context.Context, s appcontent.StatusPreview) 
 	meta.ActivityPubID = st.URI
 	meta.PublishedTime = st.PublishedAt.UTC().Format(time.RFC3339)
 	meta.AuthorURL = profileURL(h.o.Host, s.Author.Username())
-	if rev.SpoilerText != "" {
+	switch a := rev.Article; {
+	case a != nil:
+		// An article shows its title and summary, even when it is sensitive: the summary is
+		// never a content warning (ADR-0160 §6, §11). The body stays out of the shell.
+		if a.Title != "" {
+			meta.Title = a.Title
+		}
+		meta.Description = description(a.Summary)
+	case rev.SpoilerText != "":
 		// Behind a content warning, the preview shows only the warning.
 		meta.Description = description(rev.SpoilerText)
-	} else {
+	default:
 		meta.Description = description(plainText(bodyHTML(rev)))
 	}
 	img, err := h.profileImage(ctx, lang, s.Author, s.Image)

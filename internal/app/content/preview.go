@@ -81,8 +81,8 @@ type StatusPreview struct {
 	// Language is the status's language, or the author's default post language when it is
 	// undetermined; "" when both are.
 	Language string
-	// Image is the first attached image with its alt text, nil when there is none or the
-	// status is sensitive or behind a content warning.
+	// Image is the first attached image with its alt text, or the cover of an article, nil when
+	// there is none or the status is sensitive or behind a content warning.
 	Image *PreviewImage
 }
 
@@ -210,15 +210,24 @@ func (p *Previews) status(ctx context.Context, statusID string, authors previewA
 	if out.Language == "" || out.Language == UndeterminedLanguage {
 		out.Language = prof.Language
 	}
-	// Moderation may show the attachments as sensitive (data-model §5.2): the preview shows none.
+	// An article's preview image is its cover (ADR-0160 §11); it has no attachments.
+	images := rev.Attachments
+	if a := rev.Article; a != nil {
+		images = nil
+		if a.Cover != nil {
+			images = []content.Attachment{{MediaID: a.Cover.MediaID, Description: a.Cover.Description}}
+		}
+	}
+	// Moderation may show the attachments and the cover as sensitive (data-model §5.2): the
+	// preview shows none.
 	sensitive := rev.Sensitive || r.MediaSensitive
-	if !sensitive && len(rev.Attachments) > 0 {
+	if !sensitive && len(images) > 0 {
 		if sensitive, err = p.d.Repository.SensitivityOverridden(ctx, st.ID); err != nil {
 			return StatusPreview{}, err
 		}
 	}
 	if !sensitive && rev.SpoilerText == "" {
-		for _, at := range rev.Attachments {
+		for _, at := range images {
 			img, err := p.Image(ctx, at.MediaID, at.Description)
 			if err != nil {
 				return StatusPreview{}, err
