@@ -25,7 +25,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   データモデルは成功した配送の日時を持たない（`instance_health` は失敗の間だけ更新する。[data-model §4.8](../data-model/04-tables/08-federation.md#48-federation)）ので、「最後の成功」は配送の再開の日時で示す。
   失敗の日数があるか停止中なら「配送を再開する」を出し、成功したら詳細の答えを置き換え、一覧と履歴を無効にして結果を知らせる。失敗はトーストで知らせ、状態とボタンを残す（E2）。
   「モデレーション」の区画から、そのドメインのドメインへの処分の画面（`/moderation/domain-actions?domain=…`）へリンクする。「投稿の取り直し」の区画（下の「投稿の取り直し」）を持つ。
-- **ドメインへの処分**（`/moderation/domain-actions`、FR-702）: 一覧 → 詳細の 4 つのページ（上の「画面の分け方」）。`h1` の下の `LocalNav` は一覧（`/moderation/domain-actions`）と Mastodon の CSV（`/moderation/domain-actions/import`）の 2 つで、新しい処分（`/new`）と処分の詳細（`/$id`）は `h1` の下に一覧へ戻るリンクを置く。
+- **ドメインへの処分**（`/moderation/domain-actions`、FR-702）: 一覧 → 詳細の 4 つのページ（上の「画面の分け方」）。`h1` の下の `LocalNav` は一覧（`/moderation/domain-actions`）・ブロックリストの購読（`/moderation/domain-actions/subscriptions`）・許可したドメイン（`/moderation/domain-actions/allowed`）・Mastodon の CSV（`/moderation/domain-actions/import`）の 4 つで、新しい処分（`/new`）と処分の詳細（`/$id`）・購読の追加と購読のページは `h1` の下に一覧へ戻るリンクを置く。
   - **一覧**: 「新しい処分」のボタン（`/moderation/domain-actions/new` へのリンク。`?domain=` を引き継ぐ）と、新しい順の処分の `RecordTable`。絞り込みは `ListToolbar` の「有効」（`active=true`）と「すべて」（`?filter=all`、URL に置く。S3）で、
     `?domain=` があればそのドメインの処分だけを出し、「すべてのドメインを表示」のリンクで外せる。列はドメイン（詳細へのリンク）・種類・状態・終了（なければ「解除するまで」）の 4 つで、公開コメントと非公開のメモは一覧に出さない。一覧は何も変えない。
   - **詳細**（`GET /admin/domain_actions/{id}`）: `h1` は種類とドメイン（「{domain} の「{kind}」」。権限のない閲覧者には画面の名前）。「状態」の区画（状態・処分した日時・終了か解除した日時、有効な処分の「解除」）と、
@@ -42,6 +42,13 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
     プレビューは見出し（`h4`）が名前を与える `ul` で、ファイルの行の順に並べる。処分を出す行は、ドメイン（`DomainName`）を名前、行番号と出す処分の種類を説明にした `Checkbox`（最初はすべて選ぶ）、出さない行は書かれたままのドメイン（`dir="auto"`）と理由（適用済み・処分なし・前の行と同じドメイン・不正な行）の文にする。
     その下の非公開のメモ（`ReasonField`、5,000 文字）と「{件数} 行をインポート」で、選んだ行の `block` を `POST /admin/domain_actions/import` に送る。選んだ行がなければ `role="alert"` で知らせて送らない。選んだ行が `suspend` を含むときは、送る前に凍結するドメインの数を問う `ConfirmDialog` で確かめ（NFR-MOD-7）、失敗はダイアログの中に、ほかの失敗はボタンの上に出す。
     成功したら新しい処分と同じく一覧と監査ログ（`limit` と `suspend` なら投稿の一覧も）を取り直してから、プレビューを消して CSV とメモを空にし、出した処分の数と飛ばした行の数を `StatusMessage` に出して、ボタンが消えるのでインポートの見出し（`h3`）にフォーカスを移す。次のプレビューで行の選択は最初に戻る（`key`、R10）。
+  - **許可したドメイン**（`/moderation/domain-actions/allowed`、[ADR-0159](../../adr/0159-federation-allowlist-and-blocklist-subscriptions.md) §1・§6、[画面](screens/moderation-domain-allows.md)）: 「許可したドメイン」の区画は、許可が効くのは連合の範囲（`federation_scope`）が `allowlist` のときだけであることの説明（`manage_settings` を持つ閲覧者には連合の設定へのリンク）と、ドメインの順の `RecordTable`（`wholeList`）。列はドメイン（`DomainName`）・メモ（`dir="auto"`）・許可した日時・「許可を外す」。
+    「ドメインを許可」の区画はドメインとメモ（`ReasonField`、5,000 文字）のフォームで、確かめずに `POST /admin/domain_allows` で送る（`200` はすでに許可していたこと）。成功したら欄を空にし、結果を表の上の `StatusMessage` に出す。
+    「許可を外す」は、`allowlist` の間はドメインの凍結と同じくフォローが切れて戻らないので、`ConfirmDialog` で確かめてから `DELETE /admin/domain_allows/{domain}` で送る。この画面は範囲を読まない（`manage_settings` の設定）ので、ダイアログは範囲ごとの効果を両方言う。行が消えたら `useFocusAfterRemoval`（表が空ならドメインの欄）。
+  - **ブロックリストの購読**（`/moderation/domain-actions/subscriptions`・`/new`・`/{id}`、ADR-0159 §4〜§6、画面は[一覧](screens/moderation-domain-list-subscriptions.md)・[追加](screens/moderation-domain-list-subscription-new.md)・[購読のページ](screens/moderation-domain-list-subscription.md)）: 一覧 → 詳細。
+    一覧は「購読を追加」と、新しい順の `RecordTable`（購読の名前・モード・最後の取得と続けての失敗）。追加のページは名前・URL・形式と反映のしかた（モード・`suspend` と `silence` の置き換え・メディアと通報の拒否・公開コメントを写すか）のフォームで、購読したら購読のページへ移る。
+    購読のページは、下書き（1 件ずつか、読み込んだ `key` をまとめて受け入れる・退ける。凍結を出す受け入れだけを `ConfirmDialog` で確かめる、NFR-MOD-7）・取得（「今すぐ取得」と、最後の取得が変わるまでの読み直し、履歴の `RecordTable`）・設定（追加と同じ欄の `PATCH`）・購読をやめる（出した処分を解除するかの `Checkbox` を持つ `ConfirmDialog`。一覧へ移ってトースト）の 4 つの区画。
+    下書きの受け入れは処分を出すので、ドメインへの処分の一覧・監査ログ・投稿の一覧を取り直す。取得の失敗の通知（`admin_domain_list_failing`）は一覧へリンクする。
 - **登録の拒否リスト**（`/moderation/signup-blocks`、FR-719）: 一覧 → 詳細の 4 つのページ。`h1` の下の `LocalNav` は一覧（`/moderation/signup-blocks`）と一覧からの追加（`/moderation/signup-blocks/import`）の 2 つで、新しい拒否（`/new`）と拒否の詳細（`/$id`）は `h1` の下に一覧へ戻るリンクを置く。
   メールのドメインはドメインへの処分と同じく `DomainName` で 2 つの形を出し、フォームは U-label のまま送る。メールアドレスの拒否はサーバーがハッシュだけを持つので、値はそのハッシュ（16 進の SHA-256）になる。
   - **一覧**: 「拒否を追加する」のボタン（`/moderation/signup-blocks/new` へのリンク）と、新しい順の拒否の `RecordTable`。絞り込みは `ListToolbar` の「有効」（`active=true`）と「すべて」（`?filter=all`、URL に置く。S3）。
@@ -280,6 +287,7 @@ API の経路はどちらも `/admin/*` で（[client-api.md](../client-api.md) 
   - コンテンツ（`/admin/settings/content`、[画面の要件](screens/admin-settings-content.md)）: 「言語」「タイムライン」「投稿」「トップページ」「おすすめのアカウント」の区画。
   - 投稿の自動削除（`/admin/settings/auto-delete`、[画面の要件](screens/admin-settings-auto-delete.md)）: 「新しいアカウントの既定」「上限」の区画（ADR-0151）。上限を有効にするか厳しくする保存は、縛られるアカウントに通知が届き猶予が始まることを `alertdialog` で確かめてから送る。
   - 連合（`/admin/settings/federation`、[画面の要件](screens/admin-settings-federation.md)）: 「連合」「制限・凍結したサーバー」「外部の審査」の区画。
+    「連合」の区画の連合の範囲（`federation_scope`、ADR-0159 §2・§3）を `allowlist` にする保存は、`GET /admin/settings/federation_scope/impact` の切れるフォローの件数・フォローを失うローカルのアカウントの数・件数の多いサーバーを `alertdialog` で示し、件数を読み込むまで確かめのボタンを押せないようにしてから送る。
   - 検索とクローラー（`/admin/settings/discovery`、[画面の要件](screens/admin-settings-discovery.md)）: 「検索エンジンと AI」と、サーバーに全文検索があるとき（`usePostSearchAvailable`）だけの「投稿の検索」の区画。
   - 通話（`/admin/settings/voice`、[画面の要件](screens/admin-settings-voice.md)）: 「通話」の区画。サーバーが通話を出しているとき（`useVoiceAvailable`）だけ `LocalNav` に出し、出していなければ URL で開いてもフォームの代わりにその旨を出す。
   - **全般**: 「名前」の区画に、名前の `TextField` を 1 つ置く。

@@ -23,11 +23,12 @@
 | モデレーション | 自動審査の記録（`/moderation/hook-decisions`。判定フックの判定の一覧と取り消し（判定ごとの `/moderation/hook-decisions/{id}`）、`local.status` の異議申し立ての審査（`/moderation/hook-decisions/appeals`、異議ごとの `/moderation/hook-decisions/appeals/{id}`）、[ADR-0147](0147-decision-hooks.md)） | `manage_reports` |
 | モデレーション | 登録の拒否リスト（`/moderation/signup-blocks`、`/new`・一覧からの追加の `/import`・拒否ごとの `/{id}`、#626 の BAN からの作成を含む） | `manage_accounts` |
 | モデレーション | ドメインへの処分（`/moderation/domain-actions`、`/new`・#641 のインポートとエクスポートの `/import`・処分ごとの `/{id}`） | `manage_domains` |
+| モデレーション | 連合を許可したドメイン（`/moderation/domain-actions/allowed`。許可の一覧と追加・削除、ADR-0159 §6） | `manage_domains` |
 | モデレーション | ドメインのブロックリストの購読（`/moderation/domain-actions/subscriptions`・`/new`・購読ごとの `/{id}`。取得の履歴と下書き、ADR-0159 §6） | `manage_domains` |
 | モデレーション | 連合先（`/moderation/instances`。サーバーごとの配送の状態と再開、そのドメインへの処分への入口） | `manage_domains` |
 | モデレーション | 招待（`/moderation/invites`・作成の `/moderation/invites/new`、#624） | `manage_invites` |
 | モデレーション | 監査ログ（`/moderation/audit-log`） | `view_audit` |
-| サーバー管理 | サーバーの設定（`/admin/settings`。話題ごとのページ: 全般（名前・説明・連絡先）・`/branding`（アイコンとロゴ）・`/registration`（登録モード・招待・OAuth のアプリの登録）・`/content`（既定の言語・タイムライン・投稿・トップページ）・`/federation`（連合の設定・処分したドメインの公開・判定フックのモード（ADR-0147））・`/discovery`（クローラー・全文検索の対象（[ADR-0149](0149-full-text-search.md)））・`/voice`、#624） | `manage_settings` |
+| サーバー管理 | サーバーの設定（`/admin/settings`。話題ごとのページ: 全般（名前・説明・連絡先）・`/branding`（アイコンとロゴ）・`/registration`（登録モード・招待・OAuth のアプリの登録）・`/content`（既定の言語・タイムライン・投稿・トップページ）・`/federation`（連合の設定と連合の範囲の切り替え（ADR-0159 §6）・処分したドメインの公開・判定フックのモード（ADR-0147））・`/discovery`（クローラー・全文検索の対象（[ADR-0149](0149-full-text-search.md)））・`/voice`、#624） | `manage_settings` |
 | サーバー管理 | 翻訳（`/admin/translation`。翻訳のプロバイダー、それぞれに送る公開範囲、上限、月の使用量、[ADR-0148](0148-post-translation.md)） | `manage_settings` |
 | サーバー管理 | 規約とポリシー（`/admin/documents`。利用規約・`/privacy-policy`・`/commerce-disclosure` の文書ごとのページ） | `manage_settings` |
 | サーバー管理 | ルール（`/admin/rules`・`/new`・ルールごとの `/{id}`、#624） | `manage_rules` |
