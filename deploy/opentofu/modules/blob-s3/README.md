@@ -37,3 +37,6 @@ secret to the server, but it goes through the store with the key so that the two
 Keep the bucket private. The server reads the files from it and serves them under `/media/`, so nothing needs to reach the bucket
 directly. For Cloudflare R2 use [`blob-cloudflare-r2`](../blob-cloudflare-r2/README.md), which also creates the bucket. For Amazon
 S3 use [`blob-aws-s3`](../blob-aws-s3/README.md), which needs no key.
+
+The module creates no bucket, so it cannot turn on versioning or lifecycle rules: set them on the bucket where you make it, following
+[Backup and restore](../../../../docs/operations/backup.md#media-in-a-bucket).

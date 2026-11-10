@@ -140,6 +140,10 @@ A deleted or overwritten object then stays as a noncurrent version, and the buck
 aws s3api put-bucket-versioning --bucket my-media --versioning-configuration Status=Enabled
 ```
 
+With the OpenTofu modules of Amazon S3 and Google Cloud Storage, set `versioning = true`: it turns versioning on and adds the rule for noncurrent versions
+below, whose age is `noncurrent_version_days` (35 by default). Cloudflare R2 has no object versioning, and the module for another S3-compatible store
+does not create the bucket, so for those two use a copy (below).
+
 **Lifecycle rules.** With versioning, every deleted file keeps its storage cost until a rule removes it. Add a rule that deletes noncurrent versions
 after the age of your oldest database backup (35 days for the generations of [How often and where](#how-often-and-where) without the monthly ones),
 so that every database backup you keep still finds its files and a file a user deleted does not stay longer than your privacy policy says.
@@ -199,6 +203,20 @@ The database names the media files that it uses, and the media copy is taken a m
 
 The other order is worse: every file uploaded between the media backup and the database backup would be missing after a restore,
 including the media of new posts. Taking both in the maintenance mode avoids either gap.
+
+### On the OpenTofu targets
+
+The modules keep no backup of their own beyond what the provider offers: the managed PostgreSQL of Cloud SQL and RDS has automated backups
+with a retention you set, while a database with only the provider's history (Neon) can go back only as far as that history reaches.
+Schedule these yourself, with credentials that the instance does not hold:
+
+1. **The database, every day.** Run `pg_dump` against the instance's PostgreSQL from a machine or a scheduled job outside the provider that hosts the
+   database (see [PostgreSQL](#postgresql)), encrypt the dump, and write it to a bucket of another account or provider. Keep the generations of
+   [How often and where](#how-often-and-where). The job needs the `database_url` and nothing else; it must not hold the KEK.
+2. **The media, right after it.** With `versioning = true` on the bucket module, the versions are the copy for the last `noncurrent_version_days`;
+   for the loss of the account, also run `rclone copy` from the instance's bucket to a bucket elsewhere, as in
+   [Media in a bucket](#media-in-a-bucket), on the schedule of the database dump.
+3. **The KEK and the configuration** are not part of the schedule: back them up when they change ([The KEK and the configuration](#the-kek-and-the-configuration)).
 
 ### The KEK and the configuration
 
@@ -320,7 +338,22 @@ backups are taken (at least every few months):
 1. Take a backup of the live instance as above: the database, then the media.
 2. On another machine or in another Compose project, restore it with the KEK and the configuration from where you keep them
    (not copied from the live server), and with `host` unchanged so the actors' URLs match.
-3. Do not let the copy federate: keep it off the internet, or switch on the maintenance mode once the checks below pass.
-4. Go through [Starting and checking](#starting-and-checking): sign in, posts and media, and the `publicKey` of a few actors compared with the live instance.
-5. Start it once without the KEK and once with a different one, and check that it fails as [Without the right KEK](#without-the-right-kek) describes.
-6. Note how long each step took: that is how long a real restore keeps the instance down.
+3. Do not let the copy federate. Set `role = web`, which runs no job worker: the jobs restored with the database include deliveries that were
+   due when the backup was taken, and a copy that runs them signs them with the real actors' keys and sends them again to other servers.
+   Keeping the copy off the internet is not enough, since it is hard to guarantee. Switch on the maintenance mode once the checks below pass if you keep it running.
+4. Outside Compose, for example on a local machine against a cloud instance, give the copy these settings so that it touches nothing of the live instance:
+
+   | Setting | Value in the copy | Why |
+   | --- | --- | --- |
+   | `role` | `web` | Runs no job, so nothing restored is delivered again |
+   | `queue` | `db` | Jobs enqueued in the copy stay in its database instead of reaching the live queue |
+   | `stream` | `postgres` | Does not join the live event stream of the instance |
+   | `mail` | `none` | Sends no mail to real users |
+   | the blob store | a new bucket (or directory) holding the restored media | Leaves the live bucket untouched |
+   | `database_url` | the restored database | Never the live one |
+   | the KEK (`MY_KEK`, or `key_manager` and `kms_key`) | as live, from where you keep it | Without it the copy does not start |
+   | `host` | as live | So that the actors' URLs match |
+
+5. Go through [Starting and checking](#starting-and-checking): sign in, posts and media, and the `publicKey` of a few actors compared with the live instance.
+6. Start it once without the KEK and once with a different one, and check that it fails as [Without the right KEK](#without-the-right-kek) describes.
+7. Note how long each step took: that is how long a real restore keeps the instance down.

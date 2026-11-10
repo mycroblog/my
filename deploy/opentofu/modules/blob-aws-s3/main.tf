@@ -19,6 +19,25 @@ variable "bucket_name" {
   nullable    = false
 }
 
+variable "versioning" {
+  description = "Keeps a deleted or overwritten object as a noncurrent version, so the bucket can go back to the time of a database backup. Off by default: every version costs storage until the rule of noncurrent_version_days removes it."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
+variable "noncurrent_version_days" {
+  description = "Days a noncurrent version is kept before it is deleted, when versioning is on. Keep it at least as long as your oldest database backup."
+  type        = number
+  default     = 35
+  nullable    = false
+
+  validation {
+    condition     = var.noncurrent_version_days >= 1 && floor(var.noncurrent_version_days) == var.noncurrent_version_days
+    error_message = "noncurrent_version_days must be a whole number of days, at least 1."
+  }
+}
+
 resource "aws_s3_bucket" "media" {
   bucket = var.bucket_name
 }
@@ -40,9 +59,21 @@ resource "aws_s3_bucket_ownership_controls" "media" {
   }
 }
 
+resource "aws_s3_bucket_versioning" "media" {
+  count  = var.versioning ? 1 : 0
+  bucket = aws_s3_bucket.media.id
+
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
 # The server sends a large object in parts: what a frozen or timed out function leaves behind would be billed for ever.
 resource "aws_s3_bucket_lifecycle_configuration" "media" {
   bucket = aws_s3_bucket.media.id
+
+  # Versioning goes first: a rule of noncurrent versions needs it in place.
+  depends_on = [aws_s3_bucket_versioning.media]
 
   rule {
     id     = "abort-incomplete-uploads"
@@ -52,6 +83,21 @@ resource "aws_s3_bucket_lifecycle_configuration" "media" {
 
     abort_incomplete_multipart_upload {
       days_after_initiation = 7
+    }
+  }
+
+  dynamic "rule" {
+    for_each = var.versioning ? [1] : []
+
+    content {
+      id     = "noncurrent-versions"
+      status = "Enabled"
+
+      filter {}
+
+      noncurrent_version_expiration {
+        noncurrent_days = var.noncurrent_version_days
+      }
     }
   }
 }
