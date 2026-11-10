@@ -433,9 +433,11 @@ describe("a failure", () => {
 
   test("while it is on its way, the line says so, and the toggle keeps its focus and takes no second press", async () => {
     signedIn();
+    // The answer waits for the test, so that no slow machine lets it arrive between the two presses.
+    const gate = Promise.withResolvers<void>();
     const requests = serve(french, {
       respond: async () => {
-        await delay(100);
+        await gate.promise;
         return HttpResponse.json(answer);
       },
     });
@@ -447,6 +449,7 @@ describe("a failure", () => {
     expect(within(post).getByText("Translating…")).toBeVisible();
     expect(toggle).toHaveFocus();
     await user.click(toggle);
+    gate.resolve();
 
     await within(post).findByText(translated);
     expect(requests).toHaveLength(1);
