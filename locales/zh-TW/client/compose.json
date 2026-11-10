@@ -347,38 +347,6 @@
     "defaultMessage": "無法載入要引用的貼文。",
     "description": "Shown in place of the post being quoted in the new-post form when it could not be loaded."
   },
-  "compose.quote_policy.label": {
-    "defaultMessage": "誰可以引用",
-    "description": "Accessible name of the select in the new-post form that chooses who may quote the post."
-  },
-  "compose.quote_policy.public": {
-    "defaultMessage": "任何人",
-    "description": "Quote policy: anyone who can see the post may quote it."
-  },
-  "compose.quote_policy.public.description": {
-    "defaultMessage": "任何能看到這則貼文的人都可以引用。",
-    "description": "Description of the quote policy 'Anyone'."
-  },
-  "compose.quote_policy.followers": {
-    "defaultMessage": "追蹤者",
-    "description": "Quote policy: only the author's followers may quote the post."
-  },
-  "compose.quote_policy.followers.description": {
-    "defaultMessage": "只有你的追蹤者可以引用。",
-    "description": "Description of the quote policy 'Followers'."
-  },
-  "compose.quote_policy.nobody": {
-    "defaultMessage": "只有你",
-    "description": "Quote policy: only the author may quote the post."
-  },
-  "compose.quote_policy.nobody.description": {
-    "defaultMessage": "除了你以外，沒有人可以引用。",
-    "description": "Description of the quote policy 'Only you'."
-  },
-  "compose.quote_policy.tooltip": {
-    "defaultMessage": "引用：{value}",
-    "description": "Tooltip of the select that chooses who may quote the post, shown on hover and keyboard focus. {value} is the current choice, for example 'Followers'."
-  },
   "compose.language.tooltip": {
     "defaultMessage": "語言：{value}",
     "description": "Tooltip of the select that chooses the language of the post, shown on hover and keyboard focus. {value} is the current language, for example 'English'."

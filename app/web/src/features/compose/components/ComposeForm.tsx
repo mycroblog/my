@@ -23,6 +23,7 @@ import type { ClientMessageKey } from "../../../lib/i18n";
 import { useFormatRemaining } from "../hooks/useFormatRemaining";
 import { AttachmentList } from "./AttachmentList";
 import { CompletionTextArea, CompletionTextField } from "./CompletionFields";
+import { policySummary } from "../hooks/interactionPolicy";
 import { ComposeTools } from "./ComposeTools";
 import { Outbox } from "./Outbox";
 import { PollEditor } from "./PollEditor";
@@ -182,6 +183,8 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
             </Text>
           )}
           {form.error !== null && <InlineError size="inherit">{form.error}</InlineError>}
+          {/* The effective policy, once it admits less than everyone (ADR-0155 §10): what the post gets before it is sent. */}
+          {form.isPolicyRestricted && <Hint>{policySummary(t, form.interactionPolicy, form.visibility)}</Hint>}
           <ComposeTools form={form} />
           {/* The send bar: the button is never disabled by the input (G23); pressed while the draft cannot be sent, it
             says why beside it, until the reason is gone. */}

@@ -9,6 +9,7 @@ import type { Page, Route } from "@playwright/test";
 import { createIntl } from "react-intl";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, newPostButton, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 /** The client message `key` in the project's locale, with its `{name}` arguments replaced. */
 function message(key: string, values: Record<string, string> = {}): string {
@@ -25,6 +26,14 @@ function message(key: string, values: Record<string, string> = {}): string {
  */
 function endingWith(text: string): string {
   return `${text.replaceAll(/[\\^$.*+?()[\]{}|/]/g, "\\$&")}$`;
+}
+
+/** The name of the button that chooses who may reply to, boost, and quote the post, while everyone may at once. */
+function policyButtonName(): string {
+  const anyone = message("compose.interaction.audience.everyone");
+  return message("compose.interaction.button", {
+    summary: message("compose.interaction.summary", { reply: anyone, announce: anyone, quote: anyone }),
+  });
 }
 
 /** A node of an ARIA snapshot template as a quoted YAML scalar, since the names have colons ("Visibility: Public"). */
@@ -144,21 +153,14 @@ async function serveApi(page: Page): Promise<Posted[]> {
     }
     if (path === "/api/v1/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, {
-        locale: test.info().project.use.locale ?? "en",
-        time_zone: "UTC",
-        time_zone_chosen: true,
-        default_visibility: "public",
-        default_interaction_policy: {
-          reply: { automatic: "everyone" },
-          announce: { automatic: "everyone" },
-          quote: { automatic: "everyone" },
-        },
-        default_post_language: "en",
-        require_media_description: false,
-        timeline_auto_insert: true,
-        timeline_languages: [],
-      });
+      return json(
+        route,
+        preferencesOf({
+          locale: test.info().project.use.locale ?? "en",
+          default_post_language: "en",
+          timeline_auto_insert: true,
+        }),
+      );
     }
     if (path === "/api/v1/statuses" && request.method() === "POST") {
       const body = request.postDataJSON() as Record<string, unknown>;
@@ -256,6 +258,48 @@ test.describe("the new-post form", () => {
     expect(posted).toEqual([]);
   });
 
+  test("chooses who may reply, boost, and quote without axe violations or horizontal scroll, and says it before posting", async ({
+    page,
+    makeAxeBuilder,
+    hasTouch,
+  }) => {
+    const posted = await serveApi(page);
+    await page.goto("/");
+    const form = await openForm(page, hasTouch);
+
+    await form.getByRole("button", { name: policyButtonName() }).click();
+    const popover = page.getByRole("dialog", { name: message("compose.interaction.title") });
+    await expect(popover).toBeVisible();
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
+    await popover
+      .getByRole("button", { name: new RegExp(endingWith(message("compose.interaction.reply.label"))) })
+      .click();
+    await page.getByRole("option", { name: message("compose.interaction.audience.followers") }).click();
+    // The box of a checkbox is its label's (React Aria), which takes the click.
+    await popover.getByText(message("compose.interaction.reply.approval"), { exact: true }).click();
+    await expect(popover.getByRole("checkbox", { name: message("compose.interaction.reply.approval") })).toBeChecked();
+    await popover.getByRole("button", { name: message("compose.interaction.done") }).click();
+    await expect(popover).toBeHidden();
+
+    // The form says who may interact once the policy admits less than everyone.
+    const anyone = message("compose.interaction.audience.everyone");
+    await expect(
+      form.getByText(
+        message("compose.interaction.summary", {
+          reply: formatted("compose.interaction.rule.manual", {
+            automatic: message("compose.interaction.audience.followers"),
+            manual: "everyone",
+          }),
+          announce: anyone,
+          quote: anyone,
+        }),
+      ),
+    ).toBeVisible();
+    await expectNoHorizontalScroll(page);
+    expect(posted).toEqual([]);
+  });
+
   test("exposes the text, then the visibility and the other tools with their current values, then the submit button", async ({
     page,
     hasTouch,
@@ -303,7 +347,7 @@ test.describe("the new-post form", () => {
         - text: /.+/
         - ${ariaNode(`button ${JSON.stringify(message("compose.poll.toggle"))} [pressed=false]`)}
         - ${ariaNode(`button ${JSON.stringify(message("compose.warning.toggle"))} [pressed=false]`)}
-        - ${ariaNode(`button /${endingWith(message("compose.quote_policy.label"))}/`)}
+        - ${ariaNode(`button ${JSON.stringify(policyButtonName())}`)}
         - ${ariaNode(`button /${endingWith(message("compose.language.label"))}/`)}
         - ${ariaNode(`button ${JSON.stringify(message("compose.submit"))}`)}
         - status

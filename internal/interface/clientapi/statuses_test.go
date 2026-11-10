@@ -576,7 +576,12 @@ func TestQuoteOperations(t *testing.T) {
 		view: func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) {
 			view := sampleView(v)
 			settings := content.DefaultInteractionSettings.With(content.InteractionQuote, content.InteractionSetting{Automatic: content.AudienceFollowers})
-			view.Quotable, view.InteractionPolicy = true, &settings
+			view.InteractionPolicy = &settings
+			if view.Relation != nil {
+				view.Permissions = &appcontent.InteractionPermissions{
+					Reply: content.InteractionAllowed, Announce: content.InteractionPending, Quote: content.InteractionAllowed,
+				}
+			}
 			return view, nil
 		},
 	}
@@ -587,13 +592,14 @@ func TestQuoteOperations(t *testing.T) {
 		!maps.Equal(created.InteractionPolicy, appcontent.InteractionPolicyChange{content.InteractionQuote: {Automatic: content.AudienceNobody}}) {
 		t.Errorf("create = %d with %+v, want the quote and its policy", res.StatusCode, created)
 	}
-	if s := decodeStatus(t, res); s.Quotable == nil || !*s.Quotable || s.InteractionPolicy == nil ||
+	if s := decodeStatus(t, res); s.Permissions == nil || s.Permissions.Quote != clientapi.InteractionPermissionAllowed ||
+		s.Permissions.Announce != clientapi.InteractionPermissionPending || s.InteractionPolicy == nil ||
 		s.InteractionPolicy.Quote.Automatic != clientapi.InteractionAudienceFollowers || s.InteractionPolicy.Quote.Manual != nil ||
 		s.InteractionPolicy.Reply.Automatic != clientapi.InteractionAudienceEveryone {
-		t.Errorf("status = quotable %v, policy %+v; want true and followers for quotes", s.Quotable, s.InteractionPolicy)
+		t.Errorf("status = permissions %+v, policy %+v; want a quote at once, a boost that waits, and followers for quotes", s.Permissions, s.InteractionPolicy)
 	}
-	if s := decodeStatus(t, e.send(t, http.MethodGet, "/statuses/"+sampleStatusID, "", "")); s.Quotable != nil {
-		t.Errorf("an anonymous status says whether it is quotable: %v", *s.Quotable)
+	if s := decodeStatus(t, e.send(t, http.MethodGet, "/statuses/"+sampleStatusID, "", "")); s.Permissions != nil {
+		t.Errorf("an anonymous status says what its viewer may do: %+v", *s.Permissions)
 	}
 	res = e.send(t, http.MethodPut, "/statuses/"+sampleStatusID+"/interaction_policy", "write",
 		`{"quote":{"automatic":"followers"},"reply":{"automatic":"mentioned","manual":"everyone"}}`)

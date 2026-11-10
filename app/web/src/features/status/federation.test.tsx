@@ -6,15 +6,26 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
-import { instanceFixture, remoteStatusFixture, type Schemas, statusFixture } from "../../test/fixtures";
+import {
+  instanceFixture,
+  permissionsFixture,
+  remoteStatusFixture,
+  type Schemas,
+  statusFixture,
+} from "../../test/fixtures";
 import { apiBase, oauthPaths, tokenResponse } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import type { Status } from "./api/status";
 
 const bobsId = "0192f0c4-7a8e-7000-8000-0000000000f1";
-const bobs: Status = { ...statusFixture(bobsId), content: "<p>Bob's thought</p>", quotable: true };
-const carols: Status = { ...remoteStatusFixture, spoiler_text: "", media_attachments: [], quotable: true };
+const bobs: Status = { ...statusFixture(bobsId), content: "<p>Bob's thought</p>", permissions: permissionsFixture };
+const carols: Status = {
+  ...remoteStatusFixture,
+  spoiler_text: "",
+  media_attachments: [],
+  permissions: permissionsFixture,
+};
 const carolsPath = `/@${carols.account.acct}/status/${carols.id}`;
 
 const note = "Won't reach its server";

@@ -8,6 +8,7 @@ import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 type Schemas = components["schemas"];
 
@@ -123,24 +124,13 @@ async function serveApi(page: Page, maintenance: () => boolean) {
   );
   await page.route("**/api/v1/accounts/verify_credentials", (route) => json(route, alice));
   await page.route("**/api/v1/preferences", (route) =>
-    json(route, {
-      locale: test.info().project.use.locale ?? "en",
-      time_zone: "UTC",
-      time_zone_chosen: true,
-      locale_follows_browser: false,
-      time_zone_follows_browser: false,
-      default_visibility: "public",
-      default_interaction_policy: {
-        reply: { automatic: "everyone" },
-        announce: { automatic: "everyone" },
-        quote: { automatic: "everyone" },
-      },
-      default_post_language: "en",
-      require_media_description: false,
-      timeline_auto_insert: false,
-      link_card_size: "large",
-      timeline_languages: [],
-    } satisfies Schemas["Preferences"]),
+    json(
+      route,
+      preferencesOf({
+        locale: test.info().project.use.locale ?? "en",
+        default_post_language: "en",
+      }),
+    ),
   );
   await page.route("**/api/v1/notifications/marker", (route) =>
     json(route, { last_read_id: "0192f0c4-7a8e-7000-8000-0000000000a1", unread_count: 0 }),

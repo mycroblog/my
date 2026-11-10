@@ -188,24 +188,56 @@ func (r *Reader) remoteMayQuote(ctx context.Context, accountID string, quoted co
 	return content.MayQuote(facts) == content.QuoteApproved, nil
 }
 
-// quotable reports whether viewer may quote st, which they may see, and returns its interaction
-// settings for its local author, nil for anyone else (ADR-0069 §5, ADR-0155 §10).
-func (r *Reader) quotable(ctx context.Context, viewer Viewer, st content.Status) (bool, *content.InteractionSettings, error) {
+// InteractionPermissions is what a local viewer may do with a status by each kind of
+// interaction (content.MayInteract): at once, once the author approves it, or not at all.
+type InteractionPermissions struct {
+	Reply, Announce, Quote content.InteractionDecision
+}
+
+// permissions returns what viewer, who may see st, may do with it by each kind of interaction,
+// nil for an anonymous viewer, and the interaction settings of st for its local author, nil for
+// anyone else (ADR-0069 §5, ADR-0155 §10). parent is the status st replies to as the viewer sees
+// it, nil for none. The three decisions share the reads of how the viewer stands with the author.
+func (r *Reader) permissions(ctx context.Context, viewer Viewer, st content.Status, parent *content.Status) (*InteractionPermissions, *content.InteractionSettings, error) {
 	if r.d.Quotes == nil || viewer.Kind != ViewerLocal || viewer.AccountID == "" {
-		return false, nil, nil
+		return nil, nil, nil
 	}
 	facts, err := r.quoteFacts(ctx, viewer.AccountID, st)
 	if err != nil {
-		return false, nil, err
+		return nil, nil, err
 	}
-	facts.QuoterIsLocal, facts.QuoterVisible = true, true
-	allowance := content.MayQuote(facts)
+	f := content.InteractionFacts{
+		ActorAccountID: viewer.AccountID, ActorURI: facts.QuoterURI, ActorIsLocal: true, ActorVisible: facts.QuoterVisible,
+		Follows: facts.QuoterFollows, FollowedBy: facts.QuoterFollowed, Mentioned: facts.QuoterMentioned,
+		RepliedTo: parent != nil && parent.AuthorAccountID == viewer.AccountID, Status: st, Policy: facts.Policy,
+	}
+	if f.ActorURI == "" && (namesActors(facts.Policy, content.InteractionReply) || namesActors(facts.Policy, content.InteractionAnnounce)) {
+		if f.ActorURI, err = r.actorURI(ctx, viewer.AccountID); err != nil {
+			return nil, nil, err
+		}
+	}
+	decide := func(kind content.InteractionKind) content.InteractionDecision {
+		f.Kind = kind
+		return content.MayInteract(f)
+	}
+	out := InteractionPermissions{
+		Reply: decide(content.InteractionReply), Announce: decide(content.InteractionAnnounce), Quote: decide(content.InteractionQuote),
+	}
 	var own *content.InteractionSettings
 	if viewer.AccountID == st.AuthorAccountID && st.IsLocal {
 		settings := content.SettingsOf(facts.Policy)
 		own = &settings
 	}
-	return allowance != content.QuoteDenied, own, nil
+	return &out, own, nil
+}
+
+// actorURI returns the actor IRI of an account, "" when it is not known.
+func (r *Reader) actorURI(ctx context.Context, accountID string) (string, error) {
+	a, err := r.d.Accounts.FindByID(ctx, accountID)
+	if errors.Is(err, appaccount.ErrNotFound) {
+		return "", nil
+	}
+	return a.Account.URI, err
 }
 
 // quoteFacts returns what MayQuote decides a quote of st by accountID by: the policy of st, and

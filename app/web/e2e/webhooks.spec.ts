@@ -8,6 +8,7 @@ import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 type Schemas = components["schemas"];
 /** The client message `key` in the project's locale. */
@@ -89,14 +90,7 @@ async function administratorServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, administrator);
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "und",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale }));
     }
     if (key === "GET /admin/counts")
       return json(route, { open_reports: 0, pending_registrations: 0, pending_appeals: 0 });

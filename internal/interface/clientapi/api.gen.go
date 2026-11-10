@@ -2974,6 +2974,27 @@ func (e InteractionKind) Valid() bool {
 	}
 }
 
+// Defines values for InteractionPermission.
+const (
+	InteractionPermissionAllowed InteractionPermission = "allowed"
+	InteractionPermissionDenied  InteractionPermission = "denied"
+	InteractionPermissionPending InteractionPermission = "pending"
+)
+
+// Valid indicates whether the value is a known member of the InteractionPermission enum.
+func (e InteractionPermission) Valid() bool {
+	switch e {
+	case InteractionPermissionAllowed:
+		return true
+	case InteractionPermissionDenied:
+		return true
+	case InteractionPermissionPending:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InteractionRequestState.
 const (
 	InteractionRequestStateAccepted InteractionRequestState = "accepted"
@@ -6794,7 +6815,7 @@ type AdminReportState string
 
 // AdminReportStatus A post that a report points at, as a moderator reviews it. `status` is the post as it
 // was last, without the moderator's own relation to it (`favourited`, `boosted`,
-// `bookmarked`, `pinned`, and `quotable` are omitted, and so are `me` of each of its
+// `bookmarked`, `pinned`, and `permissions` are omitted, and so are `me` of each of its
 // `reactions` and `voted` and `own_votes` of its `poll`). What a moderator blocks, what
 // blocks them, and the restrictions on an author hide nothing of it. Its `quote` shows the
 // quoted post unless the post's visibility keeps it from an account with no relation to its
@@ -8782,7 +8803,7 @@ type CreateStatusRequest struct {
 	Poll *PollInput `json:"poll,omitempty"`
 
 	// QuotedStatusId The status to quote. It must be one the user may see and may quote
-	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
+	// (`quote` of `Status.permissions` is not `denied`); a quote of a boost is a quote of the boosted status. A `local`,
 	// `private`, or `direct` status may not quote a remote status: that is a 422, and nothing
 	// is created. Quoting a
 	// remote status while the instance does not send posts out (`Instance.federation.mode`
@@ -10616,6 +10637,23 @@ type InteractionAudience string
 
 // InteractionKind An interaction that an interaction policy governs (a reply, a boost, or a quote).
 type InteractionKind string
+
+// InteractionPermission Whether the authenticated user may interact with a status in one way, by its interaction
+// policy, its visibility, and how the user stands with its author: `allowed` at once,
+// `pending` once its author approves it (the interaction waits for the approval), or `denied`.
+type InteractionPermission string
+
+// InteractionPermissions What the authenticated user may do with a status, by each kind of interaction.
+type InteractionPermissions struct {
+	// Announce Whether the user may boost the status.
+	Announce InteractionPermission `json:"announce"`
+
+	// Quote Whether the user may quote the status.
+	Quote InteractionPermission `json:"quote"`
+
+	// Reply Whether the user may reply to the status.
+	Reply InteractionPermission `json:"reply"`
+}
 
 // InteractionPolicy Who may reply to, boost, and quote a status. Whatever the policy, a followers-only status is
 // boosted and quoted only by its author, a direct one is neither boosted nor quoted, and a reply
@@ -13306,6 +13344,10 @@ type Status struct {
 	// to `url` (or `uri`). Omitted when none were left out.
 	OmittedMediaCount *int `json:"omitted_media_count,omitempty"`
 
+	// Permissions What the authenticated user may do with the status: reply to it, boost it, and quote it.
+	// Omitted for anonymous requests.
+	Permissions *InteractionPermissions `json:"permissions,omitempty"`
+
 	// Pinned Whether the status is pinned to the author's profile; given only to the author.
 	Pinned *bool `json:"pinned,omitempty"`
 
@@ -13314,11 +13356,6 @@ type Status struct {
 	// each option until it ends leaves out `votes_count` of its options until then. `voted` and
 	// `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
 	Poll *Poll `json:"poll,omitempty"`
-
-	// Quotable Whether the authenticated user may quote the status (the `quote` rule of its interaction
-	// policy, its visibility, and how the user stands with the author decide it); true too when
-	// the quote waits for the author's approval. Omitted for anonymous requests.
-	Quotable *bool `json:"quotable,omitempty"`
 
 	// Quote The status that this status quotes; omitted when it quotes none, and in a
 	// `quoted_status`.

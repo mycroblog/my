@@ -4,9 +4,11 @@
 // scrolling sideways. `vite preview` has no API, so each test plays a signed-in user's server with
 // page.route; names change with the locale, so elements are found by role, structure, autocomplete tokens and,
 // where a role is not unique, by their names in the project's catalog.
+import type { components } from "@mycroblog/mykit";
 import type { Page, Route } from "@playwright/test";
 import { escapeRegExp, expect, expectNoAxeViolations, expectNoHorizontalScroll, localeDir, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 /** The signed-in user's account, as GET /accounts/verify_credentials answers. */
 const viewer = {
@@ -41,6 +43,56 @@ const bob = {
   display_name: "Bob",
 };
 
+/** A post of `account`, as the approval requests show the posts. */
+function postOf(account: typeof viewer, n: number, text: string) {
+  const id = `0192f0c4-7a8e-7000-8000-${String(n).padStart(12, "0")}`;
+  return {
+    id,
+    uri: `https://my.example/ap/statuses/${id}`,
+    url: `https://my.example/@${account.username}/status/${id}`,
+    account,
+    content: `<p>${text}</p>`,
+    spoiler_text: "",
+    sensitive: false,
+    visibility: "public",
+    language: "en",
+    created_at: "2026-10-17T10:00:00Z",
+    media_attachments: [],
+    mentions: [],
+    tags: [],
+    emojis: [],
+    replies_count: 0,
+    boosts_count: 0,
+    favourites_count: 0,
+    reactions: [],
+  };
+}
+
+/** A reply and a boost of the viewer's post that wait for the viewer's approval. */
+const interactionRequests = [
+  {
+    id: "0192f0c4-7a8e-7000-8000-0000000009a1",
+    kind: "reply",
+    state: "pending",
+    created_at: "2026-10-17T11:00:00Z",
+    account: bob,
+    status: postOf(viewer, 0x9a2, "A post whose replies the author approves."),
+    interacting_status: postOf(
+      bob,
+      0x9a3,
+      "A reply that waits for the approval, long enough to wrap on a narrow phone.",
+    ),
+  },
+  {
+    id: "0192f0c4-7a8e-7000-8000-0000000009a4",
+    kind: "announce",
+    state: "pending",
+    created_at: "2026-10-17T10:30:00Z",
+    account: bob,
+    status: postOf(viewer, 0x9a2, "A post whose replies the author approves."),
+  },
+];
+
 /** A cell of the notification settings (NotificationSettingCell). */
 type Cell = { enabled: boolean; fixed: boolean };
 
@@ -61,7 +113,7 @@ type ServerOptions = {
   permissions?: string[];
   sendsEmail?: boolean;
   timeZoneChosen?: boolean;
-  emailSuppression?: { kind: string; state_changed_at: string };
+  emailSuppression?: components["schemas"]["EmailSuppression"];
   /**
    * The server maximum of the automatic deletion that applies to the viewer (AutoDeleteLimit): GET answers the saved
    * policy with it, bound from `enforceFrom` while the policy goes beyond it, and the preview counts four posts.
@@ -78,24 +130,11 @@ async function signedInServer(
   locale: string,
   { permissions = [], sendsEmail = true, timeZoneChosen = true, emailSuppression, autoDeleteLimit }: ServerOptions = {},
 ) {
-  let preferences = {
+  let preferences = preferencesOf({
     locale,
-    time_zone: "UTC",
     time_zone_chosen: timeZoneChosen,
-    locale_follows_browser: false,
-    time_zone_follows_browser: false,
-    default_visibility: "public",
-    default_interaction_policy: {
-      reply: { automatic: "everyone" },
-      announce: { automatic: "everyone" },
-      quote: { automatic: "everyone" },
-    },
-    default_post_language: "und",
-    require_media_description: false,
     ...(emailSuppression === undefined ? {} : { email_suppression: emailSuppression }),
-    timeline_auto_insert: false,
-    timeline_languages: [] as string[],
-  };
+  });
   let autoDeletePolicy = {
     enabled: false,
     min_age_days: 30,
@@ -337,6 +376,8 @@ async function signedInServer(
         });
       case "GET /follow_requests":
         return json(route, { items: [bob] });
+      case "GET /interaction_requests":
+        return json(route, { items: interactionRequests });
       case "GET /exports":
         return json(route, {
           items: [
@@ -487,6 +528,7 @@ const pages = [
   "/settings/preferences",
   "/settings/notifications",
   "/settings/follow-requests",
+  "/settings/interaction-requests",
   "/settings/blocks",
   "/settings/mutes",
   "/settings/domain-mutes",
@@ -884,8 +926,8 @@ test.describe("display language", () => {
 
     // The note that changes save at once, then the sections: Display (the display language and time zone selects,
     // the theme radio group, the autoplay switch), Navigation (the tab bar preview, the items, and the button that
-    // restores them), New posts (the visibility and quote radio groups, the default post language select, the switch
-    // that asks for descriptions), and Timelines (the languages group and the switch that shows new posts at once).
+    // restores them), New posts (the visibility radio group, the group of who may reply, boost, and quote with a select and a
+    // checkbox of each, the default post language select, the switch that asks for descriptions), and Timelines (the languages group and the switch that shows new posts at once).
     await expect(page.getByRole("main")).toMatchAriaSnapshot(`
       - heading [level=1]
       - link
@@ -915,10 +957,15 @@ test.describe("display language", () => {
           - radio
           - radio
           - radio
-        - radiogroup:
-          - radio
-          - radio
-          - radio
+        - group:
+          - paragraph
+          - paragraph
+          - button
+          - checkbox
+          - button
+          - checkbox
+          - button
+          - checkbox
         - button
         - switch
       - region:

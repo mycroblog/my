@@ -1403,14 +1403,6 @@
     "defaultMessage": "Domaines en sourdine",
     "description": "Name of the list of domains the user mutes, as one kind of CSV file to export or import."
   },
-  "settings.default_quote_policy.label": {
-    "defaultMessage": "Qui peut citer vos nouvelles publications",
-    "description": "Label of the setting of who may quote the user's new posts."
-  },
-  "settings.default_quote_policy.description": {
-    "defaultMessage": "Vous pouvez aussi le choisir pour chaque publication.",
-    "description": "Description of the setting of who may quote the user's new posts."
-  },
   "settings.apps.title": {
     "defaultMessage": "Vos applications",
     "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."

@@ -15,6 +15,7 @@ import {
   test,
 } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 /** The client message `key` in the project's locale, with `values` in its placeholders. */
 function message(key: string, values: Record<string, string> = {}): string {
@@ -114,14 +115,7 @@ async function operatorServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, operator);
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "und",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale }));
     }
     if (key === "GET /notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (key === "GET /custom_emojis") return json(route, { items: [] });

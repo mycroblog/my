@@ -28,6 +28,20 @@ func newInteractionPolicy(s content.InteractionSettings) InteractionPolicy {
 	return InteractionPolicy{Reply: rule(s.Reply), Announce: rule(s.Announce), Quote: rule(s.Quote)}
 }
 
+// newInteractionPermissions returns what the viewer may do with a status by each kind.
+func newInteractionPermissions(p appcontent.InteractionPermissions) InteractionPermissions {
+	of := func(d content.InteractionDecision) InteractionPermission {
+		switch d {
+		case content.InteractionAllowed:
+			return InteractionPermissionAllowed
+		case content.InteractionPending:
+			return InteractionPermissionPending
+		}
+		return InteractionPermissionDenied
+	}
+	return InteractionPermissions{Reply: of(p.Reply), Announce: of(p.Announce), Quote: of(p.Quote)}
+}
+
 // newDefaultInteractionPolicy returns the InteractionPolicy of a user's defaults.
 func newDefaultInteractionPolicy(d identity.InteractionDefaults) InteractionPolicy {
 	rule := func(set identity.InteractionSetting) InteractionRule {

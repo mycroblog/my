@@ -9,7 +9,7 @@ characters are left. Besides text you can:
 - "Add a poll", with options and a duration, and the choices "Allow choosing several options" and "Hide the votes until the poll ends".
 - "Add a content warning". Readers see the warning first and choose "Show content".
 - Choose "Hide the images until readers show them" to mark the media as sensitive.
-- Set the language of the post, and "Who can quote" it: "Anyone", "Followers", or "Only you".
+- Set the language of the post, and who can reply to, boost, and quote it (see [Who can reply, boost, and quote](#who-can-reply-boost-and-quote)).
 - Reply to a post ("Reply") or quote one ("Quote").
 
 A post that could not be sent stays under "Posts being sent", where you can "Send again", "Edit", or "Discard" it.
@@ -65,6 +65,20 @@ show it to those followers as a post for followers only.
 - A reply or a boost from another server that is outside your choice altogether is kept off your post in the same way, and notifies you of nothing.
 - When you reply to or boost a post whose author approves replies or boosts by hand, yours waits for that approval. Until then, only you see your reply, under the post and on its own page, marked as waiting; others see nothing of it, and nothing is sent to other servers. Your boost is not made until it is approved. You are notified when the author approves or declines it ("... approved your reply, boost, or quote"). Deleting a waiting reply, or undoing a waiting boost, takes the request back.
 - You can pin up to five of your posts to your profile with "Pin to profile". A "Mentioned people" post cannot be pinned.
+
+## Who can reply, boost, and quote
+
+The button "Who can reply, boost, and quote" among the tools of the form opens the choices for that post. For each of
+replies, boosts, and quotes, choose who can do it at once: "Anyone", "Followers and people you mention", "People you
+mention", or "Only you". Below each, "Others can reply with your approval" (and the same for boosts and quotes) lets
+everyone else ask instead of being refused. Once a choice admits less than anyone, the form shows the result above its
+tools, for example "Replies: Anyone. Boosts: Only you. Quotes: Anyone.", before you post.
+
+- The people a post mentions can always reply to it. A "Followers" post can be boosted and quoted only by you, and a "Mentioned people" post by no one, whatever you choose.
+- The defaults for new posts are under "Who can reply to, boost, and quote your new posts" in "Display, posting, and timelines" in the settings.
+- To change them for a post you already sent, choose "Change who can reply, boost, and quote" in its "More actions" menu. Each choice is saved at once. Replies, boosts, and quotes you approved before stay, and requests that the new choice admits are approved.
+- Requests that wait for you are listed under "Approval requests" in the settings, next to "Follow requests"; the notification of each one links there with "Review the requests". "Approve" adds the reply, boost, or quote to your post, and the conversation under it shows an approved reply at once; "Decline" keeps it off.
+- On someone else's post, "Reply" is not shown and "Boost" cannot be pressed when its author does not let you. When the author approves them by hand, the form says so before you reply, and after you boost, the post says "Your boost waits for the author's approval."
 
 ## After posting
 

@@ -180,6 +180,14 @@ export function StatusCard({
     );
   // Right after the text: the line about the translation, and on a card without the actions row (a moderator's), the
   // button that translates in its place until a translation shows (web-client §13).
+  // The viewer's own reply that its parent's author has not approved (ADR-0155 §7): only they see it, and it says so.
+  const approval = (status.boost ?? status).approval;
+  const approvalNote =
+    approval === undefined ? null : (
+      <Text tone={approval === "pending" ? "warning" : "danger"}>
+        {t(approval === "pending" ? "client:status.approval.pending" : "client:status.approval.rejected")}
+      </Text>
+    );
   const translationLine = action !== null && (
     <>
       {!withActions && shown === null && (
@@ -242,10 +250,19 @@ export function StatusCard({
               <Text numeric>{t("client:status.focused.favourites", { count: view.counts.favourites })}</Text>
             )}
             {edited}
+            {approvalNote}
           </>
         ),
       })}
-      {...(variant === "compact" && edited !== null && { details: edited })}
+      {...(variant === "compact" &&
+        (edited !== null || approvalNote !== null) && {
+          details: (
+            <>
+              {edited}
+              {approvalNote}
+            </>
+          ),
+        })}
       {...(pinned && {
         // Part of the article's name, so that a reader of the feed hears it before the author.
         context: <PostCardContext kind="pin">{t("client:status.pin.label")}</PostCardContext>,

@@ -537,6 +537,11 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
     // The settings show the maximum in effect now and preview what goes (ADR-0151 §7).
     case "auto_delete_limit":
       return [{ href: "/settings/auto-delete", label: "client:notifications.link.auto_delete" }];
+    // The requests are answered on their own page (ADR-0155 §10).
+    case "reply_request":
+    case "boost_request":
+    case "quote_request":
+      return [{ href: "/settings/interaction-requests", label: "client:notifications.link.interaction_requests" }];
     case "relationships_severed":
       return ownAcct === null
         ? []

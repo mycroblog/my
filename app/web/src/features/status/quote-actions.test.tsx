@@ -2,21 +2,27 @@
 // Quoting posts through the whole app (web-client/README.md T4, FR-114): the quote button and the form, who may quote the
 // viewer's post, the posts that quote it, the revocation of an approval, and taking a quote away in an edit. The real
 // router and QueryClient, MSW for the client API.
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { apiBase, oauthPaths, tokenResponse } from "../../test/msw/http";
-import { interactionPolicyFixture, type Schemas, statusFixture, viewerStatusFixture } from "../../test/fixtures";
+import {
+  interactionPolicyFixture,
+  permissionsFixture,
+  type Schemas,
+  statusFixture,
+  viewerStatusFixture,
+} from "../../test/fixtures";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import type { Status } from "./api/status";
 
 const bobsId = "0192f0c4-7a8e-7000-8000-0000000000f1";
 const ownId = "0192f0c4-7a8e-7000-8000-0000000000f2";
-const bobs: Status = { ...statusFixture(bobsId), content: "<p>Bob's thought</p>", quotable: true };
+const bobs: Status = { ...statusFixture(bobsId), content: "<p>Bob's thought</p>", permissions: permissionsFixture };
 const own: Status = {
   ...viewerStatusFixture({ id: ownId, content: "<p>My post</p>" }),
-  quotable: true,
+  permissions: permissionsFixture,
   interaction_policy: interactionPolicyFixture,
 };
 
@@ -68,8 +74,15 @@ describe("quoting a post", () => {
     expect(within(sheet).getByText("Quoting Bob")).toBeInTheDocument();
     expect(within(sheet).getByText("Bob's thought")).toBeInTheDocument();
 
-    await user.click(within(sheet).getByRole("button", { name: "Anyone Who can quote" }));
-    await user.click(await screen.findByRole("option", { name: "Followers" }));
+    await user.click(within(sheet).getByRole("button", { name: /^Who can reply, boost, and quote: / }));
+    const popover = await screen.findByRole("dialog", { name: "Who can reply, boost, and quote" });
+    await user.click(within(popover).getByRole("button", { name: "Anyone Who can quote" }));
+    await user.click(await screen.findByRole("option", { name: "Followers and people you mention" }));
+    await user.click(within(popover).getByRole("button", { name: "Done" }));
+    // The form says who may interact before it is sent.
+    expect(
+      within(sheet).getByText("Replies: Anyone. Boosts: Anyone. Quotes: Followers and people you mention."),
+    ).toBeInTheDocument();
     await user.type(within(sheet).getByRole("textbox", { name: "Your post" }), "Look at this");
     await user.click(within(sheet).getByRole("button", { name: "Post" }));
 
@@ -96,14 +109,14 @@ describe("quoting a post", () => {
 
   test("is not offered for a post the viewer may not quote", async () => {
     signedIn();
-    serve({ ...bobs, quotable: false });
+    serve({ ...bobs, permissions: { ...permissionsFixture, quote: "denied" } });
     await renderApp({ path: `/@bob/status/${bobsId}` });
     expect(await screen.findByRole("button", { name: "Quote" })).toBeDisabled();
   });
 });
 
 describe("the viewer's own post", () => {
-  test("changes who may quote it from its menu", async () => {
+  test("changes who may reply to, boost, and quote it from its menu", async () => {
     signedIn();
     serve(own);
     const sent: Schemas["InteractionPolicyChange"][] = [];
@@ -117,14 +130,22 @@ describe("the viewer's own post", () => {
     const { user } = await renderApp({ path: `/@alice/status/${ownId}` });
 
     await user.click(await screen.findByRole("button", { name: "More actions" }));
-    await user.click(await screen.findByRole("menuitem", { name: "Change who can quote" }));
-    const dialog = await screen.findByRole("dialog", { name: "Who can quote this post" });
-    expect(within(dialog).getByRole("radio", { name: /^Anyone/ })).toBeChecked();
-    await user.click(within(dialog).getByRole("radio", { name: /^Only you/ }));
+    await user.click(await screen.findByRole("menuitem", { name: "Change who can reply, boost, and quote" }));
+    const dialog = await screen.findByRole("dialog", { name: "Who can reply, boost, and quote this post" });
+    await user.click(within(dialog).getByRole("button", { name: "Anyone Who can quote" }));
+    await user.click(await screen.findByRole("option", { name: "Only you" }));
+    await findToast("Changed who can interact with the post");
+    expect(within(dialog).getByRole("button", { name: "Only you Who can quote" })).toBeInTheDocument();
 
-    await findToast("Changed who can quote the post");
-    expect(sent).toEqual([{ quote: { automatic: "nobody" } }]);
-    expect(within(dialog).getByRole("radio", { name: /^Only you/ })).toBeChecked();
+    // The others may ask: their quotes wait for the author's approval.
+    await user.click(within(dialog).getByRole("checkbox", { name: "Others can quote with your approval" }));
+    await waitFor(() => {
+      expect(sent).toEqual([
+        { quote: { automatic: "nobody" } },
+        { quote: { automatic: "nobody", manual: "everyone" } },
+      ]);
+    });
+    expect(within(dialog).getByRole("checkbox", { name: "Others can quote with your approval" })).toBeChecked();
   });
 
   test("lists the posts that quote it", async () => {

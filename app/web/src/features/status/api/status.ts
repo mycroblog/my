@@ -4,7 +4,7 @@
 // `[method, path, init]`, so the post's key is the one the compose and notifications features use too.
 import { infiniteQueryOptions, type QueryClient, type QueryKey } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
-import { type QuotePolicy, quotePolicyChange } from "../../compose";
+import type { InteractionPolicyChange } from "../../compose";
 import { ApiError } from "../../../lib/errors";
 import type { components } from "@mycroblog/mykit";
 import {
@@ -30,9 +30,6 @@ export type Visibility = components["schemas"]["Visibility"];
 
 /** The post that a status quotes (FR-114, ADR-0069). */
 export type StatusQuote = components["schemas"]["StatusQuote"];
-
-/** Who may quote a post (FR-114, ADR-0069 §1), as the client offers it. */
-export type { QuotePolicy } from "../../compose";
 
 /** The card of the first link in a status (ADR-0062). */
 export type LinkCard = components["schemas"]["LinkCard"];
@@ -433,21 +430,21 @@ export function statusShareUrl(status: Pick<Status, "url" | "uri">): string {
 }
 
 /**
- * Changes who may quote the viewer's post `id` (PUT /statuses/{id}/interaction_policy, FR-114), leaving who may
- * reply and boost; returns the post after it.
+ * Changes who may reply to, boost, or quote the viewer's post `id` (PUT /statuses/{id}/interaction_policy, ADR-0155
+ * §10) for the kinds `change` has, leaving the others; returns the post after it.
  */
-export async function setQuotePolicy(api: Api, id: string, policy: QuotePolicy): Promise<Status> {
+export async function setInteractionPolicy(api: Api, id: string, change: InteractionPolicyChange): Promise<Status> {
   const { data, error } = await api.fetch.PUT("/statuses/{id}/interaction_policy", {
     params: { path: { id } },
-    body: quotePolicyChange(policy),
+    body: change,
   });
   // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
   if (data === undefined) throw new ApiError(error);
   return data;
 }
 
-/** Puts the server's answer to a change of the quote policy into every cached copy of the post (S1). */
-export function cacheQuotePolicyAnswer(queryClient: QueryClient, answer: Status): void {
+/** Puts the server's answer to a change of the interaction policy into every cached copy of the post (S1). */
+export function cacheInteractionPolicyAnswer(queryClient: QueryClient, answer: Status): void {
   updateCachedStatuses(
     queryClient,
     forPost(answer.id, (status) => ({
@@ -455,6 +452,30 @@ export function cacheQuotePolicyAnswer(queryClient: QueryClient, answer: Status)
       ...(answer.interaction_policy === undefined ? {} : { interaction_policy: answer.interaction_policy }),
     })),
   );
+}
+
+/** A reply to, boost of, or quote of a post of the viewer that waits for their approval (ADR-0155 §10). */
+export type InteractionRequest = components["schemas"]["InteractionRequest"];
+
+/**
+ * Puts what the answer to an approval request changed into the cache (S1): the counts of the viewer's post and the
+ * interacting post in every cached copy, and the threads, which an approved reply joins (it may be deep in the thread of any post above it), are
+ * marked stale and the shown ones read again. A thread therefore shows the approved reply without a reload.
+ */
+export async function cacheAnsweredRequest(queryClient: QueryClient, request: InteractionRequest): Promise<void> {
+  const { replies_count, boosts_count } = request.status;
+  updateCachedStatuses(
+    queryClient,
+    forPost(request.status.id, (status) => ({ ...status, replies_count, boosts_count })),
+  );
+  // The reply or the quoting post as it is now: an approved quote shows the viewer's post.
+  const interacting = request.interacting_status;
+  if (interacting !== undefined)
+    updateCachedStatuses(
+      queryClient,
+      forPost(interacting.id, () => interacting),
+    );
+  await queryClient.invalidateQueries({ predicate: (query) => query.queryKey[1] === "/statuses/{id}/context" });
 }
 
 /**

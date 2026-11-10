@@ -13,25 +13,31 @@ import { useFederation } from "../../../lib/federation";
 import { isRemoteAcct } from "../../../lib/handle";
 import { type Translate, useT } from "../../../lib/i18n";
 import { moderationAccountPath } from "../../../lib/paths";
-import { quotePolicyOf, useQuote, useReply } from "../../compose";
+import {
+  type InteractionKind,
+  type InteractionPolicy,
+  type InteractionRule,
+  useQuote,
+  useReply,
+  withChange,
+} from "../../compose";
 import { useViewer } from "../../session";
 import { hasRelation, relationCount } from "../api/cache";
 import { useLikeSlot } from "./useLikeSlot";
 import {
   cacheDeletedStatus,
   cachePinAnswer,
-  cacheQuotePolicyAnswer,
+  cacheInteractionPolicyAnswer,
   cacheRevokedQuote,
   cacheRelationAnswer,
   cacheRelationPending,
   deleteStatus,
-  type QuotePolicy,
   type ReactionEmoji,
   type Relation,
   restoreRelation,
   revokeQuote,
   setPin,
-  setQuotePolicy,
+  setInteractionPolicy,
   setRelation,
   type Status,
   statusQuotesPath,
@@ -43,14 +49,25 @@ export type RelationToggle = {
   isSelected: boolean;
   /** The public count, or null for bookmarks. */
   count: number | null;
-  /** Whether the server would refuse it (a boost of a followers-only post by another account, or of a direct one). */
+  /**
+   * Whether the server would refuse it: a boost that the post's policy or visibility refuses the viewer
+   * (`Status.permissions`). A boost the viewer has can always be taken back.
+   */
   isDisabled: boolean;
+  /**
+   * For the boost, what became of the viewer's boost that waits for the author's approval (`Status.boost_approval`,
+   * ADR-0155 §7): `pending` until they answer, `rejected` once they refused it; null for none.
+   */
+  approval?: "pending" | "rejected" | null;
   onChange: (on: boolean) => void;
 };
 
 export type StatusActions = {
-  /** Opens the form as a reply to the post. */
-  reply: () => void;
+  /**
+   * Opens the form as a reply to the post; null when its policy refuses the viewer's reply (`Status.permissions`,
+   * ADR-0155 §10), which hides the button.
+   */
+  reply: (() => void) | null;
   boost: RelationToggle;
   favourite: RelationToggle;
   bookmark: RelationToggle;
@@ -78,7 +95,7 @@ export type StatusActions = {
    */
   pin: { isPinned: boolean; toggle: () => void } | null;
   /**
-   * Opens the form quoting the post (FR-114). `isDisabled` while the viewer may not quote it (`Status.quotable`:
+   * Opens the form quoting the post (FR-114). `isDisabled` while the viewer may not quote it (`Status.permissions`:
    * its policy, or a followers-only or direct post of someone else). Null for a post of another server while the
    * instance sends nothing out (its federation mode is `off` or `inbound`, ADR-0006): the quote request could not
    * reach it, and the server refuses the quote.
@@ -90,13 +107,12 @@ export type StatusActions = {
    */
   staysLocal: boolean;
   /**
-   * Who may quote the viewer's own post and its change (ADR-0069 §1), with the address of the posts that quote it;
-   * null for others' posts.
+   * Who may reply to, boost, and quote the viewer's own post and its change (ADR-0155 §10), with the address of the
+   * posts that quote it; null for others' posts.
    */
-  quotePolicy: {
-    value: QuotePolicy;
-    set: (policy: QuotePolicy) => void;
-    isPending: boolean;
+  interactionPolicy: {
+    value: InteractionPolicy;
+    set: (kind: InteractionKind, rule: InteractionRule) => void;
     quotesPath: string;
   } | null;
   /**
@@ -124,12 +140,14 @@ function relationMessage(t: Translate, relation: Relation, on: boolean): string 
 }
 
 /**
- * Whether the server lets the viewer boost a post of `visibility` (the client API's 422 otherwise):
- * public, local and unlisted posts by anyone, a followers-only post by its author only, a direct post by
- * no one. It only decides whether to offer the button; the server decides the boost.
+ * Whether the server lets the viewer boost `post` (the client API's 422 otherwise): public, local and unlisted posts
+ * by anyone, a followers-only post by its author only, a direct post by no one, and only while its policy admits the
+ * viewer (`Status.permissions`; a boost that waits for the author's approval counts). It only decides whether to offer the button; the server decides the
+ * boost.
  */
-function canOfferBoost(visibility: Status["visibility"], isAuthor: boolean): boolean {
-  return visibility === "private" ? isAuthor : visibility !== "direct";
+function canOfferBoost(post: Status, isAuthor: boolean): boolean {
+  const visible = post.visibility === "private" ? isAuthor : post.visibility !== "direct";
+  return visible && post.permissions?.announce !== "denied";
 }
 
 /** The mutation of one relation of post `post`, serialized per post and relation so that the last press wins. */
@@ -150,7 +168,9 @@ function useRelation(post: Status, relation: Relation, viewerId: string): Relati
       // The last press is the only one still running.
       const last = queryClient.isMutating({ mutationKey, exact: true }) <= 1;
       cacheRelationAnswer(queryClient, post.id, relation, answer, last, viewerId);
-      notice.inPlace(relationMessage(t, relation, on));
+      // A boost of a post whose author approves boosts waits for them (ADR-0155 §7): the answer says so.
+      const waits = relation === "boost" && on && (answer.boost ?? answer).boost_approval === "pending";
+      notice.inPlace(waits ? t("client:status.boost.pending") : relationMessage(t, relation, on));
     },
     onError: (error, { on }) => {
       restoreRelation(queryClient, post.id, relation, on);
@@ -215,15 +235,19 @@ export function useStatusActions(status: Status): StatusActions | null {
   });
 
   const policy = useMutation({
-    mutationFn: (value: QuotePolicy) => setQuotePolicy(api, post.id, value),
+    mutationFn: ({ kind, rule }: { kind: InteractionKind; rule: InteractionRule }) =>
+      setInteractionPolicy(api, post.id, { [kind]: rule }),
     // One request at a time per post, in the order chosen.
-    scope: { id: `status:${post.id}:quote_policy` },
+    scope: { id: `status:${post.id}:interaction_policy` },
     onSuccess: (answer) => {
-      cacheQuotePolicyAnswer(queryClient, answer);
-      toast.show({ message: t("client:status.quote_policy.done"), tone: "success" });
+      cacheInteractionPolicyAnswer(queryClient, answer);
+      toast.show({ message: t("client:status.interaction_policy.done"), tone: "success" });
     },
     onError: (error) => {
-      toast.show({ message: t("client:status.quote_policy.failed", { reason: errorMessage(error) }), tone: "danger" });
+      toast.show({
+        message: t("client:status.interaction_policy.failed", { reason: errorMessage(error) }),
+        tone: "danger",
+      });
     },
   });
   const revoke = useMutation({
@@ -245,10 +269,17 @@ export function useStatusActions(status: Status): StatusActions | null {
     quoted !== undefined && quoted.account.id === viewer.account.id && post.quote?.state === "accepted" && !isAuthor;
   const staysLocal = !reachesRemote && isRemoteAcct(post.account.acct);
   return {
-    reply: () => {
-      reply(post);
+    reply:
+      post.permissions?.reply === "denied"
+        ? null
+        : () => {
+            reply(post);
+          },
+    boost: {
+      ...boost,
+      isDisabled: !boost.isSelected && (!canOfferBoost(post, isAuthor) || post.boost_approval !== undefined),
+      approval: post.boost_approval ?? null,
     },
-    boost: { ...boost, isDisabled: !canOfferBoost(post.visibility, isAuthor) },
     favourite: {
       isSelected: likeSlot.slot.kind === "favourite",
       count: post.favourites_count,
@@ -300,17 +331,18 @@ export function useStatusActions(status: Status): StatusActions | null {
           onPress: () => {
             quote(post);
           },
-          isDisabled: post.quotable !== true,
+          isDisabled: post.permissions === undefined || post.permissions.quote === "denied",
         },
     staysLocal,
-    quotePolicy:
+    interactionPolicy:
       isAuthor && post.interaction_policy !== undefined
         ? {
-            value: policy.isPending ? policy.variables : quotePolicyOf(post.interaction_policy.quote),
-            set: (value) => {
-              policy.mutate(value);
+            value: policy.isPending
+              ? withChange(post.interaction_policy, { [policy.variables.kind]: policy.variables.rule })
+              : post.interaction_policy,
+            set: (kind, rule) => {
+              policy.mutate({ kind, rule });
             },
-            isPending: policy.isPending,
             quotesPath: statusQuotesPath(post),
           }
         : null,

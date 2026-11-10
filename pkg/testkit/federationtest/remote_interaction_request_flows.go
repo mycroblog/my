@@ -272,6 +272,16 @@ func remoteRequestsLocalRepliesAndBoosts(t *testing.T, e *remoteInteractionEnv) 
 	e.expect(t, remoteActivity(t, "Create", alice+"/notes/1/activity", alice, remoteNote(alice+"/notes/1", alice, remoteNow.Add(-time.Hour), manual)), appfederation.InboxHandled)
 	post := e.post(t, alice+"/notes/1").Status
 
+	// The status tells fan that a reply and a boost wait for alice's approval, and a quote, which
+	// the post's rules leave undeclared, does not; an anonymous viewer is told nothing.
+	want := appcontent.InteractionPermissions{Reply: content.InteractionPending, Announce: content.InteractionPending, Quote: content.InteractionAllowed}
+	if v, err := e.reader.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: fan}, post.ID); err != nil || v.Permissions == nil || *v.Permissions != want {
+		t.Errorf("Permissions of fan = %+v, %v; want %+v", v.Permissions, err, want)
+	}
+	if v, err := e.reader.View(ctx, appcontent.Viewer{Kind: appcontent.ViewerAnonymous}, post.ID); err != nil || v.Permissions != nil {
+		t.Errorf("Permissions of an anonymous viewer = %+v, %v; want none", v.Permissions, err)
+	}
+
 	// The local reply is held: its author alone sees it, and a ReplyRequest that embeds its Note
 	// goes to alice instead of its Create.
 	p, err := e.content.Create(ctx, appcontent.CreateInput{

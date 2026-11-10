@@ -347,38 +347,6 @@
     "defaultMessage": "Der zu zitierende Beitrag konnte nicht geladen werden.",
     "description": "Shown in place of the post being quoted in the new-post form when it could not be loaded."
   },
-  "compose.quote_policy.label": {
-    "defaultMessage": "Wer zitieren darf",
-    "description": "Accessible name of the select in the new-post form that chooses who may quote the post."
-  },
-  "compose.quote_policy.public": {
-    "defaultMessage": "Alle",
-    "description": "Quote policy: anyone who can see the post may quote it."
-  },
-  "compose.quote_policy.public.description": {
-    "defaultMessage": "Alle, die den Beitrag sehen können, dürfen ihn zitieren.",
-    "description": "Description of the quote policy 'Anyone'."
-  },
-  "compose.quote_policy.followers": {
-    "defaultMessage": "Follower",
-    "description": "Quote policy: only the author's followers may quote the post."
-  },
-  "compose.quote_policy.followers.description": {
-    "defaultMessage": "Nur deine Follower dürfen ihn zitieren.",
-    "description": "Description of the quote policy 'Followers'."
-  },
-  "compose.quote_policy.nobody": {
-    "defaultMessage": "Nur du",
-    "description": "Quote policy: only the author may quote the post."
-  },
-  "compose.quote_policy.nobody.description": {
-    "defaultMessage": "Außer dir darf ihn niemand zitieren.",
-    "description": "Description of the quote policy 'Only you'."
-  },
-  "compose.quote_policy.tooltip": {
-    "defaultMessage": "Zitieren: {value}",
-    "description": "Tooltip of the select that chooses who may quote the post, shown on hover and keyboard focus. {value} is the current choice, for example 'Followers'."
-  },
   "compose.language.tooltip": {
     "defaultMessage": "Sprache: {value}",
     "description": "Tooltip of the select that chooses the language of the post, shown on hover and keyboard focus. {value} is the current language, for example 'English'."

@@ -5,6 +5,7 @@
 import type { Page, Route } from "@playwright/test";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, servedImage, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 function message(key: string): string {
   const locale = test.info().project.use.locale ?? "en";
@@ -121,15 +122,14 @@ async function serveApi(page: Page, options: { pushServerKey?: string; linkCardS
       });
     }
     if (key === "GET /preferences") {
-      return json(route, {
-        locale: test.info().project.use.locale ?? "en",
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "en",
-        require_media_description: false,
-        timeline_languages: [],
-        link_card_size: options.linkCardSize ?? "large",
-      });
+      return json(
+        route,
+        preferencesOf({
+          locale: test.info().project.use.locale ?? "en",
+          default_post_language: "en",
+          link_card_size: options.linkCardSize ?? "large",
+        }),
+      );
     }
     if (key === "GET /preferences/notifications") return json(route, { rows: [] });
     if (key === "GET /notifications/marker") return json(route, { unread_count: 0 });

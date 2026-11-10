@@ -15,6 +15,7 @@ import {
   DomainMuteIcon,
   ExternalLink,
   FollowRequestIcon,
+  WaitingIcon,
   ImportExportIcon,
   InviteIcon,
   LinkedAccountIcon,
@@ -89,6 +90,11 @@ const groups: readonly { id: string; heading: ClientMessageKey; pages: readonly 
     heading: "client:settings.menu.group.relationships",
     pages: [
       { href: "/settings/follow-requests", label: "client:settings.follow_requests.title", icon: FollowRequestIcon },
+      {
+        href: "/settings/interaction-requests",
+        label: "client:interaction_requests.title",
+        icon: WaitingIcon,
+      },
       { href: "/settings/blocks", label: "client:settings.blocks.title", icon: BlockIcon },
       { href: "/settings/mutes", label: "client:settings.mutes.title", icon: MuteIcon },
       { href: "/settings/domain-mutes", label: "client:settings.domain_mutes.title", icon: DomainMuteIcon },

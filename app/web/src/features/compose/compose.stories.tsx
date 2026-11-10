@@ -6,7 +6,7 @@ import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { createTranslate, type I18n } from "../../lib/i18n";
-import { instanceFixture, statusPage } from "../../test/fixtures";
+import { instanceFixture, permissionsFixture, statusPage } from "../../test/fixtures";
 import { apiBase, problem } from "../../test/msw/http";
 import { longPost, pictureHandlers, quotePost, variedTimeline } from "../../test/postStories";
 import { answering, inLocale, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
@@ -132,7 +132,7 @@ export const Quote: Story = {
       path: `/@${quotePost.account.acct}/status/${quotePost.id}`,
       handlers: [
         ...pictureHandlers,
-        http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json({ ...quotePost, quotable: true })),
+        http.get(`${apiBase}/statuses/:id`, () => HttpResponse.json({ ...quotePost, permissions: permissionsFixture })),
       ],
     },
   },

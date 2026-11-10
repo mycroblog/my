@@ -7,7 +7,8 @@
 // belongs to this tab only and ends with it; another account signing in on the same tab reads its own
 // key, and the end of the session removes it (it is the user's own data). Files picked but not yet uploaded live only in memory (their object URLs end with the page).
 import type { StorageKey, StoredCompose } from "../../../lib/storage";
-import type { CreateStatusRequest, QuotePolicy, StatusRejection, Visibility } from "../api/compose";
+import type { CreateStatusRequest, StatusRejection, Visibility } from "../api/compose";
+import type { InteractionPolicyChange } from "./interactionPolicy";
 import type { PollDraft } from "./poll";
 
 /** One image of the draft. */
@@ -36,8 +37,8 @@ export type Draft = {
   replyToId: string | null;
   /** The post quoted (FR-114), or null for none. */
   quoteId: string | null;
-  /** Who may quote the post; null follows the preference. */
-  quotePolicy: QuotePolicy | null;
+  /** The rules chosen for who may reply to, boost, and quote the post (ADR-0155); the kinds left out follow the preference. */
+  interactionPolicy: InteractionPolicyChange;
   attachments: readonly AttachmentDraft[];
   /** The poll of the post (FR-112), or null for none. A post with a poll attaches no media. */
   poll: PollDraft | null;
@@ -79,7 +80,7 @@ const emptyDraft: Draft = {
   language: null,
   replyToId: null,
   quoteId: null,
-  quotePolicy: null,
+  interactionPolicy: {},
   attachments: [],
   poll: null,
   idempotencyKey: null,
@@ -175,13 +176,18 @@ export class DraftStore {
 
   /**
    * Moves the draft into the outbox under `idempotencyKey`, with the request `body` made from it, and starts an empty draft that keeps the
-   * chosen visibility, language and quote policy. The refusal of an earlier post gives way to this one.
+   * chosen visibility, language and interaction policy. The refusal of an earlier post gives way to this one.
    */
   send(idempotencyKey: string, body: CreateStatusRequest): OutboxItem {
     const item: OutboxItem = { idempotencyKey, body, draft: { ...this.#state.draft, idempotencyKey } };
-    const { visibility, language, quotePolicy } = this.#state.draft;
+    const { visibility, language, interactionPolicy } = this.#state.draft;
     this.#set({
-      draft: { ...emptyDraft, visibility: item.draft.replyToId === null ? visibility : null, language, quotePolicy },
+      draft: {
+        ...emptyDraft,
+        visibility: item.draft.replyToId === null ? visibility : null,
+        language,
+        interactionPolicy,
+      },
       outbox: [...this.#state.outbox.filter((o) => o.idempotencyKey !== idempotencyKey), item],
       error: null,
       rejection: null,

@@ -299,7 +299,7 @@
 - `interaction_request_states` は、依頼の記録（`content.interaction_requested`）と答え（`content.interaction_answered`）のイベントの投影が `content.InteractionStateOf` の規則で書きます。依頼は `pending` から始まり、`accepted` / `rejected` で答え、`revoked` は承認した承認の削除だけが起こします。`withdrawn` は `pending` からだけで、返信の削除（どの削除でも、削除の projector が同じトランザクションで記録する）か、ブーストの取り消しが起こし、その後は答えを受けません。作者の一覧（`ListPendingInteractionRequests`）はこの投影を `(target_account_id, state, request_id)` で引きます。
 - 引用の状態は表に持たず、引用（`status_quotes` の `form`）・取り外し（`status_quote_detachments`）・引用の依頼の状態から `content.QuoteStateFrom` が導きます（ADR-0155 §8）。`legacy` の引用は承認では変わらず、`detached` は最後の状態です。ページの表示は、ページの引用の状態を 1 つのクエリで読みます（`FindQuoteStates`）。
 - 引用先の削除・ブロック・ミュート・閲覧の可否は状態に持たず、表示のたびに閲覧者ごとに判定します（`content.Reader`）。
-- 誰が引用できるかは `content.MayQuote` の 1 か所で決めます（投稿の作成、`Status.quotable`、方言の引用の表示）。閲覧できない投稿と `direct` は引用できず、`private` は作者が `private` / `direct` で引用するときだけ、`local` はリモートからは引用できません。
+- 誰が引用できるかは `content.MayQuote` の 1 か所で決めます（投稿の作成、`Status.permissions` の `quote`、方言の引用の表示）。閲覧できない投稿と `direct` は引用できず、`private` は作者が `private` / `direct` で引用するときだけ、`local` はリモートからは引用できません。
   許可の部分は `content.MayInteract`（ADR-0155 §3）で、`status_interaction_policies` の `quote` の行から判定します。自動の行に当てはまれば認め、承認の行だけに当てはまればローカルの投稿の引用は作者の判断を待ち（依頼の `pending`）、リモートの投稿の引用は自動・承認のどちらでも `QuoteRequest` を送ります。
 - `status_interaction_policies` の行の読み書き（ADR-0155 §4）:
   - 相手の値は ADR-0155 §2 のとおりです。ローカルの作者は `everyone`・`followers`・`mentioned`・`nobody` を選び、承認の相手は自動の相手より広いものか無しです。`following`・`author`・`account` はリモートの許可を読むときだけの値で、`as:Public` は `everyone`、作者の followers / following コレクションは `followers` / `following`、作者自身は `author`、ほかの IRI は `account`（正体の分からないコレクションも、どの Actor の IRI とも一致しないので誰にも当てはまらない）です。

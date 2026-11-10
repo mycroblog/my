@@ -1403,14 +1403,6 @@
     "defaultMessage": "已隐藏的域名",
     "description": "Name of the list of domains the user mutes, as one kind of CSV file to export or import."
   },
-  "settings.default_quote_policy.label": {
-    "defaultMessage": "谁可以引用你的新帖子",
-    "description": "Label of the setting of who may quote the user's new posts."
-  },
-  "settings.default_quote_policy.description": {
-    "defaultMessage": "你也可以为每条帖子单独选择。",
-    "description": "Description of the setting of who may quote the user's new posts."
-  },
   "settings.apps.title": {
     "defaultMessage": "你的应用",
     "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."

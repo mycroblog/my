@@ -1403,14 +1403,6 @@
     "defaultMessage": "ミュートしたドメイン",
     "description": "Name of the list of domains the user mutes, as one kind of CSV file to export or import."
   },
-  "settings.default_quote_policy.label": {
-    "defaultMessage": "新しい投稿を引用できる人",
-    "description": "Label of the setting of who may quote the user's new posts."
-  },
-  "settings.default_quote_policy.description": {
-    "defaultMessage": "投稿ごとにも選べます。",
-    "description": "Description of the setting of who may quote the user's new posts."
-  },
   "settings.apps.title": {
     "defaultMessage": "あなたのアプリ",
     "description": "Title of the settings page where the user registers OAuth apps of their own, and its entry in the settings menu."
@@ -2810,5 +2802,13 @@
   "settings.notifications.group.interaction_request": {
     "defaultMessage": "承認の依頼",
     "description": "Row of the notification settings table: someone's reply, boost, or quote of the user's post that waits for the user's approval, and the answers to the user's own."
+  },
+  "settings.default_interaction_policy.label": {
+    "defaultMessage": "新しい投稿に返信・ブースト・引用できる人",
+    "description": "Label of the group of settings of who may reply to, boost, and quote the user's new posts by default."
+  },
+  "settings.default_interaction_policy.description": {
+    "defaultMessage": "投稿ごとにも選べます。承認待ちの返信・ブースト・引用は、承認の依頼の一覧に届きます。",
+    "description": "Description of the settings of who may reply to, boost, and quote the user's new posts."
   }
 }

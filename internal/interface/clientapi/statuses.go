@@ -356,8 +356,9 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		p := newPoll(*v.Poll, v.Relation != nil)
 		out.Poll = &p
 	}
-	if v.Relation != nil {
-		out.Quotable = &v.Quotable
+	if v.Permissions != nil {
+		p := newInteractionPermissions(*v.Permissions)
+		out.Permissions = &p
 	}
 	if v.InteractionPolicy != nil {
 		policy := newInteractionPolicy(*v.InteractionPolicy)

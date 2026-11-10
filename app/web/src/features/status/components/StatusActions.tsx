@@ -34,7 +34,7 @@ import { useAuthorActions } from "../hooks/useAuthorActions";
 import { type RelationToggle, useStatusActions } from "../hooks/useStatusActions";
 import type { TranslationAction } from "../hooks/useStatusTranslation";
 import { EditStatusDialog } from "./EditStatusDialog";
-import { QuotePolicyDialog } from "./QuotePolicyDialog";
+import { InteractionPolicyDialog } from "./InteractionPolicyDialog";
 
 export type StatusActionsProps = {
   status: Status;
@@ -64,12 +64,14 @@ function reactionEmojiOf(choice: ReactionChoice): ReactionEmoji {
  * The action bar of a post: reply, boost, quote (FR-114), favourite, the picker of emoji reactions (ADR-0051 §10), bookmark, and a menu with
  * the link, the revocation of this post's approved quote of a post of the viewer (ADR-0069 §3), for another account's post what the
  * viewer can do about its author (useAuthorActions) with the report of the post (features/report) and, with the permission, the
- * links to the moderation page (useStatusActions), and, for the viewer's own posts, edit (EditStatusDialog), who may quote it (QuotePolicyDialog), the posts that
+ * links to the moderation page (useStatusActions), and, for the viewer's own posts, edit (EditStatusDialog), who may reply to, boost, and quote it (InteractionPolicyDialog), the posts that
  * quote it, pin or unpin, and delete behind a confirmation (WAI-ARIA APG, alert dialog pattern). Nothing while
  * nobody is signed in. The toggles keep their names in both states and expose the state with
  * `aria-pressed` (APG, button pattern); a count is part of the toggle's name (WCAG 2.5.3). On a post of another server while the
  * instance sends nothing out (ADR-0006), quoting is not offered and a note at the end of the bar, which also
- * describes the reply, boost and favourite, says that the actions do not reach that server.
+ * describes the reply, boost and favourite, says that the actions do not reach that server. The reply is left out where the
+ * post's policy refuses it, the boost is disabled (its count stays), and a boost that waits for the author's approval
+ * says so at the end of the bar (ADR-0155 §7, §10).
  */
 export function StatusActions({
   status,
@@ -81,31 +83,40 @@ export function StatusActions({
 }: StatusActionsProps) {
   const t = useT();
   const staysLocalId = useId();
+  const boostApprovalId = useId();
   const actions = useStatusActions(status);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const author = useAuthorActions(status.boost ?? status, isMenuOpen);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [isChoosingQuotePolicy, setIsChoosingQuotePolicy] = useState(false);
+  const [isChoosingPolicy, setIsChoosingPolicy] = useState(false);
   const intl = useIntl();
   if (actions === null) return null;
   const post = status.boost ?? status;
   const remove = actions.delete;
   // The note that the actions on a post of another server do not reach it (ADR-0006) describes each of them.
   const note = actions.staysLocal ? staysLocalId : undefined;
+  // What became of the viewer's boost that waits for the author's approval (ADR-0155 §7) describes the boost too.
+  const boostApproval = actions.boost.approval ?? null;
+  const boostDescribedBy =
+    [note, boostApproval === null ? undefined : boostApprovalId].filter((id) => id !== undefined).join(" ") ||
+    undefined;
 
   return (
     <>
-      <IconButton
-        variant="subtle"
-        size="toolbar"
-        label={t("client:status.action.reply")}
-        {...(note !== undefined && { "aria-describedby": note })}
-        onPress={actions.reply}
-      >
-        <ReplyIcon />
-      </IconButton>
+      {/* Hidden, not disabled, where the post's policy refuses the viewer's reply (ADR-0155 §7). */}
+      {actions.reply !== null && (
+        <IconButton
+          variant="subtle"
+          size="toolbar"
+          label={t("client:status.action.reply")}
+          {...(note !== undefined && { "aria-describedby": note })}
+          onPress={actions.reply}
+        >
+          <ReplyIcon />
+        </IconButton>
+      )}
       {repliesHref !== undefined && post.replies_count > 0 && (
         <IconButtonLink
           href={repliesHref}
@@ -124,7 +135,7 @@ export function StatusActions({
         toggle={actions.boost}
         tone="success"
         icon={(on) => <BoostIcon filled={on} />}
-        describedBy={note}
+        describedBy={boostDescribedBy}
       />
       {actions.quote !== null && (
         <IconButton
@@ -198,17 +209,17 @@ export function StatusActions({
           {actions.revokeQuote !== null && (
             <MenuItem onAction={actions.revokeQuote}>{t("client:status.quote.revoke.action")}</MenuItem>
           )}
-          {actions.quotePolicy !== null && (
+          {actions.interactionPolicy !== null && (
             <MenuItem
               onAction={() => {
-                setIsChoosingQuotePolicy(true);
+                setIsChoosingPolicy(true);
               }}
             >
-              {t("client:status.quote_policy.action")}
+              {t("client:status.interaction_policy.action")}
             </MenuItem>
           )}
-          {actions.quotePolicy !== null && (
-            <MenuItem href={actions.quotePolicy.quotesPath}>{t("client:status.quotes.action")}</MenuItem>
+          {actions.interactionPolicy !== null && (
+            <MenuItem href={actions.interactionPolicy.quotesPath}>{t("client:status.quotes.action")}</MenuItem>
           )}
           {actions.pin !== null && (
             <MenuItem onAction={actions.pin.toggle}>
@@ -276,6 +287,15 @@ export function StatusActions({
           )}
         </Menu>
       </MenuTrigger>
+      {boostApproval !== null && (
+        <Hint as="span" id={boostApprovalId}>
+          {t(
+            boostApproval === "pending"
+              ? "client:status.boost.approval.pending"
+              : "client:status.boost.approval.rejected",
+          )}
+        </Hint>
+      )}
       {note !== undefined && (
         <Hint as="span" id={note}>
           {t("client:status.federation.stays_local")}
@@ -286,13 +306,13 @@ export function StatusActions({
       )}
       {author !== null && <RelationshipConfirmDialog {...author.confirmation} />}
       {actions.canEdit && <EditStatusDialog status={post} isOpen={isEditing} onOpenChange={setIsEditing} />}
-      {actions.quotePolicy !== null && (
-        <QuotePolicyDialog
-          value={actions.quotePolicy.value}
-          onChange={actions.quotePolicy.set}
-          isPending={actions.quotePolicy.isPending}
-          isOpen={isChoosingQuotePolicy}
-          onOpenChange={setIsChoosingQuotePolicy}
+      {actions.interactionPolicy !== null && (
+        <InteractionPolicyDialog
+          value={actions.interactionPolicy.value}
+          onChange={actions.interactionPolicy.set}
+          visibility={post.visibility}
+          isOpen={isChoosingPolicy}
+          onOpenChange={setIsChoosingPolicy}
         />
       )}
       {remove !== null && (

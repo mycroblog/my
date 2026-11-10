@@ -14,7 +14,7 @@ import (
 // ReviewedStatus is a status as the moderators review it as the evidence of a report.
 type ReviewedStatus struct {
 	// StatusView is the status as it was last; its Relation is nil, so its Poll has no own votes
-	// and it is not Quotable. A deleted status has left the projections, so its Counters are zero
+	// and it has no Permissions. A deleted status has left the projections, so its Counters are zero
 	// and it has no Reactions and no Card; its Poll and Quote stay.
 	StatusView
 	// DeletedAt is when the status was deleted, the zero time when it is not.

@@ -511,34 +511,6 @@
     "defaultMessage": "Citer",
     "description": "Accessible name of the button in a post's action bar that starts a new post quoting it."
   },
-  "status.quote_policy.action": {
-    "defaultMessage": "Changer qui peut citer",
-    "description": "Item of the menu of the user's own post that opens the dialog choosing who may quote it."
-  },
-  "status.quote_policy.title": {
-    "defaultMessage": "Qui peut citer cette publication",
-    "description": "Title of the dialog that chooses who may quote one of the user's posts."
-  },
-  "status.quote_policy.close": {
-    "defaultMessage": "Fermer",
-    "description": "Accessible name of the close button of the dialog that chooses who may quote a post."
-  },
-  "status.quote_policy.label": {
-    "defaultMessage": "Qui peut citer",
-    "description": "Label of the choices of who may quote a post, in its dialog."
-  },
-  "status.quote_policy.description": {
-    "defaultMessage": "Les citations déjà approuvées restent. Pour retirer votre publication d’une citation, utilisez le menu de la publication qui la cite.",
-    "description": "Description of the choices of who may quote a post."
-  },
-  "status.quote_policy.done": {
-    "defaultMessage": "Qui peut citer la publication a été modifié",
-    "description": "Toast after the user changed who may quote one of their posts."
-  },
-  "status.quote_policy.failed": {
-    "defaultMessage": "Impossible de changer qui peut citer la publication : {reason}",
-    "description": "Toast when the change of who may quote a post failed. {reason} is the server's reason."
-  },
   "status.quotes.action": {
     "defaultMessage": "Publications qui la citent",
     "description": "Item of the menu of the user's own post that opens the list of the posts that quote it."

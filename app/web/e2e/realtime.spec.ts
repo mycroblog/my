@@ -8,6 +8,7 @@
 import type { Page } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { preferencesOf } from "./preferences.ts";
 
 type Status = components["schemas"]["Status"];
 type Notification = components["schemas"]["Notification"];
@@ -145,21 +146,13 @@ test.describe("new posts inserted on their own (ADR-0013)", () => {
       route.fulfill({
         status: 200,
         contentType: "application/json",
-        body: JSON.stringify({
-          locale: test.info().project.use.locale ?? "en",
-          time_zone: "UTC",
-          time_zone_chosen: true,
-          default_visibility: "public",
-          default_interaction_policy: {
-            reply: { automatic: "everyone" },
-            announce: { automatic: "everyone" },
-            quote: { automatic: "everyone" },
-          },
-          default_post_language: "en",
-          require_media_description: false,
-          timeline_auto_insert: true,
-          timeline_languages: [],
-        }),
+        body: JSON.stringify(
+          preferencesOf({
+            locale: test.info().project.use.locale ?? "en",
+            default_post_language: "en",
+            timeline_auto_insert: true,
+          }),
+        ),
       }),
     );
     await page.goto("/home");
@@ -230,21 +223,13 @@ async function autoInsertServer(page: Page, many: Status[]) {
   );
   await page.route("**/api/v1/preferences", (route) =>
     route.fulfill(
-      json({
-        locale: test.info().project.use.locale ?? "en",
-        time_zone: "UTC",
-        time_zone_chosen: true,
-        default_visibility: "public",
-        default_interaction_policy: {
-          reply: { automatic: "everyone" },
-          announce: { automatic: "everyone" },
-          quote: { automatic: "everyone" },
-        },
-        default_post_language: "en",
-        require_media_description: false,
-        timeline_auto_insert: true,
-        timeline_languages: [],
-      }),
+      json(
+        preferencesOf({
+          locale: test.info().project.use.locale ?? "en",
+          default_post_language: "en",
+          timeline_auto_insert: true,
+        }),
+      ),
     ),
   );
   await page.route("**/api/v1/streaming", async (route) => {
