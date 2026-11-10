@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getConversation
+  summary: Get a conversation of the direct messages
+  description: |
+    The conversation as `listConversations` shows it, even when the user hid it. A conversation
+    in which the user sent or received no direct post, or none that the user may see, is a 404.
+  tags: [conversations]
+  security:
+    - oauth2: ["read:direct"]
+  parameters:
+    - $ref: ../components/parameters/ConversationId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Conversation.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

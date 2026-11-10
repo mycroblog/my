@@ -16,6 +16,18 @@ type FeedAuthorRestriction struct {
 	EffectiveUntil sql.NullInt64
 }
 
+type FeedConversation struct {
+	AccountID      string
+	ConversationID string
+	LastEntryID    string
+}
+
+type FeedConversationParticipant struct {
+	ConversationID string
+	EntryID        string
+	AccountID      string
+}
+
 type FeedDirectRecipient struct {
 	EntryID            string
 	RecipientAccountID string

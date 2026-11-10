@@ -52,3 +52,21 @@
 - リストのタイムラインは新しい投影を作らず、`feed_entries` を `list_members` で絞って読みます（§6、ADR-0013）。
 - リストは投影ではないので、`timeline.RebuildProjections` は空にしません。再構築した `feed_follow_edges` に行のないメンバーだけを消します（§9）。
 - アカウントの消去（§8）は、本人のリスト（名前とメンバーを含む）と、ほかの人のリストの本人のメンバーの行を消します。
+
+#### ダイレクトメッセージ
+
+閲覧者が送った・受け取った `direct` の投稿を、会話（`content` の `status_conversations`、[ADR-0154](../../../adr/0154-conversations.md)）ごとにまとめます（FR-212、§6.4）。表は `timeline` が持ち、書くのも読むのも `timeline` だけです。
+
+| テーブル | 分類 | カラム | 制約 / 用途 | 元になるイベント |
+| --- | --- | --- | --- | --- |
+| `feed_conversation_participants` | 投影 | `conversation_id`, `entry_id`（`direct` の投稿の `feed_entries.id`）, `account_id`（作者または宛先） | PK `(account_id, conversation_id, entry_id)`、インデックス `(conversation_id, entry_id)`（併合・参加者）、`(entry_id)`（版・削除）。`direct` の投稿ごとの当事者（作者と `feed_direct_recipients` の宛先）と、投稿が今属する会話 | 投稿（`StatusCreated` の会話）・版（宛先）・削除・会話の併合 |
+| `feed_conversations` | 投影 | `account_id`, `conversation_id`, `last_entry_id` | PK `(account_id, conversation_id)`、インデックス `(account_id, last_entry_id)`（一覧のキーセット）、`(conversation_id)`（併合）。当事者ごとに、その会話での当事者の最新の `direct` の投稿 | `feed_conversation_participants` と同じ更新 |
+| `feed_conversation_reads` | 現在値 | `account_id`, `conversation_id`, `entry_id` | PK `(account_id, conversation_id)`、インデックス `(conversation_id)`（併合）。既読の境界。これより新しい、ほかの人の投稿があれば未読 | 利用者のコマンドが書く（投影ではない） |
+| `feed_conversation_hides` | 現在値 | `account_id`, `conversation_id`, `entry_id` | PK `(account_id, conversation_id)`、インデックス `(conversation_id)`（併合）。非表示の境界。`last_entry_id` がこれ以下の間は一覧に出さない | 利用者のコマンドが書く（投影ではない） |
+
+- 境界は投稿（エントリ）の ID で持ち、真偽値は持ちません。未読は `feed_conversation_reads` から、非表示は `feed_conversation_hides` と `last_entry_id` から読み取りのたびに導きます。既読にした端末によらず、同じ行がすべての端末に効きます。
+- 既読・非表示のコマンドは、境界を閲覧者のその会話の `last_entry_id` にし、すでにある新しい境界は残します（`INSERT … SELECT … ON CONFLICT` の 1 文）。閲覧者に `feed_conversations` の行がない会話には何も書かず、存在しないものとして答えます。
+- 投稿の作成（`direct` で会話がある）は、当事者の行を足し、当事者ごとの `last_entry_id` を新しい方に進めます。版で宛先が変わったときと削除では、当事者の行を置き換え・消してから、その会話の `feed_conversations` を当事者の行から導き直します。
+- `content.conversation_merged` は、併合された会話の当事者の行を併合先に移し、`feed_conversations`・`feed_conversation_reads`・`feed_conversation_hides` は、アカウントごとに 2 つのうち新しい値を併合先に残して、併合された会話の行を消します。どれも会話の行の数によらない一定の数の文です。
+- 再構築（`timeline.RebuildProjections`）は、`feed_conversation_participants` と `feed_conversations` を空にし、`content` が再生する `StatusCreated`（`direct` の投稿は今の会話を持つ。併合は済んだ形なので再生しない）から作り直します。既読と非表示は利用者の操作の記録なので空にしません。`projection.verify` は 2 つの投影を比べます。
+- アカウントの消去（§8）は、本人の 4 つの表の行と、消す投稿の当事者の行を消し、残る当事者の `feed_conversations` を導き直します。

@@ -12,6 +12,7 @@ import { parseRetryAfter, type Sleep, sleepSignal } from "./transport.js";
 
 type Status = components["schemas"]["Status"];
 type Notification = components["schemas"]["Notification"];
+type Conversation = components["schemas"]["Conversation"];
 type Announcement = components["schemas"]["Announcement"];
 
 /** A timeline whose new posts GET /streaming/timelines/{timeline} streams. */
@@ -25,6 +26,7 @@ export type StreamEvent =
   | { type: "update"; status: Status }
   | { type: "list_update"; listId: string; status: Status }
   | { type: "notification"; notification: Notification }
+  | { type: "conversation"; conversation: Conversation }
   | { type: "announcement"; announcement: Announcement }
   | { type: "announcement_removed"; id: string }
   | { type: "unknown"; event: string; data: string };
@@ -284,13 +286,14 @@ const knownEvents: ReadonlySet<string> = new Set([
   "update",
   "list_update",
   "notification",
+  "conversation",
   "announcement",
   "announcement_removed",
 ]);
 
 /**
- * Types an event by its name: the data of `update`, `notification`, and `announcement` is the server's Status,
- * Notification, and Announcement, that of `list_update` a list's ID and a Status (once for each of the user's lists
+ * Types an event by its name: the data of `update`, `notification`, `conversation`, and `announcement` is the
+ * server's Status, Notification, Conversation, and Announcement, that of `list_update` a list's ID and a Status (once for each of the user's lists
  * whose timeline shows the post of an `update`), and that of `announcement_removed` the announcement's ID. An unknown
  * name is an `unknown` event. It throws for a known event whose data is no JSON object with an `id` (for
  * `list_update`, with a `list_id` and a `status` that has an `id`).
@@ -323,6 +326,8 @@ export function parseStreamEvent({ event, data }: ServerSentEvent): StreamEvent 
       return { type: "update", status: value as Status };
     case "notification":
       return { type: "notification", notification: value as Notification };
+    case "conversation":
+      return { type: "conversation", conversation: value as Conversation };
     case "announcement":
       return { type: "announcement", announcement: value as Announcement };
     default:

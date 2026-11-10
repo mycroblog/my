@@ -13,6 +13,7 @@ func TestSignalRoundTrips(t *testing.T) {
 		{Kind: KindHomeEntry, EntryID: "0199f0a8-0000-7000-8000-000000000001"},
 		{Kind: KindHomeEntry, EntryID: "0199f0a8-0000-7000-8000-000000000001", AuthorAccountID: "0199f0a8-0000-7000-8000-000000000002"},
 		{Kind: KindNotifications, AccountID: "0199f0a8-0000-7000-8000-000000000002"},
+		{Kind: KindConversation, AccountID: "0199f0a8-0000-7000-8000-000000000002", ConversationID: "0199f0a8-0000-7000-8000-000000000005"},
 		{Kind: KindAnnouncement, AnnouncementID: "0199f0a8-0000-7000-8000-000000000003"},
 		{Kind: KindPublicEntry, EntryID: "0199f0a8-0000-7000-8000-000000000004", OnLocal: true, OnFederated: true},
 		{Kind: KindPublicEntry, EntryID: "0199f0a8-0000-7000-8000-000000000004", OnLocal: true},
@@ -39,6 +40,10 @@ func TestSignalRoundTrips(t *testing.T) {
 	}
 	b, _ = encodeSignal("p1", Event{Kind: KindNotifications, AccountID: "0199f0a8-0000-7000-8000-000000000002"})
 	if want := `{"v":1,"o":"p1","k":"notifications","a":"0199f0a8-0000-7000-8000-000000000002"}`; string(b) != want {
+		t.Errorf("payload = %s, want %s", b, want)
+	}
+	b, _ = encodeSignal("p1", Event{Kind: KindConversation, AccountID: "0199f0a8-0000-7000-8000-000000000002", ConversationID: "0199f0a8-0000-7000-8000-000000000005"})
+	if want := `{"v":1,"o":"p1","k":"conversation","a":"0199f0a8-0000-7000-8000-000000000002","e":"0199f0a8-0000-7000-8000-000000000005"}`; string(b) != want {
 		t.Errorf("payload = %s, want %s", b, want)
 	}
 	b, _ = encodeSignal("p1", Event{Kind: KindAnnouncement, AnnouncementID: "0199f0a8-0000-7000-8000-000000000003"})

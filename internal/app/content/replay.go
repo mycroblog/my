@@ -19,18 +19,33 @@ func (s *Service) IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bo
 // ReplayEvents passes to emit, inside tx, the events that derive other modules' projections of
 // statuses and boosts from their current state (data-model §9), so that those modules rebuild
 // their projections without reading this module's tables: a StatusCreated with the current
-// revision for each status that is not deleted, ordered by status ID, then a Boosted for each
-// live boost, ordered by boost ID. Deleted statuses and retracted boosts emit nothing, so a
+// revision for each status that is not deleted, ordered by status ID (a direct one with its
+// current conversation), then a Boosted for each live boost, ordered by boost ID. Deleted statuses and retracted boosts emit nothing, so a
 // projection that applies these events to empty tables ends where incremental updating did.
 func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interactions InteractionRepository, emit func(uow.Event) error) error {
 	posts, err := statuses.ListCurrentPosts(ctx, tx)
 	if err != nil {
 		return err
 	}
+	// The conversations of the direct posts, which the list of direct messages is keyed by
+	// (ADR-0154 §6), read together. The current conversation is the one every merge ended in, so
+	// no merge is replayed.
+	var direct []string
+	for _, p := range posts {
+		if p.Status.Visibility == VisibilityDirect {
+			direct = append(direct, p.Status.ID)
+		}
+	}
+	var convs map[string]content.Conversation
+	if len(direct) > 0 {
+		if convs, err = statuses.StatusConversationsTx(ctx, tx, direct); err != nil {
+			return err
+		}
+	}
 	live := make(map[string]content.Status, len(posts))
 	for _, p := range posts {
 		live[p.Status.ID] = p.Status
-		if err := emit(StatusCreated{Status: p.Status, Revision: p.Revision}); err != nil {
+		if err := emit(StatusCreated{Status: p.Status, Revision: p.Revision, ConversationID: convs[p.Status.ID].ID}); err != nil {
 			return err
 		}
 	}

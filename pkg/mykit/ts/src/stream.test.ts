@@ -79,6 +79,7 @@ describe("runStream", () => {
           'event: list_update\ndata: {"list_id":"l1","status":{"id":"s1"}}\n\n',
           'event: notification\ndata: {"id":"n1","type":"follow"}\n\n',
           ": heartbeat\n\n",
+          'event: conversation\ndata: {"id":"c1","unread":true}\n\n',
           'event: announcement\ndata: {"id":"a1"}\n\n',
           'event: announcement_removed\ndata: {"id":"a2"}\n\n',
           'event: poll\ndata: {"id":"p1"}\ndata: more\n\n',
@@ -95,17 +96,19 @@ describe("runStream", () => {
       "update",
       "list_update",
       "notification",
+      "conversation",
       "announcement",
       "announcement_removed",
       "unknown",
     ]);
-    const [update, listUpdate, notification, announcement, removed, unknown] = r.events;
+    const [update, listUpdate, notification, conversation, announcement, removed, unknown] = r.events;
     if (update?.type === "update") expect(update.status.id).toBe("s1");
     if (listUpdate?.type === "list_update") {
       expect(listUpdate.listId).toBe("l1");
       expect(listUpdate.status.id).toBe("s1");
     }
     if (notification?.type === "notification") expect(notification.notification.id).toBe("n1");
+    if (conversation?.type === "conversation") expect(conversation.conversation.unread).toBe(true);
     if (announcement?.type === "announcement") expect(announcement.announcement.id).toBe("a1");
     expect(removed).toEqual({ type: "announcement_removed", id: "a2" });
     expect(unknown).toEqual({ type: "unknown", event: "poll", data: '{"id":"p1"}\nmore' });

@@ -37,7 +37,8 @@ type signal struct {
 	Origin    string `json:"o"`
 	Kind      Kind   `json:"k"`
 	AccountID string `json:"a,omitempty"`
-	// E is the entry of a home_entry signal and the emoji of a voice_reaction one.
+	// E is the entry of a home_entry signal, the conversation of a conversation one, and the
+	// emoji of a voice_reaction one.
 	E string `json:"e,omitempty"`
 	// Author is the "u" of a home_entry signal, the account of its entry.
 	Author string `json:"u,omitempty"`
@@ -74,6 +75,8 @@ func encodeSignal(origin string, e Event) ([]byte, error) {
 		s.On = &on
 	case KindVoiceReaction:
 		s.E = e.Emoji
+	case KindConversation:
+		s.E = e.ConversationID
 	}
 	b, err := json.Marshal(s)
 	if err != nil {
@@ -107,6 +110,8 @@ func decodeSignal(payload []byte) (origin string, e Event, err error) {
 		return s.Origin, Event{Kind: KindHomeEntry, EntryID: s.E, AuthorAccountID: s.Author}, nil
 	case s.Kind == KindNotifications && s.AccountID != "":
 		return s.Origin, Event{Kind: KindNotifications, AccountID: s.AccountID}, nil
+	case s.Kind == KindConversation && s.AccountID != "" && s.E != "":
+		return s.Origin, Event{Kind: KindConversation, AccountID: s.AccountID, ConversationID: s.E}, nil
 	case s.Kind == KindAnnouncement && s.AnnouncementID != "":
 		return s.Origin, Event{Kind: KindAnnouncement, AnnouncementID: s.AnnouncementID}, nil
 	case s.Kind == KindPublicEntry && s.E != "":

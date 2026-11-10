@@ -46,6 +46,7 @@ func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 		{"EndsManyFollows", timelineRepoEndMany},
 		{"ListsTheListTimeline", timelineRepoListTimeline},
 		{"EmptiesTheProjectionsForARebuild", timelineRepoRebuild},
+		{"KeepsConversations", timelineRepoConversations},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -313,16 +313,20 @@ oapi-codegen と openapi-typescript が扱える範囲に限ります。`api/red
 
 ## 5. ストリーミング
 
-`GET /api/v1/streaming`（`streamEvents`）は Server-Sent Events のストリームで、閲覧者のホームの新着と新しい通知、サーバーのお知らせ（FR-726）を送ります（FR-207）。
+`GET /api/v1/streaming`（`streamEvents`）は Server-Sent Events のストリームで、閲覧者のホームの新着と新しい通知、ダイレクトメッセージの会話（FR-212）、サーバーのお知らせ（FR-726）を送ります（FR-207）。
 strict server は SSE を返せないので、`oapi-codegen.yaml` の `exclude-operation-ids` で生成から除き、`streaming.go` に手で書きます（ADR-0016）。
 それでも spec には `text/event-stream` の操作として書き、`security.gen.go` の表と `guard`（認証・レート制限・スコープ `read:statuses` と `read:notifications`）を通します。
 
 - クライアントは `fetch` のストリームで読み、`Authorization: Bearer` を送ります（`EventSource` はヘッダを送れません）。
-- イベントは `update`（`data` は `Status`）、`notification`（`data` は `Notification`）、`announcement`（公開した・公開中に変えたお知らせ。`data` は `Announcement`）、
+- イベントは `update`（`data` は `Status`）、`notification`（`data` は `Notification`）、
+  `conversation`（ダイレクトメッセージの会話に `direct` の投稿が届いた、または閲覧者がどこかの端末で既読にした。`data` は `listConversations` が見せる形の `Conversation`、FR-212）、
+  `announcement`（公開した・公開中に変えたお知らせ。`data` は `Announcement`）、
   `announcement_removed`（見えなくなったお知らせ。`data` は `{"id": …}`）です。`id` は付けず、`Last-Event-ID` での再開はしません。
   切れたら再接続し、ホームと通知とお知らせを読み直します。期間の始まりが後のお知らせは、始まった時にはイベントを送らないので、クライアントはお知らせを読み直したときに知ります。
 - 接続の流れは [overview §4.4](overview.md#44-リアルタイム更新sse) のとおりです。ハンドラは `stream.Subscriber` で購読し、知らせを受けるたびにユースケース
-  （`HomeEntries.HomeEntry`、`Notifications.List`、`Announcements.ShownAnnouncement`）で閲覧者に見せる形に読み直して、`Server.statuses` と `Server.newNotifications` で詰め替えます。
+  （`HomeEntries.HomeEntry`、`Notifications.List`、`Conversations.StreamConversation`、`Announcements.ShownAnnouncement`）で閲覧者に見せる形に読み直して、`Server.statuses`・`Server.newNotifications`・`Server.presentConversations` で詰め替えます。
+  `conversation` の知らせ（`stream.KindConversation`）は、`direct` の投稿の作成をコミットした後に投稿の作者と宛先ごとに 1 つ、既読にした後に閲覧者に 1 つ出し、そのアカウントのストリームにだけ届きます。
+  一覧が出さない会話（非表示・見られる投稿がない）と、`read:direct` のないトークンのストリームには送りません。
 - 開くと `: connected` を、その後 30 秒ごと（`Options.StreamHeartbeat`）に `: heartbeat` のコメント行を送ります。ハートビートのたびにアクセストークンを照合し直し、無効なら閉じます。
 - 接続数の上限は、アカウントごとに 8、プロセス全体で 1,000 です（`stream.HubOptions`）。上限はプロセスごとに数えるので、プロセス間のブローカー（設定 `stream`）を使う構成では、全体では「上限 × web のプロセス数」まで開けます。
   アカウントの上限を超えると 429（`/api/v1/problems/too-many-streams`）です。

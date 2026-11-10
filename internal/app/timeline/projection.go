@@ -27,7 +27,9 @@ var errEntryExists = errors.New("timeline: the feed entry already exists")
 // §9). They read only the events and the feed_* tables:
 //   - feed_entries holds a post entry for each status that is not deleted, with the language of
 //     its current revision, and a boost entry for each live boost of such a status;
-//   - feed_direct_recipients holds the current mentions of each direct post;
+//   - feed_direct_recipients holds the current mentions of each direct post, and
+//     feed_conversation_participants and feed_conversations its parties by conversation, which
+//     follow the merges of conversations (conversations.go);
 //   - feed_tag_entries holds the current tags of each post, and tag_usage counts those of the
 //     posts that CountsTagUsage (ADR-0092 §1);
 //   - feed_follow_edges holds each active follow with its show_boosts preference, and the end of
@@ -59,7 +61,13 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 		if err := insertEntry(ctx, tx, repo, entry); err != nil {
 			return err
 		}
-		return projectRevision(ctx, tx, repo, entry, rev.MentionedAccountIDs, rev.TagIDs, rev.RevisedAt)
+		if err := projectRevision(ctx, tx, repo, entry, rev.MentionedAccountIDs, rev.TagIDs, rev.RevisedAt); err != nil {
+			return err
+		}
+		if s.Visibility != appcontent.VisibilityDirect || ev.ConversationID == "" {
+			return nil
+		}
+		return repo.AddConversationEntry(ctx, tx, ev.ConversationID, s.ID, directParties(s.AuthorAccountID, rev.MentionedAccountIDs))
 	})
 	r.Register(appcontent.EventStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		rev := e.(appcontent.StatusRevised).Revision
@@ -73,19 +81,43 @@ func RegisterProjectors(r *uow.Projectors, repo Repository, moderated ModeratedE
 		if err := repo.UpdateRevision(ctx, tx, rev.StatusID, language(rev.Language), rev.Seq); err != nil {
 			return err
 		}
-		return projectRevision(ctx, tx, repo, entry, rev.MentionedAccountIDs, rev.TagIDs, rev.RevisedAt)
+		if err := projectRevision(ctx, tx, repo, entry, rev.MentionedAccountIDs, rev.TagIDs, rev.RevisedAt); err != nil {
+			return err
+		}
+		if entry.Visibility != appcontent.VisibilityDirect {
+			return nil
+		}
+		return repo.ReplaceConversationEntryParties(ctx, tx, entry.ID, directParties(entry.AuthorAccountID, rev.MentionedAccountIDs))
 	})
 	r.Register(appcontent.EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		return repo.DeleteStatusEntries(ctx, tx, e.(appcontent.StatusDeleted).Status.ID)
+		st := e.(appcontent.StatusDeleted).Status
+		if err := repo.DeleteStatusEntries(ctx, tx, st.ID); err != nil {
+			return err
+		}
+		if st.Visibility != appcontent.VisibilityDirect {
+			return nil
+		}
+		return repo.DeleteConversationEntries(ctx, tx, []string{st.ID})
 	})
 	r.Register(appcontent.EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ds := e.(appcontent.StatusesDeleted).Deletions
 		ids := make([]string, len(ds))
+		var direct []string
 		for i, d := range ds {
 			ids[i] = d.Status.ID
+			if d.Status.Visibility == appcontent.VisibilityDirect {
+				direct = append(direct, d.Status.ID)
+			}
 		}
-		return repo.DeleteStatusEntriesOf(ctx, tx, ids)
+		if err := repo.DeleteStatusEntriesOf(ctx, tx, ids); err != nil {
+			return err
+		}
+		if len(direct) == 0 {
+			return nil
+		}
+		return repo.DeleteConversationEntries(ctx, tx, direct)
 	})
+	registerConversationProjectors(r, repo)
 	r.Register(appcontent.EventBoosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.Boosted)
 		b := ev.Boost

@@ -383,7 +383,7 @@ func (s *Service) PrepareCreate(ctx context.Context, in CreateInput) (PreparedCr
 // StatusCreated, and returns it.
 func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Post, error) {
 	repo := s.d.Repository
-	parentStored, err := s.insertStatus(ctx, tx, p.st, "")
+	ins, err := s.insertStatus(ctx, tx, p.st, "")
 	if err != nil {
 		return Post{}, err
 	}
@@ -397,7 +397,7 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 	if err := repo.InsertRevision(ctx, tx, rev); err != nil {
 		return Post{}, err
 	}
-	if err := tx.Emit(ctx, StatusCreated{Status: p.st, Revision: rev}); err != nil {
+	if err := tx.Emit(ctx, StatusCreated{Status: p.st, Revision: rev, ConversationID: ins.ConversationID}); err != nil {
 		return Post{}, err
 	}
 	if err := s.applyAttachmentVerdicts(ctx, tx, p.st.ID, p.media); err != nil {
@@ -421,7 +421,7 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 			return Post{}, err
 		}
 	}
-	return Post{Status: p.st, Revision: rev, ParentStored: parentStored}, nil
+	return Post{Status: p.st, Revision: rev, ParentStored: ins.ParentStored}, nil
 }
 
 // prepareCreate checks and builds the status of in by author, outside any transaction.

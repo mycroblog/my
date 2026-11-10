@@ -27,6 +27,10 @@ const (
 	KindHomeEntry Kind = "home_entry"
 	// KindNotifications signals that an account may have new notifications.
 	KindNotifications Kind = "notifications"
+	// KindConversation signals that a conversation of an account's direct messages changed (a
+	// new direct post, or the account read it): it goes to the account subscriptions of
+	// AccountID, which read ConversationID again.
+	KindConversation Kind = "conversation"
 	// KindAnnouncement signals that a server-wide announcement was published, changed while
 	// published, or withdrawn (FR-726). It goes to every subscriber, which reads whether its
 	// viewer sees the announcement now.
@@ -81,8 +85,11 @@ func (k Kind) IsVoice() bool {
 // Event is one signal.
 type Event struct {
 	Kind Kind
-	// AccountID is the account whose notifications changed (KindNotifications).
+	// AccountID is the account whose notifications or direct messages changed
+	// (KindNotifications, KindConversation).
 	AccountID string
+	// ConversationID is the conversation of KindConversation.
+	ConversationID string
 	// EntryID is the ID of the new timeline entry (KindHomeEntry, KindPublicEntry): a status ID
 	// for a post, a boost ID for a boost.
 	EntryID string

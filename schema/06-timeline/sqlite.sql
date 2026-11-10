@@ -142,6 +142,55 @@ CREATE TABLE list_members (
 CREATE INDEX list_members_owner_member ON list_members (owner_account_id, member_account_id);
 CREATE INDEX list_members_member_account_id ON list_members (member_account_id);
 
+-- ---------------------------------------------------------------------------------------------
+-- timeline: direct messages by conversation (data-model §4.6, §6.4, ADR-0154 §6). Owned by
+-- internal/app/timeline: its projectors derive feed_conversation_participants and
+-- feed_conversations from the direct posts and follow content.conversation_merged; the owner's
+-- commands write the read and hide boundaries, which the merges move too.
+-- ---------------------------------------------------------------------------------------------
+
+-- Projection: the parties of each direct post (its author and its recipients, as
+-- feed_direct_recipients holds them), with the conversation the post belongs to now.
+CREATE TABLE feed_conversation_participants (
+  conversation_id TEXT NOT NULL,
+  entry_id TEXT NOT NULL,
+  account_id TEXT NOT NULL,
+  PRIMARY KEY (account_id, conversation_id, entry_id)
+) STRICT;
+CREATE INDEX feed_conversation_participants_conversation ON feed_conversation_participants (conversation_id, entry_id);
+CREATE INDEX feed_conversation_participants_entry_id ON feed_conversation_participants (entry_id);
+
+-- Projection: for each account, every conversation with a direct post it sent or received, and
+-- the newest such post, which orders the account's list of direct messages.
+CREATE TABLE feed_conversations (
+  account_id TEXT NOT NULL,
+  conversation_id TEXT NOT NULL,
+  last_entry_id TEXT NOT NULL,
+  PRIMARY KEY (account_id, conversation_id)
+) STRICT;
+CREATE INDEX feed_conversations_account_last ON feed_conversations (account_id, last_entry_id);
+CREATE INDEX feed_conversations_conversation_id ON feed_conversations (conversation_id);
+
+-- Current value: the newest direct post of a conversation that an account has read; the newer
+-- ones by others are unread.
+CREATE TABLE feed_conversation_reads (
+  account_id TEXT NOT NULL,
+  conversation_id TEXT NOT NULL,
+  entry_id TEXT NOT NULL,
+  PRIMARY KEY (account_id, conversation_id)
+) STRICT;
+CREATE INDEX feed_conversation_reads_conversation_id ON feed_conversation_reads (conversation_id);
+
+-- Current value: the newest direct post of a conversation when an account hid it; a newer one
+-- brings the conversation back to the list.
+CREATE TABLE feed_conversation_hides (
+  account_id TEXT NOT NULL,
+  conversation_id TEXT NOT NULL,
+  entry_id TEXT NOT NULL,
+  PRIMARY KEY (account_id, conversation_id)
+) STRICT;
+CREATE INDEX feed_conversation_hides_conversation_id ON feed_conversation_hides (conversation_id);
+
 -- The erasure of deleted local accounts' data (account, #397, data-model §4.2, §8) looks up
 -- the rows of an account.
 CREATE INDEX feed_entries_original_author_account_id ON feed_entries (original_author_account_id);

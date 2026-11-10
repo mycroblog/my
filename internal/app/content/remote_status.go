@@ -137,7 +137,7 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 		InReplyToURI:    in.InReplyToURI,
 		PublishedAt:     published,
 	}
-	parentStored, err := s.insertStatus(ctx, tx, st, in.Conversation)
+	ins, err := s.insertStatus(ctx, tx, st, in.Conversation)
 	if err != nil {
 		return Post{}, err
 	}
@@ -149,7 +149,7 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err := s.d.Repository.InsertRevision(ctx, tx, rev); err != nil {
 		return Post{}, err
 	}
-	if err := tx.Emit(ctx, StatusCreated{Status: st, Revision: rev}); err != nil {
+	if err := tx.Emit(ctx, StatusCreated{Status: st, Revision: rev, ConversationID: ins.ConversationID}); err != nil {
 		return Post{}, err
 	}
 	if err := s.recordQuote(ctx, tx, st, in.Quote); err != nil {
@@ -163,7 +163,7 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err := s.observePoll(ctx, tx, rev.Poll, in.Poll, now); err != nil {
 		return Post{}, err
 	}
-	return Post{Status: st, Revision: rev, ParentStored: parentStored}, nil
+	return Post{Status: st, Revision: rev, ParentStored: ins.ParentStored}, nil
 }
 
 // ReviseRemoteStatus records a new revision of a remote post inside tx (federation.md §3.3,

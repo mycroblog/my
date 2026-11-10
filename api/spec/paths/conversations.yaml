@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listConversations
+  summary: List the direct messages by conversation
+  description: |
+    Every conversation with a `direct` post that the user sent or received, whether or not the
+    user follows its author, the one with the newest such post first. Each shows its newest
+    direct post that the user may see, as the home timeline would show it: the posts of
+    accounts that the user blocks, is blocked by, or mutes, and of suspended accounts and
+    domains, are skipped for the one before, and a conversation with none left is left out.
+    The user's timeline languages do not apply. A conversation that the user hid
+    (`hideConversation`) is left out until a newer direct post arrives in it.
+
+    A page may hold fewer conversations than `limit` while `next_cursor` is still given, when
+    some have no post left that the user may see.
+  tags: [conversations]
+  security:
+    - oauth2: ["read:direct"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of conversations.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/ConversationPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

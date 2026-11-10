@@ -123,6 +123,10 @@ type Projection struct {
 	FollowEdges      []FollowEdge
 	Exclusions       []Exclusion
 	DomainMutes      []DomainMute
+	// ConversationParticipants and ConversationHeads are the direct messages by conversation,
+	// ordered by account, conversation, and entry.
+	ConversationParticipants []ConversationParticipant
+	ConversationHeads        []ConversationHead
 }
 
 // Window selects a page of a timeline, newest first.
@@ -207,7 +211,8 @@ type Facts struct {
 }
 
 // Repository is the persistence port of the timeline module (data-model §4.6). It reads and
-// writes only the feed_* tables, tag_usage, and the tables of lists. The database adapters implement it and pass
+// writes only the feed_* tables (those of the direct messages by conversation included),
+// tag_usage, and the tables of lists. The database adapters implement it and pass
 // timelinetest.TimelineContract; timelinetest.TimelineFlows (internal/flowtest/timeline) drives the timeline use
 // cases and projectors on them.
 //
@@ -338,4 +343,7 @@ type Repository interface {
 
 	// Snapshot returns the content of the projections, for verifying them.
 	Snapshot(ctx context.Context) (Projection, error)
+
+	// The direct messages by conversation (FR-212).
+	ConversationRepository
 }

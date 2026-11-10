@@ -52,7 +52,8 @@ type TimelineFactory func(t *testing.T, opts uow.Options) TimelineHarness
 // home), the language filter, keyset paging, deletions of statuses and of accounts (local and
 // remote), the tag_usage projection and the prefix search of hashtags over it (ADR-0092 §1), the
 // property that incrementally updated projections equal a rebuild from the events the content and
-// graph modules replay, and the lists with their timelines (ADR-0013, timeline_lists_flows.go).
+// graph modules replay, the lists with their timelines (ADR-0013, timeline_lists_flows.go), and
+// the direct messages by conversation (FR-212, conversation_flows.go).
 func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 	t.Helper()
 	cases := []struct {
@@ -83,6 +84,13 @@ func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 		{"ListLimits", timelineListLimits},
 		{"ListTimeline", timelineListTimeline},
 		{"RebuildKeepsListsOfFollows", timelineListRebuild},
+		{"ConversationsOfSentAndReceivedDirectPosts", conversationsList},
+		{"ConversationsPageByLastEntry", conversationsPaging},
+		{"ConversationsSkipHiddenPosts", conversationsVisibility},
+		{"ConversationsReadBoundary", conversationsRead},
+		{"ConversationsHideUntilNewerPost", conversationsHide},
+		{"ConversationsFollowMerges", conversationsMerge},
+		{"ConversationsFollowEditsAndDeletes", conversationsEditsAndDeletes},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newTimelineEnv(t, newHarness)) })
@@ -124,7 +132,9 @@ func newTimelineEnv(t *testing.T, newHarness TimelineFactory) *timelineEnv {
 		Accounts: e.actors, Relationships: e.graph, Clock: clock, IDs: ids, Host: testkit.ContractHost,
 	})
 	apptimeline.RegisterModerationProjectors(projectors, h.Timeline, e.actors)
-	e.svc = apptimeline.NewService(apptimeline.Deps{UnitOfWork: h.UnitOfWork, Repository: h.Timeline, Clock: clock, IDs: ids})
+	e.svc = apptimeline.NewService(apptimeline.Deps{
+		UnitOfWork: h.UnitOfWork, Repository: h.Timeline, Clock: clock, IDs: ids, Conversations: conversationResolver{h.Statuses},
+	})
 	return e
 }
 
@@ -151,6 +161,9 @@ type postOpts struct {
 	language string
 	// inReplyTo is the URI of the status replied to, "" for none.
 	inReplyTo string
+	// conversation is the ID of the conversation the status joins; "" joins its stored parent's,
+	// else a new one (ADR-0154 §2).
+	conversation string
 }
 
 // post creates a status of author, remote when the author is, and returns it.
@@ -167,7 +180,7 @@ func (e *timelineEnv) post(t *testing.T, author string, v content.Visibility, o 
 	if o.language != "" {
 		rev.Language = o.language
 	}
-	if err := e.Create(t, s, nil, rev); err != nil {
+	if err := e.create(t, s, rev, o.conversation); err != nil {
 		t.Fatalf("create status: %v", err)
 	}
 	return s
@@ -843,7 +856,7 @@ func timelineProjectionEqualsRebuild(t *testing.T, e *timelineEnv) {
 	for range 200 {
 		e.Clock.Advance(time.Minute)
 		a, b := pick(locals), pick(accounts)
-		switch rng.IntN(12) {
+		switch rng.IntN(13) {
 		case 0, 1, 2:
 			author := pick(accounts)
 			v := visibilities[rng.IntN(len(visibilities))]
@@ -905,6 +918,10 @@ func timelineProjectionEqualsRebuild(t *testing.T, e *timelineEnv) {
 			} else {
 				_ = e.graph.UnmuteDomain(ctx, a, timelineRemoteDomain)
 			}
+		case 12:
+			if len(live) > 1 {
+				e.mergeOf(t, live[rng.IntN(len(live))], live[rng.IntN(len(live))])
+			}
 		}
 	}
 	incremental, err := e.h.Timeline.Snapshot(ctx)
@@ -912,7 +929,8 @@ func timelineProjectionEqualsRebuild(t *testing.T, e *timelineEnv) {
 		t.Fatalf("Snapshot: %v", err)
 	}
 	if len(incremental.Entries) == 0 || len(incremental.FollowEdges) == 0 || len(incremental.Exclusions) == 0 ||
-		len(incremental.TagEntries) == 0 || len(incremental.TagUsage) == 0 || len(incremental.DirectRecipients) == 0 {
+		len(incremental.TagEntries) == 0 || len(incremental.TagUsage) == 0 || len(incremental.DirectRecipients) == 0 ||
+		len(incremental.ConversationParticipants) == 0 || len(incremental.ConversationHeads) == 0 {
 		t.Fatalf("the random history left some projection empty: %+v", incremental)
 	}
 	sources := []apptimeline.Source{

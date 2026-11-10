@@ -52,12 +52,13 @@ var errConversationsMoving = errors.New("content: the conversations of a status 
 // conversation of this server. When the reply links show that st's conversation and its
 // parent's, or st's and that of a stored reply to st, are one thread, the child's side is merged
 // into the parent's (ADR-0154 §3), so that the thread ends up in one conversation whatever the
-// order in which its statuses arrive. It reports whether st's parent was stored.
+// order in which its statuses arrive. It reports whether st's parent was stored and the
+// conversation that st ends in, after the merges.
 //
 // It takes the lock keys of st (statusLockKeys) before it inserts, then those of the
 // conversations it reads, so that a parent and a reply stored at the same time see each other
 // and a concurrent merge does not leave st in a merged conversation.
-func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status, declared string) (bool, error) {
+func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status, declared string) (insertedStatus, error) {
 	repo := s.d.Repository
 	if content.IsLocalConversationURI(s.d.Host, declared) {
 		declared = ""
@@ -68,16 +69,16 @@ func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status
 		slices.Sort(keys)
 	}
 	if err := repo.LockStatusKeys(ctx, tx, keys); err != nil {
-		return false, err
+		return insertedStatus{}, err
 	}
 	if err := repo.InsertStatus(ctx, tx, st); err != nil {
-		return false, err
+		return insertedStatus{}, err
 	}
 	var declaredConv *content.Conversation
 	if declared != "" {
 		c, err := repo.EnsureConversation(ctx, tx, content.Conversation{ID: s.d.IDs.NewID(), URI: declared})
 		if err != nil {
-			return false, err
+			return insertedStatus{}, err
 		}
 		declaredConv = &c
 	}
@@ -87,14 +88,14 @@ func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status
 		switch {
 		case errors.Is(err, ErrNotFound):
 		case err != nil:
-			return false, err
+			return insertedStatus{}, err
 		case p.ID != st.ID: // a status that replies to itself is no parent of its own
 			parent = &p
 		}
 	}
 	replies, err := repo.ListLiveRepliesTo(ctx, tx, st.URI)
 	if err != nil {
-		return false, err
+		return insertedStatus{}, err
 	}
 	related := make([]string, 0, len(replies)+1)
 	if parent != nil {
@@ -111,12 +112,12 @@ func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status
 	var of map[string]content.Conversation
 	for round := 0; ; round++ {
 		if of, err = repo.StatusConversationsTx(ctx, tx, related); err != nil {
-			return false, err
+			return insertedStatus{}, err
 		}
 		if declaredConv != nil {
 			c, err := s.finalConversationTx(ctx, tx, declaredConv.ID)
 			if err != nil {
-				return false, err
+				return insertedStatus{}, err
 			}
 			declaredConv = &c
 		}
@@ -133,7 +134,7 @@ func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status
 			break
 		}
 		if round == maxConversationLockRounds {
-			return false, fmt.Errorf("status %s: %w", st.ID, errConversationsMoving)
+			return insertedStatus{}, fmt.Errorf("status %s: %w", st.ID, errConversationsMoving)
 		}
 		slices.Sort(more)
 		ks := make([]string, len(more))
@@ -142,7 +143,7 @@ func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status
 			locked[id] = true
 		}
 		if err := repo.LockStatusKeys(ctx, tx, ks); err != nil {
-			return false, err
+			return insertedStatus{}, err
 		}
 	}
 
@@ -162,11 +163,11 @@ func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status
 		id := s.d.IDs.NewID()
 		conv = content.Conversation{ID: id, URI: content.ConversationURI(s.d.Host, id), IsLocal: true}
 		if conv, err = repo.EnsureConversation(ctx, tx, conv); err != nil {
-			return false, err
+			return insertedStatus{}, err
 		}
 	}
 	if err := repo.InsertStatusConversation(ctx, tx, st.ID, conv.ID); err != nil {
-		return false, err
+		return insertedStatus{}, err
 	}
 	// The merges of this transaction, by merged conversation, for the replies that shared one.
 	merged := map[string]string{}
@@ -180,7 +181,7 @@ func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status
 	}
 	if parentConv != nil && parentConv.ID != conv.ID {
 		if err := merge(conv.ID, parentConv.ID); err != nil {
-			return false, err
+			return insertedStatus{}, err
 		}
 		conv = *parentConv
 	}
@@ -195,11 +196,19 @@ func (s *Service) insertStatus(ctx context.Context, tx uow.Tx, st content.Status
 		}
 		if id != conv.ID {
 			if err := merge(id, conv.ID); err != nil {
-				return false, err
+				return insertedStatus{}, err
 			}
 		}
 	}
-	return parent != nil, nil
+	return insertedStatus{ParentStored: parent != nil, ConversationID: conv.ID}, nil
+}
+
+// insertedStatus is what insertStatus reports of the status it inserted.
+type insertedStatus struct {
+	// ParentStored is true when the status replies to a stored status.
+	ParentStored bool
+	// ConversationID is the conversation that the status belongs to once the merges are done.
+	ConversationID string
 }
 
 // finalConversationTx returns, inside tx, the conversation that id names, or the one it ended in
