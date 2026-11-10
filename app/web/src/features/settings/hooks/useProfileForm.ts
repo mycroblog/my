@@ -6,6 +6,7 @@ import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
 import { shellQueryReader } from "../../../lib/query";
+import { useFeaturedTagsDraft } from "../../hashtags";
 import {
   type AIUsage,
   cacheSavedProfile,
@@ -53,8 +54,9 @@ type ImageChange = { kind: "keep" } | { kind: "new"; media: MediaAttachment } | 
 export type ServerCrawlerPolicy = { searchIndexing: SearchIndexing; aiUsage: AIUsage } | undefined;
 
 /**
- * The profile form (FR-006): its fields, and saving them in one change of the profile. The browser checks the
- * limits before submitting (React Aria's native validation), so `submit` runs only with valid values.
+ * The profile form (FR-006): its fields and the hashtags it features (ADR-0006 §17), and saving them with the one save
+ * button: the profile in one change, then the featured hashtags when they changed. The browser checks the limits
+ * before submitting (React Aria's native validation), so `submit` runs only with valid values.
  * Mount it again (with a `key`) to start over from a newer saved profile.
  */
 export function useProfileForm() {
@@ -84,6 +86,7 @@ export function useProfileForm() {
     instance === undefined ? undefined : { searchIndexing: instance.search_indexing, aiUsage: instance.ai_usage };
   const avatar = useImageControl(account.avatar, "avatar");
   const header = useImageControl(account.header, "header");
+  const featuredTags = useFeaturedTagsDraft(account.id);
 
   const save = useMutation({
     ...updateProfileMutation(api),
@@ -116,7 +119,7 @@ export function useProfileForm() {
 
   const draft = change();
   // Compared with the saved profile, so that an edit undone by hand leaves nothing to save.
-  const hasChanges =
+  const profileChanged =
     draft.display_name !== account.display_name ||
     draft.note !== account.source.note ||
     draft.locked !== account.locked ||
@@ -127,6 +130,8 @@ export function useProfileForm() {
     draft.avatar_media_id !== undefined ||
     draft.header_media_id !== undefined ||
     !sameFields(draft.fields ?? [], account.source.fields);
+  const hasChanges = profileChanged || featuredTags.hasChanges;
+  const isSaving = save.isPending || featuredTags.isSaving;
 
   let result: FormActionResult | undefined;
   if (save.isError)
@@ -134,7 +139,8 @@ export function useProfileForm() {
       tone: "danger",
       message: t("client:settings.profile.save_failed", { reason: errorMessage(save.error) }),
     };
-  else if (save.isSuccess && submittedAt === edits)
+  else if (featuredTags.error !== undefined) result = { tone: "danger", message: featuredTags.error };
+  else if ((save.isSuccess || featuredTags.isSaved) && !isSaving && submittedAt === edits)
     result = { tone: "success", message: t("client:settings.profile.saved") };
   /** Runs an edit of the form, which takes away the result of the last save. */
   const edit =
@@ -169,15 +175,36 @@ export function useProfileForm() {
     indexable: { isSelected: indexable, onChange: edit(setIndexable) },
     aiOptOut: { isSelected: aiOptOut, onChange: edit(setAiOptOut) },
     serverPolicy,
+    featuredTags: {
+      rows: featuredTags.rows,
+      canAdd: featuredTags.canAdd,
+      validate: featuredTags.validate,
+      add: edit(featuredTags.add),
+      update: edit(featuredTags.update),
+      remove: edit(featuredTags.remove),
+      move: edit(featuredTags.move),
+    },
     avatar: { ...avatar.control, choose: edit(avatar.control.choose), remove: edit(avatar.control.remove) },
     header: { ...header.control, choose: edit(header.control.choose), remove: edit(header.control.remove) },
     submit: (event: SyntheticEvent<HTMLFormElement>) => {
       event.preventDefault();
+      if (isSaving) return;
       setSubmittedAt(edits);
-      save.mutate(change());
+      save.reset();
+      featuredTags.reset();
+      // The profile first (also with nothing changed, as the button always saves it), unless only the hashtags
+      // changed; the hashtags then, only when they changed. A failure stops there and shows in `result`.
+      const saveProfile = profileChanged || !featuredTags.hasChanges;
+      const saveTags = featuredTags.hasChanges;
+      void (async () => {
+        if (saveProfile) await save.mutateAsync(change());
+        if (saveTags) await featuredTags.save();
+      })().catch(() => {
+        // The mutations hold the error, which `result` shows.
+      });
     },
-    isSaving: save.isPending,
-    isBusy: save.isPending || avatar.control.isUploading || header.control.isUploading,
+    isSaving,
+    isBusy: isSaving || avatar.control.isUploading || header.control.isUploading,
     /**
      * The result of the last save beside the save button (web-client/16-look-states-and-wording.md G24): saved until
      * the form changes again, or why it failed (the server names the invalid property in it).

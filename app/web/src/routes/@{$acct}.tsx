@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import { accountFeaturedTagsQueryOptions } from "../features/hashtags";
 import { ProfileView } from "../features/profile";
 import { pinnedStatusesQueryOptions } from "../features/status";
 import { type AccountTimelineFilter, accountTimelineFilters, timelineQueryOptions } from "../features/timeline";
@@ -33,6 +34,11 @@ export const Route = createFileRoute("/@{$acct}")({
       // The posts tab starts with the account's pinned posts (FR-403).
       tab === "posts" &&
         context.queryClient.query({ ...pinnedStatusesQueryOptions(context.api, account.id), staleTime: Infinity }),
+      // The hashtags it features, above the tabs, so that the tabs do not move when they come; a failure only leaves
+      // them out, so it does not fail the page.
+      context.queryClient
+        .query({ ...accountFeaturedTagsQueryOptions(context.api, account.id), staleTime: Infinity })
+        .catch(() => undefined),
     ]);
   },
   component: ProfilePage,
