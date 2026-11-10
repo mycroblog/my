@@ -105,6 +105,13 @@ tasks:
     cmds:
       - bun run typecheck
 
+  site-test:
+    desc: Run the unit tests of the documentation site (app/docs) with bun test (site:check runs it)
+    deps: [":web:install"]
+    dir: app/docs
+    cmds:
+      - bun run test
+
   # web:oxlint and web:knip cover app/docs too, as part of the whole workspace; these two let the site context check
   # it without the client's generated files.
   site-lint:

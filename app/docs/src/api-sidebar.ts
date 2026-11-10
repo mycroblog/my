@@ -5,7 +5,8 @@
 // the square of the API. The group keeps its overview and lists each tag as a link to the tag's page; only the tag of
 // the current page (its tag page or one of its operations) stays a group of its operations. The pagination that
 // starlight-openapi computed from the full group is left as it is, so the previous and next links still walk the
-// operations one by one.
+// operations one by one. Whether the group is listed at all is decided after, by the section of the current page
+// (src/section-sidebar.ts).
 import { defineRouteMiddleware, type StarlightRouteData } from "@astrojs/starlight/route-data";
 
 /** The label of the sidebar group of the reference, which this middleware finds it by. */
