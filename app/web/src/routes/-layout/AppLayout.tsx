@@ -2,7 +2,7 @@
 // The layout around every page (ADR-0025). Mobile first (web-client/README.md D1): one column with the
 // navigation as a bottom tab bar; from md a side rail and the page; from xl a third column with the server's
 // announcements, the open voice chat rooms (on a room's page, its raised hands and about the room instead), the
-// viewer's latest notifications on timeline pages, and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
+// viewer's latest notifications on timeline pages, the funding meter while the server shows it there, and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
 // Signed out, the navigation is a bar along the top and the pages are one column at every width, with no third
 // column: they end with a footer that links to the server's information and documents instead.
 import { AppShell } from "@my/ui";
@@ -12,6 +12,7 @@ import { ErrorBoundary } from "react-error-boundary";
 import { AnnouncementsPanel } from "../../features/announcements";
 import { ClosedScreen, ClosureBanner } from "../../features/closure";
 import { ComposeEntry, ComposeProvider } from "../../features/compose";
+import { FundingMeterPanel } from "../../features/costs";
 import { NotificationsPanel } from "../../features/notifications";
 import { useViewer } from "../../features/session";
 import { useUserDisplaySettings } from "../../features/settings";
@@ -75,6 +76,8 @@ export function AppLayout() {
   // The list page of the announcements has them all, so the third column does not repeat them.
   const onAnnouncementsPage = pathname === "/announcements" || pathname === "/announcements/";
   const voiceRoomId = voiceRoomPagePattern.exec(pathname)?.[1];
+  // The information page and the supporter list show the funding meter themselves.
+  const onFundingPage = ["/about", "/about/", "/about/supporters", "/about/supporters/"].includes(pathname);
   if (staffMode) {
     return (
       <ComposeProvider>
@@ -123,7 +126,8 @@ export function AppLayout() {
             aside: (
               // Independent sections: if one breaks, the page goes on without it (web-client/README.md E1). The server's
               // announcements come first, then the open voice chat rooms, while there are any, and the latest
-              // notifications, which are the longest, above about the server (web-client/09-app-shell.md §9).
+              // notifications, which are the longest, and the funding meter while the server shows it there, above about
+              // the server (web-client/09-app-shell.md §9).
               <>
                 {!onAnnouncementsPage && (
                   <ErrorBoundary fallback={null} onError={reportBoundaryError}>
@@ -143,6 +147,11 @@ export function AppLayout() {
                 {onTimelinePage && signedIn && (
                   <ErrorBoundary fallback={null} onError={reportBoundaryError}>
                     <NotificationsPanel />
+                  </ErrorBoundary>
+                )}
+                {!onFundingPage && (
+                  <ErrorBoundary fallback={null} onError={reportBoundaryError}>
+                    <FundingMeterPanel />
                   </ErrorBoundary>
                 )}
                 <ErrorBoundary fallback={null} onError={reportBoundaryError}>

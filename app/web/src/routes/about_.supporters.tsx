@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+import { Stack } from "@my/ui";
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
 import { instanceQueryOptions } from "../features/about";
+import { PublishedFundingMeter } from "../features/costs";
 import { SupporterListView, supporterListQueryOptions } from "../features/supporters";
 import { useT } from "../lib/i18n";
 import { useInstanceName } from "../lib/instanceName";
@@ -11,7 +13,8 @@ import { RouteError } from "./-layout/RouteStates";
 /**
  * The supporter list (ADR-0070 §13): the members of the supporter plans who chose to be listed, by plan, as far as the
  * instance setting supporter_list_visibility publishes it. The `_` keeps the page out of the layout of `/about`. The
- * server's shell of this address always asks search engines not to index or archive it.
+ * server's shell of this address always asks search engines not to index or archive it. This month's funding meter
+ * comes first while the instance publishes it (FR-905), whatever the list shows.
  */
 export const Route = createFileRoute("/about_/supporters")({
   loader: async ({ context: { queryClient, api } }) => {
@@ -29,7 +32,10 @@ export const Route = createFileRoute("/about_/supporters")({
 function SupportersPage() {
   return (
     <InfoLayout heading={<SupportersHeading />}>
-      <SupporterListView />
+      <Stack gap="8">
+        <PublishedFundingMeter />
+        <SupporterListView />
+      </Stack>
     </InfoLayout>
   );
 }

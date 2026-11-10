@@ -45,6 +45,11 @@ export type About = {
    */
   income: Instance["income_visibility"] | undefined;
   /**
+   * How far this month's income goes toward the monthly target (FR-905, ADR-0067 §22); undefined when the instance
+   * publishes no funding meter or has not loaded.
+   */
+  fundingMeter: Instance["funding_meter"];
+  /**
    * Where users get the source code the server runs (AGPL-3.0 section 13, ADR-0011): an https URL or a mailto: URI;
    * undefined while the instance has not loaded.
    */
@@ -86,6 +91,7 @@ export function useAbout(): About {
       instance === undefined ? undefined : { searchIndexing: instance.search_indexing, aiUsage: instance.ai_usage },
     finance: instance?.finance_visibility,
     income: instance?.income_visibility,
+    fundingMeter: instance?.funding_meter,
     sourceUrl: instance?.source_url,
     commerceDisclosureUrl: instance?.commerce_disclosure_url,
   };

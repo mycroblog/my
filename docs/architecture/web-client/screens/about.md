@@ -1,7 +1,7 @@
 ---
 start: "/about"
 persona: null
-paths: ["app/web/src/features/about/**", "app/web/src/routes/about.tsx", "app/web/src/routes/-layout/InfoLayout.tsx"]
+paths: ["app/web/src/features/about/**", "app/web/src/routes/about.tsx", "app/web/src/routes/-layout/InfoLayout.tsx", "app/web/src/features/costs/components/FundingMeter.tsx"]
 ---
 
 ## このサーバーについて（`/about`）
@@ -39,12 +39,16 @@ paths: ["app/web/src/features/about/**", "app/web/src/routes/about.tsx", "app/we
 6. 制限しているサーバー: ドメインと制限の種類とコメント。
 7. 外部の審査: 判定フックを使っているときだけ。外部の審査を使っていること、審査の対象と送るデータ（ADR-0147 §12）。設定から生成し、`local.status` は送る投稿の、`local.profile` は送るプロフィールの変更のアカウントの作成からの日数（0 ならすべてのアカウント）、`inbound.status` はフォローされていない送信者のダイレクトの投稿も送るかを、`GET /instance` の `external_review_scope` から言う。サーバーが言わない設定は、送る範囲の広い方として書く。
 8. 検索エンジンと AI: 検索エンジンと AI への表明の 2 文。表明の仕方・アカウントごとの選択・法的な扱いは、その下に畳む（`Disclosure`）。その下に、このサーバー自身のクローラーの 1 文と、その画面（[`/about/crawler`](about-crawler.md)）へのリンク。
-9. 運営の費用: 公開している範囲の費用と収入、その画面へのリンク。
+9. 運営の費用: 支援のメーター（サーバーが出しているとき。下）、公開している範囲の費用と収入、その画面へのリンク（費用か収入を公開しているとき）。費用と収入をどちらも公開していなくても、メーターがあれば区画を出す。
 10. サポーター: プランとサポーターの一覧（サーバーが出しているとき）。
 11. 特定商取引法に基づく表記: その画面へのリンク。
 12. サーバーの状態: ステータスページへのリンク（新しいタブ）。
 13. ソースコード: 入手先。
 14. ライセンス: アプリが含むもののライセンスの表記へのリンク。
+
+支援のメーター（FR-905、ADR-0067 §22、`GET /instance` の `funding_meter`）は、今月の収入が月の目標にどこまで届いているかの `ProgressMeter`（`meter`）で、名前は「{月} の支援」、値の文（見えていて、`aria-valuetext` にもなる）は「72% をまかなえています」、額を公開しているときは「¥5,000 のうち ¥3,600 (72%)」。
+目標に届いた月は 100% を超える数を出さずに「今月はまかなえています」とし、棒は満ちたまま。目標が見込みの費用を含むときは値の文に「見込み」を添え、その下に変わりうる理由を書く。額を公開しているときは、目標が今月の費用か運営者の決めた額かも下に書く。
+落ち着いた言葉にする（ADR-0110）: 支援を求める呼びかけ・注意の色・通知はない。
 
 ### 4. 主な操作と保存の仕方
 

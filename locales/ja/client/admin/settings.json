@@ -223,6 +223,78 @@
     "defaultMessage": "いまのプランごとの加入者の数も見られます。金額は出しません。加入者の少ないプランでは、誰が加入しているかを推測されるかもしれません。",
     "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
   },
+  "admin.settings.funding.title": {
+    "defaultMessage": "支援のメーター",
+    "description": "Heading of the part of the costs screen's publication form about the funding meter, which shows how far this month's income goes toward a monthly goal."
+  },
+  "admin.settings.funding.description": {
+    "defaultMessage": "情報ページに、今月の収入 (決済の事業者の手数料を引いた額)が月の目標にどこまで届いているかを出せます。通知は送りません。",
+    "description": "Description of the funding meter in the costs screen's publication form."
+  },
+  "admin.settings.funding.visibility": {
+    "defaultMessage": "メーターに出すもの",
+    "description": "Label of the choice of what the funding meter publishes (server setting funding_meter_visibility)."
+  },
+  "admin.settings.funding.off": {
+    "defaultMessage": "出さない",
+    "description": "Choice of not showing the funding meter."
+  },
+  "admin.settings.funding.off.description": {
+    "defaultMessage": "情報ページにメーターを出しません。",
+    "description": "Description of not showing the funding meter."
+  },
+  "admin.settings.funding.percent": {
+    "defaultMessage": "割合だけ",
+    "description": "Choice of showing only the percentage of the monthly goal that this month's income covers."
+  },
+  "admin.settings.funding.percent.description": {
+    "defaultMessage": "今月の収入で目標のどれだけをまかなえているか (1% 単位に切り捨て)と、今月は足りているかを誰でも見られます。額は出しません。",
+    "description": "Description of showing only the percentage of the funding meter."
+  },
+  "admin.settings.funding.amounts": {
+    "defaultMessage": "割合と額",
+    "description": "Choice of showing the percentage, this month's income, and the goal."
+  },
+  "admin.settings.funding.amounts.description": {
+    "defaultMessage": "今月の収入と目標の額も誰でも見られます。",
+    "description": "Description of showing the amounts of the funding meter too."
+  },
+  "admin.settings.funding.unavailable": {
+    "defaultMessage": "{reason, select, needs_private {費用と収入をどちらも公開していないときだけ選べます。どちらかを公開していると、割合から公開していない額が分かってしまうためです。} other {費用と収入をどちらも公開しているときだけ選べます。そうでないと、額から公開していない側が分かってしまうためです。}}",
+    "description": "Description of a choice of the funding meter that cannot be chosen with the costs and the income published as they are in the form, and why. reason is needs_private (the percentage alone) or needs_public (the amounts)."
+  },
+  "admin.settings.funding.turns_off": {
+    "defaultMessage": "{reason, select, needs_private {保存するとメーターはオフになります。割合だけを出せるのは、費用と収入をどちらも公開していないときだけです。} other {保存するとメーターはオフになります。額を出せるのは、費用と収入をどちらも公開しているときだけです。}}",
+    "description": "Note in the publication form when the costs or the income published as changed in the form rule out the funding meter's choice, which the server then turns off. reason is needs_private or needs_public."
+  },
+  "admin.settings.funding.target.description": {
+    "defaultMessage": "目標を空にすると、今月の運営の費用を目標にします (費用が 1 つの通貨のときだけ)。目標の決まらない月は、メーターを出しません。",
+    "description": "Description of the monthly goal of the funding meter in the publication form."
+  },
+  "admin.settings.funding.target.amount": {
+    "defaultMessage": "月の目標",
+    "description": "Label of the field of the funding meter's monthly goal (server setting funding_meter_target_amount)."
+  },
+  "admin.settings.funding.target.amount.description": {
+    "defaultMessage": "通貨の主な単位で、1650 や 12.50 のように書きます。",
+    "description": "Description of the field of the funding meter's monthly goal."
+  },
+  "admin.settings.funding.target.currency": {
+    "defaultMessage": "目標の通貨",
+    "description": "Label of the field of the currency of the funding meter's goal (server setting funding_meter_target_currency)."
+  },
+  "admin.settings.funding.target.currency.description": {
+    "defaultMessage": "JPY のような ISO 4217 のコード。空なら今月の費用の通貨です。",
+    "description": "Description of the field of the currency of the funding meter's goal."
+  },
+  "admin.settings.funding.rail": {
+    "defaultMessage": "横の列にも出す",
+    "description": "Label of the switch that also shows the funding meter in the third column of wide screens (server setting funding_meter_rail)."
+  },
+  "admin.settings.funding.rail.description": {
+    "defaultMessage": "ログインしている人は、情報ページに加えて、広い画面のページの横の列でもメーターを見られます。",
+    "description": "Description of showing the funding meter in the third column of wide screens too."
+  },
   "admin.settings.supporter_list.title": {
     "defaultMessage": "サポーターの一覧",
     "description": "Heading of the section of the supporter list in the server settings."

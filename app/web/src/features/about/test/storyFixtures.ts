@@ -16,6 +16,17 @@ export const describedInstance: Schemas["Instance"] = {
   contact: { email: "admin@my.example", account: { ...otherAccountFixture, display_name: "Bob (administrator)" } },
   search_indexing: "allow",
   ai_usage: "deny",
+  // The costs and the income stay private: the funding meter shows the percentage alone, its target an estimate.
+  funding_meter: {
+    visibility: "percent",
+    label: "2026-11",
+    starts_on: "2026-11-01",
+    ends_on: "2026-11-30",
+    percent: 72,
+    covered: false,
+    estimated: true,
+    rail: true,
+  },
   auto_delete_limit: {
     max_age_days: 365,
     allow_pinned: true,
