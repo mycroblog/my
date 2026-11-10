@@ -224,6 +224,19 @@ export class DraftStore {
     });
   }
 
+  /**
+   * Changes the server draft that the outbox post `idempotencyKey` publishes: its newer ETag once its content was saved,
+   * or none once it can no longer be (it is then sent as a new post).
+   */
+  setOutboxSaved(idempotencyKey: string, saved: SavedDraft | null) {
+    this.#set({
+      ...this.#state,
+      outbox: this.#state.outbox.map((o) =>
+        o.idempotencyKey === idempotencyKey ? { ...o, draft: { ...o.draft, saved } } : o,
+      ),
+    });
+  }
+
   /** Drops a post from the outbox: it was posted, or the user discarded it. */
   remove(idempotencyKey: string) {
     this.#set({ ...this.#state, outbox: this.#state.outbox.filter((o) => o.idempotencyKey !== idempotencyKey) });

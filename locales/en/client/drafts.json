@@ -194,5 +194,9 @@
   "drafts.notification_link": {
     "defaultMessage": "Open your drafts",
     "description": "Link in the notification that a scheduled post could not be published, to the drafts page where the draft is kept."
+  },
+  "drafts.publish.conflict": {
+    "defaultMessage": "This draft was changed on another device, so nothing was posted. Post again to publish this version as a new post.",
+    "description": "Under the new-post form when posting a draft opened from the drafts page failed because the draft was saved on another device since it was opened: nothing was posted or overwritten. Posting again posts this version as a new post."
   }
 }

@@ -37,6 +37,21 @@ function recordDrafts() {
   return sent;
 }
 
+/** Records the text of every POST /statuses, then lets the default handler answer. */
+function recordStatuses() {
+  const texts: string[] = [];
+  server.events.on("request:start", ({ request }) => {
+    if (new URL(request.url).pathname !== "/api/v1/statuses" || request.method !== "POST") return;
+    void request
+      .clone()
+      .json()
+      .then((body) => {
+        texts.push((body as { text: string }).text);
+      });
+  });
+  return texts;
+}
+
 async function findToast(text: string) {
   return within(await screen.findByRole("region", { name: "Messages" })).findByText(text);
 }
@@ -194,32 +209,77 @@ describe("a scheduled post", () => {
 });
 
 describe("a draft opened from the server", () => {
-  test("is deleted once posted", async () => {
-    signedIn();
-    const sent = recordDrafts();
+  /** The drafts page lists one draft, which GET /drafts/d1 reads with the ETag "v1". */
+  function oneDraft() {
+    const draft = draftFixture("d1", { text: "Written on my phone" });
     server.use(
       http.get(`${apiBase}/drafts`, ({ request }) =>
-        HttpResponse.json({
-          items:
-            new URL(request.url).searchParams.get("scheduled") === "true"
-              ? []
-              : [draftFixture("d1", { text: "Written on my phone" })],
-        }),
+        HttpResponse.json({ items: new URL(request.url).searchParams.get("scheduled") === "true" ? [] : [draft] }),
       ),
-      http.get(`${apiBase}/drafts/d1`, () =>
-        draftResponse(draftFixture("d1", { text: "Written on my phone" }), '"v1"'),
-      ),
+      http.get(`${apiBase}/drafts/d1`, () => draftResponse(draft, '"v1"')),
     );
+  }
+
+  test("is published by the server with what the form holds, never as a new post", async () => {
+    signedIn();
+    const sent = recordDrafts();
+    const statuses: unknown[] = [];
+    server.events.on("request:start", ({ request }) => {
+      if (new URL(request.url).pathname === "/api/v1/statuses") statuses.push(request.method);
+    });
+    oneDraft();
     const { user } = await renderApp({ path: "/drafts" });
 
     await user.click(await screen.findByRole("button", { name: "Edit: Written on my phone" }));
     const sheet = await screen.findByRole("dialog", { name: "New post" });
-    expect(within(sheet).getByRole("textbox", { name: "Your post" })).toHaveValue("Written on my phone");
+    const text = within(sheet).getByRole("textbox", { name: "Your post" });
+    expect(text).toHaveValue("Written on my phone");
+    await user.type(text, ", finished on my laptop");
     await user.click(within(sheet).getByRole("button", { name: "Post" }));
 
     expect(await findToast("Posted.")).toBeInTheDocument();
-    await waitFor(() => {
-      expect(sent).toContainEqual({ method: "DELETE", path: "/drafts/d1", body: null, ifMatch: null });
-    });
+    expect(sent).toEqual([
+      {
+        method: "PUT",
+        path: "/drafts/d1",
+        body: { text: "Written on my phone, finished on my laptop", visibility: "public", language: "en" },
+        ifMatch: '"v1"',
+      },
+      { method: "POST", path: "/drafts/d1/publish", body: null, ifMatch: null },
+    ]);
+    expect(statuses).toEqual([]);
+  });
+
+  test("is not published when another device saved it since, and posting again posts it as a new post", async () => {
+    signedIn();
+    const sent = recordDrafts();
+    oneDraft();
+    server.use(
+      http.put(`${apiBase}/drafts/d1`, () =>
+        HttpResponse.json(
+          { type: "about:blank", title: "Precondition Failed", status: 412 },
+          { status: 412, headers: { "Content-Type": "application/problem+json" } },
+        ),
+      ),
+    );
+    const posted = recordStatuses();
+    const { user } = await renderApp({ path: "/drafts" });
+
+    await user.click(await screen.findByRole("button", { name: "Edit: Written on my phone" }));
+    const sheet = await screen.findByRole("dialog", { name: "New post" });
+    await user.click(within(sheet).getByRole("button", { name: "Post" }));
+
+    expect(
+      await within(sheet).findByText(
+        "This draft was changed on another device, so nothing was posted. Post again to publish this version as a new post.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(sheet).getByRole("textbox", { name: "Your post" })).toHaveValue("Written on my phone");
+    expect(within(sheet).queryByText("You are editing a saved draft.")).not.toBeInTheDocument();
+    await user.click(within(sheet).getByRole("button", { name: "Post" }));
+
+    expect(await findToast("Posted.")).toBeInTheDocument();
+    expect(sent.map((r) => `${r.method} ${r.path}`)).toEqual(["PUT /drafts/d1"]);
+    expect(posted).toEqual(["Written on my phone"]);
   });
 });

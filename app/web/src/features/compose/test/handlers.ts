@@ -74,6 +74,12 @@ export const handlers = [
       '"v1"',
     );
   }),
+  // operationId publishDraft: the draft is posted as the viewer's post and leaves the server.
+  http.post(`${apiBase}/drafts/:id/publish`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json(viewerStatusFixture({ content: "<p>A saved draft</p>" }), { status: 201 }),
+    ),
+  ),
   // operationId unscheduleDraft.
   http.delete(`${apiBase}/drafts/:id/schedule`, ({ request, params }) =>
     withViewer(request, () => draftResponse(draftFixture(String(params["id"]), { text: "A saved draft" }), '"v1"')),

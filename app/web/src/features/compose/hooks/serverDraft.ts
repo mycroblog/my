@@ -3,7 +3,7 @@
 // post would refuse (empty text, media still being processed, a poll still being written), so the request carries the
 // draft as it is; publishing checks it as a new post.
 import type { DraftRequest, DraftVersion } from "../api/drafts";
-import type { Visibility } from "../api/compose";
+import type { CreateStatusRequest, Visibility } from "../api/compose";
 import { type Draft, emptyDraft } from "./draftStore";
 import { maxPollOptions, pollDurations, type PollDraft } from "./poll";
 
@@ -24,6 +24,25 @@ export function draftRequest(draft: Draft, visibility: Visibility, language: str
     ...(draft.replyToId === null ? {} : { in_reply_to_id: draft.replyToId }),
     ...(draft.quoteId === null ? {} : { quoted_status_id: draft.quoteId }),
     ...(Object.keys(draft.interactionPolicy).length === 0 ? {} : { interaction_policy: draft.interactionPolicy }),
+  };
+}
+
+/**
+ * The content of a draft that is published at once: the request of the post it becomes, which has the draft's fields
+ * (the server checks it as that post when it publishes it).
+ */
+export function draftRequestOfPost(body: CreateStatusRequest): DraftRequest {
+  return {
+    text: body.text,
+    visibility: body.visibility,
+    ...(body.language === undefined ? {} : { language: body.language }),
+    ...(body.spoiler_text === undefined ? {} : { spoiler_text: body.spoiler_text }),
+    ...(body.media === undefined ? {} : { media: body.media }),
+    ...(body.sensitive === undefined ? {} : { sensitive: body.sensitive }),
+    ...(body.poll === undefined ? {} : { poll: body.poll }),
+    ...(body.in_reply_to_id === undefined ? {} : { in_reply_to_id: body.in_reply_to_id }),
+    ...(body.quoted_status_id === undefined ? {} : { quoted_status_id: body.quoted_status_id }),
+    ...(body.interaction_policy === undefined ? {} : { interaction_policy: body.interaction_policy }),
   };
 }
 

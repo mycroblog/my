@@ -6,6 +6,7 @@ import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { components } from "@mycroblog/mykit";
 import type { Api } from "../../../lib/api/client";
 import { ApiError } from "../../../lib/errors";
+import type { Status } from "./compose";
 
 export type ServerDraft = components["schemas"]["Draft"];
 export type DraftRequest = components["schemas"]["DraftRequest"];
@@ -93,6 +94,17 @@ export async function scheduleDraft(api: Api, id: string, publishAt: Date): Prom
 /** Cancels the schedule of the draft `id`, which stays as a draft (DELETE /drafts/{id}/schedule). */
 export async function unscheduleDraft(api: Api, id: string): Promise<ServerDraft> {
   const { data, error } = await api.fetch.DELETE("/drafts/{id}/schedule", { params: { path: { id } } });
+  if (data === undefined) throw new ApiError(error);
+  return data;
+}
+
+/**
+ * Publishes the draft `id` as it is saved now (POST /drafts/{id}/publish): the server posts it with the checks of a new
+ * post and deletes the draft with its schedule in the same transaction, so it is published once. A draft that cannot
+ * be published stays as it was (a 422 with the problem of a new post, such as the automated review's refusal).
+ */
+export async function publishDraft(api: Api, id: string): Promise<Status> {
+  const { data, error } = await api.fetch.POST("/drafts/{id}/publish", { params: { path: { id } } });
   if (data === undefined) throw new ApiError(error);
   return data;
 }

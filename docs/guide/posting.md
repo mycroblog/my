@@ -21,8 +21,8 @@ Choose "Save draft" to keep what you are writing on the server and empty the for
 you sign in on: the link "Drafts and scheduled posts" under the form leads to the page that lists them, where "Edit"
 opens a draft in the form again. When the form already holds something else, you are asked before it is replaced.
 Saving a draft you opened from that page replaces it; posting it publishes it and removes it from your drafts. If the
-same draft was saved on another device since you opened it, nothing is overwritten: save again to keep your version as
-a new draft.
+same draft was saved on another device since you opened it, nothing is overwritten or posted: save again to keep your
+version as a new draft, or post again to publish your version as a new post.
 
 To publish a post later, choose "Schedule the post" (the clock among the form's tools), pick a date and a time, and
 choose "Schedule". The date and time are in your time zone, the one in your preferences, and the form names it. A time

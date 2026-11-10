@@ -24,7 +24,7 @@ import {
   statusRejection,
   type Visibility,
 } from "../api/compose";
-import { cacheDraftChange, deleteDraft } from "../api/drafts";
+import { cacheDraftChange, isDraftConflict, publishDraft, updateDraft } from "../api/drafts";
 import { type Draft, isEmptyDraft, type Rejection, type SavedDraft } from "./draftStore";
 import {
   type InteractionKind,
@@ -37,7 +37,7 @@ import { newPoll, type PollDraft, pollProblem, pollRequest, withOption, withoutO
 import { type LanguageOption, languageOptions } from "./languages";
 import { countCharacters, chosenVisibility, domainMentions, postedVisibility } from "./policy";
 import { rememberTags } from "./recentTags";
-import { draftRequest } from "./serverDraft";
+import { draftRequest, draftRequestOfPost } from "./serverDraft";
 import { type Attachments, descriptionFieldId, useAttachments } from "./useAttachments";
 import { type ComposeController, composeTextId, useComposeState } from "./useCompose";
 import { type ServerDraftForm, useServerDraft } from "./useServerDraft";
@@ -289,22 +289,26 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
 
   const send = useMutation({
     mutationKey: createStatusMutationKey,
-    mutationFn: ({ idempotencyKey, body }: SendVariables) => createStatus(api, body, idempotencyKey),
+    // A draft opened from the server is published by the server (ADR-0156 §9): its content is saved first, over the
+    // version the form opened (If-Match), and the publish deletes it in the same transaction as the post, so it is
+    // posted once and never left behind. The newer ETag is kept with the outbox post, for a retry.
+    mutationFn: async ({ idempotencyKey, body }: SendVariables) => {
+      const saved = store.getSnapshot().outbox.find((o) => o.idempotencyKey === idempotencyKey)?.draft.saved ?? null;
+      if (saved === null) return createStatus(api, body, idempotencyKey);
+      const version = await updateDraft(api, saved.id, saved.etag, draftRequestOfPost(body));
+      store.setOutboxSaved(idempotencyKey, { ...saved, etag: version.etag });
+      return publishDraft(api, saved.id);
+    },
     onSuccess: async (status, { idempotencyKey, body }) => {
       // The post is done once the lists it appears in are fetched again (it stays in the outbox as sending
       // until then), so that a list opened next shows it at once (web-client/README.md S1). A failed refetch does
       // not fail the post: that list fetches again when it is shown.
       const isFirstPost = countPostedStatus(api, queryClient) === 1;
       await cachePostedStatus(api, queryClient, status);
-      const saved = store.getSnapshot().outbox.find((o) => o.idempotencyKey === idempotencyKey)?.draft.saved ?? null;
+      const published = store.getSnapshot().outbox.find((o) => o.idempotencyKey === idempotencyKey)?.draft.saved;
       store.remove(idempotencyKey);
-      // A draft opened from the drafts page is done once posted: it leaves the server, with its schedule. A failure
-      // leaves the draft there, where the person can delete it; the post is made.
-      if (saved !== null) {
-        void deleteDraft(api, saved.id)
-          .then(() => cacheDraftChange(queryClient))
-          .catch(() => undefined);
-      }
+      // A published draft has left the server, with its schedule: the lists of the drafts page lose it.
+      if (published != null) await cacheDraftChange(queryClient);
       // The server narrows the visibility of a restricted account (data-model/05-states-and-policies.md §5.4); say so.
       const narrowed = status.visibility !== body.visibility;
       if (narrowed) {
@@ -335,7 +339,12 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
         notice.inPlace([rejection.title, rejection.detail].filter((part) => part !== null).join(" "), "assertive");
         return;
       }
-      const message = t("client:compose.failed", { reason: errorMessage(error) });
+      // Another device saved the draft since the form opened it: nothing was published or overwritten. The post
+      // leaves the draft, so that sending it again posts this version as a new post.
+      if (isDraftConflict(error)) store.setOutboxSaved(idempotencyKey, null);
+      const message = isDraftConflict(error)
+        ? t("client:drafts.publish.conflict")
+        : t("client:compose.failed", { reason: errorMessage(error) });
       store.restore(idempotencyKey, message);
       notice.inPlace(message, "assertive");
     },
