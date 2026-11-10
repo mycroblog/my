@@ -258,6 +258,18 @@ func TestNormalizeArticle(t *testing.T) {
 	o = object(t, `{"type":"Article","id":"https://a.example/a/3","image":"https://a.example/c.png"}`)
 	equal(t, "no title, an IRI as the image", o.Article, &federation.ReceivedArticle{Cover: &federation.Attachment{Type: "Image", URL: "https://a.example/c.png"}})
 	equal(t, "no image", object(t, `{"type":"Article","id":"https://a.example/a/4","image":[{"type":"Image"}]}`).Article.Cover, (*federation.Attachment)(nil))
+	o = object(t, `{"type":"Article","id":"https://a.example/a/5","content":"<p>本文</p>","nameMap":{"ja-jp":"題"},"summaryMap":{"en":"Summary"}}`)
+	equal(t, "the language of nameMap", o.Bodies, []federation.Body{{Language: "ja-JP", HTML: "<p>本文</p>"}})
+	equal(t, "the title of nameMap", o.Article.Title, "題")
+	o = object(t, `{"type":"Article","id":"https://a.example/a/6","content":"<p>x</p>","name":"T","summaryMap":{"de":"Z"}}`)
+	equal(t, "the language of summaryMap", o.Bodies[0].Language, "de")
+	o = object(t, `{"type":"Article","id":"https://a.example/a/7","content":"<p>x</p>","nameMap":{"!!":"T"},"summaryMap":{"fr":"Z"}}`)
+	equal(t, "an invalid key of nameMap falls back to summaryMap", o.Bodies[0].Language, "fr")
+	o = object(t, `{"type":"Article","id":"https://a.example/a/8","content":"<p>x</p>","contentMap":{"en":"<p>x</p>"},"nameMap":{"ja":"T"}}`)
+	equal(t, "contentMap wins", o.Bodies[0].Language, "en")
+	equal(t, "a Note takes the language of nameMap too",
+		object(t, `{"type":"Note","id":"https://a.example/n/2","content":"<p>x</p>","summaryMap":{"pt-br":"cw"}}`).Bodies[0].Language, "pt-BR")
+	equal(t, "no map, no language", object(t, `{"type":"Note","id":"https://a.example/n/3","content":"<p>x</p>"}`).Bodies[0].Language, "und")
 	equal(t, "a Note has no article", object(t, `{"type":"Note","id":"https://a.example/n/1","name":"x"}`).Article, (*federation.ReceivedArticle)(nil))
 }
 

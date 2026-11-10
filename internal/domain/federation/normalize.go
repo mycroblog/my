@@ -577,9 +577,26 @@ func bodies(o object) ([]Body, error) {
 		}
 	}
 	if len(out) == 0 && content != "" {
-		out = []Body{{Language: UndeterminedLang, HTML: content}}
+		out = []Body{{Language: mapLanguage(o), HTML: content}}
 	}
 	return out, nil
+}
+
+// mapLanguage returns the language of a content without a contentMap, as Mastodon reads it: the
+// first key of nameMap, else of summaryMap, as a canonical BCP 47 tag; UndeterminedLang when
+// neither names a valid one. An Article in one language sends its content alone and names the
+// language in the maps of its title and summary.
+func mapLanguage(o object) string {
+	for _, prop := range []string{"nameMap", "summaryMap"} {
+		m, ok := o.get(prop).(object)
+		if !ok || len(m) == 0 {
+			continue
+		}
+		if lang := canonicalLanguage(m[0].key); lang != UndeterminedLang {
+			return lang
+		}
+	}
+	return UndeterminedLang
 }
 
 // body reads one HTML value and enforces MaxBodyBytes.
