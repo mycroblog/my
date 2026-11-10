@@ -100,6 +100,33 @@ type IncomeRepository interface {
 	// ListIncome returns up to limit movements of f, newest first by OccurredAt and ID, before
 	// the movement before ("" for the first page).
 	ListIncome(ctx context.Context, f IncomeFilter, before string, limit int) ([]IncomeRecord, error)
+	// UpgradeIncomeSources gives up to limit rows recorded before the column source theirs, and
+	// returns how many it rewrote: first the movements of a subscription, then the refunds,
+	// chargebacks, and reversals whose source is not their payment's (UpgradeIncomeSources).
+	UpgradeIncomeSources(ctx context.Context, tx uow.Tx, limit int) (int64, error)
+}
+
+// IncomeSourcesUpgradeBatch is the most rows one transaction of the step rewrites.
+const IncomeSourcesUpgradeBatch = 500
+
+// UpgradeIncomeSources is the work of the data upgrade step finance.income_sources (ADR-0023 §5,
+// ADR-0162 §8) on repo: it rewrites the sources in transactions of at most
+// IncomeSourcesUpgradeBatch rows until none is left. It is safe to run again: a row that has its
+// source is never rewritten.
+func UpgradeIncomeSources(ctx context.Context, u uow.UnitOfWork, repo IncomeRepository) error {
+	for {
+		var n int64
+		if err := u.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			n, err = repo.UpgradeIncomeSources(ctx, tx, IncomeSourcesUpgradeBatch)
+			return err
+		}); err != nil {
+			return fmt.Errorf("finance: upgrade the income sources: %w", err)
+		}
+		if n == 0 {
+			return nil
+		}
+	}
 }
 
 // PlanCount is the number of members of a supporter plan (ADR-0067 §17).

@@ -141,3 +141,20 @@ func (r *Repository) ListIncome(ctx context.Context, f appfinance.IncomeFilter, 
 	}
 	return out, nil
 }
+
+// UpgradeIncomeSources implements appfinance.Repository.
+func (r *Repository) UpgradeIncomeSources(ctx context.Context, tx uow.Tx, limit int) (int64, error) {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return 0, err
+	}
+	n, err := q.UpgradeIncomeSubscriptionSources(ctx, int64(limit))
+	if err != nil {
+		return 0, sqlite.Wrap(err, "upgrade income subscription sources")
+	}
+	if n > 0 {
+		return n, nil
+	}
+	n, err = q.UpgradeIncomeChildSources(ctx, int64(limit))
+	return n, sqlite.Wrap(err, "upgrade income child sources")
+}

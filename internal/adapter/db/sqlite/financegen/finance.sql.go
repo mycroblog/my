@@ -859,6 +859,42 @@ func (q *Queries) SumBillingImportRuns(ctx context.Context, arg SumBillingImport
 	return i, err
 }
 
+const upgradeIncomeChildSources = `-- name: UpgradeIncomeChildSources :execrows
+UPDATE income_movements SET source = (SELECT p.source FROM income_movements p WHERE p.id = income_movements.parent_movement_id)
+WHERE id IN (
+  SELECT c.id FROM income_movements c JOIN income_movements p ON p.id = c.parent_movement_id
+  WHERE c.source <> p.source ORDER BY c.id LIMIT ?1
+)
+`
+
+func (q *Queries) UpgradeIncomeChildSources(ctx context.Context, lim int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, upgradeIncomeChildSources, lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const upgradeIncomeSubscriptionSources = `-- name: UpgradeIncomeSubscriptionSources :execrows
+
+UPDATE income_movements SET source = 'subscription'
+WHERE id IN (
+  SELECT id FROM income_movements WHERE source = 'unknown' AND subscription_id IS NOT NULL ORDER BY id LIMIT ?1
+)
+`
+
+// The data upgrade step finance.income_sources (ADR-0023 section 5): the rows recorded before
+// the column source. A movement of a subscription is of the subscriptions, and a refund, a
+// chargeback, or a reversal takes the source of its payment; each statement rewrites up to lim
+// rows, and none once every row has its source.
+func (q *Queries) UpgradeIncomeSubscriptionSources(ctx context.Context, lim int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, upgradeIncomeSubscriptionSources, lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const upsertCostItemHead = `-- name: UpsertCostItemHead :exec
 INSERT INTO cost_item_heads (cost_item_id, label_revision_id, ends_on) VALUES (?, ?, ?)
 ON CONFLICT (cost_item_id) DO UPDATE SET label_revision_id = excluded.label_revision_id, ends_on = excluded.ends_on

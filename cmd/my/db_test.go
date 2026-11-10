@@ -22,6 +22,8 @@ func dbCmd(args []string, out, errOut *bytes.Buffer) int { return runDB(args, ou
 
 func TestDBUpgradeWithoutSteps(t *testing.T) {
 	newAdminEnv(t)
+	dbAppOptions = platform.AppOptions{DataUpgrades: &platform.DataUpgrades{}}
+	t.Cleanup(func() { dbAppOptions = platform.AppOptions{} })
 	if code, stdout, stderr := runCmd(t, dbCmd, "upgrade", "-check"); code != 0 || stdout != "ok: the database can be upgraded to this release\n" {
 		t.Errorf("db upgrade -check = %d %q %q", code, stdout, stderr)
 	}

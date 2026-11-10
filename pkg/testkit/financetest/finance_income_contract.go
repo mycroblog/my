@@ -10,6 +10,7 @@ import (
 	"time"
 
 	appfinance "github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/finance"
 	"github.com/mycroblog/my/pkg/testkit"
 )
@@ -334,6 +335,66 @@ func financeIncomeSources(t *testing.T, e *financeEnv) {
 	e.dir.Tips = true
 	if on, err := e.svc.TipsEnabled(ctx); err != nil || !on {
 		t.Errorf("TipsEnabled = %v, %v, want true", on, err)
+	}
+}
+
+// financeIncomeSourcesUpgrade records movements as the releases before the column source did
+// (all of them unknown) and runs the data upgrade step: the movements of a subscription become
+// subscription, a refund without a subscription takes its payment's source, a fee stays unknown,
+// a tip stays one_time, each statement rewrites at most its limit, and a second run rewrites
+// nothing.
+func financeIncomeSourcesUpgrade(t *testing.T, e *financeEnv) {
+	ctx := t.Context()
+	pay := incomeMovement(t, "txn_old", finance.IncomePayment, "2026-05-03", "500", "18", "482")
+	pay.SubscriptionID = testkit.NamedID("sub_old")
+	refund := incomeMovement(t, "txn_old_refund", finance.IncomeRefund, "2026-05-10", "-100", "0", "-100")
+	refund.ParentID, refund.SubscriptionID = "txn_old", testkit.NamedID("sub_old")
+	orphan := incomeMovement(t, "txn_old_orphan", finance.IncomeRefund, "2026-05-11", "-100", "0", "-100")
+	orphan.ParentID = "txn_old"
+	fee := incomeMovement(t, "txn_old_fee", finance.IncomeFee, "2026-05-31", "0", "84", "-84")
+	tip := incomeMovement(t, "txn_new_tip", finance.IncomePayment, "2026-05-12", "300", "10", "290")
+	tip.Source = string(finance.SourceOneTime)
+	if err := e.svc.RecordIncome(ctx, []appfinance.IncomeMovement{pay, refund, orphan, fee, tip}); err != nil {
+		t.Fatal(err)
+	}
+	var total int64
+	for range 20 {
+		var n int64
+		if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			n, err = e.h.Finance.UpgradeIncomeSources(ctx, tx, 1)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if n > 1 {
+			t.Fatalf("UpgradeIncomeSources(limit 1) rewrote %d rows", n)
+		}
+		if n == 0 {
+			break
+		}
+		total += n
+	}
+	if total != 3 {
+		t.Errorf("rows rewritten = %d, want 3 (the payment, its refund, and the refund without a subscription)", total)
+	}
+	if err := appfinance.UpgradeIncomeSources(ctx, e.h.UnitOfWork, e.h.Finance); err != nil {
+		t.Fatalf("UpgradeIncomeSources again = %v", err)
+	}
+	all, err := e.svc.ListIncome(ctx, appfinance.IncomeFilter{From: finance.MinDate, To: finance.MaxDate}, "", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]finance.IncomeSource{}
+	for _, m := range all {
+		got[m.ProviderID] = m.Source
+	}
+	want := map[string]finance.IncomeSource{
+		"txn_old": finance.SourceSubscription, "txn_old_refund": finance.SourceSubscription, "txn_old_orphan": finance.SourceSubscription,
+		"txn_old_fee": finance.SourceUnknown, "txn_new_tip": finance.SourceOneTime,
+	}
+	if !mapsEqual(got, want) {
+		t.Errorf("sources after the upgrade = %v, want %v", got, want)
 	}
 }
 

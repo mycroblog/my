@@ -187,3 +187,22 @@ WHERE m.occurred_on >= sqlc.arg(starts_on)::date AND m.occurred_on <= sqlc.arg(e
     OR (m.occurred_at, m.id) < (SELECT b.occurred_at, b.id FROM income_movements b WHERE b.id = sqlc.narg(before)::uuid))
 ORDER BY m.occurred_at DESC, m.id DESC
 LIMIT sqlc.arg(lim);
+
+-- The data upgrade step finance.income_sources (ADR-0023 section 5): the rows recorded before
+-- the column source. A movement of a subscription is of the subscriptions, and a refund, a
+-- chargeback, or a reversal takes the source of its payment; each statement rewrites up to lim
+-- rows, and none once every row has its source.
+
+-- name: UpgradeIncomeSubscriptionSources :execrows
+UPDATE income_movements SET source = 'subscription'
+WHERE id IN (
+  SELECT id FROM income_movements WHERE source = 'unknown' AND subscription_id IS NOT NULL ORDER BY id LIMIT sqlc.arg(lim)::integer
+);
+
+-- name: UpgradeIncomeChildSources :execrows
+UPDATE income_movements c SET source = p.source
+FROM income_movements p
+WHERE p.id = c.parent_movement_id AND c.id IN (
+  SELECT x.id FROM income_movements x JOIN income_movements y ON y.id = x.parent_movement_id
+  WHERE x.source <> y.source ORDER BY x.id LIMIT sqlc.arg(lim)::integer
+);

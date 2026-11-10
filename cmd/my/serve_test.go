@@ -51,6 +51,9 @@ func TestServeStopsOnSIGTERM(t *testing.T) {
 	t.Setenv("MY_LISTEN", addr)
 
 	var stderr bytes.Buffer
+	if code := run([]string{"db", "upgrade"}, &bytes.Buffer{}, &stderr); code != 0 {
+		t.Fatalf("db upgrade = %d: %s", code, stderr.String())
+	}
 	done := make(chan int, 1)
 	go func() { done <- run([]string{"serve"}, &bytes.Buffer{}, &stderr) }()
 

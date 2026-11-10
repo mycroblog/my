@@ -100,6 +100,7 @@ func TestServeRecordsTheDomainsOnceTheSchemaIsApplied(t *testing.T) {
 		t.Fatalf("readiness without the schema = %d, want 503", resp.StatusCode)
 	}
 	applySchema(t, path, "")
+	upgrade(t, s.app)
 	deadline := time.Now().Add(10 * time.Second)
 	for {
 		resp, body := s.do(t, http.MethodGet, platform.PathReadiness, nil)

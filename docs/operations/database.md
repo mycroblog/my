@@ -97,8 +97,10 @@ An upgrade to a new release always runs these steps in this order, with the **ne
 
 `my serve` never runs `my db upgrade -check`, `my schema apply`, or `my db upgrade`; they are one-off jobs. Run only one of them against a database at a time.
 
-Most releases have no data upgrade step: `my db upgrade -check` prints `ok: the database can be upgraded to this release` and
-`my db upgrade` prints `ok: no data upgrade step to run`. Run both anyway, so the procedure does not depend on reading every release note.
+Most releases add no data upgrade step: `my db upgrade -check` prints `ok: the database can be upgraded to this release` and, on a
+database that recorded the steps of the earlier releases, `my db upgrade` prints `ok: no data upgrade step to run`. A new database records
+every step of the release in its first `my db upgrade`, with nothing to rewrite. Run both anyway, so the procedure does not depend on reading
+every release note.
 The release notes' **Upgrading** section lists the steps of each release.
 
 ### The server during an upgrade

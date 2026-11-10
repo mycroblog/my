@@ -61,6 +61,7 @@ func FinanceRepositoryContract(t *testing.T, newHarness FinanceFactory) {
 		{"RecordsIncomeOnceAndTotalsIt", financeIncomeRecords},
 		{"ListsIncomeMovements", financeIncomeList},
 		{"KeepsTheSourcesOfIncome", financeIncomeSources},
+		{"UpgradesTheSourcesOfOldIncome", financeIncomeSourcesUpgrade},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newFinanceEnv(t, newHarness)) })
