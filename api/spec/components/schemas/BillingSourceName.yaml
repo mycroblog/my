@@ -3,4 +3,4 @@ description: |
   A source of the billing imports (`billing_sources`): a cloud provider, or `plugin`, the
   operator's plugin that aggregates any other providers.
 type: string
-enum: [aws, gcp, plugin]
+enum: [aws, gcp, cloudflare, plugin]

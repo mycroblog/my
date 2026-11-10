@@ -6,7 +6,7 @@ import "github.com/mycroblog/my/internal/app/kernel"
 
 // Label keys of the billing import metric (ADR-0055 §3).
 const (
-	// LabelBillingSource is the billing source of an import (billing_sources: aws, gcp, plugin).
+	// LabelBillingSource is the billing source of an import (billing_sources: aws, gcp, cloudflare, plugin).
 	LabelBillingSource = "my.billing.source"
 	LabelOutcome       = "my.outcome"
 	// LabelErrorType is the ImportErrorKind of a failed import.

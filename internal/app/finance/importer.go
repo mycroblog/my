@@ -58,7 +58,7 @@ const (
 )
 
 // sourceProvider returns the provider's name that the totals and the screens show for a source:
-// the name of Deps.ProviderNames, AWS, Google Cloud, or the source's name for another.
+// the name of Deps.ProviderNames, AWS, Google Cloud, Cloudflare, or the source's name for another.
 func (s *Service) sourceProvider(source string) string {
 	if name := s.d.ProviderNames[source]; name != "" {
 		return name
@@ -68,6 +68,8 @@ func (s *Service) sourceProvider(source string) string {
 		return "AWS"
 	case "gcp":
 		return "Google Cloud"
+	case "cloudflare":
+		return "Cloudflare"
 	}
 	return source
 }

@@ -25,6 +25,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.51.6
 	github.com/aws/aws-sdk-go-v2/service/translate v1.43.5
 	github.com/aws/smithy-go v1.28.7
+	github.com/cloudflare/cloudflare-go/v7 v7.14.0
 	github.com/dadrus/httpsig v0.9.0
 	github.com/deepteams/webp v1.2.8
 	github.com/dunglas/httpsfv v1.1.2
@@ -182,6 +183,10 @@ require (
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/spiffe/go-spiffe/v2 v2.8.1 // indirect
 	github.com/stretchr/testify v1.12.1 // indirect
+	github.com/tidwall/gjson v1.14.4 // indirect
+	github.com/tidwall/match v1.1.1 // indirect
+	github.com/tidwall/pretty v1.2.1 // indirect
+	github.com/tidwall/sjson v1.2.5 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/tklauser/go-sysconf v0.4.0 // indirect
 	github.com/tklauser/numcpus v0.12.0 // indirect
