@@ -216,43 +216,43 @@ export function TextAreaMirror({
       synced();
     };
     control.addEventListener("scroll", onScroll, { passive: true });
+    // The pending frames and whether the effect was cleaned up, as properties: React Compiler rejects reassigning a
+    // variable in a function that runs after render.
+    const effect = { scrollFrame: 0, resizeFrame: 0, disposed: false };
     // An input scrolls its line to keep the caret in view as the caret moves, which not every engine tells with a
     // scroll event; the caret's moves come as selectionchange, after which the scroll is read in the next frame.
-    let scrollFrame = 0;
     const onSelectionChange = () => {
-      cancelAnimationFrame(scrollFrame);
-      scrollFrame = requestAnimationFrame(onScroll);
+      cancelAnimationFrame(effect.scrollFrame);
+      effect.scrollFrame = requestAnimationFrame(onScroll);
     };
     const doc = control.ownerDocument;
     if (control instanceof HTMLInputElement) doc.addEventListener("selectionchange", onSelectionChange);
     // What follows a resize (the autocomplete moves its anchor, which React Aria observes) waits for the next frame, so
     // it does not resize observed elements inside this observer's own delivery.
     // jsdom (the component tests) has neither a ResizeObserver nor document.fonts.
-    let frame = 0;
     const observer =
       typeof ResizeObserver === "undefined"
         ? null
         : new ResizeObserver(() => {
             copyLayout(control, box);
-            cancelAnimationFrame(frame);
-            frame = requestAnimationFrame(synced);
+            cancelAnimationFrame(effect.resizeFrame);
+            effect.resizeFrame = requestAnimationFrame(synced);
           });
     observer?.observe(control);
     const fonts = "fonts" in doc ? doc.fonts : null;
     fonts?.addEventListener("loadingdone", sync);
     // Fonts already loading when this mounts may finish without a loadingdone for this mirror, and a style that settles
     // after the first copy (a metric tied to the font) changes no size the observer sees: copy once more when they are ready.
-    let disposed = false;
     void fonts?.ready.then(() => {
-      if (!disposed) sync();
+      if (!effect.disposed) sync();
     });
     return () => {
-      disposed = true;
+      effect.disposed = true;
       control.removeEventListener("scroll", onScroll);
       doc.removeEventListener("selectionchange", onSelectionChange);
       observer?.disconnect();
-      cancelAnimationFrame(frame);
-      cancelAnimationFrame(scrollFrame);
+      cancelAnimationFrame(effect.resizeFrame);
+      cancelAnimationFrame(effect.scrollFrame);
       fonts?.removeEventListener("loadingdone", sync);
     };
   }, [textareaRef]);
