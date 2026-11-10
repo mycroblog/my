@@ -13,7 +13,7 @@ import { useFederation } from "../../../lib/federation";
 import { isRemoteAcct } from "../../../lib/handle";
 import { type Translate, useT } from "../../../lib/i18n";
 import { moderationAccountPath } from "../../../lib/paths";
-import { useQuote, useReply } from "../../compose";
+import { quotePolicyOf, useQuote, useReply } from "../../compose";
 import { useViewer } from "../../session";
 import { hasRelation, relationCount } from "../api/cache";
 import { useLikeSlot } from "./useLikeSlot";
@@ -304,9 +304,9 @@ export function useStatusActions(status: Status): StatusActions | null {
         },
     staysLocal,
     quotePolicy:
-      isAuthor && post.quote_policy !== undefined
+      isAuthor && post.interaction_policy !== undefined
         ? {
-            value: policy.isPending ? policy.variables : post.quote_policy,
+            value: policy.isPending ? policy.variables : quotePolicyOf(post.interaction_policy.quote),
             set: (value) => {
               policy.mutate(value);
             },

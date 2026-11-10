@@ -99,6 +99,9 @@ type Relationship struct {
 // follow request does not count.
 func (r Relationship) ActivelyFollowing() bool { return r.Following == graph.StateActive }
 
+// ActivelyFollowedBy reports whether the target's follow of the account is active.
+func (r Relationship) ActivelyFollowedBy() bool { return r.FollowedBy == graph.StateActive }
+
 // RequestedFollow reports whether the account's follow of the target awaits approval.
 func (r Relationship) RequestedFollow() bool { return r.Following == graph.StatePending }
 

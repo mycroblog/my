@@ -2909,6 +2909,30 @@ func (e InstanceTextKey) Valid() bool {
 	}
 }
 
+// Defines values for InteractionAudience.
+const (
+	InteractionAudienceEveryone  InteractionAudience = "everyone"
+	InteractionAudienceFollowers InteractionAudience = "followers"
+	InteractionAudienceMentioned InteractionAudience = "mentioned"
+	InteractionAudienceNobody    InteractionAudience = "nobody"
+)
+
+// Valid indicates whether the value is a known member of the InteractionAudience enum.
+func (e InteractionAudience) Valid() bool {
+	switch e {
+	case InteractionAudienceEveryone:
+		return true
+	case InteractionAudienceFollowers:
+		return true
+	case InteractionAudienceMentioned:
+		return true
+	case InteractionAudienceNobody:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InviteCreatorKind.
 const (
 	InviteCreatorKindMember InviteCreatorKind = "member"
@@ -3647,27 +3671,6 @@ func (e Permission) Valid() bool {
 	case PermissionViewAudit:
 		return true
 	case PermissionViewFinance:
-		return true
-	default:
-		return false
-	}
-}
-
-// Defines values for QuotePolicy.
-const (
-	QuotePolicyFollowers QuotePolicy = "followers"
-	QuotePolicyNobody    QuotePolicy = "nobody"
-	QuotePolicyPublic    QuotePolicy = "public"
-)
-
-// Valid indicates whether the value is a known member of the QuotePolicy enum.
-func (e QuotePolicy) Valid() bool {
-	switch e {
-	case QuotePolicyFollowers:
-		return true
-	case QuotePolicyNobody:
-		return true
-	case QuotePolicyPublic:
 		return true
 	default:
 		return false
@@ -8672,6 +8675,10 @@ type CreateStatusRequest struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
 
+	// InteractionPolicy Who may reply to, boost, and quote the new status; the kinds left out take the user's
+	// `default_interaction_policy`.
+	InteractionPolicy *InteractionPolicyChange `json:"interaction_policy,omitempty"`
+
 	// Language A BCP 47 language tag; omitted means the user's default post language.
 	Language *StatusLanguageInput `json:"language,omitempty"`
 
@@ -8681,9 +8688,6 @@ type CreateStatusRequest struct {
 	// Poll A poll of a new status. It ends `expires_in` seconds after the status is
 	// posted; the author and the users who voted are notified then.
 	Poll *PollInput `json:"poll,omitempty"`
-
-	// QuotePolicy Who may quote the new status; the user's `default_quote_policy` when left out.
-	QuotePolicy *QuotePolicy `json:"quote_policy,omitempty"`
 
 	// QuotedStatusId The status to quote. It must be one the user may see and may quote
 	// (`Status.quotable`); a quote of a boost is a quote of the boosted status. A `local`,
@@ -10507,6 +10511,59 @@ type InstanceTranslationProvider struct {
 	Visibilities []Visibility `json:"visibilities"`
 }
 
+// InteractionAudience Whom an interaction policy admits, narrowest first: `nobody` the author alone, `mentioned`
+// the accounts the status mentions, `followers` the author's followers and the accounts the
+// status mentions, `everyone` anyone who may see the status. The author always may interact.
+type InteractionAudience string
+
+// InteractionPolicy Who may reply to, boost, and quote a status. Whatever the policy, a followers-only status is
+// boosted and quoted only by its author, a direct one is neither boosted nor quoted, and a reply
+// from an account the status mentions is always admitted.
+type InteractionPolicy struct {
+	// Announce Who may boost the status.
+	Announce InteractionRule `json:"announce"`
+
+	// Quote Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+	// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+	// others are refused.
+	Quote InteractionRule `json:"quote"`
+
+	// Reply Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+	// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+	// others are refused.
+	Reply InteractionRule `json:"reply"`
+}
+
+// InteractionPolicyChange A change of an interaction policy: the kinds left out keep their rules. Interactions approved
+// before stay.
+type InteractionPolicyChange struct {
+	// Announce Who may boost the status.
+	Announce *InteractionRule `json:"announce,omitempty"`
+
+	// Quote Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+	// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+	// others are refused.
+	Quote *InteractionRule `json:"quote,omitempty"`
+
+	// Reply Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+	// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+	// others are refused.
+	Reply *InteractionRule `json:"reply,omitempty"`
+}
+
+// InteractionRule Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+// others are refused.
+type InteractionRule struct {
+	// Automatic Whom an interaction policy admits, narrowest first: `nobody` the author alone, `mentioned`
+	// the accounts the status mentions, `followers` the author's followers and the accounts the
+	// status mentions, `everyone` anyone who may see the status. The author always may interact.
+	Automatic InteractionAudience `json:"automatic"`
+
+	// Manual Whom the author approves by hand; wider than `automatic`. Left out for none.
+	Manual *InteractionAudience `json:"manual,omitempty"`
+}
+
 // InviteCreatorKind How the invite was created. `staff`: by a holder of `manage_invites` or with the CLI; no cap
 // applies and its creator is not checked. `member`: by a member through their own invites,
 // under the caps of the instance settings; it works only while its creator may create invites.
@@ -12128,11 +12185,12 @@ type PostingLimits struct {
 
 // Preferences The authenticated user's preferences.
 type Preferences struct {
+	// DefaultInteractionPolicy Who may reply to, boost, and quote the user's new statuses, for the kinds their
+	// `interaction_policy` leaves out. Everyone at once for a new user.
+	DefaultInteractionPolicy InteractionPolicy `json:"default_interaction_policy"`
+
 	// DefaultPostLanguage The language of new posts that name none, a BCP 47 language tag; `und` when undetermined.
 	DefaultPostLanguage string `json:"default_post_language"`
-
-	// DefaultQuotePolicy Who may quote the user's new statuses that name no `quote_policy`.
-	DefaultQuotePolicy QuotePolicy `json:"default_quote_policy"`
 
 	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
@@ -12516,12 +12574,6 @@ type QrCode struct {
 	// Size The width and height of the view box, in modules.
 	Size int `json:"size"`
 }
-
-// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
-// the author's followers, `nobody` the author alone. A followers-only status is quoted only
-// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
-// its policy.
-type QuotePolicy string
 
 // QuoteState The state of a quote as the viewer sees it, with the values of Mastodon's
 // `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
@@ -12960,15 +13012,6 @@ type SetLinkCardDomainRuleRequest struct {
 	Note *string `json:"note,omitempty"`
 }
 
-// SetQuotePolicyRequest Who may quote the status from now on. Approvals given before stay.
-type SetQuotePolicyRequest struct {
-	// QuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
-	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
-	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
-	// its policy.
-	QuotePolicy QuotePolicy `json:"quote_policy"`
-}
-
 // SetThemeRequest The whole theme; tokens left out go back to their defaults.
 type SetThemeRequest struct {
 	CustomCss string            `json:"custom_css"`
@@ -13087,6 +13130,9 @@ type Status struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
 
+	// InteractionPolicy Who may reply to, boost, and quote the status; given only to its author.
+	InteractionPolicy *InteractionPolicy `json:"interaction_policy,omitempty"`
+
 	// Language The BCP 47 language tag of the text; `und` when it is unknown.
 	Language string `json:"language"`
 
@@ -13110,16 +13156,14 @@ type Status struct {
 	// `own_votes` describe the authenticated user's vote and are omitted for anonymous requests.
 	Poll *Poll `json:"poll,omitempty"`
 
-	// Quotable Whether the authenticated user may quote the status (its `quote_policy`, its visibility,
-	// and the user's follow of the author decide it); omitted for anonymous requests.
+	// Quotable Whether the authenticated user may quote the status (the `quote` rule of its interaction
+	// policy, its visibility, and how the user stands with the author decide it); true too when
+	// the quote waits for the author's approval. Omitted for anonymous requests.
 	Quotable *bool `json:"quotable,omitempty"`
 
 	// Quote The status that this status quotes; omitted when it quotes none, and in a
 	// `quoted_status`.
 	Quote *StatusQuote `json:"quote,omitempty"`
-
-	// QuotePolicy Who may quote the status; given only to its author.
-	QuotePolicy *QuotePolicy `json:"quote_policy,omitempty"`
 
 	// Reactions The emoji reactions to the status, counted per emoji: the 20 emoji with the most
 	// reactions, the most first. The others are seen in `listStatusReactions`. Favourites
@@ -13896,14 +13940,11 @@ type UpdateOwnCustomEmojiRequest struct {
 
 // UpdatePreferencesRequest A change of the preferences; properties left out keep their current values.
 type UpdatePreferencesRequest struct {
+	// DefaultInteractionPolicy The defaults of the kinds it has; the others stay.
+	DefaultInteractionPolicy *InteractionPolicyChange `json:"default_interaction_policy,omitempty"`
+
 	// DefaultPostLanguage The language of new posts that name none; `und` for undetermined.
 	DefaultPostLanguage *string `json:"default_post_language,omitempty"`
-
-	// DefaultQuotePolicy Who may quote a status: `public` anyone who may see it, `followers`
-	// the author's followers, `nobody` the author alone. A followers-only status is quoted only
-	// by its author, in a followers-only or direct status, and a direct one by nobody, whatever
-	// its policy.
-	DefaultQuotePolicy *QuotePolicy `json:"default_quote_policy,omitempty"`
 
 	// DefaultVisibility Who may see a status: `public` everyone, listed on public timelines;
 	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
@@ -15903,11 +15944,11 @@ type CreateStatusJSONRequestBody = CreateStatusRequest
 // EditStatusJSONRequestBody defines body for EditStatus for application/json ContentType.
 type EditStatusJSONRequestBody = EditStatusRequest
 
+// SetStatusInteractionPolicyJSONRequestBody defines body for SetStatusInteractionPolicy for application/json ContentType.
+type SetStatusInteractionPolicyJSONRequestBody = InteractionPolicyChange
+
 // VoteInPollJSONRequestBody defines body for VoteInPoll for application/json ContentType.
 type VoteInPollJSONRequestBody = VoteInPollRequest
-
-// SetStatusQuotePolicyJSONRequestBody defines body for SetStatusQuotePolicy for application/json ContentType.
-type SetStatusQuotePolicyJSONRequestBody = SetQuotePolicyRequest
 
 // ReactToStatusJSONRequestBody defines body for ReactToStatus for application/json ContentType.
 type ReactToStatusJSONRequestBody = ReactToStatusRequest
@@ -22820,6 +22861,32 @@ type ClientInterface interface {
 	// Corresponds with GET /statuses/{id}/history (the `GetStatusHistory` operationId).
 	GetStatusHistory(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// SetStatusInteractionPolicyWithBody Change who may reply to, boost, and quote the authenticated user's status
+	//
+	// Changes the `interaction_policy` of a status of the user for the kinds the request has;
+	// the others stay. Interactions approved before stay, and an approval of a quote is revoked
+	// on its own. Another account's status is a 403 when the user may see it and a 404
+	// otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+	// included.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
+	SetStatusInteractionPolicyWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetStatusInteractionPolicy Change who may reply to, boost, and quote the authenticated user's status
+	//
+	// Changes the `interaction_policy` of a status of the user for the kinds the request has;
+	// the others stay. Interactions approved before stay, and an approval of a quote is revoked
+	// on its own. Another account's status is a 403 when the user may see it and a 404
+	// otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+	// included.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
+	SetStatusInteractionPolicy(ctx context.Context, id StatusId, body SetStatusInteractionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// UnpinStatus Unpin a status
 	//
 	// Without a pin it changes nothing.
@@ -22864,30 +22931,6 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /statuses/{id}/poll/votes (the `VoteInPoll` operationId).
 	VoteInPoll(ctx context.Context, id StatusId, body VoteInPollJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// SetStatusQuotePolicyWithBody Change who may quote the authenticated user's status
-	//
-	// Changes the `quote_policy` of a status of the user; the approvals given
-	// before stay, and each is revoked on its own. Another account's status is a 403 when the
-	// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
-	// `read:direct`, the user's own included.
-	//
-	// Takes any type of body and a specified content type.
-	//
-	// Corresponds with PUT /statuses/{id}/quote_policy (the `SetStatusQuotePolicy` operationId).
-	SetStatusQuotePolicyWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
-
-	// SetStatusQuotePolicy Change who may quote the authenticated user's status
-	//
-	// Changes the `quote_policy` of a status of the user; the approvals given
-	// before stay, and each is revoked on its own. Another account's status is a 403 when the
-	// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
-	// `read:direct`, the user's own included.
-	//
-	// Takes a body of the `application/json` content type.
-	//
-	// Corresponds with PUT /statuses/{id}/quote_policy (the `SetStatusQuotePolicy` operationId).
-	SetStatusQuotePolicy(ctx context.Context, id StatusId, body SetStatusQuotePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ListStatusQuotes List the statuses that quote the authenticated user's status
 	//
@@ -33051,6 +33094,52 @@ func (c *Client) GetStatusHistory(ctx context.Context, id StatusId, reqEditors .
 	return c.Client.Do(req)
 }
 
+// SetStatusInteractionPolicyWithBody Change who may reply to, boost, and quote the authenticated user's status
+//
+// Changes the `interaction_policy` of a status of the user for the kinds the request has;
+// the others stay. Interactions approved before stay, and an approval of a quote is revoked
+// on its own. Another account's status is a 403 when the user may see it and a 404
+// otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+// included.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
+func (c *Client) SetStatusInteractionPolicyWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetStatusInteractionPolicyRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetStatusInteractionPolicy Change who may reply to, boost, and quote the authenticated user's status
+//
+// Changes the `interaction_policy` of a status of the user for the kinds the request has;
+// the others stay. Interactions approved before stay, and an approval of a quote is revoked
+// on its own. Another account's status is a 403 when the user may see it and a 404
+// otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+// included.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
+func (c *Client) SetStatusInteractionPolicy(ctx context.Context, id StatusId, body SetStatusInteractionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetStatusInteractionPolicyRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // UnpinStatus Unpin a status
 //
 // Without a pin it changes nothing.
@@ -33126,50 +33215,6 @@ func (c *Client) VoteInPollWithBody(ctx context.Context, id StatusId, contentTyp
 // Corresponds with POST /statuses/{id}/poll/votes (the `VoteInPoll` operationId).
 func (c *Client) VoteInPoll(ctx context.Context, id StatusId, body VoteInPollJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewVoteInPollRequest(c.Server, id, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// SetStatusQuotePolicyWithBody Change who may quote the authenticated user's status
-//
-// Changes the `quote_policy` of a status of the user; the approvals given
-// before stay, and each is revoked on its own. Another account's status is a 403 when the
-// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
-// `read:direct`, the user's own included.
-//
-// Takes any type of body and a specified content type.
-//
-// Corresponds with PUT /statuses/{id}/quote_policy (the `SetStatusQuotePolicy` operationId).
-func (c *Client) SetStatusQuotePolicyWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetStatusQuotePolicyRequestWithBody(c.Server, id, contentType, body)
-	if err != nil {
-		return nil, err
-	}
-	req = req.WithContext(ctx)
-	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
-		return nil, err
-	}
-	return c.Client.Do(req)
-}
-
-// SetStatusQuotePolicy Change who may quote the authenticated user's status
-//
-// Changes the `quote_policy` of a status of the user; the approvals given
-// before stay, and each is revoked on its own. Another account's status is a 403 when the
-// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
-// `read:direct`, the user's own included.
-//
-// Takes a body of the `application/json` content type.
-//
-// Corresponds with PUT /statuses/{id}/quote_policy (the `SetStatusQuotePolicy` operationId).
-func (c *Client) SetStatusQuotePolicy(ctx context.Context, id StatusId, body SetStatusQuotePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewSetStatusQuotePolicyRequest(c.Server, id, body)
 	if err != nil {
 		return nil, err
 	}
@@ -48556,6 +48601,53 @@ func NewGetStatusHistoryRequest(server string, id StatusId) (*http.Request, erro
 	return req, nil
 }
 
+// NewSetStatusInteractionPolicyRequest calls the generic SetStatusInteractionPolicy builder with application/json body
+func NewSetStatusInteractionPolicyRequest(server string, id StatusId, body SetStatusInteractionPolicyJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetStatusInteractionPolicyRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewSetStatusInteractionPolicyRequestWithBody constructs an http.Request for the SetStatusInteractionPolicy method, with any body, and a specified content type
+func NewSetStatusInteractionPolicyRequestWithBody(server string, id StatusId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/statuses/%s/interaction_policy", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewUnpinStatusRequest constructs an http.Request for the UnpinStatus method
 func NewUnpinStatusRequest(server string, id StatusId) (*http.Request, error) {
 	var err error
@@ -48662,53 +48754,6 @@ func NewVoteInPollRequestWithBody(server string, id StatusId, contentType string
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
-	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Add("Content-Type", contentType)
-
-	return req, nil
-}
-
-// NewSetStatusQuotePolicyRequest calls the generic SetStatusQuotePolicy builder with application/json body
-func NewSetStatusQuotePolicyRequest(server string, id StatusId, body SetStatusQuotePolicyJSONRequestBody) (*http.Request, error) {
-	var bodyReader io.Reader
-	buf, err := json.Marshal(body)
-	if err != nil {
-		return nil, err
-	}
-	bodyReader = bytes.NewReader(buf)
-	return NewSetStatusQuotePolicyRequestWithBody(server, id, "application/json", bodyReader)
-}
-
-// NewSetStatusQuotePolicyRequestWithBody constructs an http.Request for the SetStatusQuotePolicy method, with any body, and a specified content type
-func NewSetStatusQuotePolicyRequestWithBody(server string, id StatusId, contentType string, body io.Reader) (*http.Request, error) {
-	var err error
-
-	var pathParam0 string
-
-	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
-	if err != nil {
-		return nil, err
-	}
-
-	serverURL, err := url.Parse(server)
-	if err != nil {
-		return nil, err
-	}
-
-	operationPath := fmt.Sprintf("/statuses/%s/quote_policy", pathParam0)
-	if operationPath[0] == '/' {
-		operationPath = "." + operationPath
-	}
-
-	queryURL, err := serverURL.Parse(operationPath)
-	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -56983,6 +57028,32 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /statuses/{id}/history (the `GetStatusHistory` operationId).
 	GetStatusHistoryWithResponse(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*GetStatusHistoryResponse, error)
 
+	// SetStatusInteractionPolicyWithBodyWithResponse Change who may reply to, boost, and quote the authenticated user's status
+	//
+	// Changes the `interaction_policy` of a status of the user for the kinds the request has;
+	// the others stay. Interactions approved before stay, and an approval of a quote is revoked
+	// on its own. Another account's status is a 403 when the user may see it and a 404
+	// otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+	// included.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
+	SetStatusInteractionPolicyWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetStatusInteractionPolicyResponse, error)
+
+	// SetStatusInteractionPolicyWithResponse Change who may reply to, boost, and quote the authenticated user's status
+	//
+	// Changes the `interaction_policy` of a status of the user for the kinds the request has;
+	// the others stay. Interactions approved before stay, and an approval of a quote is revoked
+	// on its own. Another account's status is a 403 when the user may see it and a 404
+	// otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+	// included.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
+	SetStatusInteractionPolicyWithResponse(ctx context.Context, id StatusId, body SetStatusInteractionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*SetStatusInteractionPolicyResponse, error)
+
 	// UnpinStatusWithResponse Unpin a status
 	//
 	// Without a pin it changes nothing.
@@ -57031,30 +57102,6 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /statuses/{id}/poll/votes (the `VoteInPoll` operationId).
 	VoteInPollWithResponse(ctx context.Context, id StatusId, body VoteInPollJSONRequestBody, reqEditors ...RequestEditorFn) (*VoteInPollResponse, error)
-
-	// SetStatusQuotePolicyWithBodyWithResponse Change who may quote the authenticated user's status
-	//
-	// Changes the `quote_policy` of a status of the user; the approvals given
-	// before stay, and each is revoked on its own. Another account's status is a 403 when the
-	// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
-	// `read:direct`, the user's own included.
-	//
-	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with PUT /statuses/{id}/quote_policy (the `SetStatusQuotePolicy` operationId).
-	SetStatusQuotePolicyWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetStatusQuotePolicyResponse, error)
-
-	// SetStatusQuotePolicyWithResponse Change who may quote the authenticated user's status
-	//
-	// Changes the `quote_policy` of a status of the user; the approvals given
-	// before stay, and each is revoked on its own. Another account's status is a 403 when the
-	// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
-	// `read:direct`, the user's own included.
-	//
-	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-	//
-	// Corresponds with PUT /statuses/{id}/quote_policy (the `SetStatusQuotePolicy` operationId).
-	SetStatusQuotePolicyWithResponse(ctx context.Context, id StatusId, body SetStatusQuotePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*SetStatusQuotePolicyResponse, error)
 
 	// ListStatusQuotesWithResponse List the statuses that quote the authenticated user's status
 	//
@@ -78679,6 +78726,71 @@ func (r GetStatusHistoryResponse) ContentType() string {
 	return ""
 }
 
+// SetStatusInteractionPolicyResponse200Headers the declared response headers of an HTTP 200 response for SetStatusInteractionPolicy
+type SetStatusInteractionPolicyResponse200Headers struct {
+	CacheControl *string
+}
+
+// SetStatusInteractionPolicyResponseDefaultHeaders the declared response headers of an HTTP default response for SetStatusInteractionPolicy
+type SetStatusInteractionPolicyResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SetStatusInteractionPolicyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusAfterAction
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SetStatusInteractionPolicyResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SetStatusInteractionPolicyResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetStatusInteractionPolicyResponse) GetJSON200() *StatusAfterAction {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SetStatusInteractionPolicyResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SetStatusInteractionPolicyResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetStatusInteractionPolicyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetStatusInteractionPolicyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetStatusInteractionPolicyResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // UnpinStatusResponse200Headers the declared response headers of an HTTP 200 response for UnpinStatus
 type UnpinStatusResponse200Headers struct {
 	CacheControl *string
@@ -78868,71 +78980,6 @@ func (r VoteInPollResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r VoteInPollResponse) ContentType() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Header.Get("Content-Type")
-	}
-	return ""
-}
-
-// SetStatusQuotePolicyResponse200Headers the declared response headers of an HTTP 200 response for SetStatusQuotePolicy
-type SetStatusQuotePolicyResponse200Headers struct {
-	CacheControl *string
-}
-
-// SetStatusQuotePolicyResponseDefaultHeaders the declared response headers of an HTTP default response for SetStatusQuotePolicy
-type SetStatusQuotePolicyResponseDefaultHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
-	RetryAfter      *int
-	WWWAuthenticate *string
-}
-
-type SetStatusQuotePolicyResponse struct {
-	Body         []byte
-	HTTPResponse *http.Response
-	// JSON200 the response for an HTTP 200 `application/json` response
-	JSON200 *StatusAfterAction
-	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
-	ApplicationproblemJSONDefault *Problem
-	// Headers200 the parsed response headers for an HTTP 200 response
-	Headers200 *SetStatusQuotePolicyResponse200Headers
-	// HeadersDefault the parsed response headers for an HTTP default response
-	HeadersDefault *SetStatusQuotePolicyResponseDefaultHeaders
-}
-
-// GetJSON200 returns the response for an HTTP 200 `application/json` response
-func (r SetStatusQuotePolicyResponse) GetJSON200() *StatusAfterAction {
-	return r.JSON200
-}
-
-// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
-func (r SetStatusQuotePolicyResponse) GetApplicationproblemJSONDefault() *Problem {
-	return r.ApplicationproblemJSONDefault
-}
-
-// GetBody returns the raw response body bytes
-func (r SetStatusQuotePolicyResponse) GetBody() []byte {
-	return r.Body
-}
-
-// Status returns HTTPResponse.Status
-func (r SetStatusQuotePolicyResponse) Status() string {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.Status
-	}
-	return http.StatusText(0)
-}
-
-// StatusCode returns HTTPResponse.StatusCode
-func (r SetStatusQuotePolicyResponse) StatusCode() int {
-	if r.HTTPResponse != nil {
-		return r.HTTPResponse.StatusCode
-	}
-	return 0
-}
-
-// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
-func (r SetStatusQuotePolicyResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -90563,6 +90610,44 @@ func (c *ClientWithResponses) GetStatusHistoryWithResponse(ctx context.Context, 
 	return ParseGetStatusHistoryResponse(rsp)
 }
 
+// SetStatusInteractionPolicyWithBodyWithResponse Change who may reply to, boost, and quote the authenticated user's status
+//
+// Changes the `interaction_policy` of a status of the user for the kinds the request has;
+// the others stay. Interactions approved before stay, and an approval of a quote is revoked
+// on its own. Another account's status is a 403 when the user may see it and a 404
+// otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+// included.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
+func (c *ClientWithResponses) SetStatusInteractionPolicyWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetStatusInteractionPolicyResponse, error) {
+	rsp, err := c.SetStatusInteractionPolicyWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetStatusInteractionPolicyResponse(rsp)
+}
+
+// SetStatusInteractionPolicyWithResponse Change who may reply to, boost, and quote the authenticated user's status
+//
+// Changes the `interaction_policy` of a status of the user for the kinds the request has;
+// the others stay. Interactions approved before stay, and an approval of a quote is revoked
+// on its own. Another account's status is a 403 when the user may see it and a 404
+// otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+// included.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
+func (c *ClientWithResponses) SetStatusInteractionPolicyWithResponse(ctx context.Context, id StatusId, body SetStatusInteractionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*SetStatusInteractionPolicyResponse, error) {
+	rsp, err := c.SetStatusInteractionPolicy(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetStatusInteractionPolicyResponse(rsp)
+}
+
 // UnpinStatusWithResponse Unpin a status
 //
 // Without a pin it changes nothing.
@@ -90634,42 +90719,6 @@ func (c *ClientWithResponses) VoteInPollWithResponse(ctx context.Context, id Sta
 		return nil, err
 	}
 	return ParseVoteInPollResponse(rsp)
-}
-
-// SetStatusQuotePolicyWithBodyWithResponse Change who may quote the authenticated user's status
-//
-// Changes the `quote_policy` of a status of the user; the approvals given
-// before stay, and each is revoked on its own. Another account's status is a 403 when the
-// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
-// `read:direct`, the user's own included.
-//
-// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with PUT /statuses/{id}/quote_policy (the `SetStatusQuotePolicy` operationId).
-func (c *ClientWithResponses) SetStatusQuotePolicyWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetStatusQuotePolicyResponse, error) {
-	rsp, err := c.SetStatusQuotePolicyWithBody(ctx, id, contentType, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSetStatusQuotePolicyResponse(rsp)
-}
-
-// SetStatusQuotePolicyWithResponse Change who may quote the authenticated user's status
-//
-// Changes the `quote_policy` of a status of the user; the approvals given
-// before stay, and each is revoked on its own. Another account's status is a 403 when the
-// user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
-// `read:direct`, the user's own included.
-//
-// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
-//
-// Corresponds with PUT /statuses/{id}/quote_policy (the `SetStatusQuotePolicy` operationId).
-func (c *ClientWithResponses) SetStatusQuotePolicyWithResponse(ctx context.Context, id StatusId, body SetStatusQuotePolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*SetStatusQuotePolicyResponse, error) {
-	rsp, err := c.SetStatusQuotePolicy(ctx, id, body, reqEditors...)
-	if err != nil {
-		return nil, err
-	}
-	return ParseSetStatusQuotePolicyResponse(rsp)
 }
 
 // ListStatusQuotesWithResponse List the statuses that quote the authenticated user's status
@@ -116860,6 +116909,83 @@ func ParseGetStatusHistoryResponse(rsp *http.Response) (*GetStatusHistoryRespons
 	return response, nil
 }
 
+// ParseSetStatusInteractionPolicyResponse parses an HTTP response from a SetStatusInteractionPolicyWithResponse call
+func ParseSetStatusInteractionPolicyResponse(rsp *http.Response) (*SetStatusInteractionPolicyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetStatusInteractionPolicyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusAfterAction
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SetStatusInteractionPolicyResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers SetStatusInteractionPolicyResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseUnpinStatusResponse parses an HTTP response from a UnpinStatusWithResponse call
 func ParseUnpinStatusResponse(rsp *http.Response) (*UnpinStatusResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -117057,83 +117183,6 @@ func ParseVoteInPollResponse(rsp *http.Response) (*VoteInPollResponse, error) {
 		response.Headers200 = &headers
 	case true:
 		var headers VoteInPollResponseDefaultHeaders
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.ContentLanguage = &value
-		}
-		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
-			var value int
-			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.RetryAfter = &value
-		}
-		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.WWWAuthenticate = &value
-		}
-		response.HeadersDefault = &headers
-	}
-
-	return response, nil
-}
-
-// ParseSetStatusQuotePolicyResponse parses an HTTP response from a SetStatusQuotePolicyWithResponse call
-func ParseSetStatusQuotePolicyResponse(rsp *http.Response) (*SetStatusQuotePolicyResponse, error) {
-	bodyBytes, err := io.ReadAll(rsp.Body)
-	defer func() { _ = rsp.Body.Close() }()
-	if err != nil {
-		return nil, err
-	}
-
-	response := &SetStatusQuotePolicyResponse{
-		Body:         bodyBytes,
-		HTTPResponse: rsp,
-	}
-
-	switch {
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
-		var dest StatusAfterAction
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.JSON200 = &dest
-
-	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
-		var dest Problem
-		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
-			return nil, err
-		}
-		response.ApplicationproblemJSONDefault = &dest
-
-	}
-
-	switch {
-	case rsp.StatusCode == 200:
-		var headers SetStatusQuotePolicyResponse200Headers
-		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
-			var value string
-			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
-				return nil, err
-			}
-			headers.CacheControl = &value
-		}
-		response.Headers200 = &headers
-	case true:
-		var headers SetStatusQuotePolicyResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

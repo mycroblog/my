@@ -143,6 +143,13 @@ export function relationshipFixture(
   };
 }
 
+/** An `InteractionPolicy` that lets everyone reply, boost, and quote at once: a new user's default. */
+export const interactionPolicyFixture: Schemas["InteractionPolicy"] = {
+  reply: { automatic: "everyone" },
+  announce: { automatic: "everyone" },
+  quote: { automatic: "everyone" },
+};
+
 /** The signed-in user's `Preferences` for GET /preferences (operationId getPreferences). */
 export const preferencesFixture: Schemas["Preferences"] = {
   locale: "en",
@@ -151,13 +158,28 @@ export const preferencesFixture: Schemas["Preferences"] = {
   locale_follows_browser: false,
   time_zone_follows_browser: false,
   default_visibility: "public",
-  default_quote_policy: "public",
+  default_interaction_policy: interactionPolicyFixture,
   default_post_language: "en",
   require_media_description: false,
   timeline_auto_insert: true,
   link_card_size: "large",
   timeline_languages: [],
 };
+
+/**
+ * The preferences after a change of PATCH /preferences, as the server answers it: the kinds of the default
+ * interaction policy that the change leaves out keep their rules.
+ */
+export function changedPreferences(
+  preferences: Schemas["Preferences"],
+  { default_interaction_policy: policy, ...change }: Schemas["UpdatePreferencesRequest"],
+): Schemas["Preferences"] {
+  return {
+    ...preferences,
+    ...change,
+    default_interaction_policy: { ...preferences.default_interaction_policy, ...policy },
+  };
+}
 
 /** The renditions of an image whose every size is served at `url`, as a remote account's avatar is. */
 export function imageFixture(url: string): Schemas["MediaVariants"] {

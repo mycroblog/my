@@ -10,6 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/domain/hook"
+	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -23,15 +24,15 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 	content.RegisterQuoteProjectors(a.Projectors, quotes)
 	a.Content = content.NewService(content.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: statuses, Accounts: a.Accounts, Relationships: a.Graph,
-		Restrictions:            a.AccountPolicy.Content(),
-		Media:                   medias,
-		RemoteMentions:          remoteMentions{a}, // reads a.RemoteActors, built by setUpRemoteActors
-		Sanitizer:               newHTMLSanitizer(),
-		RemoteMedia:             remoteMediaRecorder{a}, // reads a.Media, built by setMedia
-		Quotes:                  quotes,
-		DefaultQuotePolicy:      a.defaultQuotePolicy,
-		MaxStatusLength:         a.Instance.MaxStatusLength,
-		RequireMediaDescription: a.Instance.RequireMediaDescription,
+		Restrictions:             a.AccountPolicy.Content(),
+		Media:                    medias,
+		RemoteMentions:           remoteMentions{a}, // reads a.RemoteActors, built by setUpRemoteActors
+		Sanitizer:                newHTMLSanitizer(),
+		RemoteMedia:              remoteMediaRecorder{a}, // reads a.Media, built by setMedia
+		Quotes:                   quotes,
+		DefaultInteractionPolicy: a.defaultInteractionPolicy,
+		MaxStatusLength:          a.Instance.MaxStatusLength,
+		RequireMediaDescription:  a.Instance.RequireMediaDescription,
 		// A one-person server posts nothing new as local (ADR-0152 §5).
 		SingleUser:      a.Instance.SingleUser,
 		DefaultLanguage: a.defaultPostLanguage,
@@ -90,17 +91,21 @@ func (a *App) setUpPreviews(statuses content.Repository) {
 	})
 }
 
-// defaultQuotePolicy returns who may quote the new statuses of a user (ADR-0069 §1): the
-// default of their preferences.
-func (a *App) defaultQuotePolicy(ctx context.Context, userID string) (content.QuotePolicy, error) {
+// defaultInteractionPolicy returns who may reply to, boost, and quote the new statuses of a user
+// (ADR-0155 §5): the defaults of their preferences.
+func (a *App) defaultInteractionPolicy(ctx context.Context, userID string) (content.InteractionSettings, error) {
 	p, err := a.Identity.Preferences(ctx, userID)
 	if errors.Is(err, identity.ErrNotFound) {
-		return content.QuotePolicyPublic, nil
+		return content.DefaultInteractionSettings, nil
 	}
 	if err != nil {
-		return "", err
+		return content.InteractionSettings{}, err
 	}
-	return content.QuotePolicy(p.DefaultQuotePolicy), nil
+	setting := func(s domainidentity.InteractionSetting) content.InteractionSetting {
+		return content.InteractionSetting{Automatic: content.InteractionAudience(s.Automatic), Manual: content.InteractionAudience(s.Manual)}
+	}
+	d := p.DefaultInteractionPolicy
+	return content.InteractionSettings{Reply: setting(d.Reply), Announce: setting(d.Announce), Quote: setting(d.Quote)}, nil
 }
 
 // defaultPostLanguage returns the default post language of a user's preferences, or "" for a

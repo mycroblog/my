@@ -456,11 +456,11 @@ func (h *StatusHandlers) store(ctx context.Context, author appaccount.Actor, obj
 	if author.Deleted() {
 		return appcontent.Status{}, fmt.Errorf("%w: the author of %s is deleted", ErrNotTaken, obj.ID)
 	}
-	followers, err := h.followers(ctx, author)
+	cols, err := h.collections(ctx, author)
 	if err != nil {
 		return appcontent.Status{}, err
 	}
-	mentions, err := h.mentions(ctx, obj, followers)
+	mentions, err := h.mentions(ctx, obj, cols.followers)
 	if err != nil {
 		return appcontent.Status{}, err
 	}
@@ -469,7 +469,7 @@ func (h *StatusHandlers) store(ctx context.Context, author appaccount.Actor, obj
 			return appcontent.Status{}, err
 		}
 	}
-	in := h.inputOf(author, federation.Audience{}, "", obj, followers, mentions)
+	in := h.inputOf(author, federation.Audience{}, "", obj, cols, mentions)
 	if opts.relay != nil && in.Visibility != appcontent.VisibilityPublic {
 		return appcontent.Status{}, fmt.Errorf("%w: the relayed %s is not public", ErrNotTaken, obj.ID)
 	}

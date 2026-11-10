@@ -4,6 +4,7 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { errorMessage } from "../../../lib/errors";
 import { useT } from "../../../lib/i18n";
+import { type QuotePolicy, quotePolicyChange, quotePolicyOf } from "../../compose";
 import { useAppLocale } from "../../../lib/locale";
 import { saveStateOf } from "./saveState";
 import { deviceTimeZone } from "./timeZones";
@@ -21,7 +22,6 @@ export const followBrowser = "browser";
 /** The preferences that the settings page changes, by their API name. */
 type PreferenceKey =
   | "default_visibility"
-  | "default_quote_policy"
   | "default_post_language"
   | "require_media_description"
   | "timeline_languages"
@@ -46,7 +46,7 @@ export type PreferencesControls = {
   /** The chosen time zone, or `followBrowser`. */
   timeZone: PreferenceControl<string>;
   defaultVisibility: PreferenceControl<Preferences["default_visibility"]>;
-  defaultQuotePolicy: PreferenceControl<Preferences["default_quote_policy"]>;
+  defaultQuotePolicy: PreferenceControl<QuotePolicy>;
   defaultPostLanguage: PreferenceControl<string>;
   requireMediaDescription: PreferenceControl<boolean>;
   timelineLanguages: PreferenceControl<string[]>;
@@ -81,7 +81,7 @@ export function usePreferences(): PreferencesControls {
       detect: () => ({ time_zone: deviceTimeZone() }),
     }),
     defaultVisibility: usePreferenceControl("default_visibility", data.default_visibility),
-    defaultQuotePolicy: usePreferenceControl("default_quote_policy", data.default_quote_policy),
+    defaultQuotePolicy: useDefaultQuotePolicyControl(data.default_interaction_policy.quote),
     defaultPostLanguage: usePreferenceControl("default_post_language", data.default_post_language),
     requireMediaDescription: usePreferenceControl("require_media_description", data.require_media_description),
     timelineLanguages: usePreferenceControl("timeline_languages", data.timeline_languages),
@@ -118,6 +118,23 @@ function usePreferenceControl<K extends PreferenceKey>(
     value: (pending ?? saved) as Preferences[K],
     onChange: (value) => {
       mutation.mutate({ [key]: value });
+    },
+    isPending: mutation.isPending,
+    error: mutation.isError ? errorMessage(mutation.error) : undefined,
+    saveState: saveStateOf(mutation),
+  };
+}
+
+/** Who may quote a new post by default: the quote rule of the default interaction policy, which the change sets alone. */
+function useDefaultQuotePolicyControl(
+  saved: Preferences["default_interaction_policy"]["quote"],
+): PreferenceControl<QuotePolicy> {
+  const mutation = useSaveChange();
+  const pending = mutation.isPending ? mutation.variables.default_interaction_policy?.quote : undefined;
+  return {
+    value: quotePolicyOf(pending ?? saved),
+    onChange: (value) => {
+      mutation.mutate({ default_interaction_policy: quotePolicyChange(value) });
     },
     isPending: mutation.isPending,
     error: mutation.isError ? errorMessage(mutation.error) : undefined,

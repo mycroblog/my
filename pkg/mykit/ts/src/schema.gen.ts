@@ -2908,7 +2908,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/statuses/{id}/quote_policy": {
+    "/statuses/{id}/interaction_policy": {
         parameters: {
             query?: never;
             header?: never;
@@ -2920,13 +2920,14 @@ export interface paths {
         };
         get?: never;
         /**
-         * Change who may quote the authenticated user's status
-         * @description Changes the `quote_policy` of a status of the user; the approvals given
-         *     before stay, and each is revoked on its own. Another account's status is a 403 when the
-         *     user may see it and a 404 otherwise. A `direct` status is a 404 to a token without
-         *     `read:direct`, the user's own included.
+         * Change who may reply to, boost, and quote the authenticated user's status
+         * @description Changes the `interaction_policy` of a status of the user for the kinds the request has;
+         *     the others stay. Interactions approved before stay, and an approval of a quote is revoked
+         *     on its own. Another account's status is a 403 when the user may see it and a 404
+         *     otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+         *     included.
          */
-        put: operations["setStatusQuotePolicy"];
+        put: operations["setStatusInteractionPolicy"];
         post?: never;
         delete?: never;
         options?: never;
@@ -11578,8 +11579,11 @@ export interface components {
              *     `off` or `inbound`) is the 403 `/api/v1/problems/federation-restricted`.
              */
             quoted_status_id?: components["schemas"]["Id"];
-            /** @description Who may quote the new status; the user's `default_quote_policy` when left out. */
-            quote_policy?: components["schemas"]["QuotePolicy"];
+            /**
+             * @description Who may reply to, boost, and quote the new status; the kinds left out take the user's
+             *     `default_interaction_policy`.
+             */
+            interaction_policy?: components["schemas"]["InteractionPolicyChange"];
         };
         /** @description A new webhook. */
         CreateWebhookRequest: {
@@ -14063,8 +14067,11 @@ export interface components {
              */
             time_zone_follows_browser: boolean;
             default_visibility: components["schemas"]["Visibility"];
-            /** @description Who may quote the user's new statuses that name no `quote_policy`. */
-            default_quote_policy: components["schemas"]["QuotePolicy"];
+            /**
+             * @description Who may reply to, boost, and quote the user's new statuses, for the kinds their
+             *     `interaction_policy` leaves out. Everyone at once for a new user.
+             */
+            default_interaction_policy: components["schemas"]["InteractionPolicy"];
             /** @description The language of new posts that name none, a BCP 47 language tag; `und` when undetermined. */
             default_post_language: string;
             /** @description Whether clients ask for a description before posting media without one. */
@@ -14422,13 +14429,43 @@ export interface components {
          */
         LinkCardSize: "large" | "small";
         /**
-         * @description Who may quote a status: `public` anyone who may see it, `followers`
-         *     the author's followers, `nobody` the author alone. A followers-only status is quoted only
-         *     by its author, in a followers-only or direct status, and a direct one by nobody, whatever
-         *     its policy.
+         * @description Whom an interaction policy admits, narrowest first: `nobody` the author alone, `mentioned`
+         *     the accounts the status mentions, `followers` the author's followers and the accounts the
+         *     status mentions, `everyone` anyone who may see the status. The author always may interact.
          * @enum {string}
          */
-        QuotePolicy: "public" | "followers" | "nobody";
+        InteractionAudience: "nobody" | "mentioned" | "followers" | "everyone";
+        /**
+         * @description Who may reply to, boost, and quote a status. Whatever the policy, a followers-only status is
+         *     boosted and quoted only by its author, a direct one is neither boosted nor quoted, and a reply
+         *     from an account the status mentions is always admitted.
+         */
+        InteractionPolicy: {
+            reply: components["schemas"]["InteractionRule"];
+            /** @description Who may boost the status. */
+            announce: components["schemas"]["InteractionRule"];
+            quote: components["schemas"]["InteractionRule"];
+        };
+        /**
+         * @description A change of an interaction policy: the kinds left out keep their rules. Interactions approved
+         *     before stay.
+         */
+        InteractionPolicyChange: {
+            reply?: components["schemas"]["InteractionRule"];
+            /** @description Who may boost the status. */
+            announce?: components["schemas"]["InteractionRule"];
+            quote?: components["schemas"]["InteractionRule"];
+        };
+        /**
+         * @description Who may interact with a status in one way. Interactions of `automatic` are approved at once;
+         *     those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
+         *     others are refused.
+         */
+        InteractionRule: {
+            automatic: components["schemas"]["InteractionAudience"];
+            /** @description Whom the author approves by hand; wider than `automatic`. Left out for none. */
+            manual?: components["schemas"]["InteractionAudience"];
+        };
         /**
          * @description The state of a quote as the viewer sees it, with the values of Mastodon's
          *     `Quote.state` and `legacy`. The quoted status is shown for `accepted` and `legacy`, and
@@ -14763,10 +14800,6 @@ export interface components {
             /** @description What the administrators keep about the rule; empty when omitted. */
             note?: string;
         };
-        /** @description Who may quote the status from now on. Approvals given before stay. */
-        SetQuotePolicyRequest: {
-            quote_policy: components["schemas"]["QuotePolicy"];
-        };
         /** @description The whole theme; tokens left out go back to their defaults. */
         SetThemeRequest: {
             tokens: components["schemas"]["ThemeTokenValue"][];
@@ -14890,12 +14923,13 @@ export interface components {
              */
             quote?: components["schemas"]["StatusQuote"];
             /**
-             * @description Whether the authenticated user may quote the status (its `quote_policy`, its visibility,
-             *     and the user's follow of the author decide it); omitted for anonymous requests.
+             * @description Whether the authenticated user may quote the status (the `quote` rule of its interaction
+             *     policy, its visibility, and how the user stands with the author decide it); true too when
+             *     the quote waits for the author's approval. Omitted for anonymous requests.
              */
             quotable?: boolean;
-            /** @description Who may quote the status; given only to its author. */
-            quote_policy?: components["schemas"]["QuotePolicy"];
+            /** @description Who may reply to, boost, and quote the status; given only to its author. */
+            interaction_policy?: components["schemas"]["InteractionPolicy"];
         };
         /** @description The thread around a status. */
         StatusContext: {
@@ -15427,7 +15461,8 @@ export interface components {
             /** @description Whether clients with a browser show dates in its time zone instead of `time_zone`. */
             time_zone_follows_browser?: boolean;
             default_visibility?: components["schemas"]["Visibility"];
-            default_quote_policy?: components["schemas"]["QuotePolicy"];
+            /** @description The defaults of the kinds it has; the others stay. */
+            default_interaction_policy?: components["schemas"]["InteractionPolicyChange"];
             /** @description The language of new posts that name none; `und` for undetermined. */
             default_post_language?: string;
             /** @description Whether clients ask for a description before posting media without one. */
@@ -19838,7 +19873,7 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    setStatusQuotePolicy: {
+    setStatusInteractionPolicy: {
         parameters: {
             query?: never;
             header?: never;
@@ -19850,7 +19885,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SetQuotePolicyRequest"];
+                "application/json": components["schemas"]["InteractionPolicyChange"];
             };
         };
         responses: {

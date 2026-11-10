@@ -142,7 +142,11 @@ async function serveApi(page: Page, limited: () => boolean) {
       locale_follows_browser: false,
       time_zone_follows_browser: false,
       default_visibility: "public",
-      default_quote_policy: "public",
+      default_interaction_policy: {
+        reply: { automatic: "everyone" },
+        announce: { automatic: "everyone" },
+        quote: { automatic: "everyone" },
+      },
       default_post_language: "en",
       require_media_description: false,
       timeline_auto_insert: false,

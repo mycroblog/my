@@ -54,8 +54,8 @@ func (f *fakePreferences) UpdatePreferences(ctx context.Context, userID string, 
 	if in.DefaultVisibility != nil {
 		p.DefaultVisibility = *in.DefaultVisibility
 	}
-	if in.DefaultQuotePolicy != nil {
-		p.DefaultQuotePolicy = *in.DefaultQuotePolicy
+	for k, set := range in.DefaultInteractionPolicy {
+		p.DefaultInteractionPolicy = p.DefaultInteractionPolicy.With(k, set)
 	}
 	if in.TimelineLanguages != nil {
 		p.TimelineLanguages = *in.TimelineLanguages
@@ -76,7 +76,7 @@ func newPreferencesEnv(t *testing.T) (*authEnv, *fakePreferences) {
 		Preferences: identity.Preferences{
 			UserID: userOf(aliceAccountID), Locale: "ja", TimeZone: "Asia/Tokyo", TimeZoneChosen: true,
 			LocaleFollowsBrowser: true, TimeZoneFollowsBrowser: true,
-			DefaultVisibility: identity.Visibility("unlisted"), LinkCardSize: identity.LinkCardLarge, DefaultQuotePolicy: identity.QuotePolicyPublic, DefaultPostLanguage: "ja",
+			DefaultVisibility: identity.Visibility("unlisted"), LinkCardSize: identity.LinkCardLarge, DefaultInteractionPolicy: identity.DefaultInteractionDefaults, DefaultPostLanguage: "ja",
 		},
 	}}
 	return newAuthEnv(t, func(o *clientapi.Options) { o.Preferences = prefs }), prefs
@@ -94,7 +94,11 @@ func TestGetPreferences(t *testing.T) {
 	}
 	want := clientapi.Preferences{
 		Locale: "ja", TimeZone: "Asia/Tokyo", TimeZoneChosen: true, LocaleFollowsBrowser: true, TimeZoneFollowsBrowser: true, DefaultVisibility: clientapi.VisibilityUnlisted, DefaultPostLanguage: "ja",
-		DefaultQuotePolicy: clientapi.QuotePolicyPublic, LinkCardSize: clientapi.LinkCardSizeLarge, TimelineLanguages: []string{},
+		DefaultInteractionPolicy: clientapi.InteractionPolicy{
+			Reply: clientapi.InteractionRule{Automatic: clientapi.InteractionAudienceEveryone}, Announce: clientapi.InteractionRule{Automatic: clientapi.InteractionAudienceEveryone},
+			Quote: clientapi.InteractionRule{Automatic: clientapi.InteractionAudienceEveryone},
+		},
+		LinkCardSize: clientapi.LinkCardSizeLarge, TimelineLanguages: []string{},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("preferences = %+v, want %+v", got, want)
@@ -128,7 +132,7 @@ func TestPreferencesShowAnUndeliverableAddress(t *testing.T) {
 
 func TestUpdatePreferences(t *testing.T) {
 	e, prefs := newPreferencesEnv(t)
-	res := e.sendJSON(t, http.MethodPatch, "/preferences", "write", `{"default_visibility":"local","default_quote_policy":"followers","timeline_languages":["en","ja"],"timeline_auto_insert":true,"link_card_size":"small"}`)
+	res := e.sendJSON(t, http.MethodPatch, "/preferences", "write", `{"default_visibility":"local","default_interaction_policy":{"quote":{"automatic":"followers","manual":"everyone"}},"timeline_languages":["en","ja"],"timeline_auto_insert":true,"link_card_size":"small"}`)
 	if res.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d, want 200", res.StatusCode)
 	}
@@ -143,8 +147,10 @@ func TestUpdatePreferences(t *testing.T) {
 		!got.TimelineAutoInsert || !prefs.p.TimelineAutoInsert {
 		t.Errorf("preferences = %+v, want the change applied to the rest", got)
 	}
-	if prefs.p.DefaultVisibility != "local" || prefs.p.DefaultQuotePolicy != identity.QuotePolicyFollowers || got.DefaultQuotePolicy != clientapi.QuotePolicyFollowers {
-		t.Errorf("stored visibility = %q, quote policy = %q (answered %q)", prefs.p.DefaultVisibility, prefs.p.DefaultQuotePolicy, got.DefaultQuotePolicy)
+	quote := identity.InteractionSetting{Automatic: identity.AudienceFollowers, Manual: identity.AudienceEveryone}
+	if prefs.p.DefaultVisibility != "local" || prefs.p.DefaultInteractionPolicy.Quote != quote || prefs.p.DefaultInteractionPolicy.Reply != identity.DefaultInteractionDefaults.Reply ||
+		got.DefaultInteractionPolicy.Quote.Automatic != clientapi.InteractionAudienceFollowers || got.DefaultInteractionPolicy.Quote.Manual == nil {
+		t.Errorf("stored visibility = %q, interaction policy = %+v (answered %+v)", prefs.p.DefaultVisibility, prefs.p.DefaultInteractionPolicy, got.DefaultInteractionPolicy)
 	}
 	if res := e.sendJSON(t, http.MethodPatch, "/preferences", "read", `{}`); res.StatusCode != http.StatusForbidden {
 		t.Errorf("read token = %d, want 403", res.StatusCode)

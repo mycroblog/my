@@ -16,7 +16,7 @@ import { applyDocumentLocale, type I18n, loadI18n } from "../lib/i18n";
 import { createAppServices } from "../lib/services";
 import { signInKey, type StoredSignIn } from "../lib/storage";
 import { createAppRouter } from "../router";
-import { preferencesFixture, type Schemas, viewerFixture } from "./fixtures";
+import { changedPreferences, preferencesFixture, type Schemas, viewerFixture } from "./fixtures";
 import { worker } from "./msw/browser";
 import { apiBase, problem, signedInHandler, withViewer } from "./msw/http";
 
@@ -127,7 +127,7 @@ export const screenLoader: Loader = async (context) => {
       http.patch(`${apiBase}/preferences`, async ({ request }) => {
         const change = (await request.clone().json()) as Schemas["UpdatePreferencesRequest"];
         return withViewer(request, () => {
-          preferences = { ...preferences, ...change };
+          preferences = changedPreferences(preferences, change);
           return HttpResponse.json(preferences);
         });
       }),

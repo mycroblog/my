@@ -269,13 +269,13 @@ func (h interactionHandlers) announce(ctx context.Context, in *InboxActivity) er
 	if err != nil {
 		return err
 	}
-	followers, err := h.d.Statuses.followers(ctx, in.Actor)
+	cols, err := h.d.Statuses.collections(ctx, in.Actor)
 	if err != nil {
 		return err
 	}
 	_, err = h.d.Interactions.RecordRemoteBoost(ctx, appcontent.RemoteBoostInput{
 		URI: activityURI(in), BoosterAccountID: in.Actor.Account.ID, StatusID: st.ID,
-		Visibility: appcontent.Visibility(in.Activity.Audience.Visibility(followers)), BoostedAt: in.Activity.Published,
+		Visibility: appcontent.Visibility(in.Activity.Audience.Visibility(cols.followers)), BoostedAt: in.Activity.Published,
 	})
 	return interactionError(err)
 }

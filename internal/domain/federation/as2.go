@@ -309,17 +309,22 @@ type Object struct {
 	Replies Ref
 	// Quote is the post that the object quotes, nil for none (FR-114, ADR-0069 §2).
 	Quote *Quote
-	// CanQuote is the interactionPolicy.canQuote of a post, nil when it declares none: the
-	// actors and collections whose quotes are approved automatically or by hand.
-	CanQuote *CanQuote
+	// CanReply, CanAnnounce, and CanQuote are the canReply, canAnnounce, and canQuote of the
+	// interactionPolicy of a post (GoToSocial's interaction policies, FEP-044f), nil when it
+	// declares none of the kind: the actors and collections whose interactions are approved
+	// automatically or by hand.
+	CanReply    *CanInteract
+	CanAnnounce *CanInteract
+	CanQuote    *CanInteract
 	// InteractingObject and InteractionTarget are the quote and the quoted post of a
 	// QuoteAuthorization (FEP-044f).
 	InteractingObject IRI
 	InteractionTarget IRI
 }
 
-// CanQuote is who may quote a post (FEP-044f, GoToSocial's interaction policies).
-type CanQuote struct {
+// CanInteract is who may interact with a post by one kind (a can* of GoToSocial's
+// interactionPolicy).
+type CanInteract struct {
 	AutomaticApproval []IRI
 	ManualApproval    []IRI
 }

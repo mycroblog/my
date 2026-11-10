@@ -32,7 +32,7 @@ func TestAuthorCommandsOnDirectPostsNeedReadDirect(t *testing.T) {
 		body         any
 	}{
 		{http.MethodPut, "", map[string]any{"text": "edited"}},
-		{http.MethodPut, "/quote_policy", map[string]any{"quote_policy": "nobody"}},
+		{http.MethodPut, "/interaction_policy", nobodyQuotes},
 		{http.MethodDelete, "", nil},
 		{http.MethodDelete, "/quotes/" + public.Id + "/approval", nil},
 	}
@@ -55,8 +55,8 @@ func TestAuthorCommandsOnDirectPostsNeedReadDirect(t *testing.T) {
 	if res := c.do(wide, http.MethodPut, "/statuses/"+sent.Id, map[string]any{"text": "edited"}, nil); res.StatusCode != http.StatusOK {
 		t.Errorf("PUT the own direct post with read:direct = %d, want 200", res.StatusCode)
 	}
-	if res := c.do(wide, http.MethodPut, "/statuses/"+sent.Id+"/quote_policy", map[string]any{"quote_policy": "nobody"}, nil); res.StatusCode != http.StatusOK {
-		t.Errorf("PUT the quote policy of the own direct post with read:direct = %d, want 200", res.StatusCode)
+	if res := c.do(wide, http.MethodPut, "/statuses/"+sent.Id+"/interaction_policy", nobodyQuotes, nil); res.StatusCode != http.StatusOK {
+		t.Errorf("PUT the interaction policy of the own direct post with read:direct = %d, want 200", res.StatusCode)
 	}
 	if res := c.do(wide, http.MethodDelete, "/statuses/"+sent.Id, nil, nil); res.StatusCode != http.StatusNoContent {
 		t.Errorf("DELETE the own direct post with read:direct = %d, want 204", res.StatusCode)
@@ -66,10 +66,13 @@ func TestAuthorCommandsOnDirectPostsNeedReadDirect(t *testing.T) {
 	if res := c.do(narrow, http.MethodPut, "/statuses/"+public.Id, map[string]any{"text": "edited"}, nil); res.StatusCode != http.StatusOK {
 		t.Errorf("PUT the own public post = %d, want 200", res.StatusCode)
 	}
-	if res := c.do(narrow, http.MethodPut, "/statuses/"+public.Id+"/quote_policy", map[string]any{"quote_policy": "nobody"}, nil); res.StatusCode != http.StatusOK {
-		t.Errorf("PUT the quote policy of the own public post = %d, want 200", res.StatusCode)
+	if res := c.do(narrow, http.MethodPut, "/statuses/"+public.Id+"/interaction_policy", nobodyQuotes, nil); res.StatusCode != http.StatusOK {
+		t.Errorf("PUT the interaction policy of the own public post = %d, want 200", res.StatusCode)
 	}
 	if res := c.do(narrow, http.MethodDelete, "/statuses/"+public.Id, nil, nil); res.StatusCode != http.StatusNoContent {
 		t.Errorf("DELETE the own public post = %d, want 204", res.StatusCode)
 	}
 }
+
+// nobodyQuotes is the body of a change of a status's quote rules to the author's alone.
+var nobodyQuotes = map[string]any{"quote": map[string]any{"automatic": "nobody"}}

@@ -59,7 +59,7 @@ func collectionScene(t *testing.T, n int) (map[string]int, *statusesClient) {
 			body["quoted_status_id"] = posts[len(posts)-1]
 		}
 		if i%5 == 3 {
-			body["quote_policy"] = "followers"
+			body["interaction_policy"] = map[string]any{"quote": map[string]any{"automatic": "followers"}}
 		}
 		posts = append(posts, c.post("alice", body).Id)
 	}

@@ -11,33 +11,6 @@ import (
 	"context"
 )
 
-const listQuotePoliciesOfStatuses = `-- name: ListQuotePoliciesOfStatuses :many
-SELECT status_id, policy, updated_at FROM status_quote_policies WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY status_id
-`
-
-func (q *Queries) ListQuotePoliciesOfStatuses(ctx context.Context, statusIds string) ([]StatusQuotePolicy, error) {
-	rows, err := q.db.QueryContext(ctx, listQuotePoliciesOfStatuses, statusIds)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []StatusQuotePolicy{}
-	for rows.Next() {
-		var i StatusQuotePolicy
-		if err := rows.Scan(&i.StatusID, &i.Policy, &i.UpdatedAt); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listQuoteStatesOfStatuses = `-- name: ListQuoteStatesOfStatuses :many
 SELECT status_id, state, authorization_uri FROM status_quote_states WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY status_id
 `

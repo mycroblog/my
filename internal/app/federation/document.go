@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
@@ -26,7 +27,7 @@ type NoteParts interface {
 // implements it.
 type NoteQuotes interface {
 	FindQuote(ctx context.Context, statusID string) (appcontent.Quote, appcontent.QuoteState, error)
-	FindQuotePolicy(ctx context.Context, statusID string) (appcontent.StatusQuotePolicy, error)
+	FindInteractionPolicy(ctx context.Context, statusID string) (appcontent.InteractionPolicy, error)
 	FederatedQuotePage(ctx context.Context, uri string) (string, bool, error)
 }
 
@@ -117,7 +118,7 @@ func (n notes) note(ctx context.Context, st appcontent.Status, rev appcontent.Re
 	if err != nil {
 		return federation.NoteDocument{}, err
 	}
-	return n.withQuotes(ctx, note, st, author, vis)
+	return n.withQuotes(ctx, note, st, author, vis, parts.Mentions)
 }
 
 // inConversation adds to the Note of st the IRI of the conversation it belongs to now, the one
@@ -138,10 +139,11 @@ func (n notes) inConversation(ctx context.Context, note federation.NoteDocument,
 }
 
 // withQuotes adds to the Note of the local status st its quote, unless the author took it away or
-// the quoted status is local-visibility (ADR-0018 §15), and its interactionPolicy (ADR-0069 §3): its quote policy for a public or unlisted status,
-// the author alone for the others, which remote servers see as followers-only. Without quotes it
-// returns note as it is.
-func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility) (federation.NoteDocument, error) {
+// the quoted status is local-visibility (ADR-0018 §15), and its interactionPolicy (ADR-0069 §3,
+// ADR-0155 §9): the quote rules of a public or unlisted status, the author alone for the others,
+// which remote servers see as followers-only. mentioned are the accounts the Note mentions. Without
+// quotes it returns note as it is.
+func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility, mentioned []appaccount.Actor) (federation.NoteDocument, error) {
 	if n.quotes == nil {
 		return note, nil
 	}
@@ -164,24 +166,41 @@ func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st 
 		note = note.WithQuote(federation.IRI(q.QuotedURI), federation.IRI(auth), page)
 	}
 	actor := federation.IRI(author.Account.URI)
-	approved := []federation.IRI{actor}
+	can := federation.ApprovalPolicy{AutomaticApproval: []federation.IRI{actor}}
 	if vis == appcontent.VisibilityPublic || vis == appcontent.VisibilityUnlisted {
-		policy := appcontent.QuotePolicyPublic
-		switch p, err := n.quotes.FindQuotePolicy(ctx, st.ID); {
-		case err == nil:
-			policy = p.Policy
-		case !errors.Is(err, appcontent.ErrNotFound):
+		policy, err := n.quotes.FindInteractionPolicy(ctx, st.ID)
+		if err != nil {
 			return federation.NoteDocument{}, err
 		}
-		switch policy {
-		case appcontent.QuotePolicyPublic:
-			approved = []federation.IRI{federation.PublicIRI}
-		case appcontent.QuotePolicyFollowers:
-			approved = []federation.IRI{federation.FollowersOf(actor)}
+		set := appcontent.SettingsOf(policy).Quote
+		can.AutomaticApproval = approvalIRIs(set.Automatic, actor, mentioned)
+		if set.Manual != "" {
+			can.ManualApproval = approvalIRIs(set.Manual, actor, mentioned)
 		}
 	}
-	note.InteractionPolicy = &federation.InteractionPolicy{CanQuote: federation.QuoteApprovalPolicy{AutomaticApproval: approved}}
+	note.InteractionPolicy = &federation.InteractionPolicy{CanQuote: can}
 	return note, nil
+}
+
+// approvalIRIs returns the IRIs of the audience a of a status by actor that mentions mentioned
+// (ADR-0155 §2): as:Public for everyone, and else the author with, for followers, the author's
+// followers collection, and for followers and mentioned, the mentioned actors.
+func approvalIRIs(a appcontent.InteractionAudience, actor federation.IRI, mentioned []appaccount.Actor) []federation.IRI {
+	if a == appcontent.AudienceEveryone {
+		return []federation.IRI{federation.PublicIRI}
+	}
+	var out []federation.IRI
+	if a == appcontent.AudienceFollowers {
+		out = append(out, federation.FollowersOf(actor))
+	}
+	if a == appcontent.AudienceFollowers || a == appcontent.AudienceMentioned {
+		for _, m := range mentioned {
+			if iri := federation.IRI(m.Account.URI); iri != "" && iri != actor && !slices.Contains(out, iri) {
+				out = append(out, iri)
+			}
+		}
+	}
+	return append(out, actor)
 }
 
 // statusNote returns the Note of a local status st as of rev by author, addressed by the

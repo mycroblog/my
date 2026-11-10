@@ -46,6 +46,10 @@
         "@id": "gts:interactionTarget",
         "@type": "@id"
       },
+      "manualApproval": {
+        "@id": "gts:manualApproval",
+        "@type": "@id"
+      },
       "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
       "movedTo": {
         "@id": "as:movedTo",
@@ -143,7 +147,9 @@
         "interactionPolicy": {
           "canQuote": {
             "automaticApproval": [
-              "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f/followers"
+              "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f/followers",
+              "https://remote.example/users/bob",
+              "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f"
             ]
           }
         }

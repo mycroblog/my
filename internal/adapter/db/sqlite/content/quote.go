@@ -176,35 +176,6 @@ func (r *StatusRepository) ListQuotesOf(ctx context.Context, uri, before string,
 	return out, nil
 }
 
-// UpsertQuotePolicy implements content.QuoteRepository.
-func (r *StatusRepository) UpsertQuotePolicy(ctx context.Context, tx uow.Tx, p content.StatusQuotePolicy) error {
-	qs, err := r.db.queries(tx)
-	if err != nil {
-		return err
-	}
-	return sqlite.Wrap(qs.UpsertStatusQuotePolicy(ctx, contentgen.UpsertStatusQuotePolicyParams{
-		StatusID: p.StatusID, Policy: string(p.Policy), UpdatedAt: sqlite.ToMillis(p.UpdatedAt),
-	}), "upsert status quote policy")
-}
-
-// DeleteQuotePolicy implements content.QuoteRepository.
-func (r *StatusRepository) DeleteQuotePolicy(ctx context.Context, tx uow.Tx, statusID string) error {
-	qs, err := r.db.queries(tx)
-	if err != nil {
-		return err
-	}
-	return sqlite.Wrap(qs.DeleteStatusQuotePolicy(ctx, statusID), "delete status quote policy")
-}
-
-// FindQuotePolicy implements content.QuoteRepository.
-func (r *StatusRepository) FindQuotePolicy(ctx context.Context, statusID string) (content.StatusQuotePolicy, error) {
-	row, err := r.db.reader().GetStatusQuotePolicy(ctx, statusID)
-	if err != nil {
-		return content.StatusQuotePolicy{}, sqlite.NotFound(err, appcontent.ErrNotFound, "quote policy of "+statusID)
-	}
-	return content.StatusQuotePolicy{StatusID: row.StatusID, Policy: content.QuotePolicy(row.Policy), UpdatedAt: sqlite.FromMillis(row.UpdatedAt)}, nil
-}
-
 // InsertQuoteAuthorization implements content.QuoteRepository.
 func (r *StatusRepository) InsertQuoteAuthorization(ctx context.Context, tx uow.Tx, a content.QuoteAuthorization) (bool, error) {
 	qs, err := r.db.queries(tx)

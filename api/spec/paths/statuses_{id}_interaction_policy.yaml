@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/StatusId.yaml
+put:
+  operationId: setStatusInteractionPolicy
+  summary: Change who may reply to, boost, and quote the authenticated user's status
+  description: |
+    Changes the `interaction_policy` of a status of the user for the kinds the request has;
+    the others stay. Interactions approved before stay, and an approval of a quote is revoked
+    on its own. Another account's status is a 403 when the user may see it and a 404
+    otherwise. A `direct` status is a 404 to a token without `read:direct`, the user's own
+    included.
+  tags: [statuses]
+  security:
+    - oauth2: ["write:statuses"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/InteractionPolicyChange.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/StatusAfterAction.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

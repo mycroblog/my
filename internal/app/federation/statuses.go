@@ -50,11 +50,11 @@ type RelayedStatuses interface {
 }
 
 // StatusAccounts is the part of the account module's public API that ingesting posts reads: the
-// accounts that a post mentions and the followers collection of its author.
+// accounts that a post mentions and the followers and following collections of its author.
 // *appaccount.Service implements it.
 type StatusAccounts interface {
 	FindByURI(ctx context.Context, uri string) (appaccount.Actor, error)
-	RemoteFollowersURL(ctx context.Context, accountID string) (string, error)
+	RemoteCollectionURLs(ctx context.Context, accountID string) (followers, following string, err error)
 }
 
 // StatusHandlersDeps are the ports of StatusHandlers.
@@ -220,18 +220,18 @@ func (h *StatusHandlers) Update(ctx context.Context, a *InboxActivity) error {
 	case err != nil:
 		return err
 	}
-	followers, err := h.followers(ctx, a.Actor)
+	cols, err := h.collections(ctx, a.Actor)
 	if err != nil {
 		return err
 	}
-	mentions, err := h.mentions(ctx, obj, followers)
+	mentions, err := h.mentions(ctx, obj, cols.followers)
 	if err != nil {
 		return err
 	}
 	if err := h.resolveMentions(ctx, mentions); err != nil {
 		return err
 	}
-	in := h.input(a, obj, followers, mentions)
+	in := h.input(a, obj, cols, mentions)
 	verdict, err := h.reviewUpdate(ctx, a, stored, obj, in, mentions)
 	if err != nil {
 		return err
@@ -341,11 +341,11 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 	if tombstoned {
 		return fmt.Errorf("%w: %s is deleted", ErrDropActivity, obj.ID)
 	}
-	followers, err := h.followers(ctx, a.Actor)
+	cols, err := h.collections(ctx, a.Actor)
 	if err != nil {
 		return err
 	}
-	mentions, err := h.mentions(ctx, obj, followers)
+	mentions, err := h.mentions(ctx, obj, cols.followers)
 	if err != nil {
 		return err
 	}
@@ -364,7 +364,7 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 			return err
 		}
 	}
-	in := h.input(a, obj, followers, mentions)
+	in := h.input(a, obj, cols, mentions)
 	if in.Visibility == appcontent.VisibilityDirect && len(mentions.accountIDs) == 0 && mentions.deactivated {
 		return fmt.Errorf("%w: %s is addressed to deactivated accounts only", ErrDropActivity, obj.ID)
 	}
@@ -484,13 +484,19 @@ func (h *StatusHandlers) followed(ctx context.Context, author appaccount.Actor) 
 	return len(followers) > 0, err
 }
 
-// followers returns the followers collection of a remote author, "" when it is unknown.
-func (h *StatusHandlers) followers(ctx context.Context, author appaccount.Actor) (federation.IRI, error) {
-	u, err := h.d.Accounts.RemoteFollowersURL(ctx, author.Account.ID)
+// authorCollections are the followers and following collections of a remote author, "" when
+// they are unknown.
+type authorCollections struct {
+	followers, following federation.IRI
+}
+
+// collections returns the followers and following collections of a remote author.
+func (h *StatusHandlers) collections(ctx context.Context, author appaccount.Actor) (authorCollections, error) {
+	followers, following, err := h.d.Accounts.RemoteCollectionURLs(ctx, author.Account.ID)
 	if errors.Is(err, appaccount.ErrNotFound) {
-		return "", nil
+		return authorCollections{}, nil
 	}
-	return federation.IRI(u), err
+	return authorCollections{followers: federation.IRI(followers), following: federation.IRI(following)}, err
 }
 
 // postMentions are the actors a post mentions or addresses: the stored accounts, and the remote
@@ -600,18 +606,18 @@ func (h *StatusHandlers) isLocal(iri federation.IRI) bool { return iri.Origin() 
 // (federation.md §4). A post without addressing takes the addressing of the activity only when
 // the post's author signed the activity: the addressing of an activity that someone else signed
 // is not the author's, even when the post itself was fetched from its origin.
-func (h *StatusHandlers) input(a *InboxActivity, obj *federation.Object, followers federation.IRI, m *postMentions) appcontent.RemoteStatusInput {
+func (h *StatusHandlers) input(a *InboxActivity, obj *federation.Object, cols authorCollections, m *postMentions) appcontent.RemoteStatusInput {
 	var fallback federation.Audience
 	if a.Received.Trust == federation.TrustSigned {
 		fallback = a.Activity.Audience
 	}
-	return h.inputOf(a.Actor, fallback, string(a.Received.ActivityURI), obj, followers, m)
+	return h.inputOf(a.Actor, fallback, string(a.Received.ActivityURI), obj, cols, m)
 }
 
 // inputOf maps a normalized post by author to what the content module stores (federation.md
 // §4). A post without addressing takes fallback, the addressing of the activity that carried it;
 // activityURI is that activity, "" for a post fetched by its id.
-func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Audience, activityURI string, obj *federation.Object, followers federation.IRI, m *postMentions) appcontent.RemoteStatusInput {
+func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Audience, activityURI string, obj *federation.Object, cols authorCollections, m *postMentions) appcontent.RemoteStatusInput {
 	audience := obj.Audience
 	if len(audience.To) == 0 && len(audience.Cc) == 0 {
 		audience = fallback
@@ -620,7 +626,7 @@ func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Au
 		URI:                 string(obj.ID),
 		AuthorAccountID:     author.Account.ID,
 		AuthorDomain:        author.Account.Domain,
-		Visibility:          appcontent.Visibility(audience.Visibility(followers)),
+		Visibility:          appcontent.Visibility(audience.Visibility(cols.followers)),
 		InReplyToURI:        string(obj.InReplyTo),
 		Conversation:        string(obj.Conversation),
 		PublishedAt:         obj.Published,
@@ -651,7 +657,7 @@ func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Au
 		in.Poll = pollInput(p)
 	}
 	in.Quote = quoteInput(obj.Quote)
-	in.QuotePolicy = quotePolicyInput(obj.CanQuote, followers)
+	in.InteractionPolicy = interactionPolicyInput(obj, federation.IRI(author.Account.URI), cols)
 	return in
 }
 

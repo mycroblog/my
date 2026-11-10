@@ -4,6 +4,7 @@
 // `[method, path, init]`, so the post's key is the one the compose and notifications features use too.
 import { infiniteQueryOptions, type QueryClient, type QueryKey } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
+import { type QuotePolicy, quotePolicyChange } from "../../compose";
 import { ApiError } from "../../../lib/errors";
 import type { components } from "@mycroblog/mykit";
 import {
@@ -30,8 +31,8 @@ export type Visibility = components["schemas"]["Visibility"];
 /** The post that a status quotes (FR-114, ADR-0069). */
 export type StatusQuote = components["schemas"]["StatusQuote"];
 
-/** Who may quote a post (FR-114, ADR-0069 §1). */
-export type QuotePolicy = components["schemas"]["QuotePolicy"];
+/** Who may quote a post (FR-114, ADR-0069 §1), as the client offers it. */
+export type { QuotePolicy } from "../../compose";
 
 /** The card of the first link in a status (ADR-0062). */
 export type LinkCard = components["schemas"]["LinkCard"];
@@ -431,11 +432,14 @@ export function statusShareUrl(status: Pick<Status, "url" | "uri">): string {
   return status.url ?? status.uri;
 }
 
-/** Changes who may quote the viewer's post `id` (PUT /statuses/{id}/quote_policy, FR-114); returns the post after it. */
+/**
+ * Changes who may quote the viewer's post `id` (PUT /statuses/{id}/interaction_policy, FR-114), leaving who may
+ * reply and boost; returns the post after it.
+ */
 export async function setQuotePolicy(api: Api, id: string, policy: QuotePolicy): Promise<Status> {
-  const { data, error } = await api.fetch.PUT("/statuses/{id}/quote_policy", {
+  const { data, error } = await api.fetch.PUT("/statuses/{id}/interaction_policy", {
     params: { path: { id } },
-    body: { quote_policy: policy },
+    body: quotePolicyChange(policy),
   });
   // The client's middleware throws an ApiError for every error status (lib/api/client.ts).
   if (data === undefined) throw new ApiError(error);
@@ -448,7 +452,7 @@ export function cacheQuotePolicyAnswer(queryClient: QueryClient, answer: Status)
     queryClient,
     forPost(answer.id, (status) => ({
       ...status,
-      ...(answer.quote_policy === undefined ? {} : { quote_policy: answer.quote_policy }),
+      ...(answer.interaction_policy === undefined ? {} : { interaction_policy: answer.interaction_policy }),
     })),
   );
 }

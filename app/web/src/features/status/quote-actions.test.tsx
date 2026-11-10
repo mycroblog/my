@@ -6,7 +6,7 @@ import { screen, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { apiBase, oauthPaths, tokenResponse } from "../../test/msw/http";
-import { type Schemas, statusFixture, viewerStatusFixture } from "../../test/fixtures";
+import { interactionPolicyFixture, type Schemas, statusFixture, viewerStatusFixture } from "../../test/fixtures";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
 import type { Status } from "./api/status";
@@ -17,7 +17,7 @@ const bobs: Status = { ...statusFixture(bobsId), content: "<p>Bob's thought</p>"
 const own: Status = {
   ...viewerStatusFixture({ id: ownId, content: "<p>My post</p>" }),
   quotable: true,
-  quote_policy: "public",
+  interaction_policy: interactionPolicyFixture,
 };
 
 function signedIn() {
@@ -75,7 +75,11 @@ describe("quoting a post", () => {
 
     await findToast("Posted.");
     expect(sent).toEqual([
-      expect.objectContaining({ text: "Look at this", quoted_status_id: bobsId, quote_policy: "followers" }),
+      expect.objectContaining({
+        text: "Look at this",
+        quoted_status_id: bobsId,
+        interaction_policy: { quote: { automatic: "followers" } },
+      }),
     ]);
   });
 
@@ -102,12 +106,12 @@ describe("the viewer's own post", () => {
   test("changes who may quote it from its menu", async () => {
     signedIn();
     serve(own);
-    const sent: Schemas["SetQuotePolicyRequest"][] = [];
+    const sent: Schemas["InteractionPolicyChange"][] = [];
     server.use(
-      http.put(`${apiBase}/statuses/:id/quote_policy`, async ({ request }) => {
-        const body = (await request.json()) as Schemas["SetQuotePolicyRequest"];
+      http.put(`${apiBase}/statuses/:id/interaction_policy`, async ({ request }) => {
+        const body = (await request.json()) as Schemas["InteractionPolicyChange"];
         sent.push(body);
-        return HttpResponse.json({ ...own, quote_policy: body.quote_policy });
+        return HttpResponse.json({ ...own, interaction_policy: { ...interactionPolicyFixture, ...body } });
       }),
     );
     const { user } = await renderApp({ path: `/@alice/status/${ownId}` });
@@ -119,7 +123,7 @@ describe("the viewer's own post", () => {
     await user.click(within(dialog).getByRole("radio", { name: /^Only you/ }));
 
     await findToast("Changed who can quote the post");
-    expect(sent).toEqual([{ quote_policy: "nobody" }]);
+    expect(sent).toEqual([{ quote: { automatic: "nobody" } }]);
     expect(within(dialog).getByRole("radio", { name: /^Only you/ })).toBeChecked();
   });
 

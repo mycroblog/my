@@ -149,7 +149,11 @@ async function serveApi(page: Page): Promise<Posted[]> {
         time_zone: "UTC",
         time_zone_chosen: true,
         default_visibility: "public",
-        default_quote_policy: "public",
+        default_interaction_policy: {
+          reply: { automatic: "everyone" },
+          announce: { automatic: "everyone" },
+          quote: { automatic: "everyone" },
+        },
         default_post_language: "en",
         require_media_description: false,
         timeline_auto_insert: true,

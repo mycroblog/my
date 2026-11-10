@@ -46,6 +46,10 @@
         "@id": "gts:interactionTarget",
         "@type": "@id"
       },
+      "manualApproval": {
+        "@id": "gts:manualApproval",
+        "@type": "@id"
+      },
       "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
       "movedTo": {
         "@id": "as:movedTo",

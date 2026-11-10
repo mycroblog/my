@@ -165,7 +165,7 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `drafts` | リソース | `id`, `account_id`, `created_at` | インデックス `(account_id, id)` |
-| `draft_contents` | 現在値 | `draft_id`（PK）, `source_text`, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`、NULL 可 = 利用者設定の既定）, `visibility`（`enum`）, `in_reply_to_status_id`（NULL 可）, `quoted_status_id`（NULL 可）, `quote_policy`（`enum(public, followers, nobody)`）, `updated_at` | 保存のたびに置き換える。`updated_at` は API の ETag の元 |
+| `draft_contents` | 現在値 | `draft_id`（PK）, `source_text`, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`、NULL 可 = 利用者設定の既定）, `visibility`（`enum`）, `in_reply_to_status_id`（NULL 可）, `quoted_status_id`（NULL 可）, `quote_policy`（`enum(everyone, followers, nobody)`。引用の自動の相手）, `updated_at` | 保存のたびに置き換える。`updated_at` は API の ETag の元 |
 | `draft_attachments` | 現在値 | `draft_id`, `position`（`int`、0〜3）, `media_id`, `description`（`text`、NULL 可） | PK `(draft_id, position)`。インデックス `(media_id)`（未添付の掃除） |
 | `draft_polls` | 現在値 | `draft_id`（PK）, `multiple`（`bool`）, `hide_totals`（`bool`）, `duration_seconds`（`int`、300〜2592000） | 締め切りは公開のときに決める |
 | `draft_poll_options` | 現在値 | `draft_id`, `position`, `title` | PK `(draft_id, position)` |
@@ -290,7 +290,7 @@
 | `status_quotes` | リソース | `status_id`（PK）, `quoted_uri`（引用先の投稿の URI。まだ保存していない投稿でもよい）, `form`（`enum(fep_044f, legacy)`） | インデックス `(quoted_uri)`。引用先は投稿の作成時に決まり、変わらない |
 | `status_quote_events` | イベント | `id`, `status_id`, `kind`（`enum(accepted, rejected, revoked, detached)`）, `authorization_uri`（NULL 可。`accepted` が検証した、`revoked` が削除を受けた `QuoteAuthorization`。ほかは NULL。自分の投稿の引用の承認も NULL）, `occurred_at` | インデックス `(status_id, id)` |
 | `status_quote_states` | 投影 | `status_id`（PK）, `state`（`enum(pending, accepted, rejected, revoked, legacy, detached)`）, `authorization_uri`（NULL 可。`accepted` のときだけ） | インデックス `(authorization_uri)` |
-| `status_quote_policies` | 現在値 | `status_id`（PK）, `policy`（`enum(public, followers, nobody)`）, `updated_at` | ローカルの投稿は作成のときに必ず持ち、作者がいつでも変えられる。リモートの投稿は `interactionPolicy.canQuote` を宣言したものだけが持ち、`Update` のたびに置き換える |
+| `status_interaction_policies` | 現在値 | `status_id`, `kind`（`enum(reply, announce, quote)`）, `approval`（`enum(automatic, manual)`）, `audience`（`enum(everyone, followers, mentioned, nobody, following, author, account)`）, `actor_uri`（`account` の相手の Actor の IRI。ほかは空文字列） | PK `(status_id, kind, approval, audience, actor_uri)`、CHECK `(audience = 'account') = (actor_uri <> '')`。ADR-0155 §4 の交流の許可。ローカルの投稿は作成のときに 3 つの種類すべての行を持ち、作者がいつでも種類ごとに変えられる。リモートの投稿は `interactionPolicy` で宣言した種類だけの行を持ち、`Create` / `Update` のたびに置き換える |
 | `quote_authorizations` | リソース | `id`, `quoting_uri`（引用元。ローカルでもリモートでもよい）, `quoting_account_id`, `quoted_status_id`（ローカルの引用先）, `created_at` | 一意 `(quoting_uri, quoted_status_id)`、インデックス `(quoted_status_id, id)`。このサーバーが出した承認で、IRI は `https://{host}/ap/quote_authorizations/{id}`（保存しない） |
 | `quote_authorization_revocations` | イベント | `authorization_id`（PK）, `revoked_at` | 承認の取り消し。取り消した承認の IRI は 410 を返す |
 
@@ -298,8 +298,14 @@
   `fep_044f` の引用は `pending` から、`legacy` の引用は `legacy` から始まり、`legacy` の引用は承認では変わりません。`revoked` は、承認した `QuoteAuthorization` の削除だけが起こします。`detached`（編集で引用を外した）は最後の状態です。
 - 引用先の削除・ブロック・ミュート・閲覧の可否は状態に持たず、表示のたびに閲覧者ごとに判定します（`content.Reader`）。
 - 誰が引用できるかは `content.MayQuote` の 1 か所で決めます（投稿の作成、`Status.quotable`、リモートの `QuoteRequest` への答え、方言の引用の表示）。閲覧できない投稿と `direct` は引用できず、`private` は作者が `private` / `direct` で引用するときだけ、`local` はリモートからは引用できません。
+  許可の部分は `content.MayInteract`（ADR-0155 §3）で、`status_interaction_policies` の `quote` の行から判定します。自動の行に当てはまれば認め、承認の行だけに当てはまればローカルの投稿の引用は作者の判断を待ち（`pending`、リモートの `QuoteRequest` には答えない）、リモートの投稿の引用は自動・承認のどちらでも `QuoteRequest` を送ります。
+- `status_interaction_policies` の行の読み書き（ADR-0155 §4）:
+  - 相手の値は ADR-0155 §2 のとおりです。ローカルの作者は `everyone`・`followers`・`mentioned`・`nobody` を選び、承認の相手は自動の相手より広いものか無しです。`following`・`author`・`account` はリモートの許可を読むときだけの値で、`as:Public` は `everyone`、作者の followers / following コレクションは `followers` / `following`、作者自身は `author`、ほかの IRI は `account`（正体の分からないコレクションも、どの Actor の IRI とも一致しないので誰にも当てはまらない）です。
+  - リモートの `can*` で `automaticApproval` が何も残らない種類は `author` の自動の行だけを持ちます。`interactionPolicy` が無い、その種類の `can*` が無い、`null` か `{}` の種類は行を持ちません（宣言なし）。GoToSocial 0.20 より前の `always` / `approvalRequired` も読みます。
+  - ページの表示・Note の組み立て・引用の判定は、ページの投稿の行を 1 つのクエリでまとめて読みます（`FindInteractionPolicies`）。書き込みは投稿ごとに、変える種類の行を 1 文で消し、新しい行を 1 文で入れます。
+  - 作者が許可を変えると `content.interaction_policy_changed`（変わった種類）を発行し、`federation` は `quote` が変わったときに現在の版の `Update` を配送します（Note は `canQuote` だけを運ぶため）。
 - ローカルの投稿を引用すると、引用先がローカルの別の作者の投稿ならすぐに `quote_authorizations` を記録して承認し、自分の投稿なら承認だけを記録します。リモートの投稿は、引用の許可を宣言していれば `QuoteRequest` の答えを待ち（`pending`）、宣言していなければ `legacy` です。
-- 引用の表（`status_quotes`・`status_quote_events`・`status_quote_states`・`status_quote_policies`）と、引用先の投稿への承認（`quote_authorizations` と取り消し）は、投稿の物理削除（保持期間の消去・アカウントの消去）と一緒に消します。
+- 引用の表（`status_quotes`・`status_quote_events`・`status_quote_states`）と交流の許可（`status_interaction_policies`）と、引用先の投稿への承認（`quote_authorizations` と取り消し）は、投稿の物理削除（保持期間の消去・アカウントの消去）と一緒に消します。
 
 - アップロードは同期で受け付けます。形式は中身から判定し（申告された `Content-Type` とファイル名は信用しない）、サイズと寸法の上限は全体をデコードする前にヘッダで検査します（ADR-0019 §8）。
   `uploaded_media.content_type` は判定した形式で、`blob_key`（`uploads/<id>`）は受け取ったままの非公開のファイルです。

@@ -13,8 +13,40 @@ import { isPostListQuery } from "../../../lib/query";
 export type Status = components["schemas"]["Status"];
 export type MediaAttachment = components["schemas"]["MediaAttachment"];
 export type Visibility = components["schemas"]["Visibility"];
-/** Who may quote a post (FR-114, ADR-0069). */
-export type QuotePolicy = components["schemas"]["QuotePolicy"];
+type InteractionAudience = components["schemas"]["InteractionAudience"];
+type InteractionRule = components["schemas"]["InteractionRule"];
+/**
+ * Who may quote a post (FR-114, ADR-0069), as the client offers it: the audience the server approves at once
+ * for a quote, of the ones the form and the settings name.
+ */
+export type QuotePolicy = "public" | "followers" | "nobody";
+
+const quoteAudience: Readonly<Record<QuotePolicy, InteractionAudience>> = {
+  public: "everyone",
+  followers: "followers",
+  nobody: "nobody",
+};
+
+/**
+ * The quote policy of the quote rule of an interaction policy: a quote approved at once for the mentioned accounts
+ * only, which the client does not offer, reads as nobody.
+ */
+export function quotePolicyOf(rule: InteractionRule): QuotePolicy {
+  switch (rule.automatic) {
+    case "everyone":
+      return "public";
+    case "followers":
+      return "followers";
+    case "mentioned":
+    case "nobody":
+      return "nobody";
+  }
+}
+
+/** The change of an interaction policy that sets who may quote a post, and leaves the other kinds. */
+export function quotePolicyChange(policy: QuotePolicy): components["schemas"]["InteractionPolicyChange"] {
+  return { quote: { automatic: quoteAudience[policy] } };
+}
 export type CreateStatusRequest = components["schemas"]["CreateStatusRequest"];
 export type PostingLimits = components["schemas"]["PostingLimits"];
 type CredentialAccount = components["schemas"]["CredentialAccount"];

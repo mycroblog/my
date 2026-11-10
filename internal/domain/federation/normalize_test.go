@@ -407,6 +407,22 @@ func TestNormalizeQuote(t *testing.T) {
 	})
 }
 
+func TestNormalizeInteractionPolicy(t *testing.T) {
+	public, author, followers := federation.PublicIRI, federation.IRI("https://a.example/u/a"), federation.IRI("https://a.example/u/a/followers")
+	o := object(t, `{"type":"Note","id":"https://a.example/n/1","attributedTo":"https://a.example/u/a","interactionPolicy":{
+		"canQuote":{"automaticApproval":["https://a.example/u/a"],"manualApproval":["https://www.w3.org/ns/activitystreams#Public"]},
+		"canReply":{"always":["https://a.example/u/a/followers"],"approvalRequired":"https://www.w3.org/ns/activitystreams#Public"},
+		"canAnnounce":{},"canLike":{"automaticApproval":["https://www.w3.org/ns/activitystreams#Public"]}}}`)
+	equal(t, "CanQuote", o.CanQuote, &federation.CanInteract{AutomaticApproval: []federation.IRI{author}, ManualApproval: []federation.IRI{public}})
+	equal(t, "CanReply (GoToSocial before 0.20)", o.CanReply, &federation.CanInteract{AutomaticApproval: []federation.IRI{followers}, ManualApproval: []federation.IRI{public}})
+	equal(t, "CanAnnounce of {}", o.CanAnnounce, (*federation.CanInteract)(nil))
+
+	o = object(t, `{"type":"Note","id":"https://a.example/n/1","attributedTo":"https://a.example/u/a","interactionPolicy":{
+		"canQuote":{"automaticApproval":[]},"canReply":null}}`)
+	equal(t, "CanQuote of an empty list", o.CanQuote, &federation.CanInteract{})
+	equal(t, "CanReply of null", o.CanReply, (*federation.CanInteract)(nil))
+}
+
 func TestNormalizeUnknown(t *testing.T) {
 	a := activity(t, `{"type":"Arrive","actor":"https://a.example/u/a","object":"https://a.example/place"}`)
 	equal(t, "unknown activity", [2]any{a.Type, a.RawType}, [2]any{federation.ActivityUnknown, "Arrive"})

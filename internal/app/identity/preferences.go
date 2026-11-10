@@ -3,6 +3,7 @@
 package identity
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"slices"
@@ -27,6 +28,10 @@ type PreferencesRepository interface {
 	// ReplaceTimelineLanguages makes languages the user's timeline languages; an empty list
 	// removes them all.
 	ReplaceTimelineLanguages(ctx context.Context, tx uow.Tx, userID string, languages []string) error
+	// ReplaceInteractionDefaults makes d the user's defaults of the interaction policies
+	// (user_interaction_policies), which InsertPreferences stores first and the reads of the
+	// preferences return; UpdatePreferences leaves them.
+	ReplaceInteractionDefaults(ctx context.Context, tx uow.Tx, userID string, d identity.InteractionDefaults) error
 
 	// LockPreferences reads the preferences and timeline languages of a user inside tx, which
 	// changes them, and keeps other writers of them waiting until tx ends, so that a
@@ -49,11 +54,9 @@ type UserPreferences struct {
 
 // PreferencesInput are the settable preferences of SetPreferences; every field is required.
 type PreferencesInput struct {
-	Locale            string
-	TimeZone          string
-	DefaultVisibility identity.Visibility
-	// DefaultQuotePolicy is who may quote new posts; "" keeps the current one.
-	DefaultQuotePolicy      identity.QuotePolicy
+	Locale                  string
+	TimeZone                string
+	DefaultVisibility       identity.Visibility
 	DefaultPostLanguage     string
 	RequireMediaDescription bool
 	// TimelineAutoInsert inserts new timeline posts without asking (ADR-0013).
@@ -113,37 +116,27 @@ func (s *Service) SetPreferences(ctx context.Context, userID string, in Preferen
 	if err := identity.ValidateVisibility(in.DefaultVisibility); err != nil {
 		return identity.Preferences{}, err
 	}
-	quotePolicy, cardSize := in.DefaultQuotePolicy, in.LinkCardSize
-	if quotePolicy == "" || cardSize == "" {
-		cur, err := s.d.Repository.FindPreferences(ctx, userID)
-		if err != nil {
-			return identity.Preferences{}, err
-		}
-		if quotePolicy == "" {
-			quotePolicy = cur.DefaultQuotePolicy
-		}
-		if cardSize == "" {
-			cardSize = cur.LinkCardSize
-		}
-	}
-	if err := identity.ValidateQuotePolicy(quotePolicy); err != nil {
+	// The defaults of the interaction policies are not set here, and stay.
+	cur, err := s.d.Repository.FindPreferences(ctx, userID)
+	if err != nil {
 		return identity.Preferences{}, err
 	}
+	cardSize := cmp.Or(in.LinkCardSize, cur.LinkCardSize)
 	if err := identity.ValidateLinkCardSize(cardSize); err != nil {
 		return identity.Preferences{}, err
 	}
 	p := identity.Preferences{
-		UserID:                  userID,
-		Locale:                  locale,
-		TimeZone:                in.TimeZone,
-		TimeZoneChosen:          true,
-		DefaultVisibility:       in.DefaultVisibility,
-		DefaultQuotePolicy:      quotePolicy,
-		DefaultPostLanguage:     postLang,
-		RequireMediaDescription: in.RequireMediaDescription,
-		TimelineAutoInsert:      in.TimelineAutoInsert,
-		LinkCardSize:            cardSize,
-		UpdatedAt:               s.d.Clock.Now(),
+		UserID:                   userID,
+		Locale:                   locale,
+		TimeZone:                 in.TimeZone,
+		TimeZoneChosen:           true,
+		DefaultVisibility:        in.DefaultVisibility,
+		DefaultInteractionPolicy: cur.DefaultInteractionPolicy,
+		DefaultPostLanguage:      postLang,
+		RequireMediaDescription:  in.RequireMediaDescription,
+		TimelineAutoInsert:       in.TimelineAutoInsert,
+		LinkCardSize:             cardSize,
+		UpdatedAt:                s.d.Clock.Now(),
 	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.UpdatePreferences(ctx, tx, p) })
 	if err != nil {
@@ -180,12 +173,13 @@ type PreferencesUpdate struct {
 	TimeZone *string
 	// LocaleFollowsBrowser and TimeZoneFollowsBrowser are the preferences of those names. A
 	// Locale or TimeZone without its field is the user's own choice, which stops following.
-	LocaleFollowsBrowser    *bool
-	TimeZoneFollowsBrowser  *bool
-	DefaultVisibility       *identity.Visibility
-	DefaultQuotePolicy      *identity.QuotePolicy
-	DefaultPostLanguage     *string
-	RequireMediaDescription *bool
+	LocaleFollowsBrowser   *bool
+	TimeZoneFollowsBrowser *bool
+	DefaultVisibility      *identity.Visibility
+	// DefaultInteractionPolicy replaces the defaults of the kinds it has; the others stay.
+	DefaultInteractionPolicy map[identity.InteractionKind]identity.InteractionSetting
+	DefaultPostLanguage      *string
+	RequireMediaDescription  *bool
 	// TimelineAutoInsert is the preference of that name (ADR-0013).
 	TimelineAutoInsert *bool
 	// LinkCardSize is the preference of that name.
@@ -199,7 +193,7 @@ type PreferenceError struct {
 	// Preference is the column of user_preferences, or timeline_languages.
 	Preference string
 	// Err wraps one of identity.ErrInvalidLanguageTag, identity.ErrInvalidTimeZone,
-	// identity.ErrInvalidVisibility, identity.ErrInvalidQuotePolicy, and
+	// identity.ErrInvalidVisibility, identity.ErrInvalidInteractionPolicy, and
 	// identity.ErrTooManyLanguages.
 	Err error
 }
@@ -240,6 +234,11 @@ func (s *Service) UpdatePreferences(ctx context.Context, userID string, in Prefe
 		if err := s.d.Repository.UpdatePreferences(ctx, tx, out.Preferences); err != nil {
 			return err
 		}
+		if out.DefaultInteractionPolicy != cur.DefaultInteractionPolicy {
+			if err := s.d.Repository.ReplaceInteractionDefaults(ctx, tx, userID, out.DefaultInteractionPolicy); err != nil {
+				return err
+			}
+		}
 		if in.TimelineLanguages == nil {
 			return nil
 		}
@@ -271,10 +270,8 @@ func canonicalPreferencesUpdate(in PreferencesUpdate) (PreferencesUpdate, error)
 			return PreferencesUpdate{}, &PreferenceError{Preference: "default_visibility", Err: err}
 		}
 	}
-	if in.DefaultQuotePolicy != nil {
-		if err := identity.ValidateQuotePolicy(*in.DefaultQuotePolicy); err != nil {
-			return PreferencesUpdate{}, &PreferenceError{Preference: "default_quote_policy", Err: err}
-		}
+	if err := identity.ValidateInteractionDefaults(in.DefaultInteractionPolicy); err != nil {
+		return PreferencesUpdate{}, &PreferenceError{Preference: "default_interaction_policy", Err: err}
 	}
 	if in.LinkCardSize != nil {
 		if err := identity.ValidateLinkCardSize(*in.LinkCardSize); err != nil {
@@ -316,8 +313,8 @@ func (in PreferencesUpdate) applyTo(cur UserPreferences) UserPreferences {
 	if in.DefaultVisibility != nil {
 		p.DefaultVisibility = *in.DefaultVisibility
 	}
-	if in.DefaultQuotePolicy != nil {
-		p.DefaultQuotePolicy = *in.DefaultQuotePolicy
+	for k, set := range in.DefaultInteractionPolicy {
+		p.DefaultInteractionPolicy = p.DefaultInteractionPolicy.With(k, set)
 	}
 	if in.DefaultPostLanguage != nil {
 		p.DefaultPostLanguage = *in.DefaultPostLanguage
@@ -405,16 +402,16 @@ func (s *Service) defaultPreferences(ctx context.Context, userID, locale string,
 		return identity.Preferences{}, err
 	}
 	return identity.Preferences{
-		UserID:                 userID,
-		Locale:                 locale,
-		TimeZone:               identity.DefaultTimeZone,
-		LocaleFollowsBrowser:   true,
-		TimeZoneFollowsBrowser: true,
-		DefaultVisibility:      identity.DefaultPostVisibility,
-		DefaultQuotePolicy:     identity.DefaultPostQuotePolicy,
-		DefaultPostLanguage:    identity.UndeterminedLanguage,
-		TimelineAutoInsert:     identity.DefaultTimelineAutoInsert,
-		LinkCardSize:           identity.DefaultLinkCardSize,
-		UpdatedAt:              now,
+		UserID:                   userID,
+		Locale:                   locale,
+		TimeZone:                 identity.DefaultTimeZone,
+		LocaleFollowsBrowser:     true,
+		TimeZoneFollowsBrowser:   true,
+		DefaultVisibility:        identity.DefaultPostVisibility,
+		DefaultInteractionPolicy: identity.DefaultInteractionDefaults,
+		DefaultPostLanguage:      identity.UndeterminedLanguage,
+		TimelineAutoInsert:       identity.DefaultTimelineAutoInsert,
+		LinkCardSize:             identity.DefaultLinkCardSize,
+		UpdatedAt:                now,
 	}, nil
 }

@@ -60,23 +60,54 @@ func quoteInput(q *federation.Quote) *appcontent.RemoteQuoteInput {
 	return &appcontent.RemoteQuoteInput{URI: string(q.Target), Form: form}
 }
 
-// quotePolicyInput maps the canQuote of a post by an author whose followers collection is
-// followers to who may quote it (ADR-0069 §3): everyone when it names Public, the followers when
-// it names their collection, and else the author alone. A quote approved by hand counts as one
-// approved, since this server's QuoteRequest waits for the answer either way. A post without
-// canQuote declares nobody (nil).
-func quotePolicyInput(c *federation.CanQuote, followers federation.IRI) *appcontent.RemoteQuotePolicyInput {
-	if c == nil {
-		return nil
+// interactionPolicyInput maps the interactionPolicy of a post by the author actor, whose
+// collections are cols, to the rules the content module stores (ADR-0155 §2): as:Public is
+// everyone, the author's followers and following collections are followers and following, the
+// author is author, and another IRI is the account of that actor, which an IRI of any other
+// collection matches no account of. A kind whose automaticApproval keeps nothing is the author's alone, and a kind the post
+// does not declare has no rules.
+func interactionPolicyInput(obj *federation.Object, actor federation.IRI, cols authorCollections) appcontent.InteractionPolicy {
+	var out appcontent.InteractionPolicy
+	for _, c := range []struct {
+		kind appcontent.InteractionKind
+		can  *federation.CanInteract
+	}{{appcontent.InteractionReply, obj.CanReply}, {appcontent.InteractionAnnounce, obj.CanAnnounce}, {appcontent.InteractionQuote, obj.CanQuote}} {
+		if c.can == nil {
+			continue
+		}
+		auto := approvalRules(c.kind, appcontent.ApprovalAutomatic, c.can.AutomaticApproval, actor, cols)
+		if len(auto) == 0 {
+			auto = appcontent.InteractionPolicy{{Kind: c.kind, Approval: appcontent.ApprovalAutomatic, Audience: appcontent.AudienceAuthor}}
+		}
+		out = append(out, auto...)
+		out = append(out, approvalRules(c.kind, appcontent.ApprovalManual, c.can.ManualApproval, actor, cols)...)
 	}
-	approved := append(slices.Clone(c.AutomaticApproval), c.ManualApproval...)
-	switch {
-	case slices.Contains(approved, federation.PublicIRI):
-		return &appcontent.RemoteQuotePolicyInput{Policy: appcontent.QuotePolicyPublic}
-	case followers != "" && slices.Contains(approved, followers):
-		return &appcontent.RemoteQuotePolicyInput{Policy: appcontent.QuotePolicyFollowers}
+	return out
+}
+
+// approvalRules maps the IRIs of one approval of a kind to rules, as interactionPolicyInput does.
+func approvalRules(kind appcontent.InteractionKind, approval appcontent.InteractionApproval, iris []federation.IRI, actor federation.IRI, cols authorCollections) appcontent.InteractionPolicy {
+	var out appcontent.InteractionPolicy
+	for _, iri := range iris {
+		r := appcontent.InteractionRule{Kind: kind, Approval: approval}
+		switch {
+		case iri == federation.PublicIRI:
+			r.Audience = appcontent.AudienceEveryone
+		case cols.followers != "" && iri == cols.followers:
+			r.Audience = appcontent.AudienceFollowers
+		case cols.following != "" && iri == cols.following:
+			r.Audience = appcontent.AudienceFollowing
+		case iri == actor:
+			r.Audience = appcontent.AudienceAuthor
+		default:
+			// Another actor, or a collection that is not known, which no account's IRI matches.
+			r.Audience, r.ActorURI = appcontent.AudienceAccount, string(iri)
+		}
+		if !slices.Contains(out, r) {
+			out = append(out, r)
+		}
 	}
-	return &appcontent.RemoteQuotePolicyInput{Policy: appcontent.QuotePolicyNobody}
+	return out
 }
 
 // verifyQuoteTx enqueues in tx the JobVerifyQuote of the post uri, which quotes q; a post without

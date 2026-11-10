@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -61,8 +62,14 @@ func (f *fakeStatuses) Edit(_ context.Context, in appcontent.EditInput) (appcont
 	return f.edit(in)
 }
 
-func (f *fakeStatuses) SetQuotePolicy(_ context.Context, accountID, id string, p content.QuotePolicy) (content.StatusQuotePolicy, error) {
-	return content.StatusQuotePolicy{StatusID: id, Policy: p}, f.do("quote_policy:"+string(p), accountID, id)
+func (f *fakeStatuses) SetInteractionPolicy(_ context.Context, accountID, id string, c appcontent.InteractionPolicyChange) (content.InteractionSettings, error) {
+	var kinds []string
+	for _, k := range content.InteractionKinds {
+		if set, ok := c[k]; ok {
+			kinds = append(kinds, string(k)+"="+string(set.Automatic)+"/"+string(set.Manual))
+		}
+	}
+	return content.DefaultInteractionSettings, f.do("interaction_policy:"+strings.Join(kinds, ","), accountID, id)
 }
 
 func (f *fakeStatuses) Quotes(_ context.Context, v appcontent.Viewer, id, _ string, _ int) (appcontent.QuotesPage, error) {
@@ -566,25 +573,30 @@ func TestQuoteOperations(t *testing.T) {
 		},
 		view: func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) {
 			view := sampleView(v)
-			view.Quotable, view.QuotePolicy = true, content.QuotePolicyFollowers
+			settings := content.DefaultInteractionSettings.With(content.InteractionQuote, content.InteractionSetting{Automatic: content.AudienceFollowers})
+			view.Quotable, view.InteractionPolicy = true, &settings
 			return view, nil
 		},
 	}
 	e := newStatusEnv(t, f)
 
-	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"look","visibility":"public","quoted_status_id":"`+sampleStatusID+`","quote_policy":"nobody"}`)
-	if res.StatusCode != http.StatusCreated || created.QuotedStatusID != sampleStatusID || created.QuotePolicy != content.QuotePolicyNobody {
+	res := e.send(t, http.MethodPost, "/statuses", "write", `{"text":"look","visibility":"public","quoted_status_id":"`+sampleStatusID+`","interaction_policy":{"quote":{"automatic":"nobody"}}}`)
+	if res.StatusCode != http.StatusCreated || created.QuotedStatusID != sampleStatusID ||
+		!maps.Equal(created.InteractionPolicy, appcontent.InteractionPolicyChange{content.InteractionQuote: {Automatic: content.AudienceNobody}}) {
 		t.Errorf("create = %d with %+v, want the quote and its policy", res.StatusCode, created)
 	}
-	if s := decodeStatus(t, res); s.Quotable == nil || !*s.Quotable || s.QuotePolicy == nil || *s.QuotePolicy != clientapi.QuotePolicyFollowers {
-		t.Errorf("status = quotable %v, policy %v; want true and followers", s.Quotable, s.QuotePolicy)
+	if s := decodeStatus(t, res); s.Quotable == nil || !*s.Quotable || s.InteractionPolicy == nil ||
+		s.InteractionPolicy.Quote.Automatic != clientapi.InteractionAudienceFollowers || s.InteractionPolicy.Quote.Manual != nil ||
+		s.InteractionPolicy.Reply.Automatic != clientapi.InteractionAudienceEveryone {
+		t.Errorf("status = quotable %v, policy %+v; want true and followers for quotes", s.Quotable, s.InteractionPolicy)
 	}
 	if s := decodeStatus(t, e.send(t, http.MethodGet, "/statuses/"+sampleStatusID, "", "")); s.Quotable != nil {
 		t.Errorf("an anonymous status says whether it is quotable: %v", *s.Quotable)
 	}
-	res = e.send(t, http.MethodPut, "/statuses/"+sampleStatusID+"/quote_policy", "write", `{"quote_policy":"followers"}`)
+	res = e.send(t, http.MethodPut, "/statuses/"+sampleStatusID+"/interaction_policy", "write",
+		`{"quote":{"automatic":"followers"},"reply":{"automatic":"mentioned","manual":"everyone"}}`)
 	if res.StatusCode != http.StatusOK || decodeStatus(t, res).Id != sampleStatusID {
-		t.Errorf("set quote policy = %d", res.StatusCode)
+		t.Errorf("set interaction policy = %d", res.StatusCode)
 	}
 	res = e.send(t, http.MethodGet, "/statuses/"+sampleStatusID+"/quotes", "read", "")
 	var page clientapi.StatusPage
@@ -595,7 +607,7 @@ func TestQuoteOperations(t *testing.T) {
 	if res := e.send(t, http.MethodDelete, "/statuses/"+sampleStatusID+"/quotes/"+quoting+"/approval", "write", ""); res.StatusCode != http.StatusNoContent {
 		t.Errorf("revoke = %d, want 204", res.StatusCode)
 	}
-	if want := "quote_policy:followers quotes revoke_quote:" + quoting; strings.Join(ops, " ") != want {
+	if want := "interaction_policy:reply=mentioned/everyone,quote=followers/ quotes revoke_quote:" + quoting; strings.Join(ops, " ") != want {
 		t.Errorf("operations = %v, want %s", ops, want)
 	}
 }

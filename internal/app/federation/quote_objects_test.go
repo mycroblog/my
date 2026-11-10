@@ -22,8 +22,8 @@ func (f fakeObjectQuotes) FindQuote(context.Context, string) (appcontent.Quote, 
 	return appcontent.Quote{}, appcontent.QuoteState{}, appcontent.ErrNotFound
 }
 
-func (f fakeObjectQuotes) FindQuotePolicy(context.Context, string) (appcontent.StatusQuotePolicy, error) {
-	return appcontent.StatusQuotePolicy{}, appcontent.ErrNotFound
+func (f fakeObjectQuotes) FindInteractionPolicy(context.Context, string) (appcontent.InteractionPolicy, error) {
+	return nil, nil
 }
 
 func (f fakeObjectQuotes) FederatedQuotePage(_ context.Context, uri string) (string, bool, error) {

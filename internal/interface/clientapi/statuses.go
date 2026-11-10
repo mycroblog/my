@@ -26,7 +26,7 @@ type Statuses interface {
 	Replay(ctx context.Context, authorAccountID, key string) (appcontent.Post, error)
 	Edit(ctx context.Context, in appcontent.EditInput) (appcontent.Post, error)
 	Delete(ctx context.Context, accountID, statusID string) (content.Deletion, error)
-	SetQuotePolicy(ctx context.Context, accountID, statusID string, policy content.QuotePolicy) (content.StatusQuotePolicy, error)
+	SetInteractionPolicy(ctx context.Context, accountID, statusID string, change appcontent.InteractionPolicyChange) (content.InteractionSettings, error)
 }
 
 // OutboxFetcher starts fetching the recent posts of a remote account whose profile a viewer
@@ -160,8 +160,8 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 		return unprocessable(l.ServerErrorsStatusQuoteNotAllowed())
 	case errors.Is(err, appcontent.ErrQuoteRemoteAudience):
 		return unprocessable(l.ServerErrorsStatusQuoteRemoteAudience())
-	case errors.Is(err, appcontent.ErrInvalidQuotePolicy):
-		return unprocessable(l.ServerErrorsInvalidValue("quote_policy"))
+	case errors.Is(err, appcontent.ErrInvalidInteractionPolicy):
+		return unprocessable(l.ServerErrorsInvalidValue("interaction_policy"))
 	case errors.Is(err, appcontent.ErrTooManyMedia):
 		return unprocessable(l.ServerErrorsStatusTooManyMedia(appcontent.MaxAttachments))
 	case errors.Is(err, appcontent.ErrMediaNotFound):
@@ -347,9 +347,9 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 	if v.Relation != nil {
 		out.Quotable = &v.Quotable
 	}
-	if v.QuotePolicy != "" {
-		policy := QuotePolicy(v.QuotePolicy)
-		out.QuotePolicy = &policy
+	if v.InteractionPolicy != nil {
+		policy := newInteractionPolicy(*v.InteractionPolicy)
+		out.InteractionPolicy = &policy
 	}
 	if q := v.Quote; q != nil {
 		out.Quote = &StatusQuote{State: QuoteState(q.State)}
@@ -512,7 +512,7 @@ func (s *Server) CreateStatus(ctx context.Context, req CreateStatusRequestObject
 		},
 		AuthorAccountID: v.AccountID, Visibility: content.Visibility(body.Visibility), InReplyToID: knownID(deref(body.InReplyToId)),
 		ClientID: v.ClientID, IdempotencyKey: deref(req.Params.IdempotencyKey), Poll: pollInput(body.Poll),
-		QuotedStatusID: knownID(deref(body.QuotedStatusId)), QuotePolicy: content.QuotePolicy(deref(body.QuotePolicy)),
+		QuotedStatusID: knownID(deref(body.QuotedStatusId)), InteractionPolicy: interactionPolicyChange(body.InteractionPolicy),
 	})
 	if err != nil {
 		if r, ok, err := s.statusRejected(ctx, err); ok {
@@ -920,24 +920,24 @@ func (s *Server) UnpinStatus(ctx context.Context, req UnpinStatusRequestObject) 
 	return UnpinStatus200JSONResponse{res}, err
 }
 
-// SetStatusQuotePolicy serves PUT /api/v1/statuses/{id}/quote_policy.
-func (s *Server) SetStatusQuotePolicy(ctx context.Context, req SetStatusQuotePolicyRequestObject) (SetStatusQuotePolicyResponseObject, error) {
+// SetStatusInteractionPolicy serves PUT /api/v1/statuses/{id}/interaction_policy.
+func (s *Server) SetStatusInteractionPolicy(ctx context.Context, req SetStatusInteractionPolicyRequestObject) (SetStatusInteractionPolicyResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, err
 	}
 	err = s.refuseUnseenDirect(ctx, v, req.Id)
 	if err == nil {
-		_, err = s.o.Statuses.SetQuotePolicy(ctx, v.AccountID, req.Id, content.QuotePolicy(req.Body.QuotePolicy))
+		_, err = s.o.Statuses.SetInteractionPolicy(ctx, v.AccountID, req.Id, interactionPolicyChange(req.Body))
 	}
 	if err == nil {
 		var out Status
 		if out, err = s.viewStatus(ctx, req.Id); err == nil {
-			return SetStatusQuotePolicy200JSONResponse{StatusAfterActionJSONResponse{Body: out, Headers: StatusAfterActionResponseHeaders{CacheControl: statusCache(ctx)}}}, nil
+			return SetStatusInteractionPolicy200JSONResponse{StatusAfterActionJSONResponse{Body: out, Headers: StatusAfterActionResponseHeaders{CacheControl: statusCache(ctx)}}}, nil
 		}
 	}
 	if p, ok := s.authorProblem(ctx, v, req.Id, err); ok {
-		return SetStatusQuotePolicydefaultApplicationProblemPlusJSONResponse(p), nil
+		return SetStatusInteractionPolicydefaultApplicationProblemPlusJSONResponse(p), nil
 	}
 	return nil, err
 }

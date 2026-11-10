@@ -21,7 +21,7 @@
 | FR-111 カスタム絵文字 | S | `custom_emojis`, `custom_emoji_images`, `custom_emoji_settings`, `custom_emoji_aliases`, `status_revision_emojis`, `account_profile_revision_emojis`, `audit_log_entries` |
 | FR-112 投票 | C | `polls`, `poll_options`, `poll_votes`, `poll_tally_observations`, `poll_tallies` |
 | FR-113 ブックマーク | S | `bookmarks` |
-| FR-114 引用投稿 | S | `status_quotes`, `status_quote_events`, `status_quote_states`, `status_quote_policies`, `quote_authorizations`, `quote_authorization_revocations`, `user_preferences`（`default_quote_policy`）, `notifications`（`quote`） |
+| FR-114 引用投稿 | S | `status_quotes`, `status_quote_events`, `status_quote_states`, `status_interaction_policies`, `quote_authorizations`, `quote_authorization_revocations`, `user_interaction_policies`, `notifications`（`quote`） |
 | FR-116 絵文字リアクション | M | `reactions`, `status_reaction_counts`, `custom_emojis`, `notifications`（`reaction`） |
 | FR-117 リンクのカード | S | `link_cards`, `link_card_media`, `status_link_cards`, `instance_settings`（`link_cards`, `link_cards_ignore_robots_txt`）, `link_card_domain_rules` |
 | FR-120 投稿の翻訳 | S | `status_translations`, `status_translation_attachments`, `status_translation_poll_options`, `translation_account_usage`, `translation_server_usage` |

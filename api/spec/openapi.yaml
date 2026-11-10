@@ -338,8 +338,8 @@ paths:
     $ref: ./paths/statuses_{id}_reactions.yaml
   /statuses/{id}/translation:
     $ref: ./paths/statuses_{id}_translation.yaml
-  /statuses/{id}/quote_policy:
-    $ref: ./paths/statuses_{id}_quote_policy.yaml
+  /statuses/{id}/interaction_policy:
+    $ref: ./paths/statuses_{id}_interaction_policy.yaml
   /statuses/{id}/quotes:
     $ref: ./paths/statuses_{id}_quotes.yaml
   /statuses/{id}/quotes/{quote_id}/approval:
@@ -1840,8 +1840,14 @@ components:
       $ref: ./components/schemas/QrCode.yaml
     LinkCardSize:
       $ref: ./components/schemas/LinkCardSize.yaml
-    QuotePolicy:
-      $ref: ./components/schemas/QuotePolicy.yaml
+    InteractionAudience:
+      $ref: ./components/schemas/InteractionAudience.yaml
+    InteractionPolicy:
+      $ref: ./components/schemas/InteractionPolicy.yaml
+    InteractionPolicyChange:
+      $ref: ./components/schemas/InteractionPolicyChange.yaml
+    InteractionRule:
+      $ref: ./components/schemas/InteractionRule.yaml
     QuoteState:
       $ref: ./components/schemas/QuoteState.yaml
     ReactToStatusRequest:
@@ -1904,8 +1910,6 @@ components:
       $ref: ./components/schemas/SetInstanceTextRequest.yaml
     SetLinkCardDomainRuleRequest:
       $ref: ./components/schemas/SetLinkCardDomainRuleRequest.yaml
-    SetQuotePolicyRequest:
-      $ref: ./components/schemas/SetQuotePolicyRequest.yaml
     SetThemeRequest:
       $ref: ./components/schemas/SetThemeRequest.yaml
     SignupBlockImportResult:

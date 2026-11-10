@@ -48,6 +48,7 @@ func LDContext() []any {
 			"interactionPolicy":         map[string]string{"@id": "gts:interactionPolicy", "@type": "@id"},
 			"canQuote":                  map[string]string{"@id": "gts:canQuote", "@type": "@id"},
 			"automaticApproval":         map[string]string{"@id": "gts:automaticApproval", "@type": "@id"},
+			"manualApproval":            map[string]string{"@id": "gts:manualApproval", "@type": "@id"},
 			"interactingObject":         map[string]string{"@id": "gts:interactingObject", "@type": "@id"},
 			"interactionTarget":         map[string]string{"@id": "gts:interactionTarget", "@type": "@id"},
 			"quote":                     map[string]string{"@id": "https://w3id.org/fep/044f#quote", "@type": "@id"},
@@ -267,13 +268,14 @@ type NoteDocument struct {
 // InteractionPolicy is the interactionPolicy of a status (GoToSocial's interaction policies,
 // FEP-044f): only canQuote.
 type InteractionPolicy struct {
-	CanQuote QuoteApprovalPolicy `json:"canQuote"`
+	CanQuote ApprovalPolicy `json:"canQuote"`
 }
 
-// QuoteApprovalPolicy is the canQuote of an interactionPolicy: whose quotes are approved
-// automatically. This server approves no quote by hand.
-type QuoteApprovalPolicy struct {
+// ApprovalPolicy is a can* of an interactionPolicy: whose interactions are approved
+// automatically, and whose after the author approves them (none is left out).
+type ApprovalPolicy struct {
 	AutomaticApproval []IRI `json:"automaticApproval"`
+	ManualApproval    []IRI `json:"manualApproval,omitempty"`
 }
 
 // InConversation returns n in the conversation uri: as conversation, and as context too unless

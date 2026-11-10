@@ -227,7 +227,7 @@ func remoteQuotesLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 	if _, err := e.quotePost(t, author, private.ID, content.VisibilityPublic); !errors.Is(err, appcontent.ErrQuoteNotAllowed) {
 		t.Errorf("public quote of an own followers-only post = %v, want ErrQuoteNotAllowed", err)
 	}
-	if _, err := e.content.SetQuotePolicy(ctx, author, public.ID, content.QuotePolicyNobody); err != nil {
+	if _, err := e.content.SetInteractionPolicy(ctx, author, public.ID, nobodyQuotes); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := e.quotePost(t, quoter, public.ID, content.VisibilityPublic); !errors.Is(err, appcontent.ErrQuoteNotAllowed) {
@@ -245,6 +245,54 @@ func remoteQuotesLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 	}
 	if updates != 1 {
 		t.Errorf("Updates after the policy changed = %d, want 1", updates)
+	}
+	// Every local post has rules of every kind; a change of the reply rules alone, which the
+	// Note does not carry, sends no Update.
+	for _, st := range []content.Status{public, private} {
+		policy, err := e.content.FindInteractionPolicy(ctx, st.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, k := range content.InteractionKinds {
+			if !policy.Declares(k) {
+				t.Errorf("the %s post %s has no rules of %s: %+v", st.Visibility, st.ID, k, policy)
+			}
+		}
+	}
+	replies := appcontent.InteractionPolicyChange{content.InteractionReply: {Automatic: content.AudienceMentioned}}
+	if got, err := e.content.SetInteractionPolicy(ctx, author, public.ID, replies); err != nil || got.Reply.Automatic != content.AudienceMentioned ||
+		got.Quote.Automatic != content.AudienceNobody {
+		t.Errorf("SetInteractionPolicy(replies) = %+v, %v; want mentioned replies and the quote rules kept", got, err)
+	}
+	updates = 0
+	for _, a := range e.quoteActivities(t, federation.OutboundStatus, public.ID) {
+		if a.Type == federation.ActivityUpdate {
+			updates++
+		}
+	}
+	if updates != 1 {
+		t.Errorf("Updates after the reply rules changed = %d, want still 1", updates)
+	}
+	// A quote that a manual rule admits waits for the author, without an approval.
+	byHand, err := e.content.Create(ctx, appcontent.CreateInput{
+		AuthorAccountID: author, TextInput: appcontent.TextInput{Text: "ask first"}, Visibility: content.VisibilityPublic,
+		InteractionPolicy: appcontent.InteractionPolicyChange{content.InteractionQuote: {Automatic: content.AudienceNobody, Manual: content.AudienceEveryone}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pending, err := e.quotePost(t, quoter, byHand.Status.ID, content.VisibilityPublic)
+	if err != nil {
+		t.Fatalf("quote of a post approved by hand = %v", err)
+	}
+	if s := e.quoteState(t, pending.ID); s.Approval != content.QuoteApprovalPending || s.AuthorizationURI != "" {
+		t.Errorf("state of a quote approved by hand = %+v, want pending", s)
+	}
+	if _, err := e.content.Create(ctx, appcontent.CreateInput{
+		AuthorAccountID: author, TextInput: appcontent.TextInput{Text: "narrow"}, Visibility: content.VisibilityPublic,
+		InteractionPolicy: appcontent.InteractionPolicyChange{content.InteractionQuote: {Automatic: content.AudienceFollowers, Manual: content.AudienceMentioned}},
+	}); !errors.Is(err, appcontent.ErrInvalidInteractionPolicy) {
+		t.Errorf("a manual audience narrower than the automatic one = %v, want ErrInvalidInteractionPolicy", err)
 	}
 
 	// An edit can take the quote away, for good.
@@ -377,6 +425,43 @@ func remoteSendsQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	if s := e.quoteState(t, r.ID); s.Approval != content.QuoteApprovalRejected {
 		t.Errorf("state after the Reject = %+v, want rejected", s)
 	}
+
+	// A post whose author approves quotes by hand keeps both approvals as it declares them, an
+	// Update replaces them, and a quote of it asks with a QuoteRequest all the same.
+	byHand := deliver(alice+"/notes/by-hand", map[string]any{"interactionPolicy": map[string]any{
+		"canQuote": map[string]any{"automaticApproval": []string{alice}, "manualApproval": []string{string(federation.PublicIRI)}},
+		"canReply": map[string]any{"automaticApproval": []string{alice + "/followers", "https://other.example/users/carol"}},
+	}})
+	rule := func(kind content.InteractionKind, approval content.InteractionApproval, audience content.InteractionAudience, actor string) content.InteractionRule {
+		return content.InteractionRule{Kind: kind, Approval: approval, Audience: audience, ActorURI: actor}
+	}
+	checkPolicy := func(what string, want content.InteractionPolicy) {
+		t.Helper()
+		got, err := e.content.FindInteractionPolicy(t.Context(), byHand.ID)
+		if err != nil || len(got) != len(want) || slices.ContainsFunc(want, func(r content.InteractionRule) bool { return !slices.Contains(got, r) }) {
+			t.Errorf("policy %s = %+v, %v; want %+v", what, got, err, want)
+		}
+	}
+	checkPolicy("as declared", content.InteractionPolicy{
+		rule(content.InteractionQuote, content.ApprovalAutomatic, content.AudienceAuthor, ""),
+		rule(content.InteractionQuote, content.ApprovalManual, content.AudienceEveryone, ""),
+		rule(content.InteractionReply, content.ApprovalAutomatic, content.AudienceFollowers, ""),
+		rule(content.InteractionReply, content.ApprovalAutomatic, content.AudienceAccount, "https://other.example/users/carol"),
+	})
+	h, err := e.quotePost(t, fan, byHand.ID, content.VisibilityPublic)
+	if err != nil {
+		t.Fatalf("quote of a post approved by hand = %v", err)
+	}
+	if s := e.quoteState(t, h.ID); s.Approval != content.QuoteApprovalPending {
+		t.Errorf("state of a quote approved by hand = %+v, want pending", s)
+	}
+	if sent := e.quoteActivities(t, federation.OutboundQuote, h.ID); len(sent) != 1 || sent[0].Type != federation.ActivityQuoteRequest {
+		t.Errorf("activities of a quote approved by hand = %+v, want a QuoteRequest", sent)
+	}
+	revised := remoteNote(byHand.URI, alice, published, map[string]any{"updated": published.Add(time.Minute).Format(time.RFC3339),
+		"interactionPolicy": map[string]any{"canQuote": map[string]any{"automaticApproval": []string{string(federation.PublicIRI)}}}})
+	e.expect(t, remoteActivity(t, "Update", byHand.URI+"/update", alice, revised), appfederation.InboxHandled)
+	checkPolicy("after the Update", content.InteractionPolicy{rule(content.InteractionQuote, content.ApprovalAutomatic, content.AudienceEveryone, "")})
 }
 
 func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
@@ -456,12 +541,22 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 		t.Errorf("answers about a local-only post = %+v, want a Reject", sent)
 	}
 	closed := e.localPost(t, author, content.VisibilityPublic)
-	if _, err := e.content.SetQuotePolicy(ctx, author, closed.ID, content.QuotePolicyNobody); err != nil {
+	if _, err := e.content.SetInteractionPolicy(ctx, author, closed.ID, nobodyQuotes); err != nil {
 		t.Fatal(err)
 	}
 	e.expect(t, request(bob+"/quote_requests/4", closed.URI), appfederation.InboxHandled)
 	if sent := e.quoteActivities(t, federation.OutboundQuote, closed.ID); len(sent) != 1 || sent[0].Type != federation.ActivityReject {
 		t.Errorf("answers about a post of nobody = %+v, want a Reject", sent)
+	}
+	// A request that a manual rule admits waits for the author, who answers it.
+	byHand := e.localPost(t, author, content.VisibilityPublic)
+	manual := appcontent.InteractionPolicyChange{content.InteractionQuote: {Automatic: content.AudienceNobody, Manual: content.AudienceEveryone}}
+	if _, err := e.content.SetInteractionPolicy(ctx, author, byHand.ID, manual); err != nil {
+		t.Fatal(err)
+	}
+	e.expect(t, request(bob+"/quote_requests/5", byHand.URI), appfederation.InboxHandled)
+	if sent := e.quoteActivities(t, federation.OutboundQuote, byHand.ID); len(sent) != 0 {
+		t.Errorf("answers about a post approved by hand = %+v, want none yet", sent)
 	}
 
 	// The author revokes the approval: the quote shows the post no more, and bob's server and the
@@ -494,3 +589,6 @@ func mustJSON(t *testing.T, v any) []byte {
 	}
 	return b
 }
+
+// nobodyQuotes changes the quote rules of a status to the author's alone.
+var nobodyQuotes = appcontent.InteractionPolicyChange{content.InteractionQuote: {Automatic: content.AudienceNobody}}
