@@ -198,6 +198,50 @@ const domainAction = {
   expires_at: "2026-11-11T08:00:00Z",
 };
 
+/** An allowed domain of the allowlist of federation, with the longest domain. */
+const domainAllow: Schemas["DomainAllow"] = {
+  domain: longDomain,
+  comment: "Our partner server, allowed while the rest of the fediverse is not.",
+  created_at: "2026-10-10T08:00:00Z",
+};
+
+/** A fetch of the subscribed blocklist that applied it. */
+const domainListFetch: Schemas["AdminDomainListFetch"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000f1",
+  outcome: "applied",
+  http_status: 200,
+  entry_count: 312,
+  fetched_at: "2026-10-16T04:00:00Z",
+};
+
+/** A subscription to a blocklist on a long URL, in the draft mode. */
+const domainListSubscription: Schemas["AdminDomainListSubscription"] = {
+  id: "0192f0c4-7a8e-7000-8000-0000000000e1",
+  url: `https://lists.${longDomain}/${"very-long-path-".repeat(4)}blocklist.csv`,
+  format: "mastodon_csv",
+  title: "The blocklist shared by the moderators of many servers",
+  mode: "draft",
+  suspend_as: "suspend",
+  silence_as: "limit",
+  apply_reject_media: true,
+  apply_reject_reports: true,
+  public_comment_from_list: false,
+  consecutive_failures: 0,
+  last_fetch: domainListFetch,
+  created_at: "2026-10-15T08:00:00Z",
+  updated_at: "2026-10-15T08:00:00Z",
+};
+
+/** A draft of the subscription that would limit the longest domain. */
+const domainListDraft: Schemas["AdminDomainListDraft"] = {
+  key: `issue:limit:noisy.${longDomain}`,
+  change: "issue",
+  domain: `noisy.${longDomain}`,
+  kind: "limit",
+  held: "draft_mode",
+  severity: "silence",
+};
+
 const signupBlock = {
   id: "0192f0c4-7a8e-7000-8000-0000000001a2",
   kind: "email_domain",
@@ -791,6 +835,17 @@ async function moderatorServer(page: Page) {
     if (key === "GET /admin/registrations") return json(route, { items: [registration] });
     if (key === "GET /admin/domain_actions") return json(route, { items: [domainAction] });
     if (key === `GET /admin/domain_actions/${domainAction.id}`) return json(route, domainAction);
+    if (key === "GET /admin/domain_allows") return json(route, { items: [domainAllow] });
+    if (key === "GET /admin/domain_list_subscriptions") return json(route, { items: [domainListSubscription] });
+    if (key === `GET /admin/domain_list_subscriptions/${domainListSubscription.id}`) {
+      return json(route, domainListSubscription);
+    }
+    if (key === `GET /admin/domain_list_subscriptions/${domainListSubscription.id}/drafts`) {
+      return json(route, { items: [domainListDraft] });
+    }
+    if (key === `GET /admin/domain_list_subscriptions/${domainListSubscription.id}/fetches`) {
+      return json(route, { items: [domainListFetch] });
+    }
     if (key === "GET /admin/signup_blocks") return json(route, { items: [signupBlock] });
     if (key === `GET /admin/signup_blocks/${signupBlock.id}`) return json(route, signupBlock);
     if (key === "GET /admin/audit_log") return json(route, { items: [auditEntry] });
@@ -1177,6 +1232,19 @@ const adminPages: Readonly<Record<string, { path: string; ready: string | { valu
     ready: { value: longDomain },
   },
   "moderation.domain-actions_.import": { path: "/moderation/domain-actions/import", ready: "" },
+  "moderation.domain-actions_.allowed": {
+    path: "/moderation/domain-actions/allowed",
+    ready: domainAllow.comment,
+  },
+  "moderation.domain-actions_.subscriptions": {
+    path: "/moderation/domain-actions/subscriptions",
+    ready: domainListSubscription.title,
+  },
+  "moderation.domain-actions_.subscriptions_.new": { path: "/moderation/domain-actions/subscriptions/new", ready: "" },
+  "moderation.domain-actions_.subscriptions_.$id": {
+    path: `/moderation/domain-actions/subscriptions/${domainListSubscription.id}`,
+    ready: domainListDraft.domain,
+  },
   "moderation.domain-actions_.$id": {
     path: `/moderation/domain-actions/${domainAction.id}`,
     ready: domainAction.public_comment,
