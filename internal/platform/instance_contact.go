@@ -46,6 +46,16 @@ func (a *App) instanceThumbnail(ctx context.Context) (*clientapi.InstanceImage, 
 	return &clientapi.InstanceImage{URL: img.URL, Width: img.Width, Height: img.Height, Alt: img.Alt}, nil
 }
 
+// mediaImage returns the image of a media setting's value for the admin settings, nil when the media
+// file is not a processed image.
+func (a *App) mediaImage(ctx context.Context, mediaID string) (*clientapi.InstanceImage, error) {
+	img, err := a.Previews.Image(ctx, mediaID, "")
+	if err != nil || img == nil {
+		return nil, err
+	}
+	return &clientapi.InstanceImage{URL: img.URL, Width: img.Width, Height: img.Height}, nil
+}
+
 // nodeMetadata returns what NodeInfo's metadata says about the instance besides its name, in the
 // instance's default locale: its summary, its contact, its thumbnail, and the closure of the
 // service. A contact account that

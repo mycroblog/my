@@ -270,6 +270,7 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "contact_account", kind: "account", default: "" },
   { key: "contact_email", kind: "email", default: "" },
   { key: "thumbnail", kind: "media", default: "" },
+  { key: "preview_image", kind: "media", default: "" },
   { key: "remote_media_policy", kind: "enum", default: "none", choices: ["none", "avatars", "all"] },
   { key: "remote_media_cache_ttl_seconds", kind: "int", default: "86400", minimum: 60, maximum: 31536000 },
   { key: "authorized_fetch", kind: "bool", default: "false" },
@@ -366,7 +367,12 @@ export function instanceSettingsFixture(
   return {
     items: settingDefaults.map((setting) => {
       const value = stored[setting.key];
-      return { ...setting, value: value ?? setting.default, stored: value !== undefined };
+      // A media setting with a value carries its image, as the server answers once the file is processed.
+      const image =
+        setting.kind === "media" && value
+          ? { image: { url: `https://my.example/media/${value}/r/large.jpg`, width: 1200, height: 630 } }
+          : {};
+      return { ...setting, value: value ?? setting.default, stored: value !== undefined, ...image };
     }),
   };
 }

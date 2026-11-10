@@ -118,16 +118,25 @@ func (a *App) brandLogos(ctx context.Context) (logo, logoDark string) {
 	return logo, svg(b.LogoDark)
 }
 
-// previewImage returns the instance's link preview image (the preview_image setting), or nil when it is unset or its media file is not a processed
-// image, which leaves the web client's built-in image.
+// previewImage returns the instance's link preview image (ADR-0028 §2): the preview_image setting,
+// or the thumbnail when that is unset or its media file is not a processed image. It is nil when
+// neither gives an image, which leaves the logo's preview and then the built-in image.
 func (a *App) previewImage(ctx context.Context) (*web.Image, error) {
-	setting, err := a.Instance.PreviewImage(ctx)
-	if err != nil || setting.MediaID == "" {
-		return nil, err
+	for _, setting := range []func(context.Context) (instance.Image, error){a.Instance.PreviewImage, a.Instance.Thumbnail} {
+		s, err := setting(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if s.MediaID == "" {
+			continue
+		}
+		img, err := a.Previews.Image(ctx, s.MediaID, s.Alt)
+		if err != nil {
+			return nil, err
+		}
+		if img != nil {
+			return &web.Image{URL: img.URL, Width: img.Width, Height: img.Height, Alt: img.Alt}, nil
+		}
 	}
-	img, err := a.Previews.Image(ctx, setting.MediaID, setting.Alt)
-	if err != nil || img == nil {
-		return nil, err
-	}
-	return &web.Image{URL: img.URL, Width: img.Width, Height: img.Height, Alt: img.Alt}, nil
+	return nil, nil
 }

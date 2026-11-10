@@ -10287,6 +10287,22 @@ export interface components {
             minimum?: number;
             /** @description The greatest value of an `int` setting; omitted for other kinds. */
             maximum?: number;
+            /**
+             * @description For a `media` setting with a value, its image, so that a client can show what is set
+             *     whoever uploaded it; omitted for other kinds, for none, and while the file is processing
+             *     or is not an image.
+             */
+            image?: components["schemas"]["AdminSettingImage"];
+        };
+        /**
+         * @description The image of a `media` setting (`preview_image`, `thumbnail`): the large still variant of its
+         *     media file, as link previews and the about page use it.
+         */
+        AdminSettingImage: {
+            /** Format: uri */
+            url: string;
+            width: number;
+            height: number;
         };
         /** @description Every instance setting, in a fixed order. */
         AdminSettingList: {

@@ -56,7 +56,7 @@
     "description": "Button that opens the file picker to choose the server's thumbnail."
   },
   "admin.settings.contact.thumbnail.description": {
-    "defaultMessage": "このサーバーについてのページと、訪れた人を迎えるページの上に表示される横長の画像 (1600 × 900 ピクセルなど) です。",
+    "defaultMessage": "このサーバーについてのページと、訪れた人を迎えるページの上に表示される横長の画像 (1600 × 900 ピクセルなど) です。プレビューの画像がないときは、リンクのプレビューにも使います。",
     "description": "Help about the server's thumbnail: where it shows and what size suits it."
   },
   "admin.settings.contact.thumbnail.failed": {
@@ -70,6 +70,22 @@
   "admin.settings.contact.title": {
     "defaultMessage": "連絡先とサムネイル",
     "description": "Heading of the section of the server's contact and thumbnail on the server settings screen."
+  },
+  "admin.settings.preview.title": {
+    "defaultMessage": "リンクのプレビュー",
+    "description": "Heading of the section of the server settings' general page that sets the image of link previews (preview_image)."
+  },
+  "admin.settings.preview.description": {
+    "defaultMessage": "このサーバーのリンクを X・Mastodon・Slack などに貼ったとき、画像のないページで表示される画像です。設定しないときは、サムネイル、ロゴ、mycroblog のロゴの順に使います。",
+    "description": "Explains the link preview section: which pages use the image and what is used when it is not set, in order."
+  },
+  "admin.settings.preview.image": {
+    "defaultMessage": "プレビューの画像",
+    "description": "Heading of the image field of link previews (preview_image)."
+  },
+  "admin.settings.preview.image.description": {
+    "defaultMessage": "1200 × 630 ピクセルの横長の画像は、大きなカードで表示されます。",
+    "description": "Hint under the heading of the preview image: the recommended size."
   },
   "admin.settings.descriptions.description": {
     "defaultMessage": "短い説明は、このサーバーについてのページやほかのアプリがサーバーの名前と並べて表示する 1 段落の文です。説明は、このサーバーについてのページで詳しく伝えます。どの言語で書いてもよく、アプリの言語にかかわらず全員にそのまま表示されます。",

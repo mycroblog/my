@@ -224,3 +224,24 @@ func ExampleResolver_Locale() {
 	// ja ltr 設定エラーが2件あります。
 	// en ltr Found 2 configuration errors.
 }
+
+// TestRegion gives every bundled locale a country, so that og:locale is language_TERRITORY
+// (ADR-0028 §2), and keeps the pseudo-locales' private-use regions out.
+func TestRegion(t *testing.T) {
+	want := map[string]string{"de": "DE", "en": "US", "es": "ES", "fr": "FR", "ja": "JP", "pt-BR": "BR", "zh-CN": "CN", "zh-TW": "TW", "ar-XB": "", "en-XA": ""}
+	for _, l := range load(t, WithPseudoLocales()).Locales() {
+		w, ok := want[l]
+		if !ok {
+			t.Errorf("no expected region for the locale %s", l)
+			continue
+		}
+		if got := Region(l); got != w {
+			t.Errorf("Region(%q) = %q, want %q", l, got, w)
+		}
+	}
+	for in, w := range map[string]string{"zh-Hant": "TW", "pt": "BR", "en-GB": "GB", "und": "", "": "", "x-foo": "", "eo": ""} {
+		if got := Region(in); got != w {
+			t.Errorf("Region(%q) = %q, want %q", in, got, w)
+		}
+	}
+}

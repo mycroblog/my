@@ -24,13 +24,13 @@ export const instanceNameLimit = 100;
 export const shortDescriptionLimit = 500;
 export const descriptionLimit = 20_000;
 
-/** The most characters of the thumbnail's alt text (internal/domain/instance, text.go). */
-export const thumbnailAltLimit = 1500;
+/** The most characters of the alt text of the thumbnail and of the preview image (internal/domain/instance, text.go). */
+export const imageAltLimit = 1500;
 
 /** The texts of the server settings screen. */
 type SettingsTextKey = Extract<
   Schemas["InstanceTextKey"],
-  "name" | "short_description" | "description" | "thumbnail_alt"
+  "name" | "short_description" | "description" | "thumbnail_alt" | "preview_image_alt"
 >;
 
 /** A new value of a text; an empty `body` clears it. */

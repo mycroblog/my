@@ -7027,6 +7027,11 @@ type AdminSetting struct {
 	// Default The value of the setting while it has never been set.
 	Default string `json:"default"`
 
+	// Image For a `media` setting with a value, its image, so that a client can show what is set
+	// whoever uploaded it; omitted for other kinds, for none, and while the file is processing
+	// or is not an image.
+	Image *AdminSettingImage `json:"image,omitempty"`
+
 	// Key The key of an instance setting. New keys may be
 	// added; clients show the ones they know.
 	Key InstanceSettingKey `json:"key"`
@@ -7054,6 +7059,14 @@ type AdminSetting struct {
 
 	// Value The current value, which is `default` when `stored` is false.
 	Value string `json:"value"`
+}
+
+// AdminSettingImage The image of a `media` setting (`preview_image`, `thumbnail`): the large still variant of its
+// media file, as link previews and the about page use it.
+type AdminSettingImage struct {
+	Height int    `json:"height"`
+	Url    string `json:"url"`
+	Width  int    `json:"width"`
 }
 
 // AdminSettingList Every instance setting, in a fixed order.

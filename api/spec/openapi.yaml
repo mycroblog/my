@@ -1284,6 +1284,8 @@ components:
       $ref: ./components/schemas/AdminSameIpAccounts.yaml
     AdminSetting:
       $ref: ./components/schemas/AdminSetting.yaml
+    AdminSettingImage:
+      $ref: ./components/schemas/AdminSettingImage.yaml
     AdminSettingList:
       $ref: ./components/schemas/AdminSettingList.yaml
     AdminSignupBlock:

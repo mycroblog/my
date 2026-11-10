@@ -177,3 +177,35 @@ func TestSingleUserNeedsOneAccount(t *testing.T) {
 		t.Errorf("single_user with one account = %d, want 200", res.StatusCode)
 	}
 }
+
+// TestMediaSettingsCarryTheirImage checks that a media setting with a processed image carries it in
+// the admin list, so that the admin screen can show a preview_image uploaded by anyone, and that a
+// media file that is not one, or an empty setting, carries none.
+func TestMediaSettingsCarryTheirImage(t *testing.T) {
+	f := &fakeSettings{stored: []instance.CurrentSetting{
+		{Key: instance.SettingPreviewImage, Value: "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f"},
+		{Key: instance.SettingThumbnail, Value: "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e70"},
+	}}
+	e := newAuthEnv(t, func(o *clientapi.Options) {
+		o.Permissions = fakePermissions{userOf(aliceAccountID): identity.AllPermissions()}
+		o.Settings = f
+		o.MediaImage = func(_ context.Context, id string) (*clientapi.InstanceImage, error) {
+			if id != "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f" {
+				return nil, nil // still processing
+			}
+			return &clientapi.InstanceImage{URL: "https://social.example/media/p/large.jpg", Width: 1200, Height: 630, Alt: "ignored"}, nil
+		}
+	})
+	e.auth.tokens["admin-read"] = bearer("admin:read", aliceAccountID)
+	list := decodeJSON[clientapi.AdminSettingList](t, e.admin(t, http.MethodGet, "/admin/settings", "admin-read", nil))
+	img := settingItem(t, list, clientapi.InstanceSettingKeyPreviewImage).Image
+	if img == nil || img.Url != "https://social.example/media/p/large.jpg" || img.Width != 1200 || img.Height != 630 {
+		t.Errorf("preview_image image = %+v, want the large variant", img)
+	}
+	if img := settingItem(t, list, clientapi.InstanceSettingKeyThumbnail).Image; img != nil {
+		t.Errorf("thumbnail still processing has image %+v, want none", img)
+	}
+	if img := settingItem(t, list, clientapi.InstanceSettingKeyRegistrationMode).Image; img != nil {
+		t.Errorf("an enum setting has image %+v", img)
+	}
+}
