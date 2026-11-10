@@ -9,6 +9,7 @@ import type { Page, Route } from "@playwright/test";
 import { createIntl } from "react-intl";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, newPostButton, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 /** The client message `key` in the project's locale, with its `{name}` arguments replaced. */
 function message(key: string, values: Record<string, string> = {}): string {
@@ -144,21 +145,14 @@ async function serveApi(page: Page): Promise<Posted[]> {
     }
     if (path === "/api/v1/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, {
-        locale: test.info().project.use.locale ?? "en",
-        time_zone: "UTC",
-        time_zone_chosen: true,
-        default_visibility: "public",
-        default_interaction_policy: {
-          reply: { automatic: "everyone" },
-          announce: { automatic: "everyone" },
-          quote: { automatic: "everyone" },
-        },
-        default_post_language: "en",
-        require_media_description: false,
-        timeline_auto_insert: true,
-        timeline_languages: [],
-      });
+      return json(
+        route,
+        preferencesOf({
+          locale: test.info().project.use.locale ?? "en",
+          default_post_language: "en",
+          timeline_auto_insert: true,
+        }),
+      );
     }
     if (path === "/api/v1/statuses" && request.method() === "POST") {
       const body = request.postDataJSON() as Record<string, unknown>;

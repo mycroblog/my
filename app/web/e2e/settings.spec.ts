@@ -4,9 +4,11 @@
 // scrolling sideways. `vite preview` has no API, so each test plays a signed-in user's server with
 // page.route; names change with the locale, so elements are found by role, structure, autocomplete tokens and,
 // where a role is not unique, by their names in the project's catalog.
+import type { components } from "@mycroblog/mykit";
 import type { Page, Route } from "@playwright/test";
 import { escapeRegExp, expect, expectNoAxeViolations, expectNoHorizontalScroll, localeDir, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 /** The signed-in user's account, as GET /accounts/verify_credentials answers. */
 const viewer = {
@@ -61,7 +63,7 @@ type ServerOptions = {
   permissions?: string[];
   sendsEmail?: boolean;
   timeZoneChosen?: boolean;
-  emailSuppression?: { kind: string; state_changed_at: string };
+  emailSuppression?: components["schemas"]["EmailSuppression"];
   /**
    * The server maximum of the automatic deletion that applies to the viewer (AutoDeleteLimit): GET answers the saved
    * policy with it, bound from `enforceFrom` while the policy goes beyond it, and the preview counts four posts.
@@ -78,24 +80,11 @@ async function signedInServer(
   locale: string,
   { permissions = [], sendsEmail = true, timeZoneChosen = true, emailSuppression, autoDeleteLimit }: ServerOptions = {},
 ) {
-  let preferences = {
+  let preferences = preferencesOf({
     locale,
-    time_zone: "UTC",
     time_zone_chosen: timeZoneChosen,
-    locale_follows_browser: false,
-    time_zone_follows_browser: false,
-    default_visibility: "public",
-    default_interaction_policy: {
-      reply: { automatic: "everyone" },
-      announce: { automatic: "everyone" },
-      quote: { automatic: "everyone" },
-    },
-    default_post_language: "und",
-    require_media_description: false,
     ...(emailSuppression === undefined ? {} : { email_suppression: emailSuppression }),
-    timeline_auto_insert: false,
-    timeline_languages: [] as string[],
-  };
+  });
   let autoDeletePolicy = {
     enabled: false,
     min_age_days: 30,

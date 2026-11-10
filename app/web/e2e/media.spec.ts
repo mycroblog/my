@@ -6,6 +6,7 @@
 import type { Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, imageVariants, test } from "./fixtures";
+import { preferencesOf } from "./preferences.ts";
 
 type Account = components["schemas"]["Account"];
 type Status = components["schemas"]["Status"];
@@ -134,14 +135,10 @@ async function serveApi(page: Page): Promise<void> {
     }
     if (path === "/preferences") {
       // The user's locale is the project's: the app displays itself in the signed-in user's locale.
-      return json(route, {
-        locale: test.info().project.use.locale ?? "en",
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "en",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(
+        route,
+        preferencesOf({ locale: test.info().project.use.locale ?? "en", default_post_language: "en" }),
+      );
     }
     if (path === "/notifications/marker") return json(route, { last_read_id: "0", unread_count: 0 });
     if (path === "/timelines/home") return json(route, { items: [post] });

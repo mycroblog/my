@@ -7,6 +7,7 @@
 import type { Page, Route } from "@playwright/test";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 /** The client message `key` in the project's locale. */
 function message(key: string): string {
@@ -85,14 +86,7 @@ async function server(page: Page, state: "announced" | "closed", { signedIn }: {
       return json(route, { type: "about:blank", title: "Unauthorized", status: 401 }, 401);
     if (key === "GET /accounts/verify_credentials") return json(route, user);
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "und",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale }));
     }
     if (key === "GET /exports") return json(route, { items: [] });
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);

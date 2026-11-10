@@ -9,6 +9,7 @@
 // is checked by role, by count and by address.
 import type { Locator, Page, Route } from "@playwright/test";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, test } from "./fixtures";
+import { preferencesOf } from "./preferences.ts";
 
 /** The signed-in moderator's account, as GET /accounts/verify_credentials answers, with the moderator's permissions. */
 const moderator = {
@@ -133,15 +134,7 @@ async function moderatorServer(page: Page) {
     }
     if (key === "GET /accounts/verify_credentials") return json(route, moderator);
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "und",
-        require_media_description: false,
-        timeline_auto_insert: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale }));
     }
     if (key === "GET /admin/counts") return json(route, { open_reports: 2, pending_registrations: 1 });
     if (key === "GET /admin/registrations") return json(route, { items: [] });

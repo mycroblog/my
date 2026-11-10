@@ -16,6 +16,7 @@ import {
   test,
 } from "./fixtures";
 import { readCatalog } from "./catalog.ts";
+import { preferencesOf } from "./preferences.ts";
 
 type Instance = components["schemas"]["Instance"];
 type Status = components["schemas"]["Status"];
@@ -239,14 +240,7 @@ test("the home timeline says that it shows the posts loaded last while offline (
       return json(route, { ...bob, source: { note: "", fields: [] }, permissions: [] });
     if (path === "/preferences") {
       const locale = test.info().project.use.locale ?? "en";
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "en",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale, default_post_language: "en" }));
     }
     return json(route, { type: "about:blank", title: "Not Found", status: 404 }, 404);
   });

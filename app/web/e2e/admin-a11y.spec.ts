@@ -11,6 +11,7 @@ import { readdirSync } from "node:fs";
 import type { Locator, Page, Route } from "@playwright/test";
 import type { components } from "@mycroblog/mykit";
 import { expect, expectNoAxeViolations, expectNoHorizontalScroll, recordTable, servedImage, test } from "./fixtures";
+import { preferencesOf } from "./preferences.ts";
 
 type Schemas = components["schemas"];
 
@@ -710,14 +711,7 @@ async function moderatorServer(page: Page) {
       return json(route, moderator);
     if (key === `GET /accounts/${target.id}`) return json(route, target);
     if (key === "GET /preferences") {
-      return json(route, {
-        locale,
-        time_zone: "UTC",
-        default_visibility: "public",
-        default_post_language: "und",
-        require_media_description: false,
-        timeline_languages: [],
-      });
+      return json(route, preferencesOf({ locale }));
     }
     if (key === "GET /admin/counts") {
       return json(route, {
