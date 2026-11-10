@@ -176,11 +176,11 @@ Delete this activity when `payments = none`.
 
 | | |
 | --- | --- |
-| Purposes | Taking subscriptions, granting roles, accounting |
-| Data subjects | Subscribers |
-| Personal data | Provider object IDs, amounts, periods, states, refunds, chargebacks, the choice to be listed. Email address sent to the provider. No card numbers, last four digits, or expiry dates |
+| Purposes | Taking subscriptions and tips, granting roles, accounting |
+| Data subjects | Subscribers, users who tip |
+| Personal data | Provider object IDs, amounts, periods, states, refunds, chargebacks, the choice to be listed, the tips and their payments. Email address sent to the provider. No card numbers, last four digits, or expiry dates |
 | Recipients | Hosting, payment provider, people who can see the list of supporters, staff with the matching permission |
-| Erasure | Webhook receipts 45 days. The customer link and the listing at account erasure. Subscription and payment records have no automatic end: {{PERIOD AND THE LAW THAT REQUIRES IT}}. At the provider: {{ITS PERIOD, AND WHETHER YOU DELETE THE CUSTOMER}} |
+| Erasure | Webhook receipts 45 days. The customer link, the listing, and the tips at account erasure (their income stays without the user). Subscription and payment records have no automatic end: {{PERIOD AND THE LAW THAT REQUIRES IT}}. At the provider: {{ITS PERIOD, AND WHETHER YOU DELETE THE CUSTOMER}} |
 | Legal basis | {{e.g. contract, legal obligation}} |
 
 ### 11. Running the service

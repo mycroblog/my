@@ -75,4 +75,5 @@
 | `supporter_open_tips` | 投影 | `user_id`（PK）, `tip_id`, `expires_at` | 支払いも期限切れもないチップ。利用者ごとに 1 つ。一意 `(tip_id)`。インデックス `(expires_at)` |
 
 - チップの状態は、支払いの行があれば `paid`、なく `expired` の結果があれば `expired`、どちらもなければ `open` です。支払いの後の全額の返金・チャージバック・その取り消しは結果の行で表し、一部の返金は収入の行（§4.12）だけです。
-- お金の動きの支払いの参照（`MoneyMovement.Payment`）を `supporter_tip_payments` で引いてチップに行き着き、収入の行の `source` を `one_time` にします。
+- お金の動きの支払いの参照（`MoneyMovement.Payment`）を `supporter_tip_payments` で引いてチップに行き着き、収入の行の `source` を `one_time`、`tip_id` をそのチップにします。支払いの動きが画面の通知より先に届いて引けないときは、開いているチップの画面を事業者から読み直してから引きます。
+- `supporter_open_tips` の `expires_at` は、画面を記録するまでは開始から 1 時間、記録した後は画面の期限です。5 分ごとの `supporters.sync_due` が期限の過ぎた行を `supporters.sync_tip` に回し、期限切れか支払いにします。作り直しは、支払いも期限切れの結果もない利用者ごとの最新のチップから導きます（§9）。
