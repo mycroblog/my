@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A revision of the settings of an event with all its places. The title and the description
+  are empty, and the places are gone, once the account that wrote them is erased.
+type: object
+required: [id, title, description, visibility, time_zone, place_disclosure, capacity, places, revised_by_account_id, revised_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  title:
+    type: string
+  description:
+    type: string
+  visibility:
+    $ref: ./EventVisibility.yaml
+  time_zone:
+    type: string
+  place_disclosure:
+    $ref: ./EventPlaceDisclosure.yaml
+  capacity:
+    description: How many attendees may answer going; 0 for no limit.
+    type: integer
+  places:
+    type: array
+    items:
+      $ref: ./EventPlace.yaml
+  revised_by_account_id:
+    $ref: ./Id.yaml
+  revised_at:
+    type: string
+    format: date-time

@@ -23,8 +23,8 @@ properties:
   forwardable:
     description: |
       Whether a moderator can forward the report to the target's server now: it was filed on
-      this server, its target is a remote account, it points at no voice chat room, and it is
-      not forwarded yet.
+      this server, its target is a remote account, it points at no voice chat room and no
+      event, and it is not forwarded yet.
     type: boolean
   filed_at:
     type: string
@@ -65,6 +65,11 @@ properties:
     description: |
       The voice chat room that the report points at, whose host is the target; omitted for
       none.
+    allOf:
+      - $ref: ./Id.yaml
+  event_id:
+    description: |
+      The event that the report points at, whose organizer is the target; omitted for none.
     allOf:
       - $ref: ./Id.yaml
   hook_origin:

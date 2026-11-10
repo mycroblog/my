@@ -243,6 +243,37 @@ func TestPostPreview(t *testing.T) {
 	}
 }
 
+// TestArticlePreview checks that an article's page shows its title, its summary, and its cover
+// (ADR-0160 §11): the summary is never a content warning, and the body stays out of the shell.
+func TestArticlePreview(t *testing.T) {
+	a := alice("Alice", "")
+	s := status(a, content.VisibilityPublic, "<p>The secret body</p>")
+	s.Post.Revision.Article = &content.ArticleRevision{Title: "On gardens", Summary: "Why we grow tomatoes", SummaryOrigin: content.SummaryByAuthor}
+	s.Image = &appcontent.PreviewImage{URL: "https://social.example/media/cv/full.jpg", Width: 1200, Height: 630, Alt: "Tomatoes"}
+	mux := previewHandler(t, &fakePreviews{statuses: map[string]appcontent.StatusPreview{statusID: s}}, web.Options{})
+
+	rec := get(mux, "/@alice/status/"+statusID, nil)
+	body := rec.Body.String()
+	got := metas(t, body)
+	for k, v := range map[string]string{
+		"og:type":                "article",
+		"og:title":               "On gardens",
+		"og:description":         "Why we grow tomatoes",
+		"og:image":               "https://social.example/media/cv/full.jpg",
+		"og:image:alt":           "Tomatoes",
+		"article:published_time": "2026-10-16T12:34:56Z",
+		"article:author":         "https://social.example/@alice",
+		"twitter:card":           "summary_large_image",
+	} {
+		if got[k] != v {
+			t.Errorf("%s = %q, want %q", k, got[k], v)
+		}
+	}
+	if rec.Code != http.StatusOK || !strings.Contains(body, "<title>On gardens</title>") || strings.Contains(body, "secret body") {
+		t.Errorf("article page = %d:\n%s", rec.Code, body)
+	}
+}
+
 // TestPreviewImageOrder checks the order of ADR-0028: the attached image, the header image or
 // avatar, the instance's preview image, and the built-in image.
 func TestPreviewImageOrder(t *testing.T) {

@@ -268,6 +268,11 @@ description: |
   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
     it can.
   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+  - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
+  - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
+    takes no more candidates, answers, or confirmations.
+  - `/api/v1/problems/event-last-candidate` (409): the last candidate of a date poll cannot be
+    withdrawn.
   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
     be searched (`Instance.full_text_search.available`).
   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of

@@ -125,6 +125,7 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   domain_list_draft_accepted: "client:admin.audit_log.action.domain_list_draft_accepted",
   domain_list_draft_rejected: "client:admin.audit_log.action.domain_list_draft_rejected",
   domain_list_fetch_queued: "client:admin.audit_log.action.domain_list_fetch_queued",
+  event_cancelled: "client:admin.audit_log.action.event_cancelled",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
@@ -159,6 +160,7 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   link_card_domain: "client:admin.audit_log.target_kind.link_card_domain",
   domain_allow: "client:admin.audit_log.target_kind.domain_allow",
   domain_list_subscription: "client:admin.audit_log.target_kind.domain_list_subscription",
+  event: "client:admin.audit_log.target_kind.event",
 };
 
 /** Who performed an operation without a user's account to show. */

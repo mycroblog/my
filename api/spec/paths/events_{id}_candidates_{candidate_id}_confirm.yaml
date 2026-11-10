@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/EventId.yaml
+  - $ref: ../components/parameters/EventCandidateId.yaml
+post:
+  operationId: confirmEventCandidate
+  summary: Confirm a candidate date of an event
+  description: |
+    Fixes the date of the event to a candidate, by the organizer or a co-organizer: the event is
+    `scheduled`, its poll takes no more answers, the reminders follow the date, and the users who
+    answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
+    change of the date is a `PATCH` of the event. A candidate that has started is a 422.
+    A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+    the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+    `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+  tags: [events]
+  security:
+    - oauth2: ["write:events"]
+  responses:
+    "200":
+      description: The event.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Event.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

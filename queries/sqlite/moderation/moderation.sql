@@ -136,6 +136,13 @@ ON CONFLICT (report_id) DO NOTHING;
 -- name: GetReportVoiceRoom :many
 SELECT room_id, revision_id FROM report_voice_rooms WHERE report_id = ?;
 
+-- name: InsertReportGathering :exec
+INSERT INTO report_gatherings (report_id, gathering_id, revision_id) VALUES (?, ?, ?)
+ON CONFLICT (report_id) DO NOTHING;
+
+-- name: GetReportGathering :many
+SELECT gathering_id, revision_id FROM report_gatherings WHERE report_id = ?;
+
 -- InsertReportHookOrigin inserts nothing when the decision already filed a report.
 -- name: InsertReportHookOrigin :execrows
 INSERT INTO report_hook_origins (report_id, hook_decision_id, hook, reason_code) VALUES (?, ?, ?, ?)
@@ -154,6 +161,9 @@ SELECT hook_decision_id, hook, reason_code FROM report_hook_origins WHERE report
 
 -- name: ListReportedVoiceRooms :many
 SELECT DISTINCT room_id FROM report_voice_rooms WHERE room_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY room_id;
+
+-- name: ListReportedGatherings :many
+SELECT DISTINCT gathering_id FROM report_gatherings WHERE gathering_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY gathering_id;
 
 -- name: ListReportRuleIDs :many
 SELECT rule_id FROM report_rule_citations WHERE report_id = ? ORDER BY rule_id;

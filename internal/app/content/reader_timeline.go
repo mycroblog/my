@@ -10,8 +10,8 @@ import (
 )
 
 // This file holds what the timelines of the client API read besides the timeline module's
-// pages: the statuses and boosts of a page, hashtags by name, and the pinned statuses of a
-// profile.
+// pages: the statuses and boosts of a page, hashtags by name, and the pinned statuses and the
+// articles of a profile.
 
 // Views returns the statuses of ids as viewer sees them, in the order of ids. Statuses that
 // are missing, deleted, or hidden from the viewer are left out, so that a page read before a
@@ -71,4 +71,31 @@ func (r *Reader) Pinned(ctx context.Context, viewer Viewer, accountID string) ([
 		ids = append(ids, p.StatusID)
 	}
 	return r.Views(ctx, viewer, ids)
+}
+
+// ArticlePage is a page of the articles of a profile.
+type ArticlePage struct {
+	Statuses []StatusView
+	// Next is the cursor of the next page, "" for the last one.
+	Next string
+}
+
+// Articles returns a page of the articles of accountID that viewer may see, newest first
+// (ADR-0160 §11): up to limit articles older than the cursor before ("" for the newest).
+// Articles that viewer may not see are left out, so a page may be shorter than limit and still
+// have a next page; the last page has none.
+func (r *Reader) Articles(ctx context.Context, viewer Viewer, accountID, before string, limit int) (ArticlePage, error) {
+	ids, err := r.d.Statuses.ListLiveArticleIDs(ctx, accountID, before, limit+1)
+	if err != nil {
+		return ArticlePage{}, err
+	}
+	var out ArticlePage
+	if len(ids) > limit {
+		ids = ids[:limit]
+		out.Next = ids[limit-1]
+	}
+	if out.Statuses, err = r.Views(ctx, viewer, ids); err != nil {
+		return ArticlePage{}, err
+	}
+	return out, nil
 }

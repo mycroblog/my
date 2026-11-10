@@ -22,6 +22,7 @@ import { imageSources } from "../../../lib/images";
 import { aboutCrawlerPath, profilePath, signInPath } from "../../../lib/paths";
 import { useStatusPageUrl } from "../../../lib/statusPage";
 import { DocumentLink, DocumentsSection } from "../../documents";
+import { FundingMeter } from "../../costs";
 import { AboutSupportersSection } from "../../supporters";
 import type { Instance, PublicDomainAction } from "../api/about";
 import { type ModeratedDomains, useAbout, useModeratedDomains } from "../hooks/useAbout";
@@ -31,7 +32,7 @@ import { type ModeratedDomains, useAbout, useModeratedDomains } from "../hooks/u
  * considers joining reads first (web-client/screens/about.md): the thumbnail, the summary, the description, the rules
  * followed by its terms of service and privacy policy, the most days it keeps posts, how to reach the operators, the remote domains it moderates as
  * far as the instance lists them, what it states to search engines and AI crawlers (its details folded), what running
- * it costs and what its supporters bring in as far as the instance publishes them, its supporter plans and the
+ * it costs and what its supporters bring in as far as the instance publishes them (with this month's funding meter), its supporter plans and the
  * supporter list, its commerce disclosures, its status page, where to get its source code, and the license notices of
  * what the web app bundles. The information layout builds the table of contents from the sections' headings.
  * Everyone may read it, signed in or not.
@@ -67,8 +68,8 @@ export function About() {
       {/* Who runs the server, what it costs and what it runs. */}
       {about.finance !== undefined &&
         about.income !== undefined &&
-        (about.finance !== "private" || about.income !== "private") && (
-          <Costs finance={about.finance} income={about.income} />
+        (about.finance !== "private" || about.income !== "private" || about.fundingMeter !== undefined) && (
+          <Costs finance={about.finance} income={about.income} meter={about.fundingMeter} />
         )}
       <AboutSupportersSection />
       {about.commerceDisclosureUrl !== undefined && <CommerceDisclosure url={about.commerceDisclosureUrl} />}
@@ -301,30 +302,37 @@ function Crawlers({
 }
 
 /**
- * What running the server costs and what its supporters bring in (FR-903, FR-917, ADR-0067 §8, ADR-0067 §17): what the
- * instance publishes of each, whether the balance is published (only when both are), and the link to the page of the
- * totals. Absent when the instance publishes neither.
+ * What running the server costs and what its supporters bring in (FR-903, FR-917, FR-905, ADR-0067 §8, ADR-0067 §17,
+ * ADR-0067 §22): the funding meter of this month first when the instance publishes it, what the instance publishes of
+ * the costs and of the income, whether the balance is published (only when both are), and the link to the page of the
+ * totals while either is. Absent when the instance publishes none of them.
  */
 function Costs({
   finance,
   income,
+  meter,
 }: {
   finance: Instance["finance_visibility"];
   income: Instance["income_visibility"];
+  meter: Instance["funding_meter"];
 }) {
   const t = useT();
+  const published = finance !== "private" || income !== "private";
   return (
     <Section title={t("client:about.costs.title")}>
+      {meter !== undefined && <FundingMeter meter={meter} />}
       {finance !== "private" && <p>{t("client:about.costs.description", { visibility: finance })}</p>}
       {income !== "private" && <p>{t("client:about.income.description", { visibility: income })}</p>}
       {finance !== "private" && income !== "private" && <p>{t("client:about.income.balance")}</p>}
-      <p>
-        <Link href="/about/costs" variant="standalone">
-          {t("client:about.costs.link", {
-            shown: finance === "private" ? "income" : income === "private" ? "costs" : "both",
-          })}
-        </Link>
-      </p>
+      {published && (
+        <p>
+          <Link href="/about/costs" variant="standalone">
+            {t("client:about.costs.link", {
+              shown: finance === "private" ? "income" : income === "private" ? "costs" : "both",
+            })}
+          </Link>
+        </p>
+      )}
     </Section>
   );
 }

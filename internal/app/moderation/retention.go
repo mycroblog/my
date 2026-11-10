@@ -99,12 +99,16 @@ type RetentionRepository interface {
 	// reporter no hold preserves.
 	ListReportsToPurge(ctx context.Context, tx uow.Tx, resolvedBefore time.Time, limit int) ([]string, error)
 	// PurgeReports deletes the reports with their statuses, rule citations, voice chat rooms,
-	// assignments, resolutions, reopenings, notes, and states.
+	// events, assignments, resolutions, reopenings, notes, and states.
 	PurgeReports(ctx context.Context, tx uow.Tx, ids []string) error
 	// ReportedVoiceRooms returns which of roomIDs a report points at (report_voice_rooms).
 	ReportedVoiceRooms(ctx context.Context, roomIDs []string) (map[string]bool, error)
 	// ReportedVoiceRoomsTx is ReportedVoiceRooms inside tx.
 	ReportedVoiceRoomsTx(ctx context.Context, tx uow.Tx, roomIDs []string) (map[string]bool, error)
+	// ReportedGatherings returns which of gatheringIDs a report points at (report_gatherings).
+	ReportedGatherings(ctx context.Context, gatheringIDs []string) (map[string]bool, error)
+	// ReportedGatheringsTx is ReportedGatherings inside tx.
+	ReportedGatheringsTx(ctx context.Context, tx uow.Tx, gatheringIDs []string) (map[string]bool, error)
 	// ListSignupBlocksToPurge returns up to limit sign-up blocks, oldest first, that ended (were
 	// lifted or expired, whichever came first) before endedBefore, except those made by a ban
 	// of an account that a hold preserves.
@@ -201,6 +205,24 @@ func (s *Service) ReportedVoiceRoomsTx(ctx context.Context, tx uow.Tx, roomIDs [
 		return map[string]bool{}, nil
 	}
 	return s.d.Repository.ReportedVoiceRoomsTx(ctx, tx, roomIDs)
+}
+
+// ReportedGatherings returns which of gatheringIDs a report points at: the gathering module keeps
+// the answers and the invitations of such an event until the reports are erased after their
+// retention (ADR-0161 §14).
+func (s *Service) ReportedGatherings(ctx context.Context, gatheringIDs []string) (map[string]bool, error) {
+	if len(gatheringIDs) == 0 {
+		return map[string]bool{}, nil
+	}
+	return s.d.Repository.ReportedGatherings(ctx, gatheringIDs)
+}
+
+// ReportedGatheringsTx is ReportedGatherings inside tx.
+func (s *Service) ReportedGatheringsTx(ctx context.Context, tx uow.Tx, gatheringIDs []string) (map[string]bool, error) {
+	if len(gatheringIDs) == 0 {
+		return map[string]bool{}, nil
+	}
+	return s.d.Repository.ReportedGatheringsTx(ctx, tx, gatheringIDs)
 }
 
 // HeldAccountIDsTx is HeldAccountIDs inside tx.

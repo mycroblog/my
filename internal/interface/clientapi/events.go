@@ -39,6 +39,7 @@ const (
 
 // Events runs the events: *appgathering.Service implements it.
 type Events interface {
+	EventPolls
 	Create(ctx context.Context, accountID string, in appgathering.CreateInput) (appgathering.View, error)
 	Get(ctx context.Context, accountID, id string) (appgathering.View, error)
 	List(ctx context.Context, accountID string, q appgathering.ListQuery) ([]appgathering.View, *appgathering.ListKey, error)
@@ -108,7 +109,7 @@ func (s *Server) eventProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, appgathering.ErrNotAttending):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeEventNotAttending, l.ServerErrorsEventNotAttending(), ""), true
 	}
-	return problem{}, false
+	return s.eventPollProblem(ctx, err)
 }
 
 // eventFail returns the problem of err, or err itself for an unexpected error.
@@ -301,8 +302,9 @@ func (s *Server) CreateEvent(ctx context.Context, req CreateEventRequestObject) 
 	}
 	b := req.Body
 	in := appgathering.CreateInput{
-		Settings: gathering.Settings{Title: b.Title, Description: deref(b.Description), TimeZone: deref(b.TimeZone), Capacity: deref(b.Capacity)},
-		Schedule: gathering.Schedule{StartsAt: b.StartsAt, EndsAt: b.EndsAt},
+		Settings:   gathering.Settings{Title: b.Title, Description: deref(b.Description), TimeZone: deref(b.TimeZone), Capacity: deref(b.Capacity)},
+		Schedule:   gathering.Schedule{StartsAt: deref(b.StartsAt), EndsAt: deref(b.EndsAt)},
+		Candidates: eventCandidates(b.Candidates),
 	}
 	if b.Visibility != nil {
 		in.Settings.Visibility = gathering.Visibility(*b.Visibility)

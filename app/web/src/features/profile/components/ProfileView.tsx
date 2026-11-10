@@ -39,6 +39,7 @@ const tabLabels: Readonly<Record<AccountTimelineFilter, ClientMessageKey>> = {
   posts: "client:profile.tab.posts",
   replies: "client:profile.tab.replies",
   no_boosts: "client:profile.tab.no_boosts",
+  articles: "client:profile.tab.articles",
 };
 
 export type ProfileViewProps = {

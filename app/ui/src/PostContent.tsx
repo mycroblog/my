@@ -138,6 +138,21 @@ const postContent = tv({
     size: { sm: "text-sm", base: "", lg: "text-lg" },
     framed: { true: "rounded-md border border-border p-3" },
     lineClamp: { "2": "line-clamp-2", "3": "line-clamp-3" },
+    // The body of an article (ADR-0160 §4) has the headings below the page's title, rules, tables and pictures, which
+    // no post has. A table takes the body's width and its cells wrap, so that no article scrolls sideways at 320 px
+    // (a table that scrolled inside itself would be a scrollable region the keyboard cannot reach).
+    article: {
+      true: [
+        "[&_h2]:mt-6 [&_h2]:text-xl [&_h2]:font-extrabold [&_h3]:mt-5 [&_h3]:text-lg [&_h3]:font-extrabold",
+        "[&_h4]:mt-4 [&_h4]:font-extrabold [&_h5]:mt-4 [&_h5]:font-bold [&_h6]:mt-4 [&_h6]:font-bold [&_h6]:text-fg-muted",
+        "*:first:mt-0",
+        "[&_hr]:my-6 [&_hr]:border-border",
+        "[&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-md",
+        "[&_del]:line-through",
+        "[&_table]:w-full [&_table]:table-fixed [&_table]:border-collapse",
+        "[&_td]:border [&_td]:border-border [&_td]:px-2 [&_td]:py-1 [&_th]:border [&_th]:border-border [&_th]:bg-surface-sunken [&_th]:px-2 [&_th]:py-1 [&_th]:font-bold",
+      ],
+    },
   },
 });
 
@@ -150,6 +165,8 @@ export type PostContentProps = Omit<ComponentPropsWithRef<"div">, "children" | "
   framed?: boolean;
   /** Cuts the body after this many lines, for an excerpt or a preview. */
   lineClamp?: 2 | 3;
+  /** Styles the body of an article (ADR-0160 §4): its headings, rules, tables and pictures. */
+  article?: boolean;
   /** The language of the post, when the server knows it (a BCP 47 tag). */
   lang?: string | undefined;
   /**
@@ -386,6 +403,7 @@ export function PostContent({
   emojiMotion: motion,
   size,
   lineClamp,
+  article,
   className,
   ref,
   ...props
@@ -404,7 +422,7 @@ export function PostContent({
       )}
       dir="auto"
       lang={lang}
-      className={postContent({ size, framed, lineClamp: lineClamp && `${lineClamp}`, className })}
+      className={postContent({ size, framed, lineClamp: lineClamp && `${lineClamp}`, article, className })}
       dangerouslySetInnerHTML={{ __html: trustedHtml(html) }}
     />
   );

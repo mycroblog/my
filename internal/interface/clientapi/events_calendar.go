@@ -28,6 +28,9 @@ func (s *Server) GetEventCalendar(ctx context.Context, req GetEventCalendarReque
 		return respond[GetEventCalendardefaultApplicationProblemPlusJSONResponse](p, err)
 	}
 	view, err := events.Get(ctx, v.AccountID, req.Id)
+	if err == nil && !view.Scheduled() {
+		err = appgathering.ErrUnscheduled
+	}
 	if err != nil {
 		p, err := s.eventFail(ctx, err)
 		return respond[GetEventCalendardefaultApplicationProblemPlusJSONResponse](p, err)

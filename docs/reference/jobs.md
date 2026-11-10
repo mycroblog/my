@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 102 job types. 42 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 104 job types. 43 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -165,7 +165,9 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `gathering.tick` | Reads the events whose next reminder or start has come, queues `gathering.notify` for each reminder and start that came since, and sets the time of the next one. Handles up to 1,000 events a run; the rest wait for the next run. | Schedule | Default | Next run |
-| `gathering.notify` | Sends one notification of an event: an invitation, a change of the date or place, a cancellation, a reminder, or the start. It picks the recipients when it runs, and only those who can still see the event. Above 500 of them, the first job only queues jobs of the same type for up to 500 each. A reminder or start of a date that changed since, or of an event cancelled since, sends nothing. | An invitation, a change, or a cancellation; `gathering.tick` | Default | Safe. Each notification is created once. |
+| `gathering.notify` | Sends one notification of an event: an invitation, the date confirmed from its candidate dates, a change of the date or place, a cancellation, a reminder, or the start. It picks the recipients when it runs, and only those who can still see the event. Above 500 of them, the first job only queues jobs of the same type for up to 500 each. A reminder or start of a date that changed since, or of an event cancelled since, sends nothing. | An invitation, a confirmed date, a change, or a cancellation; `gathering.tick` | Default | Safe. Each notification is created once. |
+| `gathering.cancel_organized` | Cancels the events of a suspended or deleted organizer that have not started, date polls not yet confirmed included, each as a cancellation that notifies its attendees. Cancels nothing when the account is active again by the time it runs. | A suspension or deletion of an account that organizes an upcoming event | Default | Safe. A cancelled event is not cancelled again. |
+| `gathering.purge_records` | Erases the answers, approvals, invitations, and votes on candidate dates of the events that ended or were cancelled past `event_records_retention_days`, except those a report or a hold preserves. | Schedule | Default | Next run |
 
 ## Full-text search
 
@@ -219,6 +221,7 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `content.purge_remote_statuses` | 1 hour |
 | `federation.purge_records` | 1 hour |
 | `federation.refresh_stale_actors` | 1 hour |
+| `gathering.purge_records` | 1 hour |
 | `graph.expire_mutes` | 1 hour |
 | `identity.queue_closure_reminders` | 1 hour |
 | `identity.purge_unused_oauth_clients` | 1 hour |

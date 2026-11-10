@@ -41,9 +41,14 @@ properties:
     items:
       $ref: ./EventPlaceKind.yaml
   starts_at:
+    description: |
+      The start of the event; for an `unscheduled` event, the earliest start of its candidate
+      dates (`GET /events/{id}/candidates`).
     type: string
     format: date-time
   ends_at:
+    description: |
+      The end of the event; for an `unscheduled` event, the latest end of its candidate dates.
     type: string
     format: date-time
   state:

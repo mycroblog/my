@@ -35,7 +35,8 @@ export function FinancePublication({ today }: { today: string }) {
 
 /**
  * What the instance publishes of these costs and of the income (the instance settings `finance_visibility` and
- * `income_visibility`, ADR-0067 §8, ADR-0067 §17), read from GET /instance.
+ * `income_visibility`, ADR-0067 §8, ADR-0067 §17) and of this month's funding meter (ADR-0067 §22), read from
+ * GET /instance. The meter is absent there both while it is off and in a month without a target, which reads as off.
  */
 function Publication() {
   const t = useT();
@@ -46,6 +47,9 @@ function Publication() {
     <Cluster as="p" gap="2" rowGap="0">
       <span>{t("client:admin.finance.visibility", { visibility: instance.finance_visibility })}</span>
       <span>{t("client:admin.finance.income_visibility", { visibility: instance.income_visibility })}</span>
+      <span>
+        {t("client:admin.finance.funding_visibility", { visibility: instance.funding_meter?.visibility ?? "off" })}
+      </span>
     </Cluster>
   );
 }

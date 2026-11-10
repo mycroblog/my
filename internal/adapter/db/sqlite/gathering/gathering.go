@@ -174,6 +174,10 @@ func recordOf(row gatheringgen.GetGatheringRow) appgathering.Record {
 		Cancellation: cancellationOf(row),
 		Revisions:    int(row.RevisionCount),
 	}
+	if row.ConfirmationID == "" {
+		// An unscheduled event polls its date: the head's times span its candidates.
+		rec.Confirmation = appgathering.Confirmation{}
+	}
 	return rec
 }
 
@@ -355,7 +359,7 @@ func (r *Repository) ViewerFacts(ctx context.Context, tx uow.Tx, accountID strin
 		return nil, wrap(err, "list gathering viewer facts")
 	}
 	for _, row := range rows {
-		out[row.GatheringID] = appgathering.ViewerFacts{Invited: row.Invited, Answer: gathering.Answer(row.Answer), Approved: fromBool(row.Approved)}
+		out[row.GatheringID] = appgathering.ViewerFacts{Invited: row.Invited, Answer: gathering.Answer(row.Answer), Approved: fromBool(row.Approved), Voted: row.Voted}
 	}
 	return out, nil
 }

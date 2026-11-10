@@ -11,6 +11,7 @@ import (
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
+	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/kernel"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appvoice "github.com/mycroblog/my/internal/app/voice"
@@ -73,6 +74,22 @@ func (s *Server) CreateReport(ctx context.Context, req CreateReportRequestObject
 			return unprocessable(l.ServerErrorsInvalidValue("account_id"))
 		}
 		in.VoiceRoom = &moderation.ReportVoiceRoom{RoomID: t.RoomID, RevisionID: t.RevisionID}
+	}
+	if b.EventId != nil {
+		// An event that the reporter can see, whose organizer is the account reported (ADR-0161 §14).
+		if s.o.EventModeration == nil {
+			return unprocessable(l.ServerErrorsInvalidValue("event_id"))
+		}
+		t, err := s.o.EventModeration.ReportTarget(ctx, v.AccountID, knownID(*b.EventId))
+		switch {
+		case errors.Is(err, appgathering.ErrNotFound):
+			return unprocessable(l.ServerErrorsInvalidValue("event_id"))
+		case err != nil:
+			return nil, fmt.Errorf("clientapi: the event %s of a report: %w", *b.EventId, err)
+		case t.OrganizerAccountID != in.TargetAccountID:
+			return unprocessable(l.ServerErrorsInvalidValue("account_id"))
+		}
+		in.Gathering = &moderation.ReportGathering{GatheringID: t.GatheringID, RevisionID: t.RevisionID}
 	}
 	r, err := s.o.Reports.File(ctx, in)
 	var (
@@ -193,6 +210,10 @@ func newReport(rec moderation.ReportRecord, target *Account) Report {
 	if r.VoiceRoom != nil {
 		id := r.VoiceRoom.RoomID
 		out.VoiceRoomId = &id
+	}
+	if r.Gathering != nil {
+		id := r.Gathering.GatheringID
+		out.EventId = &id
 	}
 	return out
 }

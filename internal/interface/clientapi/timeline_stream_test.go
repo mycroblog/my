@@ -117,6 +117,12 @@ func (l *lockedViews) Pinned(ctx context.Context, viewer appcontent.Viewer, acco
 	return l.v.Pinned(ctx, viewer, accountID)
 }
 
+func (l *lockedViews) Articles(ctx context.Context, viewer appcontent.Viewer, accountID, before string, limit int) (appcontent.ArticlePage, error) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.v.Articles(ctx, viewer, accountID, before, limit)
+}
+
 // timelineStreamEnv serves the streams of the public timelines on hub, with the statuses of
 // newTimelineEnv.
 type timelineStreamEnv struct {

@@ -31,7 +31,7 @@ email. A kind turned off in the app is not created at all, so it is not emailed 
 | Kind | Email by default | When it is sent |
 | --- | --- | --- |
 | Notifications from other users (mentions, new followers, follow requests, accepted follow requests, boosts, favourites, emoji reactions, quotes, ended polls, accounts you follow moving, voice chats) | Off | 15 minutes after the notification, only if it is still unread (not marked read, not dismissed) and still visible, and the user still gets that kind by email. One email per notification |
-| Events (invitations, changes of the date or place, cancellations, reminders, and starts of events on this server) | Off | The same as above, except reminders, which are sent at once. The email gives the event's title, start, and organizers, and never where it is held |
+| Events (invitations, confirmed dates, changes of the date or place, cancellations, reminders, and starts of events on this server) | Off | The same as above, except reminders, which are sent at once. The email gives the event's title, start, and organizers, and never where it is held |
 | Notices from the moderators (a moderation action on the account, a resolved report, a decided appeal, follows lost to a suspension, a decided custom emoji request) | Off | The same as above |
 | Notices to moderators (new reports, registrations awaiting approval, appeals, disabled webhooks, custom emoji requests, limited accounts moving, the closing date passing, new and recurring errors), to the people whose role has the permission | On | At once, without waiting for it to be read |
 | Service shutdown, and the notices of supporter plans | Always | At once; these cannot be turned off |

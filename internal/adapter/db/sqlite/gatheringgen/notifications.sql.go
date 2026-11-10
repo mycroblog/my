@@ -256,7 +256,8 @@ SELECT CAST(v.value AS TEXT) AS account_id,
   EXISTS (SELECT 1 FROM gathering_invitations i WHERE i.gathering_id = ?1 AND i.invitee_account_id = v.value
     AND NOT EXISTS (SELECT 1 FROM gathering_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
   CAST(COALESCE((SELECT a.answer FROM gathering_attendees a WHERE a.gathering_id = ?1 AND a.account_id = v.value), '') AS TEXT) AS answer,
-  CAST(COALESCE((SELECT a.approved FROM gathering_attendees a WHERE a.gathering_id = ?1 AND a.account_id = v.value), 0) AS INTEGER) AS approved
+  CAST(COALESCE((SELECT a.approved FROM gathering_attendees a WHERE a.gathering_id = ?1 AND a.account_id = v.value), 0) AS INTEGER) AS approved,
+  EXISTS (SELECT 1 FROM gathering_votes o WHERE o.gathering_id = ?1 AND o.account_id = v.value) AS voted
 FROM json_each(CAST(?2 AS TEXT)) v
 `
 
@@ -270,11 +271,12 @@ type ListGatheringAudienceFactsRow struct {
 	Invited   bool
 	Answer    string
 	Approved  int64
+	Voted     bool
 }
 
 // ListGatheringAudienceFacts returns, for each account of a JSON array, whether it has an
-// invitation to an event that was not revoked, its answer (” for none), and whether its answer
-// is approved.
+// invitation to an event that was not revoked, its answer (” for none), whether its answer is
+// approved, and whether it voted in the event's date poll.
 func (q *Queries) ListGatheringAudienceFacts(ctx context.Context, arg ListGatheringAudienceFactsParams) ([]ListGatheringAudienceFactsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listGatheringAudienceFacts, arg.GatheringID, arg.AccountIds)
 	if err != nil {
@@ -289,6 +291,7 @@ func (q *Queries) ListGatheringAudienceFacts(ctx context.Context, arg ListGather
 			&i.Invited,
 			&i.Answer,
 			&i.Approved,
+			&i.Voted,
 		); err != nil {
 			return nil, err
 		}

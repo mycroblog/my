@@ -262,6 +262,33 @@ func (q *Queries) ListReportForwardsOf(ctx context.Context, ids string) ([]Repor
 	return items, nil
 }
 
+const listReportGatheringsOf = `-- name: ListReportGatheringsOf :many
+SELECT report_id, gathering_id, revision_id FROM report_gatherings WHERE report_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY report_id
+`
+
+func (q *Queries) ListReportGatheringsOf(ctx context.Context, ids string) ([]ReportGathering, error) {
+	rows, err := q.db.QueryContext(ctx, listReportGatheringsOf, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ReportGathering{}
+	for rows.Next() {
+		var i ReportGathering
+		if err := rows.Scan(&i.ReportID, &i.GatheringID, &i.RevisionID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listReportHookOriginsOf = `-- name: ListReportHookOriginsOf :many
 SELECT report_id, hook_decision_id, hook, reason_code FROM report_hook_origins WHERE report_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY report_id
 `

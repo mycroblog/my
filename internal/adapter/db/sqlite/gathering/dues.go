@@ -210,7 +210,7 @@ func (r *Repository) AudienceFacts(ctx context.Context, tx uow.Tx, gatheringID s
 		return nil, wrap(err, "list gathering audience facts")
 	}
 	for _, row := range rows {
-		out[row.AccountID] = appgathering.ViewerFacts{Invited: row.Invited, Answer: gathering.Answer(row.Answer), Approved: fromBool(row.Approved)}
+		out[row.AccountID] = appgathering.ViewerFacts{Invited: row.Invited, Answer: gathering.Answer(row.Answer), Approved: fromBool(row.Approved), Voted: row.Voted}
 	}
 	return out, nil
 }

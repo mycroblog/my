@@ -16,7 +16,10 @@ import (
 	"github.com/mycroblog/my/internal/interface/clientapi"
 )
 
-const eventID = "01890a5d-ac96-774b-bcce-b302099a8401"
+const (
+	eventID        = "01890a5d-ac96-774b-bcce-b302099a8401"
+	confirmationID = "01890a5d-ac96-774b-bcce-b302099a8402"
+)
 
 // fakeEvents is one event organized by alice that the viewer sees with its voice place, with a
 // co-organizer whose account is gone (left out) and one who is there, and the error of the next
@@ -39,6 +42,9 @@ func (f *fakeEvents) view() appgathering.View {
 			Head: appgathering.Head{
 				GatheringID: eventID, OrganizerAccountID: aliceAccountID, State: gathering.StateScheduled, GoingCount: 1,
 				Schedule: gathering.Schedule{StartsAt: eventStart, EndsAt: eventStart.Add(2 * time.Hour)},
+			},
+			Confirmation: appgathering.Confirmation{
+				ID: confirmationID, GatheringID: eventID, Schedule: gathering.Schedule{StartsAt: eventStart, EndsAt: eventStart.Add(2 * time.Hour)},
 			},
 			Revision: appgathering.Revision{Settings: gathering.Settings{
 				Title: "Picnic", Visibility: gathering.VisibilityPublic, TimeZone: "Asia/Tokyo", PlaceDisclosure: gathering.DisclosureApproved,

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The candidate dates of an event's date poll, the earliest start first; up to 20.
+type: object
+required: [items]
+properties:
+  items:
+    type: array
+    items:
+      $ref: ./EventCandidate.yaml

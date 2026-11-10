@@ -114,6 +114,46 @@ func (q *Queries) InsertStatusRevisionArticleImage(ctx context.Context, arg Inse
 	return err
 }
 
+const listLiveArticleIDsOfAuthor = `-- name: ListLiveArticleIDsOfAuthor :many
+SELECT a.status_id FROM status_articles a
+WHERE a.author_account_id = ?1
+  AND (CAST(?2 AS TEXT) = '' OR a.status_id < ?2)
+  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = a.status_id)
+ORDER BY a.status_id DESC
+LIMIT ?3
+`
+
+type ListLiveArticleIDsOfAuthorParams struct {
+	AuthorAccountID string
+	Before          string
+	Lim             int64
+}
+
+// The articles of an author that are not deleted, newest first, below an ID (” for the
+// first page): the articles of a profile (ADR-0160 section 11).
+func (q *Queries) ListLiveArticleIDsOfAuthor(ctx context.Context, arg ListLiveArticleIDsOfAuthorParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listLiveArticleIDsOfAuthor, arg.AuthorAccountID, arg.Before, arg.Lim)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var status_id string
+		if err := rows.Scan(&status_id); err != nil {
+			return nil, err
+		}
+		items = append(items, status_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStatusRevisionArticleCoversOf = `-- name: ListStatusRevisionArticleCoversOf :many
 SELECT revision_id, media_id, description FROM status_revision_article_covers
 WHERE revision_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY revision_id

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { z } from "zod";
-import { StatusThread, statusContextQueryOptions, statusQueryOptions } from "../features/status";
+import { StatusPageTitle, StatusThread, statusContextQueryOptions, statusQueryOptions } from "../features/status";
 import { TimelineSkeleton } from "../features/timeline";
 import { ApiError } from "../lib/errors";
 import { useT } from "../lib/i18n";
@@ -15,7 +15,7 @@ import { RouteError } from "./-layout/RouteStates";
  */
 const paramsSchema = z.object({ acct: z.string().min(1), id: z.string().min(1) });
 
-/** A post and the thread around it (FR-113). */
+/** A post and the thread around it (FR-113); an article is read in full here (ADR-0160 §8). */
 export const Route = createFileRoute("/@{$acct}_/status/$id")({
   staticData: { reloadSafe: true, title: "client:status.title", back: true },
   params: { parse: (params) => paramsSchema.parse(params) },
@@ -31,7 +31,6 @@ export const Route = createFileRoute("/@{$acct}_/status/$id")({
 });
 
 function StatusPage() {
-  const t = useT();
   const { id } = Route.useParams();
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -42,7 +41,10 @@ function StatusPage() {
   };
   return (
     <>
-      <PageHeading>{t("client:status.title")}</PageHeading>
+      {/* An article's page is headed by its title (ADR-0160 §4). */}
+      <PageHeading>
+        <StatusPageTitle key={id} id={id} />
+      </PageHeading>
       {/* Another post is another thread: nothing of the previous one carries over (web-client/README.md R10). */}
       <StatusThread key={id} id={id} onDeleted={leave} />
     </>

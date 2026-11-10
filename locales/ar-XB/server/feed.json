@@ -1,4 +1,8 @@
 {
+  "feed.articles_title": {
+    "defaultMessage": "‮∀ɹʇıɔʅǝs qʎ {name} (@{handle})‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "feed.content_warning": {
     "defaultMessage": "‮Ↄouʇǝuʇ ʍɐɹuıuƃ: {warning}. Odǝu ʇɥǝ dosʇ ʇo ɹǝɐp ıʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."

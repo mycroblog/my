@@ -106,6 +106,21 @@ func TestLinkPreviews(t *testing.T) {
 			t.Errorf("%s post, ActivityPub = %d %q, want 302 %q", vis, rec.Code, rec.Header().Get("Location"), want)
 		}
 	}
+	// An article's page has its title and summary, never its body (ADR-0160 §11).
+	article, err := app.Content.CreateArticle(ctx, appcontent.CreateArticleInput{
+		AuthorAccountID: accounts["alice"], Visibility: domcontent.VisibilityPublic,
+		ArticleInput: appcontent.ArticleInput{Title: "On gardens", Summary: "Why we grow tomatoes", Text: "The secret body", Language: "ja"},
+	})
+	if err != nil {
+		t.Fatalf("CreateArticle: %v", err)
+	}
+	if rec := get("/@alice/status/" + article.Status.ID); rec.Code != http.StatusOK ||
+		!strings.Contains(rec.Body.String(), `<meta property="og:type" content="article">`) ||
+		!strings.Contains(rec.Body.String(), `<meta property="og:title" content="On gardens">`) ||
+		!strings.Contains(rec.Body.String(), `<meta property="og:description" content="Why we grow tomatoes">`) ||
+		strings.Contains(rec.Body.String(), "secret body") {
+		t.Errorf("article page = %d:\n%s", rec.Code, rec.Body)
+	}
 	if rec := get("/@alice"); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `<meta property="og:type" content="profile">`) {
 		t.Errorf("profile page = %d:\n%s", rec.Code, rec.Body)
 	}

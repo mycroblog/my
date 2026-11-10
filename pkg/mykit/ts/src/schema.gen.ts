@@ -3628,11 +3628,13 @@ export interface paths {
          * @description The account's posts and boosts that the viewer may see, newest first: its public and unlisted posts
          *     for everyone, its local posts for logged-in viewers, its followers-only posts for its
          *     followers, and its direct posts addressed to the viewer. With `pinned`, the page lists
-         *     the account's pinned posts instead, newest pin first, in a single page. A reply whose parent the viewer may not see has no
-         *     `in_reply_to_id`.
+         *     the account's pinned posts instead, newest pin first, in a single page. With `articles`, the page
+         *     lists only the account's articles, newest first, and `exclude_replies` and `exclude_boosts`
+         *     change nothing; a page may hold fewer items than `limit` and still have a `next_cursor`. A
+         *     reply whose parent the viewer may not see has no `in_reply_to_id`.
          *
          *     The page lists only the posts this server has received. For a remote account, the first
-         *     page (no `cursor`, no `pinned`) of a logged-in viewer may start fetching the account's
+         *     page (no `cursor`, no `pinned`, no `articles`) of a logged-in viewer may start fetching the account's
          *     recent public posts from its server in the background; `remote_fetch_started` tells
          *     that it did. It does at most once a day per account, for at most 30 accounts per viewer
          *     in 5 minutes, and never for an account that the viewer blocks or that blocks the viewer.
@@ -5208,7 +5210,9 @@ export interface paths {
         put?: never;
         /**
          * Create an event
-         * @description Creates an event that the user organizes, with a fixed date. The user must be a local,
+         * @description Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+         *     date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+         *     or neither, are a 422. The user must be a local,
          *     unrestricted user who may create events (the instance setting `event_creators`, or the
          *     `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
          *     place needs the voice chat on and a user who may host its rooms: a 422
@@ -5246,7 +5250,8 @@ export interface paths {
         head?: never;
         /**
          * Change an event
-         * @description Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+         * @description Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+         *     on an `unscheduled` event ends its date poll, as a confirmation does. Only the
          *     organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
          *     `voice` place needs the organizer to be able to host rooms (a 422
          *     `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -5272,7 +5277,7 @@ export interface paths {
          *     zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
          *     `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
          *     user sees: a hidden place never appears in the file. A 404 for an event that the user does
-         *     not see.
+         *     not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
          */
         get: operations["getEventCalendar"];
         put?: never;
@@ -5326,7 +5331,8 @@ export interface paths {
          *     reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
          *     answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
          *     `declined` are never refused. `declined` ends an approval. A 409
-         *     `/api/v1/problems/event-closed` for an event that started or was cancelled.
+         *     `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+         *     `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
          */
         put: operations["answerEvent"];
         post?: never;
@@ -5484,6 +5490,156 @@ export interface paths {
          *     `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
          */
         delete: operations["removeEventCoorganizer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the candidate dates of an event
+         * @description The candidate dates of the event's date poll that were not withdrawn, the earliest start
+         *     first, with how many users answered each `yes`, `maybe`, or `no` and the user's own answer,
+         *     for everyone who sees the event. An event created with a date has none.
+         */
+        get: operations["listEventCandidates"];
+        put?: never;
+        /**
+         * Add a candidate date to an event
+         * @description Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+         *     a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+         *     the past are a 422.
+         *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+         *     the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+         *     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+         */
+        post: operations["addEventCandidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates/{candidate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Withdraw a candidate date of an event
+         * @description Withdraws a candidate date of the event's date poll, by the organizer or a co-organizer. The
+         *     users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
+         *     `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
+         *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+         *     the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+         *     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+         */
+        delete: operations["withdrawEventCandidate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates/{candidate_id}/vote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Answer a candidate date of an event
+         * @description Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+         *     organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+         *     name to everyone who sees the event and keeps the event visible to the user. A 409
+         *     `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+         *     `/api/v1/problems/event-closed` for a cancelled event.
+         */
+        put: operations["voteEventCandidate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates/{candidate_id}/votes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the answers to a candidate date of an event
+         * @description Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
+         *     the event.
+         */
+        get: operations["listEventCandidateVotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates/{candidate_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a candidate date of an event
+         * @description Fixes the date of the event to a candidate, by the organizer or a co-organizer: the event is
+         *     `scheduled`, its poll takes no more answers, the reminders follow the date, and the users who
+         *     answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
+         *     change of the date is a `PATCH` of the event. A candidate that has started is a 422.
+         *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+         *     the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+         *     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+         */
+        post: operations["confirmEventCandidate"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -6630,6 +6786,30 @@ export interface paths {
          *     a 422. Needs the `manage_reports` permission.
          */
         post: operations["endVoiceRoomAsModerator"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/events/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel an event as a moderator
+         * @description Cancels an event with an optional reason, which the event shows with its cancellation, and
+         *     notifies the users who answered going or maybe and the invited users. Recorded in the audit
+         *     log (`event_cancelled`). An unknown event is a 404, an event cancelled already a 409
+         *     `/api/v1/problems/event-closed`, and a reason longer than 500 characters a 422. Needs the
+         *     `manage_reports` permission.
+         */
+        post: operations["cancelEventAsModerator"];
         delete?: never;
         options?: never;
         head?: never;
@@ -10753,10 +10933,11 @@ export interface components {
          *     `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
          *     `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
          *     that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
-         *     the `system` as the actor.
+         *     the `system` as the actor. On an `event`: `event_cancelled`, a moderator's cancellation of
+         *     the event; the ID and the label are the event's ID.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_cancelled";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -10815,7 +10996,7 @@ export interface components {
          * @description The kind of what an audited operation acted on.
          * @enum {string}
          */
-        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider" | "link_card_domain" | "hook_decision" | "domain_allow" | "domain_list_subscription";
+        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider" | "link_card_domain" | "hook_decision" | "domain_allow" | "domain_list_subscription" | "event";
         /** @description The time a remote server was marked unavailable or available again, and why. */
         AdminAvailabilityEvent: {
             id: components["schemas"]["Id"];
@@ -11639,8 +11820,8 @@ export interface components {
             forwarded: boolean;
             /**
              * @description Whether a moderator can forward the report to the target's server now: it was filed on
-             *     this server, its target is a remote account, it points at no voice chat room, and it is
-             *     not forwarded yet.
+             *     this server, its target is a remote account, it points at no voice chat room and no
+             *     event, and it is not forwarded yet.
              */
             forwardable: boolean;
             /** Format: date-time */
@@ -11670,6 +11851,8 @@ export interface components {
              *     none.
              */
             voice_room_id?: components["schemas"]["Id"];
+            /** @description The event that the report points at, whose organizer is the target; omitted for none. */
+            event_id?: components["schemas"]["Id"];
             hook_origin?: components["schemas"]["AdminReportHookOrigin"];
             /**
              * @description The IDs of the instance rules that the report cites, retired ones included; only a
@@ -11692,6 +11875,7 @@ export interface components {
              */
             statuses: components["schemas"]["AdminReportStatus"][];
             voice_room?: components["schemas"]["AdminReportVoiceRoom"];
+            event?: components["schemas"]["AdminReportEvent"];
         };
         /** @description A moderator's internal note on a report; never shown to the target or the reporter. */
         AdminReportNote: {
@@ -11741,6 +11925,70 @@ export interface components {
             participations: components["schemas"]["AdminVoiceRoomParticipation"][];
             /** @description The accounts removed from the room, who may not join it again. */
             bans: components["schemas"]["AdminVoiceRoomBan"][];
+        };
+        /**
+         * @description The event that a report points at, as the moderators review it: its organizer, its current
+         *     date, its cancellation, and every revision of its settings with all its places, whoever the
+         *     places were shown to. `reported_revision_id` is the revision that the reporter saw.
+         */
+        AdminReportEvent: {
+            id: components["schemas"]["Id"];
+            organizer_account_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            created_at: string;
+            state: components["schemas"]["EventState"];
+            /**
+             * Format: date-time
+             * @description When the event starts; omitted while it has no date.
+             */
+            starts_at?: string;
+            /**
+             * Format: date-time
+             * @description When the event ends; omitted while it has no date.
+             */
+            ends_at?: string;
+            /** @description How the event was cancelled; omitted while it is not. */
+            cancellation?: components["schemas"]["AdminEventCancellation"];
+            /** @description The revision of the settings that the reporter saw. */
+            reported_revision_id: components["schemas"]["Id"];
+            /** @description The revisions of the settings, oldest first. */
+            revisions: components["schemas"]["AdminEventRevision"][];
+        };
+        /** @description A moderator cancelling an event. */
+        AdminEventCancel: {
+            /**
+             * @description Why the event is cancelled, as plain text of up to 500 characters. The event shows it
+             *     with its cancellation to everyone who sees the event.
+             */
+            reason?: string;
+        };
+        /** @description The cancellation of an event as the moderators see it. */
+        AdminEventCancellation: {
+            reason: components["schemas"]["EventCancelReason"];
+            /** @description Who cancelled the event; omitted for an automatic cancellation. */
+            cancelled_by_account_id?: components["schemas"]["Id"];
+            /** @description The reason given for the cancellation; omitted for none. */
+            note?: string;
+            /** Format: date-time */
+            cancelled_at: string;
+        };
+        /**
+         * @description A revision of the settings of an event with all its places. The title and the description
+         *     are empty, and the places are gone, once the account that wrote them is erased.
+         */
+        AdminEventRevision: {
+            id: components["schemas"]["Id"];
+            title: string;
+            description: string;
+            visibility: components["schemas"]["EventVisibility"];
+            time_zone: string;
+            place_disclosure: components["schemas"]["EventPlaceDisclosure"];
+            /** @description How many attendees may answer going; 0 for no limit. */
+            capacity: number;
+            places: components["schemas"]["EventPlace"][];
+            revised_by_account_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            revised_at: string;
         };
         /**
          * @description The decision hook that filed the report; omitted for a report that a person or another server
@@ -13262,6 +13510,12 @@ export interface components {
              */
             voice_room_id?: components["schemas"]["Id"];
             /**
+             * @description An event on this server that the user can see; `account_id` is then its organizer. Such
+             *     a report points at no posts and no voice chat room, and is never forwarded. The
+             *     moderators see the settings of the event as the user saw them.
+             */
+            event_id?: components["schemas"]["Id"];
+            /**
              * @description Asks to forward the report to the server of a remote account, without naming the
              *     reporter. It means nothing for a local account.
              * @default false
@@ -13977,9 +14231,16 @@ export interface components {
             places: components["schemas"]["EventPlace"][];
             /** @description The kinds of the places that the user does not see. */
             hidden_places: components["schemas"]["EventPlaceKind"][];
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description The start of the event; for an `unscheduled` event, the earliest start of its candidate
+             *     dates (`GET /events/{id}/candidates`).
+             */
             starts_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description The end of the event; for an `unscheduled` event, the latest end of its candidate dates.
+             */
             ends_at: string;
             state: components["schemas"]["EventState"];
             cancellation?: components["schemas"]["EventCancellation"];
@@ -14012,6 +14273,15 @@ export interface components {
         EventAttendeePage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["EventAttendee"][];
         };
+        /** @description The answer of a user to a candidate date. */
+        EventBallot: {
+            account: components["schemas"]["Account"];
+            vote: components["schemas"]["EventVote"];
+        };
+        /** @description A page of the answers to a candidate date, in the order of the users' IDs. */
+        EventBallotPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["EventBallot"][];
+        };
         /**
          * @description Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
          *     suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
@@ -14031,7 +14301,45 @@ export interface components {
             /** Format: date-time */
             cancelled_at: string;
         };
-        /** @description A new event with a fixed date. */
+        /**
+         * @description A candidate date of an event's date poll, with how many users answered it each way. Times are
+         *     in UTC.
+         */
+        EventCandidate: {
+            id: components["schemas"]["Id"];
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            yes_count: number;
+            maybe_count: number;
+            no_count: number;
+            /** @description The user's own answer; absent before the user answers. */
+            vote?: components["schemas"]["EventVote"];
+            /** @description Whether the organizers fixed the event's date to this candidate. */
+            confirmed: boolean;
+        };
+        /** @description A candidate date of an event's date poll, in UTC. */
+        EventCandidateCreate: {
+            /**
+             * Format: date-time
+             * @description After now and at most a year ahead.
+             */
+            starts_at: string;
+            /**
+             * Format: date-time
+             * @description After `starts_at` and at most 7 days later.
+             */
+            ends_at: string;
+        };
+        /** @description The candidate dates of an event's date poll, the earliest start first; up to 20. */
+        EventCandidateList: {
+            items: components["schemas"]["EventCandidate"][];
+        };
+        /**
+         * @description A new event, either with a fixed date (`starts_at` and `ends_at`) or with the candidate dates
+         *     of a date poll (`candidates`), not both.
+         */
         EventCreate: {
             /** @description 1 to 100 characters on one line. */
             title: string;
@@ -14051,12 +14359,17 @@ export interface components {
              * Format: date-time
              * @description After now and at most a year ahead.
              */
-            starts_at: string;
+            starts_at?: string;
             /**
              * Format: date-time
              * @description After `starts_at` and at most 7 days later.
              */
-            ends_at: string;
+            ends_at?: string;
+            /**
+             * @description 1 to 20 different candidate dates, each checked as a fixed date: the event is
+             *     `unscheduled` until the organizers confirm one of them.
+             */
+            candidates?: components["schemas"]["EventCandidateCreate"][];
         };
         /**
          * @description An invitation to an event. The invited user sees the event until the invitation is revoked,
@@ -14140,14 +14453,16 @@ export interface components {
             answer: components["schemas"]["EventAnswer"];
         };
         /**
-         * @description Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
-         *     `ends_at` is in the past.
+         * @description Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
+         *     `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+         *     past.
          * @enum {string}
          */
-        EventState: "scheduled" | "cancelled";
+        EventState: "unscheduled" | "scheduled" | "cancelled";
         /**
          * @description Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
-         *     date (`starts_at` and `ends_at` together) is checked as a new event's.
+         *     date (`starts_at` and `ends_at` together) is checked as a new event's; on an `unscheduled`
+         *     event, it fixes the date without a candidate and ends the date poll.
          */
         EventUpdate: {
             title?: string;
@@ -14184,6 +14499,15 @@ export interface components {
          * @enum {string}
          */
         EventVisibility: "public" | "followers" | "following" | "mutuals" | "invited";
+        /**
+         * @description An answer to a candidate date of an event's date poll.
+         * @enum {string}
+         */
+        EventVote: "yes" | "maybe" | "no";
+        /** @description An answer to a candidate date. */
+        EventVoteUpdate: {
+            vote: components["schemas"]["EventVote"];
+        };
         /** @description Where the browser goes to sign in at a login provider. */
         ExternalAuthorizationStart: {
             /** @description The URL on this server that sends the browser on to the provider. */
@@ -14920,7 +15244,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "event_records_retention_days" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -16750,6 +17074,11 @@ export interface components {
          *     - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
          *       it can.
          *     - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+         *     - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
+         *     - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
+         *       takes no more candidates, answers, or confirmations.
+         *     - `/api/v1/problems/event-last-candidate` (409): the last candidate of a date poll cannot be
+         *       withdrawn.
          *     - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
          *       be searched (`Instance.full_text_search.available`).
          *     - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
@@ -17130,6 +17459,8 @@ export interface components {
             rule_ids: components["schemas"]["Id"][];
             /** @description The voice chat room reported; omitted for none. */
             voice_room_id?: components["schemas"]["Id"];
+            /** @description The event reported; omitted for none. */
+            event_id?: components["schemas"]["Id"];
             state: components["schemas"]["ReportState"];
         };
         /**
@@ -19310,8 +19641,12 @@ export interface components {
         ErrorGroupId: components["schemas"]["Id"];
         /** @description The ID of the account. */
         EventAccountId: components["schemas"]["Id"];
+        /** @description The ID of the candidate date. */
+        EventCandidateId: components["schemas"]["Id"];
         /** @description The ID of the event. */
         EventId: components["schemas"]["Id"];
+        /** @description Only the answers of this kind; every answer when omitted. */
+        EventVoteFilter: components["schemas"]["EventVote"];
         /** @description The ID of the domain action. */
         DomainActionId: components["schemas"]["Id"];
         /** @description The ID of the decision. */
@@ -23428,6 +23763,8 @@ export interface operations {
                 exclude_boosts?: boolean;
                 /** @description List only the account's pinned posts. */
                 pinned?: boolean;
+                /** @description List only the account's articles; `pinned` takes precedence. */
+                articles?: boolean;
                 /** @description The `next_cursor` of the previous page; omitted for the first page. */
                 cursor?: components["parameters"]["Cursor"];
                 /** @description The maximum number of items in the page. */
@@ -25511,6 +25848,176 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    listEventCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The candidates. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventCandidateList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    addEventCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCandidateCreate"];
+            };
+        };
+        responses: {
+            /** @description The candidate. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventCandidate"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    withdrawEventCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    voteEventCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventVoteUpdate"];
+            };
+        };
+        responses: {
+            /** @description The candidate. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventCandidate"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listEventCandidateVotes: {
+        parameters: {
+            query?: {
+                /** @description Only the answers of this kind; every answer when omitted. */
+                vote?: components["parameters"]["EventVoteFilter"];
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the answers. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventBallotPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    confirmEventCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The event. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     reportClientError: {
         parameters: {
             query?: never;
@@ -26693,6 +27200,32 @@ export interface operations {
         };
         responses: {
             /** @description The room ended. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelEventAsModerator: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AdminEventCancel"];
+            };
+        };
+        responses: {
+            /** @description The event is cancelled. */
             204: {
                 headers: {
                     [name: string]: unknown;

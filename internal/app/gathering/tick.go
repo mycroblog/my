@@ -64,7 +64,7 @@ func (s *Service) tickOne(ctx context.Context, id string, now time.Time) error {
 		if err != nil {
 			return err
 		}
-		if rec.Cancellation != nil {
+		if rec.Cancellation != nil || !rec.Scheduled() {
 			return s.d.Repository.DeleteDue(ctx, tx, id)
 		}
 		dues, err := duesOf(ctx, tx, s.d.Repository, rec)

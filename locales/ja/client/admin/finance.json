@@ -19,6 +19,10 @@
     "defaultMessage": "{visibility, select, totals {情報ページは収入の合計を公開しています。} plans {情報ページは収入の合計とプランごとの加入者の数を公開しています。} other {収入は公開していません。}}",
     "description": "What the server publishes of the income on its information page, on the costs screen, by the server setting income_visibility (private, totals, or plans)."
   },
+  "admin.finance.funding_visibility": {
+    "defaultMessage": "{visibility, select, percent {情報ページは支援のメーターを割合だけで出しています。} amounts {情報ページは支援のメーターを割合と額で出しています。} other {今月は支援のメーターを出していません。}}",
+    "description": "What the server shows of the funding meter on its information page, on the costs screen, by the server setting funding_meter_visibility (percent or amounts); other when it is off or the month has no goal."
+  },
   "admin.finance.viewer": {
     "defaultMessage": "{names, select, shown {会計を閲覧できる人には、項目の名前を見せ、} other {会計を閲覧できる人には、項目の名前を見せず、}}{memos, select, shown {メモを見せ、} other {メモを見せず、}}{income, select, plans {収入は合計とプランごとの人数を見せています。} other {収入は合計だけを見せています。}}",
     "description": "What the holders of the view_finance permission see on the finances page, on the costs screen, by the server settings finance_viewer_item_names and finance_viewer_item_memos (shown or hidden) and finance_viewer_income (totals or plans)."

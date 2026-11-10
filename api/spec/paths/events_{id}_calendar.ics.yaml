@@ -11,7 +11,7 @@ get:
     zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
     `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
     user sees: a hidden place never appears in the file. A 404 for an event that the user does
-    not see.
+    not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
   tags: [events]
   security:
     - oauth2: ["read:events"]

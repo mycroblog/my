@@ -43,6 +43,9 @@ SELECT report_id, rule_id FROM report_rule_citations WHERE report_id = ANY(sqlc.
 -- name: ListReportVoiceRoomsOf :many
 SELECT report_id, room_id, revision_id FROM report_voice_rooms WHERE report_id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY report_id;
 
+-- name: ListReportGatheringsOf :many
+SELECT report_id, gathering_id, revision_id FROM report_gatherings WHERE report_id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY report_id;
+
 -- name: ListReportHookOriginsOf :many
 SELECT report_id, hook_decision_id, hook, reason_code FROM report_hook_origins WHERE report_id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY report_id;
 

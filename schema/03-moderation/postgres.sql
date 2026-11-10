@@ -136,6 +136,16 @@ CREATE TABLE report_voice_rooms (
 );
 CREATE INDEX report_voice_rooms_room_id ON report_voice_rooms (room_id);
 
+-- Resource (child of a report): the event that a local report points at, with the revision of its
+-- settings that the reporter saw (ADR-0161 §14). The event and its revisions are the gathering
+-- module's; the report targets the event's organizer.
+CREATE TABLE report_gatherings (
+  report_id uuid NOT NULL PRIMARY KEY,
+  gathering_id uuid NOT NULL,
+  revision_id uuid NOT NULL
+);
+CREATE INDEX report_gatherings_gathering_id ON report_gatherings (gathering_id);
+
 -- Resource (child of a report): the decision of a hook that filed the report (ADR-0147 §7). The
 -- unique decision keeps a job that runs again from filing a second report. hook and reason_code
 -- are immutable facts copied from the decision, so a report still says it was automated and why
@@ -274,7 +284,8 @@ CREATE TABLE audit_log_entries (
     'instance_marked_available',
     'domain_allow_added', 'domain_allow_removed',
     'domain_list_subscription_created', 'domain_list_subscription_updated', 'domain_list_subscription_deleted',
-    'domain_list_draft_accepted', 'domain_list_draft_rejected', 'domain_list_fetch_queued'
+    'domain_list_draft_accepted', 'domain_list_draft_rejected', 'domain_list_fetch_queued',
+    'event_cancelled'
   )),
   target_kind text NOT NULL CHECK (target_kind IN (
     'account', 'status', 'domain', 'report', 'appeal', 'user', 'role', 'setting', 'rule',
@@ -282,7 +293,7 @@ CREATE TABLE audit_log_entries (
     'cost_item', 'supporter_program', 'supporter_plan', 'supporter_subscription', 'custom_emoji_request',
     'payment_provider', 'oauth_client', 'oauth_client_host', 'instance', 'voice_room', 'login_provider',
     'link_card_domain', 'hook_decision',
-    'domain_allow', 'domain_list_subscription'
+    'domain_allow', 'domain_list_subscription', 'event'
   )),
   target_id text COLLATE "C" NOT NULL,
   target_label text NOT NULL,

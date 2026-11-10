@@ -94,7 +94,9 @@ People without an account on the fediverse can follow a profile or a hashtag in 
 profile followed by `.atom` (for example `https://example.com/@alice.atom`), or of the hashtag page
 (`https://example.com/tags/cats.atom`). Most feed readers also find the feed from the page's own address. A feed holds
 the 20 newest public posts of this server's accounts, without replies or boosts; a hashtag's feed holds those with the
-tag. A post with a content warning shows only the warning, and its text and media stay on the post's page.
+tag. A post with a content warning shows only the warning, and its text and media stay on the post's page. An article
+shows its title and summary, with a link to the article. To follow only the articles of a profile, add `/articles.atom`
+to the profile's address instead (`https://example.com/@alice/articles.atom`); it follows the same rules.
 
 Whether your own posts are in feeds is "Publish a feed of my public posts" under "Feeds" in the profile settings. Until
 you change it, it follows "Search engines and AI": your posts are in feeds while you let search engines index your

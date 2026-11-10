@@ -40,6 +40,10 @@ type atomDocument struct {
 			Name string `xml:"name"`
 			URI  string `xml:"uri"`
 		} `xml:"author"`
+		Summary struct {
+			Type string `xml:"type,attr"`
+			Text string `xml:",chardata"`
+		} `xml:"summary"`
 		Content struct {
 			Type string `xml:"type,attr"`
 			Text string `xml:",chardata"`
@@ -52,7 +56,8 @@ type atomDocument struct {
 
 // TestAtomFeeds checks end to end which posts the Atom feeds of profiles and hashtags show (FR-213):
 // only the local public posts that are not replies or boosts, of authors whose feed is on and who
-// are neither restricted nor moved. Without a choice of its own, a feed follows indexable.
+// are neither restricted nor moved. Without a choice of its own, a feed follows indexable. Articles
+// appear with their title and summary, and a profile's articles-only feed lists only its articles.
 func TestAtomFeeds(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
@@ -133,6 +138,23 @@ func TestAtomFeeds(t *testing.T) {
 		post(name, domcontent.VisibilityPublic, text(name+"'s #cats"), "")
 	}
 	ids["hank"] = post("hank", domcontent.VisibilityPublic, text("hank's #cats"), "")
+	article := func(author string, vis domcontent.Visibility, title, summary string) string {
+		t.Helper()
+		p, err := app.Content.CreateArticle(ctx, appcontent.CreateArticleInput{
+			AuthorAccountID: accounts[author], Visibility: vis,
+			ArticleInput: appcontent.ArticleInput{
+				Title: title, Summary: summary, Text: "## The body\n\nThe whole *body* of " + title + ".", Tags: []string{"cats"}, Language: "en",
+			},
+		})
+		if err != nil {
+			t.Fatalf("CreateArticle(%s, %s): %v", author, title, err)
+		}
+		return p.Status.ID
+	}
+	ids["article"] = article("alice", domcontent.VisibilityPublic, "A long read", "What the article is about")
+	ids["summarized"] = article("alice", domcontent.VisibilityPublic, "Another read", "")
+	article("alice", domcontent.VisibilityUnlisted, "An unlisted read", "")
+	article("dave", domcontent.VisibilityPublic, "Dave's read", "")
 
 	h := app.Handler()
 	get := func(path string, header ...string) *httptest.ResponseRecorder {
@@ -178,14 +200,21 @@ func TestAtomFeeds(t *testing.T) {
 	}
 
 	alice, rec := read("/@alice.atom")
-	if got, want := entryIDs(alice), []string{ids["warned"], ids["first"]}; !slices.Equal(got, want) {
-		t.Errorf("alice's feed = %v, want %v:\n%s", got, want, rec.Body)
+	if got, want := entryIDs(alice), []string{ids["summarized"], ids["article"], ids["warned"], ids["first"]}; !slices.Equal(got, want) {
+		t.Fatalf("alice's feed = %v, want %v:\n%s", got, want, rec.Body)
 	}
-	if e := alice.Entries[0]; e.Title != "spoilers" || e.Content.Type != "text" || !strings.Contains(e.Content.Text, "spoilers") ||
+	if e := alice.Entries[1]; e.Title != "A long read" || e.Summary.Type != "text" || e.Summary.Text != "What the article is about" ||
+		e.Content.Text != "" || len(e.Categories) != 1 || e.Categories[0].Term != "cats" || strings.Contains(rec.Body.String(), "h2") {
+		t.Errorf("the article's entry = %+v, want its title, its summary, and its hashtag, without the body", e)
+	}
+	if e := alice.Entries[0]; e.Title != "Another read" || e.Summary.Text != "The whole body of Another read." {
+		t.Errorf("the entry of an article without a summary = %+v, want the summary made from the body", e)
+	}
+	if e := alice.Entries[2]; e.Title != "spoilers" || e.Content.Type != "text" || !strings.Contains(e.Content.Text, "spoilers") ||
 		strings.Contains(rec.Body.String(), "the hidden body") {
 		t.Errorf("the entry behind a content warning = %+v, want the warning alone", e)
 	}
-	if e := alice.Entries[1]; e.Content.Type != "html" || !strings.Contains(e.Content.Text, "first") ||
+	if e := alice.Entries[3]; e.Content.Type != "html" || !strings.Contains(e.Content.Text, "first") ||
 		len(e.Categories) != 1 || e.Categories[0].Term != "cats" {
 		t.Errorf("the first entry = %+v, want its HTML and its hashtag", e)
 	}
@@ -208,8 +237,24 @@ func TestAtomFeeds(t *testing.T) {
 		}
 	}
 
+	articles, rec := read("/@alice/articles.atom")
+	if got, want := entryIDs(articles), []string{ids["summarized"], ids["article"]}; !slices.Equal(got, want) {
+		t.Errorf("alice's articles feed = %v, want %v:\n%s", got, want, rec.Body)
+	}
+	if want := "https://" + cfg.Host + "/@alice/articles.atom"; articles.ID != want || !strings.HasPrefix(articles.Title, "Articles by Alice") {
+		t.Errorf("alice's articles feed = %q, %q; want the ID %s and its own title", articles.ID, articles.Title, want)
+	}
+	if doc, _ := read("/@bob/articles.atom"); len(doc.Entries) != 0 {
+		t.Errorf("bob's articles feed = %v, want none", entryIDs(doc))
+	}
+	for _, name := range []string{"carol", "dave", "nobody"} {
+		if rec := get("/@" + name + "/articles.atom"); rec.Code != http.StatusNotFound {
+			t.Errorf("GET /@%s/articles.atom = %d, want 404", name, rec.Code)
+		}
+	}
+
 	tag, rec := read("/tags/cats.atom")
-	if got, want := entryIDs(tag), []string{ids["hank"], ids["bob"], ids["warned"], ids["first"]}; !slices.Equal(got, want) {
+	if got, want := entryIDs(tag), []string{ids["summarized"], ids["article"], ids["hank"], ids["bob"], ids["warned"], ids["first"]}; !slices.Equal(got, want) {
 		t.Errorf("the hashtag's feed = %v, want %v:\n%s", got, want, rec.Body)
 	}
 	if rec := get("/tags/dogs.atom"); rec.Code != http.StatusNotFound {

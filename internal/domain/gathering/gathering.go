@@ -188,14 +188,16 @@ func (r CancelReason) Valid() bool {
 	return false
 }
 
-// State is whether an event is scheduled or cancelled (gathering_heads.state). An event that ended
-// is still scheduled: its end is in the past.
+// State is whether an event is unscheduled, scheduled, or cancelled (gathering_heads.state). An
+// event that ended is still scheduled: its end is in the past.
 type State string
 
 // The states of an event.
 const (
-	StateScheduled State = "scheduled"
-	StateCancelled State = "cancelled"
+	// StateUnscheduled: the event polls its date and no candidate was confirmed yet.
+	StateUnscheduled State = "unscheduled"
+	StateScheduled   State = "scheduled"
+	StateCancelled   State = "cancelled"
 )
 
 // Place is a place of an event (ADR-0161 §6). Name, Address, and URL are those of a physical
@@ -247,6 +249,7 @@ const (
 	FieldPlaces          Field = "places"
 	FieldStartsAt        Field = "starts_at"
 	FieldEndsAt          Field = "ends_at"
+	FieldCandidates      Field = "candidates"
 	FieldNote            Field = "note"
 )
 

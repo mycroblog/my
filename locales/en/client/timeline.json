@@ -11,6 +11,10 @@
     "defaultMessage": "No posts yet",
     "description": "Shown instead of the posts of a profile's tab when it has none."
   },
+  "timeline.empty.account.articles.heading": {
+    "defaultMessage": "No articles yet",
+    "description": "Shown instead of the articles of the articles tab of a profile when it has none."
+  },
   "timeline.empty.bookmarks.description": {
     "defaultMessage": "Posts you bookmark appear here. Only you can see your bookmarks.",
     "description": "Text under the heading of the empty list of bookmarks."

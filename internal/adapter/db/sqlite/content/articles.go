@@ -27,6 +27,17 @@ func (r *StatusRepository) InsertArticle(ctx context.Context, tx uow.Tx, a conte
 	return sqlite.Wrap(err, "insert status article")
 }
 
+// ListLiveArticleIDs implements content.Repository.
+func (r *StatusRepository) ListLiveArticleIDs(ctx context.Context, authorAccountID, before string, limit int) ([]string, error) {
+	ids, err := r.db.reader().ListLiveArticleIDsOfAuthor(ctx, contentgen.ListLiveArticleIDsOfAuthorParams{
+		AuthorAccountID: authorAccountID, Before: before, Lim: int64(limit),
+	})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list articles of "+authorAccountID)
+	}
+	return ids, nil
+}
+
 // insertRevisionArticle writes the article children of rev, none for a revision of a post.
 func insertRevisionArticle(ctx context.Context, q *contentgen.Queries, rev content.Revision) error {
 	a := rev.Article

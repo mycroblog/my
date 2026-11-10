@@ -108,3 +108,12 @@ func (r *Repository) ReportedVoiceRoomsTx(ctx context.Context, tx uow.Tx, roomID
 	}
 	return (&Repository{db: db}).ReportedVoiceRooms(ctx, roomIDs)
 }
+
+// ReportedGatheringsTx implements the reads in a transaction.
+func (r *Repository) ReportedGatheringsTx(ctx context.Context, tx uow.Tx, gatheringIDs []string) (map[string]bool, error) {
+	db, err := r.db.in(tx)
+	if err != nil {
+		return nil, err
+	}
+	return (&Repository{db: db}).ReportedGatherings(ctx, gatheringIDs)
+}

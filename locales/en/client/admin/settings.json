@@ -223,6 +223,78 @@
     "defaultMessage": "Everyone also sees how many members each plan has now, never its amounts. On a plan with few members, people may guess who they are.",
     "description": "Description of publishing the number of members of each plan too, which may let people guess the members of a small plan."
   },
+  "admin.settings.funding.title": {
+    "defaultMessage": "Funding meter",
+    "description": "Heading of the part of the costs screen's publication form about the funding meter, which shows how far this month's income goes toward a monthly goal."
+  },
+  "admin.settings.funding.description": {
+    "defaultMessage": "The about page can show how far this month's income, after the payment provider's fees, goes toward a monthly goal. It never sends notifications.",
+    "description": "Description of the funding meter in the costs screen's publication form."
+  },
+  "admin.settings.funding.visibility": {
+    "defaultMessage": "What the meter shows",
+    "description": "Label of the choice of what the funding meter publishes (server setting funding_meter_visibility)."
+  },
+  "admin.settings.funding.off": {
+    "defaultMessage": "Do not show it",
+    "description": "Choice of not showing the funding meter."
+  },
+  "admin.settings.funding.off.description": {
+    "defaultMessage": "The about page has no meter.",
+    "description": "Description of not showing the funding meter."
+  },
+  "admin.settings.funding.percent": {
+    "defaultMessage": "The percentage only",
+    "description": "Choice of showing only the percentage of the monthly goal that this month's income covers."
+  },
+  "admin.settings.funding.percent.description": {
+    "defaultMessage": "Everyone sees how much of the goal this month's income covers, rounded down to 1%, and whether the month is covered. No amount is shown.",
+    "description": "Description of showing only the percentage of the funding meter."
+  },
+  "admin.settings.funding.amounts": {
+    "defaultMessage": "The percentage and the amounts",
+    "description": "Choice of showing the percentage, this month's income, and the goal."
+  },
+  "admin.settings.funding.amounts.description": {
+    "defaultMessage": "Everyone also sees this month's income and the goal.",
+    "description": "Description of showing the amounts of the funding meter too."
+  },
+  "admin.settings.funding.unavailable": {
+    "defaultMessage": "{reason, select, needs_private {Available only while neither the costs nor the income is published: with either one published, the percentage would give the hidden amount away.} other {Available only while both the costs and the income are published: otherwise the amounts would give the hidden side away.}}",
+    "description": "Description of a choice of the funding meter that cannot be chosen with the costs and the income published as they are in the form, and why. reason is needs_private (the percentage alone) or needs_public (the amounts)."
+  },
+  "admin.settings.funding.turns_off": {
+    "defaultMessage": "{reason, select, needs_private {Saving turns the meter off: the percentage alone can be shown only while neither the costs nor the income is published.} other {Saving turns the meter off: the amounts can be shown only while both the costs and the income are published.}}",
+    "description": "Note in the publication form when the costs or the income published as changed in the form rule out the funding meter's choice, which the server then turns off. reason is needs_private or needs_public."
+  },
+  "admin.settings.funding.target.description": {
+    "defaultMessage": "Leave the goal empty to use this month's running costs, which needs them in one currency. In a month without a goal, the meter is not shown.",
+    "description": "Description of the monthly goal of the funding meter in the publication form."
+  },
+  "admin.settings.funding.target.amount": {
+    "defaultMessage": "Monthly goal",
+    "description": "Label of the field of the funding meter's monthly goal (server setting funding_meter_target_amount)."
+  },
+  "admin.settings.funding.target.amount.description": {
+    "defaultMessage": "In the main unit of the currency, such as 1650 or 12.50.",
+    "description": "Description of the field of the funding meter's monthly goal."
+  },
+  "admin.settings.funding.target.currency": {
+    "defaultMessage": "Currency of the goal",
+    "description": "Label of the field of the currency of the funding meter's goal (server setting funding_meter_target_currency)."
+  },
+  "admin.settings.funding.target.currency.description": {
+    "defaultMessage": "An ISO 4217 code such as JPY. Empty: the currency of this month's costs.",
+    "description": "Description of the field of the currency of the funding meter's goal."
+  },
+  "admin.settings.funding.rail": {
+    "defaultMessage": "Also show it in the side column",
+    "description": "Label of the switch that also shows the funding meter in the third column of wide screens (server setting funding_meter_rail)."
+  },
+  "admin.settings.funding.rail.description": {
+    "defaultMessage": "Signed-in users see the meter in the column beside the page on wide screens, besides the about page.",
+    "description": "Description of showing the funding meter in the third column of wide screens too."
+  },
   "admin.settings.supporter_list.title": {
     "defaultMessage": "Supporter list",
     "description": "Heading of the section of the supporter list in the server settings."

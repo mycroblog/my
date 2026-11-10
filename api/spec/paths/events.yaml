@@ -27,7 +27,9 @@ post:
   operationId: createEvent
   summary: Create an event
   description: |
-    Creates an event that the user organizes, with a fixed date. The user must be a local,
+    Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+    date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+    or neither, are a 422. The user must be a local,
     unrestricted user who may create events (the instance setting `event_creators`, or the
     `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
     place needs the voice chat on and a user who may host its rooms: a 422

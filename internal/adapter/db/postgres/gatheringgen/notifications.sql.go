@@ -245,7 +245,8 @@ SELECT v.account_id::uuid AS account_id,
   EXISTS (SELECT 1 FROM gathering_invitations i WHERE i.gathering_id = $1::uuid AND i.invitee_account_id = v.account_id
     AND NOT EXISTS (SELECT 1 FROM gathering_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
   COALESCE((SELECT a.answer FROM gathering_attendees a WHERE a.gathering_id = $1::uuid AND a.account_id = v.account_id), '')::text AS answer,
-  COALESCE((SELECT a.approved FROM gathering_attendees a WHERE a.gathering_id = $1::uuid AND a.account_id = v.account_id), false)::boolean AS approved
+  COALESCE((SELECT a.approved FROM gathering_attendees a WHERE a.gathering_id = $1::uuid AND a.account_id = v.account_id), false)::boolean AS approved,
+  EXISTS (SELECT 1 FROM gathering_votes o WHERE o.gathering_id = $1::uuid AND o.account_id = v.account_id) AS voted
 FROM (SELECT unnest($2::uuid[]) AS account_id) v
 `
 
@@ -259,11 +260,12 @@ type ListGatheringAudienceFactsRow struct {
 	Invited   bool
 	Answer    string
 	Approved  bool
+	Voted     bool
 }
 
 // ListGatheringAudienceFacts returns, for each account of account_ids, whether it has an
-// invitation to an event that was not revoked, its answer (” for none), and whether its answer
-// is approved.
+// invitation to an event that was not revoked, its answer (” for none), whether its answer is
+// approved, and whether it voted in the event's date poll.
 func (q *Queries) ListGatheringAudienceFacts(ctx context.Context, arg ListGatheringAudienceFactsParams) ([]ListGatheringAudienceFactsRow, error) {
 	rows, err := q.db.Query(ctx, listGatheringAudienceFacts, arg.GatheringID, arg.AccountIds)
 	if err != nil {
@@ -278,6 +280,7 @@ func (q *Queries) ListGatheringAudienceFacts(ctx context.Context, arg ListGather
 			&i.Invited,
 			&i.Answer,
 			&i.Approved,
+			&i.Voted,
 		); err != nil {
 			return nil, err
 		}

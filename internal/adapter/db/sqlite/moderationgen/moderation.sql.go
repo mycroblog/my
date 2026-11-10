@@ -387,6 +387,38 @@ func (q *Queries) GetReportForward(ctx context.Context, reportID string) ([]Repo
 	return items, nil
 }
 
+const getReportGathering = `-- name: GetReportGathering :many
+SELECT gathering_id, revision_id FROM report_gatherings WHERE report_id = ?
+`
+
+type GetReportGatheringRow struct {
+	GatheringID string
+	RevisionID  string
+}
+
+func (q *Queries) GetReportGathering(ctx context.Context, reportID string) ([]GetReportGatheringRow, error) {
+	rows, err := q.db.QueryContext(ctx, getReportGathering, reportID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetReportGatheringRow{}
+	for rows.Next() {
+		var i GetReportGatheringRow
+		if err := rows.Scan(&i.GatheringID, &i.RevisionID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getReportHookOrigin = `-- name: GetReportHookOrigin :many
 SELECT hook_decision_id, hook, reason_code FROM report_hook_origins WHERE report_id = ?
 `
@@ -763,6 +795,22 @@ func (q *Queries) InsertReportForward(ctx context.Context, arg InsertReportForwa
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const insertReportGathering = `-- name: InsertReportGathering :exec
+INSERT INTO report_gatherings (report_id, gathering_id, revision_id) VALUES (?, ?, ?)
+ON CONFLICT (report_id) DO NOTHING
+`
+
+type InsertReportGatheringParams struct {
+	ReportID    string
+	GatheringID string
+	RevisionID  string
+}
+
+func (q *Queries) InsertReportGathering(ctx context.Context, arg InsertReportGatheringParams) error {
+	_, err := q.db.ExecContext(ctx, insertReportGathering, arg.ReportID, arg.GatheringID, arg.RevisionID)
+	return err
 }
 
 const insertReportHookOrigin = `-- name: InsertReportHookOrigin :execrows
@@ -1339,6 +1387,33 @@ func (q *Queries) ListReportStatusIDs(ctx context.Context, reportID string) ([]s
 			return nil, err
 		}
 		items = append(items, status_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listReportedGatherings = `-- name: ListReportedGatherings :many
+SELECT DISTINCT gathering_id FROM report_gatherings WHERE gathering_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) ORDER BY gathering_id
+`
+
+func (q *Queries) ListReportedGatherings(ctx context.Context, ids string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listReportedGatherings, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var gathering_id string
+		if err := rows.Scan(&gathering_id); err != nil {
+			return nil, err
+		}
+		items = append(items, gathering_id)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

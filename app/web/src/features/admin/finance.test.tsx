@@ -658,6 +658,73 @@ describe("what the costs screen says of their publication", () => {
     ).toBeInTheDocument();
   });
 
+  test("sets the funding meter, explaining why a choice that would reveal a hidden amount is unavailable", async () => {
+    server.use(signedInHandler, operatorHandler(["manage_finance", "manage_settings"]));
+    const settings = settingsServer();
+    const { user } = await renderApp({ path: "/admin/finance/publication" });
+    const publication = await screen.findByRole("region", { name: "Publication" });
+    const funding = await within(publication).findByRole("region", { name: "Funding meter" });
+    const choice = within(funding).getByRole("radiogroup", { name: "What the meter shows" });
+    expect(within(choice).getByRole("radio", { name: "Do not show it" })).toBeChecked();
+    // Both the costs and the income are private: the percentage alone may be shown, the amounts may not.
+    const percent = within(choice).getByRole("radio", { name: "The percentage only" });
+    expect(percent).toBeEnabled();
+    const amounts = within(choice).getByRole("radio", { name: "The percentage and the amounts" });
+    expect(amounts).toBeDisabled();
+    expect(amounts).toHaveAccessibleDescription(
+      /Available only while both the costs and the income are published: otherwise the amounts would give the hidden side away\./u,
+    );
+
+    await user.click(percent);
+    await user.type(within(funding).getByRole("textbox", { name: "Monthly goal" }), "5000");
+    await user.type(within(funding).getByRole("textbox", { name: "Currency of the goal" }), "jpy");
+    await user.click(within(funding).getByRole("checkbox", { name: "Also show it in the side column" }));
+    await user.click(within(publication).getByRole("button", { name: "Save the publication" }));
+
+    expect(await within(publication).findByText("Saved the publication.")).toBeInTheDocument();
+    expect(settings.patches).toEqual([
+      {
+        values: {
+          funding_meter_visibility: "percent",
+          funding_meter_target_amount: "5000",
+          funding_meter_target_currency: "JPY",
+          funding_meter_rail: "true",
+        },
+      },
+    ]);
+  });
+
+  test("says that publishing one side turns the percentage off, which may then not be chosen", async () => {
+    server.use(
+      signedInHandler,
+      operatorHandler(["manage_finance", "manage_settings"]),
+      http.get(`${apiBase}/admin/settings`, () =>
+        HttpResponse.json(instanceSettingsFixture({ funding_meter_visibility: "percent" })),
+      ),
+    );
+    const { user } = await renderApp({ path: "/admin/finance/publication" });
+    const publication = await screen.findByRole("region", { name: "Publication" });
+    const funding = await within(publication).findByRole("region", { name: "Funding meter" });
+    const choice = within(funding).getByRole("radiogroup", { name: "What the meter shows" });
+    expect(within(choice).getByRole("radio", { name: "The percentage only" })).toBeChecked();
+
+    const costs = within(publication).getByRole("region", { name: "Running costs" });
+    await user.click(
+      within(within(costs).getByRole("radiogroup", { name: "What to publish" })).getByRole("radio", { name: "Totals" }),
+    );
+
+    expect(
+      within(funding).getByText(
+        "Saving turns the meter off: the percentage alone can be shown only while neither the costs nor the income is published.",
+      ),
+    ).toBeInTheDocument();
+    expect(within(choice).getByRole("radio", { name: "The percentage only" })).toHaveAccessibleDescription(
+      /Available only while neither the costs nor the income is published/u,
+    );
+    // With only the costs published, neither the percentage nor the amounts may be shown.
+    expect(within(choice).getByRole("radio", { name: "The percentage and the amounts" })).toBeDisabled();
+  });
+
   test("shows what is published, without the form, to a viewer who may not change it", async () => {
     server.use(signedInHandler, operatorHandler(["manage_finance"]));
     serveVisibility("private");
@@ -665,6 +732,7 @@ describe("what the costs screen says of their publication", () => {
 
     const publication = await screen.findByRole("region", { name: "Publication" });
     expect(await within(publication).findByText("These costs are not published.")).toBeInTheDocument();
+    expect(within(publication).getByText("The funding meter is not shown this month.")).toBeInTheDocument();
     expect(within(publication).queryByRole("button", { name: "Save the publication" })).not.toBeInTheDocument();
   });
 });

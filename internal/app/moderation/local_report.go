@@ -138,6 +138,10 @@ type LocalReportInput struct {
 	// checks that the reporter sees the room and names its host as the target and its current
 	// revision; such a report points at no statuses and is never forwarded.
 	VoiceRoom *moderation.ReportVoiceRoom
+	// Gathering is the event reported, nil for none (ADR-0161 §14). The gathering module checks
+	// that the reporter sees the event and names its organizer as the target and its current
+	// revision; such a report points at no statuses and no room and is never forwarded.
+	Gathering *moderation.ReportGathering
 }
 
 // ReportFieldError reports a field of a local report that does not hold: an unknown category,
@@ -174,6 +178,10 @@ func (s *LocalReports) File(ctx context.Context, in LocalReportInput) (moderatio
 		room := *in.VoiceRoom
 		r.VoiceRoom = &room
 	}
+	if in.Gathering != nil {
+		g := *in.Gathering
+		r.Gathering = &g
+	}
 	switch {
 	case !r.Category.Valid():
 		return moderation.Report{}, &ReportFieldError{Field: "category"}
@@ -183,6 +191,12 @@ func (s *LocalReports) File(ctx context.Context, in LocalReportInput) (moderatio
 		return moderation.Report{}, &ReportFieldError{Field: "status_ids"}
 	case r.VoiceRoom != nil && (r.VoiceRoom.RoomID == "" || r.VoiceRoom.RevisionID == ""):
 		return moderation.Report{}, &ReportFieldError{Field: "voice_room_id"}
+	case r.Gathering != nil && len(r.StatusIDs) > 0:
+		return moderation.Report{}, &ReportFieldError{Field: "status_ids"}
+	case r.Gathering != nil && r.VoiceRoom != nil:
+		return moderation.Report{}, &ReportFieldError{Field: "voice_room_id"}
+	case r.Gathering != nil && (r.Gathering.GatheringID == "" || r.Gathering.RevisionID == ""):
+		return moderation.Report{}, &ReportFieldError{Field: "event_id"}
 	}
 	if err := r.ValidateLocal(); err != nil {
 		return moderation.Report{}, err
@@ -197,7 +211,7 @@ func (s *LocalReports) File(ctx context.Context, in LocalReportInput) (moderatio
 	case err != nil:
 		return moderation.Report{}, err
 	}
-	r.Forwarded = in.Forward && !target.Account.IsLocal() && r.VoiceRoom == nil
+	r.Forwarded = in.Forward && !target.Account.IsLocal() && r.VoiceRoom == nil && r.Gathering == nil
 	viewer := appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: in.ReporterAccountID}
 	if err := s.checkStatuses(ctx, viewer, r); err != nil {
 		return moderation.Report{}, err

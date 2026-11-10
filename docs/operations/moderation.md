@@ -471,7 +471,7 @@ In the admin API: `GET /api/v1/admin/reports` (filter with `state`, `category`, 
 - When you issue an action from a report (`report_id` / `-report` of the action), the report is resolved as `actioned` in the same operation.
 - A note (`note`) is an internal note that only moderators see, up to 2,000 characters. It is shown neither to the target nor to the reporter. It cannot be edited or deleted.
 - Reopening (`reopen`) puts a resolved report back to `open` (the assignment stays). An open report cannot be reopened (`409` in the admin API).
-- Forwarding (`forward`, the button **Forward to their server** of the report details) sends a report about an account on another server to that server, as a `Flag` of your instance actor with the account and the reported posts that still exist. The only text it carries is what you write for that server's moderators when you forward it (`-comment`, `comment` in the admin API, or **Text for their moderators** on the report's page; up to 1,000 characters, none by default). The reporter's comment and the note of an [external review](#reports-that-an-external-review-filed) never leave your server this way, and nothing of the reporter is sent. A report that its reporter chose to forward when filing it went out at once, with the reporter's comment. Forwarding works on a report filed on this server, by a person or by an [external review](#reports-that-an-external-review-filed), open or resolved, that was not forwarded yet; a report received from another server or about a voice chat room cannot be forwarded (`409` `report-not-forwardable` in the admin API, and the report details show no button). A report is sent once: forwarding it again, with any text, or forwarding one that its reporter had forwarded when filing it, changes nothing. `forwarded` in the admin API says whether it was sent, `forwardable` whether you can send it now.
+- Forwarding (`forward`, the button **Forward to their server** of the report details) sends a report about an account on another server to that server, as a `Flag` of your instance actor with the account and the reported posts that still exist. The only text it carries is what you write for that server's moderators when you forward it (`-comment`, `comment` in the admin API, or **Text for their moderators** on the report's page; up to 1,000 characters, none by default). The reporter's comment and the note of an [external review](#reports-that-an-external-review-filed) never leave your server this way, and nothing of the reporter is sent. A report that its reporter chose to forward when filing it went out at once, with the reporter's comment. Forwarding works on a report filed on this server, by a person or by an [external review](#reports-that-an-external-review-filed), open or resolved, that was not forwarded yet; a report received from another server or about a voice chat room or an event cannot be forwarded (`409` `report-not-forwardable` in the admin API, and the report details show no button). A report is sent once: forwarding it again, with any text, or forwarding one that its reporter had forwarded when filing it, changes nothing. `forwarded` in the admin API says whether it was sent, `forwardable` whether you can send it now.
 - The report details (`show`, `GET .../{id}`) return the notes, oldest first, with the number of other reports about the target and the number of actions against the target (lifted and expired ones included). The list does not return notes.
 - Assignments, resolutions, reopenings, notes and forwards are kept as events (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `report_forwards`), and `report_states` holds the current state.
 - Moderators can translate the reported posts and the reporter's comment on the report's page, or with `POST .../{id}/statuses/{status_id}/translation` and `POST .../{id}/comment/translation` (body `{"target_language": "en"}`).
@@ -499,6 +499,17 @@ leaves the report as it is.
   There are no recordings and no text chat, so these records are the only evidence.
 - A holder of `manage_reports` can end an open room for every participant with `POST /api/v1/admin/voice_rooms/{id}/end` (body `{"reason": "..."}`, optional, up to 500 characters).
   The reason is only for the moderators; the participants see only that the room ended. It works while the voice chat is off too, and the audit log records `voice_room_ended`.
+
+### Events
+
+- A local user can report an event that they can see, a cancelled one included (`POST /api/v1/reports` with `event_id`, and `account_id` set to the event's organizer).
+  The report targets the organizer and points at the event's settings (title, description, and places) as the reporter saw them. An event still polling for a date can be reported and cancelled like any other. It points at no posts and is never forwarded to another server.
+- The report details (`GET /api/v1/admin/reports/{id}`) show the event (`event`): its date, whether and how it was cancelled, and every change of its settings, oldest first, with all its places, also those that only the approved attendees saw.
+  `reported_revision_id` is the version the reporter saw, so a title or an address changed after the report is still in front of you.
+- A holder of `manage_reports` can cancel an event with `POST /api/v1/admin/events/{id}/cancel` (body `{"reason": "..."}`, optional, up to 500 characters).
+  The reason is shown with the cancellation to everyone who sees the event. The users who answered going or maybe and the invited users are notified, as of the organizer's own cancellation, and the audit log records `event_cancelled`.
+  An event cancelled already answers `409` `event-closed`.
+- Suspending or deleting the organizer cancels the organizer's events that have not started yet, including those still polling for a date (`gathering.cancel_organized`), and notifies their attendees. These cancellations name nobody as the one who cancelled them, and lifting the suspension does not restore them. Events that started already are not cancelled.
 
 ## Notifications for moderators and the pending counts
 
@@ -566,6 +577,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (denying and revoking the denial of a Client ID Metadata Document host; denying revokes the tokens of that host's clients; the target name is the host) |
 | `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (announcing the closure of the service or changing the date, withdrawing the announcement, closing, and completing the delivery of the closure; the target name is `service_closure`) |
 | `voice_room` | `voice_room_ended` (a moderator ended an open voice chat room; the target name is the room ID, since the name goes when the account that wrote it is erased; the report details show the name) |
+| `event` | `event_cancelled` (a moderator cancelled an event; the target name is the event ID, since the title goes when the account that wrote it is erased; the report details show the title) |
 | `domain_allow` | `domain_allow_added`, `domain_allow_removed` (adding a domain to the allowlist of federation and removing it; see [federating only with allowed servers](#federating-only-with-allowed-servers); the target name is the domain) |
 | `link_card_domain` | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` (setting a rule of the link card crawler on a domain, and removing it; see [link card domains](instance-settings.md#link-card-domains)) |
 | `login_provider` | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` (adding, changing, deleting, enabling and disabling an external login provider, and replacing its client secret; the target name is the provider's display name) |
@@ -591,7 +603,7 @@ In the admin API: `GET /api/v1/admin/audit_log` (filter with `actor_account_id`,
 
 ## Record retention and holds
 
-After the retention period for each kind of record, hourly jobs (`moderation.purge_records`, `identity.purge_origins`, and `voice.purge_records`) remove moderation records.
+After the retention period for each kind of record, hourly jobs (`moderation.purge_records`, `identity.purge_origins`, `voice.purge_records`, and `gathering.purge_records`) remove moderation records.
 You can change the periods in the instance settings, but not below the lower limit ([instance settings](instance-settings.md)). A changed period takes effect from the next run. A released retention hold, with its reason, is removed once the retention period for moderation actions has passed since its release.
 
 | Record | Setting | Default | Lower limit | Starts from |
@@ -604,6 +616,7 @@ You can change the periods in the instance settings, but not below the lower lim
 | Sign-up blocks | None (cannot be changed) | 30 days | n/a | The earlier of lifting and expiry |
 | Who took part in a voice chat room (participations, speakers and listeners, raised hands, invitations, removals) | `voice_participants_retention_days` | 90 days | 30 days | The end of the room |
 | The decisions of the [decision hooks](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 days | 30 days | The decision |
+| The answers, approvals, invitations, and votes on the candidate dates of an event | `event_records_retention_days` | 90 days | 30 days | The earlier of the end of the event (for an event whose date was never fixed, the end of its last candidate date) and its cancellation |
 
 - Open reports are never removed. A report that an action refers to (`report_id` of the action) stays until that action is removed.
 - The end of an action is the earlier of lifting and expiry. For an action that was appealed, if the review comes later than that, the end is the time of the review, and the action is kept while the appeal waits for review.
@@ -611,6 +624,7 @@ You can change the periods in the instance settings, but not below the lower lim
 - Posts that a report or an action points to are not physically deleted by the purge job, with their attached media, until that report or action is removed, even if the author deleted them (they disappear from view). Remote posts also stay beyond the retention period (including the instance setting `remote_status_max_retention_days`).
 - A sign-up block that has neither a lift nor an end time stays as long as it is in effect.
 - The records of who took part in a voice chat room that a report points at stay until that report is removed. The room itself (its name, description, hosts, and how it ended) is never removed.
+- The answers, votes, and invitations of an event that a report points at stay until that report is removed, and so do those that name an account under a hold. The event itself (its settings and places, its date and candidate dates, its co-organizers, and its cancellation) is never removed; once its answers are gone, it counts nobody as going.
 - One job run removes only a capped number of rows per kind (100 at a time, 20 times, for actions, reports and sign-up blocks; 1,000 rows at a time, 20 times, for the audit log). The next run removes the rest.
 
 ### Holds

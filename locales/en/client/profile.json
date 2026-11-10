@@ -255,6 +255,10 @@
     "defaultMessage": "Without boosts",
     "description": "Tab of a profile: only the posts the account wrote itself, without replies and boosts."
   },
+  "profile.tab.articles": {
+    "defaultMessage": "Articles",
+    "description": "Tab of a profile: only the account's articles (long posts with a title), newest first."
+  },
   "profile.tab.posts": {
     "defaultMessage": "Posts",
     "description": "Tab of a profile: the account's posts and boosts, without its replies."

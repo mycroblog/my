@@ -21,3 +21,5 @@ export { useFilteredLabel } from "./hooks/useFilteredLabel";
 export { ReportCommentText } from "./components/ReportCommentText";
 export { StatusHistory } from "./components/StatusHistory";
 export { StatusThread } from "./components/StatusThread";
+// The heading of a post's page: an article's is its title (ADR-0160 §4).
+export { StatusPageTitle } from "./components/StatusPageTitle";

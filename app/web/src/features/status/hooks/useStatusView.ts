@@ -2,6 +2,7 @@
 // What a status card shows, as plain values for the slots of @my/ui's PostCard (web-client/README.md A4): the
 // hook decides what to show and formats it; the component only places it. It returns no JSX.
 import {
+  type ArticleCoverImage,
   type CustomEmojiImage,
   type ImageSources,
   type LinkCardImage,
@@ -85,7 +86,48 @@ export type StatusView = {
   card: LinkCardView | null;
   /** How many times the post was boosted and favourited. */
   counts: { replies: number; boosts: number; favourites: number };
+  /**
+   * What makes the post an article (ADR-0160 §1): its title (null for an article from another server that has none),
+   * its summary (null when empty), and its cover (undefined for none); null for a post. A list's copy of an article
+   * has no body (`html` is empty), which only the article's own page reads.
+   */
+  article: ArticleView | null;
 };
+
+/** What a card or the page of an article shows besides its body, for @my/ui's ArticleCard and ArticleCover. */
+export type ArticleView = {
+  title: string | null;
+  summary: string | null;
+  cover: ArticleCoverImage | undefined;
+};
+
+/** The title, summary and cover of an article, or null for a post. */
+function articleView(post: Status): ArticleView | null {
+  const article = post.article;
+  if (article === undefined) return null;
+  const cover = article.cover;
+  // An upload's renditions, or for a cover from another server the file through the media proxy: the cover is shown
+  // as wide as the article, larger than the proxy's small rendition (`preview_url`).
+  const remoteUrl = cover?.url ?? cover?.preview_url;
+  const sources =
+    cover === undefined || cover.state !== "ready" || cover.type !== "image"
+      ? undefined
+      : (imageSources(cover.variants) ?? (remoteUrl === undefined ? undefined : { still: [{ url: remoteUrl }] }));
+  return {
+    title: article.title === "" ? null : article.title,
+    summary: article.summary === "" ? null : article.summary,
+    cover:
+      cover === undefined || sources === undefined
+        ? undefined
+        : {
+            sources,
+            width: cover.variants?.large.width ?? cover.meta.width,
+            height: cover.variants?.large.height ?? cover.meta.height,
+            blurhash: cover.blurhash,
+            alt: cover.description,
+          },
+  };
+}
 
 /** What the link card of a post shows, for @my/ui's LinkCard. */
 type LinkCardView = {
@@ -243,5 +285,6 @@ export function useStatusView(status: Status): StatusView {
     sensitive: post.sensitive,
     card,
     counts: { replies: post.replies_count, boosts: post.boosts_count, favourites: post.favourites_count },
+    article: articleView(post),
   };
 }

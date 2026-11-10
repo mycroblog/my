@@ -38,6 +38,7 @@ func ModerationRetentionContract(t *testing.T, newHarness ModerationFactory) {
 		{"PurgesTheReleasedHolds", retentionRepoReleasedHolds},
 		{"DeletesTheOldAuditLog", retentionRepoAuditLog},
 		{"TellsTheReportedVoiceRooms", retentionRepoVoiceRooms},
+		{"TellsTheReportedGatherings", retentionRepoGatherings},
 	})
 }
 
@@ -386,5 +387,29 @@ func retentionRepoVoiceRooms(t *testing.T, r *modRepo) {
 	})
 	if !got[room] || got[other] {
 		t.Errorf("ReportedVoiceRoomsTx = %v; want the reported room only", got)
+	}
+}
+
+func retentionRepoGatherings(t *testing.T, r *modRepo) {
+	event, other := r.ids.NewID(), r.ids.NewID()
+	rep := r.report(t, r.ids.NewID(), r.ids.NewID(), func(rep *moderation.Report) {
+		rep.Gathering = &moderation.ReportGathering{GatheringID: event, RevisionID: r.ids.NewID()}
+	})
+	got, err := r.h.Moderation.ReportedGatherings(t.Context(), []string{event, other})
+	if err != nil || !got[event] || got[other] {
+		t.Errorf("ReportedGatherings = %v, %v; want the reported event only", got, err)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) (err error) {
+		got, err = r.h.Moderation.ReportedGatheringsTx(ctx, tx, []string{other, event})
+		return err
+	})
+	if !got[event] || got[other] {
+		t.Errorf("ReportedGatheringsTx = %v; want the reported event only", got)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Moderation.PurgeReports(ctx, tx, []string{rep.ID})
+	})
+	if got, err := r.h.Moderation.ReportedGatherings(t.Context(), []string{event}); err != nil || got[event] {
+		t.Errorf("ReportedGatherings(of a purged report) = %v, %v; want none", got, err)
 	}
 }

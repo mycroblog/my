@@ -24,7 +24,9 @@ import (
 
 // This file serves the Atom feeds (RFC 4287) of profiles (/@alice.atom) and hashtags
 // (/tags/{tag}.atom), FR-213: the newest local public posts, without replies and boosts, for feed
-// readers of people without a fediverse account. A feed that does not exist, or that its owner
+// readers of people without a fediverse account; and the articles-only feed of a profile
+// (/@alice/articles.atom, ADR-0160 §11). An article's entry is its title, its summary, and the
+// link to its page. A feed that does not exist, or that its owner
 // turned off, is the server's 404. A rendered feed is kept in the key-value store for
 // feedCacheTTL, so that feed readers polling it do not read the database each time.
 
@@ -32,12 +34,15 @@ import (
 // error wrapping appcontent.ErrNotFound for a feed that does not exist.
 type Feeds interface {
 	Profile(ctx context.Context, username string) (appcontent.Feed, error)
+	Articles(ctx context.Context, username string) (appcontent.Feed, error)
 	Tag(ctx context.Context, name string) (appcontent.Feed, error)
 }
 
 const (
 	// feedSuffix ends the path of a feed: the path of its HTML page with it.
 	feedSuffix = ".atom"
+	// articlesSegment ends the path of a profile's articles, before feedSuffix.
+	articlesSegment = "/articles"
 	// pathTags is the prefix of the hashtags' pages (ADR-0018).
 	pathTags = "/tags/"
 	// feedContentType is the media type of an Atom feed.
@@ -62,12 +67,13 @@ const (
 type feedKind string
 
 const (
-	feedProfile feedKind = "profile"
-	feedTag     feedKind = "tag"
+	feedProfile  feedKind = "profile"
+	feedArticles feedKind = "articles"
+	feedTag      feedKind = "tag"
 )
 
-// feedRoute returns the feed of a path: /@{name}.atom, with or without the local domain in the
-// name as parsePreviewRoute takes it, or /tags/{tag}.atom.
+// feedRoute returns the feed of a path: /@{name}.atom or /@{name}/articles.atom, with or without
+// the local domain in the name as parsePreviewRoute takes it, or /tags/{tag}.atom.
 func (h *Handler) feedRoute(p string) (kind feedKind, name string, ok bool) {
 	rest, ok := strings.CutSuffix(p, feedSuffix)
 	if !ok {
@@ -79,11 +85,15 @@ func (h *Handler) feedRoute(p string) (kind feedKind, name string, ok bool) {
 		}
 		return feedTag, tag, true
 	}
+	kind = feedProfile
+	if profile, ok := strings.CutSuffix(rest, articlesSegment); ok {
+		kind, rest = feedArticles, profile
+	}
 	route, ok := h.parsePreviewRoute(rest)
 	if !ok || route.statusID != "" || route.invalid {
 		return "", "", false
 	}
-	return feedProfile, route.name, true
+	return kind, route.name, true
 }
 
 // tagPage returns the hashtag of the path of a hashtag's page, /tags/{tag}.
@@ -218,20 +228,31 @@ func (h *Handler) renderFeed(ctx context.Context, kind feedKind, name string) (c
 		policy instance.CrawlerPolicy
 	)
 	switch kind {
-	case feedProfile:
-		if feed, err = h.o.Feeds.Profile(ctx, name); err != nil {
+	case feedProfile, feedArticles:
+		read, path := h.o.Feeds.Profile, ""
+		if kind == feedArticles {
+			read, path = h.o.Feeds.Articles, articlesSegment
+		}
+		if feed, err = read(ctx, name); err != nil {
 			return cachedFeed{}, err
 		}
 		p := *feed.Author
 		lang := h.previewLanguage(ctx, p.Language)
+		l := h.o.Messages.Localizer(lang)
 		url := profileURL(h.o.Host, p.Username())
+		handle := p.Username() + "@" + h.o.AccountDomain
+		title := l.ServerPreviewTitle(i18n.ServerPreviewTitleArgs{Handle: handle, Name: displayName(p)})
+		if kind == feedArticles {
+			title = l.ServerFeedArticlesTitle(i18n.ServerFeedArticlesTitleArgs{Handle: handle, Name: displayName(p)})
+		}
+		self := url + path + feedSuffix
 		doc = atomFeed{
 			Lang:  lang,
-			ID:    url + feedSuffix,
-			Title: h.o.Messages.Localizer(lang).ServerPreviewTitle(i18n.ServerPreviewTitleArgs{Handle: p.Username() + "@" + h.o.AccountDomain, Name: displayName(p)}),
+			ID:    self,
+			Title: title,
 			Links: []atomLink{
 				{Rel: "alternate", Type: "text/html", Href: url},
-				{Rel: "self", Type: "application/atom+xml", Href: url + feedSuffix},
+				{Rel: "self", Type: "application/atom+xml", Href: self},
 			},
 			Author:  &atomPerson{Name: displayName(p), URI: url},
 			Updated: atomTime(p.Actor.Profile.RevisedAt),
@@ -288,9 +309,10 @@ func (h *Handler) renderFeed(ctx context.Context, kind feedKind, name string) (c
 	return cachedFeed{Body: body, ETag: etag(body), Modified: modified.UTC().Truncate(time.Second), Policy: policy}, nil
 }
 
-// feedEntry renders a post of a feed. A post behind a content warning shows only the warning, and
-// leaves its body and media to its page; the others show the body with their images, unless
-// these are sensitive, and every attachment as an enclosure.
+// feedEntry renders a post of a feed. An article shows its title and its summary, and leaves its
+// body to its page. A post behind a content warning shows only the warning, and leaves its body
+// and media to its page; the others show the body with their images, unless these are
+// sensitive, and every attachment as an enclosure.
 func (h *Handler) feedEntry(ctx context.Context, e appcontent.FeedEntry) atomEntry {
 	st, rev := e.Post.Status, e.Post.Revision
 	lang := h.previewLanguage(ctx, e.Language)
@@ -307,6 +329,13 @@ func (h *Handler) feedEntry(ctx context.Context, e appcontent.FeedEntry) atomEnt
 	}
 	for _, tag := range e.Tags {
 		out.Categories = append(out.Categories, atomCategory{Term: tag})
+	}
+	if a := rev.Article; a != nil {
+		out.Title = atomText{Type: "text", Text: a.Title}
+		if a.Summary != "" {
+			out.Summary = &atomText{Type: "text", Text: a.Summary}
+		}
+		return out
 	}
 	if rev.SpoilerText != "" {
 		out.Title = atomText{Type: "text", Text: feedTitle(rev.SpoilerText)}
@@ -366,6 +395,7 @@ type atomEntry struct {
 	Updated    atomTime       `xml:"updated"`
 	Author     atomPerson     `xml:"author"`
 	Categories []atomCategory `xml:"category"`
+	Summary    *atomText      `xml:"summary,omitempty"`
 	Content    *atomText      `xml:"content,omitempty"`
 }
 

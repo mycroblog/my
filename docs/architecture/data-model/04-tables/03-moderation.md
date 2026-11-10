@@ -93,6 +93,7 @@
 | `report_statuses` | リソース（子） | `report_id`, `status_id` | PK `(report_id, status_id)`。インデックス `(status_id)`（投稿の消去で証拠を残す判定） |
 | `report_rule_citations` | リソース（子） | `report_id`, `rule_id` | PK `(report_id, rule_id)`。ルールの文言が改訂されても `rule_id` は変わらない（§4.9） |
 | `report_voice_rooms` | リソース（子） | `report_id`（PK）, `room_id`, `revision_id`（通報の時点の設定の版） | インデックス `(room_id)`。ルームと版の表は `voice` のもの（§4.14、ADR-0100 §11） |
+| `report_gatherings` | リソース（子） | `report_id`（PK）, `gathering_id`, `revision_id`（通報者が見た設定の版） | インデックス `(gathering_id)`。イベントと版の表は `gathering` のもの（§4.19、ADR-0161 §14） |
 | `report_hook_origins` | リソース（子） | `report_id`（PK）, `hook_decision_id`, `hook`, `reason_code` | 一意 `(hook_decision_id)`。通報を起票したフックの判定（ADR-0147 §7）。一意制約が再実行での二重の起票を防ぐ。`hook` と `reason_code` は不変の事実の写しで、判定が保持期間で消えても残る |
 | `report_assignments` | イベント | `id`, `report_id`, `assignee_user_id`（NULL 可 = 担当解除）, `assigned_by_user_id`（NULL 可 = CLI）, `assigned_at` | インデックス `(report_id, id DESC)`。担当が変わらない割り当ては記録しない |
 | `report_resolutions` | イベント | `id`, `report_id`, `outcome`（`enum(actioned, dismissed)`）, `resolved_by_user_id`（NULL 可 = CLI）, `resolved_at` | インデックス `(report_id, id DESC)`。処分との関連は `moderation_actions.report_id` で辿る。解決済みの通報の解決は記録しない |
@@ -111,6 +112,8 @@
 - フックの `flag` の通報（ADR-0147 §7）は、通報者がインスタンス Actor で、`uri` は NULL、`forwarded` は偽です。カテゴリは判定の理由コードから決め（`spam`・`malware` は `spam`、`illegal` は `legal`、`harassment`・`sexual`・`violence` は `violation`、ほかは `other`）、`comment` はプラグインのメモ（なければ空）です。投稿と同じトランザクションで `moderation.Service.FileHookReport` が書きます。解決しても `report_resolved` を作りません。
 - 通話のルームの通報（ADR-0100 §11）は、通報者に見える（`voice.CanSee`）開いたルームを `report_voice_rooms` で指し、対象のアカウントはその時のホスト、`revision_id` はその時の設定の版です。ルームが見えるか・ホスト・版は `voice` が決め（`voice.Service.ReportTarget`）、クライアント API が `moderation.LocalReports` に渡します。投稿は指せず、転送しません。
   モデレーターが開く通報の詳細は、そのルームの版をすべてと、参加者の記録（参加と退出・退出させた人）を、`voice` の消去が残している間だけ示します（`voice.Service.RoomRecords`）。通報が残る間は、そのルームの参加者の記録は消えません（§4.14）。
+- イベントの通報（ADR-0161 §14）は、通報者に見える（`gathering.CanSee`）イベントを、中止したものも含めて `report_gatherings` で指し、対象のアカウントは主催者、`revision_id` は通報者が見ていた設定の版です。イベントが見えるか・主催者・版は `gathering` が決め（`gathering.Service.ReportTarget`）、クライアント API が `moderation.LocalReports` に渡します。投稿も通話のルームも指せず、転送しません。
+  モデレーターが開く通報の詳細は、そのイベントの今の日時・中止と、設定の版をすべて、誰に見せていたかにかかわらずすべての場所とともに示します（`gathering.Service.EventRecords`）。通報が残る間は、そのイベントの出欠・日程の候補への答え・招待は消えません（§4.19）。
 - 通報の状態の投影は、受け付けで `open`、解決で `resolved`（`outcome` を写す）、再開で `open` に戻します（担当は残します）。再開できるのは解決済みの通報だけです。
   処分（`moderation_actions.report_id` を持つもの）を記録すると、同じトランザクションでその通報を `actioned` で解決し、監査ログに `report_resolved` を残します。解決済みの通報を指す処分は、通報を変えません。
 - モデレーターが開く通報の詳細は、メモを古い順に、対象のほかの通報の数（`reports` の `(target_account_id, id)`）と対象への処分の数（`moderation_actions`。解除・期限切れを含む）とともに示します。
@@ -140,7 +143,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance, voice_room, login_provider, link_card_domain, hook_decision, domain_allow, domain_list_subscription)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
+| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance, voice_room, login_provider, link_card_domain, hook_decision, domain_allow, domain_list_subscription, event)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
 
 - 各モジュールの管理のユースケースが元のイベントと同じトランザクションで発行するドメインイベント（`moderation.audit_recorded`）を、`moderation` の同期の購読者が書きます。理由とメモの本文は写さず、`source_event_id` で元のイベントから引きます。
   記録の ID はトランザクションの前に作り、再試行しても同じ行を書きます。何も変えなかった操作（解除済みの処分の解除など）は記録しません。
@@ -171,6 +174,7 @@
   | `domain_list_draft_accepted` | `domain_list_subscription` | `domain_list_subscriptions.id` | 購読の題名 | 発行・解除した `domain_moderation_actions.id`（処分の `domain_action_issued` / `domain_action_lifted` も記録する） |
   | `domain_list_draft_rejected` | `domain_list_subscription` | `domain_list_subscriptions.id` | 購読の題名 | `domain_list_draft_rejections.id` |
   | `domain_list_fetch_queued` | `domain_list_subscription` | `domain_list_subscriptions.id` | 購読の題名 | なし（取得の行は取得のときに書く） |
+  | `event_cancelled` | `event` | `gatherings.id` | `gatherings.id`（題名は書いた人の消去で消えるので写さない。モデレーターは通報の詳細で題名を見る） | `gathering_cancellations.gathering_id`（= `gatherings.id`。理由の文は `gathering_cancellations.note`） |
   | `appeal_upheld`, `appeal_overturned` | `appeal` | `moderation_appeals.id` | 申し立てたアカウントのハンドル | `moderation_appeal_decisions.appeal_id`（= `moderation_appeals.id`） |
   | `revealed_private_data` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | なし（元の記録を持たない操作） |
   | `two_factor_disabled` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | `totp_enrollment_revocations.enrollment_id` |
@@ -239,7 +243,7 @@
 | 記録 | 設定（既定・下限） | 起点 | 消すもの |
 | --- | --- | --- | --- |
 | 処分 | `moderation_actions_retention_days`（365 日・180 日） | 処分の終わり: `warn`・`delete_statuses` は `issued_at`、ほかは解除と期限の早い方（どちらも無ければ消さない）。異議申し立てがあれば審査の `decided_at` より前には消さず、審査待ちの間は消さない | `moderation_actions` と `moderation_action_statuses`・`moderation_action_lifts`・`moderation_appeals`・`moderation_appeal_decisions`・`appeal_states`・`account_restrictions` の行 |
-| 通報 | `reports_retention_days`（365 日・180 日） | `report_states` が `resolved` になった `since`（最後の解決）。未解決の通報と、処分が参照する（`moderation_actions.report_id`）通報は消さない | `reports` と `report_statuses`・`report_rule_citations`・`report_assignments`・`report_resolutions`・`report_reopenings`・`report_notes`・`report_voice_rooms`・`report_hook_origins`・`report_forwards`・`report_states` |
+| 通報 | `reports_retention_days`（365 日・180 日） | `report_states` が `resolved` になった `since`（最後の解決）。未解決の通報と、処分が参照する（`moderation_actions.report_id`）通報は消さない | `reports` と `report_statuses`・`report_rule_citations`・`report_assignments`・`report_resolutions`・`report_reopenings`・`report_notes`・`report_voice_rooms`・`report_gatherings`・`report_hook_origins`・`report_forwards`・`report_states` |
 | 監査ログ | `audit_log_retention_days`（730 日・365 日） | `occurred_at` | `audit_log_entries` の行 |
 | 登録の拒否 | なし（30 日に固定） | 拒否の終わり: 解除（`signup_block_lifts.lifted_at`）と期限（`expires_at`）の早い方。どちらも無ければ消さない | `signup_blocks` と `signup_block_lifts` の行 |
 

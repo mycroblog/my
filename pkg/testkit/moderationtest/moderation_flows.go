@@ -1014,6 +1014,34 @@ func moderationLocalReports(t *testing.T, e *moderationEnv) {
 	if reported, err := e.svc.ReportedVoiceRooms(ctx, []string{room.RoomID}); err != nil || len(reported) != 0 {
 		t.Errorf("ReportedVoiceRooms after the report's purge = %v, %v; want none", reported, err)
 	}
+
+	// A report of an event, whose organizer the gathering module names, points at the event and
+	// the revision that the reporter saw, no statuses and no room, and is never forwarded
+	// (ADR-0161 §14).
+	event := &moderation.ReportGathering{GatheringID: testkit.NamedID("event"), RevisionID: testkit.NamedID("event revision")}
+	in = appmoderation.LocalReportInput{
+		ReporterAccountID: reporter, TargetAccountID: e.local, Category: moderation.CategorySpam, Forward: true, Gathering: event,
+	}
+	in.VoiceRoom = room
+	if _, err := reports.File(ctx, in); !errors.As(err, &fieldErr) || fieldErr.Field != "voice_room_id" {
+		t.Errorf("File(an event and a room) = %v, want a *ReportFieldError of voice_room_id", err)
+	}
+	in.VoiceRoom, in.StatusIDs = nil, []string{testkit.OrderedID(1)}
+	if _, err := reports.File(ctx, in); !errors.As(err, &fieldErr) || fieldErr.Field != "status_ids" {
+		t.Errorf("File(an event with statuses) = %v, want a *ReportFieldError of status_ids", err)
+	}
+	in.StatusIDs = nil
+	eventReport, err := reports.File(ctx, in)
+	if err != nil || eventReport.Forwarded || eventReport.Gathering == nil || *eventReport.Gathering != *event {
+		t.Fatalf("File(an event) = %+v, %v; want the event, not forwarded", eventReport, err)
+	}
+	if got, err := e.svc.ReportRecord(ctx, eventReport.ID); err != nil || got.Report.Gathering == nil || *got.Report.Gathering != *event {
+		t.Errorf("ReportRecord(an event) = %+v, %v; want the event and its revision", got.Report, err)
+	}
+	if reported, err := e.svc.ReportedGatherings(ctx, []string{event.GatheringID}); err != nil || !reported[event.GatheringID] {
+		t.Errorf("ReportedGatherings = %v, %v; want the event", reported, err)
+	}
+	e.events.Take()
 }
 
 func moderationHandlesReports(t *testing.T, e *moderationEnv) {

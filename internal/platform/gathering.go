@@ -5,10 +5,12 @@ package platform
 import (
 	"context"
 	"errors"
+	"time"
 
 	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/queue"
+	"github.com/mycroblog/my/internal/app/uow"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/voice"
@@ -29,6 +31,7 @@ func (a *App) setUpGathering(repo appgathering.Repository) {
 	d := appgathering.Deps{
 		Repository: repo, UnitOfWork: a.UnitOfWork, Clock: a.Clock, IDs: a.IDs, RateLimiter: a.RateLimiter,
 		Members: gatheringMembers{a}, Relations: gatheringRelations{a}, Outbox: outbox, Logger: a.Logger,
+		Retention: gatheringRetention{a}, Store: a.KV,
 	}
 	if a.gatheringNotifier != nil {
 		d.Notifier = a.gatheringNotifier
@@ -36,6 +39,8 @@ func (a *App) setUpGathering(repo appgathering.Repository) {
 	a.Events = appgathering.NewService(d)
 	a.Events.RegisterNotificationProjectors(a.Projectors)
 	a.Events.RegisterNotificationJobs(a.Handlers, a.Scheduler)
+	a.Events.RegisterModerationProjectors(a.Projectors)
+	a.Events.RegisterModerationJobs(a.Handlers, a.Scheduler)
 }
 
 // eventsAPI returns the events of the client API, nil before setUpGathering.
@@ -44,6 +49,43 @@ func (a *App) eventsAPI() clientapi.Events {
 		return nil
 	}
 	return a.Events
+}
+
+// eventModerationAPI returns the moderation of the events of the client API, nil before
+// setUpGathering.
+func (a *App) eventModerationAPI() clientapi.EventModeration {
+	if a.Events == nil {
+		return nil
+	}
+	return a.Events
+}
+
+// gatheringRetention reads what the purge of the answers and the invitations of the events keeps
+// from the instance and moderation modules (ADR-0161 §14).
+type gatheringRetention struct{ a *App }
+
+func (r gatheringRetention) RecordsRetention(ctx context.Context) (time.Duration, error) {
+	s, err := r.a.Instance.Settings(ctx)
+	if err != nil {
+		return 0, err
+	}
+	return s.Retention(instance.SettingEventRecordsRetentionDays), nil
+}
+
+func (r gatheringRetention) ReportedGatherings(ctx context.Context, ids []string) (map[string]bool, error) {
+	return r.a.Moderation.ReportedGatherings(ctx, ids)
+}
+
+func (r gatheringRetention) ReportedGatheringsTx(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	return r.a.Moderation.ReportedGatheringsTx(ctx, tx, ids)
+}
+
+func (r gatheringRetention) HeldAccountIDs(ctx context.Context) ([]string, error) {
+	return r.a.Moderation.HeldAccountIDs(ctx)
+}
+
+func (r gatheringRetention) HeldAccountIDsTx(ctx context.Context, tx uow.Tx) ([]string, error) {
+	return r.a.Moderation.HeldAccountIDsTx(ctx, tx)
 }
 
 // gatheringMembers reads the accounts for the events from the account, moderation, identity,

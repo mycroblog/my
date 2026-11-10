@@ -104,7 +104,11 @@ type Deps struct {
 	// events notify nobody.
 	Outbox   queue.Outbox
 	Notifier Notifier
-	Logger   *slog.Logger
+	// Retention reads what JobPurgeRecords keeps, and Store keeps its cursor; with Retention nil
+	// the purge erases nothing (ADR-0161 §14).
+	Retention Retention
+	Store     kernel.KeyValueStore
+	Logger    *slog.Logger
 }
 
 // Service runs the events (ADR-0161): creating, revising, and cancelling them, their
@@ -217,7 +221,8 @@ func (s *Service) facts(ctx context.Context, viewer gathering.Viewer, recs []Rec
 	for _, r := range recs {
 		f := gathering.Facts{
 			Coorganizer: r.Coorganizes(viewer.AccountID), Invited: own[r.ID].Invited, Answered: own[r.ID].Answer != "",
-			Approved: own[r.ID].Approved, FollowsOrganizer: following[r.OrganizerAccountID], FollowedByOrganizer: followers[r.OrganizerAccountID],
+			Approved: own[r.ID].Approved, Voted: own[r.ID].Voted, FollowsOrganizer: following[r.OrganizerAccountID],
+			FollowedByOrganizer: followers[r.OrganizerAccountID],
 		}
 		for _, id := range r.organizerIDs() {
 			// The organizers do not block themselves.

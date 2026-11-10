@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The publication settings next to the screens whose data they publish (audit A8 of #1638): how much of the running
 // costs is published (FR-903) and shown to the holders of view_finance (ADR-0070 §5) and how much of the income is
-// published (FR-917), on the costs screen.
+// published (FR-917), and what the funding meter publishes toward which monthly target (FR-905), on the costs screen.
 // They stay instance settings (manage_settings): the form reads and saves them with the server settings' API, sends
 // the ones that changed together, and each change goes to the audit log (FR-704).
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -23,6 +23,10 @@ export const financePublicationKeys = [
   "finance_viewer_item_memos",
   "finance_viewer_income",
   "income_visibility",
+  "funding_meter_visibility",
+  "funding_meter_target_amount",
+  "funding_meter_target_currency",
+  "funding_meter_rail",
 ] as const satisfies readonly InstanceSettingKey[];
 
 export type PublicationKey = (typeof financePublicationKeys)[number];

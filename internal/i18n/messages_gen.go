@@ -1869,6 +1869,13 @@ func (l *Localizer) ServerErrorsEventInvalidInvitee() string {
 	return l.format("server:errors.event.invalid_invitee", nil)
 }
 
+// ServerErrorsEventLastCandidate formats "server:errors.event.last_candidate". API error title for HTTP 409 when an organizer withdraws the last candidate date of an event's date poll.
+//
+//	en: The date poll needs at least one candidate.
+func (l *Localizer) ServerErrorsEventLastCandidate() string {
+	return l.format("server:errors.event.last_candidate", nil)
+}
+
 // ServerErrorsEventNotAttending formats "server:errors.event.not_attending". API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event.
 //
 //	en: That user has not answered going or maybe.
@@ -1897,11 +1904,25 @@ func (l *Localizer) ServerErrorsEventOrganizerOnly() string {
 	return l.format("server:errors.event.organizer_only", nil)
 }
 
+// ServerErrorsEventScheduled formats "server:errors.event.scheduled". API error title for HTTP 409 when a user adds, withdraws, answers, or confirms a candidate date of an event whose date its organizers already confirmed.
+//
+//	en: The date of that event has been confirmed.
+func (l *Localizer) ServerErrorsEventScheduled() string {
+	return l.format("server:errors.event.scheduled", nil)
+}
+
 // ServerErrorsEventTooManyCoorganizers formats "server:errors.event.too_many_coorganizers". API error title for HTTP 409 when the organizer names a co-organizer past the limit of three.
 //
 //	en: The event has as many co-organizers as it may.
 func (l *Localizer) ServerErrorsEventTooManyCoorganizers() string {
 	return l.format("server:errors.event.too_many_coorganizers", nil)
+}
+
+// ServerErrorsEventUnscheduled formats "server:errors.event.unscheduled". API error title for HTTP 409 when a user answers an event, or asks for its calendar file, before its organizers confirmed a date from its date poll.
+//
+//	en: That event has no date yet.
+func (l *Localizer) ServerErrorsEventUnscheduled() string {
+	return l.format("server:errors.event.unscheduled", nil)
 }
 
 // ServerErrorsEventVoiceUnavailable formats "server:errors.event.voice_unavailable". API error title for HTTP 422 when an event gets a voice chat room as a place while voice chat is off or its organizer may not host rooms.
@@ -3337,6 +3358,22 @@ func (l *Localizer) ServerErrorsWebhookInvalidDetail(reason string) string {
 //	en: The password is wrong.
 func (l *Localizer) ServerErrorsWrongPassword() string {
 	return l.format("server:errors.wrong_password", nil)
+}
+
+// ServerFeedArticlesTitleArgs holds the arguments of ServerFeedArticlesTitle, passed by name.
+//
+//exhaustruct:enforce
+type ServerFeedArticlesTitleArgs struct {
+	_      struct{} // forces keyed fields
+	Handle string
+	Name   string
+}
+
+// ServerFeedArticlesTitle formats "server:feed.articles_title". Title of the Atom feed that lists only the articles (long posts with a title) of a profile. {name} is the display name, or the username when there is none; {handle} is username@domain.
+//
+//	en: Articles by {name} (@{handle})
+func (l *Localizer) ServerFeedArticlesTitle(args ServerFeedArticlesTitleArgs) string {
+	return l.format("server:feed.articles_title", map[string]any{"handle": args.Handle, "name": args.Name})
 }
 
 // ServerFeedContentWarning formats "server:feed.content_warning". Text of a post in an Atom feed when the post has a content warning: the feed shows only the warning, and the body and the media stay on the post's page. {warning} is the warning, written by the author.

@@ -25,6 +25,16 @@ SELECT revision_id, media_id, description FROM status_revision_article_covers WH
 SELECT revision_id, position, media_id, description FROM status_revision_article_images
 WHERE revision_id = $1 ORDER BY position;
 
+-- name: ListLiveArticleIDsOfAuthor :many
+-- The articles of an author that are not deleted, newest first, below an ID (NULL for the
+-- first page): the articles of a profile (ADR-0160 section 11).
+SELECT a.status_id FROM status_articles a
+WHERE a.author_account_id = sqlc.arg(author_account_id)
+  AND (sqlc.narg(before)::uuid IS NULL OR a.status_id < sqlc.narg(before)::uuid)
+  AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = a.status_id)
+ORDER BY a.status_id DESC
+LIMIT sqlc.arg(lim);
+
 -- The article children of many revisions, read as the queries above read one (FindCurrentRevisions).
 
 -- name: ListStatusRevisionArticlesOf :many

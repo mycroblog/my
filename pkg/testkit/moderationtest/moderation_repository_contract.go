@@ -502,6 +502,15 @@ func modRepoReports(t *testing.T, r *modRepo) {
 	})
 	// A second local report: reports without a URI do not collide.
 	r.report(t, reporter, target, nil)
+	event := r.report(t, reporter, r.ids.NewID(), func(rep *moderation.Report) {
+		rep.Gathering = &moderation.ReportGathering{GatheringID: r.ids.NewID(), RevisionID: r.ids.NewID()}
+	})
+	if got, err := r.h.Moderation.FindReport(ctx, event.ID); err != nil || !sameReport(got, event) {
+		t.Errorf("FindReport(an event) = %+v, %v; want %+v", got, err, event)
+	}
+	if got, err := r.h.Moderation.FindReports(ctx, []string{event.ID}); err != nil || !sameReport(got[event.ID], event) {
+		t.Errorf("FindReports(an event) = %+v, %v; want %+v", got, err, event)
+	}
 
 	if got, err := r.h.Moderation.FindReport(ctx, remote.ID); err != nil || !sameReport(got, remote) {
 		t.Errorf("FindReport = %+v, %v; want %+v", got, err, remote)

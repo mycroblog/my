@@ -202,7 +202,7 @@ flowchart TD
 | 1 時間 | `federation.refresh_stale_actors` | 200 件ごとに続き 1、古くてフォロワーのいる actor ごとに `federation.refresh_actor` |
 | 1 時間 | `content.purge_remote_statuses`、`content.purge_relayed_statuses`、`content.auto_delete_statuses`、`account.erase_deleted` | 続きがあれば 1 |
 | 1 時間 | `account.execute_deletions` | [§3.3](#33-アカウントの削除と消去) |
-| 1 時間 | `kv.purge_expired`、`media.purge_unattached`、`media.purge_replaced`、`media.purge_remote_cache`、`graph.expire_mutes`、`moderation.purge_records`、`federation.purge_records`、`webhook.purge_messages`、`queue.purge_dead_jobs`、`voice.purge_records`、`identity.expire_imports`、`identity.expire_exports`、`identity.purge_unused_oauth_clients`、`identity.purge_origins`、`identity.purge_auth_records`、`identity.queue_closure_reminders` | |
+| 1 時間 | `kv.purge_expired`、`media.purge_unattached`、`media.purge_replaced`、`media.purge_remote_cache`、`graph.expire_mutes`、`moderation.purge_records`、`federation.purge_records`、`webhook.purge_messages`、`queue.purge_dead_jobs`、`voice.purge_records`、`gathering.purge_records`、`identity.expire_imports`、`identity.expire_exports`、`identity.purge_unused_oauth_clients`、`identity.purge_origins`、`identity.purge_auth_records`、`identity.queue_closure_reminders` | |
 | 6 時間（設定で 15 分〜7 日） | `supporters.reconcile_payments` | |
 | 1 日 | `federation.probe_instances` | 50 件ごとに続き 1 |
 | 1 日 | `account.prune_remote_profiles`、`content.purge_remote_emojis` | 続きがあれば 1 |
@@ -219,6 +219,7 @@ flowchart TD
 | サービス終了の実行 | `instance.closure_delete_actors` → アカウントごとの `federation.fanout` → `federation.deliver` | ローカルの全アカウント × 既知のサーバーの数 |
 | 通話の開始 | `voice.notify_started` → 通知 → `notification.push` | ローカルのフォロワー（[§3.6](#36-広いジョブの分割)） |
 | 通話の参加者の確認 | `voice.check_account`、`voice.check_block`、`voice.check_hosts` | アカウント・ブロックの変更ごとに 1、ロールの変更で開いている全ルーム |
+| イベントの主催者の凍結・削除 | `gathering.cancel_organized` → イベントごとの中止 → `gathering.notify` | 主催者の開始前のイベントの数（1 回 100 件ずつ読む） |
 | 通報・登録の申請など | 通知 → `notification.push`、`notification.moderator_email` | その種類を受け取る権限を持つ人の数 |
 | パスワードの変更・削除 | `identity.password_notice_email` | 1 |
 | 本人による無効化 | `identity.deactivation_email`、`federation.fanout` → `federation.deliver` | メール 1 通と、`Delete` と同じ宛先への `Update` |

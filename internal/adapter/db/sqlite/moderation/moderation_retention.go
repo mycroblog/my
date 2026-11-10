@@ -166,7 +166,7 @@ func (r *Repository) PurgeReports(ctx context.Context, tx uow.Tx, reportIDs []st
 	}
 	steps := []func(context.Context, string) error{
 		q.PurgeReportStatuses, q.PurgeReportRuleCitations, q.PurgeReportAssignments, q.PurgeReportResolutions,
-		q.PurgeReportReopenings, q.PurgeReportNotes, q.PurgeReportVoiceRooms, q.PurgeReportHookOrigins, q.PurgeReportForwards, q.PurgeReportStates, q.PurgeReports,
+		q.PurgeReportReopenings, q.PurgeReportNotes, q.PurgeReportVoiceRooms, q.PurgeReportGatherings, q.PurgeReportHookOrigins, q.PurgeReportForwards, q.PurgeReportStates, q.PurgeReports,
 	}
 	for _, step := range steps {
 		if err := step(ctx, ids); err != nil {
@@ -188,6 +188,23 @@ func (r *Repository) ReportedVoiceRooms(ctx context.Context, roomIDs []string) (
 	}
 	out := make(map[string]bool, len(rooms))
 	for _, id := range rooms {
+		out[id] = true
+	}
+	return out, nil
+}
+
+// ReportedGatherings implements moderation.RetentionRepository.
+func (r *Repository) ReportedGatherings(ctx context.Context, gatheringIDs []string) (map[string]bool, error) {
+	ids, err := sqlite.JSONList(gatheringIDs)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListReportedGatherings(ctx, ids)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list reported gatherings")
+	}
+	out := make(map[string]bool, len(rows))
+	for _, id := range rows {
 		out[id] = true
 	}
 	return out, nil

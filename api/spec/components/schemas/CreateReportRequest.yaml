@@ -33,6 +33,13 @@ properties:
       host. Such a report points at no posts and is never forwarded.
     allOf:
       - $ref: ./Id.yaml
+  event_id:
+    description: |
+      An event on this server that the user can see; `account_id` is then its organizer. Such
+      a report points at no posts and no voice chat room, and is never forwarded. The
+      moderators see the settings of the event as the user saw them.
+    allOf:
+      - $ref: ./Id.yaml
   forward:
     description: |
       Asks to forward the report to the server of a remote account, without naming the

@@ -33,6 +33,7 @@ async function serveInstance(
   page: Page,
   origin: string,
   domains: { status: 200 } | { status: 401 | 404 },
+  overrides: Partial<Instance> = {},
 ): Promise<void> {
   const instance: Instance = {
     domain: "my.example",
@@ -67,6 +68,7 @@ async function serveInstance(
     terms_url: `${origin}/about/terms`,
     privacy_policy_url: `${origin}/about/privacy`,
     status_page_url: statusPageUrl,
+    ...overrides,
   };
   await page.route("**/api/v1/instance", (route) => route.fulfill({ json: instance }));
   await page.route("**/api/v1/instance/domain_actions*", (route) =>
@@ -205,6 +207,35 @@ test("the information page of a server that lists the servers it moderates to it
   const main = page.getByRole("main");
   await expect(main.locator('a[href="/login?return_to=%2Fabout"]')).toBeVisible();
   await expect(main.locator("li", { hasText: "spam.example" })).toHaveCount(0);
+  await expectNoAxeViolations(makeAxeBuilder);
+  await expectNoHorizontalScroll(page);
+});
+
+test("the funding meter of a server that publishes only the percentage reads as text in its running costs", async ({
+  page,
+  baseURL,
+  makeAxeBuilder,
+}) => {
+  const meter: components["schemas"]["FundingMeter"] = {
+    visibility: "percent",
+    label: "2026-11",
+    starts_on: "2026-11-01",
+    ends_on: "2026-11-30",
+    percent: 130,
+    covered: true,
+    estimated: true,
+    rail: false,
+  };
+  await serveInstance(page, new URL(baseURL ?? "").origin, { status: 404 }, { funding_meter: meter });
+  await page.goto("/about");
+  const bar = page.getByRole("main").getByRole("meter");
+  await expect(bar).toBeVisible();
+  // Covered: the bar is full and its value in words says so without a number above 100%.
+  await expect(bar).toHaveAttribute("aria-valuenow", "100");
+  await expect(bar).toHaveAttribute("aria-valuetext", /\S/u);
+  await expect(bar).not.toHaveAttribute("aria-valuetext", /130/u);
+  // Nothing but the meter is published, so its section has no link to the page of the totals.
+  await expect(page.getByRole("main").getByRole("region").filter({ has: bar }).getByRole("link")).toHaveCount(0);
   await expectNoAxeViolations(makeAxeBuilder);
   await expectNoHorizontalScroll(page);
 });

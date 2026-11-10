@@ -36,6 +36,7 @@ func (f *fakeReports) File(_ context.Context, in appmoderation.LocalReportInput)
 		ID: "01890a5d-ac96-774b-bcce-b302099a7001", ReporterAccountID: in.ReporterAccountID, TargetAccountID: in.TargetAccountID,
 		Category: in.Category, Comment: in.Comment, Forwarded: in.Forward, FiledAt: time.Date(2026, 10, 17, 9, 0, 0, 0, time.UTC),
 		StatusIDs: append([]string{}, in.StatusIDs...), RuleIDs: append([]string{}, in.RuleIDs...), VoiceRoom: in.VoiceRoom,
+		Gathering: in.Gathering,
 	}, nil
 }
 

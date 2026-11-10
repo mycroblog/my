@@ -3,7 +3,8 @@
 // running costs and of its income by week, month or year as the public costs page (`/about/costs`) shows what the
 // instance settings `finance_visibility` and `income_visibility` publish and the finances page (`/finance`) shows them
 // to the holders of view_finance, with the navigation's entry to it, and the parts of the totals that the
-// administrators' costs screen (the admin feature) shows too.
+// administrators' costs screen (the admin feature) shows too; and the funding meter (FR-905) that the information
+// page, the supporter list and the third column show while the instance publishes it.
 // Routes and other features use it through this file only (web-client/README.md A3).
 export {
   type CostBasis,
@@ -23,6 +24,7 @@ export { categoryLabels, CostTotalsPanel, CostTotalsView } from "./components/Co
 export { chartsTotals, financeCurrency, FinanceOverview } from "./components/FinanceOverview";
 export { IncomeTotalsView } from "./components/IncomeTotals";
 export { FinanceCosts } from "./components/FinanceCosts";
+export { FundingMeter, FundingMeterPanel, PublishedFundingMeter } from "./components/FundingMeter";
 export { PublicCosts } from "./components/PublicCosts";
 export { useFinanceEntry } from "./hooks/useFinanceCosts";
 export { useFormatMoney, useFormatTotals } from "./hooks/useCostFormat";

@@ -24,3 +24,5 @@ allOf:
           $ref: ./AdminReportStatus.yaml
       voice_room:
         $ref: ./AdminReportVoiceRoom.yaml
+      event:
+        $ref: ./AdminReportEvent.yaml

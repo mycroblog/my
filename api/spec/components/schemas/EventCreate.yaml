@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: MIT
-description: A new event with a fixed date.
+description: |
+  A new event, either with a fixed date (`starts_at` and `ends_at`) or with the candidate dates
+  of a date poll (`candidates`), not both.
 type: object
-required: [title, starts_at, ends_at]
+required: [title]
 properties:
   title:
     description: 1 to 100 characters on one line.
@@ -36,3 +38,10 @@ properties:
     description: After `starts_at` and at most 7 days later.
     type: string
     format: date-time
+  candidates:
+    description: |
+      1 to 20 different candidate dates, each checked as a fixed date: the event is
+      `unscheduled` until the organizers confirm one of them.
+    type: array
+    items:
+      $ref: ./EventCandidateCreate.yaml

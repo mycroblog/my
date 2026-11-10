@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: |
-  Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
-  `ends_at` is in the past.
+  Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
+  `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+  past.
 type: string
-enum: [scheduled, cancelled]
+enum: [unscheduled, scheduled, cancelled]

@@ -12,9 +12,10 @@ import (
 )
 
 // This file holds the use cases behind the Atom feeds of profiles and hashtags (FR-213): the
-// newest local public posts, without replies and boosts, as an anonymous visitor sees them. Each
-// post goes through Previews.status, so through content.CanView with an anonymous viewer, and an
-// author's posts appear only while the author has a feed (ProfilePreview.Feed).
+// newest local public posts, without replies and boosts, as an anonymous visitor sees them, and
+// the articles-only feed of a profile (ADR-0160 §11). Each post goes through Previews.status, so
+// through content.CanView with an anonymous viewer, and an author's posts appear only while the
+// author has a feed (ProfilePreview.Feed).
 
 // FeedLength is the number of posts of an Atom feed.
 const FeedLength = 20
@@ -52,6 +53,8 @@ type Feed struct {
 	Author *ProfilePreview
 	// Tag is the hashtag of a hashtag's feed, the zero Tag for a profile's.
 	Tag Tag
+	// Articles is true for the articles-only feed of a profile.
+	Articles bool
 	// Entries are the posts, newest first.
 	Entries []FeedEntry
 }
@@ -77,7 +80,7 @@ type FeedMedia struct {
 	Sensitive bool
 }
 
-// Profile returns the feed of a local username. A username that names no account an anonymous
+// Profile returns the feed of a local username: its posts and articles. A username that names no account an anonymous
 // visitor may see, or one that has no feed, fails with ErrNotFound.
 func (f *Feeds) Profile(ctx context.Context, username string) (Feed, error) {
 	prof, err := f.d.Previews.Profile(ctx, username)
@@ -93,6 +96,32 @@ func (f *Feeds) Profile(ctx context.Context, username string) (Feed, error) {
 		return Feed{}, err
 	}
 	return Feed{Author: &prof, Entries: entries}, nil
+}
+
+// Articles returns the articles-only feed of a local username, with the rules of Profile.
+func (f *Feeds) Articles(ctx context.Context, username string) (Feed, error) {
+	prof, err := f.d.Previews.Profile(ctx, username)
+	if err != nil {
+		return Feed{}, err
+	}
+	if !prof.Feed {
+		return Feed{}, fmt.Errorf("article feed of %s: %w", username, ErrNotFound)
+	}
+	authors := previewAuthors{prof.Actor.Account.ID: {actor: prof.Actor, found: true, profile: prof}}
+	entries, err := f.entries(ctx, f.articleIDs, prof.Actor.Account.ID, authors, feedPages)
+	if err != nil {
+		return Feed{}, err
+	}
+	return Feed{Author: &prof, Articles: true, Entries: entries}, nil
+}
+
+// articleIDs lists the articles of an author as FeedPostIDs lists the candidates of a feed.
+func (f *Feeds) articleIDs(ctx context.Context, authorAccountID, before string, limit int) ([]string, string, error) {
+	ids, err := f.d.Repository.ListLiveArticleIDs(ctx, authorAccountID, before, limit)
+	if err != nil || len(ids) < limit {
+		return ids, "", err
+	}
+	return ids, ids[len(ids)-1], nil
 }
 
 // Tag returns the feed of a hashtag, by its name with or without #. A name that is not a hashtag
@@ -150,11 +179,12 @@ func (f *Feeds) entries(ctx context.Context, list FeedPostIDs, key string, autho
 	return out, f.tagNames(ctx, out)
 }
 
-// entry adds the attachments to a post of a feed.
+// entry adds the attachments to a post of a feed. An article has none: its entry is its title and
+// summary.
 func (f *Feeds) entry(ctx context.Context, s StatusPreview) (FeedEntry, error) {
 	e := FeedEntry{StatusPreview: s}
 	rev := s.Post.Revision
-	if rev.SpoilerText != "" || len(rev.Attachments) == 0 || f.d.Previews.d.Media == nil {
+	if rev.Article != nil || rev.SpoilerText != "" || len(rev.Attachments) == 0 || f.d.Previews.d.Media == nil {
 		return e, nil
 	}
 	sensitive := rev.Sensitive

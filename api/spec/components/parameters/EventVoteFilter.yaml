@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+name: vote
+in: query
+required: false
+description: Only the answers of this kind; every answer when omitted.
+schema:
+  $ref: ../schemas/EventVote.yaml

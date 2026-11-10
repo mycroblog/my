@@ -41,6 +41,9 @@ type Repository interface {
 	InsertLocalStatus(ctx context.Context, tx uow.Tx, ls content.LocalStatus) error
 	// InsertArticle inserts the article subtype of a status (ADR-0160 §2).
 	InsertArticle(ctx context.Context, tx uow.Tx, a content.Article) error
+	// ListLiveArticleIDs returns up to limit articles of an author that are not deleted, newest
+	// first, by ID, whose ID is below before ("" for the first page).
+	ListLiveArticleIDs(ctx context.Context, authorAccountID, before string, limit int) ([]string, error)
 	// InsertRevision inserts a revision with its bodies, source, attachments, mentions, tags, and
 	// emoji. On PostgreSQL, a Seq that a concurrent revision took fails with an error for which
 	// errors.Is(err, uow.ErrRetryable) holds, so that a new attempt reads the new head.

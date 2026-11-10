@@ -247,6 +247,30 @@ func (q *Queries) ListReportForwardsOf(ctx context.Context, ids []string) ([]Rep
 	return items, nil
 }
 
+const listReportGatheringsOf = `-- name: ListReportGatheringsOf :many
+SELECT report_id, gathering_id, revision_id FROM report_gatherings WHERE report_id = ANY($1::uuid[]) ORDER BY report_id
+`
+
+func (q *Queries) ListReportGatheringsOf(ctx context.Context, ids []string) ([]ReportGathering, error) {
+	rows, err := q.db.Query(ctx, listReportGatheringsOf, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ReportGathering{}
+	for rows.Next() {
+		var i ReportGathering
+		if err := rows.Scan(&i.ReportID, &i.GatheringID, &i.RevisionID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listReportHookOriginsOf = `-- name: ListReportHookOriginsOf :many
 SELECT report_id, hook_decision_id, hook, reason_code FROM report_hook_origins WHERE report_id = ANY($1::uuid[]) ORDER BY report_id
 `

@@ -297,6 +297,10 @@ func (s *Server) newAdminReportsWith(ctx context.Context, reads presentReads, re
 			id := r.VoiceRoom.RoomID
 			item.VoiceRoomId = &id
 		}
+		if r.Gathering != nil {
+			id := r.Gathering.GatheringID
+			item.EventId = &id
+		}
 		if o := r.HookOrigin; o != nil {
 			origin := AdminReportHookOrigin{Hook: HookName(o.Hook), DecisionId: o.DecisionID}
 			if o.ReasonCode != "" {

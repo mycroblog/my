@@ -990,5 +990,17 @@
   "errors.event.not_attending": {
     "defaultMessage": "That user has not answered going or maybe.",
     "description": "API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event."
+  },
+  "errors.event.unscheduled": {
+    "defaultMessage": "That event has no date yet.",
+    "description": "API error title for HTTP 409 when a user answers an event, or asks for its calendar file, before its organizers confirmed a date from its date poll."
+  },
+  "errors.event.scheduled": {
+    "defaultMessage": "The date of that event has been confirmed.",
+    "description": "API error title for HTTP 409 when a user adds, withdraws, answers, or confirms a candidate date of an event whose date its organizers already confirmed."
+  },
+  "errors.event.last_candidate": {
+    "defaultMessage": "The date poll needs at least one candidate.",
+    "description": "API error title for HTTP 409 when an organizer withdraws the last candidate date of an event's date poll."
   }
 }

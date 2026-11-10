@@ -44,6 +44,7 @@ func TestCanSeeByVisibility(t *testing.T) {
 		{gathering.VisibilityInvited, gathering.Facts{Invited: true}, true},
 		// An answer keeps the event visible after the visibility narrowed.
 		{gathering.VisibilityInvited, gathering.Facts{Answered: true}, true},
+		{gathering.VisibilityInvited, gathering.Facts{Voted: true}, true},
 		{gathering.VisibilityMutuals, gathering.Facts{Coorganizer: true}, true},
 	} {
 		e := gathering.Event{OrganizerAccountID: organizer, Visibility: tc.vis}

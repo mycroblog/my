@@ -95,6 +95,7 @@ const (
 	AuditServiceClosureClosed            = moderation.AuditServiceClosureClosed
 	AuditServiceClosureDeliveryCompleted = moderation.AuditServiceClosureDeliveryCompleted
 	AuditVoiceRoomEnded                  = moderation.AuditVoiceRoomEnded
+	AuditEventCancelled                  = moderation.AuditEventCancelled
 	AuditLoginProviderCreated            = moderation.AuditLoginProviderCreated
 	AuditLoginProviderUpdated            = moderation.AuditLoginProviderUpdated
 	AuditLoginProviderDeleted            = moderation.AuditLoginProviderDeleted
@@ -128,6 +129,7 @@ const (
 	AuditTargetOAuthClientHost       = moderation.AuditTargetOAuthClientHost
 	AuditTargetInstance              = moderation.AuditTargetInstance
 	AuditTargetVoiceRoom             = moderation.AuditTargetVoiceRoom
+	AuditTargetEvent                 = moderation.AuditTargetEvent
 	AuditTargetLoginProvider         = moderation.AuditTargetLoginProvider
 	AuditTargetLinkCardDomain        = moderation.AuditTargetLinkCardDomain
 )

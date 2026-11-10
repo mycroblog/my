@@ -10,7 +10,8 @@ put:
     reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
     answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
     `declined` are never refused. `declined` ends an approval. A 409
-    `/api/v1/problems/event-closed` for an event that started or was cancelled.
+    `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+    `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
   tags: [events]
   security:
     - oauth2: ["write:events"]

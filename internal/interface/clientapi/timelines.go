@@ -37,6 +37,8 @@ type TimelineReader interface {
 	Tag(ctx context.Context, name string) (content.Tag, error)
 	// Pinned returns the statuses that accountID pins and the viewer may see, newest pin first.
 	Pinned(ctx context.Context, viewer appcontent.Viewer, accountID string) ([]appcontent.StatusView, error)
+	// Articles returns a page of the articles of accountID that the viewer may see, newest first.
+	Articles(ctx context.Context, viewer appcontent.Viewer, accountID, before string, limit int) (appcontent.ArticlePage, error)
 }
 
 // timelineViewer returns the viewer of the request in ctx for the content module, and the
@@ -205,6 +207,31 @@ func entryItems(entries []apptimeline.Entry) []statusItem {
 		items = append(items, it)
 	}
 	return items
+}
+
+// listAccountArticles serves GET /api/v1/accounts/{id}/statuses?articles=true: the account's
+// articles, newest first (ADR-0160 §11).
+func (s *Server) listAccountArticles(ctx context.Context, cv appcontent.Viewer, v *Viewer, accountID string, params ListAccountStatusesParams) (ListAccountStatusesResponseObject, error) {
+	limit, _ := pageLimit(params.Limit)
+	page, err := s.o.TimelineReader.Articles(ctx, cv, accountID, deref(params.Cursor), limit)
+	if err != nil {
+		return nil, err
+	}
+	items, err := s.filteredStatuses(ctx, cv, timeline.FilterContextAccount, page.Statuses)
+	if err != nil {
+		return nil, err
+	}
+	cache := cachePublic
+	if v != nil {
+		cache = cacheNoStore
+	}
+	body := AccountStatusPage{Items: items}
+	if page.Next != "" {
+		body.NextCursor = &page.Next
+	}
+	return ListAccountStatuses200JSONResponse{AccountStatusPageJSONResponse{
+		Body: body, Headers: AccountStatusPageResponseHeaders{CacheControl: &cache},
+	}}, nil
 }
 
 // GetHomeTimeline serves GET /api/v1/timelines/home.
@@ -378,6 +405,9 @@ func (s *Server) ListAccountStatuses(ctx context.Context, req ListAccountStatuse
 		return ListAccountStatuses200JSONResponse{AccountStatusPageJSONResponse{
 			Body: AccountStatusPage{Items: body.Items}, Headers: AccountStatusPageResponseHeaders{CacheControl: &cache},
 		}}, nil
+	}
+	if params.Articles != nil && *params.Articles {
+		return s.listAccountArticles(ctx, cv, v, req.Id, params)
 	}
 	q, err := s.timelineQuery(ctx, v, params.Cursor, params.Limit, false)
 	if err != nil {

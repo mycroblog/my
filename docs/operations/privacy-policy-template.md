@@ -32,6 +32,7 @@ Review the policy when you change a setting below or a service, and after each u
 | Actions against accounts, and appeals | 365 days | `moderation_actions_retention_days` | 180-3650 | The end of the action |
 | Audit log | 730 days | `audit_log_retention_days` | 365-3650 | The record |
 | Who took part in a voice chat room | 90 days | `voice_participants_retention_days` | 30-3650 | The end of the room |
+| Who answered, voted on the dates of, and was invited to an event | 90 days | `event_records_retention_days` | 30-3650 | The earlier of the end of the event and its cancellation |
 | The decisions of an external review, when you use one | 90 days | `hook_decisions_retention_days` | 30-3650 | The decision |
 | Remote posts nothing here refers to | 90 days | `remote_status_retention_days` | 1-3650 | The post's publication |
 | Any remote post | No limit (`0`) | `remote_status_max_retention_days` | 0-3650 | The post's publication |
@@ -71,7 +72,7 @@ A [retention hold](moderation.md#holds) stops erasure for one account, so every 
 The server removes these only when an account is erased, or never. A law may ask you to justify keeping them, or to remove them by other means, so decide what your policy says about each.
 
 - The rows of an active account: email addresses, past profile versions, past post versions, notifications, follows, and the registration application of a rejected user. An account that nobody deletes stays.
-- What stays after erasure: the account's URI and username (so that neither can be reused), its lifecycle events, the record that a post was deleted, moderation records until their own period ends, invites and role grants, account moves, voice chat rooms without their names and descriptions, events without the titles, descriptions, and places their authors wrote, and the invitations and answers to events.
+- What stays after erasure: the account's URI and username (so that neither can be reused), its lifecycle events, the record that a post was deleted, moderation records until their own period ends, invites and role grants, account moves, voice chat rooms without their names and descriptions, events without the titles, descriptions, and places their authors wrote, and the invitations and answers to events and to their candidate dates.
 - Supporter records (subscriptions, state changes, payments, refunds, chargebacks), kept for accounting and for reconciling with the provider. The server does not delete a customer at the payment provider: do that in the provider's dashboard if your obligations allow it.
 - An action with no end (a `ban`, or a `suspend` without an end time), until it is lifted. Open reports.
 - Remote accounts, until their server deletes them.
@@ -169,7 +170,7 @@ This policy covers people with an account here, people who read pages here witho
 | {{IF voice}} Voice chat rooms: name, description, hosts, and how they ended | Showing and moderating rooms | Kept. The name and description you wrote are emptied when your account is erased |
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
 | Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
-| Invitations to events, your answers, and their approval | Showing who comes, and showing the address and link to the approved | Kept |
+| Invitations to events, your answers to them and to their candidate dates, and their approval | Showing who comes and who can come on which date, and showing the address and link to the approved | {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
 | Copies of activities sent to and received from other servers | Delivering, retrying, and rejecting duplicates | 30 days. The first delivery of a post stays until 30 days after the post or its author is deleted |

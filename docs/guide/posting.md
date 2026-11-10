@@ -117,6 +117,18 @@ post shows its translation, a line under the text says which language it was tra
 original" to go back. If the server sends the text of posts to a translation service, the visibility picker tells you
 for which choices.
 
+## Reading articles
+
+An article is a long post with a title, a summary, and often a cover image, written on this server or on another one.
+Timelines and profiles show an article as a card with its cover, the word "Article", its title, and its summary; select
+the title to read the whole article on its own page, which the title heads. Replies, boosts, quotes, favourites, and
+reactions work as on any post. Articles have no "Translate".
+
+An article its author marked sensitive shows its title and summary, and hides the rest: on the card, "Show sensitive
+media" shows its cover, and on its page "Show the article" shows its cover and its text. The "Articles" tab of a profile
+lists only that person's articles, newest first; for someone on another server, only the articles this server has
+received.
+
 ## Direct messages
 
 "Direct messages" in the navigation gathers your "Mentioned people" posts and those you receive, one row per

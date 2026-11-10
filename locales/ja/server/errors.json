@@ -990,5 +990,17 @@
   "errors.event.not_attending": {
     "defaultMessage": "その利用者は「行く」か「たぶん」と答えていません。",
     "description": "API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event."
+  },
+  "errors.event.unscheduled": {
+    "defaultMessage": "そのイベントの日時はまだ決まっていません。",
+    "description": "API error title for HTTP 409 when a user answers an event, or asks for its calendar file, before its organizers confirmed a date from its date poll."
+  },
+  "errors.event.scheduled": {
+    "defaultMessage": "そのイベントの日時はもう確定しています。",
+    "description": "API error title for HTTP 409 when a user adds, withdraws, answers, or confirms a candidate date of an event whose date its organizers already confirmed."
+  },
+  "errors.event.last_candidate": {
+    "defaultMessage": "日程の候補は 1 つ以上必要です。",
+    "description": "API error title for HTTP 409 when an organizer withdraws the last candidate date of an event's date poll."
   }
 }

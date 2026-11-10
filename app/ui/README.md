@@ -779,8 +779,10 @@ The test procedure is in [web-client/README.md §7](../../docs/architecture/web-
 | `PostCardNameLink` | `context`, a sentence | A name or a hashtag inside a sentence ("Bob boosted", "Followed hashtag #cats"), in a `<bdi>`; notification rows use it too. |
 | `PostCardContext` | `context` | The icon of its kind (`boost`, `pin`, `hashtag`) and the sentence; every context line uses it. |
 | `PostCardOrigin` | `actions` | The link from a post of another server to its own page (`href`, `host`, `label`). |
+| `ArticleCard` | `content` | An article in a list: its cover, a line naming the kind (`kindLabel`), its title as the card's one link to its page, and its summary cut after three lines; a `sensitive` article conceals its cover. |
+| `ArticleCover` | `content` | The 16:9 cover of an article on its page (`rounded`), concealed behind a toggle while `sensitive`; `ArticleCard` draws it too. |
 
-Counts in `details` are `<Text numeric>`; several parts under a body are a `<Stack gap="3" shrink>`; `PostContent` takes `size="lg"` for the post a page is about.
+Counts in `details` are `<Text numeric>`; several parts under a body are a `<Stack gap="3" shrink>`; `PostContent` takes `size="lg"` for the post a page is about, and `article` for the body of an article (its headings, rules, tables and pictures).
 
 ### Screen-specific pieces
 

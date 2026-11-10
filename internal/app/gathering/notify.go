@@ -102,8 +102,8 @@ func (s *Service) enqueueNotify(ctx context.Context, tx uow.Tx, ps ...notifyPayl
 }
 
 // RegisterNotificationProjectors registers the projectors that enqueue the notifications of the
-// commands of the events in their transactions: an invitation, a new date, a revision that changes
-// the places, and a cancellation. A revision of only the title, the description, or the other
+// commands of the events in their transactions: an invitation, the confirmation of a date poll, a
+// new date, a revision that changes the places, and a cancellation. A revision of only the title, the description, or the other
 // settings notifies nobody.
 func (s *Service) RegisterNotificationProjectors(r *uow.Projectors) {
 	r.Register(EventInvited, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -135,6 +135,7 @@ func (s *Service) RegisterNotificationProjectors(r *uow.Projectors) {
 			Source: rec.OrganizerAccountID, Actor: c.CancelledByAccountID, At: c.CancelledAt,
 		})
 	})
+	s.registerPollNotificationProjectors(r)
 }
 
 // enqueueChanged enqueues the event_changed of the change ref of the event id by actor.
@@ -185,7 +186,7 @@ func (s *Service) notify(ctx context.Context, p notifyPayload) error {
 	fan := queue.FanOut{
 		Size: RecipientsPerJob,
 		Page: queue.PageByLastKey(func(ctx context.Context, after string, limit int) ([]string, error) {
-			return s.d.Repository.Audience(ctx, nil, p.Gathering, invitees(p.Kind), after, limit)
+			return s.audience(ctx, p, after, limit)
 		}),
 		Handle: func(ctx context.Context, ids []string) error { return s.notifyBatch(ctx, p, ids) },
 		Enqueue: func(ctx context.Context, steps []queue.FanOutStep) error {
@@ -331,7 +332,7 @@ func (s *Service) seesAmong(ctx context.Context, rec Record, ids []string) (map[
 		}
 		f := gathering.Facts{
 			Blocked: blocked[id], Coorganizer: rec.Coorganizes(id), Invited: own[id].Invited, Answered: own[id].Answer != "",
-			Approved: own[id].Approved, FollowsOrganizer: follows[id], FollowedByOrganizer: followed[id],
+			Approved: own[id].Approved, Voted: own[id].Voted, FollowsOrganizer: follows[id], FollowedByOrganizer: followed[id],
 		}
 		out[id] = gathering.CanSee(e, viewer, f)
 	}
