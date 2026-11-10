@@ -48,6 +48,19 @@
   返すのはドメイン（`obfuscate` なら伏せ字）・ドメインの SHA-256・種類・`public_comment` で、`private_note` は返しません。
   誰に見せるかはインスタンス設定 `domain_actions_visibility` と `domain_actions_rationale_visibility`（§4.9）で決めます。
 
+#### 許可したドメイン
+
+[ADR-0159](../../../adr/0159-federation-allowlist-and-blocklist-subscriptions.md) §1〜§3 の記録です。
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `domain_allows` | リソース | `domain`（PK。正規化したホスト）, `comment`（NULL 可。5,000 文字まで。公開しない）, `created_by_user_id`（NULL 可 = CLI）, `created_at` | 5,000 件まで |
+| `allowlist_cutoffs` | イベント | `id`, `cause`（`enum(scope_switched, allow_removed)`）, `domain`（`allow_removed` のときだけ値を持つ）, `issued_by_user_id`（NULL 可 = CLI）, `occurred_at` | `CHECK ((cause = 'allow_removed') = (domain IS NOT NULL))` |
+
+- 許可はサブドメインにも効き、判定は処分と同じく対象ドメインと親ドメイン群を `domain IN (…)` で引きます。外すときは行を消し、作成と削除は監査ログ（`domain_allow_added` / `domain_allow_removed`）に残ります。
+- インスタンス設定 `federation_scope`（§4.9）が `open` の間、許可は判定に影響しません。`allowlist` の間、許可の無いドメインは `suspend` の制限を持つものとして判定します（`domain_restrictions` には書かない）。
+- `allowlist` への切り替え（`scope_switched`）と、`allowlist` の間に許可を外して親ドメインの許可も無いとき（`allow_removed`）に `allowlist_cutoffs` を 1 行記録し、同じトランザクションでジョブ `moderation.sever_allowlist` を積みます。ジョブは `moderation.sever_domain` と同じく、ローカルのアカウントの 1 ページごとに 1 トランザクションでフォローを切り、`relationship_severances`（`allowlist_cutoff_id`）に記録します。実行時に設定が `open` に戻っていれば何も切りません。
+
 #### 通報
 
 | テーブル | 分類 | カラム | 制約 |
@@ -103,7 +116,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance, voice_room, login_provider, link_card_domain, hook_decision)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
+| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance, voice_room, login_provider, link_card_domain, hook_decision, domain_allow)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
 
 - 各モジュールの管理のユースケースが元のイベントと同じトランザクションで発行するドメインイベント（`moderation.audit_recorded`）を、`moderation` の同期の購読者が書きます。理由とメモの本文は写さず、`source_event_id` で元のイベントから引きます。
   記録の ID はトランザクションの前に作り、再試行しても同じ行を書きます。何も変えなかった操作（解除済みの処分の解除など）は記録しません。
@@ -129,6 +142,7 @@
   | `voice_room_ended` | `voice_room` | `voice_rooms.id` | `voice_rooms.id`（名前は書いた人の消去で消えるので写さない。モデレーターは通報の詳細で名前を見る） | `voice_room_endings.room_id`（= `voice_rooms.id`。理由の文は `voice_room_endings.note`） |
   | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` | `login_provider` | `login_providers.id` | IdP の表示名 | `login_providers.id` / `login_provider_revisions.id` / `login_provider_state_changes.id` / `login_provider_secrets.id` |
   | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` | `link_card_domain` | 正規化したドメイン | 正規化したドメイン | なし（`link_card_domain_rules` は現在値） |
+  | `domain_allow_added`, `domain_allow_removed` | `domain_allow` | 正規化したドメイン | 正規化したドメイン | なし（`domain_allows` はリソース）。`allowlist` の間の削除は `allowlist_cutoffs.id` |
   | `appeal_upheld`, `appeal_overturned` | `appeal` | `moderation_appeals.id` | 申し立てたアカウントのハンドル | `moderation_appeal_decisions.appeal_id`（= `moderation_appeals.id`） |
   | `revealed_private_data` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | なし（元の記録を持たない操作） |
   | `two_factor_disabled` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | `totp_enrollment_revocations.enrollment_id` |
@@ -170,7 +184,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `relationship_severances` | イベント | `id`, `domain_action_id`（NULL 可）, `action_id`（NULL 可。リモートのアカウントの凍結）, `account_id`（関係を失ったローカルのアカウント）, `followers_lost`（`int`）, `following_lost`（`int`）, `occurred_at` | インデックス `(account_id, id DESC)`。一意 `(domain_action_id, account_id)`, `(action_id, account_id)`。`domain_action_id` と `action_id` はどちらか一方だけが値を持つ（`CHECK`） |
+| `relationship_severances` | イベント | `id`, `domain_action_id`（NULL 可）, `action_id`（NULL 可。リモートのアカウントの凍結）, `allowlist_cutoff_id`（NULL 可。許可のリストによる切断）, `account_id`（関係を失ったローカルのアカウント）, `followers_lost`（`int`）, `following_lost`（`int`）, `occurred_at` | インデックス `(account_id, id DESC)`。一意 `(domain_action_id, account_id)`, `(action_id, account_id)`, `(allowlist_cutoff_id, account_id)`。`domain_action_id`・`action_id`・`allowlist_cutoff_id` はどれか 1 つだけが値を持つ（`CHECK`） |
 
 - ドメインの凍結とリモートのアカウントの凍結は、両方向のフォローを（承認待ちも含めて）`follow_terminations`（`reason = moderation`）で切り、承認済みのフォローを失ったローカルのアカウントごとに 1 行を記録して通知します（FR-717、ADR-0058）。`followers_lost` / `following_lost` は承認済みのフォローの数で、承認待ちだけを失ったアカウントには行を作りません。解除しても関係は戻しません。
 - リモートのアカウントの凍結は、凍結を始めた処分のトランザクションで切ります（相手は 1 アカウントなので、ローカルのアカウントの数で済む）。

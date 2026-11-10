@@ -282,6 +282,45 @@ A domain `suspend` and a remote account `suspend` cut follows between local user
 - Lifting the action does not bring back the cut follows. Users follow again.
 - Processing the same action again (for example when a job re-runs) adds no more severed-relationship records or notifications.
 
+### Federating only with allowed servers
+
+The instance setting `federation_scope` decides which servers this server federates with: `open` (the default) federates with every server that no domain action suspends,
+and `allowlist` only with the domains on the allowlist and their subdomains, for an organization or a personal server that talks only with servers it knows.
+
+While `federation_scope` is `allowlist`:
+
+- A server without an allow is treated as a suspended domain: its deliveries get `403` before their signatures are checked, nothing is delivered to it or fetched from it, and relays bring nothing in from it.
+- An allow covers its subdomains: allowing `friend.example` also allows `social.friend.example`.
+- The domain actions still apply to the allowed servers: an allowed domain with a `suspend` stays suspended, and one with a `limit` or `reject_media` stays limited.
+- ActivityPub GETs need a signature from an allowed server, whatever `authorized_fetch` says, so that a server without an allow cannot read the public posts. Servers and crawlers that do not sign their GETs get `401`.
+- NodeInfo states `metadata.federationScope`, so that other servers can tell.
+
+While it is `open`, the allowlist changes nothing, and it is kept for the next time you switch.
+
+```sh
+my admin domain allow add -comment "partner" friend.example
+my admin domain allow list
+my admin domain allow remove friend.example
+my admin federation scope                   # prints the setting
+my admin federation scope allowlist         # shows what the switch would end, and changes nothing
+my admin federation scope -apply allowlist  # switches
+my admin federation scope open
+```
+
+In the admin API: `GET /api/v1/admin/domain_allows`, `POST /api/v1/admin/domain_allows` (the body has `domain` and `comment`; a domain already allowed answers `200` and keeps its allow), and `DELETE /api/v1/admin/domain_allows/{domain}`, with the permission `manage_domains`.
+`GET /api/v1/admin/settings/federation_scope/impact` counts what the switch would end, with the permission `manage_settings`, and `PATCH /api/v1/admin/settings` changes `federation_scope` like any other setting.
+The allowlist holds at most 5,000 domains, and a comment, which is never published, at most 5,000 characters. This server's own domain cannot be allowed.
+
+Switching to `allowlist`, and removing an allow while it is on, ends follows for good:
+
+- Before you switch, read how many approved follows between local users and the servers without an allow the switch would end, how many local users lose one, and the servers with the most of them (the impact above, or `my admin federation scope allowlist` without `-apply`).
+- The switch cuts the follows with every server that the allowlist does not allow, in both directions and without telling those servers, as a domain `suspend` does: a job (`moderation.sever_allowlist`) cuts them one local user at a time, and each user who lost approved follows gets one notification (`relationships_severed`) with the counts.
+- Removing an allow while `federation_scope` is `allowlist` cuts the follows with the accounts of that domain and of its subdomains that no other allow covers, in the same way. Removing the allow of a subdomain whose parent domain is allowed cuts nothing.
+- Switching back to `open`, or allowing the domain again, does not bring back the cut follows. Users follow again.
+- Setting `allowlist` when it is already `allowlist` cuts nothing more.
+
+Adding and removing an allow are in the audit log (`domain_allow_added` and `domain_allow_removed`), and the switch is the `setting_changed` of `federation_scope`.
+
 ### Publishing the domains you act on
 
 You can publish the `limit` and `suspend` actions in effect through `GET /api/v1/instance/domain_actions`.
@@ -437,10 +476,11 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (denying and revoking the denial of a Client ID Metadata Document host; denying revokes the tokens of that host's clients; the target name is the host) |
 | `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (announcing the closure of the service or changing the date, withdrawing the announcement, closing, and completing the delivery of the closure; the target name is `service_closure`) |
 | `voice_room` | `voice_room_ended` (a moderator ended an open voice chat room; the target name is the room ID, since the name goes when the account that wrote it is erased; the report details show the name) |
+| `domain_allow` | `domain_allow_added`, `domain_allow_removed` (adding a domain to the allowlist of federation and removing it; see [federating only with allowed servers](#federating-only-with-allowed-servers); the target name is the domain) |
 | `link_card_domain` | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` (setting a rule of the link card crawler on a domain, and removing it; see [link card domains](instance-settings.md#link-card-domains)) |
 | `login_provider` | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` (adding, changing, deleting, enabling and disabling an external login provider, and replacing its client secret; the target name is the provider's display name) |
 
-The list shows whether the target still exists. Accounts, reports, appeals and sign-up blocks that disappeared after their retention period, and deleted roles, custom emoji and webhooks, show only the name at the time of recording and no link to a screen.
+The list shows whether the target still exists. Accounts, reports, appeals and sign-up blocks that disappeared after their retention period, removed allows, and deleted roles, custom emoji and webhooks, show only the name at the time of recording and no link to a screen.
 
 ```sh
 my admin audit list

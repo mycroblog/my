@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 94 job types. 40 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 95 job types. 40 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -121,6 +121,7 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `moderation.sever_domain` | Cuts the follows of local accounts with a suspended domain, and records what each account lost. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. Running one again repeats nothing it did. | A domain suspension | Default. An action that is gone or is not a domain suspension is dead at once. | Safe |
+| `moderation.sever_allowlist` | Cuts the follows of local accounts with the servers that the allowlist of federation cuts off (when `federation_scope` becomes `allowlist`, or an allow is removed while it is), and records what each account lost. It cuts nothing once `federation_scope` is `open` again or the server is allowed again. Above 1,000 local accounts, the first job only queues jobs of the same type for up to 1,000 each. Running one again repeats nothing it did. | The switch to `allowlist`, or the removal of an allow | Default. A cutoff that is gone is dead at once. | Safe |
 | `moderation.expire_restrictions` | Removes expired account and domain restrictions, tells other servers when a suspension ends, and with a search backend queues `search.sync_author` or `search.sync_domain` for what they restricted. | Schedule | Default | Next run |
 | `moderation.purge_records` | Erases the moderation records past their retention, including released retention holds. | Schedule | Default | Next run |
 | `identity.reject_for_closure` | Rejects the pending registrations when the closure's notice period starts. Stops if the closure is withdrawn. | The closure being recorded | Default | Safe |

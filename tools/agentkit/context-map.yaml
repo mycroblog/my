@@ -307,6 +307,14 @@ entries:
     userdocs: ["docs/guide/posting.md"]
     notes:
       - "Visibility checks go through the single domain policy function; never re-implement them."
+  - name: federation-allowlist
+    paths: ["internal/domain/moderation/allowlist*.go", "internal/app/moderation/allowlist.go", "internal/adapter/db/*/moderation/allowlist.go", "queries/*/moderation/allowlist.sql", "internal/platform/federation_scope.go", "internal/interface/clientapi/admin_domain_allows*.go", "cmd/my/domain_allow.go", "pkg/testkit/moderationtest/allowlist_*.go", "pkg/testkit/notificationtest/allowlist_severance_flows.go", "api/spec/paths/admin_domain_allows*.yaml", "api/spec/paths/admin_settings_federation_scope_impact.yaml", "api/spec/components/schemas/DomainAllow*.yaml", "api/spec/components/schemas/CreateDomainAllowRequest.yaml", "api/spec/components/schemas/FederationScopeImpact*.yaml"]
+    docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/federation.md#11-モデレーションとの連携", "docs/architecture/data-model/04-tables/03-moderation.md#43-moderation"]
+    userdocs: ["docs/operations/moderation.md#federating-only-with-allowed-servers", "docs/operations/instance-settings.md", "docs/reference/jobs.md"]
+    notes:
+      - "The allowlist bears on federation only through moderation.FederationPolicy: while federation_scope is allowlist, a domain that neither it nor a parent allows has the restrictions of a domain suspension, and no entry point of federation branches on the scope. Link cards read the unscoped policy (their hosts are websites)."
+      - "The switch to allowlist is the instance setting federation_scope; platform subscribes to instance.setting_revised (which carries the previous value) and calls moderation.FederationScopeSwitchedTx, so the admin API, the CLI, and my instance set all cut the follows (moderation.sever_allowlist)."
+      - "allowlist forces authorized fetch (instance.Settings.EffectiveAuthorizedFetch) and NodeInfo states metadata.federationScope."
   - name: link-card-crawler
     paths: ["internal/app/content/link_card*.go", "internal/domain/content/link_card*.go", "internal/domain/content/robots*.go", "app/web/src/features/about/components/LinkCardCrawler.tsx"]
     docs: ["docs/adr/0062-link-preview-cards.md#decision決定", "docs/adr/0062-link-preview-cards.md#decision決定", "docs/architecture/web-client/screens/about-crawler.md"]
