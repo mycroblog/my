@@ -29,11 +29,17 @@ type StatusCreated struct {
 	// ConversationID is the conversation that the status belongs to (ADR-0154 §2), after the
 	// merges that storing it caused, whose ConversationMerged events come before this one.
 	ConversationID string
-	// HeldReply is whether the status is a reply held out of the thread of its parent
-	// (held_replies, ADR-0155 §6): it is not linked to its parent nor counted, and it notifies
-	// no one.
+	// HeldReply is whether the status is a reply held out of the thread of its parent until its
+	// request is approved (ADR-0155 §6, §7): it is not linked to its parent nor counted, and it
+	// notifies no one. A local one is published to no one either (Unpublished). StatusReleased
+	// releases it.
 	HeldReply bool
 }
+
+// Unpublished reports whether the status is shown to its author alone until StatusReleased: a
+// local reply that waits for its approval (ADR-0155 §7). The timelines, search, webhooks, the
+// notifications, and the federation leave it out.
+func (e StatusCreated) Unpublished() bool { return e.HeldReply && e.Status.IsLocal }
 
 // EventType implements uow.Event.
 func (StatusCreated) EventType() string { return EventStatusCreated }
@@ -46,6 +52,9 @@ type StatusRevised struct {
 	// HeldReply is whether the status is a held reply (StatusCreated.HeldReply).
 	HeldReply bool
 }
+
+// Unpublished reports whether the status is shown to its author alone (StatusCreated.Unpublished).
+func (e StatusRevised) Unpublished() bool { return e.HeldReply && e.Status.IsLocal }
 
 // EventType implements uow.Event.
 func (StatusRevised) EventType() string { return EventStatusRevised }

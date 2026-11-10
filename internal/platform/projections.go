@@ -150,10 +150,10 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				},
 			},
 			{
-				Name: "status_quote_states", Module: "content",
-				Tables: []string{"status_quote_states"},
+				Name: "interaction_request_states", Module: "content",
+				Tables: []string{"interaction_request_states"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
-					return content.RebuildQuoteStates(ctx, u, r.quotes)
+					return content.RebuildInteractionStates(ctx, u, r.quotes)
 				},
 			},
 			{

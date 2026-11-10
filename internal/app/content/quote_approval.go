@@ -29,91 +29,95 @@ type QuoteRequestInput struct {
 	QuotingURI string
 	// QuoterAccountID is the remote account that asks: the actor of the QuoteRequest.
 	QuoterAccountID string
+	// ActivityURI is the id of the QuoteRequest, which the author's later answer embeds.
+	ActivityURI string
 }
 
-// AnswerQuoteRequest decides a remote QuoteRequest automatically (ADR-0069 §2) and returns this
-// server's QuoteAuthorization of the quote, with the quoted status: the one given before when
-// the quote was approved already. The quote is approved when the quoter is a remote account
-// that may see the status as an ActivityPub fetch would (content.CanView in
+// AnswerQuoteRequest decides a remote QuoteRequest (ADR-0069 §2, ADR-0155 §6), records it, and
+// returns this server's QuoteAuthorization of the quote, with the quoted status: the one given
+// before when the quote was approved already. The quote is approved when the quoter is a remote
+// account that may see the status as an ActivityPub fetch would (content.CanView in
 // ContextObjectFetch), is not under the interaction restriction (FR-708), the policy of the
-// status includes them automatically (content.MayQuote), and a quoting status that is stored
+// status includes them automatically (content.MayInteract), and a quoting status that is stored
 // already is theirs; a local-only status refuses every remote quoter.
 // A refused quote, and one whose approval was revoked, fail with ErrQuoteRefused; one that a
-// manual rule includes, with ErrQuoteAwaitsApproval. A quoted status that is not local, missing,
-// or deleted fails with ErrNotFound.
+// manual rule includes, with ErrQuoteAwaitsApproval: it waits for the author's answer
+// (AnswerInteractionRequest). A quoted status that is not local, missing, or deleted fails with
+// ErrNotFound.
 func (s *Interactions) AnswerQuoteRequest(ctx context.Context, in QuoteRequestInput) (content.QuoteAuthorization, content.Status, error) {
 	if s.d.Quotes == nil {
 		return content.QuoteAuthorization{}, content.Status{}, fmt.Errorf("quotes: %w", ErrNotFound)
 	}
-	quoted, err := s.d.Statuses.FindStatusByURI(ctx, in.QuotedURI)
+	quoted, err := s.localTarget(ctx, in.QuotedURI)
 	if err != nil {
 		return content.QuoteAuthorization{}, content.Status{}, err
 	}
-	a := s.audience()
-	if quoted, err = a.live(ctx, quoted.ID); err != nil {
-		return content.QuoteAuthorization{}, content.Status{}, err
-	}
-	if !quoted.IsLocal {
-		return content.QuoteAuthorization{}, content.Status{}, fmt.Errorf("status %s is remote: %w", quoted.ID, ErrNotFound)
-	}
 	refused := fmt.Errorf("quote of %s by %s: %w", quoted.ID, in.QuoterAccountID, ErrQuoteRefused)
-	actor, err := s.d.Accounts.FindByID(ctx, in.QuoterAccountID)
-	if err != nil || actor.Account.IsLocal() || in.QuotingURI == "" {
-		return content.QuoteAuthorization{}, quoted, errors.Join(refused, err)
+	if in.QuotingURI == "" {
+		return content.QuoteAuthorization{}, quoted, refused
 	}
-	// Only the author of the quoting status asks for its quote.
-	switch quoting, err := s.d.Statuses.FindStatusByURI(ctx, in.QuotingURI); {
-	case err == nil && quoting.AuthorAccountID != in.QuoterAccountID:
+	d, err := s.remoteVerdict(ctx, content.InteractionQuote, in.QuoterAccountID, quoted)
+	if err != nil {
+		return content.QuoteAuthorization{}, quoted, err
+	}
+	// Only the author of the quoting status asks for its quote; a request for another's records
+	// nothing.
+	quoting, err := s.d.Statuses.FindStatusByURI(ctx, in.QuotingURI)
+	quotingStored := err == nil
+	switch {
+	case quotingStored && quoting.AuthorAccountID != in.QuoterAccountID:
 		return content.QuoteAuthorization{}, quoted, refused
 	case err != nil && !errors.Is(err, ErrNotFound):
 		return content.QuoteAuthorization{}, quoted, err
 	}
-	r, err := s.d.Restrictions.Restrictions(ctx, in.QuoterAccountID)
-	if err != nil {
-		return content.QuoteAuthorization{}, quoted, err
+	if quotingStored {
+		// The stored quoting status's state follows the request only when it quotes this status.
+		q, err := s.d.Quotes.FindQuote(ctx, quoting.ID)
+		switch {
+		case errors.Is(err, ErrNotFound):
+			quotingStored = false
+		case err != nil:
+			return content.QuoteAuthorization{}, quoted, err
+		default:
+			quotingStored = q.QuotedURI == quoted.URI
+		}
 	}
-	if !r.CanInteract() {
-		return content.QuoteAuthorization{}, quoted, refused
+	r := content.InteractionRequest{
+		Kind: content.InteractionQuote, Direction: content.DirectionInbound, TargetURI: quoted.URI, TargetAccountID: quoted.AuthorAccountID,
+		InteractingURI: in.QuotingURI, InteractingAccountID: in.QuoterAccountID, ActivityURI: in.ActivityURI,
 	}
-	visible, err := a.remoteVisible(ctx, in.QuoterAccountID, quoted)
-	if err != nil {
-		return content.QuoteAuthorization{}, quoted, err
-	}
-	rel, err := s.d.Relationships.Relationship(ctx, in.QuoterAccountID, quoted.AuthorAccountID)
-	if err != nil {
-		return content.QuoteAuthorization{}, quoted, err
-	}
-	policy, err := interactionPolicyOf(ctx, s.d.Quotes, quoted.ID)
-	if err != nil {
-		return content.QuoteAuthorization{}, quoted, err
-	}
-	mentioned, err := s.d.Interactions.Mentioned(ctx, quoted.ID, in.QuoterAccountID)
-	if err != nil {
-		return content.QuoteAuthorization{}, quoted, err
-	}
-	switch content.MayQuote(content.QuoteFacts{
-		QuoterAccountID: in.QuoterAccountID, QuoterURI: actor.Account.URI, QuoterVisible: visible && !rel.Blocking && !rel.BlockedBy,
-		QuoterFollows: rel.ActivelyFollowing(), QuoterFollowed: rel.ActivelyFollowedBy(), QuoterMentioned: mentioned,
-		Quoted: quoted, Policy: policy,
-	}) {
-	case content.QuoteApproved:
-	case content.QuotePending:
-		return content.QuoteAuthorization{}, quoted, fmt.Errorf("quote of %s by %s: %w", quoted.ID, in.QuoterAccountID, ErrQuoteAwaitsApproval)
-	default:
-		return content.QuoteAuthorization{}, quoted, refused
-	}
-	auth := content.QuoteAuthorization{
-		ID: s.d.IDs.NewID(), QuotingURI: in.QuotingURI, QuotingAccountID: in.QuoterAccountID, QuotedStatusID: quoted.ID, CreatedAt: s.d.Clock.Now(),
-	}
+	var state content.InteractionState
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		_, err := s.d.Quotes.InsertQuoteAuthorization(ctx, tx, auth)
+		a, err := s.firstAnswer(ctx, tx, d, r, quoted, false)
+		if err != nil {
+			return err
+		}
+		ref := RefOf(quoted)
+		if a.kind == "" || !quotingStored {
+			_, state, _, err = s.approvals().request(ctx, tx, r, a, &ref)
+			return err
+		}
+		// The stored quote is answered with its request, which tells its quoted author.
+		if _, err := changeQuote(ctx, tx, s.approvals(), s.d.Statuses, quoting, content.QuoteEventKind(a.kind), a.authorization, false); err != nil {
+			return err
+		}
+		req, err := s.d.Quotes.FindInteractionRequestFor(ctx, tx, r.Kind, r.InteractingURI, r.TargetURI)
+		if err != nil {
+			return err
+		}
+		state, err = s.approvals().state(ctx, tx, req)
 		return err
 	})
-	if err != nil {
+	switch {
+	case err != nil:
 		return content.QuoteAuthorization{}, quoted, err
+	case state.State == content.InteractionRequestPending:
+		return content.QuoteAuthorization{}, quoted, fmt.Errorf("quote of %s by %s: %w", quoted.ID, in.QuoterAccountID, ErrQuoteAwaitsApproval)
+	case state.State != content.InteractionRequestAccepted:
+		return content.QuoteAuthorization{}, quoted, refused
 	}
 	// A repeated request gets the approval given before.
-	stored, err := s.d.Quotes.FindQuoteAuthorizationFor(ctx, in.QuotingURI, quoted.ID)
+	stored, err := s.d.Quotes.FindInteractionAuthorizationFor(ctx, nil, content.InteractionQuote, in.QuotingURI, quoted.ID)
 	if err != nil {
 		return content.QuoteAuthorization{}, quoted, err
 	}
@@ -145,7 +149,7 @@ func (s *Interactions) RevokeQuote(ctx context.Context, accountID, quotedStatusI
 	if err != nil {
 		return err
 	}
-	auth, err := s.d.Quotes.FindQuoteAuthorizationFor(ctx, quoting.URI, quoted.ID)
+	auth, err := s.d.Quotes.FindInteractionAuthorizationFor(ctx, nil, content.InteractionQuote, quoting.URI, quoted.ID)
 	if err != nil {
 		return err
 	}
@@ -154,26 +158,23 @@ func (s *Interactions) RevokeQuote(ctx context.Context, accountID, quotedStatusI
 	}
 	now := s.d.Clock.Now()
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		revoked, err := s.d.Quotes.InsertQuoteAuthorizationRevocation(ctx, tx, auth.ID, now)
+		revoked, err := s.d.Quotes.InsertInteractionAuthorizationRevocation(ctx, tx, auth.ID, now)
 		if err != nil || !revoked {
 			return err
 		}
 		auth.RevokedAt = &now
 		uri := content.QuoteAuthorizationURI(s.d.Host, auth.ID)
-		if _, err := changeQuote(ctx, tx, s.d.Quotes, s.d.Statuses, s.d.IDs, s.d.Clock, quoting, content.QuoteEventRevoked, uri); err != nil && !errors.Is(err, ErrNotFound) {
+		if _, err := changeQuote(ctx, tx, s.approvals(), s.d.Statuses, quoting, content.QuoteEventRevoked, uri, false); err != nil && !errors.Is(err, ErrNotFound) {
 			return err
 		}
 		return tx.Emit(ctx, QuoteAuthorizationRevoked{Authorization: auth, Quoted: RefOf(quoted)})
 	})
 }
 
-// FindQuoteAuthorization returns an approval that this server gave, with its revocation, for
-// its ActivityPub object. One that does not exist fails with ErrNotFound.
+// FindQuoteAuthorization returns an approval of a quote that this server gave, with its
+// revocation, for its ActivityPub object. One that does not exist fails with ErrNotFound.
 func (s *Interactions) FindQuoteAuthorization(ctx context.Context, id string) (content.QuoteAuthorization, error) {
-	if s.d.Quotes == nil {
-		return content.QuoteAuthorization{}, fmt.Errorf("quote authorization %s: %w", id, ErrNotFound)
-	}
-	return s.d.Quotes.FindQuoteAuthorization(ctx, id)
+	return s.FindInteractionAuthorization(ctx, content.InteractionQuote, id)
 }
 
 // VerifyLocalQuoteAuthorization reports whether the QuoteAuthorization id of this server, not
@@ -181,13 +182,5 @@ func (s *Interactions) FindQuoteAuthorization(ctx context.Context, id string) (c
 // quotedStatusID (ADR-0069 §2): how a remote quote of a local status that names it is approved.
 // An authorization approves only the quote of the account it was given to.
 func (s *Interactions) VerifyLocalQuoteAuthorization(ctx context.Context, id, quotingURI, quotingAccountID, quotedStatusID string) (bool, error) {
-	auth, err := s.FindQuoteAuthorization(ctx, id)
-	if errors.Is(err, ErrNotFound) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return auth.RevokedAt == nil && auth.QuotingURI == quotingURI && auth.QuotingAccountID == quotingAccountID &&
-		auth.QuotedStatusID == quotedStatusID, nil
+	return s.VerifyLocalAuthorization(ctx, content.InteractionQuote, id, quotingURI, quotingAccountID, quotedStatusID)
 }

@@ -94,6 +94,35 @@ type Favourite struct {
 	ID        string
 }
 
+type InteractionRequest struct {
+	ID                   string
+	Kind                 string
+	Direction            string
+	TargetUri            string
+	TargetAccountID      sql.NullString
+	InteractingUri       string
+	InteractingAccountID string
+	ActivityUri          string
+	Visibility           string
+	CreatedAt            int64
+}
+
+type InteractionRequestEvent struct {
+	ID               string
+	RequestID        string
+	Kind             string
+	AuthorizationUri sql.NullString
+	OccurredAt       int64
+}
+
+type InteractionRequestState struct {
+	RequestID        string
+	Kind             string
+	TargetAccountID  sql.NullString
+	State            string
+	AuthorizationUri sql.NullString
+}
+
 type LinkCard struct {
 	Url              string
 	CardUrl          string
@@ -350,20 +379,6 @@ type StatusQuote struct {
 	StatusID  string
 	QuotedUri string
 	Form      string
-}
-
-type StatusQuoteEvent struct {
-	ID               string
-	StatusID         string
-	Kind             string
-	AuthorizationUri sql.NullString
-	OccurredAt       int64
-}
-
-type StatusQuoteState struct {
-	StatusID         string
-	State            string
-	AuthorizationUri sql.NullString
 }
 
 type StatusReactionCount struct {

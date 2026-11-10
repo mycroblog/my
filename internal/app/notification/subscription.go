@@ -326,29 +326,40 @@ func registerSubscriptionProjectors(r *uow.Projectors, d ProjectorDeps) {
 		}
 		return deleteSubscription(ctx, repo, tx, b.BlockedAccountID, b.BlockerAccountID)
 	})
-	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		ev := e.(appcontent.StatusCreated)
+	newPost := func(ctx context.Context, tx uow.Tx, st appcontent.Status, rev appcontent.Revision) error {
 		if d.PostJobs == nil {
 			return nil
 		}
-		fetched := !ev.Status.IsLocal && (ev.Revision.Remote == nil || ev.Revision.Remote.ActivityURI == "")
+		fetched := !st.IsLocal && (rev.Remote == nil || rev.Remote.ActivityURI == "")
 		if fetched {
 			return nil // an old post fetched for a thread, a search, or a quote is no new post
 		}
-		has, err := repo.HasSubscribers(ctx, tx, ev.Status.AuthorAccountID)
+		has, err := repo.HasSubscribers(ctx, tx, st.AuthorAccountID)
 		if err != nil || !has {
 			return err
 		}
 		payload, err := json.Marshal(postJob{
-			StatusID: ev.Status.ID, AuthorAccountID: ev.Status.AuthorAccountID, InReplyToURI: ev.Status.InReplyToURI,
-			MentionedAccountIDs: ev.Revision.MentionedAccountIDs, At: ev.Revision.RevisedAt,
+			StatusID: st.ID, AuthorAccountID: st.AuthorAccountID, InReplyToURI: st.InReplyToURI,
+			MentionedAccountIDs: rev.MentionedAccountIDs, At: rev.RevisedAt,
 		})
 		if err != nil {
 			return err
 		}
 		return d.PostJobs.EnqueueTx(ctx, tx, queue.NewJob{
-			Type: JobNotifyPostSubscribers, Payload: payload, IdempotencyKey: JobNotifyPostSubscribers + ":" + ev.Status.ID,
+			Type: JobNotifyPostSubscribers, Payload: payload, IdempotencyKey: JobNotifyPostSubscribers + ":" + st.ID,
 		})
+	}
+	// A reply held out of its thread is a new post once it is approved (ADR-0155 §6, §7).
+	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.StatusCreated)
+		if ev.HeldReply {
+			return nil
+		}
+		return newPost(ctx, tx, ev.Status, ev.Revision)
+	})
+	r.Register(appcontent.EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.StatusReleased)
+		return newPost(ctx, tx, ev.Status, ev.Revision)
 	})
 }
 

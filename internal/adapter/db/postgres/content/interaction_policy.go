@@ -63,22 +63,3 @@ func (r *StatusRepository) FindInteractionPolicy(ctx context.Context, statusID s
 	m, err := r.FindInteractionPolicies(ctx, []string{statusID})
 	return m[statusID], err
 }
-
-// InsertHeldReply implements content.Repository.
-func (r *StatusRepository) InsertHeldReply(ctx context.Context, tx uow.Tx, h content.HeldReply) error {
-	q, err := r.db.queries(tx)
-	if err != nil {
-		return err
-	}
-	return postgres.Wrap(q.InsertHeldReply(ctx, contentgen.InsertHeldReplyParams{StatusID: h.StatusID, Reason: string(h.Reason), HeldAt: h.HeldAt}), "insert held reply")
-}
-
-// IsHeldReply implements content.Repository.
-func (r *StatusRepository) IsHeldReply(ctx context.Context, tx uow.Tx, statusID string) (bool, error) {
-	q, err := r.db.queries(tx)
-	if err != nil {
-		return false, err
-	}
-	held, err := q.HeldReplyExists(ctx, statusID)
-	return held, postgres.Wrap(err, "check held reply")
-}

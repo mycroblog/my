@@ -19,8 +19,9 @@ type relationshipsWithBatch interface {
 // ViewsFor is Views of the statuses of ids for each of viewers, local signed-in viewers, by
 // viewer account, with a number of queries that does not grow with the viewers: the statuses and
 // everything about them that is the same for every viewer are read once (Reader.page), and what
-// each viewer did with them, their votes, the statuses that mention them, and their relationships
-// with the authors are read for all the viewers together.
+// each viewer did with them, their votes, the statuses that mention them, their requests of
+// interactions with them, and their relationships with the authors are read for all the viewers
+// together.
 func (r *Reader) ViewsFor(ctx context.Context, viewers []Viewer, ids []string) (map[string][]StatusView, error) {
 	out := make(map[string][]StatusView, len(viewers))
 	if len(viewers) == 0 {
@@ -61,6 +62,17 @@ func (r *Reader) ViewsFor(ctx context.Context, viewers []Viewer, ids []string) (
 	if err != nil {
 		return nil, err
 	}
+	quotes, okQ := base.d.Quotes.(*pageQuotes)
+	var uris []string
+	var ownRequests map[string][]OwnInteraction
+	if okQ {
+		for _, id := range live {
+			uris = append(uris, statuses.statuses[id].URI)
+		}
+		if ownRequests, err = r.d.Quotes.ListOwnInteractionsOf(ctx, accounts, uris); err != nil {
+			return nil, err
+		}
+	}
 	var authors []string
 	for _, id := range live {
 		if a := statuses.statuses[id].AuthorAccountID; !slices.Contains(authors, a) {
@@ -87,6 +99,11 @@ func (r *Reader) ViewsFor(ctx context.Context, viewers []Viewer, ids []string) (
 			vr.of[[2]string{v.AccountID, author}] = rels[[2]string{v.AccountID, author}]
 		}
 		p := *base
+		if okQ {
+			vq := *quotes
+			vq.viewer, vq.uris, vq.own = v.AccountID, uris, ownRequests[v.AccountID]
+			p.d.Quotes = &vq
+		}
 		p.d.Statuses, p.d.Interactions, p.d.Relationships = &vs, &vi, vr
 		p.aud.statuses, p.aud.interactions, p.aud.relationships = &vs, &vi, vr
 		views := make([]StatusView, 0, len(ids))

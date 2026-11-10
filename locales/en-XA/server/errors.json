@@ -171,6 +171,10 @@
     "defaultMessage": "[Ŧħḗḗ ȧȧƈƈḗḗşş ŧǿǿķḗḗƞ ƞḗḗḗḗḓş ŧħḗḗ şƈǿǿƥḗḗ {scope}.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.interaction_request.answered": {
+    "defaultMessage": "[Ŧħīş řḗḗɋŭŭḗḗşŧ īş ȧȧƞşẇḗḗřḗḗḓ ȧȧŀřḗḗȧȧḓẏ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.interaction_restricted": {
     "defaultMessage": "[Ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ḿȧȧẏ ƞǿǿŧ ƒǿǿŀŀǿǿẇ, ƒȧȧṽǿǿŭŭřīŧḗḗ, ƀǿǿǿǿşŧ, ǿǿř řḗḗƥŀẏ řīɠħŧ ƞǿǿẇ.]",
     "description": "Generated from en by tools/i18n; do not edit."

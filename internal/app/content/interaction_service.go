@@ -82,7 +82,8 @@ func (s *Interactions) Boost(ctx context.Context, accountID, statusID string) (c
 	if !st.Visibility.Boostable(st.AuthorAccountID == accountID) {
 		return content.Boost{}, fmt.Errorf("boost %s: %w", statusID, content.ErrNotBoostable)
 	}
-	if err := s.interactionReaders().localMayInteract(ctx, content.InteractionAnnounce, accountID, nil, st, ErrBoostNotAllowed); err != nil {
+	v, err := s.interactionReaders().localVerdict(ctx, content.InteractionAnnounce, accountID, nil, st, ErrBoostNotAllowed)
+	if err != nil {
 		return content.Boost{}, err
 	}
 	id := s.d.IDs.NewID()
@@ -91,30 +92,56 @@ func (s *Interactions) Boost(ctx context.Context, accountID, statusID string) (c
 		Visibility: st.Visibility, IsLocal: true, BoostedAt: s.d.Clock.Now(),
 	}
 	var out content.Boost
-	repo := s.d.Interactions
+	requested := false
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		out = content.Boost{}
-		if err := s.ensureLive(ctx, tx, st.ID); err != nil {
-			return err
+		out, requested = content.Boost{}, false
+		if s.d.Quotes != nil && v.requested(st) {
+			edge, err := s.d.Interactions.BoostEdge(ctx, tx, accountID, st.ID)
+			switch {
+			case err == nil:
+				out, err = s.d.Interactions.Boost(ctx, tx, edge.BoostID)
+				return err
+			case !errors.Is(err, ErrNotFound):
+				return err
+			}
+			requested = true
+			return s.requestBoost(ctx, tx, b, st)
 		}
-		edge, err := repo.BoostEdge(ctx, tx, accountID, st.ID)
-		switch {
-		case err == nil:
-			out, err = repo.Boost(ctx, tx, edge.BoostID)
-			return err
-		case !errors.Is(err, ErrNotFound):
-			return err
-		}
-		if err := repo.InsertBoost(ctx, tx, b); err != nil {
-			return err
-		}
-		out = b
-		return tx.Emit(ctx, Boosted{Boost: b, Status: RefOf(st)})
+		out, err = s.insertBoost(ctx, tx, b, st)
+		return err
 	})
 	if err != nil {
 		return content.Boost{}, err
 	}
+	if requested {
+		return content.Boost{}, fmt.Errorf("boost of %s: %w", st.ID, ErrInteractionAwaitsApproval)
+	}
 	return out, nil
+}
+
+// requestBoost records in tx the request of the local boost b of st, pending, unless the booster
+// asked for one already: the boost is recorded, and goes out, once the request is approved
+// (ADR-0155 §7).
+func (s *Interactions) requestBoost(ctx context.Context, tx uow.Tx, b content.Boost, st content.Status) error {
+	if err := s.ensureLive(ctx, tx, st.ID); err != nil {
+		return err
+	}
+	r := content.InteractionRequest{
+		Kind: content.InteractionAnnounce, Direction: content.DirectionOf(st.IsLocal, true), TargetURI: st.URI,
+		TargetAccountID: st.AuthorAccountID, InteractingURI: b.URI, InteractingAccountID: b.BoosterAccountID, Visibility: b.Visibility,
+	}
+	own, err := s.d.Quotes.ListOwnInteractions(ctx, b.BoosterAccountID, []string{st.URI})
+	if err != nil {
+		return err
+	}
+	for _, o := range own {
+		if o.Kind == content.InteractionAnnounce && o.State == content.InteractionRequestPending {
+			return nil // asked already
+		}
+	}
+	ref := RefOf(st)
+	_, _, _, err = s.approvals().request(ctx, tx, r, answer{}, &ref)
+	return err
 }
 
 // Unboost retracts accountID's live boost of statusID. Without one it changes nothing.

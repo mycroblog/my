@@ -144,13 +144,13 @@ func (r *StatusRepository) FindConversationMerge(ctx context.Context, id string)
 }
 
 // ListLiveConversationStatuses implements content.Repository.
-func (r *StatusRepository) ListLiveConversationStatuses(ctx context.Context, conversationID, after string, limit int) ([]content.Status, error) {
+func (r *StatusRepository) ListLiveConversationStatuses(ctx context.Context, conversationID, viewerAccountID, after string, limit int) ([]content.Status, error) {
 	lim, err := postgres.ToInt32(limit, "limit")
 	if err != nil {
 		return nil, err
 	}
 	rows, err := r.db.reader().ListLiveConversationStatuses(ctx, contentgen.ListLiveConversationStatusesParams{
-		ConversationID: conversationID, After: postgres.ToNullString(after), Lim: lim,
+		ConversationID: conversationID, ViewerAccountID: postgres.ToNullString(viewerAccountID), After: postgres.ToNullString(after), Lim: lim,
 	})
 	if err != nil {
 		return nil, postgres.Wrap(err, "list conversation statuses")

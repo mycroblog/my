@@ -2911,6 +2911,24 @@ func (e InstanceTextKey) Valid() bool {
 	}
 }
 
+// Defines values for InteractionApprovalState.
+const (
+	InteractionApprovalStatePending  InteractionApprovalState = "pending"
+	InteractionApprovalStateRejected InteractionApprovalState = "rejected"
+)
+
+// Valid indicates whether the value is a known member of the InteractionApprovalState enum.
+func (e InteractionApprovalState) Valid() bool {
+	switch e {
+	case InteractionApprovalStatePending:
+		return true
+	case InteractionApprovalStateRejected:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InteractionAudience.
 const (
 	InteractionAudienceEveryone  InteractionAudience = "everyone"
@@ -2929,6 +2947,48 @@ func (e InteractionAudience) Valid() bool {
 	case InteractionAudienceMentioned:
 		return true
 	case InteractionAudienceNobody:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InteractionKind.
+const (
+	InteractionKindAnnounce InteractionKind = "announce"
+	InteractionKindQuote    InteractionKind = "quote"
+	InteractionKindReply    InteractionKind = "reply"
+)
+
+// Valid indicates whether the value is a known member of the InteractionKind enum.
+func (e InteractionKind) Valid() bool {
+	switch e {
+	case InteractionKindAnnounce:
+		return true
+	case InteractionKindQuote:
+		return true
+	case InteractionKindReply:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for InteractionRequestState.
+const (
+	InteractionRequestStateAccepted InteractionRequestState = "accepted"
+	InteractionRequestStatePending  InteractionRequestState = "pending"
+	InteractionRequestStateRejected InteractionRequestState = "rejected"
+)
+
+// Valid indicates whether the value is a known member of the InteractionRequestState enum.
+func (e InteractionRequestState) Valid() bool {
+	switch e {
+	case InteractionRequestStateAccepted:
+		return true
+	case InteractionRequestStatePending:
+		return true
+	case InteractionRequestStateRejected:
 		return true
 	default:
 		return false
@@ -3201,6 +3261,7 @@ const (
 	NotificationGroupFollow                  NotificationGroup = "follow"
 	NotificationGroupFollowAccepted          NotificationGroup = "follow_accepted"
 	NotificationGroupFollowRequest           NotificationGroup = "follow_request"
+	NotificationGroupInteractionRequest      NotificationGroup = "interaction_request"
 	NotificationGroupMention                 NotificationGroup = "mention"
 	NotificationGroupModeration              NotificationGroup = "moderation"
 	NotificationGroupPollClosed              NotificationGroup = "poll_closed"
@@ -3250,6 +3311,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupFollowAccepted:
 		return true
 	case NotificationGroupFollowRequest:
+		return true
+	case NotificationGroupInteractionRequest:
 		return true
 	case NotificationGroupMention:
 		return true
@@ -3330,18 +3393,23 @@ const (
 	NotificationTypeAppealDecided              NotificationType = "appeal_decided"
 	NotificationTypeAutoDeleteLimit            NotificationType = "auto_delete_limit"
 	NotificationTypeBoost                      NotificationType = "boost"
+	NotificationTypeBoostRequest               NotificationType = "boost_request"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
 	NotificationTypeFavourite                  NotificationType = "favourite"
 	NotificationTypeFollow                     NotificationType = "follow"
 	NotificationTypeFollowAccepted             NotificationType = "follow_accepted"
 	NotificationTypeFollowRequest              NotificationType = "follow_request"
 	NotificationTypeHookAppealDecided          NotificationType = "hook_appeal_decided"
+	NotificationTypeInteractionAccepted        NotificationType = "interaction_accepted"
+	NotificationTypeInteractionRejected        NotificationType = "interaction_rejected"
 	NotificationTypeMention                    NotificationType = "mention"
 	NotificationTypeModerationNotice           NotificationType = "moderation_notice"
 	NotificationTypePollClosed                 NotificationType = "poll_closed"
 	NotificationTypeQuote                      NotificationType = "quote"
+	NotificationTypeQuoteRequest               NotificationType = "quote_request"
 	NotificationTypeReaction                   NotificationType = "reaction"
 	NotificationTypeRelationshipsSevered       NotificationType = "relationships_severed"
+	NotificationTypeReplyRequest               NotificationType = "reply_request"
 	NotificationTypeReportResolved             NotificationType = "report_resolved"
 	NotificationTypeServiceClosure             NotificationType = "service_closure"
 	NotificationTypeStatus                     NotificationType = "status"
@@ -3386,6 +3454,8 @@ func (e NotificationType) Valid() bool {
 		return true
 	case NotificationTypeBoost:
 		return true
+	case NotificationTypeBoostRequest:
+		return true
 	case NotificationTypeCustomEmojiRequestDecided:
 		return true
 	case NotificationTypeFavourite:
@@ -3398,6 +3468,10 @@ func (e NotificationType) Valid() bool {
 		return true
 	case NotificationTypeHookAppealDecided:
 		return true
+	case NotificationTypeInteractionAccepted:
+		return true
+	case NotificationTypeInteractionRejected:
+		return true
 	case NotificationTypeMention:
 		return true
 	case NotificationTypeModerationNotice:
@@ -3406,9 +3480,13 @@ func (e NotificationType) Valid() bool {
 		return true
 	case NotificationTypeQuote:
 		return true
+	case NotificationTypeQuoteRequest:
+		return true
 	case NotificationTypeReaction:
 		return true
 	case NotificationTypeRelationshipsSevered:
+		return true
+	case NotificationTypeReplyRequest:
 		return true
 	case NotificationTypeReportResolved:
 		return true
@@ -10510,10 +10588,21 @@ type InstanceTranslationProvider struct {
 	Visibilities []Visibility `json:"visibilities"`
 }
 
+// InteractionApprovalState The approval of the authenticated user's interaction (a reply, a boost, or a quote) by the
+// author of the status it is with, while it is not given:
+//
+//   - `pending`: it waits for the author's answer. A reply that waits is shown to its author
+//     alone, and goes out once it is approved; a boost that waits is recorded once it is approved.
+//   - `rejected`: the author refused it.
+type InteractionApprovalState string
+
 // InteractionAudience Whom an interaction policy admits, narrowest first: `nobody` the author alone, `mentioned`
 // the accounts the status mentions, `followers` the author's followers and the accounts the
 // status mentions, `everyone` anyone who may see the status. The author always may interact.
 type InteractionAudience string
+
+// InteractionKind An interaction that an interaction policy governs (a reply, a boost, or a quote).
+type InteractionKind string
 
 // InteractionPolicy Who may reply to, boost, and quote a status. Whatever the policy, a followers-only status is
 // boosted and quoted only by its author, a direct one is neither boosted nor quoted, and a reply
@@ -10548,6 +10637,44 @@ type InteractionPolicyChange struct {
 	// those of `manual`, a wider audience, wait for the author's approval. Without `manual`, the
 	// others are refused.
 	Reply *InteractionRule `json:"reply,omitempty"`
+}
+
+// InteractionRequest A reply to, a boost of, or a quote of a status of the authenticated user that waits for the
+// user's approval, because only the manual rule of the status's interaction policy admits the
+// account that interacts.
+type InteractionRequest struct {
+	// Account The account that interacts.
+	Account   Account   `json:"account"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// InteractingStatus The reply or the quoting status, when the server has it and the user may see it; omitted
+	// for a boost, and for a reply that a remote server sends only once it is approved.
+	InteractingStatus *Status `json:"interacting_status,omitempty"`
+
+	// Kind An interaction that an interaction policy governs (a reply, a boost, or a quote).
+	Kind InteractionKind `json:"kind"`
+
+	// State `pending` until the user answers; then `accepted` or `rejected`.
+	State InteractionRequestState `json:"state"`
+
+	// Status The status of the user that the account interacts with.
+	Status Status `json:"status"`
+}
+
+// InteractionRequestState `pending` until the user answers; then `accepted` or `rejected`.
+type InteractionRequestState string
+
+// InteractionRequestPage A page of interaction requests.
+type InteractionRequestPage struct {
+	Items []InteractionRequest `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
 // InteractionRule Who may interact with a status in one way. Interactions of `automatic` are approved at once;
@@ -11332,7 +11459,11 @@ type Notification struct {
 	// with another emoji is another notification), or the account that quoted a post of the
 	// user (`quote`, once the quote is approved or, from software without approvals, received).
 	// `status` is the post that `mention`, `boost`, `favourite`, `reaction`, and `poll_closed`
-	// are about, and for `quote` the post that quotes. `moderation_notice` comes from the instance and has no `account`; its
+	// are about, and for `quote` the post that quotes. `reply_request`, `boost_request`, and
+	// `quote_request` tell that `account` replied to, boosted, or quoted the user's `status` and
+	// that it waits for the user's approval (`listInteractionRequests`); `interaction_accepted`
+	// and `interaction_rejected` tell that `account`, the author of `status`, approved or refused
+	// the user's reply to it, boost of it, or quote of it. `moderation_notice` comes from the instance and has no `account`; its
 	// `moderation_action` is the action on the user's account, with its kind, reason, and end.
 	// `report_resolved` also comes from the instance: its `report` is the user's report that
 	// the moderators resolved, without how they resolved it. It is sent once per report, even
@@ -11442,7 +11573,9 @@ type NotificationErrorGroupChange string
 // and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 // `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 // `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
+// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
+// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 // `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -11508,7 +11641,9 @@ type NotificationSettingRow struct {
 	// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 	// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-	// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
+	// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+	// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
+	// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -11560,7 +11695,9 @@ type NotificationSettingsUpdate struct {
 		// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 		// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-		// `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
+		// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+		// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
+		// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -11583,7 +11720,11 @@ type NotificationSettingsUpdateChangesChannel string
 // with another emoji is another notification), or the account that quoted a post of the
 // user (`quote`, once the quote is approved or, from software without approvals, received).
 // `status` is the post that `mention`, `boost`, `favourite`, `reaction`, and `poll_closed`
-// are about, and for `quote` the post that quotes. `moderation_notice` comes from the instance and has no `account`; its
+// are about, and for `quote` the post that quotes. `reply_request`, `boost_request`, and
+// `quote_request` tell that `account` replied to, boosted, or quoted the user's `status` and
+// that it waits for the user's approval (`listInteractionRequests`); `interaction_accepted`
+// and `interaction_rejected` tell that `account`, the author of `status`, approved or refused
+// the user's reply to it, boost of it, or quote of it. `moderation_notice` comes from the instance and has no `account`; its
 // `moderation_action` is the action on the user's account, with its kind, reason, and end.
 // `report_resolved` also comes from the instance: its `report` is the user's report that
 // the moderators resolved, without how they resolved it. It is sent once per report, even
@@ -13057,6 +13198,11 @@ type Status struct {
 	// Account An account, as clients show it.
 	Account Account `json:"account"`
 
+	// Approval The approval of this reply by the author of the status it replies to, while it is not
+	// given; given only to the author of the reply, and omitted for a reply that needs no
+	// approval or has it. A `pending` reply is shown to its author alone.
+	Approval *InteractionApprovalState `json:"approval,omitempty"`
+
 	// Bookmarked Whether the authenticated user bookmarked the status.
 	Bookmarked *bool `json:"bookmarked,omitempty"`
 
@@ -13070,6 +13216,11 @@ type Status struct {
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
 	Boost *Status `json:"boost,omitempty"`
+
+	// BoostApproval The approval of the authenticated user's boost of the status by its author, while it is
+	// not given; omitted when the user did not ask for one or it is given (then `boosted` is
+	// true).
+	BoostApproval *InteractionApprovalState `json:"boost_approval,omitempty"`
 
 	// Boosted Whether the authenticated user boosts the status.
 	Boosted *bool `json:"boosted,omitempty"`
@@ -14722,6 +14873,11 @@ type IdempotencyKey = string
 // InstanceDomain defines model for InstanceDomain.
 type InstanceDomain = string
 
+// InteractionRequestId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type InteractionRequestId = Id
+
 // InviteId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -15449,6 +15605,18 @@ type GetInstanceIncomeTotalsParams struct {
 type ListInstanceSupportersParams struct {
 	// PlanId Only the members of this plan.
 	PlanId *Id `form:"plan_id,omitempty" json:"plan_id,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListInteractionRequestsParams defines parameters for ListInteractionRequests.
+type ListInteractionRequestsParams struct {
+	// Kind Only the requests of this kind.
+	Kind *InteractionKind `form:"kind,omitempty" json:"kind,omitempty"`
 
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
@@ -16744,6 +16912,15 @@ type ServerInterface interface {
 	// ListInstanceSupporters List the supporters who chose to be listed
 	// (GET /instance/supporters)
 	ListInstanceSupporters(w http.ResponseWriter, r *http.Request, params ListInstanceSupportersParams)
+	// ListInteractionRequests List the interaction requests to the authenticated user
+	// (GET /interaction_requests)
+	ListInteractionRequests(w http.ResponseWriter, r *http.Request, params ListInteractionRequestsParams)
+	// AcceptInteractionRequest Approve an interaction request
+	// (POST /interaction_requests/{id}/accept)
+	AcceptInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId)
+	// RejectInteractionRequest Refuse an interaction request
+	// (POST /interaction_requests/{id}/reject)
+	RejectInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId)
 	// ListOwnInvites List the user's own invites
 	// (GET /invites)
 	ListOwnInvites(w http.ResponseWriter, r *http.Request, params ListOwnInvitesParams)
@@ -24611,6 +24788,117 @@ func (siw *ServerInterfaceWrapper) ListInstanceSupporters(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// ListInteractionRequests operation middleware
+func (siw *ServerInterfaceWrapper) ListInteractionRequests(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListInteractionRequestsParams
+
+	// ------------- Optional query parameter "kind" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "kind", r.URL.Query(), &params.Kind, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "kind"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "kind", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInteractionRequests(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AcceptInteractionRequest operation middleware
+func (siw *ServerInterfaceWrapper) AcceptInteractionRequest(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id InteractionRequestId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AcceptInteractionRequest(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RejectInteractionRequest operation middleware
+func (siw *ServerInterfaceWrapper) RejectInteractionRequest(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id InteractionRequestId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RejectInteractionRequest(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListOwnInvites operation middleware
 func (siw *ServerInterfaceWrapper) ListOwnInvites(w http.ResponseWriter, r *http.Request) {
 
@@ -28283,6 +28571,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/follow_requests", wrapper.ListFollowRequests)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/follow_requests/{id}/accept", wrapper.AcceptFollowRequest)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/follow_requests/{id}/reject", wrapper.RejectFollowRequest)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/interaction_requests", wrapper.ListInteractionRequests)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/interaction_requests/{id}/accept", wrapper.AcceptInteractionRequest)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/interaction_requests/{id}/reject", wrapper.RejectInteractionRequest)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/mutes", wrapper.ListMutes)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/domain_mutes", wrapper.ListDomainMutes)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/domain_mutes", wrapper.MuteDomain)
@@ -44089,6 +44380,162 @@ func (response ListInstanceSupportersdefaultApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type ListInteractionRequestsRequestObject struct {
+	Params ListInteractionRequestsParams
+}
+
+type ListInteractionRequestsResponseObject interface {
+	VisitListInteractionRequestsResponse(w http.ResponseWriter) error
+}
+
+type ListInteractionRequests200JSONResponse InteractionRequestPage
+
+func (response ListInteractionRequests200JSONResponse) VisitListInteractionRequestsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInteractionRequestsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListInteractionRequestsdefaultApplicationProblemPlusJSONResponse) VisitListInteractionRequestsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptInteractionRequestRequestObject struct {
+	Id InteractionRequestId `json:"id"`
+}
+
+type AcceptInteractionRequestResponseObject interface {
+	VisitAcceptInteractionRequestResponse(w http.ResponseWriter) error
+}
+
+type AcceptInteractionRequest200JSONResponse InteractionRequest
+
+func (response AcceptInteractionRequest200JSONResponse) VisitAcceptInteractionRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AcceptInteractionRequestdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AcceptInteractionRequestdefaultApplicationProblemPlusJSONResponse) VisitAcceptInteractionRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectInteractionRequestRequestObject struct {
+	Id InteractionRequestId `json:"id"`
+}
+
+type RejectInteractionRequestResponseObject interface {
+	VisitRejectInteractionRequestResponse(w http.ResponseWriter) error
+}
+
+type RejectInteractionRequest200JSONResponse InteractionRequest
+
+func (response RejectInteractionRequest200JSONResponse) VisitRejectInteractionRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RejectInteractionRequestdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RejectInteractionRequestdefaultApplicationProblemPlusJSONResponse) VisitRejectInteractionRequestResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListOwnInvitesRequestObject struct {
 	Params ListOwnInvitesParams
 }
@@ -52356,6 +52803,15 @@ type StrictServerInterface interface {
 	// ListInstanceSupporters List the supporters who chose to be listed
 	// (GET /instance/supporters)
 	ListInstanceSupporters(ctx context.Context, request ListInstanceSupportersRequestObject) (ListInstanceSupportersResponseObject, error)
+	// ListInteractionRequests List the interaction requests to the authenticated user
+	// (GET /interaction_requests)
+	ListInteractionRequests(ctx context.Context, request ListInteractionRequestsRequestObject) (ListInteractionRequestsResponseObject, error)
+	// AcceptInteractionRequest Approve an interaction request
+	// (POST /interaction_requests/{id}/accept)
+	AcceptInteractionRequest(ctx context.Context, request AcceptInteractionRequestRequestObject) (AcceptInteractionRequestResponseObject, error)
+	// RejectInteractionRequest Refuse an interaction request
+	// (POST /interaction_requests/{id}/reject)
+	RejectInteractionRequest(ctx context.Context, request RejectInteractionRequestRequestObject) (RejectInteractionRequestResponseObject, error)
 	// ListOwnInvites List the user's own invites
 	// (GET /invites)
 	ListOwnInvites(ctx context.Context, request ListOwnInvitesRequestObject) (ListOwnInvitesResponseObject, error)
@@ -59677,6 +60133,84 @@ func (sh *strictHandler) ListInstanceSupporters(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListInstanceSupportersResponseObject); ok {
 		if err := validResponse.VisitListInstanceSupportersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListInteractionRequests operation middleware
+func (sh *strictHandler) ListInteractionRequests(w http.ResponseWriter, r *http.Request, params ListInteractionRequestsParams) {
+	var request ListInteractionRequestsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInteractionRequests(ctx, request.(ListInteractionRequestsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInteractionRequests")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInteractionRequestsResponseObject); ok {
+		if err := validResponse.VisitListInteractionRequestsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AcceptInteractionRequest operation middleware
+func (sh *strictHandler) AcceptInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId) {
+	var request AcceptInteractionRequestRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AcceptInteractionRequest(ctx, request.(AcceptInteractionRequestRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AcceptInteractionRequest")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AcceptInteractionRequestResponseObject); ok {
+		if err := validResponse.VisitAcceptInteractionRequestResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RejectInteractionRequest operation middleware
+func (sh *strictHandler) RejectInteractionRequest(w http.ResponseWriter, r *http.Request, id InteractionRequestId) {
+	var request RejectInteractionRequestRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RejectInteractionRequest(ctx, request.(RejectInteractionRequestRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RejectInteractionRequest")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RejectInteractionRequestResponseObject); ok {
+		if err := validResponse.VisitRejectInteractionRequestResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

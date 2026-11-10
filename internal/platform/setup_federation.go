@@ -40,7 +40,7 @@ func (a *App) setUpFederation(cfg *config.Config, repo federation.Repository) qu
 	a.QuoteHandlers = federation.NewQuoteHandlers(federation.QuoteHandlersDeps{
 		UnitOfWork: a.UnitOfWork,
 		Recorder:   federation.RecorderDeps{Repository: repo, Outbox: outbox, IDs: a.IDs, Host: cfg.Host},
-		Approvals:  a.Interactions, Quotes: a.Content, Statuses: a.Content, Accounts: a.Accounts,
+		Approvals:  a.Interactions, Interactions: a.Interactions, Quotes: a.Content, Statuses: a.Content, Accounts: a.Accounts,
 		Fetcher: remoteDocuments{a}, // reads a.RemoteActors, built by setUpRemoteActors
 		Clock:   a.Clock, Logger: a.Logger,
 	})

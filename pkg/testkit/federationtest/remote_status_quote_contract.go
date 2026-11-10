@@ -19,10 +19,12 @@ import (
 // featured collections of remote accounts become (ADR-0006).
 
 // remoteStatusRepoQuotes checks the quote repository: a status quotes one status, found by its
-// status and listed in pages by status ID and per quoted URI, newest first; its events read back
-// in order; the policies are upserted and deleted; an approval is recorded once per quoting URI and
-// quoted status, found with its revocation, which is recorded once; and the projection of the
-// states is upserted, listed, and deleted for its rebuild.
+// status and listed in pages by status ID and per quoted URI, newest first; the state of a quote
+// is derived from its form, its detachment, and its request, whose answers read back in order;
+// the requests are found by ID and interaction, paged per author, and listed per interactor; the
+// projection of their states is upserted, listed, and deleted for its rebuild; the policies are
+// upserted and deleted; an approval is recorded once per kind, interaction, and target, found
+// with its revocation, which is recorded once.
 func remoteStatusRepoQuotes(t *testing.T, r *remoteStatusRepo) {
 	if r.h.Quotes == nil {
 		t.Skip("the harness has no quote repository")
@@ -82,33 +84,151 @@ func remoteStatusRepoQuotes(t *testing.T, r *remoteStatusRepo) {
 		t.Errorf("ListQuotesOf before the second = %+v, %v; want the first", got, err)
 	}
 
-	// The events of a quote, in the order they occurred.
-	events := []content.QuoteEvent{
-		{ID: r.ids.NewID(), StatusID: quotes[0].StatusID, Kind: content.QuoteEventAccepted, AuthorizationURI: "https://remote.example/auth/1", OccurredAt: r.clock.Now()},
-		{ID: r.ids.NewID(), StatusID: quotes[0].StatusID, Kind: content.QuoteEventRevoked, AuthorizationURI: "https://remote.example/auth/1", OccurredAt: r.clock.Now().Add(time.Second)},
-		{ID: r.ids.NewID(), StatusID: quotes[0].StatusID, Kind: content.QuoteEventDetached, OccurredAt: r.clock.Now().Add(2 * time.Second)},
+	// The state of a quote is derived from its form, its detachment, and its request.
+	stored := map[string]content.Status{}
+	for _, q := range []content.Quote{quotes[0], quotes[2]} {
+		st := r.remoteStatus("")
+		st.ID = q.StatusID
+		r.insert(t, st)
+		stored[q.StatusID] = st
 	}
+	auth1 := "https://remote.example/auth/1"
+	request := func(q content.Quote) content.InteractionRequest {
+		return content.InteractionRequest{
+			ID: r.ids.NewID(), Kind: content.InteractionQuote, Direction: content.DirectionRemote, TargetURI: q.QuotedURI,
+			InteractingURI: stored[q.StatusID].URI, InteractingAccountID: stored[q.StatusID].AuthorAccountID, CreatedAt: r.clock.Now(),
+		}
+	}
+	r0, r2 := request(quotes[0]), request(quotes[2])
+	events := []content.InteractionEvent{
+		{ID: r.ids.NewID(), RequestID: r0.ID, Kind: content.InteractionEventAccepted, AuthorizationURI: auth1, OccurredAt: r.clock.Now()},
+		{ID: r.ids.NewID(), RequestID: r0.ID, Kind: content.InteractionEventRevoked, AuthorizationURI: auth1, OccurredAt: r.clock.Now().Add(time.Second)},
+	}
+	accepted := content.InteractionEvent{ID: r.ids.NewID(), RequestID: r2.ID, Kind: content.InteractionEventAccepted, AuthorizationURI: auth1, OccurredAt: r.clock.Now()}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-		for _, e := range events {
-			if err := r.h.Quotes.InsertQuoteEvent(ctx, tx, e); err != nil {
+		for _, req := range []content.InteractionRequest{r0, r2} {
+			if ok, err := r.h.Quotes.InsertInteractionRequest(ctx, tx, req); err != nil || !ok {
+				t.Errorf("InsertInteractionRequest(%s) = %t, %v; want true", req.ID, ok, err)
+			}
+			if err := r.h.Quotes.UpsertInteractionState(ctx, tx, content.InitialInteractionState(req)); err != nil {
 				return err
 			}
 		}
-		got, err := r.h.Quotes.ListQuoteEvents(ctx, tx, quotes[0].StatusID)
-		if err != nil || !slices.EqualFunc(got, events, equalQuoteEvent) {
-			t.Errorf("ListQuoteEvents = %+v, %v; want %+v", got, err, events)
+		for _, e := range append(slices.Clone(events), accepted) {
+			if err := r.h.Quotes.InsertInteractionEvent(ctx, tx, e); err != nil {
+				return err
+			}
+		}
+		got, err := r.h.Quotes.ListInteractionEvents(ctx, tx, r0.ID)
+		if err != nil || !slices.EqualFunc(got, events, equalInteractionEvent) {
+			t.Errorf("ListInteractionEvents = %+v, %v; want %+v", got, err, events)
+		}
+		if got, err := r.h.Quotes.FindQuoteStateTx(ctx, tx, quotes[0].StatusID); err != nil || got.Approval != content.QuoteApprovalPending {
+			t.Errorf("FindQuoteStateTx before the projection = %+v, %v; want pending", got, err)
+		}
+		for _, st := range []content.InteractionState{content.InteractionStateOf(r0, events), content.InteractionStateOf(r2, []content.InteractionEvent{accepted})} {
+			if err := r.h.Quotes.UpsertInteractionState(ctx, tx, st); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
-	stateOf, err := r.h.Quotes.FindQuoteStates(ctx, ids)
-	if err != nil {
-		t.Fatalf("FindQuoteStates = %v", err)
+	wantStates := map[string]content.QuoteState{
+		quotes[0].StatusID: {StatusID: quotes[0].StatusID, Approval: content.QuoteApprovalRevoked},
+		quotes[1].StatusID: {StatusID: quotes[1].StatusID, Approval: content.QuoteApprovalLegacy},
+		quotes[2].StatusID: {StatusID: quotes[2].StatusID, Approval: content.QuoteApprovalAccepted, AuthorizationURI: auth1},
+		other.StatusID:     {StatusID: other.StatusID, Approval: content.QuoteApprovalLegacy},
 	}
-	for _, id := range ids {
-		want, err := r.h.Quotes.FindQuoteState(ctx, id)
-		if got, ok := stateOf[id]; ok != (err == nil) || ok && got != want {
-			t.Errorf("FindQuoteStates[%s] = %+v (%t), want %+v (%v) as FindQuoteState", id, got, ok, want, err)
+	checkStates := func(when string) {
+		t.Helper()
+		stateOf, err := r.h.Quotes.FindQuoteStates(ctx, ids)
+		if err != nil {
+			t.Fatalf("FindQuoteStates = %v", err)
 		}
+		for _, id := range ids {
+			got, err := r.h.Quotes.FindQuoteState(ctx, id)
+			w, ok := wantStates[id]
+			if ok != (err == nil) || got != w {
+				t.Errorf("%s: FindQuoteState(%s) = %+v, %v; want %+v (%t)", when, id, got, err, w, ok)
+			}
+			if g, found := stateOf[id]; found != ok || g != w {
+				t.Errorf("%s: FindQuoteStates[%s] = %+v (%t), want %+v as FindQuoteState", when, id, g, found, w)
+			}
+		}
+	}
+	checkStates("answered")
+	if got, err := r.h.Quotes.ListQuoteStatesByAuthorization(ctx, auth1); err != nil || !slices.Equal(got, []content.QuoteState{wantStates[quotes[2].StatusID]}) {
+		t.Errorf("ListQuoteStatesByAuthorization = %+v, %v; want the accepted one", got, err)
+	}
+	// A detachment takes the quote away for good, recorded once.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		for range 2 {
+			if err := r.h.Quotes.InsertQuoteDetachment(ctx, tx, quotes[2].StatusID, r.clock.Now()); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	wantStates[quotes[2].StatusID] = content.QuoteState{StatusID: quotes[2].StatusID, Approval: content.QuoteApprovalDetached}
+	checkStates("detached")
+
+	// The requests, read by ID, by interaction, in pages, and per author.
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		if got, err := r.h.Quotes.FindInteractionRequest(ctx, tx, r0.ID); err != nil || !equalInteractionRequest(got, r0) {
+			t.Errorf("FindInteractionRequest = %+v, %v; want %+v", got, err, r0)
+		}
+		if got, err := r.h.Quotes.ListInteractionRequestsAfter(ctx, tx, r0.ID, 10); err != nil || len(got) != 1 || !equalInteractionRequest(got[0], r2) {
+			t.Errorf("ListInteractionRequestsAfter = %+v, %v; want %+v", got, err, r2)
+		}
+		return nil
+	})
+	if got, err := r.h.Quotes.FindInteractionRequestFor(ctx, nil, content.InteractionQuote, r2.InteractingURI, r2.TargetURI); err != nil || !equalInteractionRequest(got, r2) {
+		t.Errorf("FindInteractionRequestFor = %+v, %v; want %+v", got, err, r2)
+	}
+	if _, err := r.h.Quotes.FindInteractionRequestFor(ctx, nil, content.InteractionReply, r2.InteractingURI, r2.TargetURI); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindInteractionRequestFor(another kind) = %v, want ErrNotFound", err)
+	}
+	author, booster := testkit.NamedID("approving-author"), testkit.NamedID("booster")
+	pending := []content.InteractionRequest{
+		{ID: r.ids.NewID(), Kind: content.InteractionReply, Direction: content.DirectionInbound, TargetURI: "https://local.example/s/1",
+			TargetAccountID: author, InteractingURI: "https://remote.example/notes/reply", InteractingAccountID: booster, CreatedAt: r.clock.Now()},
+		{ID: r.ids.NewID(), Kind: content.InteractionAnnounce, Direction: content.DirectionInbound, TargetURI: "https://local.example/s/1",
+			TargetAccountID: author, InteractingURI: "https://remote.example/announces/1", InteractingAccountID: booster,
+			ActivityURI: "https://remote.example/requests/1", Visibility: content.VisibilityUnlisted, CreatedAt: r.clock.Now()},
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		for _, req := range pending {
+			if _, err := r.h.Quotes.InsertInteractionRequest(ctx, tx, req); err != nil {
+				return err
+			}
+			if err := r.h.Quotes.UpsertInteractionState(ctx, tx, content.InitialInteractionState(req)); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if got, err := r.h.Quotes.ListPendingInteractionRequests(ctx, author, nil, "", 1); err != nil || len(got) != 1 || !equalInteractionRequest(got[0], pending[1]) {
+		t.Errorf("ListPendingInteractionRequests newest = %+v, %v; want %+v", got, err, pending[1])
+	}
+	if got, err := r.h.Quotes.ListPendingInteractionRequests(ctx, author, nil, pending[1].ID, 10); err != nil || len(got) != 1 || !equalInteractionRequest(got[0], pending[0]) {
+		t.Errorf("ListPendingInteractionRequests before the newest = %+v, %v; want %+v", got, err, pending[0])
+	}
+	if got, err := r.h.Quotes.ListPendingInteractionRequests(ctx, author, []content.InteractionKind{content.InteractionReply}, "", 10); err != nil || len(got) != 1 || got[0].ID != pending[0].ID {
+		t.Errorf("ListPendingInteractionRequests of replies = %+v, %v; want the reply", got, err)
+	}
+	if got, err := r.h.Quotes.ListOwnInteractions(ctx, booster, []string{"https://remote.example/notes/reply", "https://local.example/s/1"}); err != nil || len(got) != 2 {
+		t.Errorf("ListOwnInteractions = %+v, %v; want the reply and the boost", got, err)
+	}
+	if got, err := r.h.Quotes.ListOwnInteractions(ctx, booster, []string{"https://remote.example/announces/1"}); err != nil || len(got) != 0 {
+		t.Errorf("ListOwnInteractions by the Announce = %+v, %v; want none (boosts are found by their target)", got, err)
+	}
+	states, err := r.h.Quotes.ListInteractionStates(ctx)
+	if err != nil || len(states) != 4 {
+		t.Errorf("ListInteractionStates = %+v, %v; want 4", states, err)
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Quotes.DeleteAllInteractionStates(ctx, tx) })
+	if got, err := r.h.Quotes.ListInteractionStates(ctx); err != nil || len(got) != 0 {
+		t.Errorf("ListInteractionStates after DeleteAllInteractionStates = %+v, %v; want none", got, err)
 	}
 
 	// The interaction policies: replaced per kind, read for many statuses together.
@@ -155,16 +275,16 @@ func remoteStatusRepoQuotes(t *testing.T, r *remoteStatusRepo) {
 	}
 
 	// The approvals of this server, and their revocations.
-	auth := content.QuoteAuthorization{
-		ID: r.ids.NewID(), QuotingURI: "https://remote.example/notes/quoting", QuotingAccountID: testkit.NamedID("quoter"),
-		QuotedStatusID: r.ids.NewID(), CreatedAt: r.clock.Now(),
+	auth := content.InteractionAuthorization{
+		ID: r.ids.NewID(), Kind: content.InteractionQuote, InteractingURI: "https://remote.example/notes/quoting",
+		InteractingAccountID: testkit.NamedID("quoter"), TargetStatusID: r.ids.NewID(), CreatedAt: r.clock.Now(),
 	}
-	authorize := func(a content.QuoteAuthorization, want bool) {
+	authorize := func(a content.InteractionAuthorization, want bool) {
 		t.Helper()
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-			ok, err := r.h.Quotes.InsertQuoteAuthorization(ctx, tx, a)
+			ok, err := r.h.Quotes.InsertInteractionAuthorization(ctx, tx, a)
 			if err == nil && ok != want {
-				t.Errorf("InsertQuoteAuthorization(%s) = %v, want %v", a.ID, ok, want)
+				t.Errorf("InsertInteractionAuthorization(%s) = %v, want %v", a.ID, ok, want)
 			}
 			return err
 		})
@@ -173,22 +293,25 @@ func remoteStatusRepoQuotes(t *testing.T, r *remoteStatusRepo) {
 	again := auth
 	again.ID = r.ids.NewID()
 	authorize(again, false)
-	if got, err := r.h.Quotes.FindQuoteAuthorization(ctx, auth.ID); err != nil || !equalQuoteAuthorization(got, auth) {
+	reply := auth
+	reply.ID, reply.Kind = r.ids.NewID(), content.InteractionReply
+	authorize(reply, true)
+	if got, err := r.h.Quotes.FindInteractionAuthorization(ctx, auth.ID); err != nil || !equalQuoteAuthorization(got, auth) {
 		t.Errorf("FindQuoteAuthorization = %+v, %v; want %+v", got, err, auth)
 	}
-	if got, err := r.h.Quotes.FindQuoteAuthorizationFor(ctx, auth.QuotingURI, auth.QuotedStatusID); err != nil || !equalQuoteAuthorization(got, auth) {
+	if got, err := r.h.Quotes.FindInteractionAuthorizationFor(ctx, nil, content.InteractionQuote, auth.InteractingURI, auth.TargetStatusID); err != nil || !equalQuoteAuthorization(got, auth) {
 		t.Errorf("FindQuoteAuthorizationFor = %+v, %v; want %+v", got, err, auth)
 	}
-	if _, err := r.h.Quotes.FindQuoteAuthorization(ctx, again.ID); !errors.Is(err, appcontent.ErrNotFound) {
+	if _, err := r.h.Quotes.FindInteractionAuthorization(ctx, again.ID); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindQuoteAuthorization(not recorded) = %v, want ErrNotFound", err)
 	}
-	if _, err := r.h.Quotes.FindQuoteAuthorizationFor(ctx, auth.QuotingURI, r.ids.NewID()); !errors.Is(err, appcontent.ErrNotFound) {
+	if _, err := r.h.Quotes.FindInteractionAuthorizationFor(ctx, nil, content.InteractionQuote, auth.InteractingURI, r.ids.NewID()); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindQuoteAuthorizationFor(another status) = %v, want ErrNotFound", err)
 	}
 	revokedAt := r.clock.Now().Add(time.Minute)
 	for i, want := range []bool{true, false} {
 		r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-			ok, err := r.h.Quotes.InsertQuoteAuthorizationRevocation(ctx, tx, auth.ID, revokedAt.Add(time.Duration(i)*time.Minute))
+			ok, err := r.h.Quotes.InsertInteractionAuthorizationRevocation(ctx, tx, auth.ID, revokedAt.Add(time.Duration(i)*time.Minute))
 			if err == nil && ok != want {
 				t.Errorf("InsertQuoteAuthorizationRevocation #%d = %v, want %v", i+1, ok, want)
 			}
@@ -196,55 +319,26 @@ func remoteStatusRepoQuotes(t *testing.T, r *remoteStatusRepo) {
 		})
 	}
 	auth.RevokedAt = &revokedAt
-	if got, err := r.h.Quotes.FindQuoteAuthorization(ctx, auth.ID); err != nil || !equalQuoteAuthorization(got, auth) {
+	if got, err := r.h.Quotes.FindInteractionAuthorization(ctx, auth.ID); err != nil || !equalQuoteAuthorization(got, auth) {
 		t.Errorf("FindQuoteAuthorization after the revocation = %+v, %v; want revoked at the first %v", got, err, revokedAt)
 	}
-
-	// The projection of the states.
-	states := []content.QuoteState{
-		{StatusID: quotes[0].StatusID, Approval: content.QuoteApprovalAccepted, AuthorizationURI: "https://remote.example/auth/1"},
-		{StatusID: quotes[1].StatusID, Approval: content.QuoteApprovalLegacy},
-		{StatusID: quotes[2].StatusID, Approval: content.QuoteApprovalAccepted, AuthorizationURI: "https://remote.example/auth/1"},
-	}
-	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
-		for _, s := range append([]content.QuoteState{{StatusID: quotes[0].StatusID, Approval: content.QuoteApprovalPending}}, states...) {
-			if err := r.h.Quotes.UpsertQuoteState(ctx, tx, s); err != nil {
-				return err
-			}
-		}
-		if got, err := r.h.Quotes.FindQuoteStateTx(ctx, tx, quotes[0].StatusID); err != nil || got != states[0] {
-			t.Errorf("FindQuoteStateTx = %+v, %v; want the upserted %+v", got, err, states[0])
-		}
-		return nil
-	})
-	if got, err := r.h.Quotes.FindQuoteState(ctx, quotes[1].StatusID); err != nil || got != states[1] {
-		t.Errorf("FindQuoteState = %+v, %v; want %+v", got, err, states[1])
-	}
-	if _, err := r.h.Quotes.FindQuoteState(ctx, other.StatusID); !errors.Is(err, appcontent.ErrNotFound) {
-		t.Errorf("FindQuoteState(none) = %v, want ErrNotFound", err)
-	}
-	if got, err := r.h.Quotes.ListQuoteStatesByAuthorization(ctx, "https://remote.example/auth/1"); err != nil || !slices.Equal(got, []content.QuoteState{states[0], states[2]}) {
-		t.Errorf("ListQuoteStatesByAuthorization = %+v, %v; want the accepted ones in status ID order", got, err)
-	}
-	if got, err := r.h.Quotes.ListQuoteStates(ctx); err != nil || !slices.Equal(got, states) {
-		t.Errorf("ListQuoteStates = %+v, %v; want %+v", got, err, states)
-	}
-	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Quotes.DeleteAllQuoteStates(ctx, tx) })
-	if got, err := r.h.Quotes.ListQuoteStates(ctx); err != nil || len(got) != 0 {
-		t.Errorf("ListQuoteStates after DeleteAllQuoteStates = %+v, %v; want none", got, err)
-	}
 }
 
-func equalQuoteEvent(a, b content.QuoteEvent) bool {
-	return a.ID == b.ID && a.StatusID == b.StatusID && a.Kind == b.Kind && a.AuthorizationURI == b.AuthorizationURI && a.OccurredAt.Equal(b.OccurredAt)
+func equalInteractionEvent(a, b content.InteractionEvent) bool {
+	return a.ID == b.ID && a.RequestID == b.RequestID && a.Kind == b.Kind && a.AuthorizationURI == b.AuthorizationURI && a.OccurredAt.Equal(b.OccurredAt)
 }
 
-func equalQuoteAuthorization(a, b content.QuoteAuthorization) bool {
+func equalInteractionRequest(a, b content.InteractionRequest) bool {
+	a.CreatedAt, b.CreatedAt = a.CreatedAt.UTC().Truncate(time.Millisecond), b.CreatedAt.UTC().Truncate(time.Millisecond)
+	return a == b
+}
+
+func equalQuoteAuthorization(a, b content.InteractionAuthorization) bool {
 	if (a.RevokedAt == nil) != (b.RevokedAt == nil) || (a.RevokedAt != nil && !a.RevokedAt.Equal(*b.RevokedAt)) {
 		return false
 	}
-	return a.ID == b.ID && a.QuotingURI == b.QuotingURI && a.QuotingAccountID == b.QuotingAccountID &&
-		a.QuotedStatusID == b.QuotedStatusID && a.CreatedAt.Equal(b.CreatedAt)
+	return a.ID == b.ID && a.Kind == b.Kind && a.InteractingURI == b.InteractingURI && a.InteractingAccountID == b.InteractingAccountID &&
+		a.TargetStatusID == b.TargetStatusID && a.CreatedAt.Equal(b.CreatedAt)
 }
 
 // remoteStatusRepoPins checks the pins that ReplaceRemotePins writes: a pin takes a free slot of

@@ -65,7 +65,8 @@ An endpoint subscribes to some of these events. Setting up the subscription need
 | `webhook.test` | An administrator sends a test message to the endpoint | `WebhookTest` | — (not subscribable) |
 
 - `status.created` is sent for `public` posts only: `unlisted`, `local`, `private`, and `direct` posts never leave the server
-  this way, and neither do remote posts.
+  this way, and neither do remote posts. A reply that waits for the approval of the author of the post it replies to is sent
+  when it is approved, not before.
 - `account.updated` is sent for local accounts only, and not for the profile an account is created with.
 - `custom_emoji.*` follows the administrators' operations only, never the remote emoji that posts and profiles bring.
 - `error_group.*` never follows a web client report sent without a session: a group that only such reports have seen is sent

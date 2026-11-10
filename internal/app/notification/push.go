@@ -612,6 +612,16 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		p.Title, p.Path = l.ServerPushReaction(name), statusPath(recipient.Acct, n.StatusID)
 	case notification.TypeQuote:
 		p.Title, p.Path = l.ServerPushQuote(name), statusPath(source.Acct, n.StatusID)
+	case notification.TypeReplyRequest:
+		p.Title, p.Path = l.ServerPushReplyRequest(name), statusPath(recipient.Acct, n.StatusID)
+	case notification.TypeBoostRequest:
+		p.Title, p.Path = l.ServerPushBoostRequest(name), statusPath(recipient.Acct, n.StatusID)
+	case notification.TypeQuoteRequest:
+		p.Title, p.Path = l.ServerPushQuoteRequest(name), statusPath(recipient.Acct, n.StatusID)
+	case notification.TypeInteractionAccepted:
+		p.Title, p.Path = l.ServerPushInteractionAccepted(name), statusPath(source.Acct, n.StatusID)
+	case notification.TypeInteractionRejected:
+		p.Title, p.Path = l.ServerPushInteractionRejected(name), statusPath(source.Acct, n.StatusID)
 	case notification.TypePollClosed:
 		// The voters' notifications are from the poll's author; the author's own has no source.
 		author := source.Acct

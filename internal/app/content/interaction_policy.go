@@ -205,6 +205,11 @@ func (s *Service) SetInteractionPolicy(ctx context.Context, accountID, statusID 
 	if err != nil {
 		return content.InteractionSettings{}, err
 	}
+	if s.d.ReconsiderRequests != nil {
+		// The pending requests that the new rules admit at once are approved (ADR-0155 §3). One
+		// that this misses keeps waiting for the author's answer, so the change stands either way.
+		_ = s.d.ReconsiderRequests(ctx, st.ID)
+	}
 	return after, nil
 }
 

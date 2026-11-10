@@ -75,7 +75,20 @@ func (a audience) visible(ctx context.Context, viewer content.Viewer, st content
 		}
 	}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	if facts.Unpublished, err = a.unpublished(ctx, st); err != nil {
+		return false, appaccount.Actor{}, err
+	}
 	return content.CanView(content.ContextStatus, viewer, facts, restrictions, rel), author, nil
+}
+
+// unpublished reports whether st is a local reply held until the author of its parent approves
+// it (ADR-0155 §7), which its author alone sees: one query for a local reply, none otherwise.
+func (a audience) unpublished(ctx context.Context, st content.Status) (bool, error) {
+	if !st.IsLocal || st.InReplyToURI == "" {
+		return false, nil
+	}
+	held, err := a.statuses.HeldRepliesAmong(ctx, nil, []string{st.ID})
+	return held[st.ID], err
 }
 
 // reviewable reports whether the moderators, who review a report, may read st, which the report
@@ -172,6 +185,9 @@ func (a audience) visibleToLocal(ctx context.Context, statusID string, viewerIDs
 		}
 	}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	if facts.Unpublished, err = a.unpublished(ctx, st); err != nil {
+		return nil, err
+	}
 	for _, id := range viewerIDs {
 		viewer := content.Viewer{Kind: content.ViewerLocal, AccountID: id}
 		out[id] = content.CanView(content.ContextStatus, viewer, facts, restrictions, rels[id])

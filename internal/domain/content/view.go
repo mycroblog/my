@@ -71,6 +71,9 @@ type StatusFacts struct {
 	AuthorAccountID string
 	AuthorIsLocal   bool
 	Visibility      Visibility // the stored, original visibility
+	// Unpublished is whether the status is a local reply held until the author of its parent
+	// approves it (ADR-0155 §7): its author alone sees it.
+	Unpublished bool
 }
 
 // ViewContext is where the status would be shown.
@@ -142,7 +145,8 @@ func (c ViewContext) String() string {
 }
 
 // CanView reports whether viewer may see status in context. It fails closed: an invalid
-// visibility, viewer kind, or context, or a local visibility on a remote status, is denied.
+// visibility, viewer kind, or context, or a local visibility on a remote status, is denied. An
+// unpublished status (a held local reply) is its author's alone.
 func CanView(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRestrictions, rel Relation) bool {
 	if !status.Visibility.Valid() || (status.Visibility == VisibilityLocal && !status.AuthorIsLocal) {
 		return false
@@ -155,6 +159,9 @@ func CanView(ctx ViewContext, viewer Viewer, status StatusFacts, author AuthorRe
 	}
 	isAuthor := viewer.Kind == ViewerLocal && viewer.AccountID != "" && viewer.AccountID == status.AuthorAccountID
 	moderator := viewer.Kind == ViewerLocal && viewer.Moderator
+	if status.Unpublished && !isAuthor {
+		return false
+	}
 
 	// profile_view (suspension, deletion) hides everything except from the author and
 	// moderators, and even they see it only on the status and profile pages.

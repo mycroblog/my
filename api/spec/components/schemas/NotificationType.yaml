@@ -7,7 +7,11 @@ description: |
   with another emoji is another notification), or the account that quoted a post of the
   user (`quote`, once the quote is approved or, from software without approvals, received).
   `status` is the post that `mention`, `boost`, `favourite`, `reaction`, and `poll_closed`
-  are about, and for `quote` the post that quotes. `moderation_notice` comes from the instance and has no `account`; its
+  are about, and for `quote` the post that quotes. `reply_request`, `boost_request`, and
+  `quote_request` tell that `account` replied to, boosted, or quoted the user's `status` and
+  that it waits for the user's approval (`listInteractionRequests`); `interaction_accepted`
+  and `interaction_rejected` tell that `account`, the author of `status`, approved or refused
+  the user's reply to it, boost of it, or quote of it. `moderation_notice` comes from the instance and has no `account`; its
   `moderation_action` is the action on the user's account, with its kind, reason, and end.
   `report_resolved` also comes from the instance: its `report` is the user's report that
   the moderators resolved, without how they resolved it. It is sent once per report, even
@@ -113,3 +117,8 @@ enum:
   - admin_hook_appeal
   - hook_appeal_decided
   - auto_delete_limit
+  - reply_request
+  - boost_request
+  - quote_request
+  - interaction_accepted
+  - interaction_rejected

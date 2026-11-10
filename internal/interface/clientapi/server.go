@@ -129,6 +129,9 @@ type Options struct {
 	Statuses     Statuses
 	StatusReader StatusReader
 	Interactions Interactions
+	// InteractionRequests lists and answers the requests of interactions with the viewer's
+	// statuses (the interaction requests operations); nil lists none and answers 404.
+	InteractionRequests InteractionRequests
 	// Translations translates statuses on a reader's request (translateStatus); nil answers that
 	// no provider is available.
 	Translations Translations

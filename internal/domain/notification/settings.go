@@ -83,6 +83,10 @@ const (
 	// (ADR-0151 §7): posts are about to go for good, so it is emailed by default, even to those who
 	// rarely sign in, and the user may turn either channel off.
 	GroupAutoDeleteLimit Group = "auto_delete_limit"
+	// GroupInteractionRequest is the requests of replies, boosts, and quotes that wait for the
+	// recipient's approval, and the answers to the recipient's own (ADR-0155 §10): in the app, on
+	// by default, without email.
+	GroupInteractionRequest Group = "interaction_request"
 )
 
 // Section is the kind of a group, which decides its defaults and how its emails are sent.
@@ -186,6 +190,11 @@ var Groups = []GroupSpec{
 	ordinary(GroupPollClosed), ordinary(GroupAccountMoved),
 	ordinary(GroupVoice, TypeVoiceRoomStarted, TypeVoiceRoomInvited),
 	{Group: GroupStatus, Section: SectionOrdinary, Types: []Type{TypeStatus}, InApp: ordinaryRules[0], Email: Rule{Absent: true}},
+	{
+		Group: GroupInteractionRequest, Section: SectionOrdinary,
+		Types: []Type{TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected},
+		InApp: ordinaryRules[0], Email: Rule{Absent: true},
+	},
 	moderator(TypeAdminReport), moderator(TypeAdminSignUp), moderator(TypeAdminAppeal), moderator(TypeAdminWebhookDisabled),
 	moderator(TypeAdminCustomEmojiRequest), moderator(TypeAdminAccountMoved), moderator(TypeAdminServiceClosureDue),
 	moderator(TypeAdminErrorGroup), moderator(TypeAdminHookFailing), moderator(TypeAdminHookAppeal),

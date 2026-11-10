@@ -414,9 +414,10 @@ func (s subject) retracting() bool { return s.suspended || s.movedTo != "" }
 //   - Like and Undo Like: the author of the favourited status.
 //   - Create of a vote: the author of the poll's status.
 //   - Flag: the reported account.
-//   - Follow, Undo, Accept, and Reject of the relay membership, and the activities of the
-//     approval of a quote: the inbox of the payload; the Delete of a revoked QuoteAuthorization
-//     then goes to the quoted author's followers too (ADR-0069 §3).
+//   - Follow, Undo, Accept, and Reject of the relay membership, the activities of the approval of
+//     an interaction, and the ReplyRequest of a local reply: the inbox of the payload; the Delete
+//     of a revoked QuoteAuthorization then goes to the quoted author's followers too (ADR-0069
+//     §3).
 func (s subject) phases() []phase {
 	switch s.act.ObjectKind {
 	case federation.OutboundRelay, federation.OutboundRefusal:
@@ -442,6 +443,9 @@ func (s subject) phases() []phase {
 	case federation.OutboundFavourite, federation.OutboundPollVote:
 		return []phase{phaseStatusAuthor}
 	case federation.OutboundStatus:
+		if s.act.Type == federation.ActivityReplyRequest {
+			return []phase{phaseRelay}
+		}
 		if s.act.Type == federation.ActivityCreate {
 			if s.visibility == appcontent.VisibilityPublic {
 				return []phase{phaseMentions, phaseFollowers, phaseRelays}
@@ -494,6 +498,17 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 	}
 	var err error
 	switch {
+	case act.ObjectKind == federation.OutboundStatus && act.Type == federation.ActivityReplyRequest:
+		// The ReplyRequest of a held local reply goes to the inbox of the author of its parent
+		// alone (ADR-0155 §7), with the reply's current revision.
+		if p.Inbox == "" {
+			return subject{}, fmt.Errorf("%w: ReplyRequest of %s without an inbox", federation.ErrInvalidOutbound, act.ObjectID)
+		}
+		s.inbox = federation.IRI(p.Inbox)
+		s.status, s.revision, err = f.d.Statuses.LiveRevision(ctx, act.ObjectID, "")
+		if errors.Is(err, appcontent.ErrNotFound) {
+			return subject{}, fmt.Errorf("%w: status %s", errGone, act.ObjectID)
+		}
 	case act.ObjectKind == federation.OutboundStatus && (act.Type == federation.ActivityCreate || act.Type == federation.ActivityUpdate):
 		s.status, s.revision, err = f.d.Statuses.LiveRevision(ctx, act.ObjectID, revisionID)
 		if errors.Is(err, appcontent.ErrNotFound) {

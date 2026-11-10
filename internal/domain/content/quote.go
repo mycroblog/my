@@ -34,7 +34,8 @@ type Quote struct {
 // QuoteEventKind is what happened to the approval of a quote.
 type QuoteEventKind string
 
-// Quote event kinds (status_quote_events.kind).
+// Quote event kinds: the answers to the quote's request (interaction_request_events.kind), and
+// its detachment (status_quote_detachments).
 const (
 	// QuoteEventAccepted approves the quote: a QuoteAuthorization verified, or a quote of the
 	// author's own status.
@@ -56,7 +57,8 @@ func (k QuoteEventKind) Valid() bool {
 	return false
 }
 
-// QuoteEvent is one change of the approval of a quote (status_quote_events).
+// QuoteEvent is one change of the approval of a quote: an answer to its request, or its
+// detachment.
 type QuoteEvent struct {
 	ID       string
 	StatusID string
@@ -72,7 +74,7 @@ type QuoteEvent struct {
 // Quote.state (ADR-0069 §1).
 type QuoteApproval string
 
-// Quote approvals (status_quote_states.state).
+// Quote approvals.
 const (
 	QuoteApprovalPending  QuoteApproval = "pending"
 	QuoteApprovalAccepted QuoteApproval = "accepted"
@@ -88,7 +90,8 @@ const (
 // approved or legacy. Who may see the quoted status is decided on top of it, per viewer.
 func (a QuoteApproval) Shown() bool { return a == QuoteApprovalAccepted || a == QuoteApprovalLegacy }
 
-// QuoteState is the current approval of a quote (the status_quote_states projection).
+// QuoteState is the current approval of a quote, derived from its form, its detachment, and the
+// state of its request (QuoteStateFrom).
 type QuoteState struct {
 	StatusID string
 	Approval QuoteApproval
@@ -141,27 +144,25 @@ func QuoteStateOf(q Quote, events []QuoteEvent) QuoteState {
 	return s
 }
 
-// QuoteAuthorization is this server's approval of a quote of a local status
-// (quote_authorizations, FEP-044f's QuoteAuthorization). One quoting status has at most one per
-// quoted status; a revocation withdraws it for good.
-type QuoteAuthorization struct {
-	ID string
-	// QuotingURI is the URI of the quoting status, which may be local or remote.
-	QuotingURI string
-	// QuotingAccountID is the author of the quoting status.
-	QuotingAccountID string
-	// QuotedStatusID is the local status quoted.
-	QuotedStatusID string
-	CreatedAt      time.Time
-	// RevokedAt is when the quoted author revoked it, nil while it stands
-	// (quote_authorization_revocations).
-	RevokedAt *time.Time
-}
-
-// QuoteAuthorizationURI returns the ActivityPub id of a QuoteAuthorization of host; it is derived
-// from the authorization's ID and never stored.
-func QuoteAuthorizationURI(host, authorizationID string) string {
-	return "https://" + host + "/ap/quote_authorizations/" + authorizationID
+// QuoteStateFrom returns the state of q from whether its author took it away and the state of
+// its request, nil while it has none: as QuoteStateOf derives it from the same events.
+func QuoteStateFrom(q Quote, detached bool, req *InteractionState) QuoteState {
+	s := InitialQuoteState(q)
+	switch {
+	case detached:
+		return QuoteState{StatusID: q.StatusID, Approval: QuoteApprovalDetached}
+	case q.Form == QuoteFormLegacy || req == nil:
+		return s
+	}
+	switch req.State {
+	case InteractionRequestAccepted:
+		s.Approval, s.AuthorizationURI = QuoteApprovalAccepted, req.AuthorizationURI
+	case InteractionRequestRejected:
+		s.Approval = QuoteApprovalRejected
+	case InteractionRequestRevoked:
+		s.Approval = QuoteApprovalRevoked
+	}
+	return s
 }
 
 // QuoteAllowance is whether an account may quote a status (MayQuote).

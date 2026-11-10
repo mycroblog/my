@@ -77,11 +77,11 @@ var (
 	activityTypes = []ActivityType{
 		ActivityCreate, ActivityUpdate, ActivityDelete, ActivityFollow, ActivityAccept, ActivityReject,
 		ActivityUndo, ActivityAnnounce, ActivityLike, ActivityEmojiReact, ActivityBlock, ActivityFlag,
-		ActivityAdd, ActivityRemove, ActivityMove, ActivityQuoteRequest,
+		ActivityAdd, ActivityRemove, ActivityMove, ActivityQuoteRequest, ActivityReplyRequest, ActivityAnnounceRequest,
 	}
 	objectTypes = []ObjectType{
 		ObjectNote, ObjectQuestion, ObjectArticle, ObjectPage, ObjectEvent, ObjectImage, ObjectVideo,
-		ObjectAudio, ObjectTombstone, ObjectQuoteAuthorization,
+		ObjectAudio, ObjectTombstone, ObjectQuoteAuthorization, ObjectReplyAuthorization, ObjectAnnounceAuthorization,
 	}
 	convertedTypes  = []ObjectType{ObjectArticle, ObjectPage, ObjectEvent, ObjectImage, ObjectVideo, ObjectAudio}
 	actorTypes      = []ActorType{ActorPerson, ActorService, ActorApplication, ActorGroup, ActorOrganization}
@@ -129,12 +129,14 @@ func (n normalizer) activity(o object, t ActivityType, raw string) (*Activity, e
 		return nil, err
 	}
 	switch t {
-	case ActivityQuoteRequest:
+	case ActivityQuoteRequest, ActivityReplyRequest, ActivityAnnounceRequest:
 		if a.Instrument, err = n.ref(o.get("instrument"), container); err != nil {
 			return nil, err
 		}
 	case ActivityAccept:
 		a.Result = n.firstRef(o.get("result"))
+	case ActivityAnnounce:
+		a.Authorization = n.firstRef(o.get("announceAuthorization"))
 	}
 	return a, nil
 }
@@ -201,10 +203,12 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 	}
 	obj.Quote = n.quote(o)
 	obj.CanReply, obj.CanAnnounce, obj.CanQuote = n.canInteract(o, "canReply"), n.canInteract(o, "canAnnounce"), n.canInteract(o, "canQuote")
-	if t == ObjectQuoteAuthorization {
+	switch t {
+	case ObjectQuoteAuthorization, ObjectReplyAuthorization, ObjectAnnounceAuthorization:
 		obj.InteractingObject = n.firstRef(o.get("interactingObject"))
 		obj.InteractionTarget = n.firstRef(o.get("interactionTarget"))
 	}
+	obj.ReplyAuthorization = n.firstRef(o.get("replyAuthorization"))
 	return obj, nil
 }
 

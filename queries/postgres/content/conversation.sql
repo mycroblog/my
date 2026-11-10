@@ -42,14 +42,17 @@ WHERE sc.status_id = ANY(sqlc.arg(ids)::uuid[])
 ORDER BY sc.status_id;
 
 -- ListLiveConversationStatuses returns, in ID order after the cursor @after, up to @lim statuses
--- of a conversation that are neither deleted nor held out of their thread (held_replies).
+-- of a conversation that are neither deleted nor held out of their thread (a reply request of theirs
+-- is not accepted), but for the held replies of @viewer_account_id.
 -- name: ListLiveConversationStatuses :many
 SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM status_conversations sc JOIN statuses s ON s.id = sc.status_id
 WHERE sc.conversation_id = sqlc.arg(conversation_id)
   AND sc.status_id > COALESCE(sqlc.narg(after)::uuid, '00000000-0000-0000-0000-000000000000')
   AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
-  AND NOT EXISTS (SELECT 1 FROM held_replies h WHERE h.status_id = s.id)
+  AND (s.author_account_id = sqlc.narg(viewer_account_id)::uuid OR NOT EXISTS (SELECT 1 FROM interaction_requests r
+    WHERE r.kind = 'reply' AND r.interacting_uri = s.uri AND r.target_uri = s.in_reply_to_uri
+      AND NOT EXISTS (SELECT 1 FROM interaction_request_events e WHERE e.request_id = r.id AND e.kind = 'accepted')))
 ORDER BY sc.status_id
 LIMIT sqlc.arg(lim)::integer;
 

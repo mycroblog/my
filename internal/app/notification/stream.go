@@ -49,6 +49,19 @@ func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 			signal(ev.Revision.MentionedAccountIDs...)
 		}
 	})
+	r.OnCommit(appcontent.EventStatusReleased, func(_ context.Context, e uow.Event) {
+		signal(e.(appcontent.StatusReleased).Revision.MentionedAccountIDs...)
+	})
+	r.OnCommit(appcontent.EventInteractionRequested, func(_ context.Context, e uow.Event) {
+		if ev := e.(appcontent.InteractionRequested); ev.State.State == appcontent.InteractionRequestPending && ev.Target != nil && ev.Target.IsLocal {
+			signal(ev.Target.AuthorAccountID)
+		}
+	})
+	r.OnCommit(appcontent.EventInteractionAnswered, func(_ context.Context, e uow.Event) {
+		if ev := e.(appcontent.InteractionAnswered); ev.Request.Direction == appcontent.DirectionOutbound || ev.Request.Direction == appcontent.DirectionLocal && ev.Deferred {
+			signal(ev.Request.InteractingAccountID)
+		}
+	})
 	r.OnCommit(appcontent.EventStatusRevised, func(_ context.Context, e uow.Event) {
 		if ev := e.(appcontent.StatusRevised); !ev.HeldReply {
 			signal(ev.Revision.MentionedAccountIDs...)

@@ -112,18 +112,22 @@ func (s *Service) recordLocalQuote(ctx context.Context, tx uow.Tx, st content.St
 	if err := s.recordQuote(ctx, tx, st, &RemoteQuoteInput{URI: q.quoted.URI, Form: form}); err != nil {
 		return err
 	}
+	if q.allowance == content.QuotePending {
+		// The quote of a local status waits for its author (ADR-0155 §6).
+		quote := content.Quote{StatusID: st.ID, QuotedURI: q.quoted.URI, Form: form}
+		ref := RefOf(q.quoted)
+		_, err := quoteRequest(ctx, tx, s.approvals(), st, quote, &ref, answer{})
+		return err
+	}
 	if q.allowance != content.QuoteApproved {
 		return nil
 	}
 	uri := ""
 	if q.quoted.AuthorAccountID != st.AuthorAccountID {
-		a := content.QuoteAuthorization{
-			ID: s.d.IDs.NewID(), QuotingURI: st.URI, QuotingAccountID: st.AuthorAccountID, QuotedStatusID: q.quoted.ID, CreatedAt: s.d.Clock.Now(),
-		}
-		if _, err := s.d.Quotes.InsertQuoteAuthorization(ctx, tx, a); err != nil {
+		var err error
+		if uri, err = s.approvals().authorize(ctx, tx, content.InteractionQuote, st.URI, st.AuthorAccountID, q.quoted); err != nil {
 			return err
 		}
-		uri = content.QuoteAuthorizationURI(s.d.Host, a.ID)
 	}
 	_, err := s.changeQuote(ctx, tx, st, content.QuoteEventAccepted, uri)
 	return err
@@ -182,19 +186,25 @@ type NoteQuotes struct {
 	States   map[string]content.QuoteState
 	Policies map[string]content.InteractionPolicy
 	Links    map[string]FederatedQuoteLink
+	// ReplyAuthorizations are the authorizations of the approved replies, by status
+	// (ReplyAuthorization).
+	ReplyAuthorizations map[string]string
 }
 
 // NoteQuotesOf reads what the Notes of statusIDs say of quotes, as FindQuote, FindInteractionPolicy,
-// and FederatedQuotePage read it for one status, with a number of queries that does not grow with
-// statusIDs.
+// FederatedQuotePage, and ReplyAuthorization read it for one status, with a number of queries
+// that does not grow with statusIDs.
 func (s *Service) NoteQuotesOf(ctx context.Context, statusIDs []string) (NoteQuotes, error) {
 	out := NoteQuotes{Quotes: map[string]content.Quote{}, States: map[string]content.QuoteState{},
-		Policies: map[string]content.InteractionPolicy{}, Links: map[string]FederatedQuoteLink{}}
+		Policies: map[string]content.InteractionPolicy{}, Links: map[string]FederatedQuoteLink{}, ReplyAuthorizations: map[string]string{}}
 	if s.d.Quotes == nil || len(statusIDs) == 0 {
 		return out, nil
 	}
 	var err error
 	if out.Quotes, err = s.d.Quotes.FindQuotes(ctx, statusIDs); err != nil {
+		return NoteQuotes{}, err
+	}
+	if out.ReplyAuthorizations, err = s.d.Quotes.ReplyAuthorizationsOf(ctx, statusIDs); err != nil {
 		return NoteQuotes{}, err
 	}
 	if out.Policies, err = s.d.Quotes.FindInteractionPolicies(ctx, statusIDs); err != nil {
@@ -314,4 +324,35 @@ func (s *Service) actorURI(ctx context.Context, accountID string) (string, error
 		return "", nil
 	}
 	return a.Account.URI, err
+}
+
+// ReplyAuthorization returns the authorization of the approved reply request of the status
+// statusID, which its Note names (replyAuthorization, ADR-0155 §7); "" for a status without one.
+func (s *Service) ReplyAuthorization(ctx context.Context, statusID string) (string, error) {
+	if s.d.Quotes == nil {
+		return "", nil
+	}
+	m, err := s.d.Quotes.ReplyAuthorizationsOf(ctx, []string{statusID})
+	return m[statusID], err
+}
+
+// InteractionAuthorizationOf returns the authorization of the approved request of the
+// interaction interactingURI of kind with targetURI: what the Announce of an approved boost names
+// (announceAuthorization, ADR-0155 §7); "" for an interaction without one.
+func (s *Service) InteractionAuthorizationOf(ctx context.Context, kind content.InteractionKind, interactingURI, targetURI string) (string, error) {
+	if s.d.Quotes == nil {
+		return "", nil
+	}
+	r, err := s.d.Quotes.FindInteractionRequestFor(ctx, nil, kind, interactingURI, targetURI)
+	if errors.Is(err, ErrNotFound) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	st, err := s.d.Quotes.FindInteractionState(ctx, nil, r.ID)
+	if errors.Is(err, ErrNotFound) || err == nil && st.State != content.InteractionRequestAccepted {
+		return "", nil
+	}
+	return st.AuthorizationURI, err
 }

@@ -87,6 +87,11 @@ const (
 	// ActivityQuoteRequest asks the author of a post to approve a quote of it (FEP-044f,
 	// ADR-0069 §3): object is the quoted post, instrument the quoting one.
 	ActivityQuoteRequest ActivityType = "QuoteRequest"
+	// ActivityReplyRequest and ActivityAnnounceRequest ask the author of a post to approve a
+	// reply to it or a boost of it (GoToSocial's interaction policies, ADR-0155 §6): object is
+	// the post, instrument the reply or the Announce.
+	ActivityReplyRequest    ActivityType = "ReplyRequest"
+	ActivityAnnounceRequest ActivityType = "AnnounceRequest"
 	// ActivityUnknown is any other type of a document with an actor; RawType keeps the name.
 	ActivityUnknown ActivityType = ""
 )
@@ -109,6 +114,10 @@ const (
 	// ObjectQuoteAuthorization is the stamp by which the author of a post approves a quote of it
 	// (FEP-044f, ADR-0069 §2).
 	ObjectQuoteAuthorization ObjectType = "QuoteAuthorization"
+	// ObjectReplyAuthorization and ObjectAnnounceAuthorization are the stamps by which the author
+	// of a post approves a reply to it or a boost of it (GoToSocial's interaction policies).
+	ObjectReplyAuthorization    ObjectType = "ReplyAuthorization"
+	ObjectAnnounceAuthorization ObjectType = "AnnounceAuthorization"
 	// ObjectUnknown is any other type of a document without an actor; RawType keeps the name.
 	ObjectUnknown ObjectType = ""
 )
@@ -208,10 +217,15 @@ type Activity struct {
 	// EmojiReact; empty for a plain Like.
 	Reaction string
 	Emojis   []Emoji
-	// Instrument is the instrument of a QuoteRequest: the quoting post.
+	// Instrument is the instrument of a QuoteRequest, ReplyRequest, or AnnounceRequest: the
+	// quoting post, the reply, or the Announce.
 	Instrument Ref
-	// Result is the result of an Accept: the QuoteAuthorization of an accepted QuoteRequest.
+	// Result is the result of an Accept: the QuoteAuthorization, ReplyAuthorization, or
+	// AnnounceAuthorization of an accepted request.
 	Result IRI
+	// Authorization is the announceAuthorization of an Announce: the AnnounceAuthorization that
+	// approves it, "" for none.
+	Authorization IRI
 }
 
 // Object returns the first object of a, or the zero Ref.
@@ -316,10 +330,13 @@ type Object struct {
 	CanReply    *CanInteract
 	CanAnnounce *CanInteract
 	CanQuote    *CanInteract
-	// InteractingObject and InteractionTarget are the quote and the quoted post of a
-	// QuoteAuthorization (FEP-044f).
+	// InteractingObject and InteractionTarget are the interaction and the post of a
+	// QuoteAuthorization (FEP-044f), ReplyAuthorization, or AnnounceAuthorization.
 	InteractingObject IRI
 	InteractionTarget IRI
+	// ReplyAuthorization is the replyAuthorization of a reply: the ReplyAuthorization that
+	// approves it, "" for none.
+	ReplyAuthorization IRI
 }
 
 // CanInteract is who may interact with a post by one kind (a can* of GoToSocial's

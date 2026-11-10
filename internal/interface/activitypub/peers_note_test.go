@@ -304,8 +304,14 @@ func (noteQuote) FederatedQuotePage(context.Context, string) (string, bool, erro
 	return noteQuotedPage, true, nil
 }
 
-func (noteQuote) FindQuoteAuthorization(context.Context, string) (appcontent.QuoteAuthorization, error) {
-	return appcontent.QuoteAuthorization{}, appcontent.ErrNotFound
+func (noteQuote) ReplyAuthorization(context.Context, string) (string, error) { return "", nil }
+
+func (noteQuote) InteractionAuthorizationOf(context.Context, appcontent.InteractionKind, string, string) (string, error) {
+	return "", nil
+}
+
+func (noteQuote) FindInteractionAuthorization(context.Context, appcontent.InteractionKind, string) (appcontent.InteractionAuthorization, error) {
+	return appcontent.InteractionAuthorization{}, appcontent.ErrNotFound
 }
 
 // TestCollectionsServeTheQuotingNote checks a quoting status in the outbox and featured: the Note

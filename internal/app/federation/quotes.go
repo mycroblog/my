@@ -24,8 +24,8 @@ import (
 // quote (ADR-0069 §2).
 const JobVerifyQuote = "federation.verify_quote"
 
-// ErrQuoteUnauthorized reports a QuoteAuthorization that does not approve the quote that names
-// it.
+// ErrQuoteUnauthorized reports an authorization (a QuoteAuthorization, ReplyAuthorization, or
+// AnnounceAuthorization) that does not approve the interaction that names it.
 var ErrQuoteUnauthorized = errors.New("federation: the QuoteAuthorization does not approve the quote")
 
 // RemoteQuotes is the part of the content module's public API that records the approvals of the
@@ -234,6 +234,14 @@ func lastSegment(uri string) string { return uri[strings.LastIndexByte(uri, '/')
 // issued it for the quote of quoted by quoting (FEP-044f): it is attributed to author, on the
 // author's host, and names the two posts.
 func checkQuoteAuthorization(ctx context.Context, fetcher DocumentFetcher, uri, author, quoting, quotedURI federation.IRI) error {
+	return checkAuthorization(ctx, fetcher, federation.ObjectQuoteAuthorization, uri, author, quoting, quotedURI)
+}
+
+// checkAuthorization fetches the authorization uri of type typ and checks that author issued it
+// for the interaction interacting with target (FEP-044f, ADR-0155 §7): it is attributed to
+// author, on the author's host, and names the two. One that does not fails with
+// ErrQuoteUnauthorized.
+func checkAuthorization(ctx context.Context, fetcher DocumentFetcher, typ federation.ObjectType, uri, author, interacting, target federation.IRI) error {
 	if uri.Host() == "" || uri.Host() != author.Host() {
 		return fmt.Errorf("%w: %s is not on the host of %s", ErrQuoteUnauthorized, uri, author)
 	}
@@ -243,12 +251,12 @@ func checkQuoteAuthorization(ctx context.Context, fetcher DocumentFetcher, uri, 
 	}
 	obj := got.Document.Object
 	switch {
-	case obj == nil || obj.Type != federation.ObjectQuoteAuthorization || obj.ID != uri:
-		return fmt.Errorf("%w: %s is not a QuoteAuthorization", ErrQuoteUnauthorized, uri)
+	case obj == nil || obj.Type != typ || obj.ID != uri:
+		return fmt.Errorf("%w: %s is not a %s", ErrQuoteUnauthorized, uri, typ)
 	case obj.AttributedTo != author:
 		return fmt.Errorf("%w: %s is attributed to %q, not to %s", ErrQuoteUnauthorized, uri, obj.AttributedTo, author)
-	case obj.InteractingObject != quoting || obj.InteractionTarget != quotedURI:
-		return fmt.Errorf("%w: %s approves %q quoting %q", ErrQuoteUnauthorized, uri, obj.InteractingObject, obj.InteractionTarget)
+	case obj.InteractingObject != interacting || obj.InteractionTarget != target:
+		return fmt.Errorf("%w: %s approves %q with %q", ErrQuoteUnauthorized, uri, obj.InteractingObject, obj.InteractionTarget)
 	}
 	return nil
 }

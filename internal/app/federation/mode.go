@@ -89,7 +89,8 @@ func allowsAny(mode federation.Mode, flows ...federation.Flow) bool {
 //   - Follow (follow_in) passes when the mode allows it or refuses it: the follow handler answers
 //     a refused one with a Reject.
 //   - Accept and Reject answer a Follow of a local account (follow_out), of the instance actor's
-//     membership of a relay, or a QuoteRequest (publish); they pass when one of those flows does,
+//     membership of a relay, or a QuoteRequest, ReplyRequest, or AnnounceRequest (publish); they
+//     pass when one of those flows does,
 //     and their handlers check their own.
 //   - Undo passes by the activity it takes back: Follow (follow_in), Block (protect), Accept
 //     (follow_out), and the reactions (ingest); an Undo whose object is not embedded passes when
@@ -98,8 +99,8 @@ func allowsAny(mode federation.Mode, flows ...federation.Flow) bool {
 //   - Like and EmojiReact, which are about local posts: ingest and publish, since the reactions
 //     to posts that the mode does not publish are not shown anywhere.
 //   - Announce: ingest, and publish too when it boosts a local post.
-//   - QuoteRequest, about a local post: publish; its handler refuses it with a Reject when the
-//     mode does not take the quoting post in.
+//   - QuoteRequest, ReplyRequest, and AnnounceRequest, about a local post: publish; their handlers
+//     refuse them with a Reject when the mode does not take the interaction in.
 //   - Move: follow_out, which it moves to the new actor.
 //   - Create, Update, Delete, Add, Remove, and every other type: ingest.
 func receives(mode federation.Mode, act *federation.Activity, host string) bool {
@@ -129,7 +130,7 @@ func receives(mode federation.Mode, act *federation.Activity, host string) bool 
 			return federation.Allows(mode, federation.FlowIngest) && federation.Allows(mode, federation.FlowPublish)
 		}
 		return federation.Allows(mode, federation.FlowIngest)
-	case federation.ActivityQuoteRequest:
+	case federation.ActivityQuoteRequest, federation.ActivityReplyRequest, federation.ActivityAnnounceRequest:
 		return federation.Allows(mode, federation.FlowPublish)
 	case federation.ActivityMove:
 		return federation.Allows(mode, federation.FlowFollowOut)

@@ -9,80 +9,7 @@ package contentgen
 
 import (
 	"context"
-	"time"
 )
-
-const deleteAllStatusQuoteStates = `-- name: DeleteAllStatusQuoteStates :exec
-DELETE FROM status_quote_states
-`
-
-func (q *Queries) DeleteAllStatusQuoteStates(ctx context.Context) error {
-	_, err := q.db.Exec(ctx, deleteAllStatusQuoteStates)
-	return err
-}
-
-const getQuoteAuthorization = `-- name: GetQuoteAuthorization :one
-SELECT a.id, a.quoting_uri, a.quoting_account_id, a.quoted_status_id, a.created_at, r.revoked_at
-FROM quote_authorizations a LEFT JOIN quote_authorization_revocations r ON r.authorization_id = a.id
-WHERE a.id = $1::uuid
-`
-
-type GetQuoteAuthorizationRow struct {
-	ID               string
-	QuotingUri       string
-	QuotingAccountID string
-	QuotedStatusID   string
-	CreatedAt        time.Time
-	RevokedAt        *time.Time
-}
-
-func (q *Queries) GetQuoteAuthorization(ctx context.Context, id string) (GetQuoteAuthorizationRow, error) {
-	row := q.db.QueryRow(ctx, getQuoteAuthorization, id)
-	var i GetQuoteAuthorizationRow
-	err := row.Scan(
-		&i.ID,
-		&i.QuotingUri,
-		&i.QuotingAccountID,
-		&i.QuotedStatusID,
-		&i.CreatedAt,
-		&i.RevokedAt,
-	)
-	return i, err
-}
-
-const getQuoteAuthorizationFor = `-- name: GetQuoteAuthorizationFor :one
-SELECT a.id, a.quoting_uri, a.quoting_account_id, a.quoted_status_id, a.created_at, r.revoked_at
-FROM quote_authorizations a LEFT JOIN quote_authorization_revocations r ON r.authorization_id = a.id
-WHERE a.quoting_uri = $1 AND a.quoted_status_id = $2::uuid
-`
-
-type GetQuoteAuthorizationForParams struct {
-	QuotingUri     string
-	QuotedStatusID string
-}
-
-type GetQuoteAuthorizationForRow struct {
-	ID               string
-	QuotingUri       string
-	QuotingAccountID string
-	QuotedStatusID   string
-	CreatedAt        time.Time
-	RevokedAt        *time.Time
-}
-
-func (q *Queries) GetQuoteAuthorizationFor(ctx context.Context, arg GetQuoteAuthorizationForParams) (GetQuoteAuthorizationForRow, error) {
-	row := q.db.QueryRow(ctx, getQuoteAuthorizationFor, arg.QuotingUri, arg.QuotedStatusID)
-	var i GetQuoteAuthorizationForRow
-	err := row.Scan(
-		&i.ID,
-		&i.QuotingUri,
-		&i.QuotingAccountID,
-		&i.QuotedStatusID,
-		&i.CreatedAt,
-		&i.RevokedAt,
-	)
-	return i, err
-}
 
 const getStatusQuote = `-- name: GetStatusQuote :one
 SELECT status_id, quoted_uri, form FROM status_quotes WHERE status_id = $1::uuid
@@ -96,61 +23,36 @@ func (q *Queries) GetStatusQuote(ctx context.Context, statusID string) (StatusQu
 }
 
 const getStatusQuoteState = `-- name: GetStatusQuoteState :one
-SELECT status_id, state, authorization_uri FROM status_quote_states WHERE status_id = $1::uuid
+
+SELECT q.status_id, q.form, (d.status_id IS NOT NULL)::bool AS detached, COALESCE(rs.state, '')::text AS state, rs.authorization_uri
+FROM status_quotes q LEFT JOIN statuses s ON s.id = q.status_id
+LEFT JOIN status_quote_detachments d ON d.status_id = q.status_id
+LEFT JOIN interaction_requests r ON r.kind = 'quote' AND r.interacting_uri = s.uri AND r.target_uri = q.quoted_uri
+LEFT JOIN interaction_request_states rs ON rs.request_id = r.id
+WHERE q.status_id = $1::uuid
 `
 
-func (q *Queries) GetStatusQuoteState(ctx context.Context, statusID string) (StatusQuoteState, error) {
+type GetStatusQuoteStateRow struct {
+	StatusID         string
+	Form             string
+	Detached         bool
+	State            string
+	AuthorizationUri *string
+}
+
+// The state of a quote is derived from its form, its detachment, and the state of its request
+// (content.QuoteStateFrom): state is empty while the quote has no request.
+func (q *Queries) GetStatusQuoteState(ctx context.Context, statusID string) (GetStatusQuoteStateRow, error) {
 	row := q.db.QueryRow(ctx, getStatusQuoteState, statusID)
-	var i StatusQuoteState
-	err := row.Scan(&i.StatusID, &i.State, &i.AuthorizationUri)
-	return i, err
-}
-
-const insertQuoteAuthorization = `-- name: InsertQuoteAuthorization :execrows
-INSERT INTO quote_authorizations (id, quoting_uri, quoting_account_id, quoted_status_id, created_at)
-VALUES ($1, $2, $3, $4, $5)
-ON CONFLICT (quoting_uri, quoted_status_id) DO NOTHING
-`
-
-type InsertQuoteAuthorizationParams struct {
-	ID               string
-	QuotingUri       string
-	QuotingAccountID string
-	QuotedStatusID   string
-	CreatedAt        time.Time
-}
-
-// InsertQuoteAuthorization records an approval; a quoting status approved already keeps its own.
-func (q *Queries) InsertQuoteAuthorization(ctx context.Context, arg InsertQuoteAuthorizationParams) (int64, error) {
-	result, err := q.db.Exec(ctx, insertQuoteAuthorization,
-		arg.ID,
-		arg.QuotingUri,
-		arg.QuotingAccountID,
-		arg.QuotedStatusID,
-		arg.CreatedAt,
+	var i GetStatusQuoteStateRow
+	err := row.Scan(
+		&i.StatusID,
+		&i.Form,
+		&i.Detached,
+		&i.State,
+		&i.AuthorizationUri,
 	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
-}
-
-const insertQuoteAuthorizationRevocation = `-- name: InsertQuoteAuthorizationRevocation :execrows
-INSERT INTO quote_authorization_revocations (authorization_id, revoked_at) VALUES ($1, $2)
-ON CONFLICT (authorization_id) DO NOTHING
-`
-
-type InsertQuoteAuthorizationRevocationParams struct {
-	AuthorizationID string
-	RevokedAt       time.Time
-}
-
-func (q *Queries) InsertQuoteAuthorizationRevocation(ctx context.Context, arg InsertQuoteAuthorizationRevocationParams) (int64, error) {
-	result, err := q.db.Exec(ctx, insertQuoteAuthorizationRevocation, arg.AuthorizationID, arg.RevokedAt)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected(), nil
+	return i, err
 }
 
 const insertStatusQuote = `-- name: InsertStatusQuote :execrows
@@ -178,100 +80,41 @@ func (q *Queries) InsertStatusQuote(ctx context.Context, arg InsertStatusQuotePa
 	return result.RowsAffected(), nil
 }
 
-const insertStatusQuoteEvent = `-- name: InsertStatusQuoteEvent :exec
-INSERT INTO status_quote_events (id, status_id, kind, authorization_uri, occurred_at)
-VALUES ($1, $2, $3, $4, $5)
+const listQuoteStatesByAuthorization = `-- name: ListQuoteStatesByAuthorization :many
+SELECT q.status_id, q.form, (d.status_id IS NOT NULL)::bool AS detached, rs.state, rs.authorization_uri
+FROM interaction_request_states rs JOIN interaction_requests r ON r.id = rs.request_id AND r.kind = 'quote'
+JOIN statuses s ON s.uri = r.interacting_uri
+JOIN status_quotes q ON q.status_id = s.id AND q.quoted_uri = r.target_uri
+LEFT JOIN status_quote_detachments d ON d.status_id = q.status_id
+WHERE rs.authorization_uri = $1 ORDER BY q.status_id
 `
 
-type InsertStatusQuoteEventParams struct {
-	ID               string
+type ListQuoteStatesByAuthorizationRow struct {
 	StatusID         string
-	Kind             string
+	Form             string
+	Detached         bool
+	State            string
 	AuthorizationUri *string
-	OccurredAt       time.Time
 }
 
-func (q *Queries) InsertStatusQuoteEvent(ctx context.Context, arg InsertStatusQuoteEventParams) error {
-	_, err := q.db.Exec(ctx, insertStatusQuoteEvent,
-		arg.ID,
-		arg.StatusID,
-		arg.Kind,
-		arg.AuthorizationUri,
-		arg.OccurredAt,
-	)
-	return err
-}
-
-const listAllStatusQuoteStates = `-- name: ListAllStatusQuoteStates :many
-SELECT status_id, state, authorization_uri FROM status_quote_states ORDER BY status_id
-`
-
-func (q *Queries) ListAllStatusQuoteStates(ctx context.Context) ([]StatusQuoteState, error) {
-	rows, err := q.db.Query(ctx, listAllStatusQuoteStates)
+// ListQuoteStatesByAuthorization returns the states of the quotes whose request the
+// QuoteAuthorization authorization_uri accepted.
+func (q *Queries) ListQuoteStatesByAuthorization(ctx context.Context, authorizationUri *string) ([]ListQuoteStatesByAuthorizationRow, error) {
+	rows, err := q.db.Query(ctx, listQuoteStatesByAuthorization, authorizationUri)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []StatusQuoteState{}
+	items := []ListQuoteStatesByAuthorizationRow{}
 	for rows.Next() {
-		var i StatusQuoteState
-		if err := rows.Scan(&i.StatusID, &i.State, &i.AuthorizationUri); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listStatusQuoteEvents = `-- name: ListStatusQuoteEvents :many
-SELECT id, status_id, kind, authorization_uri, occurred_at FROM status_quote_events
-WHERE status_id = $1::uuid ORDER BY id
-`
-
-func (q *Queries) ListStatusQuoteEvents(ctx context.Context, statusID string) ([]StatusQuoteEvent, error) {
-	rows, err := q.db.Query(ctx, listStatusQuoteEvents, statusID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []StatusQuoteEvent{}
-	for rows.Next() {
-		var i StatusQuoteEvent
+		var i ListQuoteStatesByAuthorizationRow
 		if err := rows.Scan(
-			&i.ID,
 			&i.StatusID,
-			&i.Kind,
+			&i.Form,
+			&i.Detached,
+			&i.State,
 			&i.AuthorizationUri,
-			&i.OccurredAt,
 		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listStatusQuoteStatesByAuthorization = `-- name: ListStatusQuoteStatesByAuthorization :many
-SELECT status_id, state, authorization_uri FROM status_quote_states
-WHERE authorization_uri = $1 ORDER BY status_id
-`
-
-func (q *Queries) ListStatusQuoteStatesByAuthorization(ctx context.Context, authorizationUri *string) ([]StatusQuoteState, error) {
-	rows, err := q.db.Query(ctx, listStatusQuoteStatesByAuthorization, authorizationUri)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []StatusQuoteState{}
-	for rows.Next() {
-		var i StatusQuoteState
-		if err := rows.Scan(&i.StatusID, &i.State, &i.AuthorizationUri); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -345,64 +188,11 @@ func (q *Queries) ListStatusQuotesOf(ctx context.Context, arg ListStatusQuotesOf
 	return items, nil
 }
 
-const purgeQuoteAuthorizationRevocations = `-- name: PurgeQuoteAuthorizationRevocations :exec
-DELETE FROM quote_authorization_revocations WHERE authorization_id IN (
-  SELECT a.id FROM quote_authorizations a WHERE a.quoted_status_id = ANY($1::uuid[]))
-`
-
-func (q *Queries) PurgeQuoteAuthorizationRevocations(ctx context.Context, ids []string) error {
-	_, err := q.db.Exec(ctx, purgeQuoteAuthorizationRevocations, ids)
-	return err
-}
-
-const purgeQuoteAuthorizations = `-- name: PurgeQuoteAuthorizations :exec
-DELETE FROM quote_authorizations WHERE quoted_status_id = ANY($1::uuid[])
-`
-
-func (q *Queries) PurgeQuoteAuthorizations(ctx context.Context, ids []string) error {
-	_, err := q.db.Exec(ctx, purgeQuoteAuthorizations, ids)
-	return err
-}
-
-const purgeStatusQuoteEvents = `-- name: PurgeStatusQuoteEvents :exec
-DELETE FROM status_quote_events WHERE status_id = ANY($1::uuid[])
-`
-
-func (q *Queries) PurgeStatusQuoteEvents(ctx context.Context, ids []string) error {
-	_, err := q.db.Exec(ctx, purgeStatusQuoteEvents, ids)
-	return err
-}
-
-const purgeStatusQuoteStates = `-- name: PurgeStatusQuoteStates :exec
-DELETE FROM status_quote_states WHERE status_id = ANY($1::uuid[])
-`
-
-func (q *Queries) PurgeStatusQuoteStates(ctx context.Context, ids []string) error {
-	_, err := q.db.Exec(ctx, purgeStatusQuoteStates, ids)
-	return err
-}
-
 const purgeStatusQuotes = `-- name: PurgeStatusQuotes :exec
 DELETE FROM status_quotes WHERE status_id = ANY($1::uuid[])
 `
 
 func (q *Queries) PurgeStatusQuotes(ctx context.Context, ids []string) error {
 	_, err := q.db.Exec(ctx, purgeStatusQuotes, ids)
-	return err
-}
-
-const upsertStatusQuoteState = `-- name: UpsertStatusQuoteState :exec
-INSERT INTO status_quote_states (status_id, state, authorization_uri) VALUES ($1, $2, $3)
-ON CONFLICT (status_id) DO UPDATE SET state = excluded.state, authorization_uri = excluded.authorization_uri
-`
-
-type UpsertStatusQuoteStateParams struct {
-	StatusID         string
-	State            string
-	AuthorizationUri *string
-}
-
-func (q *Queries) UpsertStatusQuoteState(ctx context.Context, arg UpsertStatusQuoteStateParams) error {
-	_, err := q.db.Exec(ctx, upsertStatusQuoteState, arg.StatusID, arg.State, arg.AuthorizationUri)
 	return err
 }

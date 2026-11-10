@@ -40,6 +40,7 @@ const notificationGroupLabels: Readonly<Record<NotificationGroup, ClientMessageK
   account_moved: "client:settings.notifications.group.account_moved",
   voice: "client:settings.notifications.group.voice",
   status: "client:settings.notifications.group.status",
+  interaction_request: "client:settings.notifications.group.interaction_request",
   admin_report: "client:settings.notifications.group.admin_report",
   admin_sign_up: "client:settings.notifications.group.admin_sign_up",
   admin_appeal: "client:settings.notifications.group.admin_appeal",

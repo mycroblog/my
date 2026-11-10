@@ -207,6 +207,11 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   status: "status",
   announcement: "announcement",
   auto_delete_limit: "notice",
+  reply_request: "mention",
+  boost_request: "boost",
+  quote_request: "quote",
+  interaction_accepted: "notice",
+  interaction_rejected: "notice",
 };
 
 const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
@@ -246,6 +251,11 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   voice_room_invited: "client:notifications.type.voice_room_invited",
   admin_error_group: "client:notifications.type.admin_error_group",
   status: "client:notifications.type.status",
+  reply_request: "client:notifications.type.reply_request",
+  boost_request: "client:notifications.type.boost_request",
+  quote_request: "client:notifications.type.quote_request",
+  interaction_accepted: "client:notifications.type.interaction_accepted",
+  interaction_rejected: "client:notifications.type.interaction_rejected",
 };
 
 /** The sentences of a `service_closure` that tells of a change of the dates or of a withdrawal. */

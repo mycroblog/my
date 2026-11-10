@@ -446,5 +446,25 @@
   "notifications.link.auto_delete": {
     "defaultMessage": "Check which posts will go",
     "description": "Link in the notification of the server's maximum of the automatic deletion to the settings of the automatic deletion, which preview what goes."
+  },
+  "notifications.type.reply_request": {
+    "defaultMessage": "{name} asked to reply to your post",
+    "description": "Notification sentence. {name} is the display name of the account whose reply to the user's post waits for the user's approval."
+  },
+  "notifications.type.boost_request": {
+    "defaultMessage": "{name} asked to boost your post",
+    "description": "Notification sentence. {name} is the display name of the account whose boost of the user's post waits for the user's approval."
+  },
+  "notifications.type.quote_request": {
+    "defaultMessage": "{name} asked to quote your post",
+    "description": "Notification sentence. {name} is the display name of the account whose quote of the user's post waits for the user's approval."
+  },
+  "notifications.type.interaction_accepted": {
+    "defaultMessage": "{name} approved your reply, boost, or quote",
+    "description": "Notification sentence. {name} is the display name of the author of the post, which the notification shows, who approved the user's reply to it, boost of it, or quote of it."
+  },
+  "notifications.type.interaction_rejected": {
+    "defaultMessage": "{name} declined your reply, boost, or quote",
+    "description": "Notification sentence. {name} is the display name of the author of the post, which the notification shows, who declined the user's reply to it, boost of it, or quote of it."
   }
 }

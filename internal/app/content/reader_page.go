@@ -11,6 +11,7 @@ import (
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
@@ -83,6 +84,16 @@ func (r *Reader) page(ctx context.Context, viewer Viewer, ids []string) (*Reader
 	if page.deletions, err = r.d.Statuses.FindDeletions(ctx, live); err != nil {
 		return nil, err
 	}
+	var localReplies []string
+	for _, id := range live {
+		if st := statuses[id]; st.IsLocal && st.InReplyToURI != "" {
+			localReplies = append(localReplies, id)
+		}
+	}
+	page.heldAmong = localReplies
+	if page.held, err = r.d.Statuses.HeldRepliesAmong(ctx, nil, localReplies); err != nil {
+		return nil, err
+	}
 	if page.revisions, err = r.d.Statuses.FindCurrentRevisions(ctx, live); err != nil {
 		return nil, err
 	}
@@ -110,6 +121,15 @@ func (r *Reader) page(ctx context.Context, viewer Viewer, ids []string) (*Reader
 		quotes.page = live
 		if quotes.policies, err = r.d.Quotes.FindInteractionPolicies(ctx, live); err != nil {
 			return nil, err
+		}
+		if viewer.Kind == ViewerLocal && viewer.AccountID != "" {
+			quotes.viewer = viewer.AccountID
+			for _, id := range live {
+				quotes.uris = append(quotes.uris, statuses[id].URI)
+			}
+			if quotes.own, err = r.d.Quotes.ListOwnInteractions(ctx, viewer.AccountID, quotes.uris); err != nil {
+				return nil, err
+			}
 		}
 	}
 	var accountIDs, authors, tagIDs []string
@@ -198,6 +218,9 @@ type pageStatuses struct {
 	byURI     map[string]string
 	statuses  map[string]content.Status
 	deletions map[string]content.Deletion
+	// held are the held replies among the local replies heldAmong of the page.
+	held      map[string]bool
+	heldAmong []string
 	revisions map[string]content.Revision
 	counters  map[string]content.Counters
 	tags      map[string]content.Tag
@@ -267,6 +290,21 @@ func (p *pageStatuses) FindStatusByURI(ctx context.Context, uri string) (content
 		return content.Status{}, fmt.Errorf("status %s: %w", uri, ErrNotFound)
 	}
 	return p.Repository.FindStatusByURI(ctx, uri)
+}
+
+// HeldRepliesAmong answers the held replies among the local replies of the page from what the page
+// read, and reads the others.
+func (p *pageStatuses) HeldRepliesAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error) {
+	if tx != nil || slices.ContainsFunc(ids, func(id string) bool { return !slices.Contains(p.heldAmong, id) && p.statuses[id].IsLocal }) {
+		return p.Repository.HeldRepliesAmong(ctx, tx, ids)
+	}
+	out := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		if p.held[id] {
+			out[id] = true
+		}
+	}
+	return out, nil
 }
 
 // FindDeletion returns the deletion of a status of the page as it was read, and reads any other.
@@ -564,6 +602,25 @@ type pageQuotes struct {
 	quotes   map[string]content.Quote
 	states   map[string]content.QuoteState
 	policies map[string]content.InteractionPolicy
+	// viewer and uris are the account and the statuses whose own interactions own holds.
+	viewer string
+	uris   []string
+	own    []OwnInteraction
+}
+
+// ListOwnInteractions answers the interactions of the page's viewer with statuses of the page
+// from what the page read, and reads the others.
+func (p *pageQuotes) ListOwnInteractions(ctx context.Context, accountID string, uris []string) ([]OwnInteraction, error) {
+	if accountID != p.viewer || p.viewer == "" || slices.ContainsFunc(uris, func(u string) bool { return !slices.Contains(p.uris, u) }) {
+		return p.QuoteRepository.ListOwnInteractions(ctx, accountID, uris)
+	}
+	var out []OwnInteraction
+	for _, o := range p.own {
+		if slices.Contains(uris, o.InteractingURI) && o.Kind == content.InteractionReply || slices.Contains(uris, o.TargetURI) && o.Kind == content.InteractionAnnounce {
+			out = append(out, o)
+		}
+	}
+	return out, nil
 }
 
 // quotePart returns the part of a status of the page from m, failing with ErrNotFound as its read

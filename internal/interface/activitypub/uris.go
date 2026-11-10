@@ -5,6 +5,7 @@ package activitypub
 import (
 	"strings"
 
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/account"
@@ -23,9 +24,12 @@ const (
 	activitySegment = "activity"
 )
 
-// quoteAuthorizationsPrefix is the path of the IRIs of the QuoteAuthorizations of this server
-// before the UUID (ADR-0069 §1).
-const quoteAuthorizationsPrefix = "/ap/quote_authorizations/"
+// authorizationsPrefix returns the path of the IRIs of this server's authorizations of kind before
+// the UUID (ADR-0155 §8): /ap/quote_authorizations/ (ADR-0069 §1), /ap/reply_authorizations/,
+// and /ap/announce_authorizations/.
+func authorizationsPrefix(kind appcontent.InteractionKind) string {
+	return "/ap/" + appcontent.AuthorizationSegment(kind) + "/"
+}
 
 // contextsPrefix is the path of the IRIs of this server's conversations before the UUID
 // (ADR-0018, ADR-0154 §4).

@@ -146,6 +146,10 @@ type Deps struct {
 	RemoteMedia RemoteMediaRecorder
 	// Quotes stores the quotes of statuses (ADR-0069); nil records none.
 	Quotes QuoteRepository
+	// ReconsiderRequests approves the pending requests of interactions with a status that its new
+	// rules admit at once (Interactions.ReconsiderRequests, ADR-0155 §3); nil leaves them to the
+	// author.
+	ReconsiderRequests func(ctx context.Context, statusID string) error
 	// MaxStatusLength returns the current max_status_length instance setting (FR-101); it is
 	// read per command, so that changes apply at once.
 	MaxStatusLength func(ctx context.Context) (int, error)
@@ -358,7 +362,10 @@ type PreparedCreate struct {
 	tags        []content.Tag
 	interaction content.InteractionSettings
 	quote       *localQuote
-	tally       *content.PollTallyObservation
+	// reply is the status replied to when the reply goes through a request (ADR-0155 §7), nil
+	// for none: the reply is held, shown to its author alone, until the request is approved.
+	reply *content.Status
+	tally *content.PollTallyObservation
 	// media are the decisions of media.check on the attachments that CreateTx acts on.
 	media []mediaVerdict
 	now   time.Time
@@ -399,8 +406,13 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 	if err := repo.InsertRevision(ctx, tx, rev); err != nil {
 		return Post{}, err
 	}
-	if err := tx.Emit(ctx, StatusCreated{Status: p.st, Revision: rev, ConversationID: ins.ConversationID}); err != nil {
+	if err := tx.Emit(ctx, StatusCreated{Status: p.st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: p.reply != nil}); err != nil {
 		return Post{}, err
+	}
+	if p.reply != nil {
+		if err := s.requestReply(ctx, tx, p.st, *p.reply); err != nil {
+			return Post{}, err
+		}
 	}
 	if err := s.applyAttachmentVerdicts(ctx, tx, p.st.ID, p.media); err != nil {
 		return Post{}, err
@@ -458,15 +470,19 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 		Visibility:      content.EffectiveVisibility(in.Visibility, restrictions.Author),
 		PublishedAt:     now,
 	}
+	var reply *content.Status
 	if in.InReplyToID != "" {
 		if !restrictions.CanInteract() {
 			return PreparedCreate{}, fmt.Errorf("account %s: %w", in.AuthorAccountID, ErrInteractionRestricted)
 		}
-		parent, err := s.replyTarget(ctx, in.AuthorAccountID, in.InReplyToID)
+		parent, requested, err := s.replyTarget(ctx, in.AuthorAccountID, in.InReplyToID)
 		if err != nil {
 			return PreparedCreate{}, err
 		}
 		st.InReplyToURI = parent.URI
+		if requested {
+			reply = &parent
+		}
 	}
 	interaction, err := s.newInteractionSettings(ctx, author, in.InteractionPolicy)
 	if err != nil {
@@ -501,7 +517,7 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 	if err != nil {
 		return PreparedCreate{}, err
 	}
-	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, interaction: interaction, quote: quote, tally: tally, media: verdicts, now: now}, nil
+	return PreparedCreate{st: st, local: local, rev: rev, tags: tags, interaction: interaction, quote: quote, reply: reply, tally: tally, media: verdicts, now: now}, nil
 }
 
 // Replay returns the post that an author posted with an Idempotency-Key, so that a retry is
@@ -534,19 +550,34 @@ func (s *Service) replay(ctx context.Context, authorID, key string) (Post, error
 	return post, err
 }
 
-// replyTarget returns the status that authorID replies to, provided that authorID may see it.
-// A status that does not exist, is deleted, or is hidden from the author fails alike with
-// ErrReplyTargetNotFound, so that a reply does not reveal it; one whose reply rules do not admit
-// the author at once with ErrReplyNotAllowed (content.MayInteract, ADR-0155 §3, §7).
-func (s *Service) replyTarget(ctx context.Context, authorID, statusID string) (content.Status, error) {
+// replyTarget returns the status that authorID replies to, provided that authorID may see it,
+// and whether the reply goes through a request (ADR-0155 §7): one that waits for the author's
+// approval, or one with a remote status that its server must approve. A status that does not
+// exist, is deleted, or is hidden from the author fails alike with ErrReplyTargetNotFound, so
+// that a reply does not reveal it; one whose reply rules do not admit the author at all with
+// ErrReplyNotAllowed (content.MayInteract, ADR-0155 §3).
+func (s *Service) replyTarget(ctx context.Context, authorID, statusID string) (content.Status, bool, error) {
 	st, in, err := s.visibleTo(ctx, authorID, statusID)
 	if err != nil {
-		return content.Status{}, err
+		return content.Status{}, false, err
 	}
-	if err := s.interactionReaders().localMayInteract(ctx, content.InteractionReply, authorID, &in, st, ErrReplyNotAllowed); err != nil {
-		return content.Status{}, err
+	v, err := s.interactionReaders().localVerdict(ctx, content.InteractionReply, authorID, &in, st, ErrReplyNotAllowed)
+	if err != nil {
+		return content.Status{}, false, err
 	}
-	return st, nil
+	return st, s.d.Quotes != nil && v.requested(st), nil
+}
+
+// requestReply records in tx the request of the local reply st to parent, pending: the reply is
+// held, and shown to its author alone, until the request is approved (ADR-0155 §7).
+func (s *Service) requestReply(ctx context.Context, tx uow.Tx, st, parent content.Status) error {
+	r := content.InteractionRequest{
+		Kind: content.InteractionReply, Direction: content.DirectionOf(parent.IsLocal, true), TargetURI: parent.URI,
+		TargetAccountID: parent.AuthorAccountID, InteractingURI: st.URI, InteractingAccountID: st.AuthorAccountID,
+	}
+	ref := RefOf(parent)
+	_, _, _, err := s.approvals().request(ctx, tx, r, answer{}, &ref)
+	return err
 }
 
 // interactionReaders returns the ports that decide who may interact with a status.
@@ -640,7 +671,13 @@ func (s *Service) Edit(ctx context.Context, in EditInput) (Post, error) {
 		if err := repo.InsertRevision(ctx, tx, rev); err != nil {
 			return err
 		}
-		if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev}); err != nil {
+		held := false
+		if st.InReplyToURI != "" {
+			if held, err = repo.IsHeldReply(ctx, tx, st.ID); err != nil {
+				return err
+			}
+		}
+		if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev, HeldReply: held}); err != nil {
 			return err
 		}
 		if err := s.applyAttachmentVerdicts(ctx, tx, st.ID, verdicts); err != nil {

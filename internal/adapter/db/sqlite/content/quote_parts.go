@@ -44,7 +44,7 @@ func (r *StatusRepository) FindQuoteStates(ctx context.Context, statusIDs []stri
 		return nil, sqlite.Wrap(err, "list quote states")
 	}
 	for _, row := range rows {
-		out[row.StatusID] = quoteStateFrom(row)
+		out[row.StatusID] = quoteStateOf(row.StatusID, row.Form, row.Detached != 0, row.State, row.AuthorizationUri.String)
 	}
 	return out, nil
 }

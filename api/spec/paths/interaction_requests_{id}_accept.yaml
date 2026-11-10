@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/InteractionRequestId.yaml
+post:
+  operationId: acceptInteractionRequest
+  summary: Approve an interaction request
+  description: |
+    Approves the reply, boost, or quote: a reply joins the thread of the status, a boost is counted, and a quote shows the status. The account is told, and its server gets the approval (an `Accept` with the authorization).
+    A request that is answered already is a 409; one of another user's status, or of a deleted
+    status, is a 404.
+  tags: [statuses]
+  security:
+    - oauth2: ["write:statuses"]
+  responses:
+    "200":
+      description: The request, answered.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/InteractionRequest.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

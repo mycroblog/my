@@ -94,6 +94,35 @@ type Favourite struct {
 	ID        string
 }
 
+type InteractionRequest struct {
+	ID                   string
+	Kind                 string
+	Direction            string
+	TargetUri            string
+	TargetAccountID      *string
+	InteractingUri       string
+	InteractingAccountID string
+	ActivityUri          string
+	Visibility           string
+	CreatedAt            time.Time
+}
+
+type InteractionRequestEvent struct {
+	ID               string
+	RequestID        string
+	Kind             string
+	AuthorizationUri *string
+	OccurredAt       time.Time
+}
+
+type InteractionRequestState struct {
+	RequestID        string
+	Kind             string
+	TargetAccountID  *string
+	State            string
+	AuthorizationUri *string
+}
+
 type LinkCard struct {
 	Url              string
 	CardUrl          string
@@ -350,20 +379,6 @@ type StatusQuote struct {
 	StatusID  string
 	QuotedUri string
 	Form      string
-}
-
-type StatusQuoteEvent struct {
-	ID               string
-	StatusID         string
-	Kind             string
-	AuthorizationUri *string
-	OccurredAt       time.Time
-}
-
-type StatusQuoteState struct {
-	StatusID         string
-	State            string
-	AuthorizationUri *string
 }
 
 type StatusReactionCount struct {

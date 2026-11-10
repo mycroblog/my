@@ -106,7 +106,11 @@ type StatusHandlersDeps struct {
 	// Approvals verifies the QuoteAuthorizations of this server that remote quotes of local
 	// statuses name; nil leaves those quotes pending.
 	Approvals QuoteApprovals
-	Clock     kernel.Clock
+	// Interactions approves the remote replies to remote statuses whose replyAuthorization
+	// verifies (ADR-0155 §6), reading the parents' authors through Profiles; nil leaves the held
+	// ones held.
+	Interactions InteractionApprovals
+	Clock        kernel.Clock
 	// Host is the serving domain: actors on it are local.
 	Host   string
 	Logger *slog.Logger
@@ -404,6 +408,9 @@ func (h *StatusHandlers) ingest(ctx context.Context, a *InboxActivity, obj *fede
 	})
 	if errors.Is(err, appcontent.ErrStatusExists) {
 		return nil // a concurrent activity stored it
+	}
+	if err == nil {
+		h.verifyThirdPartyReply(ctx, obj)
 	}
 	return err
 }

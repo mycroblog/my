@@ -29,6 +29,22 @@ type NoteQuotes interface {
 	FindQuote(ctx context.Context, statusID string) (appcontent.Quote, appcontent.QuoteState, error)
 	FindInteractionPolicy(ctx context.Context, statusID string) (appcontent.InteractionPolicy, error)
 	FederatedQuotePage(ctx context.Context, uri string) (string, bool, error)
+	// ReplyAuthorization returns the authorization of an approved reply, "" for none
+	// (ADR-0155 §7).
+	ReplyAuthorization(ctx context.Context, statusID string) (string, error)
+	// InteractionAuthorizationOf returns the authorization of the approved request of an
+	// interaction, "" for none: that of an approved boost (ADR-0155 §7).
+	InteractionAuthorizationOf(ctx context.Context, kind appcontent.InteractionKind, interactingURI, targetURI string) (string, error)
+}
+
+// announceAuthorization returns the AnnounceAuthorization of the local boost b of the remote
+// status st that its author approved (ADR-0155 §7), "" for none.
+func (n notes) announceAuthorization(ctx context.Context, b appcontent.Boost, st appcontent.Status) (federation.IRI, error) {
+	if n.quotes == nil || st.IsLocal {
+		return "", nil
+	}
+	auth, err := n.quotes.InteractionAuthorizationOf(ctx, appcontent.InteractionAnnounce, b.URI, st.URI)
+	return federation.IRI(auth), err
 }
 
 // NoteConversations reads the conversations of statuses, whose IRI a Note carries as its context
@@ -138,7 +154,8 @@ func (n notes) inConversation(ctx context.Context, note federation.NoteDocument,
 	return note, nil
 }
 
-// withQuotes adds to the Note of the local status st its quote, unless the author took it away or
+// withQuotes adds to the Note of the local status st the authorization of an approved reply
+// (replyAuthorization, ADR-0155 §7), its quote, unless the author took it away or
 // the quoted status is local-visibility (ADR-0018 §15), and its interactionPolicy (ADR-0069 §3,
 // ADR-0155 §9): canReply, canAnnounce, and canQuote with the rules of each kind, except that the
 // author alone may boost or quote a followers-only or direct status, and may reply to, boost, or
@@ -165,6 +182,13 @@ func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st 
 			auth = state.AuthorizationURI
 		}
 		note = note.WithQuote(federation.IRI(q.QuotedURI), federation.IRI(auth), page)
+	}
+	if st.InReplyToURI != "" {
+		auth, err := n.quotes.ReplyAuthorization(ctx, st.ID)
+		if err != nil {
+			return federation.NoteDocument{}, err
+		}
+		note.ReplyAuthorization = federation.IRI(auth)
 	}
 	actor := federation.IRI(author.Account.URI)
 	alone := federation.ApprovalPolicy{AutomaticApproval: []federation.IRI{actor}}
@@ -399,6 +423,13 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 		if err != nil {
 			return nil, err
 		}
+		if act.Type == federation.ActivityReplyRequest {
+			// The request of a held reply embeds it (ADR-0155 §7): object is its parent.
+			doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, federation.Audience{To: note.To, Cc: note.Cc},
+				federation.IRI(s.status.InReplyToURI))
+			doc.Instrument = note
+			break
+		}
 		doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, published, federation.Audience{To: note.To, Cc: note.Cc}, note)
 	case federation.OutboundBoost:
 		mentioned, err := f.actorIRIs(ctx, s.mentioned)
@@ -406,6 +437,9 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 			return nil, err
 		}
 		announce := announceDocument(s.boost, s.status, actor, s.visibility, mentioned)
+		if announce.AnnounceAuthorization, err = f.notes.announceAuthorization(ctx, s.boost, s.status); err != nil {
+			return nil, err
+		}
 		doc = announce
 		if act.Type == federation.ActivityUndo {
 			doc = federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, federation.Audience{To: announce.To, Cc: announce.Cc}, announce.Embedded())

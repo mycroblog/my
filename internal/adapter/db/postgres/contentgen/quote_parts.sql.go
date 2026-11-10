@@ -12,19 +12,38 @@ import (
 )
 
 const listQuoteStatesOfStatuses = `-- name: ListQuoteStatesOfStatuses :many
-SELECT status_id, state, authorization_uri FROM status_quote_states WHERE status_id = ANY($1::uuid[]) ORDER BY status_id
+SELECT q.status_id, q.form, (d.status_id IS NOT NULL)::bool AS detached, COALESCE(rs.state, '')::text AS state, rs.authorization_uri
+FROM status_quotes q LEFT JOIN statuses s ON s.id = q.status_id
+LEFT JOIN status_quote_detachments d ON d.status_id = q.status_id
+LEFT JOIN interaction_requests r ON r.kind = 'quote' AND r.interacting_uri = s.uri AND r.target_uri = q.quoted_uri
+LEFT JOIN interaction_request_states rs ON rs.request_id = r.id
+WHERE q.status_id = ANY($1::uuid[]) ORDER BY q.status_id
 `
 
-func (q *Queries) ListQuoteStatesOfStatuses(ctx context.Context, statusIds []string) ([]StatusQuoteState, error) {
+type ListQuoteStatesOfStatusesRow struct {
+	StatusID         string
+	Form             string
+	Detached         bool
+	State            string
+	AuthorizationUri *string
+}
+
+func (q *Queries) ListQuoteStatesOfStatuses(ctx context.Context, statusIds []string) ([]ListQuoteStatesOfStatusesRow, error) {
 	rows, err := q.db.Query(ctx, listQuoteStatesOfStatuses, statusIds)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []StatusQuoteState{}
+	items := []ListQuoteStatesOfStatusesRow{}
 	for rows.Next() {
-		var i StatusQuoteState
-		if err := rows.Scan(&i.StatusID, &i.State, &i.AuthorizationUri); err != nil {
+		var i ListQuoteStatesOfStatusesRow
+		if err := rows.Scan(
+			&i.StatusID,
+			&i.Form,
+			&i.Detached,
+			&i.State,
+			&i.AuthorizationUri,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

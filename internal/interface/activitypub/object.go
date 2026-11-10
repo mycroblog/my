@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 )
 
@@ -62,33 +63,36 @@ func (h *Handler) object(w http.ResponseWriter, r *http.Request) {
 	writeBody(w, typeActivityJSON, acc.cache(obj.Public), status, obj.Document)
 }
 
-// quoteAuthorization serves GET /ap/quote_authorizations/{id}, the approval of a quote of a local
-// status (FEP-044f, ADR-0069 §1): to anyone, as the quoting post shows it; a revoked one gets 410
+// authorization serves GET /ap/{kind}_authorizations/{id}, the approval of a reply, a boost, or a
+// quote of a local status (GoToSocial's ReplyAuthorization and AnnounceAuthorization, FEP-044f's
+// QuoteAuthorization; ADR-0155 §8): to anyone, as the interaction shows it; a revoked one gets 410
 // with a Tombstone. Authorized fetch still asks for a signature.
-func (h *Handler) quoteAuthorization(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	if !kernel.ValidID(id) {
-		h.notFound(w, r)
-		return
+func (h *Handler) authorization(kind appcontent.InteractionKind) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if !kernel.ValidID(id) {
+			h.notFound(w, r)
+			return
+		}
+		acc, ok := h.authorize(w, r, true)
+		if !ok {
+			return
+		}
+		if acc.refused() {
+			h.unauthorized(w, r)
+			return
+		}
+		obj, err := h.o.Objects.Authorization(r.Context(), kind, id)
+		if err != nil {
+			h.fail(w, r, err)
+			return
+		}
+		status := http.StatusOK
+		if obj.Gone {
+			status = http.StatusGone
+		}
+		writeBody(w, typeActivityJSON, acc.cache(obj.Public), status, obj.Document)
 	}
-	acc, ok := h.authorize(w, r, true)
-	if !ok {
-		return
-	}
-	if acc.refused() {
-		h.unauthorized(w, r)
-		return
-	}
-	obj, err := h.o.Objects.QuoteAuthorization(r.Context(), id)
-	if err != nil {
-		h.fail(w, r, err)
-		return
-	}
-	status := http.StatusOK
-	if obj.Gone {
-		status = http.StatusGone
-	}
-	writeBody(w, typeActivityJSON, acc.cache(obj.Public), status, obj.Document)
 }
 
 // activity serves GET /ap/activities/{id}: the Announce of a public or unlisted boost (ADR-0018

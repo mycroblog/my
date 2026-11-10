@@ -119,6 +119,12 @@ type ViewerRelation struct {
 	Author bool
 	// Pinned is whether the author pinned the status; always false for other viewers.
 	Pinned bool
+	// Approval is, for the author of a reply, the state of its request while it is not approved
+	// (ADR-0155 §10): pending, or rejected; "" for a reply that needs no approval or has it.
+	Approval content.InteractionRequestState
+	// BoostApproval is the state of the viewer's request to boost the status while it is not
+	// approved: pending, or rejected; "" for none.
+	BoostApproval content.InteractionRequestState
 }
 
 // MediaView is an attached media file that can be shown: an upload that finished processing, or
@@ -281,7 +287,7 @@ func (r *Reader) Thread(ctx context.Context, viewer Viewer, statusID string) (Th
 	if !ok {
 		return Thread{}, nil
 	}
-	candidates, err := r.d.Statuses.ListLiveConversationStatuses(ctx, conv.ID, "", MaxThreadStatuses)
+	candidates, err := r.d.Statuses.ListLiveConversationStatuses(ctx, conv.ID, viewer.AccountID, "", MaxThreadStatuses)
 	if err != nil {
 		return Thread{}, err
 	}
@@ -603,7 +609,31 @@ func (r *Reader) relation(ctx context.Context, accountID string, st content.Stat
 			return nil, err
 		}
 	}
+	if r.d.Quotes != nil {
+		own, err := r.d.Quotes.ListOwnInteractions(ctx, accountID, []string{st.URI})
+		if err != nil {
+			return nil, err
+		}
+		rel.Approval, rel.BoostApproval = ownApprovals(own, st)
+	}
 	return &rel, nil
+}
+
+// ownApprovals returns the states of the requests of own, an account's interactions, that are not
+// approved: of its reply st, and of its boost of st, a pending one before a rejected one.
+func ownApprovals(own []OwnInteraction, st content.Status) (reply, boost content.InteractionRequestState) {
+	for _, o := range own {
+		if o.State == content.InteractionRequestAccepted {
+			continue
+		}
+		switch {
+		case o.Kind == content.InteractionReply && o.InteractingURI == st.URI:
+			reply = o.State
+		case o.Kind == content.InteractionAnnounce && o.TargetURI == st.URI && boost != content.InteractionRequestPending:
+			boost = o.State
+		}
+	}
+	return reply, boost
 }
 
 // found turns a lookup into whether it found a row.
