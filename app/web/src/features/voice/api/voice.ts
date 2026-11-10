@@ -31,6 +31,7 @@ export type VoiceRoomEmoji = Schemas["VoiceRoomIcon"];
 export const voiceRoomVisibilities = [
   "local",
   "followers",
+  "following",
   "mutuals",
   "invited",
 ] as const satisfies readonly VoiceRoomVisibility[];
@@ -39,6 +40,7 @@ export const voiceRoomVisibilities = [
 export const voiceRoomSpeakers = [
   "everyone",
   "followers",
+  "following",
   "mutuals",
   "manual",
 ] as const satisfies readonly VoiceRoomSpeakers[];

@@ -224,8 +224,12 @@ test.describe("the events", () => {
       .fill("Board games");
     const start = new Date(Date.now() + 10 * day).toISOString().slice(0, 10);
     await main.getByLabel(new RegExp(`^${escapeRegExp(message("events.form.starts_at"))}`, "u")).fill(`${start}T18:00`);
-    await main.getByLabel(new RegExp(`^${escapeRegExp(message("events.form.ends_at"))}`, "u")).fill(`${start}T21:00`);
-    await main.getByRole("button", { name: message("events.form.submit_new"), exact: true }).click();
+    const ends = main.getByLabel(new RegExp(`^${escapeRegExp(message("events.form.ends_at"))}`, "u"));
+    await ends.fill(`${start}T21:00`);
+    // On a phone, the focused date field keeps pulling the page back to itself, away from the button below it.
+    await ends.blur();
+    const create = main.getByRole("button", { name: message("events.form.submit_new"), exact: true });
+    await (hasTouch ? create.tap() : create.click());
     await expect(page.getByRole("heading", { level: 1, name: "Board games" })).toBeVisible();
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);

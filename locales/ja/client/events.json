@@ -135,6 +135,174 @@
     "defaultMessage": "出欠を保存できませんでした: {reason}",
     "description": "Error of saving the user's answer. {reason} is why."
   },
+  "events.poll.title": {
+    "defaultMessage": "日程の調整",
+    "description": "Heading of the date poll of an event that has no date yet."
+  },
+  "events.poll.description": {
+    "defaultMessage": "候補の日時それぞれに答えてください。あなたの名前と答えは、イベントが見える人に表示されます。",
+    "description": "Description of the date poll of an event."
+  },
+  "events.poll.failed": {
+    "defaultMessage": "候補の日時を読み込めませんでした",
+    "description": "Heading of the error when the candidate dates of an event fail to load."
+  },
+  "events.poll.empty": {
+    "defaultMessage": "候補の日時はまだありません。",
+    "description": "Shown when an event's date poll has no candidate."
+  },
+  "events.poll.caption": {
+    "defaultMessage": "候補の日時と答え",
+    "description": "Accessible caption of the table of the candidate dates of an event."
+  },
+  "events.poll.date": {
+    "defaultMessage": "日時",
+    "description": "Column header of the dates of the candidates of an event's date poll."
+  },
+  "events.poll.count.yes": {
+    "defaultMessage": "行ける",
+    "description": "Column header of how many people can go on a candidate date."
+  },
+  "events.poll.count.maybe": {
+    "defaultMessage": "たぶん",
+    "description": "Column header of how many people may go on a candidate date."
+  },
+  "events.poll.count.no": {
+    "defaultMessage": "行けない",
+    "description": "Column header of how many people cannot go on a candidate date."
+  },
+  "events.poll.your_answer": {
+    "defaultMessage": "あなたの答え",
+    "description": "Column header of the user's answers to the candidate dates."
+  },
+  "events.poll.your_answer_of": {
+    "defaultMessage": "{date} へのあなたの答え",
+    "description": "Accessible name of the choices of the user's answer to one candidate date. date: the candidate's dates."
+  },
+  "events.poll.actions": {
+    "defaultMessage": "操作",
+    "description": "Visually hidden column header of the buttons of each candidate date."
+  },
+  "events.poll.vote.yes": {
+    "defaultMessage": "行ける",
+    "description": "Choice and badge of an answer to a candidate date: the person can go."
+  },
+  "events.poll.vote.maybe": {
+    "defaultMessage": "たぶん",
+    "description": "Choice and badge of an answer to a candidate date: the person may go."
+  },
+  "events.poll.vote.no": {
+    "defaultMessage": "行けない",
+    "description": "Choice and badge of an answer to a candidate date: the person cannot go."
+  },
+  "events.poll.vote_failed": {
+    "defaultMessage": "答えを保存できませんでした: {reason}",
+    "description": "Error when an answer to a candidate date fails. reason: why."
+  },
+  "events.poll.ballots": {
+    "defaultMessage": "答えた人",
+    "description": "Button that lists who answered a candidate date, and the name of that list."
+  },
+  "events.poll.ballots_of": {
+    "defaultMessage": "答えた人 {date}",
+    "description": "Accessible name of the button that lists who answered a candidate date. date: the candidate's dates."
+  },
+  "events.poll.ballots_title": {
+    "defaultMessage": "{date} に答えた人",
+    "description": "Title of the dialog that lists who answered a candidate date. date: the candidate's dates."
+  },
+  "events.poll.close": {
+    "defaultMessage": "閉じる",
+    "description": "Accessible name of the button that closes the list of who answered a candidate date."
+  },
+  "events.poll.ballots_failed": {
+    "defaultMessage": "答えた人を読み込めませんでした",
+    "description": "Heading of the error when the answers to a candidate date fail to load."
+  },
+  "events.poll.ballots_empty": {
+    "defaultMessage": "この日時に答えた人はまだいません。",
+    "description": "Shown when nobody answered a candidate date."
+  },
+  "events.poll.ballots_more": {
+    "defaultMessage": "さらに表示",
+    "description": "Button that loads more of who answered a candidate date."
+  },
+  "events.poll.confirm": {
+    "defaultMessage": "この日時に決める",
+    "description": "Button with which an organizer fixes the event's date to a candidate."
+  },
+  "events.poll.confirm_of": {
+    "defaultMessage": "この日時に決める: {date}",
+    "description": "Accessible name of the button that fixes the event's date to a candidate. date: the candidate's dates."
+  },
+  "events.poll.confirm.title": {
+    "defaultMessage": "日時を {date} に決めますか？",
+    "description": "Title of the confirmation of fixing the event's date to a candidate. date: the candidate's dates."
+  },
+  "events.poll.confirm.description": {
+    "defaultMessage": "日程の調整は答えを受け付けなくなり、答えた人と招待した人に通知が届きます。日時は後からエディタで変えられます。",
+    "description": "Description of the confirmation of fixing the event's date to a candidate."
+  },
+  "events.poll.confirm.confirm": {
+    "defaultMessage": "決める",
+    "description": "Confirm button of fixing the event's date to a candidate."
+  },
+  "events.poll.confirm.back": {
+    "defaultMessage": "調整を続ける",
+    "description": "Button that closes the confirmation of fixing the event's date without fixing it."
+  },
+  "events.poll.confirmed_notice": {
+    "defaultMessage": "日時を {date} に決めました。",
+    "description": "Announced after an organizer fixed the event's date to a candidate. date: the candidate's dates."
+  },
+  "events.poll.withdraw": {
+    "defaultMessage": "取り下げる",
+    "description": "Button with which an organizer withdraws a candidate date."
+  },
+  "events.poll.withdraw_of": {
+    "defaultMessage": "取り下げる: {date}",
+    "description": "Accessible name of the button that withdraws a candidate date. date: the candidate's dates."
+  },
+  "events.poll.withdraw.title": {
+    "defaultMessage": "{date} を取り下げますか？",
+    "description": "Title of the confirmation of withdrawing a candidate date. date: the candidate's dates."
+  },
+  "events.poll.withdraw.description": {
+    "defaultMessage": "候補と、その候補への答えが日程の調整から消えます。",
+    "description": "Description of the confirmation of withdrawing a candidate date."
+  },
+  "events.poll.withdraw.confirm": {
+    "defaultMessage": "取り下げる",
+    "description": "Confirm button of withdrawing a candidate date."
+  },
+  "events.poll.withdraw.back": {
+    "defaultMessage": "残す",
+    "description": "Button that closes the confirmation of withdrawing a candidate date without withdrawing it."
+  },
+  "events.poll.withdrawn_notice": {
+    "defaultMessage": "{date} を取り下げました。",
+    "description": "Announced after an organizer withdrew a candidate date. date: the candidate's dates."
+  },
+  "events.poll.withdraw_failed": {
+    "defaultMessage": "候補を取り下げられませんでした: {reason}",
+    "description": "Error when withdrawing a candidate date fails. reason: why."
+  },
+  "events.poll.add_legend": {
+    "defaultMessage": "候補の日時を足す",
+    "description": "Legend of the fields with which an organizer adds a candidate date."
+  },
+  "events.poll.add": {
+    "defaultMessage": "日時を足す",
+    "description": "Button that adds a candidate date to the poll."
+  },
+  "events.poll.added_notice": {
+    "defaultMessage": "{date} を足しました。",
+    "description": "Announced after an organizer added a candidate date. date: the candidate's dates."
+  },
+  "events.poll.add_failed": {
+    "defaultMessage": "候補を足せませんでした: {reason}",
+    "description": "Error when adding a candidate date fails. reason: why."
+  },
   "events.calendar": {
     "defaultMessage": "カレンダーに追加 (.ics)",
     "description": "Button that saves the event as an iCalendar file to import into the user's calendar."
@@ -242,6 +410,42 @@
   "events.place.voice.description": {
     "defaultMessage": "開始の時刻に、このサーバーの通話のルームが開きます。",
     "description": "Text of the voice chat place of an event."
+  },
+  "events.place.voice.speakers": {
+    "defaultMessage": "許可なしで話せる人: {speakers}",
+    "description": "Who may speak in the voice chat room of an event without asking. speakers: the choice, such as Followers of the host."
+  },
+  "events.place.voice.open": {
+    "defaultMessage": "通話のルームが開いています。",
+    "description": "Text of the voice chat place of an event once its room opened."
+  },
+  "events.place.voice.join": {
+    "defaultMessage": "通話のルームに参加",
+    "description": "Link from an event to its voice chat room."
+  },
+  "events.place.voice.opening": {
+    "defaultMessage": "通話のルームを開いています…",
+    "description": "Text of the voice chat place of an event after its start, before its room opened."
+  },
+  "events.place.voice.cancelled": {
+    "defaultMessage": "イベントが中止されたので、通話のルームは開きません。",
+    "description": "Text of the voice chat place of a cancelled event."
+  },
+  "events.place.voice.unavailable.disabled": {
+    "defaultMessage": "このサーバーで通話がオフになっているので、通話のルームを開けませんでした。",
+    "description": "Why the voice chat room of an event did not open: voice chat is off."
+  },
+  "events.place.voice.unavailable.not_eligible": {
+    "defaultMessage": "主催者がルームを開けなくなったので、通話のルームを開けませんでした。",
+    "description": "Why the voice chat room of an event did not open: the organizer may not host rooms."
+  },
+  "events.place.voice.unavailable.too_many_rooms": {
+    "defaultMessage": "このサーバーで開けるルームの数に達していたので、通話のルームを開けませんでした。",
+    "description": "Why the voice chat room of an event did not open: too many rooms were open."
+  },
+  "events.place.voice.unavailable.hosting_elsewhere": {
+    "defaultMessage": "主催者が別のルームのホストだったので、通話のルームを開けませんでした。",
+    "description": "Why the voice chat room of an event did not open: the organizer hosted another room."
   },
   "events.place.map": {
     "defaultMessage": "地図",
@@ -507,6 +711,42 @@
     "defaultMessage": "主催者が候補から日時を選んでいます。ここで開始と終了を入力すると、日時が決まり、候補からの選択は終わります。",
     "description": "Note in the editor of an event whose date poll has no date yet."
   },
+  "events.form.date_mode": {
+    "defaultMessage": "日時の決め方",
+    "description": "Label of the choice of how a new event's date is set."
+  },
+  "events.form.date_mode.fixed": {
+    "defaultMessage": "今決める",
+    "description": "Choice of a new event's date: the organizer sets it now."
+  },
+  "events.form.date_mode.poll": {
+    "defaultMessage": "候補の日時を出して答えてもらう",
+    "description": "Choice of a new event's date: a poll of candidate dates."
+  },
+  "events.form.candidates.description": {
+    "defaultMessage": "候補の日時は {max} 個まで。イベントが見える人がそれぞれに答え、イベントの画面で日時を決めます。",
+    "description": "Description of the candidate dates of a new event. max: the most candidates."
+  },
+  "events.form.candidate": {
+    "defaultMessage": "候補 {number}",
+    "description": "Legend of the start and end of one candidate date. number: its place in the list."
+  },
+  "events.form.candidate.remove": {
+    "defaultMessage": "外す",
+    "description": "Button that removes a candidate date from a new event."
+  },
+  "events.form.candidate.remove_of": {
+    "defaultMessage": "外す: 候補 {number}",
+    "description": "Accessible name of the button that removes a candidate date. number: its place in the list."
+  },
+  "events.form.candidate.add": {
+    "defaultMessage": "候補の日時を足す",
+    "description": "Button that adds a candidate date to a new event."
+  },
+  "events.form.candidate.duplicate": {
+    "defaultMessage": "この日時はすでに候補にあります。",
+    "description": "Error of a candidate date that repeats another."
+  },
   "events.form.time_zone": {
     "defaultMessage": "イベントのタイムゾーン",
     "description": "Label of the time zone of an event."
@@ -594,6 +834,18 @@
   "events.form.place_name.invalid": {
     "defaultMessage": "1 行で {max} 文字までの名前を入力してください。",
     "description": "Error of the name of a place. {max} is the longest name."
+  },
+  "events.form.voice": {
+    "defaultMessage": "通話のルーム",
+    "description": "Checkbox that adds a voice chat room of this server to an event."
+  },
+  "events.form.voice.description": {
+    "defaultMessage": "開始の時刻に、イベントが見える人のためのルームがこのサーバーで開きます。",
+    "description": "Description of the voice chat place of an event."
+  },
+  "events.form.voice.speakers": {
+    "defaultMessage": "許可なしで話せる人",
+    "description": "Label of who may speak in the voice chat room of an event without asking."
   },
   "events.form.voice_kept": {
     "defaultMessage": "イベントの通話のルームはそのまま残ります。",
@@ -686,6 +938,14 @@
   "events.error.unscheduled": {
     "defaultMessage": "イベントの日時はまだ決まっていません。",
     "description": "Reason of a write refused because the event has no date yet."
+  },
+  "events.error.scheduled": {
+    "defaultMessage": "イベントの日時はもう決まっています。",
+    "description": "Reason of a write to a date poll refused because the date was set."
+  },
+  "events.error.last_candidate": {
+    "defaultMessage": "日程の調整には候補の日時が少なくとも 1 つ要ります。",
+    "description": "Reason of withdrawing the last candidate date refused."
   },
   "events.error.not_eligible": {
     "defaultMessage": "このサーバーではイベントを作成できません。",

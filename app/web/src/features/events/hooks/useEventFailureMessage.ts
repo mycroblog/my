@@ -10,6 +10,8 @@ const failureMessages: Partial<Record<EventFailure, ClientMessageKey>> = {
   full: "client:events.error.full",
   closed: "client:events.error.closed",
   unscheduled: "client:events.error.unscheduled",
+  scheduled: "client:events.error.scheduled",
+  "last-candidate": "client:events.error.last_candidate",
   "not-eligible": "client:events.error.not_eligible",
   "voice-unavailable": "client:events.error.voice_unavailable",
   "already-invited": "client:events.error.already_invited",

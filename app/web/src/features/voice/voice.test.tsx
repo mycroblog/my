@@ -193,6 +193,18 @@ describe("the list of the open rooms", () => {
     const { user } = await renderApp({ path: "/voice" });
     await user.click(await screen.findByRole("button", { name: "Start a room" }));
     const dialog = await screen.findByRole("dialog", { name: "Start a room" });
+    // Those whom the host follows are a choice of both who sees the room and who speaks without asking.
+    await user.click(
+      within(within(dialog).getByRole("radiogroup", { name: "Who can see and join" })).getByRole("radio", {
+        name: "People the host follows",
+      }),
+    );
+    expect(within(dialog).queryByRole("checkbox", { name: "Post about the room" })).not.toBeInTheDocument();
+    expect(
+      within(within(dialog).getByRole("radiogroup", { name: "Who can speak without asking" })).getByRole("radio", {
+        name: "People the host follows",
+      }),
+    ).toBeInTheDocument();
     await user.click(
       within(within(dialog).getByRole("radiogroup", { name: "Who can see and join" })).getByRole("radio", {
         name: "Mutual follows of the host",
