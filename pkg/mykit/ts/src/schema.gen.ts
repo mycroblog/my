@@ -2035,6 +2035,79 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/interaction_requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the interaction requests to the authenticated user
+         * @description The replies, boosts, and quotes of the user's statuses that wait for the user's approval,
+         *     newest first, of one kind when `kind` is given. A request whose status the user deleted, or
+         *     whose account the user may not see, is left out, so a page may hold fewer than `limit`
+         *     requests before the last.
+         */
+        get: operations["listInteractionRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interaction_requests/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the interaction request. */
+                id: components["parameters"]["InteractionRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve an interaction request
+         * @description Approves the reply, boost, or quote: a reply joins the thread of the status, a boost is counted, and a quote shows the status. The account is told, and its server gets the approval (an `Accept` with the authorization).
+         *     A request that is answered already is a 409; one of another user's status, or of a deleted
+         *     status, is a 404.
+         */
+        post: operations["acceptInteractionRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/interaction_requests/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the interaction request. */
+                id: components["parameters"]["InteractionRequestId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refuse an interaction request
+         * @description Refuses the reply, boost, or quote: it stays out of the thread and the counts. The account is told, and its server gets a `Reject`.
+         *     A request that is answered already is a 409; one of another user's status, or of a deleted
+         *     status, is a 404.
+         */
+        post: operations["rejectInteractionRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/mutes": {
         parameters: {
             query?: never;
@@ -13397,7 +13470,9 @@ export interface components {
          *     and off together. The ordinary notifications are one row per type (`mention`, `follow`,
          *     `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
          *     `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-         *     `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
+         *     `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+         *     `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
+         *     `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
          *     `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
          *     `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
          *     notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -13408,7 +13483,7 @@ export interface components {
          *     `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
          * @enum {string}
          */
-        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement" | "auto_delete_limit";
+        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "interaction_request" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement" | "auto_delete_limit";
         /** @description How far the authenticated user has read the notifications, across all clients. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
@@ -13497,7 +13572,11 @@ export interface components {
          *     with another emoji is another notification), or the account that quoted a post of the
          *     user (`quote`, once the quote is approved or, from software without approvals, received).
          *     `status` is the post that `mention`, `boost`, `favourite`, `reaction`, and `poll_closed`
-         *     are about, and for `quote` the post that quotes. `moderation_notice` comes from the instance and has no `account`; its
+         *     are about, and for `quote` the post that quotes. `reply_request`, `boost_request`, and
+         *     `quote_request` tell that `account` replied to, boosted, or quoted the user's `status` and
+         *     that it waits for the user's approval (`listInteractionRequests`); `interaction_accepted`
+         *     and `interaction_rejected` tell that `account`, the author of `status`, approved or refused
+         *     the user's reply to it, boost of it, or quote of it. `moderation_notice` comes from the instance and has no `account`; its
          *     `moderation_action` is the action on the user's account, with its kind, reason, and end.
          *     `report_resolved` also comes from the instance: its `report` is the user's report that
          *     the moderators resolved, without how they resolved it. It is sent once per report, even
@@ -13567,7 +13646,7 @@ export interface components {
          *     has no `account`. It is sent once per notice.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
         /**
          * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -14436,6 +14515,21 @@ export interface components {
          */
         InteractionAudience: "nobody" | "mentioned" | "followers" | "everyone";
         /**
+         * @description The approval of the authenticated user's interaction (a reply, a boost, or a quote) by the
+         *     author of the status it is with, while it is not given:
+         *
+         *     - `pending`: it waits for the author's answer. A reply that waits is shown to its author
+         *       alone, and goes out once it is approved; a boost that waits is recorded once it is approved.
+         *     - `rejected`: the author refused it.
+         * @enum {string}
+         */
+        InteractionApprovalState: "pending" | "rejected";
+        /**
+         * @description An interaction that an interaction policy governs (a reply, a boost, or a quote).
+         * @enum {string}
+         */
+        InteractionKind: "reply" | "announce" | "quote";
+        /**
          * @description Who may reply to, boost, and quote a status. Whatever the policy, a followers-only status is
          *     boosted and quoted only by its author, a direct one is neither boosted nor quoted, and a reply
          *     from an account the status mentions is always admitted.
@@ -14445,6 +14539,35 @@ export interface components {
             /** @description Who may boost the status. */
             announce: components["schemas"]["InteractionRule"];
             quote: components["schemas"]["InteractionRule"];
+        };
+        /**
+         * @description A reply to, a boost of, or a quote of a status of the authenticated user that waits for the
+         *     user's approval, because only the manual rule of the status's interaction policy admits the
+         *     account that interacts.
+         */
+        InteractionRequest: {
+            id: components["schemas"]["Id"];
+            kind: components["schemas"]["InteractionKind"];
+            /**
+             * @description `pending` until the user answers; then `accepted` or `rejected`.
+             * @enum {string}
+             */
+            state: "pending" | "accepted" | "rejected";
+            /** Format: date-time */
+            created_at: string;
+            /** @description The account that interacts. */
+            account: components["schemas"]["Account"];
+            /** @description The status of the user that the account interacts with. */
+            status: components["schemas"]["Status"];
+            /**
+             * @description The reply or the quoting status, when the server has it and the user may see it; omitted
+             *     for a boost, and for a reply that a remote server sends only once it is approved.
+             */
+            interacting_status?: components["schemas"]["Status"];
+        };
+        /** @description A page of interaction requests. */
+        InteractionRequestPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["InteractionRequest"][];
         };
         /**
          * @description A change of an interaction policy: the kinds left out keep their rules. Interactions approved
@@ -14915,6 +15038,18 @@ export interface components {
             bookmarked?: boolean;
             /** @description Whether the status is pinned to the author's profile; given only to the author. */
             pinned?: boolean;
+            /**
+             * @description The approval of this reply by the author of the status it replies to, while it is not
+             *     given; given only to the author of the reply, and omitted for a reply that needs no
+             *     approval or has it. A `pending` reply is shown to its author alone.
+             */
+            approval?: components["schemas"]["InteractionApprovalState"];
+            /**
+             * @description The approval of the authenticated user's boost of the status by its author, while it is
+             *     not given; omitted when the user did not ask for one or it is given (then `boosted` is
+             *     true).
+             */
+            boost_approval?: components["schemas"]["InteractionApprovalState"];
             poll?: components["schemas"]["Poll"];
             card?: components["schemas"]["LinkCard"];
             /**
@@ -16587,6 +16722,8 @@ export interface components {
         InstanceDomain: string;
         /** @description The key of the text. */
         InstanceTextKey: components["schemas"]["InstanceTextKey"];
+        /** @description The ID of the interaction request. */
+        InteractionRequestId: components["schemas"]["Id"];
         /** @description The ID of the invite. */
         InviteId: components["schemas"]["Id"];
         /** @description The ID of the login provider. */
@@ -18794,6 +18931,82 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["Relationship"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listInteractionRequests: {
+        parameters: {
+            query?: {
+                /** @description Only the requests of this kind. */
+                kind?: components["schemas"]["InteractionKind"];
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of interaction requests. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InteractionRequestPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    acceptInteractionRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the interaction request. */
+                id: components["parameters"]["InteractionRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request, answered. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InteractionRequest"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    rejectInteractionRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the interaction request. */
+                id: components["parameters"]["InteractionRequestId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request, answered. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InteractionRequest"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

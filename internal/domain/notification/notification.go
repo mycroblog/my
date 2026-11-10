@@ -118,6 +118,17 @@ const (
 	// binds it, and from when its posts go by the maximum (ADR-0151 §7): AutoDeleteLimitNoticeID is
 	// the notice, and it has no source account.
 	TypeAutoDeleteLimit Type = "auto_delete_limit"
+	// TypeReplyRequest, TypeBoostRequest, and TypeQuoteRequest tell the author of a local status
+	// of a reply, a boost, or a quote of it that waits for the author's approval (ADR-0155 §10).
+	// StatusID is the status, SourceAccountID the account that interacts.
+	TypeReplyRequest Type = "reply_request"
+	TypeBoostRequest Type = "boost_request"
+	TypeQuoteRequest Type = "quote_request"
+	// TypeInteractionAccepted and TypeInteractionRejected tell a local account that the author of
+	// a status approved or refused its reply, boost, or quote of it (ADR-0155 §10). StatusID is
+	// the status interacted with, SourceAccountID its author.
+	TypeInteractionAccepted Type = "interaction_accepted"
+	TypeInteractionRejected Type = "interaction_rejected"
 )
 
 // ErrorGroupChange is what an admin_error_group tells of (notifications.error_group_change).
@@ -220,6 +231,7 @@ var Types = []Type{
 	TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
 	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
 	TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit,
+	TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
 }
 
 // Valid reports whether t is a known notification type.
@@ -233,7 +245,8 @@ func (t Type) Valid() bool {
 		TypeAccountMoved, TypeAdminAccountMoved,
 		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
 		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
-		TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit:
+		TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit,
+		TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected:
 		return true
 	}
 	return false
@@ -366,6 +379,9 @@ func (n Notification) Validate() error {
 	if n.Type == TypeStatus && (n.StatusID == "" || n.SourceAccountID == "") {
 		return errors.New("notification: a status names its post and its author")
 	}
+	if n.Type.Approval() && (n.StatusID == "" || n.SourceAccountID == "") {
+		return errors.New("notification: the notifications of the approvals of interactions name a status and an account")
+	}
 	if (n.Type == TypeAnnouncement) != (n.AnnouncementID != "") || (n.Type == TypeAnnouncement && n.SourceAccountID != "") {
 		return errors.New("notification: an announcement, and only it, names an announcement, and it has no source account")
 	}
@@ -442,6 +458,19 @@ func AdminServiceClosureDueKey(announcementID string) string {
 // FollowKey is the dedupe key of a follow, follow_request, or follow_accepted notification:
 // one per follow and type. Following again after unfollowing is a new follow and notifies again.
 func FollowKey(t Type, followID string) string { return string(t) + ":" + followID }
+
+// Approval reports whether t is a notification of the approval of an interaction: a request that
+// waits for the recipient's answer, or the answer to the recipient's (ADR-0155 §10).
+func (t Type) Approval() bool {
+	switch t {
+	case TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected:
+		return true
+	}
+	return false
+}
+
+// ApprovalKey is the dedupe key of a notification of type t of the interaction request requestID.
+func ApprovalKey(t Type, requestID string) string { return string(t) + ":" + requestID }
 
 // AutoDeleteLimitKey is the dedupe key of an auto_delete_limit notification: one per notice.
 func AutoDeleteLimitKey(noticeID string) string { return string(TypeAutoDeleteLimit) + ":" + noticeID }

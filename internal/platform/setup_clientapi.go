@@ -68,7 +68,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		AccountDomain: cfg.AccountDomain, Graph: a.Graph, Subscriptions: a.Subscriptions, InstanceThumbnail: a.instanceThumbnail,
 		Resolver: a.RemoteActors, RemoteProfiles: a.Accounts, AccountSearch: a.AccountSearch, AccountSuggestions: a.AccountSuggestions, TagSearch: a.TagSearch,
 		Notifications: a.Notifications, NotificationPreferences: a.Notifications, Push: a.Push,
-		Statuses: a.Content, StatusReader: a.Statuses, Translations: a.Translation, Interactions: a.Interactions, Threads: a.RemoteStatuses, Outboxes: a.RemoteStatuses,
+		Statuses: a.Content, StatusReader: a.Statuses, Translations: a.Translation, Interactions: a.Interactions, InteractionRequests: a.Interactions, Threads: a.RemoteStatuses, Outboxes: a.RemoteStatuses,
 		Timelines: a.Timeline, TimelineReader: a.Statuses, TimelineLanguages: a.timelineLanguages, Lists: a.Timeline, Conversations: a.Timeline,
 		Streams: a.Streams, HomeEntries: a.Timeline, EntryLists: a.Timeline, TimelineStreams: a.Streams, PublicEntries: a.Timeline,
 		Permissions: a.Identity, InstanceHealth: a.InstanceHealth, DeadJobs: a.DeadJobs,

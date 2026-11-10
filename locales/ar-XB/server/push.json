@@ -67,6 +67,10 @@
     "defaultMessage": "‮{name} qoosʇǝp ʎonɹ dosʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.boost_request": {
+    "defaultMessage": "‮{name} ɐsʞǝp ʇo qoosʇ ʎonɹ dosʇ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.custom_emoji_request_decided": {
     "defaultMessage": "‮⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs oɟ {instance} ɹǝʌıǝʍǝp ʎonɹ ɔnsʇoɯ ǝɯoɾı ɹǝbnǝsʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -91,6 +95,14 @@
     "defaultMessage": "‮⊥ɥǝ ɯopǝɹɐʇoɹs oɟ {instance} ɹǝʌıǝʍǝp ʎonɹ ɐddǝɐʅ oɟ ɐ ɹǝɟnsǝp dosʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.interaction_accepted": {
+    "defaultMessage": "‮{name} ɐddɹoʌǝp ʎonɹ ıuʇǝɹɐɔʇıou ʍıʇɥ ʇɥǝıɹ dosʇ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.interaction_rejected": {
+    "defaultMessage": "‮{name} pǝɔʅıuǝp ʎonɹ ıuʇǝɹɐɔʇıou ʍıʇɥ ʇɥǝıɹ dosʇ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.mention": {
     "defaultMessage": "‮{name} ɯǝuʇıouǝp ʎon‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -111,12 +123,20 @@
     "defaultMessage": "‮{name} bnoʇǝp ʎonɹ dosʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.quote_request": {
+    "defaultMessage": "‮{name} ɐsʞǝp ʇo bnoʇǝ ʎonɹ dosʇ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.reaction": {
     "defaultMessage": "‮{name} ɹǝɐɔʇǝp ʇo ʎonɹ dosʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.relationships_severed": {
     "defaultMessage": "‮∀ snsdǝusıou qʎ ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance} ǝupǝp soɯǝ oɟ ʎonɹ ɟoʅʅoʍs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.reply_request": {
+    "defaultMessage": "‮{name} ɐsʞǝp ʇo ɹǝdʅʎ ʇo ʎonɹ dosʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.report_resolved": {

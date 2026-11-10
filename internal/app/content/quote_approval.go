@@ -60,12 +60,27 @@ func (s *Interactions) AnswerQuoteRequest(ctx context.Context, in QuoteRequestIn
 	if err != nil {
 		return content.QuoteAuthorization{}, quoted, err
 	}
-	// Only the author of the quoting status asks for its quote.
-	switch quoting, err := s.d.Statuses.FindStatusByURI(ctx, in.QuotingURI); {
-	case err == nil && quoting.AuthorAccountID != in.QuoterAccountID:
-		d = content.InteractionDenied
+	// Only the author of the quoting status asks for its quote; a request for another's records
+	// nothing.
+	quoting, err := s.d.Statuses.FindStatusByURI(ctx, in.QuotingURI)
+	quotingStored := err == nil
+	switch {
+	case quotingStored && quoting.AuthorAccountID != in.QuoterAccountID:
+		return content.QuoteAuthorization{}, quoted, refused
 	case err != nil && !errors.Is(err, ErrNotFound):
 		return content.QuoteAuthorization{}, quoted, err
+	}
+	if quotingStored {
+		// The stored quoting status's state follows the request only when it quotes this status.
+		q, err := s.d.Quotes.FindQuote(ctx, quoting.ID)
+		switch {
+		case errors.Is(err, ErrNotFound):
+			quotingStored = false
+		case err != nil:
+			return content.QuoteAuthorization{}, quoted, err
+		default:
+			quotingStored = q.QuotedURI == quoted.URI
+		}
 	}
 	r := content.InteractionRequest{
 		Kind: content.InteractionQuote, Direction: content.DirectionInbound, TargetURI: quoted.URI, TargetAccountID: quoted.AuthorAccountID,
@@ -78,7 +93,19 @@ func (s *Interactions) AnswerQuoteRequest(ctx context.Context, in QuoteRequestIn
 			return err
 		}
 		ref := RefOf(quoted)
-		_, state, _, err = s.approvals().request(ctx, tx, r, a, &ref)
+		if a.kind == "" || !quotingStored {
+			_, state, _, err = s.approvals().request(ctx, tx, r, a, &ref)
+			return err
+		}
+		// The stored quote is answered with its request, which tells its quoted author.
+		if _, err := changeQuote(ctx, tx, s.approvals(), s.d.Statuses, quoting, content.QuoteEventKind(a.kind), a.authorization, false); err != nil {
+			return err
+		}
+		req, err := s.d.Quotes.FindInteractionRequestFor(ctx, tx, r.Kind, r.InteractingURI, r.TargetURI)
+		if err != nil {
+			return err
+		}
+		state, err = s.approvals().state(ctx, tx, req)
 		return err
 	})
 	switch {

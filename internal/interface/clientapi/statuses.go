@@ -340,6 +340,14 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		if r.Author {
 			out.Pinned = &r.Pinned
 		}
+		if r.Approval != "" {
+			a := InteractionApprovalState(r.Approval)
+			out.Approval = &a
+		}
+		if r.BoostApproval != "" && !r.Boosted {
+			a := InteractionApprovalState(r.BoostApproval)
+			out.BoostApproval = &a
+		}
 	}
 	if v.Card != nil {
 		out.Card = s.newLinkCard(*v.Card, parts)
@@ -838,7 +846,13 @@ func ignoreResult[T any](_ T, err error) error { return err }
 
 // BoostStatus serves POST /api/v1/statuses/{id}/boost.
 func (s *Server) BoostStatus(ctx context.Context, req BoostStatusRequestObject) (BoostStatusResponseObject, error) {
-	res, p, err := s.actUnmoved(ctx, req.Id, func(a string) error { return ignoreResult(s.o.Interactions.Boost(ctx, a, req.Id)) })
+	res, p, err := s.actUnmoved(ctx, req.Id, func(a string) error {
+		err := ignoreResult(s.o.Interactions.Boost(ctx, a, req.Id))
+		if errors.Is(err, appcontent.ErrInteractionAwaitsApproval) {
+			return nil // the status says boost_approval: pending
+		}
+		return err
+	})
 	if p != nil {
 		return BoostStatusdefaultApplicationProblemPlusJSONResponse(*p), nil
 	}

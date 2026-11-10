@@ -67,6 +67,10 @@
     "defaultMessage": "[{name} ƀǿǿǿǿşŧḗḗḓ ẏǿǿŭŭř ƥǿǿşŧ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.boost_request": {
+    "defaultMessage": "[{name} ȧȧşķḗḗḓ ŧǿǿ ƀǿǿǿǿşŧ ẏǿǿŭŭř ƥǿǿşŧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.custom_emoji_request_decided": {
     "defaultMessage": "[Ŧħḗḗ ȧȧḓḿīƞīşŧřȧȧŧǿǿřş ǿǿƒ {instance} řḗḗṽīḗḗẇḗḗḓ ẏǿǿŭŭř ƈŭŭşŧǿǿḿ ḗḗḿǿǿĵī řḗḗɋŭŭḗḗşŧ]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -91,6 +95,14 @@
     "defaultMessage": "[Ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance} řḗḗṽīḗḗẇḗḗḓ ẏǿǿŭŭř ȧȧƥƥḗḗȧȧŀ ǿǿƒ ȧȧ řḗḗƒŭŭşḗḗḓ ƥǿǿşŧ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.interaction_accepted": {
+    "defaultMessage": "[{name} ȧȧƥƥřǿǿṽḗḗḓ ẏǿǿŭŭř īƞŧḗḗřȧȧƈŧīǿǿƞ ẇīŧħ ŧħḗḗīř ƥǿǿşŧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.interaction_rejected": {
+    "defaultMessage": "[{name} ḓḗḗƈŀīƞḗḗḓ ẏǿǿŭŭř īƞŧḗḗřȧȧƈŧīǿǿƞ ẇīŧħ ŧħḗḗīř ƥǿǿşŧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.mention": {
     "defaultMessage": "[{name} ḿḗḗƞŧīǿǿƞḗḗḓ ẏǿǿŭŭ]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -111,12 +123,20 @@
     "defaultMessage": "[{name} ɋŭŭǿǿŧḗḗḓ ẏǿǿŭŭř ƥǿǿşŧ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.quote_request": {
+    "defaultMessage": "[{name} ȧȧşķḗḗḓ ŧǿǿ ɋŭŭǿǿŧḗḗ ẏǿǿŭŭř ƥǿǿşŧ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.reaction": {
     "defaultMessage": "[{name} řḗḗȧȧƈŧḗḗḓ ŧǿǿ ẏǿǿŭŭř ƥǿǿşŧ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.relationships_severed": {
     "defaultMessage": "[Ȧ şŭŭşƥḗḗƞşīǿǿƞ ƀẏ ŧħḗḗ ḿǿǿḓḗḗřȧȧŧǿǿřş ǿǿƒ {instance} ḗḗƞḓḗḗḓ şǿǿḿḗḗ ǿǿƒ ẏǿǿŭŭř ƒǿǿŀŀǿǿẇş]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.reply_request": {
+    "defaultMessage": "[{name} ȧȧşķḗḗḓ ŧǿǿ řḗḗƥŀẏ ŧǿǿ ẏǿǿŭŭř ƥǿǿşŧ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.report_resolved": {

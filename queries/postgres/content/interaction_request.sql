@@ -77,6 +77,15 @@ WHERE r.interacting_account_id = sqlc.arg(account_id)::uuid
     OR (r.kind = 'announce' AND r.target_uri = ANY(sqlc.arg(uris)::text[])))
 ORDER BY r.id;
 
+-- ListOwnInteractionStatesOfAccounts is ListOwnInteractionStates of each of many accounts.
+-- name: ListOwnInteractionStatesOfAccounts :many
+SELECT r.id, r.kind, r.target_uri, r.interacting_uri, r.interacting_account_id, s.state
+FROM interaction_requests r JOIN interaction_request_states s ON s.request_id = r.id
+WHERE r.interacting_account_id = ANY(sqlc.arg(account_ids)::uuid[])
+  AND ((r.kind = 'reply' AND r.interacting_uri = ANY(sqlc.arg(uris)::text[]))
+    OR (r.kind = 'announce' AND r.target_uri = ANY(sqlc.arg(uris)::text[])))
+ORDER BY r.id;
+
 -- HeldRepliesAmong returns the statuses among ids that are replies held out of the thread of
 -- their parent: a reply request of theirs is not accepted.
 -- name: HeldRepliesAmong :many

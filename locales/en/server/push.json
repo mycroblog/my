@@ -162,5 +162,25 @@
   "push.voice_room_invited": {
     "defaultMessage": "{name} invited you to a voice chat room",
     "description": "Web Push notification: the host or a co-host of a voice chat room invited the user to it. {name} is the display name, or the @handle, of the account that invited the user."
+  },
+  "push.reply_request": {
+    "defaultMessage": "{name} asked to reply to your post",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account whose reply to the user's post waits for the user's approval."
+  },
+  "push.boost_request": {
+    "defaultMessage": "{name} asked to boost your post",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account whose boost of the user's post waits for the user's approval."
+  },
+  "push.quote_request": {
+    "defaultMessage": "{name} asked to quote your post",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account whose quote of the user's post waits for the user's approval."
+  },
+  "push.interaction_accepted": {
+    "defaultMessage": "{name} approved your interaction with their post",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it."
+  },
+  "push.interaction_rejected": {
+    "defaultMessage": "{name} declined your interaction with their post",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it."
   }
 }

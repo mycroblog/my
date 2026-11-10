@@ -134,6 +134,20 @@ properties:
   pinned:
     description: Whether the status is pinned to the author's profile; given only to the author.
     type: boolean
+  approval:
+    description: |
+      The approval of this reply by the author of the status it replies to, while it is not
+      given; given only to the author of the reply, and omitted for a reply that needs no
+      approval or has it. A `pending` reply is shown to its author alone.
+    allOf:
+      - $ref: ./InteractionApprovalState.yaml
+  boost_approval:
+    description: |
+      The approval of the authenticated user's boost of the status by its author, while it is
+      not given; omitted when the user did not ask for one or it is given (then `boosted` is
+      true).
+    allOf:
+      - $ref: ./InteractionApprovalState.yaml
   poll:
     $ref: ./Poll.yaml
   card:

@@ -309,6 +309,9 @@ func (a audience) remoteVisibleAsActive(ctx context.Context, accountID string, s
 	}
 	viewer := content.Viewer{Kind: content.ViewerRemote, AccountID: accountID}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	if facts.Unpublished, err = a.unpublished(ctx, st); err != nil {
+		return false, err
+	}
 	return content.CanView(content.ContextObjectFetch, viewer, facts, r.Author, rel), nil
 }
 
@@ -335,6 +338,9 @@ func (a audience) remoteVisible(ctx context.Context, accountID string, st conten
 	}
 	viewer := content.Viewer{Kind: content.ViewerRemote, AccountID: accountID}
 	facts := content.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	if facts.Unpublished, err = a.unpublished(ctx, st); err != nil {
+		return false, err
+	}
 	return content.CanView(content.ContextObjectFetch, viewer, facts, restrictions, rel), nil
 }
 

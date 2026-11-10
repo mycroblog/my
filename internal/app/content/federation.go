@@ -278,3 +278,13 @@ func (s *Service) DailyLocalPublicPosts(ctx context.Context, to time.Time, days 
 func (s *Service) ListRecentLocalPosters(ctx context.Context, since time.Time, limit int) ([]string, error) {
 	return s.d.Repository.ListRecentLocalPosters(ctx, since, limit)
 }
+
+// Unpublished reports whether st is a local reply held until the author of its parent approves
+// it (ADR-0155 §7): its author alone sees it, and its IRI serves no one else.
+func (s *Service) Unpublished(ctx context.Context, st Status) (bool, error) {
+	if !st.IsLocal || st.InReplyToURI == "" {
+		return false, nil
+	}
+	held, err := s.d.Repository.HeldRepliesAmong(ctx, nil, []string{st.ID})
+	return held[st.ID], err
+}

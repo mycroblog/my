@@ -2951,6 +2951,86 @@ paths:
           $ref: '#/components/responses/Relationship'
         default:
           $ref: '#/components/responses/Problem'
+  /interaction_requests:
+    get:
+      operationId: listInteractionRequests
+      summary: List the interaction requests to the authenticated user
+      description: |
+        The replies, boosts, and quotes of the user's statuses that wait for the user's approval,
+        newest first, of one kind when `kind` is given. A request whose status the user deleted, or
+        whose account the user may not see, is left out, so a page may hold fewer than `limit`
+        requests before the last.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - read:statuses
+      parameters:
+        - name: kind
+          in: query
+          required: false
+          description: Only the requests of this kind.
+          schema:
+            $ref: '#/components/schemas/InteractionKind'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of interaction requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InteractionRequestPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /interaction_requests/{id}/accept:
+    parameters:
+      - $ref: '#/components/parameters/InteractionRequestId'
+    post:
+      operationId: acceptInteractionRequest
+      summary: Approve an interaction request
+      description: |
+        Approves the reply, boost, or quote: a reply joins the thread of the status, a boost is counted, and a quote shows the status. The account is told, and its server gets the approval (an `Accept` with the authorization).
+        A request that is answered already is a 409; one of another user's status, or of a deleted
+        status, is a 404.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:statuses
+      responses:
+        '200':
+          description: The request, answered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InteractionRequest'
+        default:
+          $ref: '#/components/responses/Problem'
+  /interaction_requests/{id}/reject:
+    parameters:
+      - $ref: '#/components/parameters/InteractionRequestId'
+    post:
+      operationId: rejectInteractionRequest
+      summary: Refuse an interaction request
+      description: |
+        Refuses the reply, boost, or quote: it stays out of the thread and the counts. The account is told, and its server gets a `Reject`.
+        A request that is answered already is a 409; one of another user's status, or of a deleted
+        status, is a 404.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:statuses
+      responses:
+        '200':
+          description: The request, answered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InteractionRequest'
+        default:
+          $ref: '#/components/responses/Problem'
   /mutes:
     get:
       operationId: listMutes
@@ -11521,6 +11601,13 @@ components:
       description: The key of the text.
       schema:
         $ref: '#/components/schemas/InstanceTextKey'
+    InteractionRequestId:
+      name: id
+      in: path
+      description: The ID of the interaction request.
+      required: true
+      schema:
+        $ref: '#/components/schemas/Id'
     InviteId:
       name: id
       in: path
@@ -20841,7 +20928,9 @@ components:
         and off together. The ordinary notifications are one row per type (`mention`, `follow`,
         `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
         `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-        `voice_room_invited`. `status` has no `email` channel. The moderator notifications are one row per type (`admin_report`,
+        `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+        `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
+        `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
         `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
         `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
         notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
@@ -20860,6 +20949,7 @@ components:
         - favourite
         - reaction
         - quote
+        - interaction_request
         - poll_closed
         - account_moved
         - voice
@@ -21021,7 +21111,11 @@ components:
         with another emoji is another notification), or the account that quoted a post of the
         user (`quote`, once the quote is approved or, from software without approvals, received).
         `status` is the post that `mention`, `boost`, `favourite`, `reaction`, and `poll_closed`
-        are about, and for `quote` the post that quotes. `moderation_notice` comes from the instance and has no `account`; its
+        are about, and for `quote` the post that quotes. `reply_request`, `boost_request`, and
+        `quote_request` tell that `account` replied to, boosted, or quoted the user's `status` and
+        that it waits for the user's approval (`listInteractionRequests`); `interaction_accepted`
+        and `interaction_rejected` tell that `account`, the author of `status`, approved or refused
+        the user's reply to it, boost of it, or quote of it. `moderation_notice` comes from the instance and has no `account`; its
         `moderation_action` is the action on the user's account, with its kind, reason, and end.
         `report_resolved` also comes from the instance: its `report` is the user's report that
         the moderators resolved, without how they resolved it. It is sent once per report, even
@@ -21127,6 +21221,11 @@ components:
         - admin_hook_appeal
         - hook_appeal_decided
         - auto_delete_limit
+        - reply_request
+        - boost_request
+        - quote_request
+        - interaction_accepted
+        - interaction_rejected
     OAuthApp:
       description: |
         An OAuth app that the authenticated user registered. Like every third-party app,
@@ -22364,6 +22463,25 @@ components:
         - mentioned
         - followers
         - everyone
+    InteractionApprovalState:
+      description: |
+        The approval of the authenticated user's interaction (a reply, a boost, or a quote) by the
+        author of the status it is with, while it is not given:
+
+        - `pending`: it waits for the author's answer. A reply that waits is shown to its author
+          alone, and goes out once it is approved; a boost that waits is recorded once it is approved.
+        - `rejected`: the author refused it.
+      type: string
+      enum:
+        - pending
+        - rejected
+    InteractionKind:
+      description: An interaction that an interaction policy governs (a reply, a boost, or a quote).
+      type: string
+      enum:
+        - reply
+        - announce
+        - quote
     InteractionPolicy:
       description: |
         Who may reply to, boost, and quote a status. Whatever the policy, a followers-only status is
@@ -22383,6 +22501,61 @@ components:
             - $ref: '#/components/schemas/InteractionRule'
         quote:
           $ref: '#/components/schemas/InteractionRule'
+    InteractionRequest:
+      description: |
+        A reply to, a boost of, or a quote of a status of the authenticated user that waits for the
+        user's approval, because only the manual rule of the status's interaction policy admits the
+        account that interacts.
+      type: object
+      required:
+        - id
+        - kind
+        - state
+        - created_at
+        - account
+        - status
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        kind:
+          $ref: '#/components/schemas/InteractionKind'
+        state:
+          description: |
+            `pending` until the user answers; then `accepted` or `rejected`.
+          type: string
+          enum:
+            - pending
+            - accepted
+            - rejected
+        created_at:
+          type: string
+          format: date-time
+        account:
+          description: The account that interacts.
+          allOf:
+            - $ref: '#/components/schemas/Account'
+        status:
+          description: The status of the user that the account interacts with.
+          allOf:
+            - $ref: '#/components/schemas/Status'
+        interacting_status:
+          description: |
+            The reply or the quoting status, when the server has it and the user may see it; omitted
+            for a boost, and for a reply that a remote server sends only once it is approved.
+          allOf:
+            - $ref: '#/components/schemas/Status'
+    InteractionRequestPage:
+      description: A page of interaction requests.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/InteractionRequest'
     InteractionPolicyChange:
       description: |
         A change of an interaction policy: the kinds left out keep their rules. Interactions approved
@@ -23121,6 +23294,20 @@ components:
         pinned:
           description: Whether the status is pinned to the author's profile; given only to the author.
           type: boolean
+        approval:
+          description: |
+            The approval of this reply by the author of the status it replies to, while it is not
+            given; given only to the author of the reply, and omitted for a reply that needs no
+            approval or has it. A `pending` reply is shown to its author alone.
+          allOf:
+            - $ref: '#/components/schemas/InteractionApprovalState'
+        boost_approval:
+          description: |
+            The approval of the authenticated user's boost of the status by its author, while it is
+            not given; omitted when the user did not ask for one or it is given (then `boosted` is
+            true).
+          allOf:
+            - $ref: '#/components/schemas/InteractionApprovalState'
         poll:
           $ref: '#/components/schemas/Poll'
         card:

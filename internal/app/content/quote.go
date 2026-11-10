@@ -135,17 +135,29 @@ func (s *Service) recordQuote(ctx context.Context, tx uow.Tx, st content.Status,
 	if err != nil {
 		return err
 	}
-	if q.Form == content.QuoteFormFEP044f {
-		if _, _, err := quoteRequest(ctx, tx, s.approvals(), st, q, quoted); err != nil {
+	if q.Form == content.QuoteFormFEP044f && st.IsLocal && (quoted == nil || !quoted.IsLocal) {
+		// A local quote of a remote status asks its server (a QuoteRequest).
+		if _, err := quoteRequest(ctx, tx, s.approvals(), st, q, quoted, answer{}); err != nil {
 			return err
 		}
 	}
 	return tx.Emit(ctx, QuoteRecorded{Quote: q, Status: RefOf(st), Quoted: quoted, RecordedAt: s.d.Clock.Now()})
 }
 
-// quoteRequest returns the request of the FEP-044f quote q of st, recorded in tx when it has
-// none, with its state.
-func quoteRequest(ctx context.Context, tx uow.Tx, p approvals, st content.Status, q content.Quote, quoted *StatusRef) (content.InteractionRequest, content.InteractionState, error) {
+// quoteRequest records in tx the request of the FEP-044f quote q of st with the answer a, unless
+// it has one; it answers the request it has with a, unless a is no answer. It returns the
+// request's state.
+func quoteRequest(ctx context.Context, tx uow.Tx, p approvals, st content.Status, q content.Quote, quoted *StatusRef, a answer) (content.InteractionState, error) {
+	switch req, err := p.repo.FindInteractionRequestFor(ctx, tx, content.InteractionQuote, st.URI, q.QuotedURI); {
+	case err == nil:
+		if a.kind == "" {
+			return p.state(ctx, tx, req)
+		}
+		state, _, err := p.answer(ctx, tx, req, a, quoted)
+		return state, err
+	case !errors.Is(err, ErrNotFound):
+		return content.InteractionState{}, err
+	}
 	r := content.InteractionRequest{
 		Kind: content.InteractionQuote, TargetURI: q.QuotedURI, InteractingURI: st.URI, InteractingAccountID: st.AuthorAccountID,
 		Direction: content.DirectionOf(false, st.IsLocal),
@@ -153,8 +165,8 @@ func quoteRequest(ctx context.Context, tx uow.Tx, p approvals, st content.Status
 	if quoted != nil {
 		r.TargetAccountID, r.Direction = quoted.AuthorAccountID, content.DirectionOf(quoted.IsLocal, st.IsLocal)
 	}
-	req, state, _, err := p.request(ctx, tx, r, answer{}, quoted)
-	return req, state, err
+	_, state, _, err := p.request(ctx, tx, r, a, quoted)
+	return state, err
 }
 
 // approvals returns the writer of the records of approvals.
@@ -199,12 +211,8 @@ func changeQuote(ctx context.Context, tx uow.Tx, p approvals, statuses Repositor
 			return false, err
 		}
 	} else {
-		req, _, err := quoteRequest(ctx, tx, p, st, q, quoted)
-		if err != nil {
-			return false, err
-		}
 		a := answer{kind: content.InteractionEventKind(kind), authorization: authorizationURI, deferred: deferred}
-		if _, _, err := p.answer(ctx, tx, req, a, quoted); err != nil {
+		if _, err := quoteRequest(ctx, tx, p, st, q, quoted, a); err != nil {
 			return false, err
 		}
 	}

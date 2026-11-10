@@ -218,6 +218,19 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 		}
 		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.Revision.MentionedAccountIDs, ev.Revision.RevisedAt)
 	})
+	// An approved reply mentions its accounts when it is released into its thread.
+	r.Register(appcontent.EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.StatusReleased)
+		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.Revision.MentionedAccountIDs, ev.Revision.RevisedAt)
+	})
+	r.Register(appcontent.EventInteractionRequested, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.InteractionRequested)
+		return p.interactionRequested(ctx, tx, ev)
+	})
+	r.Register(appcontent.EventInteractionAnswered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(appcontent.InteractionAnswered)
+		return p.interactionAnswered(ctx, tx, ev)
+	})
 	registerDeletedStatusProjector(r, d.Repository)
 	r.Register(appcontent.EventBoosted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.Boosted)
@@ -503,6 +516,50 @@ func (p *projector) quote(ctx context.Context, tx uow.Tx, quoting appcontent.Sta
 		RecipientAccountID: quoted.AuthorAccountID, SourceAccountID: quoting.AuthorAccountID, Type: notification.TypeQuote,
 		StatusID: quoting.ID, DedupeKey: notification.InteractionKey(notification.TypeQuote, quoting.ID, quoting.AuthorAccountID),
 		CreatedAt: at,
+	})
+}
+
+// requestTypes are the notifications of the requests of each kind.
+var requestTypes = map[appcontent.InteractionKind]notification.Type{
+	appcontent.InteractionReply:    notification.TypeReplyRequest,
+	appcontent.InteractionAnnounce: notification.TypeBoostRequest,
+	appcontent.InteractionQuote:    notification.TypeQuoteRequest,
+}
+
+// interactionRequested notifies the local author of the status of a request that waits for the
+// author's approval (ADR-0155 §10): of its kind, from the account that interacts.
+func (p *projector) interactionRequested(ctx context.Context, tx uow.Tx, ev appcontent.InteractionRequested) error {
+	r, target := ev.Request, ev.Target
+	if ev.State.State != appcontent.InteractionRequestPending || target == nil || !target.IsLocal {
+		return nil
+	}
+	t := requestTypes[r.Kind]
+	return p.notify(ctx, tx, notification.Notification{
+		RecipientAccountID: target.AuthorAccountID, SourceAccountID: r.InteractingAccountID, Type: t, StatusID: target.ID,
+		DedupeKey: notification.ApprovalKey(t, r.ID), CreatedAt: r.CreatedAt,
+	})
+}
+
+// interactionAnswered notifies the local account whose interaction the author of its target
+// answered (ADR-0155 §10): accepted or rejected, from the author, about the status interacted
+// with. That is the answer of a remote server, and the answer of a local author (Deferred); the
+// approval of a local interaction that the rules gave at once notifies no one.
+func (p *projector) interactionAnswered(ctx context.Context, tx uow.Tx, ev appcontent.InteractionAnswered) error {
+	r, target := ev.Request, ev.Target
+	if target == nil || !(r.Direction == appcontent.DirectionOutbound || r.Direction == appcontent.DirectionLocal && ev.Deferred) {
+		return nil
+	}
+	t := notification.TypeInteractionAccepted
+	switch ev.State.State {
+	case appcontent.InteractionRequestAccepted:
+	case appcontent.InteractionRequestRejected:
+		t = notification.TypeInteractionRejected
+	default:
+		return nil
+	}
+	return p.notify(ctx, tx, notification.Notification{
+		RecipientAccountID: r.InteractingAccountID, SourceAccountID: target.AuthorAccountID, Type: t, StatusID: target.ID,
+		DedupeKey: notification.ApprovalKey(t, r.ID), CreatedAt: ev.Event.OccurredAt,
 	})
 }
 

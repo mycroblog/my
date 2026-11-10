@@ -70,7 +70,7 @@ func notificationSettings(t *testing.T, e *notificationEnv) {
 		groups = append(groups, string(r.Spec.Group))
 	}
 	if got, want := strings.Join(groups, ","),
-		"mention,follow,follow_request,follow_accepted,boost,favourite,reaction,quote,poll_closed,account_moved,voice,status,moderation,service_closure,announcement,auto_delete_limit"; got != want {
+		"mention,follow,follow_request,follow_accepted,boost,favourite,reaction,quote,poll_closed,account_moved,voice,status,interaction_request,moderation,service_closure,announcement,auto_delete_limit"; got != want {
 		t.Errorf("rows of a user = %s, want %s (no moderator rows, no supporter row while the program is off)", got, want)
 	}
 	wantRow(alice, notification.GroupMention, cells{inApp: true})

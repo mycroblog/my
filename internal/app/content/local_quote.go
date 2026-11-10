@@ -112,6 +112,13 @@ func (s *Service) recordLocalQuote(ctx context.Context, tx uow.Tx, st content.St
 	if err := s.recordQuote(ctx, tx, st, &RemoteQuoteInput{URI: q.quoted.URI, Form: form}); err != nil {
 		return err
 	}
+	if q.allowance == content.QuotePending {
+		// The quote of a local status waits for its author (ADR-0155 §6).
+		quote := content.Quote{StatusID: st.ID, QuotedURI: q.quoted.URI, Form: form}
+		ref := RefOf(q.quoted)
+		_, err := quoteRequest(ctx, tx, s.approvals(), st, quote, &ref, answer{})
+		return err
+	}
 	if q.allowance != content.QuoteApproved {
 		return nil
 	}

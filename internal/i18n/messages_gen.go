@@ -1841,6 +1841,13 @@ func (l *Localizer) ServerErrorsInsufficientScopeDetail(scope string) string {
 	return l.format("server:errors.insufficient_scope_detail", map[string]any{"scope": scope})
 }
 
+// ServerErrorsInteractionRequestAnswered formats "server:errors.interaction_request.answered". Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before.
+//
+//	en: This request is answered already.
+func (l *Localizer) ServerErrorsInteractionRequestAnswered() string {
+	return l.format("server:errors.interaction_request.answered", nil)
+}
+
 // ServerErrorsInteractionRestricted formats "server:errors.interaction_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying).
 //
 //	en: Your account may not follow, favourite, boost, or reply right now.
@@ -4551,6 +4558,13 @@ func (l *Localizer) ServerPushBoost(name string) string {
 	return l.format("server:push.boost", map[string]any{"name": name})
 }
 
+// ServerPushBoostRequest formats "server:push.boost_request". Web Push notification. {name} is the display name, or the @handle, of the account whose boost of the user's post waits for the user's approval.
+//
+//	en: {name} asked to boost your post
+func (l *Localizer) ServerPushBoostRequest(name string) string {
+	return l.format("server:push.boost_request", map[string]any{"name": name})
+}
+
 // ServerPushCustomEmojiRequestDecided formats "server:push.custom_emoji_request_decided". Web Push notification: an administrator approved or rejected the user's request for a custom emoji or a new image of one. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: The administrators of {instance} reviewed your custom emoji request
@@ -4593,6 +4607,20 @@ func (l *Localizer) ServerPushHookAppealDecided(instance string) string {
 	return l.format("server:push.hook_appeal_decided", map[string]any{"instance": instance})
 }
 
+// ServerPushInteractionAccepted formats "server:push.interaction_accepted". Web Push notification. {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it.
+//
+//	en: {name} approved your interaction with their post
+func (l *Localizer) ServerPushInteractionAccepted(name string) string {
+	return l.format("server:push.interaction_accepted", map[string]any{"name": name})
+}
+
+// ServerPushInteractionRejected formats "server:push.interaction_rejected". Web Push notification. {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it.
+//
+//	en: {name} declined your interaction with their post
+func (l *Localizer) ServerPushInteractionRejected(name string) string {
+	return l.format("server:push.interaction_rejected", map[string]any{"name": name})
+}
+
 // ServerPushMention formats "server:push.mention". Web Push notification. {name} is the display name, or the @handle, of the account that wrote a post that mentions the user.
 //
 //	en: {name} mentioned you
@@ -4628,6 +4656,13 @@ func (l *Localizer) ServerPushQuote(name string) string {
 	return l.format("server:push.quote", map[string]any{"name": name})
 }
 
+// ServerPushQuoteRequest formats "server:push.quote_request". Web Push notification. {name} is the display name, or the @handle, of the account whose quote of the user's post waits for the user's approval.
+//
+//	en: {name} asked to quote your post
+func (l *Localizer) ServerPushQuoteRequest(name string) string {
+	return l.format("server:push.quote_request", map[string]any{"name": name})
+}
+
 // ServerPushReaction formats "server:push.reaction". Web Push notification. {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji.
 //
 //	en: {name} reacted to your post
@@ -4640,6 +4675,13 @@ func (l *Localizer) ServerPushReaction(name string) string {
 //	en: A suspension by the moderators of {instance} ended some of your follows
 func (l *Localizer) ServerPushRelationshipsSevered(instance string) string {
 	return l.format("server:push.relationships_severed", map[string]any{"instance": instance})
+}
+
+// ServerPushReplyRequest formats "server:push.reply_request". Web Push notification. {name} is the display name, or the @handle, of the account whose reply to the user's post waits for the user's approval.
+//
+//	en: {name} asked to reply to your post
+func (l *Localizer) ServerPushReplyRequest(name string) string {
+	return l.format("server:push.reply_request", map[string]any{"name": name})
 }
 
 // ServerPushReportResolved formats "server:push.report_resolved". Web Push notification: the moderators resolved a report that the user filed. It never says how. {instance} is the server's display name, or its domain name when it has none.

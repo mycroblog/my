@@ -278,6 +278,12 @@ paths:
     $ref: ./paths/follow_requests_{id}_accept.yaml
   /follow_requests/{id}/reject:
     $ref: ./paths/follow_requests_{id}_reject.yaml
+  /interaction_requests:
+    $ref: ./paths/interaction_requests.yaml
+  /interaction_requests/{id}/accept:
+    $ref: ./paths/interaction_requests_{id}_accept.yaml
+  /interaction_requests/{id}/reject:
+    $ref: ./paths/interaction_requests_{id}_reject.yaml
   /mutes:
     $ref: ./paths/mutes.yaml
   /domain_mutes:
@@ -862,6 +868,8 @@ components:
       $ref: ./components/parameters/InstanceDomain.yaml
     InstanceTextKey:
       $ref: ./components/parameters/InstanceTextKey.yaml
+    InteractionRequestId:
+      $ref: ./components/parameters/InteractionRequestId.yaml
     InviteId:
       $ref: ./components/parameters/InviteId.yaml
     LoginProviderId:
@@ -1842,8 +1850,16 @@ components:
       $ref: ./components/schemas/LinkCardSize.yaml
     InteractionAudience:
       $ref: ./components/schemas/InteractionAudience.yaml
+    InteractionApprovalState:
+      $ref: ./components/schemas/InteractionApprovalState.yaml
+    InteractionKind:
+      $ref: ./components/schemas/InteractionKind.yaml
     InteractionPolicy:
       $ref: ./components/schemas/InteractionPolicy.yaml
+    InteractionRequest:
+      $ref: ./components/schemas/InteractionRequest.yaml
+    InteractionRequestPage:
+      $ref: ./components/schemas/InteractionRequestPage.yaml
     InteractionPolicyChange:
       $ref: ./components/schemas/InteractionPolicyChange.yaml
     InteractionRule:

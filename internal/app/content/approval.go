@@ -92,6 +92,9 @@ type ApprovalRepository interface {
 	// ListOwnInteractions returns the requests of the replies of accountID whose URI is among
 	// uris, and of its boosts of the statuses among uris, with their states, with one query.
 	ListOwnInteractions(ctx context.Context, accountID string, uris []string) ([]OwnInteraction, error)
+	// ListOwnInteractionsOf is ListOwnInteractions of each of accountIDs, by account, with one
+	// query.
+	ListOwnInteractionsOf(ctx context.Context, accountIDs, uris []string) (map[string][]OwnInteraction, error)
 
 	// ReplyAuthorizationsOf returns, by status, the authorization of the approved reply request of
 	// each of the statuses ids that has one, with one query.
@@ -163,10 +166,11 @@ type InteractionAnswered struct {
 	State   content.InteractionState
 	// Target is the status interacted with, nil while it is not stored.
 	Target *StatusRef
-	// Deferred is whether the answer to a remote account's interaction with a local status must
-	// still be delivered: the author's answer, and the answer to an interaction that came
-	// without a request. The handler of a ReplyRequest, AnnounceRequest, or QuoteRequest
-	// answers what it decides itself.
+	// Deferred is whether the answer came after the request: the author's answer, and the
+	// answer to a remote interaction that came without a request. The federation module delivers
+	// the deferred answers to remote accounts; the handler of a ReplyRequest, AnnounceRequest, or
+	// QuoteRequest answers what it decides itself. The notification module tells the local
+	// account of the author's answer to its interaction.
 	Deferred bool
 }
 
@@ -250,7 +254,8 @@ type answer struct {
 }
 
 // request records in tx the request r with the answer a, unless the interaction has a request
-// for the target already. It returns the stored request with its state, and whether r is new.
+// for the target already, which a answers when it is pending. It returns the stored request with
+// its state, and whether r is new.
 func (p approvals) request(ctx context.Context, tx uow.Tx, r content.InteractionRequest, a answer, target *StatusRef) (content.InteractionRequest, content.InteractionState, bool, error) {
 	if r.ID == "" {
 		r.ID = p.ids.NewID()
@@ -268,6 +273,11 @@ func (p approvals) request(ctx context.Context, tx uow.Tx, r content.Interaction
 			return content.InteractionRequest{}, content.InteractionState{}, false, err
 		}
 		st, err := p.state(ctx, tx, stored)
+		if err != nil || st.State != content.InteractionRequestPending || a.kind == "" {
+			return stored, st, false, err
+		}
+		// A pending request that is decided now, asked again, is answered (ADR-0155 §3).
+		st, _, err = p.answer(ctx, tx, stored, a, target)
 		return stored, st, false, err
 	}
 	st := content.InitialInteractionState(r)

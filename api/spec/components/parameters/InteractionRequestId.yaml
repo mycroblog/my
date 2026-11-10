@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+name: id
+in: path
+description: The ID of the interaction request.
+required: true
+schema:
+  $ref: ../schemas/Id.yaml

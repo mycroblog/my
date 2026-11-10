@@ -47,6 +47,12 @@ type ObjectStatuses interface {
 	PostCount(ctx context.Context, accountID string) (int64, error)
 }
 
+// unpublishedStatuses tells the held local replies, which their author alone sees (ADR-0155 §7), as
+// *appcontent.Service does.
+type unpublishedStatuses interface {
+	Unpublished(ctx context.Context, st appcontent.Status) (bool, error)
+}
+
 // ObjectAccounts is the part of the account module's public API that object fetches read.
 // *appaccount.Service implements it.
 type ObjectAccounts interface {
@@ -354,6 +360,12 @@ func (o *Objects) object(ctx context.Context, req Requester, statusID string, ac
 // Facts only ever widen what CanView grants, so reading them lazily decides the same.
 func (o *Objects) canView(ctx context.Context, req Requester, st appcontent.Status, rev appcontent.Revision, restrictions appcontent.AuthorRestrictions) (bool, error) {
 	facts := appcontent.StatusFacts{AuthorAccountID: st.AuthorAccountID, AuthorIsLocal: st.IsLocal, Visibility: st.Visibility}
+	if u, ok := o.d.Statuses.(unpublishedStatuses); ok {
+		var err error
+		if facts.Unpublished, err = u.Unpublished(ctx, st); err != nil {
+			return false, err
+		}
+	}
 	viewer := appcontent.Viewer{Kind: appcontent.ViewerAnonymous}
 	var rel appcontent.Relation
 	if !req.Anonymous() {

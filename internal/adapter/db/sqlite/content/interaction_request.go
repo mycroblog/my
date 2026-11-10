@@ -170,6 +170,33 @@ func (r *StatusRepository) ReplyAuthorizationsOf(ctx context.Context, ids []stri
 	return out, nil
 }
 
+// ListOwnInteractionsOf implements content.ApprovalRepository.
+func (r *StatusRepository) ListOwnInteractionsOf(ctx context.Context, accountIDs, uris []string) (map[string][]appcontent.OwnInteraction, error) {
+	out := map[string][]appcontent.OwnInteraction{}
+	if len(accountIDs) == 0 || len(uris) == 0 {
+		return out, nil
+	}
+	accounts, err := sqlite.JSONList(accountIDs)
+	if err != nil {
+		return nil, err
+	}
+	list, err := sqlite.JSONList(uris)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListOwnInteractionStatesOfAccounts(ctx, contentgen.ListOwnInteractionStatesOfAccountsParams{AccountIds: accounts, Uris: list})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list own interaction states of accounts")
+	}
+	for _, row := range rows {
+		out[row.InteractingAccountID] = append(out[row.InteractingAccountID], appcontent.OwnInteraction{
+			RequestID: row.ID, Kind: content.InteractionKind(row.Kind), TargetURI: row.TargetUri, InteractingURI: row.InteractingUri,
+			State: content.InteractionRequestState(row.State),
+		})
+	}
+	return out, nil
+}
+
 // IsHeldReply implements content.Repository.
 func (r *StatusRepository) IsHeldReply(ctx context.Context, tx uow.Tx, statusID string) (bool, error) {
 	held, err := r.HeldRepliesAmong(ctx, tx, []string{statusID})

@@ -560,6 +560,60 @@ func (q *Queries) ListOwnInteractionStates(ctx context.Context, arg ListOwnInter
 	return items, nil
 }
 
+const listOwnInteractionStatesOfAccounts = `-- name: ListOwnInteractionStatesOfAccounts :many
+SELECT r.id, r.kind, r.target_uri, r.interacting_uri, r.interacting_account_id, s.state
+FROM interaction_requests r JOIN interaction_request_states s ON s.request_id = r.id
+WHERE r.interacting_account_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+  AND ((r.kind = 'reply' AND r.interacting_uri IN (SELECT value FROM json_each(CAST(?2 AS TEXT))))
+    OR (r.kind = 'announce' AND r.target_uri IN (SELECT value FROM json_each(CAST(?2 AS TEXT)))))
+ORDER BY r.id
+`
+
+type ListOwnInteractionStatesOfAccountsParams struct {
+	AccountIds string
+	Uris       string
+}
+
+type ListOwnInteractionStatesOfAccountsRow struct {
+	ID                   string
+	Kind                 string
+	TargetUri            string
+	InteractingUri       string
+	InteractingAccountID string
+	State                string
+}
+
+// ListOwnInteractionStatesOfAccounts is ListOwnInteractionStates of each of many accounts.
+func (q *Queries) ListOwnInteractionStatesOfAccounts(ctx context.Context, arg ListOwnInteractionStatesOfAccountsParams) ([]ListOwnInteractionStatesOfAccountsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listOwnInteractionStatesOfAccounts, arg.AccountIds, arg.Uris)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOwnInteractionStatesOfAccountsRow{}
+	for rows.Next() {
+		var i ListOwnInteractionStatesOfAccountsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Kind,
+			&i.TargetUri,
+			&i.InteractingUri,
+			&i.InteractingAccountID,
+			&i.State,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPendingInteractionRequests = `-- name: ListPendingInteractionRequests :many
 SELECT r.id, r.kind, r.direction, r.target_uri, r.target_account_id, r.interacting_uri, r.interacting_account_id,
   r.activity_uri, r.visibility, r.created_at

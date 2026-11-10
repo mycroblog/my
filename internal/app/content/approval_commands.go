@@ -387,13 +387,40 @@ func (s *Interactions) insertBoost(ctx context.Context, tx uow.Tx, b content.Boo
 // InteractionRequestPage is a page of the pending requests of an author.
 type InteractionRequestPage struct {
 	Requests []content.InteractionRequest
+	// StatusIDs are the IDs of the stored statuses among the targets and interactions of
+	// Requests, by URI.
+	StatusIDs map[string]string
 	// Next is the cursor of the next page, "" on the last page.
 	Next string
 }
 
+// statusIDsOf returns the IDs of the stored statuses among the targets and interactions of rs, by
+// URI, with one query.
+func (s *Interactions) statusIDsOf(ctx context.Context, rs []content.InteractionRequest) (map[string]string, error) {
+	out := map[string]string{}
+	var uris []string
+	for _, r := range rs {
+		uris = append(uris, r.TargetURI)
+		if r.Kind != content.InteractionAnnounce {
+			uris = append(uris, r.InteractingURI)
+		}
+	}
+	if len(uris) == 0 {
+		return out, nil
+	}
+	sts, err := s.d.Statuses.FindStatusesByURIs(ctx, uris)
+	if err != nil {
+		return nil, err
+	}
+	for uri, st := range sts {
+		out[uri] = st.ID
+	}
+	return out, nil
+}
+
 // PendingInteractionRequests returns a page of up to limit requests of kinds (every kind when it
 // is empty) that wait for the answer of accountID, newest first, below the cursor before ("" for
-// the newest), with one query.
+// the newest), with the IDs of the statuses they name: two queries.
 func (s *Interactions) PendingInteractionRequests(ctx context.Context, accountID string, kinds []content.InteractionKind, before string, limit int) (InteractionRequestPage, error) {
 	if s.d.Quotes == nil {
 		return InteractionRequestPage{}, nil
@@ -410,12 +437,22 @@ func (s *Interactions) PendingInteractionRequests(ctx context.Context, accountID
 		out.Requests = rs[:limit]
 		out.Next = rs[limit-1].ID
 	}
-	return out, nil
+	out.StatusIDs, err = s.statusIDsOf(ctx, out.Requests)
+	return out, err
 }
 
-// FindInteractionRequest returns the request id when accountID is the author of its target, for
-// presenting it; any other fails with ErrNotFound.
-func (s *Interactions) FindInteractionRequest(ctx context.Context, accountID, id string) (content.InteractionRequest, content.InteractionState, error) {
+// FindInteractionRequest returns the request id when accountID is the author of its target, as a
+// page of one, for presenting it; any other fails with ErrNotFound.
+func (s *Interactions) FindInteractionRequest(ctx context.Context, accountID, id string) (InteractionRequestPage, content.InteractionState, error) {
+	r, st, err := s.findInteractionRequest(ctx, accountID, id)
+	if err != nil {
+		return InteractionRequestPage{}, content.InteractionState{}, err
+	}
+	ids, err := s.statusIDsOf(ctx, []content.InteractionRequest{r})
+	return InteractionRequestPage{Requests: []content.InteractionRequest{r}, StatusIDs: ids}, st, err
+}
+
+func (s *Interactions) findInteractionRequest(ctx context.Context, accountID, id string) (content.InteractionRequest, content.InteractionState, error) {
 	if s.d.Quotes == nil || !kernel.ValidID(id) {
 		return content.InteractionRequest{}, content.InteractionState{}, fmt.Errorf("interaction request %s: %w", id, ErrNotFound)
 	}
