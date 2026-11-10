@@ -229,9 +229,9 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 	return snap, nil
 }
 
-// spend counts one request against max, or fails with ErrRequestCap when none is left.
-func (s *Source) spend(snap *appfinance.Snapshot, max int) error {
-	if snap.Requests >= max {
+// spend counts one request against limit, or fails with ErrRequestCap when none is left.
+func (s *Source) spend(snap *appfinance.Snapshot, limit int) error {
+	if snap.Requests >= limit {
 		return appfinance.ErrRequestCap
 	}
 	snap.Requests++
@@ -345,25 +345,25 @@ func classify(ctx context.Context, err error) error {
 	if !errors.As(err, &apiErr) {
 		var urlErr *url.Error
 		if errors.As(err, &urlErr) {
-			return fmt.Errorf("%w: %v", appfinance.ErrBillingUnavailable, err)
+			return fmt.Errorf("%w: %w", appfinance.ErrBillingUnavailable, err)
 		}
 		// The SDK could not read the response.
-		return fmt.Errorf("%w: %v", appfinance.ErrInvalidBillingResponse, err)
+		return fmt.Errorf("%w: %w", appfinance.ErrInvalidBillingResponse, err)
 	}
 	invalidToken := slices.ContainsFunc(apiErr.Errors, func(e shared.ErrorData) bool { return e.Code == codeInvalidToken })
 	switch code := apiErr.StatusCode; {
 	// An invalid token is a 400 with code 9106; an account the token cannot read, or that does not
 	// exist, is a 403 with code 10000.
 	case invalidToken || code == http.StatusUnauthorized || code == http.StatusForbidden:
-		return fmt.Errorf("%w: %v", appfinance.ErrBillingPermission, err)
+		return fmt.Errorf("%w: %w", appfinance.ErrBillingPermission, err)
 	case code == http.StatusNotFound:
-		return fmt.Errorf("%w: %v", appfinance.ErrBillingNotFound, err)
+		return fmt.Errorf("%w: %w", appfinance.ErrBillingNotFound, err)
 	case code == http.StatusTooManyRequests:
-		return fmt.Errorf("%w: %v", appfinance.ErrBillingThrottled, err)
+		return fmt.Errorf("%w: %w", appfinance.ErrBillingThrottled, err)
 	case code >= http.StatusInternalServerError:
-		return fmt.Errorf("%w: %v", appfinance.ErrBillingUnavailable, err)
+		return fmt.Errorf("%w: %w", appfinance.ErrBillingUnavailable, err)
 	default:
-		return fmt.Errorf("%w: %v", appfinance.ErrInvalidBillingResponse, err)
+		return fmt.Errorf("%w: %w", appfinance.ErrInvalidBillingResponse, err)
 	}
 }
 
