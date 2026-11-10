@@ -10,6 +10,12 @@ import (
 	"time"
 )
 
+type ConversationMute struct {
+	AccountID      string
+	ConversationID string
+	CreatedAt      time.Time
+}
+
 type ErrorGroupNoticeHour struct {
 	HourStart time.Time
 	Notices   int64
@@ -47,9 +53,23 @@ type Notification struct {
 	CreatedAt               time.Time
 }
 
+type NotificationPolicy struct {
+	AccountID       string
+	PolicyCondition string
+	PolicyAction    string
+	UpdatedAt       time.Time
+}
+
 type NotificationReadMarker struct {
 	AccountID  string
 	LastReadID string
+}
+
+type NotificationRequest struct {
+	RecipientAccountID string
+	SourceAccountID    string
+	NotificationsCount int64
+	LastNotificationID string
 }
 
 type NotificationSetting struct {

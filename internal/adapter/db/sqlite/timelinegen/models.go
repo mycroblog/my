@@ -10,6 +10,13 @@ import (
 	"database/sql"
 )
 
+type FeaturedTag struct {
+	AccountID  string
+	TagID      string
+	Ordinal    int64
+	FeaturedAt int64
+}
+
 type FeedAuthorRestriction struct {
 	AccountID      string
 	Restriction    string
@@ -85,6 +92,11 @@ type FeedTagFollow struct {
 	AccountID  string
 	TagID      string
 	FollowedAt int64
+}
+
+type KeywordFilterContext struct {
+	FilterID string
+	Context  string
 }
 
 type ListMember struct {

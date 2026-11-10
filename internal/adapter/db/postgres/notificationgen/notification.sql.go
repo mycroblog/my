@@ -60,6 +60,11 @@ WHERE n.recipient_account_id = $1
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR n.announcement_id = ANY($5::uuid[]))
 `
 
@@ -725,6 +730,11 @@ WHERE n.recipient_account_id = $1
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR n.announcement_id = ANY($7::uuid[]))
 ORDER BY n.id DESC
 LIMIT $8
@@ -820,6 +830,11 @@ WHERE n.recipient_account_id = $1
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR n.announcement_id = ANY($7::uuid[]))
 ORDER BY n.id ASC
 LIMIT $8
@@ -935,6 +950,11 @@ WHERE n.id = $1::uuid AND n.recipient_account_id = $2
     WHERE dx.viewer_account_id = n.recipient_account_id
       AND (dx.domain = n.source_domain OR right(n.source_domain, length(dx.domain) + 1) = '.' || dx.domain))
   AND NOT EXISTS (SELECT 1 FROM notification_deleted_statuses s WHERE s.status_id = n.status_id)
+  AND NOT EXISTS (SELECT 1 FROM notification_filterings f WHERE f.notification_id = n.id
+    AND (NOT EXISTS (SELECT 1 FROM notification_accepted_sources a
+        WHERE a.recipient_account_id = f.recipient_account_id AND a.source_account_id = f.source_account_id)
+      OR EXISTS (SELECT 1 FROM notification_request_dismissals rd
+        WHERE rd.recipient_account_id = f.recipient_account_id AND rd.source_account_id = f.source_account_id AND rd.last_notification_id >= f.notification_id)))
   AND (n.announcement_id IS NULL OR n.announcement_id = ANY($5::uuid[])))
 `
 

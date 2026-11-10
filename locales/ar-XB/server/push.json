@@ -83,6 +83,10 @@
     "defaultMessage": "‮{name} ɟɐʌonɹıʇǝp ʎonɹ dosʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.filtered": {
+    "defaultMessage": "‮{title} (ɯɐʇɔɥǝs ʎonɹ ɟıʅʇǝɹ “{filter}”)‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.follow": {
     "defaultMessage": "‮{name} ɟoʅʅoʍǝp ʎon‬",
     "description": "Generated from en by tools/i18n; do not edit."

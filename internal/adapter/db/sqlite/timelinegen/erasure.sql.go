@@ -47,6 +47,27 @@ func (q *Queries) CountUsedFeedTagsOfEntries(ctx context.Context, ids string) ([
 	return items, nil
 }
 
+const eraseFeaturedTagsOf = `-- name: EraseFeaturedTagsOf :execrows
+
+DELETE FROM featured_tags WHERE featured_tags.account_id = ?1 AND featured_tags.tag_id IN (
+  SELECT f.tag_id FROM featured_tags f WHERE f.account_id = ?1
+  ORDER BY f.tag_id LIMIT ?2)
+`
+
+type EraseFeaturedTagsOfParams struct {
+	AccountID string
+	Lim       int64
+}
+
+// The hashtags that an account features (data-model 4.6).
+func (q *Queries) EraseFeaturedTagsOf(ctx context.Context, arg EraseFeaturedTagsOfParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, eraseFeaturedTagsOf, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const eraseFeedDirectRecipientsOf = `-- name: EraseFeedDirectRecipientsOf :execrows
 DELETE FROM feed_direct_recipients WHERE feed_direct_recipients.recipient_account_id = ?1 AND feed_direct_recipients.entry_id IN (
   SELECT r.entry_id FROM feed_direct_recipients r WHERE r.recipient_account_id = ?1
@@ -203,6 +224,85 @@ type EraseFeedTagFollowsOfParams struct {
 // The hashtags that an account follows (data-model 4.6).
 func (q *Queries) EraseFeedTagFollowsOf(ctx context.Context, arg EraseFeedTagFollowsOfParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, eraseFeedTagFollowsOf, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const eraseKeywordFilterContextsOf = `-- name: EraseKeywordFilterContextsOf :execrows
+DELETE FROM keyword_filter_contexts WHERE keyword_filter_contexts.filter_id IN (
+  SELECT f.id FROM keyword_filters f WHERE f.account_id = ?1
+  ORDER BY f.id LIMIT ?2)
+`
+
+type EraseKeywordFilterContextsOfParams struct {
+	AccountID string
+	Lim       int64
+}
+
+func (q *Queries) EraseKeywordFilterContextsOf(ctx context.Context, arg EraseKeywordFilterContextsOfParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, eraseKeywordFilterContextsOf, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const eraseKeywordFilterSettingsOf = `-- name: EraseKeywordFilterSettingsOf :execrows
+DELETE FROM keyword_filter_settings WHERE keyword_filter_settings.filter_id IN (
+  SELECT f.id FROM keyword_filters f WHERE f.account_id = ?1
+  ORDER BY f.id LIMIT ?2)
+`
+
+type EraseKeywordFilterSettingsOfParams struct {
+	AccountID string
+	Lim       int64
+}
+
+func (q *Queries) EraseKeywordFilterSettingsOf(ctx context.Context, arg EraseKeywordFilterSettingsOfParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, eraseKeywordFilterSettingsOf, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const eraseKeywordFilterWordsOf = `-- name: EraseKeywordFilterWordsOf :execrows
+
+DELETE FROM keyword_filter_words WHERE keyword_filter_words.filter_id IN (
+  SELECT f.id FROM keyword_filters f WHERE f.account_id = ?1
+  ORDER BY f.id LIMIT ?2)
+`
+
+type EraseKeywordFilterWordsOfParams struct {
+	AccountID string
+	Lim       int64
+}
+
+// The keyword filters of an account (data-model 4.6). A filter's settings, contexts, and words go
+// before the filter, and the steps pick the same first filters by ID.
+func (q *Queries) EraseKeywordFilterWordsOf(ctx context.Context, arg EraseKeywordFilterWordsOfParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, eraseKeywordFilterWordsOf, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const eraseKeywordFiltersOf = `-- name: EraseKeywordFiltersOf :execrows
+DELETE FROM keyword_filters WHERE keyword_filters.account_id = ?1 AND keyword_filters.id IN (
+  SELECT f.id FROM keyword_filters f WHERE f.account_id = ?1
+  ORDER BY f.id LIMIT ?2)
+`
+
+type EraseKeywordFiltersOfParams struct {
+	AccountID string
+	Lim       int64
+}
+
+func (q *Queries) EraseKeywordFiltersOf(ctx context.Context, arg EraseKeywordFiltersOfParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, eraseKeywordFiltersOf, arg.AccountID, arg.Lim)
 	if err != nil {
 		return 0, err
 	}

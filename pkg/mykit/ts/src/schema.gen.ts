@@ -620,6 +620,32 @@ export interface paths {
         patch: operations["updateNotificationSettings"];
         trace?: never;
     };
+    "/preferences/notification_policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the authenticated user's notification policy
+         * @description What happens to the notifications of other accounts, by condition on their source: listed,
+         *     filtered into the request of their source, or dropped.
+         */
+        get: operations["getNotificationPolicy"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change the authenticated user's notification policy
+         * @description Changes the actions of the conditions in the body and keeps the others. The notifications
+         *     already created stay where they went.
+         */
+        patch: operations["updateNotificationPolicy"];
+        trace?: never;
+    };
     "/preferences/supporter_listing": {
         parameters: {
             query?: never;
@@ -945,7 +971,7 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
+         * Export the authenticated user's follows, followed hashtags, blocks, mutes, muted domains, or bookmarks as CSV
          * @description Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
          *     Mastodon and this server import: `following` is `following_accounts.csv`
          *     (`Account address,Show boosts,Notify on new posts,Languages`, the active follows),
@@ -953,7 +979,9 @@ export interface paths {
          *     `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
          *     `domain_mutes` is `blocked_domains.csv` (one domain per line, the domains the user
          *     mutes, which Mastodon imports as blocked domains), and `bookmarks` is `bookmarks.csv`
-         *     (one post URI per line, the posts the user may still see).
+         *     (one post URI per line, the posts the user may still see). `followed_tags` is
+         *     `followed_hashtags.csv` (one hashtag per line without its `#`, the latest followed
+         *     first), a file of this server that Mastodon neither exports nor imports.
          *     Addresses are `username@domain`, with the account domain for this server's accounts;
          *     remote accounts whose handle is unconfirmed are left out. At most 30 exports per account
          *     are accepted every hour.
@@ -982,8 +1010,9 @@ export interface paths {
         get: operations["listDataImports"];
         put?: never;
         /**
-         * Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
-         * @description Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+         * Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
+         * @description Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+         *     server (`exportCsv`). The file's
          *     entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
          *     `overwrite` also removes what the user has of `kind` that the file does not list. The
          *     server carries the import out in the background: it resolves remote accounts and posts
@@ -1014,8 +1043,8 @@ export interface paths {
          * @description Reads a CSV file as `startDataImport` would and tells what importing it would do,
          *     changing nothing. The header row is optional, a leading `@` of an address is dropped,
          *     and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-         *     `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-         *     `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+         *     `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+         *     `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
          *     new posts, notifications of a muted account hidden. The `Languages` column of a follow
          *     is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
          */
@@ -1854,6 +1883,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/featured_tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the hashtags an account features
+         * @description The hashtags that the account features on its profile (at most 10), in the order it chose.
+         *     For a remote account they are those its server lists, as this server last fetched them
+         *     with the account. The counts read only the account's `public` and `unlisted` posts that
+         *     this server has, so a remote account's may be lower than on its server.
+         *
+         *     An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+         *     deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
+         */
+        get: operations["listAccountFeaturedTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/mute": {
         parameters: {
             query?: never;
@@ -2459,7 +2514,9 @@ export interface paths {
          * @description The user's notifications, newest first. Dismissed notifications, notifications about
          *     deleted posts, and notifications from accounts that the user blocks, is blocked by, or
          *     mutes with notifications hidden are left out, also those that came before the block or
-         *     mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
+         *     mute. The notifications that the user's notification policy filtered wait in the
+         *     notification requests instead, until the user accepts the request of their source. The
+         *     moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
          *     `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
          *     `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
          *     the user's roles no longer grant the permission they need.
@@ -2516,6 +2573,135 @@ export interface paths {
          *     changes nothing; a notification that is not the user's is a 404.
          */
         post: operations["dismissNotification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the notification requests
+         * @description The sources whose notifications the user's notification policy filtered, one request per
+         *     source, the one with the newest notification first. The sources that the user blocks, is
+         *     blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
+         *     left out.
+         */
+        get: operations["listNotificationRequests"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/requests/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count the notification requests
+         * @description The number of requests that the list of requests shows, and of their notifications.
+         */
+        get: operations["getNotificationRequestSummary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/requests/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a notification request
+         * @description The request of a source account; a 404 when the list of requests does not show one.
+         */
+        get: operations["getNotificationRequest"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/requests/{id}/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the notifications of a notification request
+         * @description The notifications waiting in the request of a source account, newest first, without the
+         *     dismissed ones and those about deleted posts; a 404 when the list of requests does not show
+         *     the request.
+         */
+        get: operations["listNotificationRequestNotifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/requests/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept a notification request
+         * @description Moves the notifications of the request into the list, unread when they are newer than the
+         *     read marker, without delivering them, and accepts the later notifications of the source
+         *     whatever the policy says. A 404 when the source has no request.
+         */
+        post: operations["acceptNotificationRequest"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notifications/requests/{id}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss a notification request
+         * @description Removes the notifications of the request, which are never listed. The source is not
+         *     accepted: a later notification that the policy filters opens a new request. A 404 when the
+         *     source has no request.
+         */
+        post: operations["dismissNotificationRequest"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2821,6 +3007,41 @@ export interface paths {
          * @description Without a bookmark it changes nothing.
          */
         delete: operations["unbookmarkStatus"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/statuses/{id}/mute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the status. */
+                id: components["parameters"]["StatusId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mute the thread of a status
+         * @description Mutes the thread (conversation) that the status belongs to: from then on, replies and
+         *     mentions in it, boosts, favourites, reactions, and quotes of its posts, and new posts
+         *     in it by accounts the user is notified of no longer notify the user, the user's own
+         *     posts in the thread included. Notifications that came before stay, and the posts still
+         *     appear in timelines. The mute has no expiry and follows the thread when it is joined
+         *     with another. Muting a thread that is already muted changes nothing; the status's
+         *     `muted` tells the state.
+         */
+        post: operations["muteStatusThread"];
+        /**
+         * Unmute the thread of a status
+         * @description Ends the mute of the thread that the status belongs to. What happened in the thread
+         *     while it was muted does not notify the user afterwards. Without a mute it changes
+         *     nothing.
+         */
+        delete: operations["unmuteStatusThread"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3329,6 +3550,92 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/filters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the user's keyword filters
+         * @description Every keyword filter of the user (at most 100), oldest first, the expired ones too. Nobody else sees them.
+         */
+        get: operations["listKeywordFilters"];
+        put?: never;
+        /**
+         * Create a keyword filter
+         * @description Creates a keyword filter, which applies at once to every post the contexts show, old ones
+         *     too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+         *     a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+         *     in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+         */
+        post: operations["createKeywordFilter"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/filters/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a keyword filter
+         * @description A keyword filter of the user. Another user's filter is a 404, as if it did not exist.
+         */
+        get: operations["getKeywordFilter"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a keyword filter
+         * @description Deletes the filter with its words. Another user's filter is a 404.
+         */
+        delete: operations["deleteKeywordFilter"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a keyword filter
+         * @description Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+         *     `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+         *     user's filter is a 404.
+         */
+        patch: operations["updateKeywordFilter"];
+        trace?: never;
+    };
+    "/featured_tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the hashtags the user features
+         * @description The hashtags that the user features on their profile (at most 10), in the order the user
+         *     chose, with how many of the user's `public` and `unlisted` posts carry each.
+         */
+        get: operations["listFeaturedTags"];
+        /**
+         * Choose the hashtags the user features
+         * @description Replaces the hashtags that the user features on their profile with `names`, in their
+         *     order; a hashtag that no post has used yet can be featured. The other servers that follow
+         *     the user learn of the change as of a change of the profile. A name that is no hashtag is a
+         *     422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+         *     changes nothing.
+         */
+        put: operations["setFeaturedTags"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/timelines/home": {
         parameters: {
             query?: never;
@@ -3693,7 +4000,11 @@ export interface paths {
          *     - `list_update`: the same post or boost, once for each of the viewer's lists whose
          *       timeline shows it (its author is a member), right after its `update`. `data` is
          *       `{"list_id": "<list id>", "status": <Status>}`.
-         *     - `notification`: a new notification. `data` is a `Notification`.
+         *     - `notification`: a new notification. `data` is a `Notification`. A notification that the
+         *       user's notification policy filters into a notification request sends none.
+         *     - `notification_requests`: the counts of the notification requests changed (a notification
+         *       was filtered into one, or one was accepted or dismissed). `data` is a
+         *       `NotificationRequestSummary`.
          *     - `conversation`: a conversation of the direct messages changed: a `direct` post that the
          *       user sent or received arrived in it, or the user read it on a device. `data` is a
          *       `Conversation`, as `listConversations` shows it; nothing is sent for a conversation that it
@@ -12701,14 +13012,15 @@ export interface components {
             failed: number;
         };
         /**
-         * @description What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
-         *     accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-         *     domains the user mutes; Mastodon's `blocked_domains.csv` with the header
-         *     `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
-         *     posts the user bookmarked).
+         * @description What a CSV file lists: `following` (the accounts the user follows), `followed_tags` (the
+         *     hashtags the user follows, `followed_hashtags.csv`: one hashtag per line without its `#`,
+         *     a file of this server that Mastodon does not have), `blocks` (the accounts the user
+         *     blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the domains the user mutes;
+         *     Mastodon's `blocked_domains.csv` with the header `#domain`, which a Mastodon user's blocked
+         *     domains become here), or `bookmarks` (the posts the user bookmarked).
          * @enum {string}
          */
-        DataImportKind: "following" | "blocks" | "mutes" | "domain_mutes" | "bookmarks";
+        DataImportKind: "following" | "followed_tags" | "blocks" | "mutes" | "domain_mutes" | "bookmarks";
         /** @description The user's latest imports, newest first. */
         DataImportList: {
             items: components["schemas"]["DataImport"][];
@@ -13973,6 +14285,142 @@ export interface components {
         FollowedHashtagCollection: {
             items: components["schemas"]["FollowedHashtag"][];
         };
+        /**
+         * @description A keyword filter of the user, which only the user sees. The server matches the posts it
+         *     returns against the filters of their contexts, so every client gets the same result; the
+         *     user's own posts and boosts are never matched.
+         */
+        KeywordFilter: {
+            id: components["schemas"]["Id"];
+            /** @description The name of the filter, 1 to 50 characters, which a folded post shows. */
+            title: string;
+            action: components["schemas"]["KeywordFilterAction"];
+            /** @description Where the filter applies, at least one. */
+            contexts: components["schemas"]["KeywordFilterContext"][];
+            /** @description The words of the filter, in the order given; a post matches the filter when it matches any of them. */
+            keywords: components["schemas"]["KeywordFilterKeyword"][];
+            /**
+             * Format: date-time
+             * @description When the filter stops applying; omitted for a filter that never does. An expired filter
+             *     stays, applying nowhere, and applies again when its expiry moves later.
+             */
+            expires_at?: string;
+            /** @description Whether the filter has expired and applies nowhere. */
+            expired: boolean;
+            /**
+             * Format: date-time
+             * @description When the user created the filter.
+             */
+            created_at: string;
+        };
+        /**
+         * @description What a keyword filter does to a post that matches it: `warn` returns the post with the filter
+         *     in its `filtered`, and clients fold it behind the filter's title; `hide` leaves the post out,
+         *     as if the user could not see it.
+         * @enum {string}
+         */
+        KeywordFilterAction: "warn" | "hide";
+        /** @description The user's keyword filters, oldest first, the expired ones too. */
+        KeywordFilterCollection: {
+            items: components["schemas"]["KeywordFilter"][];
+        };
+        /**
+         * @description Where a keyword filter applies: `home` (the home timeline and the timelines of lists),
+         *     `notifications` (the notifications, their stream, Web Push, and email), `public` (the local,
+         *     federated, and hashtag timelines and their streams), `thread` (the posts before and after a
+         *     post), and `account` (the posts and pinned posts of a profile).
+         * @enum {string}
+         */
+        KeywordFilterContext: "home" | "notifications" | "public" | "thread" | "account";
+        /** @description A word of a keyword filter. */
+        KeywordFilterKeyword: {
+            /**
+             * @description The word or phrase, as the user typed it. It matches the text, the content warning, the
+             *     poll's choices, and the alt text of a post, each on its own, regardless of case, of
+             *     half-width and full-width forms, and of katakana and hiragana; runs of white space match
+             *     one space. Up to 100 characters once normalized.
+             */
+            keyword: string;
+            /**
+             * @description Whether the word matches only where no letter, digit, or `_` touches it. Characters of
+             *     scripts that do not separate words with spaces (Chinese, Japanese, Thai, and the like)
+             *     never count as touching, so there the word matches anywhere.
+             */
+            whole_word: boolean;
+        };
+        /**
+         * @description A keyword filter as the user writes it. A field that is not one is a 422 naming it; the
+         *     same word twice (once normalized) is kept once.
+         */
+        KeywordFilterRequest: {
+            /**
+             * @description 1 to 50 characters (grapheme clusters) on one line, without control characters. White
+             *     space around it is removed.
+             */
+            title: string;
+            action: components["schemas"]["KeywordFilterAction"];
+            /** @description Where the filter applies, at least one. */
+            contexts: components["schemas"]["KeywordFilterContext"][];
+            /**
+             * @description 1 to 100 words. White space around each is removed. The user's filters have at most
+             *     1,000 words in all.
+             */
+            keywords: components["schemas"]["KeywordFilterKeyword"][];
+            /**
+             * Format: date-time
+             * @description When the filter stops applying; omit it for a filter that never does.
+             */
+            expires_at?: string;
+        };
+        /** @description A keyword filter of the user with the action `warn` that a post matched, and the words it matched. */
+        FilterResult: {
+            filter: components["schemas"]["MatchedKeywordFilter"];
+            /** @description The words of the filter that the post matched, as the user typed them. */
+            keyword_matches: string[];
+        };
+        /** @description The keyword filter that a post matched, as far as a folded post shows it. */
+        MatchedKeywordFilter: {
+            id: components["schemas"]["Id"];
+            /** @description The title of the filter, which the folded post shows. */
+            title: string;
+        };
+        /**
+         * @description A hashtag that an account features on its profile, with how many of the account's `public`
+         *     and `unlisted` posts that this server has carry it. The account's posts of the other
+         *     visibilities are never counted.
+         */
+        FeaturedHashtag: {
+            /** @description The hashtag without `#`, as first written on the server. */
+            name: string;
+            /**
+             * Format: uri
+             * @description The hashtag's page.
+             */
+            url: string;
+            /**
+             * Format: int64
+             * @description How many of the account's `public` and `unlisted` posts carry the hashtag now.
+             */
+            statuses_count: number;
+            /**
+             * Format: date-time
+             * @description When one of those posts was last posted or edited with the hashtag; absent when none
+             *     carries it.
+             */
+            last_status_at?: string;
+        };
+        /** @description The hashtags that an account features on its profile, at most 10, in the order it chose. */
+        FeaturedHashtagCollection: {
+            items: components["schemas"]["FeaturedHashtag"][];
+        };
+        /** @description The hashtags to feature on the user's profile, in the order to show them. */
+        SetFeaturedTagsRequest: {
+            /**
+             * @description The hashtags, with or without `#`, at most 10; a hashtag given twice counts once. An
+             *     empty list features none.
+             */
+            names: string[];
+        };
         /** @description The name of a list. */
         ListRequest: {
             /**
@@ -14382,6 +14830,82 @@ export interface components {
         /** @description A page of notifications, newest first. */
         NotificationPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["Notification"][];
+        };
+        /**
+         * @description What the authenticated user's notification policy does with the notifications of other
+         *     accounts, by condition on their source. A notification that meets several conditions takes
+         *     the strictest action (`drop` before `filter` before `accept`); one that meets none is
+         *     accepted. Every condition accepts until the user chooses. The policy applies to `follow`,
+         *     `follow_request`, `mention`, `boost`, `favourite`, `reaction`, `quote`, and
+         *     `voice_room_invited`; the notifications the user asked for, those of the moderators, and the
+         *     notices of the server (moderation, reports, appeals, the service closure, the supporters, the
+         *     announcements) are never filtered or dropped. A source whose request the user accepted meets
+         *     no condition, and a source the user follows meets none but `limited_account`. A change
+         *     applies to the notifications created after it.
+         */
+        NotificationPolicy: {
+            /** @description Sources that the user does not follow (a follow request waiting for approval does not count). */
+            not_following: components["schemas"]["NotificationPolicyAction"];
+            /** @description Sources that do not follow the user. */
+            not_follower: components["schemas"]["NotificationPolicyAction"];
+            /** @description Sources whose account was created less than 30 days ago. */
+            new_account: components["schemas"]["NotificationPolicyAction"];
+            /**
+             * @description Mentions in a direct post that does not answer a direct post of the user that mentioned
+             *     the source in the same conversation.
+             */
+            unsolicited_private_mention: components["schemas"]["NotificationPolicyAction"];
+            /** @description Sources that a moderator limited, by themselves or by their domain. */
+            limited_account: components["schemas"]["NotificationPolicyAction"];
+        };
+        /**
+         * @description What the notification policy does with the notifications whose source meets a condition.
+         *     `accept` lists them and delivers them as the notification settings say; `filter` keeps them
+         *     out of the list and the unread count, in the request of their source, and delivers them
+         *     nowhere (no Web Push, email, sound, or streaming event); `drop` creates no notification.
+         * @enum {string}
+         */
+        NotificationPolicyAction: "accept" | "filter" | "drop";
+        /** @description Changes of the authenticated user's notification policy; an omitted condition keeps its action. */
+        NotificationPolicyUpdate: {
+            not_following?: components["schemas"]["NotificationPolicyAction"];
+            not_follower?: components["schemas"]["NotificationPolicyAction"];
+            new_account?: components["schemas"]["NotificationPolicyAction"];
+            unsolicited_private_mention?: components["schemas"]["NotificationPolicyAction"];
+            limited_account?: components["schemas"]["NotificationPolicyAction"];
+        };
+        /**
+         * @description The filtered notifications of one source that wait for the authenticated user to accept or
+         *     dismiss them. The request is named by the ID of its source account.
+         */
+        NotificationRequest: {
+            /** @description The ID of the source account, which names the request. */
+            id: components["schemas"]["Id"];
+            account: components["schemas"]["Account"];
+            /**
+             * Format: int64
+             * @description The number of notifications waiting in the request.
+             */
+            notifications_count: number;
+            /** @description The newest notification of the request; omitted when it can no longer be shown. */
+            last_notification?: components["schemas"]["Notification"];
+        };
+        /** @description A page of notification requests, the one with the newest notification first. */
+        NotificationRequestPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["NotificationRequest"][];
+        };
+        /** @description How many notification requests wait for the authenticated user. */
+        NotificationRequestSummary: {
+            /**
+             * Format: int64
+             * @description The number of requests, one per source account.
+             */
+            accounts_count: number;
+            /**
+             * Format: int64
+             * @description The number of notifications in them.
+             */
+            notifications_count: number;
         };
         /** @description One channel of one row of the notification settings. */
         NotificationSettingCell: {
@@ -15187,6 +15711,10 @@ export interface components {
          *       this problem; signing in and resetting a password stay available outside the client API.
          *     - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
          *       allowed. Unmute one first.
+         *     - `/api/v1/problems/too-many-keyword-filters` (422): the user already has the most keyword
+         *       filters allowed. Delete one first.
+         *     - `/api/v1/problems/too-many-filter-keywords` (422): the words would pass the most a keyword
+         *       filter, or all the user's filters together, may have. Remove some first.
          *     - `/api/v1/problems/too-many-lists` (422): the user already has the most lists allowed.
          *       Delete one first.
          *     - `/api/v1/problems/too-many-list-members` (422): the list already has the most members
@@ -15195,6 +15723,8 @@ export interface components {
          *       follow request was accepted) can be added to a list.
          *     - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
          *       hashtags allowed (100). Unfollow one first.
+         *     - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
+         *       than allowed (10).
          *     - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
          *       account's actor, or to the user itself.
          *     - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
@@ -15863,8 +16393,8 @@ export interface components {
         /** @description The content warning; omitted or empty for none. It counts toward `max_post_characters`. */
         SpoilerText: string;
         /**
-         * @description A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-         *     describe the authenticated user's relation to it and are omitted for anonymous
+         * @description A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
+         *     `muted` describe the authenticated user's relation to it and are omitted for anonymous
          *     requests; `pinned` is only given to the author.
          *
          *     In a timeline, a boost is a status of the booster with `boost` set to the boosted
@@ -15925,6 +16455,17 @@ export interface components {
             /** @description The hashtags of the text. */
             tags: components["schemas"]["StatusTag"][];
             /**
+             * @description The user's keyword filters with the action `warn` that the post matched where it is shown,
+             *     with the words each matched; empty when none did, and always for an anonymous request.
+             *     Clients fold a post with any behind the titles of its filters, with a way to show it. A
+             *     post that matches a filter with the action `hide` is left out instead, except the post
+             *     that `GET /api/v1/statuses/{id}` shows, which is folded. In a
+             *     timeline, a boost carries the filters that the boosted post matched. A quoted post carries
+             *     its own: a quote that matches folds only the quote, even for `hide`. The user's own posts
+             *     and boosts, and what they quote, never match.
+             */
+            filtered: components["schemas"]["FilterResult"][];
+            /**
              * @description On the home timeline and its stream, the names (without `#`) of the hashtags that the
              *     user follows and the post carries, when the post is there only for them: its author is
              *     neither the user nor an account the user follows. Omitted everywhere else.
@@ -15953,6 +16494,11 @@ export interface components {
             boosted?: boolean;
             /** @description Whether the authenticated user bookmarked the status. */
             bookmarked?: boolean;
+            /**
+             * @description Whether the authenticated user mutes the thread (conversation) of the status, which
+             *     keeps the user from being notified of what happens in it (`muteStatusThread`).
+             */
+            muted?: boolean;
             /** @description Whether the status is pinned to the author's profile; given only to the author. */
             pinned?: boolean;
             /**
@@ -17648,6 +18194,36 @@ export interface components {
                 "application/json": components["schemas"]["FollowedHashtagCollection"];
             };
         };
+        /** @description The keyword filter. */
+        KeywordFilter: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["KeywordFilter"];
+            };
+        };
+        /** @description The user's keyword filters, oldest first. */
+        KeywordFilterCollection: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["KeywordFilterCollection"];
+            };
+        };
+        /** @description The hashtags that the account features on its profile, in the order it chose. */
+        FeaturedHashtagCollection: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["FeaturedHashtagCollection"];
+            };
+        };
     };
     parameters: {
         /** @description The ID of the account action. */
@@ -17724,6 +18300,8 @@ export interface components {
         ListAccountId: components["schemas"]["Id"];
         /** @description The ID of the list. */
         ListId: components["schemas"]["Id"];
+        /** @description The ID of the keyword filter. */
+        KeywordFilterId: components["schemas"]["Id"];
         /**
          * @description The hashtag, with or without a leading `#` (`%23`), matched under NFKC and lowercase: letters,
          *     marks, digits, and underscores with at least one letter or mark. Anything else is a 422
@@ -18494,6 +19072,54 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    getNotificationPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The policy. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPolicy"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateNotificationPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NotificationPolicyUpdate"];
+            };
+        };
+        responses: {
+            /** @description The policy after the change. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPolicy"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     getSupporterListing: {
         parameters: {
             query?: never;
@@ -18829,7 +19455,10 @@ export interface operations {
             200: {
                 headers: {
                     "Cache-Control": components["headers"]["CacheControl"];
-                    /** @description Names the file to save the CSV as, the name Mastodon gives it. */
+                    /**
+                     * @description Names the file to save the CSV as, the name Mastodon gives it (for
+                     *     `followed_tags`, `followed_hashtags.csv`).
+                     */
                     "Content-Disposition"?: string;
                     [name: string]: unknown;
                 };
@@ -19759,6 +20388,22 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    listAccountFeaturedTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["FeaturedHashtagCollection"];
+            default: components["responses"]["Problem"];
+        };
+    };
     muteAccount: {
         parameters: {
             query?: never;
@@ -20555,6 +21200,154 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    listNotificationRequests: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of requests. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationRequestPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getNotificationRequestSummary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The counts. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationRequestSummary"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getNotificationRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationRequest"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listNotificationRequestNotifications: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of notifications. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    acceptNotificationRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request is accepted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    dismissNotificationRequest: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The account ID. */
+                id: components["parameters"]["AccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The request is dismissed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     getPushSubscription: {
         parameters: {
             query?: never;
@@ -20972,6 +21765,38 @@ export interface operations {
         };
     };
     unbookmarkStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the status. */
+                id: components["parameters"]["StatusId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["StatusAfterAction"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    muteStatusThread: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the status. */
+                id: components["parameters"]["StatusId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["StatusAfterAction"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    unmuteStatusThread: {
         parameters: {
             query?: never;
             header?: never;
@@ -21474,6 +22299,124 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["FollowedHashtagCollection"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listKeywordFilters: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["KeywordFilterCollection"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createKeywordFilter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeywordFilterRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["KeywordFilter"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getKeywordFilter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the keyword filter. */
+                id: components["parameters"]["KeywordFilterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["KeywordFilter"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteKeywordFilter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the keyword filter. */
+                id: components["parameters"]["KeywordFilterId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The filter is deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateKeywordFilter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the keyword filter. */
+                id: components["parameters"]["KeywordFilterId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeywordFilterRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["KeywordFilter"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listFeaturedTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["FeaturedHashtagCollection"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    setFeaturedTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetFeaturedTagsRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["FeaturedHashtagCollection"];
             default: components["responses"]["Problem"];
         };
     };
