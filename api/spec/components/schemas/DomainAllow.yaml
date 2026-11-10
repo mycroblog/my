@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A domain of the allowlist of federation, which covers its subdomains. While the instance
+  setting `federation_scope` is `allowlist`, the instance federates only with the allowed
+  domains; the domain actions on an allowed domain still apply. While it is `open`, the
+  allowlist changes nothing.
+type: object
+required: [domain, comment, created_at]
+properties:
+  domain:
+    description: The domain, in canonical form (lower case, IDNA A-labels); the key of the allow.
+    type: string
+  comment:
+    description: What the moderators keep about the allow, never published; empty for none.
+    type: string
+  created_at:
+    description: When the domain was allowed.
+    type: string
+    format: date-time

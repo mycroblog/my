@@ -1,0 +1,63 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listDomainAllows
+  summary: List the allowlist of federation
+  description: |
+    Every allowed domain, by domain. The list is not paginated; the allowlist holds at most
+    5,000 domains. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  responses:
+    "200":
+      description: The allowed domains.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/DomainAllowList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: createDomainAllow
+  summary: Allow a domain to federate
+  description: |
+    Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+    the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+    follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+    and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+    instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+    is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+    permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateDomainAllowRequest.yaml
+  responses:
+    "200":
+      description: The domain was already allowed.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/DomainAllow.yaml
+    "201":
+      description: The new allow.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/DomainAllow.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

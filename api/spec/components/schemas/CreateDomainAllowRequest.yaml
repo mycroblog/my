@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: A domain to allow.
+type: object
+required: [domain]
+properties:
+  domain:
+    description: The domain, a host without a scheme, path, or port; it also covers its subdomains.
+    type: string
+    minLength: 1
+    maxLength: 253
+  comment:
+    description: A note for the moderators, never published.
+    type: string
+    maxLength: 5000

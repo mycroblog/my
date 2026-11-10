@@ -656,6 +656,12 @@ paths:
     $ref: ./paths/admin_settings.yaml
   /admin/settings/login_providers_only/impact:
     $ref: ./paths/admin_settings_login_providers_only_impact.yaml
+  /admin/settings/federation_scope/impact:
+    $ref: ./paths/admin_settings_federation_scope_impact.yaml
+  /admin/domain_allows:
+    $ref: ./paths/admin_domain_allows.yaml
+  /admin/domain_allows/{domain}:
+    $ref: ./paths/admin_domain_allows_{domain}.yaml
   /invites:
     $ref: ./paths/invites.yaml
   /invites/{id}/revoke:
@@ -1246,6 +1252,10 @@ components:
       $ref: ./components/schemas/AdminPasswordResetLink.yaml
     LoginProvidersOnlyImpact:
       $ref: ./components/schemas/LoginProvidersOnlyImpact.yaml
+    FederationScopeImpact:
+      $ref: ./components/schemas/FederationScopeImpact.yaml
+    FederationScopeImpactDomain:
+      $ref: ./components/schemas/FederationScopeImpactDomain.yaml
     AdminQueue:
       $ref: ./components/schemas/AdminQueue.yaml
     AdminRegistration:
@@ -1492,6 +1502,8 @@ components:
       $ref: ./components/schemas/CreateCustomEmojiRequest.yaml
     CreateDomainActionRequest:
       $ref: ./components/schemas/CreateDomainActionRequest.yaml
+    CreateDomainAllowRequest:
+      $ref: ./components/schemas/CreateDomainAllowRequest.yaml
     CreateInviteRequest:
       $ref: ./components/schemas/CreateInviteRequest.yaml
     CreateOwnInviteRequest:
@@ -1574,6 +1586,10 @@ components:
       $ref: ./components/schemas/DomainBlockImportPreview.yaml
     DomainBlockImportResult:
       $ref: ./components/schemas/DomainBlockImportResult.yaml
+    DomainAllow:
+      $ref: ./components/schemas/DomainAllow.yaml
+    DomainAllowList:
+      $ref: ./components/schemas/DomainAllowList.yaml
     DomainBlockImportRow:
       $ref: ./components/schemas/DomainBlockImportRow.yaml
     DomainBlockImportSkipped:

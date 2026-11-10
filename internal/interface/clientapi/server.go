@@ -234,6 +234,9 @@ type Options struct {
 	// LinkCardDomainRules runs the rules of the link card crawler (admin_link_card_domains.go); nil
 	// answers 404.
 	LinkCardDomainRules LinkCardDomainRules
+	// DomainAllows runs the allowlist of federation and the impact of switching to it
+	// (admin_domain_allows.go); nil answers 404.
+	DomainAllows DomainAllows
 	// InstanceTexts reads and writes the instance texts for the admin operations
 	// (admin_instance_texts.go).
 	InstanceTexts InstanceTexts

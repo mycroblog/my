@@ -17,7 +17,9 @@ description: |
   (an instance setting), `text_changed` (an instance text). On a `rule`:
   `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
   `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
-  card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
+  card crawler set on the domain), `link_card_domain_rule_removed`. On a `domain_allow`:
+  `domain_allow_added`, `domain_allow_removed` (a domain added to and removed from the allowlist
+  of federation). On a `role`: `role_granted`,
   `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
   `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
   an `appeal`:
@@ -173,3 +175,5 @@ enum:
   - link_card_domain_images_stopped
   - link_card_domain_rule_removed
   - instance_marked_available
+  - domain_allow_added
+  - domain_allow_removed

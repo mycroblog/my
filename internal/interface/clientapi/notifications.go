@@ -652,9 +652,16 @@ func newRelationshipSeverance(sv moderation.SeveranceRecord) *RelationshipSevera
 	out := &RelationshipSeverance{
 		Kind: RelationshipSeveranceKindAccountSuspension, FollowersLost: sv.FollowersLost, FollowingLost: sv.FollowingLost,
 	}
-	if sv.DomainActionID != "" {
+	switch {
+	case sv.DomainActionID != "":
 		domain := sv.Domain
 		out.Kind, out.Domain = RelationshipSeveranceKindDomainSuspension, &domain
+	case sv.AllowlistCutoffID != "":
+		out.Kind = RelationshipSeveranceKindAllowlistCutoff
+		if sv.Domain != "" {
+			domain := sv.Domain
+			out.Domain = &domain
+		}
 	}
 	return out
 }

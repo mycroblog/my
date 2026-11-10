@@ -80,6 +80,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		Rules:    a.Instance,
 		// The rules of the link card crawler.
 		LinkCardDomainRules: a.Instance,
+		DomainAllows:        a.Moderation,
 		// The server-wide announcements (FR-726).
 		Announcements: a.Instance,
 		Roles:         a.Identity,
