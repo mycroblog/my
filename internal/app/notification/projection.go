@@ -203,12 +203,19 @@ func RegisterProjectors(r *uow.Projectors, d ProjectorDeps) {
 		})
 	})
 	registerExclusionProjectors(r, d.Repository)
+	// A reply held out of its thread mentions no one (ADR-0155 §6).
 	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.StatusCreated)
+		if ev.HeldReply {
+			return nil
+		}
 		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.Revision.MentionedAccountIDs, ev.Revision.RevisedAt)
 	})
 	r.Register(appcontent.EventStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev := e.(appcontent.StatusRevised)
+		if ev.HeldReply {
+			return nil
+		}
 		return p.mentions(ctx, tx, ev.Status.ID, ev.Status.AuthorAccountID, ev.Revision.MentionedAccountIDs, ev.Revision.RevisedAt)
 	})
 	registerDeletedStatusProjector(r, d.Repository)

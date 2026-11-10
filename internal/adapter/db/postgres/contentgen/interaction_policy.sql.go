@@ -9,6 +9,7 @@ package contentgen
 
 import (
 	"context"
+	"time"
 )
 
 const deleteStatusInteractionPolicyKinds = `-- name: DeleteStatusInteractionPolicyKinds :exec
@@ -23,6 +24,35 @@ type DeleteStatusInteractionPolicyKindsParams struct {
 // DeleteStatusInteractionPolicyKinds removes the rules of the kinds of a status.
 func (q *Queries) DeleteStatusInteractionPolicyKinds(ctx context.Context, arg DeleteStatusInteractionPolicyKindsParams) error {
 	_, err := q.db.Exec(ctx, deleteStatusInteractionPolicyKinds, arg.StatusID, arg.Kinds)
+	return err
+}
+
+const heldReplyExists = `-- name: HeldReplyExists :one
+SELECT EXISTS (SELECT 1 FROM held_replies WHERE status_id = $1)
+`
+
+func (q *Queries) HeldReplyExists(ctx context.Context, statusID string) (bool, error) {
+	row := q.db.QueryRow(ctx, heldReplyExists, statusID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const insertHeldReply = `-- name: InsertHeldReply :exec
+
+INSERT INTO held_replies (status_id, reason, held_at) VALUES ($1, $2, $3)
+ON CONFLICT (status_id) DO NOTHING
+`
+
+type InsertHeldReplyParams struct {
+	StatusID string
+	Reason   string
+	HeldAt   time.Time
+}
+
+// The replies held out of the threads of their parents (held_replies, ADR-0155 section 6).
+func (q *Queries) InsertHeldReply(ctx context.Context, arg InsertHeldReplyParams) error {
+	_, err := q.db.Exec(ctx, insertHeldReply, arg.StatusID, arg.Reason, arg.HeldAt)
 	return err
 }
 
@@ -88,6 +118,15 @@ func (q *Queries) ListStatusInteractionPolicies(ctx context.Context, statusIds [
 		return nil, err
 	}
 	return items, nil
+}
+
+const purgeHeldReplies = `-- name: PurgeHeldReplies :exec
+DELETE FROM held_replies WHERE status_id = ANY($1::uuid[])
+`
+
+func (q *Queries) PurgeHeldReplies(ctx context.Context, ids []string) error {
+	_, err := q.db.Exec(ctx, purgeHeldReplies, ids)
+	return err
 }
 
 const purgeStatusInteractionPolicies = `-- name: PurgeStatusInteractionPolicies :exec

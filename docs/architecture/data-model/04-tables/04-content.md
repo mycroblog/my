@@ -53,12 +53,12 @@
 | `local_post_counters` | `account_id`（PK）, `posts_count`（`bigint`、1 以上） | §2.3。NodeInfo の `usage.localPosts`（全行の合計）。数えるものが 0 件のアカウントは行を持たない |
 
 - 投稿の投影は **削除されていない投稿だけ** を対象にします。削除イベントを記録したトランザクションで、その投稿の `status_heads`・`status_mention_index`・`status_counters`・`status_reply_links`（返信としての行と、親としての行の両方）を消します。削除された投稿への遅れた版は投影に反映しません。
-- `status_reply_links` は、返信と親の両方が既知で、どちらも削除されていないときに 1 行です。返信が先に届いた場合は、親の投稿のトランザクションで `statuses (in_reply_to_uri)` から返信を引いてつなぎます。
+- `status_reply_links` は、返信と親の両方が既知で、どちらも削除されておらず、返信が保留の返信（`held_replies`）でないときに 1 行です。返信が先に届いた場合は、親の投稿のトランザクションで `statuses (in_reply_to_uri)` から返信を引いてつなぎます。
 - 投稿の作成・編集・削除の projector は、投影を読む前に投稿のキーでトランザクションを直列化します（`Repository.LockStatusKeys`）。
   作成と削除は投稿の `uri` と `in_reply_to_uri`（作成は加えて、宣言された会話の IRI と、関わる会話の ID）、編集と削除は投稿の `id` をキーにし、キーを決まった順に取ります。
   PostgreSQL は READ COMMITTED なので、トランザクションスコープのアドバイザリロックを取ります。SQLite は書き込みトランザクションが `BEGIN IMMEDIATE` で直列なので何もしません。
   これが無いと、同時に作られた親と返信が互いを見落としてつながらず、削除と同時の編集が削除済みの投稿の `status_heads`・`status_mention_index` を作り直します。
-- `replies_count` は、つながった返信のうち公開範囲が `public` / `local` / `unlisted` のものを数えます。`private` / `direct` の返信は、件数からも存在が分からないように数えません。
+- `replies_count` は、つながった返信（保留の返信を除く）のうち公開範囲が `public` / `local` / `unlisted` のものを数えます。`private` / `direct` の返信は、件数からも存在が分からないように数えません。
 - `local_post_counters` はローカルアカウントごとに、NodeInfo の `usage.localPosts` に数える投稿の件数を持ちます。
   Mastodon（`account_stats.statuses_count` のローカルアカウントの合計）と GoToSocial に合わせ、削除されていない `direct` 以外のローカルの投稿と、取り消されていない、削除されていない投稿へのローカルのブーストを数えます。
   - 両者はブーストを投稿として保存するので、ブーストも数えます。
@@ -291,6 +291,7 @@
 | `status_quote_events` | イベント | `id`, `status_id`, `kind`（`enum(accepted, rejected, revoked, detached)`）, `authorization_uri`（NULL 可。`accepted` が検証した、`revoked` が削除を受けた `QuoteAuthorization`。ほかは NULL。自分の投稿の引用の承認も NULL）, `occurred_at` | インデックス `(status_id, id)` |
 | `status_quote_states` | 投影 | `status_id`（PK）, `state`（`enum(pending, accepted, rejected, revoked, legacy, detached)`）, `authorization_uri`（NULL 可。`accepted` のときだけ） | インデックス `(authorization_uri)` |
 | `status_interaction_policies` | 現在値 | `status_id`, `kind`（`enum(reply, announce, quote)`）, `approval`（`enum(automatic, manual)`）, `audience`（`enum(everyone, followers, mentioned, nobody, following, author, account)`）, `actor_uri`（`account` の相手の Actor の IRI。ほかは空文字列） | PK `(status_id, kind, approval, audience, actor_uri)`、CHECK `(audience = 'account') = (actor_uri <> '')`。ADR-0155 §4 の交流の許可。ローカルの投稿は作成のときに 3 つの種類すべての行を持ち、作者がいつでも種類ごとに変えられる。リモートの投稿は `interactionPolicy` で宣言した種類だけの行を持ち、`Create` / `Update` のたびに置き換える |
+| `held_replies` | リソース | `status_id`（PK。返信の投稿）, `reason`（`enum(pending, refused)`）, `held_at` | ADR-0155 §6 の、認めていないリモートの返信。ローカルの投稿へのリモートの返信を、親の返信の許可がすぐに認めないとき（`content.MayInteract`）に、返信の取り込みと同じトランザクションで記録する。`pending` は承認の行だけに当てはまったもの、`refused` はどれにも当てはまらなかったもの |
 | `quote_authorizations` | リソース | `id`, `quoting_uri`（引用元。ローカルでもリモートでもよい）, `quoting_account_id`, `quoted_status_id`（ローカルの引用先）, `created_at` | 一意 `(quoting_uri, quoted_status_id)`、インデックス `(quoted_status_id, id)`。このサーバーが出した承認で、IRI は `https://{host}/ap/quote_authorizations/{id}`（保存しない） |
 | `quote_authorization_revocations` | イベント | `authorization_id`（PK）, `revoked_at` | 承認の取り消し。取り消した承認の IRI は 410 を返す |
 
@@ -303,9 +304,11 @@
   - 相手の値は ADR-0155 §2 のとおりです。ローカルの作者は `everyone`・`followers`・`mentioned`・`nobody` を選び、承認の相手は自動の相手より広いものか無しです。`following`・`author`・`account` はリモートの許可を読むときだけの値で、`as:Public` は `everyone`、作者の followers / following コレクションは `followers` / `following`、作者自身は `author`、ほかの IRI は `account`（正体の分からないコレクションも、どの Actor の IRI とも一致しないので誰にも当てはまらない）です。
   - リモートの `can*` で `automaticApproval` が何も残らない種類は `author` の自動の行だけを持ちます。`interactionPolicy` が無い、その種類の `can*` が無い、`null` か `{}` の種類は行を持ちません（宣言なし）。GoToSocial 0.20 より前の `always` / `approvalRequired` も読みます。
   - ページの表示・Note の組み立て・引用の判定は、ページの投稿の行を 1 つのクエリでまとめて読みます（`FindInteractionPolicies`）。書き込みは投稿ごとに、変える種類の行を 1 文で消し、新しい行を 1 文で入れます。
-  - 作者が許可を変えると `content.interaction_policy_changed`（変わった種類）を発行し、`federation` は `quote` が変わったときに現在の版の `Update` を配送します（Note は `canQuote` だけを運ぶため）。
+  - 作者が許可を変えると `content.interaction_policy_changed`（変わった種類）を発行し、`federation` は現在の版の `Update` を配送します（Note は `canReply`・`canAnnounce`・`canQuote` を運ぶため）。
+- 返信とブーストの許可も `content.MayInteract` の 1 か所で、`reply` / `announce` の行から判定します（ADR-0155 §3）。ローカルの人の返信とブースト（ローカルの投稿にもリモートの投稿にも）は、すぐに認められなければ断り（`ErrReplyNotAllowed` / `ErrBoostNotAllowed`）、リモートの人のローカルの投稿へのブーストは記録しません。許可は投稿の行を 1 つ読み、すぐには認めないときだけ、フォローの関係・メンション・返信先の作者を読みます。
+- リモートの人のローカルの投稿への返信は、すぐに認められなければ `held_replies` に記録します（ADR-0155 §6）。保留の返信は `status_reply_links`・`replies_count`・親の返信の一覧（`ListReplies`）と会話の投稿の一覧（`ListLiveConversationStatuses`。スレッドと `context` のコレクション）に入らず、`content.status_created` / `content.status_revised` の `HeldReply` によってメンションの通知を作りません。投稿そのものと、その作者のプロフィール・個別の表示はそのままです。後から許可を変えても、記録した保留の返信は変わりません（認めた交流を取り消さないのと同じく、判定は届いたときのもの）。
 - ローカルの投稿を引用すると、引用先がローカルの別の作者の投稿ならすぐに `quote_authorizations` を記録して承認し、自分の投稿なら承認だけを記録します。リモートの投稿は、引用の許可を宣言していれば `QuoteRequest` の答えを待ち（`pending`）、宣言していなければ `legacy` です。
-- 引用の表（`status_quotes`・`status_quote_events`・`status_quote_states`）と交流の許可（`status_interaction_policies`）と、引用先の投稿への承認（`quote_authorizations` と取り消し）は、投稿の物理削除（保持期間の消去・アカウントの消去）と一緒に消します。
+- 引用の表（`status_quotes`・`status_quote_events`・`status_quote_states`）と交流の許可（`status_interaction_policies`）と保留の返信（`held_replies`）と、引用先の投稿への承認（`quote_authorizations` と取り消し）は、投稿の物理削除（保持期間の消去・アカウントの消去）と一緒に消します。
 
 - アップロードは同期で受け付けます。形式は中身から判定し（申告された `Content-Type` とファイル名は信用しない）、サイズと寸法の上限は全体をデコードする前にヘッダで検査します（ADR-0019 §8）。
   `uploaded_media.content_type` は判定した形式で、`blob_key`（`uploads/<id>`）は受け取ったままの非公開のファイルです。

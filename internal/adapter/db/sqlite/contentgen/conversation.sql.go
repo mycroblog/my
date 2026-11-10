@@ -146,6 +146,7 @@ FROM status_conversations sc JOIN statuses s ON s.id = sc.status_id
 WHERE sc.conversation_id = ?1
   AND sc.status_id > CAST(?2 AS TEXT)
   AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM held_replies h WHERE h.status_id = s.id)
 ORDER BY sc.status_id
 LIMIT ?3
 `
@@ -157,7 +158,8 @@ type ListLiveConversationStatusesParams struct {
 }
 
 // ListLiveConversationStatuses returns, in ID order after the cursor @after (” for the first),
-// up to @lim statuses of a conversation that are not deleted.
+// up to @lim statuses of a conversation that are neither deleted nor held out of their thread
+// (held_replies).
 func (q *Queries) ListLiveConversationStatuses(ctx context.Context, arg ListLiveConversationStatusesParams) ([]Status, error) {
 	rows, err := q.db.QueryContext(ctx, listLiveConversationStatuses, arg.ConversationID, arg.After, arg.Lim)
 	if err != nil {

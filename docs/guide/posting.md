@@ -60,6 +60,8 @@ show it to those followers as a post for followers only.
 - You cannot change the visibility of a post after posting it. When you edit a post, the visibility and the post it replies to stay as they are.
 - A moderator can limit how widely an account posts. The form then says "Your account can post at most as ..." and a wider choice is posted at the widest level allowed.
 - Anyone who can see a public, "This server", or unlisted post can boost it. Only you can boost your own "Followers" posts, and only your followers see that boost. "Mentioned people" posts cannot be boosted.
+- The author of a post can choose who may reply to it and who may boost it; posts from some other servers carry such a choice too. A reply or a boost outside it is refused, with a message such as "The author of this post does not let you reply to it." The author, the people the post mentions, and the author of the post it replies to can always reply.
+- A reply from another server that is outside your choice is kept off your post: it is not in the conversation under your post or in its count of replies, and you get no notification of it. It still appears on its author's profile and on its own page. A boost from another server outside your choice is not counted and does not notify you.
 - You can pin up to five of your posts to your profile with "Pin to profile". A "Mentioned people" post cannot be pinned.
 
 ## After posting

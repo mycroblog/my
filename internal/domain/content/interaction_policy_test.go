@@ -118,3 +118,19 @@ func TestMayInteract(t *testing.T) {
 		})
 	}
 }
+
+func TestHeldReplyReasonOf(t *testing.T) {
+	for _, tc := range []struct {
+		decision content.InteractionDecision
+		want     content.HeldReplyReason
+		held     bool
+	}{
+		{content.InteractionAllowed, "", false},
+		{content.InteractionPending, content.HeldReplyPending, true},
+		{content.InteractionDenied, content.HeldReplyRefused, true},
+	} {
+		if got, held := content.HeldReplyReasonOf(tc.decision); got != tc.want || held != tc.held || (held && !got.Valid()) {
+			t.Errorf("HeldReplyReasonOf(%v) = %q, %t; want %q, %t", tc.decision, got, held, tc.want, tc.held)
+		}
+	}
+}

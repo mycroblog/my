@@ -17,8 +17,9 @@ import (
 // (data-model §9). Every status projection covers only statuses that are not deleted:
 //   - status_heads points at the revision with the highest Seq;
 //   - status_mention_index holds the mentions of that revision;
-//   - status_reply_links links a reply to its parent once both are known;
-//   - status_counters counts the replies whose visibility CountsAsReply (the boosts and
+//   - status_reply_links links a reply to its parent once both are known, unless the reply is
+//     held (held_replies);
+//   - status_counters counts the replies, not held, whose visibility CountsAsReply (the boosts and
 //     favourites are counted by RegisterInteractionProjectors);
 //   - account_post_counters counts each account's statuses and their latest PublishedAt;
 //   - local_post_counters counts each local account's statuses that CountAsLocalPost (its
@@ -32,7 +33,7 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(ev.Status, false)); err != nil {
 			return err
 		}
-		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision)
+		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision, ev.HeldReply)
 	})
 	r.Register(EventStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		rev := e.(StatusRevised).Revision
@@ -112,7 +113,9 @@ func projectRevision(ctx context.Context, tx uow.Tx, repo Repository, rev conten
 	return repo.ReplaceMentions(ctx, tx, rev.StatusID, rev.MentionedAccountIDs)
 }
 
-func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.Status, rev content.Revision) error {
+// projectCreated projects the new status s with its first revision rev. A held reply is not
+// linked to its parent nor counted among its replies.
+func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.Status, rev content.Revision, held bool) error {
 	if err := projectRevision(ctx, tx, repo, rev); err != nil {
 		return err
 	}
@@ -136,7 +139,7 @@ func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 	if err := repo.InsertCounters(ctx, tx, counters); err != nil {
 		return err
 	}
-	if s.InReplyToURI != "" {
+	if s.InReplyToURI != "" && !held {
 		parent, err := repo.FindLiveStatusByURI(ctx, tx, s.InReplyToURI)
 		switch {
 		case errors.Is(err, ErrNotFound):

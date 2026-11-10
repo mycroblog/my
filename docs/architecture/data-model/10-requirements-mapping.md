@@ -13,7 +13,7 @@
 | FR-012 ログイン中のブラウザ | S | `sessions`, `session_origins`, `session_activity`, `session_revocations`, `oauth_token_revocations`, `oauth_token_family_last_used` |
 | FR-101〜104 投稿・公開範囲・メンション・タグ・CW | M | `statuses`, `status_revisions` と子テーブル, `status_mention_index`, `feed_tag_entries` |
 | FR-105 画像添付・代替テキスト | M | `media_files`, `uploaded_media`, `media_processing_results`, `media_variants`, `media_focus`, `media_descriptions`, `status_revision_attachments` |
-| FR-106 返信・スレッド | M | `statuses.in_reply_to_uri`, `conversations` / `status_conversations` / `conversation_merges`, `status_reply_links` |
+| FR-106 返信・スレッド | M | `statuses.in_reply_to_uri`, `conversations` / `status_conversations` / `conversation_merges`, `status_reply_links`, `held_replies` |
 | FR-107 ブースト・お気に入り | M | `boosts`, `boost_retractions`, `boost_edges`, `favourites`, `status_counters` |
 | FR-108 削除 | M | `status_deletions`, `deliveries` |
 | FR-109 編集と履歴 | S | `status_revisions`, `status_heads` |

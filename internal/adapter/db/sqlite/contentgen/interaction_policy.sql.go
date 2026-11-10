@@ -27,6 +27,35 @@ func (q *Queries) DeleteStatusInteractionPolicyKinds(ctx context.Context, arg De
 	return err
 }
 
+const heldReplyExists = `-- name: HeldReplyExists :one
+SELECT EXISTS (SELECT 1 FROM held_replies WHERE status_id = ?)
+`
+
+func (q *Queries) HeldReplyExists(ctx context.Context, statusID string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, heldReplyExists, statusID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
+const insertHeldReply = `-- name: InsertHeldReply :exec
+
+INSERT INTO held_replies (status_id, reason, held_at) VALUES (?, ?, ?)
+ON CONFLICT (status_id) DO NOTHING
+`
+
+type InsertHeldReplyParams struct {
+	StatusID string
+	Reason   string
+	HeldAt   int64
+}
+
+// The replies held out of the threads of their parents (held_replies, ADR-0155 section 6).
+func (q *Queries) InsertHeldReply(ctx context.Context, arg InsertHeldReplyParams) error {
+	_, err := q.db.ExecContext(ctx, insertHeldReply, arg.StatusID, arg.Reason, arg.HeldAt)
+	return err
+}
+
 const insertStatusInteractionPolicy = `-- name: InsertStatusInteractionPolicy :exec
 INSERT INTO status_interaction_policies (status_id, kind, approval, audience, actor_uri)
 SELECT CAST(?1 AS TEXT), value ->> '$.kind', value ->> '$.approval', value ->> '$.audience', value ->> '$.actor_uri'
@@ -85,6 +114,15 @@ func (q *Queries) ListStatusInteractionPolicies(ctx context.Context, statusIds s
 		return nil, err
 	}
 	return items, nil
+}
+
+const purgeHeldReplies = `-- name: PurgeHeldReplies :exec
+DELETE FROM held_replies WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+`
+
+func (q *Queries) PurgeHeldReplies(ctx context.Context, ids string) error {
+	_, err := q.db.ExecContext(ctx, purgeHeldReplies, ids)
+	return err
 }
 
 const purgeStatusInteractionPolicies = `-- name: PurgeStatusInteractionPolicies :exec

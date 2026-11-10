@@ -59,7 +59,9 @@ type RemoteInteractionFactory func(t *testing.T, opts uow.Options) RemoteInterac
 // each inbox, also while an earlier delivery retries (ADR-0004 ordering keys), so that an inbox
 // of one reaction per account ends with what the sender has; and a local vote in a remote poll
 // sends a Create of a Note per choice to the poll's author (FR-112), the votes in a poll being
-// decided with the poll locked. The actors and the fetches are
+// decided with the poll locked; and the reply and boost rules of a post (ADR-0155) refuse local
+// replies and boosts outside them, keep remote replies outside them out of the thread, the
+// counts, and the notifications, and leave remote boosts outside them unrecorded. The actors and the fetches are
 // in-memory stand-ins.
 func RemoteInteractionFlows(t *testing.T, newHarness RemoteInteractionFactory) {
 	t.Helper()
@@ -80,6 +82,7 @@ func RemoteInteractionFlows(t *testing.T, newHarness RemoteInteractionFactory) {
 		{"QuotesLocalPostsWithApprovals", remoteQuotesLocalPosts},
 		{"SendsQuoteRequestsAndTakesTheAnswers", remoteSendsQuoteRequests},
 		{"AnswersQuoteRequestsAndRevokesApprovals", remoteAnswersQuoteRequests},
+		{"EnforcesReplyAndBoostRules", remoteEnforcesInteractionPolicies},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newRemoteInteractionEnv(t, newHarness)) })
