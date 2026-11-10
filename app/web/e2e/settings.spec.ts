@@ -999,7 +999,7 @@ test.describe("navigation", () => {
         .getByRole("list")
         .locator("a")
         .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
-    await expect(section.getByRole("checkbox")).toHaveCount(8);
+    await expect(section.getByRole("checkbox")).toHaveCount(9);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
 
@@ -1015,6 +1015,7 @@ test.describe("navigation", () => {
         "/public",
         "/search",
         "/notifications",
+        "/direct-messages",
         "/profile",
         "/bookmarks",
         "/settings",
@@ -1034,6 +1035,7 @@ test.describe("navigation", () => {
         "/public",
         "/search",
         "/notifications",
+        "/direct-messages",
         "/bookmarks",
         "/settings",
         "/announcements",
@@ -1052,6 +1054,7 @@ test.describe("navigation", () => {
         "/public",
         "/search",
         "/notifications",
+        "/direct-messages",
         "/bookmarks",
         "/settings",
         "/announcements",

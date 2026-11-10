@@ -225,6 +225,7 @@ describe("the event stream", () => {
         HttpResponse.json({ ...preferencesFixture, timeline_auto_insert: false }),
       ),
       http.get(`${apiBase}/announcements`, () => HttpResponse.json({ items: [] })),
+      http.get(`${apiBase}/conversations`, () => HttpResponse.json({ items: [] })),
       http.get(`${apiBase}/streaming`, ({ request }) => {
         const token = request.headers.get("Authorization");
         tokens.push(token ?? "");

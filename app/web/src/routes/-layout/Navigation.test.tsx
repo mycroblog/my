@@ -236,6 +236,7 @@ describe("the timelines' items", () => {
       "/home",
       "/notifications",
       "/search",
+      "/direct-messages",
       "/profile",
       "/bookmarks",
       "/settings",
@@ -298,6 +299,7 @@ describe("the user's arrangement", () => {
       "/public",
       "/bookmarks",
       "/settings",
+      "/direct-messages",
       "/announcements",
       "/lists",
     ]);
@@ -308,7 +310,15 @@ describe("the user's arrangement", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Bookmarks", "Settings", "Announcements", "Lists", "my example", "More about this server"]);
+    ).toEqual([
+      "Bookmarks",
+      "Settings",
+      "Direct messages",
+      "Announcements",
+      "Lists",
+      "my example",
+      "More about this server",
+    ]);
   });
 
   test("keeps the place of a timeline the server does not offer among the first five", async () => {
@@ -329,7 +339,16 @@ describe("the user's arrangement", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Profile", "Bookmarks", "Settings", "Announcements", "Lists", "my example", "More about this server"]);
+    ).toEqual([
+      "Profile",
+      "Bookmarks",
+      "Settings",
+      "Direct messages",
+      "Announcements",
+      "Lists",
+      "my example",
+      "More about this server",
+    ]);
   });
 
   test("follows a change made in another tab", async () => {
@@ -361,7 +380,16 @@ describe("the tab bar's Menu", () => {
       within(sheet)
         .getAllByRole("link")
         .map((link) => link.textContent),
-    ).toEqual(["Profile", "Bookmarks", "Settings", "Announcements", "Lists", "my example", "More about this server"]);
+    ).toEqual([
+      "Direct messages",
+      "Profile",
+      "Bookmarks",
+      "Settings",
+      "Announcements",
+      "Lists",
+      "my example",
+      "More about this server",
+    ]);
     expect(within(sheet).getByRole("link", { name: "Settings" })).toHaveAttribute("aria-current", "page");
     expect(within(sheet).getByRole("link", { name: "Profile" })).not.toHaveAttribute("aria-current");
 
@@ -478,6 +506,7 @@ describe("the sidebar's server and viewer", () => {
       "/public",
       "/notifications",
       "/search",
+      "/direct-messages",
       "/profile",
       "/bookmarks",
       "/settings",

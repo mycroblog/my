@@ -1,0 +1,66 @@
+{
+  "direct_messages.title": {
+    "defaultMessage": "Direct messages",
+    "description": "Heading and document title of the page of the user's direct messages by conversation, and its item in the main navigation. Keep it short: it is shown under an icon in the side rail of tablets and in the menu sheet of phones."
+  },
+  "direct_messages.nav_unread": {
+    "defaultMessage": "Direct messages, {count, plural, one {# unread} other {# unread}}",
+    "description": "Accessible name of the navigation item of the direct messages while some conversations are unread. Start it with the text of direct_messages.title, which is shown. {count} is the number of unread conversations."
+  },
+  "direct_messages.unread_count": {
+    "defaultMessage": "{count, plural, one {# unread} other {# unread}}",
+    "description": "The number of unread conversations on the badge of the navigation item of the direct messages, for example '3 unread'."
+  },
+  "direct_messages.unread": {
+    "defaultMessage": "Unread:",
+    "description": "Read by screen readers before the names of a conversation in which a post of another account is unread."
+  },
+  "direct_messages.participants.self": {
+    "defaultMessage": "Only you",
+    "description": "Names of a conversation in which the user wrote only to themselves, in place of the names of the other people."
+  },
+  "direct_messages.participants.more": {
+    "defaultMessage": "{names} and {count, plural, one {# other} other {# others}}",
+    "description": "Names of a conversation with more than three other people. {names} is a list of the first three names, {count} how many more people there are."
+  },
+  "direct_messages.content_warning": {
+    "defaultMessage": "Content warning: {summary}",
+    "description": "Excerpt of the newest post of a conversation when that post has a content warning: only the warning is shown. {summary} is the warning, written by the author."
+  },
+  "direct_messages.open": {
+    "defaultMessage": "Open the conversation",
+    "description": "Excerpt of the newest post of a conversation when that post has no text (pictures only): a link to the conversation's thread."
+  },
+  "direct_messages.empty": {
+    "defaultMessage": "No direct messages yet",
+    "description": "Heading of the empty state of the direct messages."
+  },
+  "direct_messages.empty.description": {
+    "defaultMessage": "Posts that only the people they mention can see are gathered here by conversation. To write one, choose “Mentioned people” as the visibility of a post, or “Direct message” in the menu of someone's post.",
+    "description": "Description of the empty state of the direct messages: what the page shows and how to write a direct message. “Mentioned people” is compose.visibility.direct."
+  },
+  "direct_messages.failed": {
+    "defaultMessage": "Could not load the direct messages",
+    "description": "Heading of the failure of the direct messages in place of the list."
+  },
+  "direct_messages.retry": {
+    "defaultMessage": "Try again",
+    "description": "Button that loads the direct messages again after a failure."
+  },
+  "direct_messages.load_more": {
+    "defaultMessage": "Load more conversations",
+    "description": "Button at the end of the direct messages that loads older conversations."
+  },
+  "direct_messages.loading": {
+    "defaultMessage": "Loading direct messages",
+    "description": "Read by screen readers while the direct messages load."
+  },
+  "direct_messages.signed_out.heading": {
+    "defaultMessage": "You are not signed in",
+    "description": "Heading of the direct messages page for a visitor who is not signed in."
+  },
+  "direct_messages.signed_out": {
+    "defaultMessage": "Sign in to see your direct messages.",
+    "description": "Description of the direct messages page for a visitor who is not signed in."
+  }
+}

@@ -4,6 +4,7 @@ import { viewerFixture, viewerStatusFixture } from "../../../test/fixtures";
 import type { PostingLimits } from "../api/compose";
 import { fitWithin } from "./prepareImage";
 import {
+  chosenVisibility,
   countCharacters,
   defaultVisibility,
   directMessageText,
@@ -33,6 +34,18 @@ describe("defaultVisibility", () => {
   test("of a reply is the narrower of the preference and the replied-to post's", () => {
     expect(defaultVisibility("public", viewerStatusFixture({ visibility: "local" }))).toBe("local");
     expect(defaultVisibility("private", viewerStatusFixture({ visibility: "public" }))).toBe("private");
+  });
+});
+describe("chosenVisibility", () => {
+  test("is the choice, or the default without one", () => {
+    expect(chosenVisibility("unlisted", "public", undefined)).toBe("unlisted");
+    expect(chosenVisibility(null, "public", viewerStatusFixture({ visibility: "private" }))).toBe("private");
+  });
+
+  test("keeps a reply to a direct message direct whatever is chosen", () => {
+    const direct = viewerStatusFixture({ visibility: "direct" });
+    expect(chosenVisibility(null, "public", direct)).toBe("direct");
+    expect(chosenVisibility("public", "public", direct)).toBe("direct");
   });
 });
 

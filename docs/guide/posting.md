@@ -81,6 +81,18 @@ post shows its translation, a line under the text says which language it was tra
 original" to go back. If the server sends the text of posts to a translation service, the visibility picker tells you
 for which choices.
 
+## Direct messages
+
+"Direct messages" in the navigation gathers your "Mentioned people" posts and those you receive, one row per
+conversation, the one with the newest post first. Each row shows who is in the conversation, when its newest post was
+written, and the start of that post. The number beside "Direct messages" is how many conversations have a post you
+have not read yet; each of them has a dot before its names.
+
+Choose the start of a post to open the conversation's thread; this marks the conversation read on all your devices. A
+reply to a "Mentioned people" post is always "Mentioned people" too, so it reaches no one the conversation did not. On
+phones, "Direct messages" is in "Menu" unless you move it into the tab bar under "Display, posting, and timelines" in
+the settings.
+
 ## Deleting old posts automatically
 
 "Delete old posts" in the settings deletes your posts once they are older than the age you choose, as if you had

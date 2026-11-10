@@ -272,10 +272,11 @@ test.describe("layout", () => {
 
   test("exposes the skip link, the navigation, and the main landmark with one level-one heading", async ({ page }) => {
     // Phones: Home, Local, Notifications, Search and the Menu button. From md: Home, Local, Notifications, Search,
-    // Profile, Bookmarks, Settings, Announcements and Lists (the instance answers nothing here, so no Federated).
+    // Direct messages, Profile, Bookmarks, Settings, Announcements and Lists (the instance answers nothing here, so no
+    // Federated).
     const items = hasTabBar(page)
       ? ["link", "link", "link", "link", "button"]
-      : ["link", "link", "link", "link", "link", "link", "link", "link", "link"];
+      : ["link", "link", "link", "link", "link", "link", "link", "link", "link", "link"];
     await expect(page.locator("body")).toMatchAriaSnapshot(`
       - link
       - navigation:
@@ -308,7 +309,7 @@ ${items.map((role) => `          - listitem:\n            - ${role}`).join("\n")
 
   test("shows the icon of every navigation item at one size", async ({ page }) => {
     const icons = shownItems(page).locator("svg");
-    await expect(icons).toHaveCount(hasTabBar(page) ? 5 : 9);
+    await expect(icons).toHaveCount(hasTabBar(page) ? 5 : 10);
     for (const icon of await icons.all()) {
       expect(await icon.boundingBox()).toMatchObject({ width: 24, height: 24 });
     }
@@ -380,7 +381,7 @@ test.describe("the sidebar of desktops", () => {
           - link "${instanceName}"
         - list:
           - /children: equal
-${Array.from({ length: 9 }, () => "          - listitem:\n            - link").join("\n")}
+${Array.from({ length: 10 }, () => "          - listitem:\n            - link").join("\n")}
         - link "${displayName} @alice"
     `);
     await expect(viewer).not.toHaveAttribute("aria-current");
@@ -476,7 +477,7 @@ test.describe("the menu of the phones' tab bar", () => {
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   });
 
-  test("opens a sheet with the profile, the bookmarks and the settings from the keyboard, and Esc gives focus back", async ({
+  test("opens a sheet with the direct messages, the profile, the bookmarks and the settings from the keyboard, and Esc gives focus back", async ({
     page,
     makeAxeBuilder,
   }) => {
@@ -500,12 +501,15 @@ test.describe("the menu of the phones' tab bar", () => {
             - link
           - listitem:
             - link
+          - listitem:
+            - link
         - paragraph:
           - link "${instanceName}"
         - paragraph:
           - link
     `);
-    await expect(sheet.getByRole("link")).toHaveText([/./, /./, /./, /./, /./, /./, /./]);
+    await expect(sheet.getByRole("link")).toHaveText([/./, /./, /./, /./, /./, /./, /./, /./]);
+    await expect(sheet.locator('a[href="/direct-messages"]')).toBeVisible();
     await expect(sheet.locator('a[href="/announcements"]')).toBeVisible();
     await expect(sheet.locator('a[href="/lists"]')).toBeVisible();
     await expect(sheet.locator('a[href="/"]')).toBeVisible();
