@@ -24,7 +24,7 @@ export default defineConfig({
   devToolbar: { enabled: false },
   // Heading attributes (`## 公開範囲 {#visibility}`) give each heading of a translated page the anchor of its English
   // heading (scripts/import-docs.ts), so that the links and #anchors of the sources lead to it in every locale.
-  markdown: { processor: satteri({ features: { headingAttributes: true } }) },
+  markdown: { processor: satteri({ features: { attributes: true } }) },
   integrations: [
     starlight({
       title: "mycroblog",
