@@ -80,16 +80,16 @@
     "description": "Term of the payment provider's ID of the payment that a refund, a chargeback, or a reversal belongs to."
   },
   "admin.finance.movements.subscriber": {
-    "defaultMessage": "Subscriber",
-    "description": "Term of the subscriber's account of a money movement."
+    "defaultMessage": "Paid by",
+    "description": "Term of the account that paid a money movement: the subscriber of its subscription, or the user who paid its tip."
   },
   "admin.finance.movements.no_subscriber": {
     "defaultMessage": "None",
-    "description": "What the subscriber term says of a money movement of no subscription, such as a provider fee."
+    "description": "What the paid-by term says of a money movement of neither a subscription nor a tip, such as a provider fee."
   },
   "admin.finance.movements.deleted_account": {
     "defaultMessage": "Deleted account",
-    "description": "What the subscriber term says of a money movement whose subscriber's account has been deleted."
+    "description": "What the paid-by term says of a money movement whose subscriber or tipper has been deleted."
   },
   "admin.finance.movements.empty.filtered": {
     "defaultMessage": "No movements match the filters",
@@ -562,5 +562,17 @@
   "admin.finance.movements.gross_fee": {
     "defaultMessage": "Gross {gross}, fee {fee}",
     "description": "Under the net amount of a money movement on the payments and refunds page. {gross} and {fee} are formatted amounts."
+  },
+  "admin.finance.movements.source.subscription": {
+    "defaultMessage": "Subscription",
+    "description": "The source of a money movement: a subscription to a supporter plan."
+  },
+  "admin.finance.movements.source.one_time": {
+    "defaultMessage": "Tip",
+    "description": "The source of a money movement: a tip, a one-time payment to the server's operation with nothing in return."
+  },
+  "admin.finance.movements.source.unknown": {
+    "defaultMessage": "Neither a subscription nor a tip",
+    "description": "The source of a money movement: neither, such as a payment taken outside this server or a fee of no subscription."
   }
 }

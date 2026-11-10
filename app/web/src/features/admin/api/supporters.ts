@@ -4,8 +4,9 @@
 // creating, changing and retiring one, and the subscriptions (GET /admin/supporter_subscriptions, newest first, as an
 // infinite query narrowed to a plan and a state, and GET /admin/supporter_subscriptions/{id}) with cancelling one at once, and the state of the payment provider
 // (GET /admin/payment_status, ADR-0074 §4) with reconciling with it now (POST /admin/payment_reconciliation/runs, once an hour). A
-// plan that breaks a rule is a 422 `invalid-supporter-plan` problem whose `reason` says which. Every change is recorded
-// in the audit log.
+// plan that breaks a rule is a 422 `invalid-supporter-plan` problem whose `reason` says which. The tips (GET / PUT
+// /admin/supporter_tips, ADR-0162 §17): enabling them with their amounts, whose rules a 422 `invalid-tip-amounts`
+// problem names. Every change is recorded in the audit log.
 import { infiniteQueryOptions, type QueryClient } from "@tanstack/react-query";
 import type { Api } from "../../../lib/api/client";
 import type { components } from "@mycroblog/mykit";
@@ -26,6 +27,9 @@ export type SupporterSubscriptionState = Schemas["SupporterSubscriptionState"];
 export type PaymentStatus = Schemas["PaymentStatus"];
 export type PaymentStatusWarning = PaymentStatus["warnings"][number];
 export type PaymentReconciliationRun = Schemas["PaymentReconciliationRun"];
+export type SupporterTips = Schemas["AdminSupporterTips"];
+export type SupporterTipsChange = Schemas["AdminSupporterTipsRequest"];
+export type TipAmountsProblemReason = Schemas["TipAmountsProblemReason"];
 
 /** The visibilities of a plan, in the order of the form. */
 export const supporterPlanVisibilities = ["public", "hidden"] as const satisfies readonly SupporterPlanVisibility[];
@@ -142,6 +146,54 @@ export function setSupporterProgramMutation(api: Api) {
       return data;
     },
   };
+}
+
+/** The tips (ADR-0162 §17): whether they are enabled with their amounts, whether users may tip now, and what enabling them needs. */
+export function supporterTipsQueryOptions(api: Api) {
+  return api.query.queryOptions("get", "/admin/supporter_tips");
+}
+
+/** The problem type of amounts of the tips that break a rule. */
+const invalidTipAmountsProblem = "/api/v1/problems/invalid-tip-amounts";
+
+const tipAmountsProblemReasons: readonly string[] = [
+  "count",
+  "currency",
+  "range",
+] satisfies readonly TipAmountsProblemReason[];
+
+/** The reason of an `invalid-tip-amounts` problem, or undefined for another error or a problem without one. */
+export function tipAmountsProblemReason(error: unknown): TipAmountsProblemReason | undefined {
+  if (!(error instanceof ApiError) || error.type !== invalidTipAmountsProblem) return undefined;
+  const reason = error.document["reason"];
+  return typeof reason === "string" && tipAmountsProblemReasons.includes(reason)
+    ? (reason as TipAmountsProblemReason)
+    : undefined;
+}
+
+/** Enables the tips with their amounts, changes the amounts, or disables them (PUT /admin/supporter_tips), as the options of useMutation. */
+export function setSupporterTipsMutation(api: Api) {
+  return {
+    mutationKey: ["put", "/admin/supporter_tips"] as const,
+    mutationFn: async (body: SupporterTipsChange): Promise<SupporterTips> => {
+      const { data, error } = await api.fetch.PUT("/admin/supporter_tips", { body });
+      if (data === undefined) throw new ApiError(error);
+      return data;
+    },
+  };
+}
+
+/**
+ * Puts the tips as the server answered a change into the cache, and marks what the change moves (ADR-0028): the
+ * instance's `tips_enabled`, the totals of the income (whose `tips` says whether the server takes them), and the audit log.
+ */
+export async function cacheSupporterTips(api: Api, queryClient: QueryClient, tips: SupporterTips): Promise<void> {
+  queryClient.setQueryData(supporterTipsQueryOptions(api).queryKey, tips);
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["get", "/instance"] }),
+    queryClient.invalidateQueries({ queryKey: ["get", "/admin/income_totals"] }),
+    refreshAuditLog(queryClient),
+  ]);
 }
 
 /** Creates a plan (POST /admin/supporter_plans), as the options of useMutation. */

@@ -108,7 +108,8 @@ export { FinanceIncome } from "./components/FinanceIncome";
 export { FinancePublication } from "./components/FinancePublication";
 export { FinanceTotals } from "./components/FinanceTotals";
 export { NewCostItem } from "./components/NewCostItem";
-// The supporter program: enabling it, its plans and their subscriptions (ADR-0072), for manage_supporters.
+// The supporter program: enabling it, its plans and their subscriptions (ADR-0072), and the tips (ADR-0162), for
+// manage_supporters.
 export {
   supporterPlanStates,
   type SupporterSubscriptionFilter,
@@ -117,6 +118,7 @@ export {
   supporterSubscriptionQueryOptions,
   supporterSubscriptionStates,
   supporterSubscriptionsQueryOptions,
+  supporterTipsQueryOptions,
 } from "./api/supporters";
 export { SupporterPlanDetail } from "./components/SupporterPlanDetail";
 export { NewSupporterPlan } from "./components/SupporterPlanForm";

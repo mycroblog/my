@@ -1,0 +1,174 @@
+{
+  "tip.title": {
+    "defaultMessage": "Tip",
+    "description": "Title of the user's page of the tips, one-time payments to the server's operation with nothing in return. Never word a tip as a donation."
+  },
+  "tip.app": {
+    "defaultMessage": "This page is not available in the app.",
+    "description": "Shown in the mobile app instead of the page of the tips."
+  },
+  "tip.disabled": {
+    "defaultMessage": "This server does not take tips.",
+    "description": "Shown on the page of the tips when the server takes none."
+  },
+  "tip.loading": {
+    "defaultMessage": "Loading the tips",
+    "description": "Label of the spinner while the page of the tips loads."
+  },
+  "tip.failed": {
+    "defaultMessage": "Could not load the tips",
+    "description": "Heading of the error when the page of the tips could not load."
+  },
+  "tip.retry": {
+    "defaultMessage": "Try again",
+    "description": "Button that loads the page of the tips again after an error."
+  },
+  "tip.return.confirming": {
+    "defaultMessage": "Confirming your payment with the payment provider. This takes a few seconds.",
+    "description": "Shown back from the payment provider's page while the server confirms the payment of the tip."
+  },
+  "tip.return.canceled": {
+    "defaultMessage": "You left the payment page. Nothing was charged.",
+    "description": "Shown back from the payment provider's page when the user left it or it ended unpaid."
+  },
+  "tip.return.unconfirmed": {
+    "defaultMessage": "The payment provider has not confirmed the payment yet. If you paid, it is recorded once the provider confirms it, and you need not pay again.",
+    "description": "Shown back from the payment provider's page when the payment of the tip is still not confirmed after the page asked many times."
+  },
+  "tip.thanks.status": {
+    "defaultMessage": "Your tip was paid.",
+    "description": "Announced when the tip that the user returned from paying is paid."
+  },
+  "tip.thanks.title": {
+    "defaultMessage": "Thank you",
+    "description": "Heading of the thanks after a tip is paid."
+  },
+  "tip.thanks.description": {
+    "defaultMessage": "Your tip of {amount} goes to running {server}.",
+    "description": "Under the thanks after a tip is paid. amount is a formatted amount, such as ¥500; server is the name of the server. Say nothing of a donation or a deduction."
+  },
+  "tip.form.title": {
+    "defaultMessage": "Tip for running {server}",
+    "description": "Heading of the form of a tip. server is the name of the server."
+  },
+  "tip.form.description": {
+    "defaultMessage": "A tip is a one-time payment to the operators of this server for running it. Nothing is given in return: no badge, role, or other benefit.",
+    "description": "What a tip is, above the choice of its amount. Never word it as a donation, and never suggest a deduction."
+  },
+  "tip.form.amount": {
+    "defaultMessage": "Amount",
+    "description": "Label of the choice of the amount of a tip, among the operators' amounts."
+  },
+  "tip.form.submit": {
+    "defaultMessage": "Leave a tip",
+    "description": "Button that opens the final confirmation of a tip."
+  },
+  "tip.ineligible.not_local": {
+    "defaultMessage": "Only users of this server can tip.",
+    "description": "Why the user cannot tip: the account is not of this server."
+  },
+  "tip.ineligible.email_unverified": {
+    "defaultMessage": "To tip, first verify your email address with the link in the email the server sent you.",
+    "description": "Why the user cannot tip, and how to become able to: their primary email address is not verified."
+  },
+  "tip.ineligible.restricted": {
+    "defaultMessage": "Your account cannot tip while it is suspended or being deleted.",
+    "description": "Why the user cannot tip: the account is suspended or being deleted."
+  },
+  "tip.confirm.title": {
+    "defaultMessage": "Tip {amount} for running {server}?",
+    "description": "Title of the final confirmation before the payment provider's page. amount is a formatted amount, such as ¥500; server is the name of the server."
+  },
+  "tip.confirm.description": {
+    "defaultMessage": "Check the terms below. You enter your payment details on the payment provider's page, not on this server.",
+    "description": "Under the title of the final confirmation of a tip."
+  },
+  "tip.confirm.amount": {
+    "defaultMessage": "Amount",
+    "description": "Term of the final confirmation of a tip: its amount."
+  },
+  "tip.confirm.payment": {
+    "defaultMessage": "Payment",
+    "description": "Term of the final confirmation of a tip: when it is paid."
+  },
+  "tip.confirm.payment.value": {
+    "defaultMessage": "Once, right now. It does not renew.",
+    "description": "When a tip is paid: once, at once, never again."
+  },
+  "tip.confirm.return": {
+    "defaultMessage": "In return",
+    "description": "Term of the final confirmation of a tip: what the user gets for it."
+  },
+  "tip.confirm.return.value": {
+    "defaultMessage": "Nothing. A tip gives no benefit, role, or badge.",
+    "description": "What a tip gives: nothing."
+  },
+  "tip.confirm.go": {
+    "defaultMessage": "Go to payment",
+    "description": "Button of the final confirmation of a tip that opens the payment provider's page."
+  },
+  "tip.confirm.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the final confirmation of a tip."
+  },
+  "tip.confirm.failed": {
+    "defaultMessage": "Could not open the payment page: {reason}",
+    "description": "Error in the final confirmation of a tip. reason is why, localized."
+  },
+  "tip.commerce": {
+    "defaultMessage": "Commerce disclosures",
+    "description": "Link in the final confirmation of a tip to the server's commerce disclosures."
+  },
+  "tip.error.rate_limited": {
+    "defaultMessage": "Too many tips were started. Try again later.",
+    "description": "Problem: the server limits how many tips are started."
+  },
+  "tip.error.rate_limited_until": {
+    "defaultMessage": "Too many tips were started. Try again after {time}.",
+    "description": "Problem: the server limits how many tips are started. time is a formatted time, such as 3:15 PM."
+  },
+  "tip.error.disabled": {
+    "defaultMessage": "This server no longer takes tips.",
+    "description": "Problem: the server stopped taking tips."
+  },
+  "tip.error.ineligible": {
+    "defaultMessage": "Your account cannot tip.",
+    "description": "Problem: the user cannot tip."
+  },
+  "tip.error.amount": {
+    "defaultMessage": "This amount is no longer offered. Reload the page and choose again.",
+    "description": "Problem: the amount is not one of the operators' amounts any more."
+  },
+  "tip.error.pending": {
+    "defaultMessage": "Another tip of yours is starting. Wait a moment and try again.",
+    "description": "Problem: another start of the user's tip runs at the same time."
+  },
+  "tip.error.closing": {
+    "defaultMessage": "The service is closing, so it takes no more tips.",
+    "description": "Problem: the closure of the service was announced."
+  },
+  "tip.entry.go": {
+    "defaultMessage": "Leave a tip",
+    "description": "Link to the page of the tips, on the about page, the funding meter's panel and the page of the supporter plans."
+  },
+  "tip.entry.sign_in": {
+    "defaultMessage": "Sign in to leave a tip",
+    "description": "Link for a visitor who is not signed in to sign in and then reach the page of the tips."
+  },
+  "tip.entry.eligibility": {
+    "defaultMessage": "Users of this server with a verified email address can tip.",
+    "description": "Who may tip, on the about page for a visitor who is not signed in."
+  },
+  "tip.about.title": {
+    "defaultMessage": "Tips",
+    "description": "Heading of the section of the tips on the about page and the page of the supporter plans."
+  },
+  "tip.about.description": {
+    "defaultMessage": "You can leave a one-time tip for running {server}. Nothing is given in return.",
+    "description": "What a tip is, on the about page. server is the name of the server. Never word it as a donation."
+  },
+  "tip.settings.description": {
+    "defaultMessage": "Apart from the plans, you can leave a one-time tip for running this server, with nothing in return.",
+    "description": "The tips on the page of the supporter plans."
+  }
+}

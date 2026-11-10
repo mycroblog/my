@@ -17,6 +17,7 @@ import { EventRail } from "../../features/events";
 import { NotificationsPanel } from "../../features/notifications";
 import { useViewer } from "../../features/session";
 import { useUserDisplaySettings } from "../../features/settings";
+import { FundingMeterTipLink } from "../../features/supporters";
 import { VoiceCallBar, VoiceRail, VoiceRoomAside } from "../../features/voice";
 import { hasClosed, useClosure } from "../../lib/closure";
 import { useBoundaryErrorReport } from "../../lib/errorReporting";
@@ -159,7 +160,7 @@ export function AppLayout() {
                 )}
                 {!onFundingPage && (
                   <ErrorBoundary fallback={null} onError={reportBoundaryError}>
-                    <FundingMeterPanel />
+                    <FundingMeterPanel tip={<FundingMeterTipLink />} />
                   </ErrorBoundary>
                 )}
                 <ErrorBoundary fallback={null} onError={reportBoundaryError}>

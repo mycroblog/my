@@ -1,0 +1,174 @@
+{
+  "tip.title": {
+    "defaultMessage": "チップ",
+    "description": "Title of the user's page of the tips, one-time payments to the server's operation with nothing in return. Never word a tip as a donation."
+  },
+  "tip.app": {
+    "defaultMessage": "このページはアプリでは使えません。",
+    "description": "Shown in the mobile app instead of the page of the tips."
+  },
+  "tip.disabled": {
+    "defaultMessage": "このサーバーはチップを受け付けていません。",
+    "description": "Shown on the page of the tips when the server takes none."
+  },
+  "tip.loading": {
+    "defaultMessage": "チップを読み込み中",
+    "description": "Label of the spinner while the page of the tips loads."
+  },
+  "tip.failed": {
+    "defaultMessage": "チップを読み込めませんでした",
+    "description": "Heading of the error when the page of the tips could not load."
+  },
+  "tip.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "Button that loads the page of the tips again after an error."
+  },
+  "tip.return.confirming": {
+    "defaultMessage": "決済事業者に支払いを確認しています。数秒かかります。",
+    "description": "Shown back from the payment provider's page while the server confirms the payment of the tip."
+  },
+  "tip.return.canceled": {
+    "defaultMessage": "決済の画面を離れました。請求はされていません。",
+    "description": "Shown back from the payment provider's page when the user left it or it ended unpaid."
+  },
+  "tip.return.unconfirmed": {
+    "defaultMessage": "決済事業者がまだ支払いを確認していません。支払った場合は、事業者が確認したときに記録されます。もう一度支払う必要はありません。",
+    "description": "Shown back from the payment provider's page when the payment of the tip is still not confirmed after the page asked many times."
+  },
+  "tip.thanks.status": {
+    "defaultMessage": "チップの支払いが済みました。",
+    "description": "Announced when the tip that the user returned from paying is paid."
+  },
+  "tip.thanks.title": {
+    "defaultMessage": "ありがとうございます",
+    "description": "Heading of the thanks after a tip is paid."
+  },
+  "tip.thanks.description": {
+    "defaultMessage": "{amount} のチップは {server} の運営に使われます。",
+    "description": "Under the thanks after a tip is paid. amount is a formatted amount, such as ¥500; server is the name of the server. Say nothing of a donation or a deduction."
+  },
+  "tip.form.title": {
+    "defaultMessage": "{server} の運営へのチップ",
+    "description": "Heading of the form of a tip. server is the name of the server."
+  },
+  "tip.form.description": {
+    "defaultMessage": "チップは、このサーバーの運営への 1 回だけの支払いです。見返りはありません。バッジやロールなどの特典は付きません。",
+    "description": "What a tip is, above the choice of its amount. Never word it as a donation, and never suggest a deduction."
+  },
+  "tip.form.amount": {
+    "defaultMessage": "金額",
+    "description": "Label of the choice of the amount of a tip, among the operators' amounts."
+  },
+  "tip.form.submit": {
+    "defaultMessage": "チップを払う",
+    "description": "Button that opens the final confirmation of a tip."
+  },
+  "tip.ineligible.not_local": {
+    "defaultMessage": "チップを払えるのはこのサーバーの利用者だけです。",
+    "description": "Why the user cannot tip: the account is not of this server."
+  },
+  "tip.ineligible.email_unverified": {
+    "defaultMessage": "チップを払うには、先にサーバーが送ったメールのリンクでメールアドレスを確認してください。",
+    "description": "Why the user cannot tip, and how to become able to: their primary email address is not verified."
+  },
+  "tip.ineligible.restricted": {
+    "defaultMessage": "アカウントが凍結中か削除の手続き中のため、チップを払えません。",
+    "description": "Why the user cannot tip: the account is suspended or being deleted."
+  },
+  "tip.confirm.title": {
+    "defaultMessage": "{server} の運営に {amount} のチップを払いますか？",
+    "description": "Title of the final confirmation before the payment provider's page. amount is a formatted amount, such as ¥500; server is the name of the server."
+  },
+  "tip.confirm.description": {
+    "defaultMessage": "次の内容を確かめてください。支払い情報は、このサーバーではなく決済事業者の画面で入力します。",
+    "description": "Under the title of the final confirmation of a tip."
+  },
+  "tip.confirm.amount": {
+    "defaultMessage": "金額",
+    "description": "Term of the final confirmation of a tip: its amount."
+  },
+  "tip.confirm.payment": {
+    "defaultMessage": "支払い",
+    "description": "Term of the final confirmation of a tip: when it is paid."
+  },
+  "tip.confirm.payment.value": {
+    "defaultMessage": "いま 1 回だけ。更新はありません。",
+    "description": "When a tip is paid: once, at once, never again."
+  },
+  "tip.confirm.return": {
+    "defaultMessage": "見返り",
+    "description": "Term of the final confirmation of a tip: what the user gets for it."
+  },
+  "tip.confirm.return.value": {
+    "defaultMessage": "ありません。チップに特典・ロール・バッジは付きません。",
+    "description": "What a tip gives: nothing."
+  },
+  "tip.confirm.go": {
+    "defaultMessage": "支払いへ進む",
+    "description": "Button of the final confirmation of a tip that opens the payment provider's page."
+  },
+  "tip.confirm.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the final confirmation of a tip."
+  },
+  "tip.confirm.failed": {
+    "defaultMessage": "支払いの画面を開けませんでした: {reason}",
+    "description": "Error in the final confirmation of a tip. reason is why, localized."
+  },
+  "tip.commerce": {
+    "defaultMessage": "特定商取引法に基づく表記",
+    "description": "Link in the final confirmation of a tip to the server's commerce disclosures."
+  },
+  "tip.error.rate_limited": {
+    "defaultMessage": "チップの開始が多すぎます。しばらくしてからもう一度試してください。",
+    "description": "Problem: the server limits how many tips are started."
+  },
+  "tip.error.rate_limited_until": {
+    "defaultMessage": "チップの開始が多すぎます。{time} 以降にもう一度試してください。",
+    "description": "Problem: the server limits how many tips are started. time is a formatted time, such as 3:15 PM."
+  },
+  "tip.error.disabled": {
+    "defaultMessage": "このサーバーはチップの受け付けをやめました。",
+    "description": "Problem: the server stopped taking tips."
+  },
+  "tip.error.ineligible": {
+    "defaultMessage": "このアカウントはチップを払えません。",
+    "description": "Problem: the user cannot tip."
+  },
+  "tip.error.amount": {
+    "defaultMessage": "この金額はもう選べません。ページを読み込み直して選び直してください。",
+    "description": "Problem: the amount is not one of the operators' amounts any more."
+  },
+  "tip.error.pending": {
+    "defaultMessage": "ほかのチップを開始しています。少し待ってからもう一度試してください。",
+    "description": "Problem: another start of the user's tip runs at the same time."
+  },
+  "tip.error.closing": {
+    "defaultMessage": "サービスの終了が決まったため、チップは受け付けていません。",
+    "description": "Problem: the closure of the service was announced."
+  },
+  "tip.entry.go": {
+    "defaultMessage": "チップを払う",
+    "description": "Link to the page of the tips, on the about page, the funding meter's panel and the page of the supporter plans."
+  },
+  "tip.entry.sign_in": {
+    "defaultMessage": "ログインしてチップを払う",
+    "description": "Link for a visitor who is not signed in to sign in and then reach the page of the tips."
+  },
+  "tip.entry.eligibility": {
+    "defaultMessage": "メールアドレスを確認したこのサーバーの利用者が、チップを払えます。",
+    "description": "Who may tip, on the about page for a visitor who is not signed in."
+  },
+  "tip.about.title": {
+    "defaultMessage": "チップ",
+    "description": "Heading of the section of the tips on the about page and the page of the supporter plans."
+  },
+  "tip.about.description": {
+    "defaultMessage": "{server} の運営に、1 回だけのチップを払えます。見返りはありません。",
+    "description": "What a tip is, on the about page. server is the name of the server. Never word it as a donation."
+  },
+  "tip.settings.description": {
+    "defaultMessage": "プランとは別に、このサーバーの運営に 1 回だけのチップを払えます。見返りはありません。",
+    "description": "The tips on the page of the supporter plans."
+  }
+}

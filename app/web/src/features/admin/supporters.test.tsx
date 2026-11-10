@@ -3,7 +3,9 @@
 // manage_supporters moves between the program, the plans and the subscriptions with the screen's LocalNav; on the
 // program's page enables the program and sets who may read the supporter list in one save, or sees why the server
 // refuses, and sees the payment provider's state with how to fix its failure and its warnings, reconciles now or sees
-// why it is too soon, and sees no provider section without a configured provider; lists the plans narrowed to a state,
+// why it is too soon, and sees no provider section without a configured provider; reads what the tips cost and show,
+// enables them with their amounts or sees the field the server refuses, and cannot enable them on a provider without
+// one-time payments; lists the plans narrowed to a state,
 // creates a plan on its page or sees the field the server refuses, and changes and retires a plan on the plan's page;
 // lists the subscriptions narrowed by state in the URL and ends one at once on its page after asking. A viewer without
 // the permission has neither the screen nor its menu entry; with MSW playing the API.
@@ -21,6 +23,7 @@ import {
   supporterPlanFixture,
   supporterProgramFixture,
   supporterSubscriptionFixture,
+  supporterTipsFixture,
 } from "./test/handlers";
 
 beforeEach(() => {
@@ -83,7 +86,7 @@ describe("the program page of the supporters screen", () => {
       "/admin/supporters/subscriptions",
     );
     // docs/architecture/web-client/screens/admin-supporters.md §3
-    expect(sectionHeadings()).toEqual(["Supporter program", "Payment provider"]);
+    expect(sectionHeadings()).toEqual(["Supporter program", "Tips", "Payment provider"]);
     const program = screen.getByRole("region", { name: "Supporter program" });
     expect(within(program).getByRole("checkbox", { name: "Enable the supporter program" })).toBeChecked();
     expect(within(program).getByText("2 subscriptions")).toBeInTheDocument();
@@ -239,6 +242,101 @@ describe("the program page of the supporters screen", () => {
     await user.click(within(program).getByRole("checkbox", { name: "Enable the supporter program" }));
     await user.click(within(program).getByRole("button", { name: "Save" }));
     expect(await within(program).findByText(/Retire the plans first\./u)).toBeInTheDocument();
+  });
+});
+
+describe("the tips of the supporters screen", () => {
+  beforeEach(() => {
+    server.use(signedInHandler, operatorHandler(["manage_supporters"]));
+  });
+
+  test("explains the dispute fee and the public totals, and enables the tips with their amounts", async () => {
+    const sent: unknown[] = [];
+    server.use(
+      http.put(`${apiBase}/admin/supporter_tips`, async ({ request }) => {
+        const body = (await request.json()) as Schemas["AdminSupporterTipsRequest"];
+        sent.push(body);
+        return HttpResponse.json(
+          supporterTipsFixture({
+            enabled: true,
+            accepting: true,
+            amounts: body.amounts ?? [],
+            changed_at: "2026-10-22T00:00:00Z",
+          }),
+        );
+      }),
+    );
+    const { user } = await renderApp({ path: "/admin/supporters" });
+    const tips = await screen.findByRole("region", { name: "Tips" });
+
+    expect(within(tips).getByText(/¥1,500 a dispute/u)).toBeInTheDocument();
+    expect(within(tips).getByText(/never show their amount or how many there were/u)).toBeInTheDocument();
+    expect(within(tips).getByRole("link", { name: /Read about tips in the operator documentation/u })).toHaveAttribute(
+      "href",
+      "https://mycroblog.dev/next/operations/supporters/#tips",
+    );
+    expect(tips.textContent).not.toMatch(/donat|deduct/iu);
+    expect(within(tips).queryByRole("textbox", { name: "Amounts" })).not.toBeInTheDocument();
+
+    await user.click(within(tips).getByRole("checkbox", { name: "Take tips" }));
+    const amounts = within(tips).getByRole("textbox", { name: "Amounts" });
+    expect(amounts).toHaveAccessibleDescription(/each from ¥100 to ¥100,000/u);
+    await user.type(amounts, "1000, 300 abc");
+    await user.click(within(tips).getByRole("button", { name: "Save the tips" }));
+    expect(await within(tips).findByText("Write each amount as a number, such as 500 or 5.00.")).toBeInTheDocument();
+    expect(sent).toEqual([]);
+
+    await user.clear(amounts);
+    await user.type(amounts, "1000, 300, 500, 300");
+    await user.click(within(tips).getByRole("button", { name: "Save the tips" }));
+    expect(await within(tips).findByText(/^Saved\./u)).toBeInTheDocument();
+    expect(sent).toEqual([
+      {
+        enabled: true,
+        amounts: [
+          { amount: "300", currency: "JPY" },
+          { amount: "500", currency: "JPY" },
+          { amount: "1000", currency: "JPY" },
+        ],
+      },
+    ]);
+    expect(within(tips).getByText("Yes")).toBeInTheDocument();
+  });
+
+  test("shows the server's refusal of the amounts next to their field", async () => {
+    server.use(
+      http.put(`${apiBase}/admin/supporter_tips`, () =>
+        refusal(422, "/api/v1/problems/invalid-tip-amounts", "Invalid amounts", "Each amount must be at least ¥100.", {
+          reason: "range",
+        }),
+      ),
+    );
+    const { user } = await renderApp({ path: "/admin/supporters" });
+    const tips = await screen.findByRole("region", { name: "Tips" });
+
+    await user.click(within(tips).getByRole("checkbox", { name: "Take tips" }));
+    await user.type(within(tips).getByRole("textbox", { name: "Amounts" }), "50");
+    await user.click(within(tips).getByRole("button", { name: "Save the tips" }));
+
+    const field = within(tips).getByRole("textbox", { name: "Amounts" });
+    await waitFor(() => {
+      expect(field).toHaveAccessibleDescription(/Each amount must be at least ¥100\./u);
+    });
+    expect(field).toBeInvalid();
+  });
+
+  test("keeps the checkbox off on a provider without one-time payments, and warns of card testing", async () => {
+    server.use(
+      http.get(`${apiBase}/admin/supporter_tips`, () =>
+        HttpResponse.json(supporterTipsFixture({ one_time_payments: false, limits: [], server_limit_reached: true })),
+      ),
+    );
+    await renderApp({ path: "/admin/supporters" });
+    const tips = await screen.findByRole("region", { name: "Tips" });
+
+    expect(within(tips).getByRole("checkbox", { name: "Take tips" })).toBeDisabled();
+    expect(within(tips).getByText(/takes no one-time payments/u)).toBeInTheDocument();
+    expect(within(tips).getByText(/This may be card testing/u)).toBeInTheDocument();
   });
 });
 

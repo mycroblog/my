@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The pages of the costs screen through the whole app (web-client/README.md T4, ADR-0067, ADR-0068): an administrator
 // with manage_finance sees on the overview the totals by month amortized by default and switches to weeks, years and
-// cash, with the rules next to them, and the income with its gross, fees and balance under the same tabs and the members
-// of each plan; goes between the pages by their links; records a cost paid every few months on the new item's page;
-// edits, revises, ends and deletes one on its page; imports a provider's charges now; and reads the money movements with
-// their subscribers by username, narrowed to a kind and a range of dates kept in the URL. A viewer without the
-// permission sees why; with MSW playing the API.
+// cash, with the rules next to them, and the income with its gross, fees, net of each source (the tips apart) and
+// balance under the same tabs and the members of each plan; goes between the pages by their links; records a cost paid
+// every few months on the new item's page; edits, revises, ends and deletes one on its page; imports a provider's
+// charges now; and reads the money movements with their subscribers and the users who paid the tips by username,
+// narrowed to a kind and a range of dates kept in the URL. A viewer without the permission sees why; with MSW playing
+// the API.
 import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
@@ -869,8 +870,10 @@ describe("the income on the costs screen", () => {
       within(table)
         .getAllByRole("columnheader")
         .map((cell) => cell.textContent),
-    ).toEqual(["Period", "Gross", "Fees", "Income after fees", "Balance"]);
-    expect(within(table).getAllByRole("row")[1]).toHaveTextContent("October 2026¥12,000¥432¥11,568+¥11,428");
+    ).toEqual(["Period", "Gross", "Fees", "Income after fees", "By source", "Balance"]);
+    expect(within(table).getAllByRole("row")[1]).toHaveTextContent(
+      "October 2026¥12,000¥432¥11,568Subscriptions: ¥11,568+¥11,428",
+    );
     expect(within(section).getByRole("heading", { level: 4, name: "Members of each plan" })).toBeInTheDocument();
     expect(within(section).getByRole("region", { name: "Members of each plan" })).toHaveTextContent("Coffee1 member");
     const rules = within(section).getByRole("region", { name: "How the income is counted" });
@@ -929,6 +932,87 @@ describe("the income on the costs screen", () => {
     expect(rows[1]).toHaveTextContent("-¥500");
     expect(rows[1]).toHaveTextContent("Deleted account");
     expect(rows[1]).toHaveTextContent("Of the payment txn_0");
+  });
+
+  test("shows each tip with the user who paid it, and the tips' net apart in the totals", async () => {
+    server.use(operatorHandler(["manage_finance"]));
+    totalsServer();
+    itemsServer([]);
+    const tip: Schemas["IncomeMovement"] = {
+      id: "0199f0e0-0000-7000-8000-00000000bb04",
+      provider: "stripe",
+      provider_id: "txn_tip",
+      kind: "payment",
+      source: "one_time",
+      tip_id: "0199f0e0-0000-7000-8000-00000000ee01",
+      account_id: "0199f0e0-0000-7000-8000-00000000dd02",
+      username: "bob",
+      occurred_at: "2026-10-12T00:00:00Z",
+      occurred_on: "2026-10-12",
+      gross: { amount: "500", currency: "JPY" },
+      fee: { amount: "18", currency: "JPY" },
+      net: { amount: "482", currency: "JPY" },
+      recorded_at: "2026-10-12T00:01:00Z",
+    };
+    /** A tip whose record was erased with its account: the income keeps its source alone. */
+    const erasedTip: Schemas["IncomeMovement"] = {
+      ...tip,
+      id: "0199f0e0-0000-7000-8000-00000000bb05",
+      provider_id: "txn_tip_2",
+      occurred_at: "2026-10-11T00:00:00Z",
+      occurred_on: "2026-10-11",
+    };
+    delete erasedTip.tip_id;
+    delete erasedTip.account_id;
+    delete erasedTip.username;
+    serveMovements([tip, erasedTip]);
+    server.use(
+      http.get(`${apiBase}/admin/income_totals`, ({ request }) => {
+        const query = Object.fromEntries(new URL(request.url).searchParams);
+        return HttpResponse.json({
+          granularity: query["granularity"] as Schemas["CostGranularity"],
+          basis: query["basis"] as Schemas["CostBasis"],
+          periods: [
+            {
+              label: "2026-10",
+              starts_on: "2026-10-01",
+              ends_on: "2026-10-31",
+              gross: [{ amount: "1500", currency: "JPY" }],
+              fee: [{ amount: "54", currency: "JPY" }],
+              net: [{ amount: "1446", currency: "JPY" }],
+              balance: [{ amount: "1446", currency: "JPY" }],
+              net_by_source: [
+                { source: "one_time", net: [{ amount: "964", currency: "JPY" }] },
+                { source: "subscription", net: [{ amount: "482", currency: "JPY" }] },
+              ],
+            },
+          ],
+          plans: [],
+          tips: true,
+          rules: { week_start: "monday", providers: [], amortize_after_days: 31 },
+        } satisfies Schemas["AdminIncomeTotals"]);
+      }),
+    );
+    const { user } = await renderApp({ path: "/admin/finance" });
+
+    const totals = await screen.findByRole("region", { name: "Income" });
+    expect(within(totals).getAllByRole("row")[1]).toHaveTextContent("Subscriptions: ¥482Tips: ¥964");
+    // The members of each plan end with the tips, without a number.
+    expect(within(totals).getByRole("region", { name: "Members of each plan" })).toHaveTextContent(
+      "TipsIncluded in the totals, without their number",
+    );
+    expect(within(totals).getByRole("region", { name: "How the income is counted" })).toHaveTextContent(
+      "A tip counts in full on the date it is paid.",
+    );
+
+    await user.click(screen.getByRole("link", { name: "Payments and refunds" }));
+    const region = await screen.findByRole("region", { name: "Payments and refunds" });
+    expect(within(region).getByRole("columnheader", { name: "Paid by" })).toBeInTheDocument();
+    const rows = within(region).getAllByRole("row").slice(1);
+    expect(rows[0]).toHaveTextContent("Tip");
+    expect(rows[0]).toHaveTextContent("@bob");
+    expect(rows[1]).toHaveTextContent("Tip");
+    expect(rows[1]).toHaveTextContent("Deleted account");
   });
 
   test("narrows the money movements to a kind and a range of dates, kept in the URL", async () => {

@@ -39,11 +39,13 @@ import {
   useSubscriptionCommands,
   useSupporterPage,
 } from "../hooks/useSupporterSubscription";
+import { SupporterTipLink } from "./Tips";
 
 /**
  * The body of the user's page of the supporter plans (`/settings/supporter`, ADR-0072 §6, §8, §13): the user's
  * subscription and what they may do with it, or the plans with the final confirmation before the provider's hosted
- * checkout. The Tauri app shows that the page is not available there and nothing else (§14).
+ * checkout, and the way to the page of the tips while the server takes them (ADR-0162 §17). The Tauri app shows that
+ * the page is not available there and nothing else (§14).
  */
 export function SupporterSubscriptionSettings({ returned }: { returned: SupporterReturn }) {
   const t = useT();
@@ -86,6 +88,7 @@ export function SupporterSubscriptionSettings({ returned }: { returned: Supporte
               commerceDisclosureUrl={page.commerceDisclosureUrl}
             />
           )}
+          <SupporterTipLink />
         </Stack>
       );
   }

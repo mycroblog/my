@@ -3,9 +3,10 @@
 // web-client/screens/admin-finance-income.md): the payment provider's money movements of the income, newest first,
 // one page at a time, narrowed to a kind (applied at once) and to the dates they are counted on (applied together,
 // since a date field changes while it is typed), both in the URL (web-client/README.md S3). The table has four
-// columns (web-client §14 一覧の表): the date, the kind with the period it covers and the provider's identifiers, the
-// net with the gross and the fee under it, and whose subscription it belongs to. Only this page shows them; the
-// payment provider records them, and nothing here changes them.
+// columns (web-client §14 一覧の表): the date, the kind with its source (a subscription, a tip, or neither), the period
+// it covers and the provider's identifiers, the net with the gross and the fee under it, and who paid it: the
+// subscriber or the user who paid the tip. Only this page shows them, and so each tip (ADR-0162 §16); the payment
+// provider records them, and nothing here changes them.
 import { Button, Cluster, EmptyState, Hint, Link, Select, SelectItem, Stack, Text, TextField } from "@my/ui";
 import { useRef } from "react";
 import { useIntl } from "react-intl";
@@ -14,7 +15,7 @@ import { useFormatMoney, utcDate } from "../../costs";
 import { DateTime, type RecordColumns, RecordTable, Section, useHasPermission } from "../../moderation";
 import { incomeKinds, type IncomeMovement, type IncomeMovementFilter } from "../api/finance";
 import { useFormatDay, useIncomeMovements, useMovementDates } from "../hooks/useFinance";
-import { FinanceScreen, incomeKindLabels } from "./FinanceParts";
+import { FinanceScreen, incomeKindLabels, incomeSourceLabels } from "./FinanceParts";
 
 /** The value of the "every kind" choice of the movements' filter. */
 const anyKind = "any";
@@ -64,6 +65,9 @@ function IncomeMovements({ filter, onFilterChange }: FinanceIncomeProps) {
       cell: (movement) => (
         <Stack gap="1">
           <span>{t(incomeKindLabels[movement.kind])}</span>
+          <Text size="sm" tone="muted">
+            {t(incomeSourceLabels[movement.source])}
+          </Text>
           {movement.covers_starts_on !== undefined && movement.covers_ends_on !== undefined && (
             <Cluster as="span" gap="1" rowGap="0">
               <Text size="sm" tone="muted">
@@ -106,10 +110,10 @@ function IncomeMovements({ filter, onFilterChange }: FinanceIncomeProps) {
       ),
     },
     {
-      id: "subscriber",
+      id: "payer",
       header: t("client:admin.finance.movements.subscriber"),
       wrap: "anywhere",
-      cell: (movement) => <Subscriber movement={movement} />,
+      cell: (movement) => <Payer movement={movement} />,
     },
   ];
   const filtersRef = useRef<HTMLDivElement>(null);
@@ -199,18 +203,18 @@ function IncomeMovements({ filter, onFilterChange }: FinanceIncomeProps) {
 }
 
 /**
- * Whose subscription a movement belongs to: the subscriber's username, linked to the account's moderation screen for
- * a viewer with manage_accounts; "deleted account" when the account is gone; "none" for a movement of no
- * subscription (the provider's fee).
+ * Who paid a movement: the subscriber of its subscription or the user who paid its tip (ADR-0162 §16), as their
+ * username, linked to the account's moderation screen for a viewer with manage_accounts; "deleted account" when the
+ * account, or the tip's record, is gone; "none" for a movement of neither (the provider's fee, a payment taken outside
+ * this server).
  */
-function Subscriber({ movement }: { movement: IncomeMovement }) {
+function Payer({ movement }: { movement: IncomeMovement }) {
   const t = useT();
   const mayOpenAccount = useHasPermission("manage_accounts");
   if (movement.account_id === undefined || movement.username === undefined) {
+    const paidByUser = movement.subscription_id !== undefined || movement.source === "one_time";
     return t(
-      movement.subscription_id === undefined
-        ? "client:admin.finance.movements.no_subscriber"
-        : "client:admin.finance.movements.deleted_account",
+      paidByUser ? "client:admin.finance.movements.deleted_account" : "client:admin.finance.movements.no_subscriber",
     );
   }
   const handle = `@${movement.username}`;

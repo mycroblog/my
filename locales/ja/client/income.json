@@ -78,5 +78,37 @@
   "income.rules.balance": {
     "defaultMessage": "収支は、通貨ごとに、同じ数え方の収入から費用を引いたものです。通貨は換算しません。",
     "description": "Rule of the income totals: what the balance is."
+  },
+  "income.totals.by_source": {
+    "defaultMessage": "出どころごと",
+    "description": "Column header of the administrators' income totals: the income after fees of the subscriptions, of the tips, and of the other money of the provider's account."
+  },
+  "income.source.subscription": {
+    "defaultMessage": "加入",
+    "description": "Source of the income: the subscriptions to the supporter plans."
+  },
+  "income.source.one_time": {
+    "defaultMessage": "チップ",
+    "description": "Source of the income: the tips, one-time payments to the server's operation with nothing in return."
+  },
+  "income.source.unknown": {
+    "defaultMessage": "その他",
+    "description": "Source of the income: money of the payment provider's account that is neither a subscription nor a tip, such as a payment taken outside this server or a fee of no subscription."
+  },
+  "income.source.net": {
+    "defaultMessage": "{source}: {net}",
+    "description": "A line of the income of one source in a period. source is the source, such as Tips; net is the formatted income after fees of each currency."
+  },
+  "income.plans.tips": {
+    "defaultMessage": "チップ",
+    "description": "The last row of the members of each plan while the server takes tips: the totals include them."
+  },
+  "income.plans.tips.note": {
+    "defaultMessage": "合計に含みます (件数は出しません)",
+    "description": "Beside the row of the tips in the members of each plan: their number and amount are never shown."
+  },
+  "income.rules.tips": {
+    "defaultMessage": "チップは、支払われた日付に全額を載せます。その返金とチャージバックは、それが起きた期間で差し引きます。",
+    "description": "Rule of the income totals while the server takes tips."
   }
 }

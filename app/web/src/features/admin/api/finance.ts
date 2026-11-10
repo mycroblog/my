@@ -23,6 +23,7 @@ export type BillingImport = Schemas["BillingImport"];
 export type AdminIncomeTotals = Schemas["AdminIncomeTotals"];
 export type IncomeMovement = Schemas["IncomeMovement"];
 export type IncomeKind = Schemas["IncomeKind"];
+export type IncomeSource = Schemas["IncomeSource"];
 
 /** The schedules, in the order of the form. */
 export const costSchedules = ["once", "weeks", "months", "years"] as const satisfies readonly CostSchedule[];

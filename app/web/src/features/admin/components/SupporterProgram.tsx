@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The first page of the supporters screen (ADR-0072, manage_supporters; web-client/screens/admin-supporters.md): the
 // supporter program in one form with one save (whether it is enabled, its payment provider, what it needs, and who may
-// read the supporter list, ADR-0070 §13), and the state of the configured payment provider (its mode, its last webhook,
+// read the supporter list, ADR-0070 §13), the tips in a form of their own (SupporterTips.tsx, ADR-0162 §17), and the
+// state of the configured payment provider (its mode, its last webhook,
 // its last reconciliation with how to fix its failure, and the signs of a webhook that is not set up right) with
 // reconciling with it now (ADR-0074 §4). What a save did is the result of the form's action bar; a refusal is said in
 // the server's words there (role="alert").
@@ -44,6 +45,7 @@ import {
   useSupporterProgramForm,
 } from "../hooks/useSupporters";
 import { SupporterPages } from "./supporterParts";
+import { SupporterTips } from "./SupporterTips";
 
 const warningLabels: Readonly<Record<SupporterProgramWarning, ClientMessageKey>> = {
   no_provider: "client:admin.supporters.warning.no_provider",
@@ -112,6 +114,7 @@ export function SupporterProgram() {
             <ProgramForm />
           </Card>
         </Section>
+        <SupporterTips />
         <PaymentProvider />
       </Stack>
     </SupporterPages>
