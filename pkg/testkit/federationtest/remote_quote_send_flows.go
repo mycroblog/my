@@ -508,10 +508,17 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	if n := e.notified(t, author, bobID, notification.TypeQuote); n != 1 {
 		t.Errorf("quote notifications = %d, want 1", n)
 	}
-	// The same request again gets the same approval.
+	// The same request again gets the same approval, also when it names the status by the Create
+	// of this server's document, embedded or by its IRI (Bonfire).
 	e.expect(t, request(bob+"/quote_requests/2", public.URI), appfederation.InboxHandled)
 	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 2 || sent[1].Doc.Result != result {
 		t.Errorf("answers = %+v, want the same QuoteAuthorization twice", sent)
+	}
+	e.expect(t, mustJSON(t, map[string]any{"@context": "https://www.w3.org/ns/activitystreams", "id": bob + "/quote_requests/7", "type": "QuoteRequest", "actor": bob,
+		"object": map[string]any{"id": public.URI + "/activity", "type": "Create", "actor": e.localIRI(author), "object": public.URI}, "instrument": quoting}), appfederation.InboxHandled)
+	e.expect(t, request(bob+"/quote_requests/8", public.URI+"/activity"), appfederation.InboxHandled)
+	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 4 || sent[2].Doc.Result != result || sent[3].Doc.Result != result {
+		t.Errorf("answers to requests naming the Create, embedded and by its IRI = %+v, want the same QuoteAuthorization", sent)
 	}
 	// The approval is bob's: it approves no quote of another account.
 	approval := string(result)[strings.LastIndexByte(string(result), '/')+1:]
@@ -533,7 +540,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 		t.Fatal(err)
 	}
 	e.expect(t, daveRequest, appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 3 || sent[2].Type != federation.ActivityReject {
+	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 5 || sent[4].Type != federation.ActivityReject {
 		t.Errorf("answers = %+v, want a Reject of dave's request for bob's post", sent)
 	}
 	if s := e.quoteState(t, other.ID); s.Approval != content.QuoteApprovalPending {
@@ -563,6 +570,44 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	e.expect(t, request(bob+"/quote_requests/5", byHand.URI), appfederation.InboxHandled)
 	if sent := e.quoteActivities(t, federation.OutboundQuote, byHand.ID); len(sent) != 0 {
 		t.Errorf("answers about a post approved by hand = %+v, want none yet", sent)
+	}
+	// A quoting post that names no quote until it is approved (Bonfire) is answered all the same.
+	unnamed := bob + "/notes/quote-unnamed"
+	e.expect(t, remoteActivity(t, "Create", unnamed+"/activity", bob, remoteNote(unnamed, bob, remoteNow.Add(-time.Hour), nil)), appfederation.InboxHandled)
+	e.expect(t, mustJSON(t, map[string]any{"@context": "https://www.w3.org/ns/activitystreams", "id": bob + "/quote_requests/6", "type": "QuoteRequest", "actor": bob,
+		"object": byHand.URI, "instrument": unnamed}), appfederation.InboxHandled)
+	page, err := e.interactions.PendingInteractionRequests(ctx, author, []content.InteractionKind{content.InteractionQuote}, "", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range page.Requests {
+		if r.InteractingURI != unnamed {
+			continue
+		}
+		if st, err := e.interactions.AnswerInteractionRequest(ctx, author, r.ID, true); err != nil || st.State != content.InteractionRequestAccepted {
+			t.Errorf("approving the quote of a post that names none = %+v, %v; want accepted", st, err)
+		}
+	}
+	if sent := e.quoteActivities(t, federation.OutboundQuote, byHand.ID); len(sent) != 1 || sent[0].Type != federation.ActivityAccept ||
+		!strings.HasPrefix(string(sent[0].Doc.Result), "https://"+testkit.ContractHost+"/ap/quote_authorizations/") {
+		t.Errorf("answers after approving the quote of a post that names none = %+v, want an Accept with a QuoteAuthorization", sent)
+	} else {
+		// Its Update then names the quote and the approval, which records the quote, accepted.
+		e.expect(t, remoteActivity(t, "Update", unnamed+"/update", bob, remoteNote(unnamed, bob, remoteNow.Add(-time.Hour), map[string]any{
+			"quote": byHand.URI, "quoteAuthorization": string(sent[0].Doc.Result), "updated": remoteNow.Format(time.RFC3339),
+		})), appfederation.InboxHandled)
+		if s := e.quoteState(t, e.post(t, unnamed).Status.ID); s.Approval != content.QuoteApprovalAccepted || s.AuthorizationURI != string(sent[0].Doc.Result) {
+			t.Errorf("state of the quote named after its approval = %+v, want accepted by %s", s, sent[0].Doc.Result)
+		}
+	}
+	// An edit cannot add a quote that was not asked for.
+	edited := bob + "/notes/edited"
+	e.expect(t, remoteActivity(t, "Create", edited+"/activity", bob, remoteNote(edited, bob, remoteNow.Add(-time.Hour), nil)), appfederation.InboxHandled)
+	e.expect(t, remoteActivity(t, "Update", edited+"/update", bob, remoteNote(edited, bob, remoteNow.Add(-time.Hour), map[string]any{
+		"quote": public.URI, "updated": remoteNow.Format(time.RFC3339),
+	})), appfederation.InboxHandled)
+	if _, _, err := e.content.FindQuote(ctx, e.post(t, edited).Status.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindQuote of a post that an edit made quote = %v, want ErrNotFound", err)
 	}
 
 	// The author revokes the approval: the quote shows the post no more, and bob's server and the

@@ -365,12 +365,16 @@ func (s *Interactions) AcceptRemoteInteraction(ctx context.Context, kind content
 func (s *Interactions) answerTx(ctx context.Context, tx uow.Tx, r content.InteractionRequest, a answer, target content.Status) (content.InteractionState, error) {
 	ref := RefOf(target)
 	if r.Kind == content.InteractionQuote {
-		if quoting, err := s.d.Statuses.FindStatusByURITx(ctx, tx, r.InteractingURI); err == nil {
-			if _, err := changeQuote(ctx, tx, s.approvals(), s.d.Statuses, quoting, content.QuoteEventKind(a.kind), a.authorization, a.deferred); err != nil {
-				return content.InteractionState{}, err
+		// A quoting status that names no quote yet (Bonfire adds quote with its
+		// quoteAuthorization once approved) is answered as a request alone.
+		quoting, err := s.d.Statuses.FindStatusByURITx(ctx, tx, r.InteractingURI)
+		if err == nil {
+			_, err = changeQuote(ctx, tx, s.approvals(), s.d.Statuses, quoting, content.QuoteEventKind(a.kind), a.authorization, a.deferred)
+			if err == nil {
+				return s.approvals().state(ctx, tx, r)
 			}
-			return s.approvals().state(ctx, tx, r)
-		} else if !errors.Is(err, ErrNotFound) {
+		}
+		if !errors.Is(err, ErrNotFound) {
 			return content.InteractionState{}, err
 		}
 	}
@@ -563,6 +567,27 @@ func (s *Interactions) FindRequest(ctx context.Context, id string) (content.Inte
 		return r, content.InitialInteractionState(r), nil
 	}
 	return r, st, err
+}
+
+// FindOutboundRequestOf returns the pending request that asks a remote author to approve the
+// local reply or boost interactingURI (ADR-0155 §7), and whether there is one: for an answer that
+// names the interaction instead of the request.
+func (s *Interactions) FindOutboundRequestOf(ctx context.Context, interactingURI string) (content.InteractionRequest, bool, error) {
+	if s.d.Quotes == nil {
+		return content.InteractionRequest{}, false, nil
+	}
+	for _, kind := range []content.InteractionKind{content.InteractionReply, content.InteractionAnnounce} {
+		pending, err := s.d.Quotes.ListPendingInteractionRequestsBy(ctx, nil, kind, interactingURI)
+		if err != nil {
+			return content.InteractionRequest{}, false, err
+		}
+		for _, r := range pending {
+			if r.Direction == content.DirectionOutbound {
+				return r, true, nil
+			}
+		}
+	}
+	return content.InteractionRequest{}, false, nil
 }
 
 // FindInteractionAuthorization returns an approval of kind that this server gave, with its

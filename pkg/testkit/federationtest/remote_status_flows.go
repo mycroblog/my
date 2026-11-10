@@ -174,6 +174,13 @@ func (a *lateApprovals) FindRequest(ctx context.Context, id string) (appcontent.
 	return a.target.FindRequest(ctx, id)
 }
 
+func (a *lateApprovals) FindOutboundRequestOf(ctx context.Context, interactingURI string) (appcontent.InteractionRequest, bool, error) {
+	if a.target == nil {
+		return appcontent.InteractionRequest{}, false, nil
+	}
+	return a.target.FindOutboundRequestOf(ctx, interactingURI)
+}
+
 func (a *lateApprovals) WithdrawRemoteInteraction(ctx context.Context, kind appcontent.InteractionKind, uri, accountID string) (bool, error) {
 	if a.target == nil {
 		return false, nil

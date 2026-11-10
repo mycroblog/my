@@ -1,7 +1,7 @@
 name: Federation live
 
 # Live interoperability test (ADR-0006, ADR-0015, docs/architecture/federation.md §12): this server federating with
-# Mastodon, GoToSocial, Misskey, and Akkoma in test/federation-live, part of the slow suite
+# Mastodon, GoToSocial, Misskey, Akkoma, and Bonfire Social in test/federation-live, part of the slow suite
 # (slow-suite.yml, ADR-0079) and runnable by hand on any branch.
 # Not part of `scripts/task.sh check`. The logs of every server and the captured activities are kept as artifacts.
 

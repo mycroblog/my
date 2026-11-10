@@ -177,7 +177,8 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 // ReviseRemoteStatus records a new revision of a remote post inside tx (federation.md §3.3,
 // §3.4): only when its RevisedAt is later than the current revision's, so that an Update that
 // arrives late or twice makes no revision. A revision without a quote takes the status's quote
-// away (ADR-0069 §3). The counts of the current poll are recorded either
+// away (ADR-0069 §3), and one that names the quote it asked for records it
+// (recordRequestedQuote). The counts of the current poll are recorded either
 // way, when they are higher. It reports whether a revision was made. A status that does not
 // exist or is deleted fails with ErrNotFound; one of another author with ErrNotAuthor.
 func (s *Service) ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteStatusInput) (bool, error) {
@@ -227,8 +228,31 @@ func (s *Service) ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 		if err := s.detachQuote(ctx, tx, st); err != nil {
 			return false, err
 		}
+	} else if err := s.recordRequestedQuote(ctx, tx, st, in.Quote); err != nil {
+		return false, err
 	}
 	return true, s.observePoll(ctx, tx, rev.Poll, in.Poll, now)
+}
+
+// recordRequestedQuote records in tx the quote in that a revision of the remote status st names,
+// when st quoted nothing before and asked for that quote with a QuoteRequest: Bonfire names the
+// quote only once it is approved (FEP-044f). A quote cannot be added by an edit otherwise
+// (ADR-0069 §1).
+func (s *Service) recordRequestedQuote(ctx context.Context, tx uow.Tx, st content.Status, in *RemoteQuoteInput) error {
+	if s.d.Quotes == nil || in.Form != content.QuoteFormFEP044f {
+		return nil
+	}
+	if _, err := s.d.Quotes.FindQuoteTx(ctx, tx, st.ID); !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	_, err := s.d.Quotes.FindInteractionRequestFor(ctx, tx, content.InteractionQuote, st.URI, in.URI)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return nil
+	case err != nil:
+		return err
+	}
+	return s.recordQuote(ctx, tx, st, in)
 }
 
 // DeleteRemoteStatus records inside tx that the author of a remote post deleted it (a Delete,

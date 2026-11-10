@@ -623,7 +623,8 @@ func (r *Reader) relation(ctx context.Context, accountID string, st content.Stat
 // approved: of its reply st, and of its boost of st, a pending one before a rejected one.
 func ownApprovals(own []OwnInteraction, st content.Status) (reply, boost content.InteractionRequestState) {
 	for _, o := range own {
-		if o.State == content.InteractionRequestAccepted {
+		// An approved interaction needs none any more, and a withdrawn one is gone.
+		if o.State == content.InteractionRequestAccepted || o.State == content.InteractionRequestWithdrawn {
 			continue
 		}
 		switch {

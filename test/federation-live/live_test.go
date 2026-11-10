@@ -44,6 +44,8 @@ const (
 	misskeyHost  = "misskey.test"
 	misskeyUser  = "grace"
 	akkomaHost   = "akkoma.test"
+	// gts21Host is GoToSocial 0.21, the release before gtsHost's, for TestInteractionApproval only.
+	gts21Host = "gts21.test"
 
 	// The users who never follow alice: the mentioned non-followers of TestVisibilityAudiences.
 	mastodonStranger = "dave"
@@ -65,6 +67,9 @@ type env struct {
 	db    string
 	local *localClient
 	peers []*peerClient
+	// approvers are the peers that ask for and give the approvals of replies and boosts
+	// (TestInteractionApproval): GoToSocial 0.22 (the gotosocial peer of peers) and 0.21.
+	approvers []*peerClient
 }
 
 var (
@@ -106,7 +111,7 @@ func setup() (*env, error) {
 				return nil, err
 			}
 			switch host {
-			case localHost, mastodonHost, gtsHost, misskeyHost, akkomaHost:
+			case localHost, mastodonHost, gtsHost, gts21Host, misskeyHost, akkomaHost, bonfireHost:
 				return dialer.DialContext(ctx, network, proxy)
 			}
 			return nil, fmt.Errorf("%s is not a host of the stack", host)
@@ -124,21 +129,25 @@ func setup() (*env, error) {
 		return nil, fmt.Errorf("signing in to %s: %w", localHost, err)
 	}
 	gts := map[string]string{}
-	for _, user := range []string{gtsUser, gtsStranger} {
-		token, err := signInGoToSocial(ctx, transport, user, os.Getenv("FEDERATION_LIVE_GTS_PASSWORD"))
+	for _, handle := range []string{gtsUser + "@" + gtsHost, gtsStranger + "@" + gtsHost, gtsUser + "@" + gts21Host} {
+		user, host, _ := strings.Cut(handle, "@")
+		token, err := signInGoToSocial(ctx, transport, host, user, os.Getenv("FEDERATION_LIVE_GTS_PASSWORD"))
 		if err != nil {
-			return nil, fmt.Errorf("signing in to %s as %s: %w", gtsHost, user, err)
+			return nil, fmt.Errorf("signing in to %s as %s: %w", host, user, err)
 		}
-		gts[user] = token
+		gts[handle] = token
 	}
 	mastodon := func(user, token string) *peerClient {
 		return &peerClient{name: "mastodon", host: mastodonHost, user: user,
 			peerAPI: &mastodonAPI{host: mastodonHost, token: token, http: e.http}}
 	}
-	gotosocial := func(user string) *peerClient {
-		return &peerClient{name: "gotosocial", host: gtsHost, user: user,
-			peerAPI: &mastodonAPI{host: gtsHost, token: gts[user], http: e.http, cachedHome: true}}
+	gotosocialAt := func(name, host, user string) *peerClient {
+		return &peerClient{name: name, host: host, user: user,
+			peerAPI:         &mastodonAPI{host: host, token: gts[user+"@"+host], http: e.http, cachedHome: true},
+			takesRejections: true, remoteBoostNotApproved: gtsRemoteBoostNotApproved,
+			keepsWithdrawnRequests: gtsKeepsWithdrawnRequests}
 	}
+	gotosocial := func(user string) *peerClient { return gotosocialAt("gotosocial", gtsHost, user) }
 	misskey := func(user, token string) *peerClient {
 		return &peerClient{name: "misskey", host: misskeyHost, user: user,
 			peerAPI: &misskeyAPI{host: misskeyHost, token: token, http: e.http}, noEdits: misskeyNoEdits,
@@ -152,9 +161,11 @@ func setup() (*env, error) {
 	k := misskey(misskeyUser, os.Getenv("FEDERATION_LIVE_MISSKEY_TOKEN"))
 	k.stranger = misskey(misskeyStranger, os.Getenv("FEDERATION_LIVE_MISSKEY_TOKEN_HEIDI"))
 	e.peers = []*peerClient{m, g, k}
+	g21 := gotosocialAt("gotosocial-0.21", gts21Host, gtsUser)
+	e.approvers = []*peerClient{g, g21}
 	// GoToSocial creates accounts that approve their followers by hand; the scenarios that need an
 	// approval lock the account themselves (TestFollowApproval).
-	for _, p := range []*peerClient{g, g.stranger} {
+	for _, p := range []*peerClient{g, g.stranger, g21} {
 		if err := p.setLocked(ctx, false); err != nil {
 			return nil, fmt.Errorf("unlocking %s: %w", p.handle(), err)
 		}
@@ -479,6 +490,28 @@ type status struct {
 	// Reactions are the emoji reactions, counted per emoji (this server's client API and
 	// Misskey's).
 	Reactions []statusReaction `json:"reactions"`
+	// Boosted (this server's client API) and Reblogged (the Mastodon client API) say whether the
+	// user boosted the status.
+	Boosted   bool `json:"boosted"`
+	Reblogged bool `json:"reblogged"`
+	// Approval and BoostApproval are the approval of the user's reply and of the user's boost of
+	// the status while it is not given (this server's client API, ADR-0155 §10): pending or
+	// rejected.
+	Approval      string `json:"approval"`
+	BoostApproval string `json:"boost_approval"`
+	// Permissions say what the user may do with the status (this server's client API).
+	Permissions *struct {
+		Quote string `json:"quote"`
+	} `json:"permissions"`
+	// Quote is the status that the status quotes (both APIs).
+	Quote *statusQuote `json:"quote"`
+}
+
+// statusQuote is the quote of a status (both APIs): its state, and the quoted status when the
+// viewer may see it.
+type statusQuote struct {
+	State        string  `json:"state"`
+	QuotedStatus *status `json:"quoted_status"`
 }
 
 // statusReaction is the number of the reactions to a status with one emoji (this server's
@@ -684,6 +717,15 @@ type peerClient struct {
 	// Like with the emoji (_misskey_reaction), which this server records as an emoji reaction,
 	// not as a favourite (ADR-0051, TestFavourite).
 	favouriteReaction string
+	// takesRejections is set for a peer that drops its user's reply or boost when alice refuses it
+	// (TestInteractionApproval).
+	takesRejections bool
+	// keepsWithdrawnRequests, when set, says how the peer keeps listing the requests that alice
+	// withdraws (TestInteractionApproval).
+	keepsWithdrawnRequests string
+	// remoteBoostNotApproved, when set, says why the peer user cannot approve alice's boost of
+	// her status (TestInteractionApproval).
+	remoteBoostNotApproved string
 }
 
 // handle is the peer user's handle.
@@ -876,12 +918,12 @@ func (p *mastodonAPI) notifications(ctx context.Context) ([]notification, error)
 
 // signInGoToSocial gets an access token for a user through GoToSocial's OAuth screens: register
 // an application, sign in, approve, and exchange the out-of-band code.
-func signInGoToSocial(ctx context.Context, transport http.RoundTripper, user, password string) (string, error) {
+func signInGoToSocial(ctx context.Context, transport http.RoundTripper, host, user, password string) (string, error) {
 	b, err := newBrowser(transport)
 	if err != nil {
 		return "", err
 	}
-	base := "https://" + gtsHost
+	base := "https://" + host
 	const redirect = "urn:ietf:wg:oauth:2.0:oob"
 	const scopes = "read write follow"
 	var app struct {
@@ -899,7 +941,7 @@ func signInGoToSocial(ctx context.Context, transport http.RoundTripper, user, pa
 		return "", err
 	}
 	status, _, page, err := b.do(ctx, http.MethodPost, base+"/auth/sign_in", url.Values{
-		"username": {user + "@" + gtsHost}, "password": {password},
+		"username": {user + "@" + host}, "password": {password},
 	})
 	if err != nil {
 		return "", err

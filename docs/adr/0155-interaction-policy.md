@@ -86,7 +86,9 @@ GoToSocial の取り決めでは、交流する側は、承認の範囲に当て
 - **依頼の無いブースト**（ローカルの投稿の `Announce`）: 自動の範囲なら今と同じく記録します。承認の範囲なら依頼として記録して作者の判断を待ち、認めるまで `boosts` に記録しません。どちらでもなければ記録せず `Reject` を送ります。記録しないブーストは、件数・タイムライン・通知に出ません。
 - **第三者の交流**（リモートの投稿へのリモートの人の返信・ブースト）: 対象の投稿の自動の範囲に `as:Public` が無いのに、交流が承認のプロパティを持たないか、承認が §7 の検証を通らなければ、返信はスレッドに出さず、ブーストは記録しません。
 - **引用**（`QuoteRequest`）: ADR-0069 §2 の自動の答えに、承認待ちを足します。承認の範囲に当てはまる依頼は作者に通知し、作者の判断で `Accept` か `Reject` を送ります。同意の手順を持たない `legacy` の引用は自動の範囲だけで判定し、承認の範囲なら `rejected` にします（依頼を受ける手段がないため）。
-- 依頼への `Accept` / `Reject` は依頼のアクティビティを `object` に埋め込みます（ADR-0069 §2 と同じ）。
+- `ReplyRequest` / `AnnounceRequest` への `Accept` / `Reject` の `object` は、依頼のアクティビティの埋め込みと交流（返信の `Note` か `Announce`）の IRI の 2 つを、この順に並べた配列です。`Accept` の `result` はこのサーバーのホストの承認の IRI です。GoToSocial 0.21・0.22 は、自分の `AnnounceRequest` への `Accept` と、`ReplyRequest` / `AnnounceRequest` への `Reject` を、交流の IRI からしか読まないためです。`QuoteRequest` への答えは依頼の埋め込みだけです（ADR-0069 §2 と同じ）。
+- こちらの依頼への答えは、`object` が依頼（IRI か埋め込み）か、それを含む配列か、依頼が承認を求める交流の IRI だけのものも受けます。答え直しは何も変えません。
+- 依頼を送らない実装: Mastodon 4.7 は `canReply`・`canAnnounce` を読まず、承認の要る投稿にも依頼なしで返信・ブーストを送ります。Bonfire Social 1.0 は `automaticApproval` だけを境界（許す・許さない）に写し、`manualApproval` を読まないので、作者だけを自動で認める投稿にはその場で返信・ブーストを断り、ほかは依頼なしで送ります。返信・ブーストの依頼を送らず、答えもしません。引用は `QuoteRequest` で往復します。
 
 ### 7. 送信: ローカルの人の、リモートの投稿への交流
 
@@ -119,6 +121,7 @@ GoToSocial の取り決めでは、交流する側は、承認の範囲に当て
   - `private` / `direct` の `canAnnounce` と `canQuote`、`local` の `canQuote` は作者自身です（ADR-0069 §3 の `local`・§4 と同じ）。
   - `local` の投稿の `canReply`・`canAnnounce` は、リモートへは作者自身にします。リモートからはフォロワー限定に見え、ブーストで外へ広がるためです。
 - `@context` は今の `federation.LDContext`（GoToSocial の語彙 `https://gotosocial.org/ns#` を含む）に、`canReply`・`canAnnounce`・`manualApproval`・`ReplyRequest`・`AnnounceRequest`・`ReplyAuthorization`・`AnnounceAuthorization`・`replyAuthorization`・`announceAuthorization` を足します。
+- GoToSocial 0.21・0.22 と Mastodon 4.7 は、GoToSocial 自身が書く `https://gotosocial.org/ns`（`#` なし）ではないこの `@context` でも、`canReply`・`canAnnounce`・`canQuote` と `manualApproval` を読みます（ライブの相互運用テストで、承認の範囲だけに当てはまる返信・ブースト・引用が依頼になる）。
 - 許可を変えたら、今の引用の許可の変更（`content.quote_policy_changed`）と同じく、現在の版の `Update` を配送します。
 
 ### 10. 通知・クライアント API・Web
@@ -162,6 +165,8 @@ GoToSocial の取り決めでは、交流する側は、承認の範囲に当て
 | Mastodon 4.5〜4.7（[ActivityPub の文書](https://docs.joinmastodon.org/spec/activitypub/#Quote)、`note_serializer.rb`、`activity.rb`） | `canQuote` の `automaticApproval` だけを送り、`QuoteRequest` に答える。`canReply`・`canAnnounce` は送らず、`ReplyRequest`・`AnnounceRequest` を扱わない |
 | [Bonfire](https://bonfirenetworks.org/features) | 境界（見る・返信・引用などの範囲）を GoToSocial の交流の許可と Mastodon の引用の承認に合わせると述べる。1.0rc3 の告知では FEP-044f は対応済み、交流の許可は未定 |
 
+依頼への `Accept` / `Reject` の `object` は、はじめ ADR-0069 §2 にならって依頼の埋め込みだけとした。2026-11-10 のライブの相互運用テスト（`test/federation-live`）で、GoToSocial 0.21.3・0.22.1 がこの形の、自分の `AnnounceRequest` への `Accept` を読み捨て（`federatingdb/accept.go` が埋め込みの `AnnounceRequest` を扱わない）、承認したブーストが GoToSocial で承認待ちのまま配送されないこと、`Reject` も埋め込みの依頼を読まず、断った返信・ブーストが GoToSocial で承認待ちに残ることが分かった。GoToSocial は `object` の各要素を順に扱い、交流の IRI なら自分の保存した交流として承認・拒否する。そこで Decider が、`ReplyRequest` / `AnnounceRequest` への答えの `object` を依頼の埋め込みと交流の IRI の配列にすると決めた。依頼を埋め込む形を保つので、依頼で照合する実装も読める。引用の答えは Mastodon と Bonfire が依頼の埋め込みで読むので変えない。
+
 ## 採らなかった案
 
 - 種類ごとに表を分ける（`status_reply_policies` など）: 今の引用の表を残せて移行が小さい。ただし同じ規則と列を種類の数だけ持ち、判定も種類ごとに書くことになる。
@@ -194,7 +199,4 @@ GoToSocial の取り決めでは、交流する側は、承認の範囲に当て
 
 要検証（実装の issue で、フィクスチャとライブの相互運用テストで確かめる）:
 
-- GoToSocial の文書は `@context` を `https://gotosocial.org/ns`（`#` なし）と書き、今の `federation.LDContext` は `https://gotosocial.org/ns#` を入れている。GoToSocial と Mastodon がどちらでも同じ語に展開するか。
-- Mastodon が `canReply` を読んで、許可外の返信の操作を止めるか（調べた範囲では、読む記述も実装も見つからなかった）。
-- Bonfire の境界が `canReply`・`manualApproval` にどう対応し、`ReplyRequest` を送るか・答えるか（文書に連合の詳細がなかった）。
 - GoToSocial が、依頼の無い返信を承認したときの `Accept`（`object` が返信）を、こちらから送ったときに受け付けるか。
