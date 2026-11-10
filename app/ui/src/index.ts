@@ -232,6 +232,7 @@ export {
   BlockIcon,
   MuteIcon,
   DomainMuteIcon,
+  FilterIcon,
   PasswordIcon,
   TwoFactorIcon,
   PasskeyIcon,
@@ -307,6 +308,7 @@ export { MediaGrid, type MediaGridProps, type MediaItem, type MediaPlayback } fr
 export type { MediaViewerLabels } from "./MediaViewer";
 export { MediaLoadFailure, type MediaLoadFailureProps, type MediaLoadLabels } from "./MediaLoadFailure";
 export { NewItemsButton, type NewItemsButtonProps } from "./NewItemsButton";
+export { FilteredPost, type FilteredPostProps } from "./FilteredPost";
 export { PostCard, PostCardAuthor, type PostCardAuthorProps, type PostCardProps } from "./PostCard";
 export {
   PostContent,

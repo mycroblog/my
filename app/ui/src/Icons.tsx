@@ -39,6 +39,7 @@ import {
   PiProhibit,
   PiSpeakerSimpleSlash,
   PiGlobeX,
+  PiFunnel,
   PiPassword,
   PiLockKey,
   PiFingerprint,
@@ -255,6 +256,8 @@ export const iconTable = {
   BlockIcon: { off: glyph(PiProhibit, "PiProhibit") },
   MuteIcon: { off: glyph(PiSpeakerSimpleSlash, "PiSpeakerSimpleSlash") },
   DomainMuteIcon: { off: glyph(PiGlobeX, "PiGlobeX") },
+  // The user's keyword filters (ADR-0157), and the mark of a post they fold.
+  FilterIcon: { off: glyph(PiFunnel, "PiFunnel") },
   PasswordIcon: { off: glyph(PiPassword, "PiPassword") },
   TwoFactorIcon: { off: glyph(PiLockKey, "PiLockKey") },
   PasskeyIcon: { off: glyph(PiFingerprint, "PiFingerprint") },
@@ -684,6 +687,11 @@ export function MuteIcon() {
 /** A globe with a cross, for the servers the user mutes. */
 export function DomainMuteIcon() {
   return renderIcon(iconTable.DomainMuteIcon);
+}
+
+/** A funnel, for the user's keyword filters and the posts they fold. */
+export function FilterIcon() {
+  return renderIcon(iconTable.FilterIcon);
 }
 
 /** A row of hidden characters, for the password. */
