@@ -38,7 +38,7 @@ but nothing is sent to or received from that relay, and the admin area shows a w
 
 ## What the server receives
 
-- A public post carried by a joined relay is fetched again from its origin and checked before it is ingested. It then shows in the federated timeline and hashtag timelines. It does not show in home timelines and creates no notification.
+- A public post carried by a joined relay is fetched again from its origin and checked before it is ingested. It then shows in the federated timeline and hashtag timelines, and in the home timelines of the people who follow one of its hashtags. It shows in no other home timeline and creates no notification.
 - At most `relay_max_activities_per_hour` posts per hour (default 1,000) are ingested per relay. Anything above the limit is dropped without being fetched.
   The page of the relay in the admin area and `my admin relay list` show how many were ingested in the last 24 hours and how many were dropped over the limit. If many are dropped, raise the limit or reconsider the relay.
 - A post is not ingested when its domain or account has a `suspend` (a federation restriction) or a `limit` (a restriction that removes it from public places).

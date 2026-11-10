@@ -36,7 +36,7 @@ which shows how many there are.
 
 | Timeline | What it shows |
 | --- | --- |
-| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts set to "This server" by the people you follow. Posts you have not seen yet are counted ("new posts"), or inserted by themselves when you turn on "Show new posts automatically". |
+| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts set to "This server" by the people you follow, and the public posts and posts set to "This server" of the hashtags you follow, from people you do not follow. Posts you have not seen yet are counted ("new posts"), or inserted by themselves when you turn on "Show new posts automatically". |
 | Local | The public posts, and the posts set to "This server", of the accounts of this server. |
 | Federated | The public posts of the accounts of this server and of the accounts of other servers that this server knows. Posts set to "This server" and unlisted posts are not on it. |
 

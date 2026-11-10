@@ -50,24 +50,43 @@ LIMIT :limit + 1
   ハッシュタグの枝は、`feed_tag_follows` の閲覧者のタグごとに `feed_tag_entries (tag_id, entry_id)` の範囲を同じカーソルと読み取り窓で読み、`feed_entries` と結合します。
 
   ```sql
-  SELECT e.* FROM feed_entries e
-  JOIN feed_tag_entries t ON t.entry_id = e.id
+  SELECT e.*, array_agg(t.tag_id ORDER BY t.tag_id) AS tag_ids  -- SQLite は group_concat
+  FROM feed_tag_entries t
+  JOIN feed_entries e ON e.id = t.entry_id
   WHERE t.tag_id IN (SELECT tag_id FROM feed_tag_follows WHERE account_id = :viewer)
     AND t.visibility IN ('public', 'local')
     AND t.entry_id < :cursor AND t.entry_id >= :window_floor
     AND e.kind = 'post'
-    AND e.author_account_id <> :viewer
+    AND t.author_account_id <> :viewer
     AND NOT EXISTS (SELECT 1 FROM feed_follow_edges f
-          WHERE f.follower_account_id = :viewer AND f.followee_account_id = e.author_account_id)
+          WHERE f.follower_account_id = :viewer AND f.followee_account_id = t.author_account_id)
     AND /* 作者の public_discovery・visibility_ceiling_private・profile_view、ドメインの public_discovery・profile_view（§6.3 のハッシュタグと同じ） */
     AND /* 閲覧者のブロック・ミュート（feed_exclusions）、ドメインのミュート（feed_domain_mutes）、言語フィルタ（ホームと同じ） */
+  GROUP BY e.id
+  ORDER BY e.id DESC
+  LIMIT :limit + 1
   ```
 
-  - 作者をフォローしている投稿と自分の投稿はフォローの側の枝だけが返すので、2 つの枝は重なりません。同じ投稿が複数のフォローしたタグを持つときは `id` で 1 行にします（`DISTINCT`、または枝を `UNION` で合わせる）。
-  - 2 つの枝をそれぞれ `ORDER BY id DESC LIMIT :limit + 1` で読み、`id` の大きい順に合わせて `:limit + 1` 件に切ります。読み取り窓を広げるとき（上の読み取り窓）は、両方の枝を同じ窓で読み直します。
-  - 使うインデックス: `feed_tag_follows` の PK、`feed_tag_entries (tag_id, entry_id)` の PK、`feed_entries` の PK。
-  - ハッシュタグの枝からだけ入った行には、合ったフォロー中のタグを付けて返します（ADR-0013 §28）。ストリームの新着の判定（`HomeEntry`）も同じ 2 つの枝を読みます。
-  - 計測（PostgreSQL と SQLite の `EXPLAIN`、フォロー 1,000・タグ 100・賑やかなタグ）は、実装のタスクで書き足します。
+  - 作者をフォローしている投稿と自分の投稿はフォローの側の枝だけが返すので、2 つの枝は重なりません。同じ投稿が複数のフォローしたタグを持つときは `GROUP BY` で 1 行にし、合ったタグをまとめて返します。
+  - 2 つの枝をそれぞれ `ORDER BY id DESC LIMIT :limit + 1` で読み、アプリケーションで `id` の大きい順に合わせて `:limit + 1` 件に切ります（同じ `id` はフォローの側の行を残します）。読み取り窓を広げるとき（上の読み取り窓）は、両方の枝を同じ窓で読み直します。
+  - 使うインデックス: `feed_tag_follows` の PK、`feed_tag_entries (tag_id, entry_id)` の PK か `(entry_id)`、`feed_entries` の PK。
+  - ハッシュタグの枝の行は、`content.CanView` を `ContextHashtag` で当て直します（フォローの側の行は `ContextHome`）。作者をフォローしていなくても見えるのは、ハッシュタグのタイムラインで見える投稿だからです。
+  - ハッシュタグの枝からだけ入った行には、合ったフォロー中のタグを付けて返します（ADR-0013 §28）。ストリームの新着の判定（`HomeEntry`）も同じ 2 つの枝を読み、配る相手の絞り込み（`HomeAudience`）は、作者のフォロワーに加えて、投稿のタグ（`public` / `local` のとき）をフォローしている人を `feed_tag_entries (entry_id)` と `feed_tag_follows` の PK で選びます。
+  - **計測**（#2571）: 30 日で 30 万件の投稿（2 万人、2 割がローカル、1 割が `unlisted`）、3 割の投稿に 2,000 個のタグのどれか、5% に賑やかなタグ（1 日 500 件）。閲覧者はフォロー 1,000・フォローしたタグ 100、ほかに 500 人がフォロー 200・タグ 20 を持ちます。21 件の読み取りの中央値（21 回）です。
+
+    | 読み方 | SQLite: フォローの枝 | SQLite: ハッシュタグの枝 | PostgreSQL: フォローの枝 | PostgreSQL: ハッシュタグの枝 |
+    | --- | --- | --- | --- | --- |
+    | 1 ページ目（窓 7 日）、賑やかなタグを含む | 5.4 ms | 22.9 ms | 12.1 ms | 6.2 ms |
+    | 3 日前のカーソル（窓 7 日）、賑やかなタグを含む | 5.8 ms | 23.1 ms | 15.3 ms | 5.7 ms |
+    | 下限なし、賑やかなタグを含む | 6.6 ms | 106.9 ms | 10.7 ms | 5.3 ms |
+    | 1 ページ目（窓 7 日）、静かなタグ 100 | 5.5 ms | 7.0 ms | 10.6 ms | 5.6 ms |
+    | 下限なし、静かなタグ 100 | 5.2 ms | 32.3 ms | 10.7 ms | 5.7 ms |
+
+    - SQLite の計画は `SEARCH t USING INDEX sqlite_autoindex_feed_tag_entries_1 (tag_id=? AND entry_id>?)`（`LIST SUBQUERY` が `feed_tag_follows` の PK を `account_id=?` で読む）、`SEARCH e USING INDEX sqlite_autoindex_feed_entries_1 (id=?)`、`USE TEMP B-TREE FOR GROUP BY` です。
+      タグごとに窓の中の範囲をすべて読んでから並べるので、読む行は窓の中のフォローしたタグの投稿の数（賑やかなタグで約 3,500 行、静かなタグ 100 で約 1,000 行）に比例します。
+    - PostgreSQL の計画は `Index Scan Backward using feed_tag_entries_entry_id` で新しい順に読み、各行のタグを `feed_tag_follows_pkey`（`Memoize`）で確かめ、21 件で止まります。賑やかなタグで 173 行、静かなタグ 100 で 935 行を読みました（`EXPLAIN (ANALYZE, BUFFERS)`、それぞれ 0.8 ms と 1.8 ms）。
+    - 両方の枝を足しても、窓の中の読み取りは 30 ms 以下で、ホームの予算（NFR-PERF-3 の p95 300 ms）に収まります。下限なしは、窓を広げてもページが埋まらないとき（フォローしたタグの投稿が少ないとき）だけ読みます。
+      ハッシュタグの枝の窓を狭める・件数を限る・投影を作る手当て（ADR-0013 §29）は、今は要りません。
 
 - **リスト（FR-211）**: ホームと同じ条件（読み取り窓・`show_boosts`・`direct` の宛先・ブロックとミュート・`profile_view`・ドメインのミュート・言語）を、作者（投稿者またはブーストした人）をそのリストのメンバーに限って当てます。
   作者の集合は `list_members` を `feed_follow_edges` と結合した `IN (SELECT member_account_id … WHERE list_id = :list AND owner_account_id = :viewer)` で、閲覧者自身の投稿とブーストは入れません（`e.author_account_id <> :viewer`）。
