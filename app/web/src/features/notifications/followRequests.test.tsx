@@ -165,6 +165,28 @@ describe("a follow request notification", () => {
     expect(within(row).queryByRole("button")).not.toBeInTheDocument();
   });
 
+  test("offers the answers when the relationship cached before the request still says it does not wait", async () => {
+    // The viewer read the relationship before Bob asked (here on the same page), and it is still fresh in the cache.
+    const relationshipReads: string[] = [];
+    server.events.on("request:start", ({ request }) => {
+      if (new URL(request.url).pathname.endsWith("/accounts/relationships")) relationshipReads.push(request.url);
+    });
+    const { state } = requestServer({ waiting: false });
+    const { router } = await renderApp({ path: "/notifications" });
+    await requestRow();
+    await waitFor(() => {
+      expect(relationshipReads).toHaveLength(1);
+    });
+
+    state.waiting = true;
+    await router.navigate({ to: "/home" });
+    await router.navigate({ to: "/notifications" });
+
+    const row = await requestRow();
+    expect(await within(row).findByRole("button", { name: "Approve: Bob" })).toBeInTheDocument();
+    server.events.removeAllListeners();
+  });
+
   test("shows a request answered elsewhere (a 404) as no longer waiting, not as an error", async () => {
     const { state } = requestServer();
     server.use(

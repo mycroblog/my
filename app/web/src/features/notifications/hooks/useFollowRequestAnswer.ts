@@ -34,7 +34,8 @@ export type FollowRequestAnswerState =
 
 /** The follow request of `account` to the viewer, and answering it. */
 export function useFollowRequestAnswer(account: NotificationAccount): FollowRequestAnswerState {
-  const relationship = useRelationship(account);
+  // The notification may be newer than the cached relationship: read it again when the row mounts.
+  const relationship = useRelationship(account, { fresh: true });
   const [outcome, setOutcome] = useState<FollowRequestOutcome | null>(null);
   const accept = useAnswerMutation(account, "accept", setOutcome);
   const reject = useAnswerMutation(account, "reject", setOutcome);
