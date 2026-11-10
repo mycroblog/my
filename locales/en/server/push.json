@@ -88,8 +88,8 @@
     "description": "Web Push notification. {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji."
   },
   "push.relationships_severed": {
-    "defaultMessage": "A suspension by the moderators of {instance} ended some of your follows",
-    "description": "Web Push notification: the moderators suspended a server or an account, which ended follows between it and the user. {instance} is the server's display name, or its domain name when it has none."
+    "defaultMessage": "{instance} ended some of your follows with accounts on other servers",
+    "description": "Web Push notification: follows between the user and accounts of other servers ended, because the moderators suspended a server or an account, or because this server stopped federating with a server (it federates only with the servers it allows). {instance} is the server's display name, or its domain name when it has none."
   },
   "push.report_resolved": {
     "defaultMessage": "A report you filed on {instance} has been resolved",
