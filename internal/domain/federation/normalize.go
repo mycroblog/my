@@ -305,6 +305,16 @@ func (n normalizer) canInteract(o object, kind string) *CanInteract {
 	return out
 }
 
+// hashtagName returns the name of a Hashtag item, without its leading # ("" when it has none),
+// and false for any other value.
+func hashtagName(v any) (string, bool) {
+	o, ok := v.(object)
+	if !ok || !slices.Contains(strs(o.get("type")), string(TagHashtag)) {
+		return "", false
+	}
+	return strings.TrimPrefix(strings.TrimSpace(str(o.get("name"))), "#"), true
+}
+
 // activityStreamsMediaType reports whether the mediaType of a Link names an ActivityStreams
 // document (FEP-e232).
 func activityStreamsMediaType(mt string) bool {
@@ -323,6 +333,12 @@ func (n normalizer) collection(o object, page bool) (*Collection, error) {
 		items = o.get("items")
 	}
 	for _, v := range list(items) {
+		if name, ok := hashtagName(v); ok {
+			if name != "" && len(c.Hashtags) < MaxItems {
+				c.Hashtags = append(c.Hashtags, name)
+			}
+			continue
+		}
 		if len(c.Items) == MaxItems {
 			break
 		}
@@ -356,6 +372,7 @@ func (n normalizer) actor(o object, t ActorType) (*Actor, error) {
 		Followers:                 n.firstRef(o.get("followers")),
 		Following:                 n.firstRef(o.get("following")),
 		Featured:                  n.firstRef(o.get("featured")),
+		FeaturedTags:              n.firstRef(o.get("featuredTags")),
 		Icon:                      n.imageURL(o.get("icon")),
 		Image:                     n.imageURL(o.get("image")),
 		ManuallyApprovesFollowers: o.get("manuallyApprovesFollowers") == true,

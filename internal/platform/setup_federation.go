@@ -98,7 +98,7 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 // the keys that RemoteActors resolves, so setUpRemoteActors runs first.
 func (a *App) newObjects(cfg *config.Config) *federation.Objects {
 	return federation.NewObjects(federation.ObjectsDeps{
-		Statuses: a.Content, Accounts: a.Accounts, Graph: a.Graph, Timeline: a.Timeline, Reader: a.Statuses, Images: a.Media.Images,
+		Statuses: a.Content, Accounts: a.Accounts, Graph: a.Graph, Timeline: a.Timeline, FeaturedTags: a.Timeline, Reader: a.Statuses, Images: a.Media.Images,
 		Aliases:       a.Accounts,
 		Quotes:        federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
 		Conversations: a.Content,

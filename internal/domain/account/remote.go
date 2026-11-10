@@ -34,6 +34,7 @@ type RemoteSnapshot struct {
 	FollowersURL      string
 	FollowingURL      string
 	FeaturedURL       string
+	FeaturedTagsURL   string
 	FollowersTotal    *int64
 	FollowingTotal    *int64
 	StatusesTotal     *int64

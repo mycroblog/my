@@ -42,6 +42,7 @@ type Objects interface {
 	OutboxTotal(ctx context.Context, accountID string) (int64, error)
 	Outbox(ctx context.Context, accountID, before string) (appfederation.OutboxPage, error)
 	Featured(ctx context.Context, accountID string) ([]federation.NoteDocument, error)
+	FeaturedTags(ctx context.Context, a appaccount.Actor) ([]federation.TagDocument, error)
 	Conversation(ctx context.Context, req appfederation.Requester, id string, paged bool, after string) (appfederation.ConversationCollection, error)
 }
 

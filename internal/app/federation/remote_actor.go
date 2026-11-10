@@ -253,7 +253,7 @@ func (r *RemoteActors) storeAfter(ctx context.Context, actor *federation.Actor, 
 		if err := r.applyActorVerdict(ctx, tx, v, stored.ID); err != nil {
 			return err
 		}
-		if err := enqueueFetchFeaturedTx(ctx, tx, r.d.Outbox, stored.ID, actor.ID, actor.Featured); err != nil {
+		if err := enqueueFetchFeaturedAllTx(ctx, tx, r.d.Outbox, stored.ID, actor); err != nil {
 			return err
 		}
 		return r.seeInstance(ctx, tx, in.Domain)
@@ -309,7 +309,7 @@ func (r *RemoteActors) input(ctx context.Context, a *federation.Actor, raw []byt
 		PreferredUsername: a.PreferredUsername, Name: a.Name, SummaryHTML: a.Summary,
 		ProfileURL: string(a.URL), InboxURL: string(a.Inbox), SharedInboxURL: string(a.SharedInbox),
 		OutboxURL: string(a.Outbox), FollowersURL: string(a.Followers), FollowingURL: string(a.Following),
-		FeaturedURL: string(a.Featured), AvatarURL: string(a.Icon), HeaderURL: string(a.Image),
+		FeaturedURL: string(a.Featured), FeaturedTagsURL: string(a.FeaturedTags), AvatarURL: string(a.Icon), HeaderURL: string(a.Image),
 		Locked: a.ManuallyApprovesFollowers, Bot: a.Bot(), Discoverable: a.Discoverable, Indexable: a.Indexable,
 		Keys: r.actorKeys(ctx, a, raw), Document: raw, Handle: r.checkHandle(ctx, a),
 	}

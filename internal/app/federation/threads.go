@@ -75,12 +75,13 @@ func fetchObjectJob(p fetchObjectPayload) (queue.NewJob, error) {
 	return queue.NewJob{Type: JobFetchObject, Payload: payload, IdempotencyKey: "fetch_object:" + hex.EncodeToString(sum[:])}, nil
 }
 
-// RegisterJobs registers the handlers of JobFetchObject, JobFetchOutbox, JobFetchFeatured, and
-// JobVerifyQuote.
+// RegisterJobs registers the handlers of JobFetchObject, JobFetchOutbox, JobFetchFeatured,
+// JobFetchFeaturedTags, and JobVerifyQuote.
 func (h *StatusHandlers) RegisterJobs(r *queue.JobHandlerRegistry) {
 	r.Register(JobFetchObject, h.handleFetchObject)
 	r.Register(JobFetchOutbox, h.handleFetchOutbox)
 	r.Register(JobFetchFeatured, h.handleFetchFeatured)
+	r.Register(JobFetchFeaturedTags, h.handleFetchFeaturedTags)
 	r.Register(JobVerifyQuote, h.handleVerifyQuote)
 }
 

@@ -228,7 +228,8 @@ CREATE TABLE remote_accounts (
 );
 
 -- Event: one fetch of a remote actor's document whose content differed from the previous one.
--- document_digest is the SHA-256 of the document.
+-- document_digest is the SHA-256 of the document. The collections are NULL when the document
+-- does not declare them; featured_tags_url is its featuredTags (ADR-0006 §17).
 CREATE TABLE remote_account_snapshots (
   id uuid NOT NULL PRIMARY KEY,
   account_id uuid NOT NULL,
@@ -244,7 +245,8 @@ CREATE TABLE remote_account_snapshots (
   following_total bigint,
   statuses_total bigint,
   document_digest bytea NOT NULL,
-  fetched_at timestamptz NOT NULL
+  fetched_at timestamptz NOT NULL,
+  featured_tags_url text
 );
 CREATE INDEX remote_account_snapshots_account_id_id ON remote_account_snapshots (account_id, id DESC);
 

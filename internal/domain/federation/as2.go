@@ -366,8 +366,13 @@ type Collection struct {
 	ID IRI
 	// Page is set for a CollectionPage or OrderedCollectionPage.
 	Page bool
-	// Items are the items (or orderedItems) in document order, at most MaxItems of them.
+	// Items are the items (or orderedItems) in document order, at most MaxItems of them, but the
+	// Hashtag items.
 	Items []Ref
+	// Hashtags are the names of the Hashtag items, without their leading #, in document order and
+	// at most MaxItems of them: the items of a featuredTags collection (Mastodon's featured
+	// hashtags), which have no id.
+	Hashtags []string
 	// First is the first page of a collection; Next the page after a page.
 	First Ref
 	Next  Ref
@@ -400,6 +405,7 @@ type Actor struct {
 	Followers                 IRI
 	Following                 IRI
 	Featured                  IRI
+	FeaturedTags              IRI
 	Icon                      IRI
 	Image                     IRI
 	ManuallyApprovesFollowers bool

@@ -64,6 +64,7 @@ type RemoteActorInput struct {
 	FollowersURL      string
 	FollowingURL      string
 	FeaturedURL       string
+	FeaturedTagsURL   string
 	AvatarURL         string
 	HeaderURL         string
 	Locked            bool
@@ -297,7 +298,7 @@ func (s *Service) recordSnapshot(ctx context.Context, tx uow.Tx, accountID strin
 		ID: s.d.IDs.NewID(), AccountID: accountID, PreferredUsername: in.PreferredUsername,
 		ProfileURL: in.ProfileURL, InboxURL: in.InboxURL, SharedInboxURL: in.SharedInboxURL,
 		OutboxURL: in.OutboxURL, FollowersURL: in.FollowersURL, FollowingURL: in.FollowingURL, FeaturedURL: in.FeaturedURL,
-		DocumentDigest: sum[:], FetchedAt: now,
+		FeaturedTagsURL: in.FeaturedTagsURL, DocumentDigest: sum[:], FetchedAt: now,
 	}
 	return snap, s.d.Repository.InsertRemoteSnapshot(ctx, tx, snap)
 }
@@ -639,6 +640,17 @@ func (s *Service) RemoteFeaturedURL(ctx context.Context, accountID string) (stri
 		return "", err
 	}
 	return snap.FeaturedURL, nil
+}
+
+// RemoteFeaturedTagsURL returns the featuredTags collection (the featured hashtags) of a remote
+// actor, from its newest document: "" when the document has none. It fails with ErrNotFound for a
+// local account and for a remote one that has never been fetched.
+func (s *Service) RemoteFeaturedTagsURL(ctx context.Context, accountID string) (string, error) {
+	snap, err := s.d.Repository.FindLatestRemoteSnapshot(ctx, accountID)
+	if err != nil {
+		return "", err
+	}
+	return snap.FeaturedTagsURL, nil
 }
 
 // StaleRemoteActors returns at most limit remote actors whose last fetch is RemoteActorTTL or

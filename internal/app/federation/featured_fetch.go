@@ -57,31 +57,50 @@ func enqueueFetchFeaturedTx(ctx context.Context, tx uow.Tx, outbox queue.Outbox,
 // FeaturedChanged is the inbox handler of Add and Remove (federation.md §3.4): an Add or Remove
 // whose target is the featured collection of its actor, as the stored actor document declares
 // it, enqueues the JobFetchFeatured of the actor, which makes the pins those the collection lists
-// then. The activity's object is not read: fetching the collection again applies the same checks
-// and bounds as the fetch of a refreshed actor, and catches up on the changes that did not
-// arrive. The caller has checked that the signer is the activity's actor (federation.md §3.2), so
-// the actor is the owner of the collection. Any other Add or Remove is dropped, as is one of an
-// account whose featured collection is not mirrored. While a fetch of the account is pending, the
-// activity enqueues none.
+// then, and the JobFetchFeaturedTags of the actor when its document declares a featuredTags
+// collection: Mastodon sends the change of its featured hashtags as the Add or Remove of a Hashtag
+// to the featured collection (ADR-0006 §17). The activity's object is not read: fetching the
+// collections again applies the same checks and bounds as the fetch of a refreshed actor, and
+// catches up on the changes that did not arrive. The caller has checked that the signer is the
+// activity's actor (federation.md §3.2), so the actor is the owner of the collection. Any other
+// Add or Remove is dropped, as is one of an account whose featured collection is not mirrored.
+// While a fetch of the account is pending, the activity enqueues none.
 func (h *StatusHandlers) FeaturedChanged(ctx context.Context, a *InboxActivity) error {
 	target := a.Activity.Target
-	if h.d.Pins == nil || h.d.Profiles == nil || h.d.Outbox == nil || target == "" ||
+	if (h.d.Pins == nil && h.d.FeaturedTags == nil) || h.d.Profiles == nil || h.d.Outbox == nil || target == "" ||
 		!federation.SameOrigin(target, a.Activity.Actor) {
 		return fmt.Errorf("%w: %s to %q by %s", ErrDropActivity, a.Activity.Type, target, a.Activity.Actor)
 	}
-	featured, err := h.d.Profiles.RemoteFeaturedURL(ctx, a.Actor.Account.ID)
-	switch {
-	case errors.Is(err, appaccount.ErrNotFound):
-		featured = ""
-	case err != nil:
+	accountID := a.Actor.Account.ID
+	featured, err := ignoreNotFound(h.d.Profiles.RemoteFeaturedURL(ctx, accountID))
+	if err != nil {
 		return err
 	}
 	if featured == "" || federation.IRI(featured) != target {
 		return fmt.Errorf("%w: %s to %s, not the featured collection of %s", ErrDropActivity, a.Activity.Type, target, a.Activity.Actor)
 	}
+	var featuredTags string
+	if h.d.FeaturedTags != nil {
+		if featuredTags, err = ignoreNotFound(h.d.Profiles.RemoteFeaturedTagsURL(ctx, accountID)); err != nil {
+			return err
+		}
+	}
 	return h.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		return enqueueFetchFeaturedTx(ctx, tx, h.d.Outbox, a.Actor.Account.ID, a.Activity.Actor, target)
+		if h.d.Pins != nil {
+			if err := enqueueFetchFeaturedTx(ctx, tx, h.d.Outbox, accountID, a.Activity.Actor, target); err != nil {
+				return err
+			}
+		}
+		return enqueueFetchFeaturedTagsTx(ctx, tx, h.d.Outbox, accountID, a.Activity.Actor, federation.IRI(featuredTags))
 	})
+}
+
+// ignoreNotFound returns uri, or "" for an account that appaccount.ErrNotFound reports unknown.
+func ignoreNotFound(uri string, err error) (string, error) {
+	if errors.Is(err, appaccount.ErrNotFound) {
+		return "", nil
+	}
+	return uri, err
 }
 
 // handleFetchFeatured is the queue.Handler of JobFetchFeatured. A collection that cannot be

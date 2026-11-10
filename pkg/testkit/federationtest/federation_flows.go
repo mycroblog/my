@@ -20,6 +20,7 @@ import (
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/app/queue"
+	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
@@ -80,6 +81,7 @@ func FederationFlows(t *testing.T, newHarness FederationFactory) {
 		{"DeliversLocalBlocksOfRemoteAccounts", fedDeliversBlocks},
 		{"ForwardsReportsAsFlags", fedForwardsReports},
 		{"UpdatesAndDeletesActors", fedUpdatesAndDeletesActors},
+		{"UpdatesTheActorOnFeaturedTags", fedUpdatesTheActorOnFeaturedTags},
 		{"PropagatesSuspensionsOfLocalActors", fedPropagatesSuspensions},
 		{"BuildsTheNoteOfTheRevision", fedBuildsTheNote},
 		{"SendsVideoAndAudioWithPosterAndDuration", fedSendsVideoAndAudio},
@@ -981,6 +983,31 @@ func fedUpdatesAndDeletesActors(t *testing.T, e *fedEnv) {
 	}
 	if got := e.inboxes(t, updates[0].ID); len(got) != 0 {
 		t.Errorf("Update of a deleted account delivered to %v, want nowhere", got)
+	}
+}
+
+// fedUpdatesTheActorOnFeaturedTags checks that a change of a local account's featured hashtags
+// sends the Update of its actor to its followers, whose servers fetch its featuredTags
+// collection again (ADR-0006 §17).
+func fedUpdatesTheActorOnFeaturedTags(t *testing.T, e *fedEnv) {
+	author := e.local()
+	e.accounts.mu.Lock()
+	actor := e.accounts.actors[author]
+	actor.Local = &account.LocalAccount{AccountID: author, Username: "author"}
+	actor.Profile = &account.ProfileRevision{AccountID: author, Seq: 2, DisplayName: "Author"}
+	e.accounts.actors[author] = actor
+	e.accounts.mu.Unlock()
+	e.follow(e.remote("a.example", true), author)
+	e.emit(t, apptimeline.FeaturedTagsChanged{AccountID: author, ChangedAt: e.clock.Now()})
+	e.drain(t)
+	update := e.activity(t, federation.OutboundAccount, author, federation.ActivityUpdate)
+	if got := e.inboxes(t, update.ID); !slices.Equal(got, []string{"https://a.example/inbox"}) {
+		t.Errorf("Update inboxes = %v, want the follower's", got)
+	}
+	doc := e.document(t, update.ID)
+	person, _ := doc["object"].(map[string]any)
+	if doc["type"] != "Update" || person["featuredTags"] != e.uri(author)+"/featured-tags" {
+		t.Errorf("Update document = %v, want the actor with its featuredTags collection", doc)
 	}
 }
 

@@ -25,8 +25,9 @@ func (r remoteMediaRecorder) RecordRemoteMedia(ctx context.Context, tx uow.Tx, i
 // Delete, docs/architecture/federation.md §3.4) on the inbox processor: the posts related to
 // local accounts are ingested through the content module (ADR-0006). The boosts and favourites
 // (Announce, Like, EmojiReact, and their Undo) go through the same posts. It also registers the
-// fetches of remote posts, threads, outboxes, and featured collections (federation.fetch_object,
-// federation.fetch_outbox, and federation.fetch_featured, §6.2, §6.3), builds the Resolver, and
+// fetches of remote posts, threads, outboxes, featured collections, and featuredTags collections
+// (federation.fetch_object, federation.fetch_outbox, federation.fetch_featured, and
+// federation.fetch_featured_tags, §6.2, §6.3), builds the Resolver, and
 // the refetches of remote posts that operators request (federation.refetch_status, §6.4).
 func (a *App) registerStatusHandlers(repo federation.InboxRepository) {
 	outbox := a.Outbox
@@ -36,7 +37,7 @@ func (a *App) registerStatusHandlers(repo federation.InboxRepository) {
 	a.RemoteStatuses = federation.NewStatusHandlers(federation.StatusHandlersDeps{
 		UnitOfWork: a.UnitOfWork, Statuses: a.Content, Accounts: a.Accounts, Actors: a.RemoteActors,
 		Fetcher: a.RemoteActors, Followers: a.Graph, Tombstones: repo, Outbox: outbox, Jobs: a.Jobs, KV: a.KV,
-		Profiles: a.Accounts, Relationships: a.Graph, Restrictions: a.ModerationPolicy, Pins: a.Interactions, Votes: a.Interactions,
+		Profiles: a.Accounts, Relationships: a.Graph, Restrictions: a.ModerationPolicy, Pins: a.Interactions, FeaturedTags: a.Timeline, Votes: a.Interactions,
 		// The posts that only relays bring in are kept for relay_status_retention_days (ADR-0006).
 		Relayed: a.Content, RelayPolicy: a.ModerationPolicy, Quotes: a.Content, Approvals: a.Interactions, Interactions: a.Interactions,
 		Review: federation.StatusReview{

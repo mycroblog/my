@@ -1,0 +1,23 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    {
+      "Hashtag": "as:Hashtag"
+    }
+  ],
+  "id": "https://mastodon.example/ap/users/117454922805771612/collections/tags",
+  "type": "Collection",
+  "totalItems": 2,
+  "items": [
+    {
+      "type": "Hashtag",
+      "href": "https://mastodon.example/@bob/tagged/cats",
+      "name": "#cats"
+    },
+    {
+      "type": "Hashtag",
+      "href": "https://mastodon.example/@bob/tagged/photography",
+      "name": "#Photography"
+    }
+  ]
+}
