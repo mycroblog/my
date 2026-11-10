@@ -73,6 +73,9 @@ const (
 	// HTTPPurposeRobots fetches the robots.txt of an origin (ADR-0062 §10). A larger file is not
 	// refused by its Content-Length: the caller reads up to the limit and uses what it read.
 	HTTPPurposeRobots
+	// HTTPPurposeDomainList fetches a domain block list that the instance subscribes to
+	// (ADR-0159 §4): a CSV, JSON, or plain text list on a third party's server, at most 2 MiB.
+	HTTPPurposeDomainList
 )
 
 // LinkCardAgentToken is the product token of the link card crawler: the name that robots.txt
@@ -107,7 +110,7 @@ type HTTPLimits struct {
 // DefaultHTTPLimits returns the limits of ADR-0019 §1 for p (ADR-0106 §9 for
 // HTTPPurposeHumanCheck, ADR-0060 for HTTPPurposeWebhook, ADR-0090 §1 for
 // HTTPPurposeClientMetadata, ADR-0106 §5 for HTTPPurposeLoginProvider, ADR-0062 §10 for
-// HTTPPurposeRobots; HTTPPurposeWebPush reads at most the small error document of a push
+// HTTPPurposeRobots, ADR-0159 §4 for HTTPPurposeDomainList; HTTPPurposeWebPush reads at most the small error document of a push
 // service), and false for an unknown purpose.
 func DefaultHTTPLimits(p HTTPPurpose) (HTTPLimits, bool) {
 	switch p {
@@ -129,6 +132,8 @@ func DefaultHTTPLimits(p HTTPPurpose) (HTTPLimits, bool) {
 		return HTTPLimits{MaxBodyBytes: 256 << 10, Timeout: 15 * time.Second}, true
 	case HTTPPurposeRobots:
 		return HTTPLimits{MaxBodyBytes: 512 << 10, Timeout: 10 * time.Second}, true
+	case HTTPPurposeDomainList:
+		return HTTPLimits{MaxBodyBytes: 2 << 20, Timeout: 30 * time.Second}, true
 	}
 	return HTTPLimits{}, false
 }

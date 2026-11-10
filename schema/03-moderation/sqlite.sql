@@ -272,7 +272,9 @@ CREATE TABLE audit_log_entries (
     'login_provider_enabled', 'login_provider_disabled', 'login_provider_secret_rotated',
     'link_card_domain_fetch_stopped', 'link_card_domain_images_stopped', 'link_card_domain_rule_removed',
     'instance_marked_available',
-    'domain_allow_added', 'domain_allow_removed'
+    'domain_allow_added', 'domain_allow_removed',
+    'domain_list_subscription_created', 'domain_list_subscription_updated', 'domain_list_subscription_deleted',
+    'domain_list_draft_accepted', 'domain_list_draft_rejected', 'domain_list_fetch_queued'
   )),
   target_kind TEXT NOT NULL CHECK (target_kind IN (
     'account', 'status', 'domain', 'report', 'appeal', 'user', 'role', 'setting', 'rule',
@@ -280,7 +282,7 @@ CREATE TABLE audit_log_entries (
     'cost_item', 'supporter_program', 'supporter_plan', 'supporter_subscription', 'custom_emoji_request',
     'payment_provider', 'oauth_client', 'oauth_client_host', 'instance', 'voice_room', 'login_provider',
     'link_card_domain', 'hook_decision',
-    'domain_allow'
+    'domain_allow', 'domain_list_subscription'
   )),
   target_id TEXT NOT NULL,
   target_label TEXT NOT NULL,
@@ -434,3 +436,121 @@ CREATE TABLE allowlist_cutoffs (
   occurred_at INTEGER NOT NULL,
   CHECK ((cause = 'allow_removed') = (domain IS NOT NULL))
 ) STRICT;
+
+
+-- ---------------------------------------------------------------------------------------------
+-- moderation: subscriptions to domain block lists that others publish (data-model §4.3,
+-- ADR-0159 §4, §5). Owned by internal/app/moderation.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: a subscription to a domain block list at url, an https URL fetched through the
+-- SSRF-guarded client every day. created_by_user_id is NULL for the CLI.
+CREATE TABLE domain_list_subscriptions (
+  id TEXT NOT NULL PRIMARY KEY,
+  url TEXT NOT NULL,
+  format TEXT NOT NULL CHECK (format IN ('mastodon_csv', 'mastodon_json', 'plain_text')),
+  created_by_user_id TEXT,
+  created_at INTEGER NOT NULL
+) STRICT;
+
+-- Event: a version of the settings of a subscription; the newest is in effect, and the first
+-- is written with the subscription. revised_by_user_id is NULL for the CLI.
+CREATE TABLE domain_list_subscription_revisions (
+  id TEXT NOT NULL PRIMARY KEY,
+  subscription_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  mode TEXT NOT NULL CHECK (mode IN ('draft', 'automatic')),
+  suspend_as TEXT NOT NULL CHECK (suspend_as IN ('suspend', 'limit', 'ignore')),
+  silence_as TEXT NOT NULL CHECK (silence_as IN ('limit', 'ignore')),
+  apply_reject_media INTEGER NOT NULL,
+  apply_reject_reports INTEGER NOT NULL,
+  public_comment_from_list INTEGER NOT NULL,
+  revised_by_user_id TEXT,
+  revised_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX domain_list_subscription_revisions_subscription_id_id ON domain_list_subscription_revisions (subscription_id, id DESC);
+
+-- Event: a subscription was deleted, at most once; lift_actions tells whether the actions it
+-- issued were lifted with it. deleted_by_user_id is NULL for the CLI.
+CREATE TABLE domain_list_subscription_deletions (
+  subscription_id TEXT NOT NULL PRIMARY KEY,
+  lift_actions INTEGER NOT NULL,
+  deleted_by_user_id TEXT,
+  deleted_at INTEGER NOT NULL
+) STRICT;
+
+-- Current value: what the next fetch of a subscription sends and counts. etag and last_modified
+-- are the validators of the last list read, digest its hex SHA-256 (NULL before the first),
+-- consecutive_failures the failed fetches since the last one that did not fail.
+CREATE TABLE domain_list_subscription_heads (
+  subscription_id TEXT NOT NULL PRIMARY KEY,
+  etag TEXT,
+  last_modified TEXT,
+  digest TEXT,
+  consecutive_failures INTEGER NOT NULL,
+  last_fetch_id TEXT
+) STRICT;
+
+-- Event: one fetch of a subscribed list. error_code is set exactly for a failed fetch;
+-- http_status is NULL when no answer came. entry_count is the entries the subscription holds
+-- after the fetch.
+CREATE TABLE domain_list_fetches (
+  id TEXT NOT NULL PRIMARY KEY,
+  subscription_id TEXT NOT NULL,
+  outcome TEXT NOT NULL CHECK (outcome IN ('applied', 'not_modified', 'failed')),
+  http_status INTEGER,
+  error_code TEXT CHECK (error_code IN (
+    'http_status', 'network', 'forbidden_destination', 'too_large', 'too_many_entries', 'malformed'
+  )),
+  entry_count INTEGER NOT NULL,
+  fetched_at INTEGER NOT NULL,
+  CHECK ((outcome = 'failed') = (error_code IS NOT NULL))
+) STRICT;
+CREATE INDEX domain_list_fetches_subscription_id_id ON domain_list_fetches (subscription_id, id DESC);
+
+-- Projection: the domains of a subscribed list as the last fetch that read it listed them, one
+-- row per domain (canonical), with the severity as listed (one this server does not know too).
+-- since_fetch_id is the fetch from which the domain is listed with this content without a
+-- break. A fetch that reads the list rewrites the rows of the subscription; the next fetch
+-- rebuilds them.
+CREATE TABLE domain_list_entries (
+  subscription_id TEXT NOT NULL,
+  domain TEXT NOT NULL,
+  severity TEXT NOT NULL,
+  reject_media INTEGER NOT NULL,
+  reject_reports INTEGER NOT NULL,
+  public_comment TEXT,
+  obfuscate INTEGER NOT NULL,
+  since_fetch_id TEXT NOT NULL,
+  PRIMARY KEY (subscription_id, domain)
+) STRICT;
+
+-- Event: a subscription issued a domain action, in a fetch of the automatic mode or as a draft
+-- that a moderator accepted (fetch_id is then the subscription's last fetch, NULL for none). A
+-- subscription lifts and replaces only the actions it has a row of.
+CREATE TABLE subscription_domain_actions (
+  action_id TEXT NOT NULL PRIMARY KEY,
+  subscription_id TEXT NOT NULL,
+  fetch_id TEXT
+) STRICT;
+CREATE INDEX subscription_domain_actions_subscription_id ON subscription_domain_actions (subscription_id);
+
+-- Event: a draft of a subscription that a moderator rejected, or an action of the subscription
+-- that a person lifted. A rejected issue names the fetch since which its entry lists the
+-- domain alike (entry_since_fetch_id) and stays rejected until the entry changes; a rejected
+-- lift names the action (action_id) and stays rejected while it is in effect.
+-- rejected_by_user_id is NULL for the CLI.
+CREATE TABLE domain_list_draft_rejections (
+  id TEXT NOT NULL PRIMARY KEY,
+  subscription_id TEXT NOT NULL,
+  change_kind TEXT NOT NULL CHECK (change_kind IN ('issue', 'lift')),
+  domain TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('limit', 'suspend', 'reject_media', 'reject_reports', 'force_sensitive')),
+  entry_since_fetch_id TEXT,
+  action_id TEXT,
+  rejected_by_user_id TEXT,
+  rejected_at INTEGER NOT NULL,
+  CHECK ((change_kind = 'issue') = (entry_since_fetch_id IS NOT NULL)),
+  CHECK ((change_kind = 'lift') = (action_id IS NOT NULL))
+) STRICT;
+CREATE INDEX domain_list_draft_rejections_subscription_id_id ON domain_list_draft_rejections (subscription_id, id);

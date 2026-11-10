@@ -69,6 +69,8 @@ var jobTypes = []string{
 	"media.reprocess_walk",
 	"metrics.snapshot",
 	"moderation.expire_restrictions",
+	"moderation.fetch_domain_list",
+	"moderation.fetch_domain_lists",
 	"moderation.purge_records",
 	"moderation.sever_allowlist",
 	"moderation.sever_domain",

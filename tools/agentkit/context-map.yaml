@@ -301,6 +301,12 @@ entries:
     paths: ["internal/domain/moderation/**", "internal/app/moderation/**"]
     docs: ["docs/architecture/data-model/04-tables/03-moderation.md#43-moderation", "docs/operations/moderation.md", "docs/adr/0058-moderation-admin-separation.md"]
     userdocs: ["docs/operations/moderation.md", "docs/guide/safety.md"]
+  - name: domain-list-subscriptions
+    paths: ["internal/domain/moderation/domain_list*.go", "internal/app/moderation/domain_list*.go", "internal/adapter/db/*/moderation/domain_list*.go", "queries/*/moderation/domain_list.sql", "internal/interface/clientapi/admin_domain_list_subscriptions*.go", "api/spec/paths/admin_domain_list_subscriptions*.yaml", "cmd/my/domain_subscription*.go", "pkg/testkit/moderationtest/domain_list_*.go"]
+    docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/data-model/04-tables/03-moderation.md#ドメインのブロックリストの購読"]
+    userdocs: ["docs/operations/moderation.md#subscribing-to-blocklists", "docs/reference/jobs.md", "docs/reference/cli.md"]
+    notes:
+      - "A list is fetched through kernel.HTTPClient (HTTPPurposeDomainList) outside transactions; a subscription lifts or replaces only the actions it has a row of in subscription_domain_actions, and a failed fetch changes nothing but its record."
   - name: module-content
     paths: ["internal/domain/content/**", "internal/app/content/**"]
     docs: ["docs/architecture/data-model/04-tables/04-content.md#44-content", "docs/architecture/visibility.md"]

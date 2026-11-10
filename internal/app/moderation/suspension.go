@@ -69,8 +69,8 @@ const (
 )
 
 // RegisterJobs registers the moderation job handlers on reg (the expiry of restrictions, the
-// severance of a suspended domain's follows, and the purge of the records past their
-// retention) and the expiry and purge schedules on sched.
+// severance of a suspended domain's follows, the purge of the records past their retention,
+// and the fetch of the subscribed domain block lists) and their schedules on sched.
 func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
 	reg.Register(JobSeverDomain, s.handleSeverDomain)
 	reg.Register(JobSeverAllowlist, s.handleSeverAllowlist)
@@ -85,6 +85,7 @@ func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Sched
 	})
 	sched.Add(queue.Schedule{Name: JobExpireRestrictions, Every: ExpiryInterval, Job: queue.NewJob{Type: JobExpireRestrictions}})
 	s.registerPurgeJob(reg, sched)
+	s.registerDomainListJobs(reg, sched)
 }
 
 // ExpireAccountRestrictions removes the restriction rows of accounts that have expired and

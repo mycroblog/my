@@ -113,6 +113,9 @@ const (
 	// AuditTargetDomainAllow is a domain of the allowlist of federation (ADR-0159 §8); its ID and
 	// its label are the canonical domain.
 	AuditTargetDomainAllow AuditTargetKind = "domain_allow"
+	// AuditTargetDomainListSubscription is a subscription to a domain block list (ADR-0159 §8);
+	// its ID is domain_list_subscriptions.id and its label the subscription's title.
+	AuditTargetDomainListSubscription AuditTargetKind = "domain_list_subscription"
 )
 
 var auditTargetKinds = []AuditTargetKind{
@@ -124,6 +127,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetOAuthClient, AuditTargetOAuthClientHost, AuditTargetInstance, AuditTargetVoiceRoom,
 	AuditTargetLoginProvider, AuditTargetLinkCardDomain, AuditTargetHookDecision,
 	AuditTargetDomainAllow,
+	AuditTargetDomainListSubscription,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -379,6 +383,22 @@ const (
 	// federation_scope is allowlist, whose source is the allowlist_cutoffs row that it caused.
 	AuditDomainAllowAdded   AuditAction = "domain_allow_added"
 	AuditDomainAllowRemoved AuditAction = "domain_allow_removed"
+	// AuditDomainListSubscriptionCreated, AuditDomainListSubscriptionUpdated, and
+	// AuditDomainListSubscriptionDeleted: a moderator subscribed to a domain block list
+	// (domain_list_subscriptions), changed its settings (domain_list_subscription_revisions), or
+	// deleted it (domain_list_subscription_deletions), ADR-0159 §8.
+	AuditDomainListSubscriptionCreated AuditAction = "domain_list_subscription_created"
+	AuditDomainListSubscriptionUpdated AuditAction = "domain_list_subscription_updated"
+	AuditDomainListSubscriptionDeleted AuditAction = "domain_list_subscription_deleted"
+	// AuditDomainListDraftAccepted: a moderator accepted a draft of a subscription; the source
+	// event is the action it issued or lifted, which has its own domain_action_issued or
+	// domain_action_lifted entry. AuditDomainListDraftRejected: a moderator rejected a draft
+	// (domain_list_draft_rejections).
+	AuditDomainListDraftAccepted AuditAction = "domain_list_draft_accepted"
+	AuditDomainListDraftRejected AuditAction = "domain_list_draft_rejected"
+	// AuditDomainListFetchQueued: a moderator asked for a fetch of a subscribed list now; the
+	// operation has no row of its own until the fetch (domain_list_fetches).
+	AuditDomainListFetchQueued AuditAction = "domain_list_fetch_queued"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -488,6 +508,12 @@ var auditActions = []struct {
 	{AuditInstanceMarkedAvailable, AuditTargetDomain},
 	{AuditDomainAllowAdded, AuditTargetDomainAllow},
 	{AuditDomainAllowRemoved, AuditTargetDomainAllow},
+	{AuditDomainListSubscriptionCreated, AuditTargetDomainListSubscription},
+	{AuditDomainListSubscriptionUpdated, AuditTargetDomainListSubscription},
+	{AuditDomainListSubscriptionDeleted, AuditTargetDomainListSubscription},
+	{AuditDomainListDraftAccepted, AuditTargetDomainListSubscription},
+	{AuditDomainListDraftRejected, AuditTargetDomainListSubscription},
+	{AuditDomainListFetchQueued, AuditTargetDomainListSubscription},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

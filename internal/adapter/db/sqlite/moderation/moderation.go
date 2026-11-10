@@ -595,6 +595,7 @@ func domainActionRecordFrom(row moderationgen.ListDomainModerationActionsRow) mo
 	if row.LiftActionID.Valid {
 		rec.Lift = &moderation.DomainLift{ActionID: row.ID, LiftedByUserID: row.LiftedByUserID.String, LiftedAt: sqlite.FromMillis(row.LiftedAt.Int64)}
 	}
+	rec.SubscriptionID = row.SubscriptionID.String
 	return rec
 }
 

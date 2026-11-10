@@ -357,6 +357,9 @@ func stateAt(expiresAt *time.Time, lifted bool, now time.Time) ActionState {
 type DomainActionRecord struct {
 	Action DomainAction
 	Lift   *DomainLift // nil until lifted
+	// SubscriptionID is the subscription to a domain block list that issued the action
+	// (SubscriptionDomainAction); "" for an action a person issued.
+	SubscriptionID string
 }
 
 // State returns whether the action is in effect at now.

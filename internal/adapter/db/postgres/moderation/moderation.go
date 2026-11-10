@@ -598,6 +598,7 @@ func domainActionRecordFrom(row moderationgen.ListDomainModerationActionsRow) mo
 	if row.LiftActionID != nil && row.LiftedAt != nil {
 		rec.Lift = &moderation.DomainLift{ActionID: row.ID, LiftedByUserID: postgres.FromNullString(row.LiftedByUserID), LiftedAt: postgres.UTC(*row.LiftedAt)}
 	}
+	rec.SubscriptionID = postgres.FromNullString(row.SubscriptionID)
 	return rec
 }
 

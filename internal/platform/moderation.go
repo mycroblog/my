@@ -42,6 +42,8 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 		LocalDomains: []string{a.Config.Host, a.Config.AccountDomain},
 		Evidence:     moderationEvidence{a}, AuditTargets: moderationAuditTargets{a},
 		Scopes: federationScopes{a},
+		// The subscribed domain block lists are on third parties' servers (ADR-0159 §4).
+		HTTP: a.HTTPClient,
 	})
 	// The policy follows the allowlist of federation_scope (ADR-0159 §2) besides the actions on
 	// domains.

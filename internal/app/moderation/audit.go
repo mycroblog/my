@@ -351,7 +351,15 @@ func (s *Service) GoneAuditTargets(ctx context.Context, entries []moderation.Aud
 // emitAudit emits the audit log entry of one of this module's operations, performed by byUserID
 // ("" for the CLI).
 func (s *Service) emitAudit(ctx context.Context, tx uow.Tx, e moderation.AuditEntry, byUserID string) error {
+	return s.emitAuditAs(ctx, tx, e, byUserID, false)
+}
+
+// emitAuditAs is emitAudit, with the server itself as the actor when system.
+func (s *Service) emitAuditAs(ctx context.Context, tx uow.Tx, e moderation.AuditEntry, byUserID string, system bool) error {
 	e.ActorKind, e.ActorUserID = moderation.AuditActor(byUserID)
+	if system {
+		e.ActorKind, e.ActorUserID = moderation.AuditActorSystem, ""
+	}
 	return tx.Emit(ctx, AuditRecorded{Entry: e})
 }
 
