@@ -212,7 +212,11 @@ schedule past a limit is refused with a message that names it.
   when it is published.
 - A post is stamped with the time it is published, and the automatic deletion of old posts counts from then.
 - The media files a draft attaches are kept while the draft is; deleting the draft makes them unattached, and they go
-  with the cleanup of unattached uploads.
+  with the cleanup of unattached uploads. The cover of an article's draft and the uploads its body shows are kept the
+  same way.
+- Drafts and scheduled posts include [articles](#articles), which are scheduled and counted like posts. An article's
+  draft may lack its title while its author writes; it is checked as a new article when it is published, and a user
+  who may no longer write new articles by then gets no article.
 
 ### Articles
 

@@ -1229,6 +1229,10 @@ components:
       $ref: ./components/schemas/DomainListDraftsRequest.yaml
     Draft:
       $ref: ./components/schemas/Draft.yaml
+    DraftArticle:
+      $ref: ./components/schemas/DraftArticle.yaml
+    DraftArticleInput:
+      $ref: ./components/schemas/DraftArticleInput.yaml
     DraftFailureReason:
       $ref: ./components/schemas/DraftFailureReason.yaml
     DraftPage:

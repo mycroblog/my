@@ -112,13 +112,70 @@ func (r *StatusRepository) SaveDraftContent(ctx context.Context, tx uow.Tx, c co
 			}
 		}
 	}
+	if a := c.Article; a != nil {
+		return saveDraftArticle(ctx, q, c.DraftID, *a)
+	}
 	return nil
+}
+
+// saveDraftArticle writes the article of a draft (draft_articles and its children).
+func saveDraftArticle(ctx context.Context, q *contentgen.Queries, draftID string, a content.DraftArticle) error {
+	params := contentgen.InsertDraftArticleParams{DraftID: draftID, Title: a.Title, Summary: a.Summary}
+	if c := a.Cover; c != nil {
+		params.CoverMediaID = sql.NullString{String: c.MediaID, Valid: true}
+		params.CoverDescription = sql.NullString{String: c.Description, Valid: true}
+	}
+	if err := q.InsertDraftArticle(ctx, params); err != nil {
+		return sqlite.Wrap(err, "insert draft article")
+	}
+	for i, t := range a.Tags {
+		err := q.InsertDraftArticleTag(ctx, contentgen.InsertDraftArticleTagParams{DraftID: draftID, Position: int64(i), Name: t})
+		if err != nil {
+			return sqlite.Wrap(err, "insert draft article tag")
+		}
+	}
+	for _, id := range a.Images {
+		if err := q.InsertDraftArticleImage(ctx, contentgen.InsertDraftArticleImageParams{DraftID: draftID, MediaID: id}); err != nil {
+			return sqlite.Wrap(err, "insert draft article image")
+		}
+	}
+	return nil
+}
+
+// draftArticleFrom reads the article of a draft, nil for the draft of a post.
+func draftArticleFrom(ctx context.Context, q *contentgen.Queries, draftID string) (*content.DraftArticle, error) {
+	row, err := q.GetDraftArticle(ctx, draftID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, sqlite.Wrap(err, "get draft article")
+	}
+	a := &content.DraftArticle{Title: row.Title, Summary: row.Summary}
+	if row.CoverMediaID.Valid {
+		a.Cover = &content.ArticleCover{MediaID: row.CoverMediaID.String, Description: row.CoverDescription.String}
+	}
+	if a.Tags, err = q.ListDraftArticleTags(ctx, draftID); err != nil {
+		return nil, sqlite.Wrap(err, "list draft article tags")
+	}
+	if a.Images, err = q.ListDraftArticleImages(ctx, draftID); err != nil {
+		return nil, sqlite.Wrap(err, "list draft article images")
+	}
+	// None is nil, as the draft that a save wrote has it.
+	if len(a.Tags) == 0 {
+		a.Tags = nil
+	}
+	if len(a.Images) == 0 {
+		a.Images = nil
+	}
+	return a, nil
 }
 
 // clearDraftContent deletes the children of a draft's content, which a save writes again.
 func clearDraftContent(ctx context.Context, q *contentgen.Queries, draftID string) error {
 	return sqlite.RunSteps(ctx, draftID, "clear draft content",
-		q.DeleteDraftInteractionPolicies, q.DeleteDraftAttachments, q.DeleteDraftPollOptions, q.DeleteDraftPoll)
+		q.DeleteDraftInteractionPolicies, q.DeleteDraftAttachments, q.DeleteDraftPollOptions, q.DeleteDraftPoll,
+		q.DeleteDraftArticleImages, q.DeleteDraftArticleTags, q.DeleteDraftArticle)
 }
 
 // FindDraftContent implements content.DraftRepository.
@@ -183,6 +240,9 @@ func draftContentFrom(ctx context.Context, q *contentgen.Queries, draftID string
 		}
 	case !errors.Is(err, sql.ErrNoRows):
 		return content.DraftContent{}, sqlite.Wrap(err, "get draft poll")
+	}
+	if c.Article, err = draftArticleFrom(ctx, q, draftID); err != nil {
+		return content.DraftContent{}, err
 	}
 	return c, nil
 }

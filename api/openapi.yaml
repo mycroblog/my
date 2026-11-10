@@ -4416,7 +4416,9 @@ paths:
       summary: Publish a draft now
       description: |
         Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-        and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+        and deletes the draft with its schedule; the draft of an article (`article`) is published with
+        those of `createArticle`, and the status has its `content`. A draft that cannot be published
+        stays as it was.
       tags:
         - drafts
       security:
@@ -14822,8 +14824,9 @@ components:
             maxLength: 300
     Draft:
       description: |
-        A draft of a post, saved on the server so that the user goes on writing it on another device,
-        and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+        A draft of a post or of an article (`article`), saved on the server so that the user goes on
+        writing it on another device, and publishes it at once or at a chosen time. Only the user reads
+        it; it is never federated.
       type: object
       required:
         - id
@@ -14872,6 +14875,10 @@ components:
             $ref: '#/components/schemas/StatusMediaItem'
         poll:
           $ref: '#/components/schemas/DraftPoll'
+        article:
+          description: What makes the draft that of an article; left out for the draft of a post.
+          allOf:
+            - $ref: '#/components/schemas/DraftArticle'
         scheduled_at:
           description: When the draft is scheduled to be published; left out while it is not scheduled.
           type: string
@@ -14880,6 +14887,65 @@ components:
           description: How the newest schedule that is over ended; left out when none ended.
           allOf:
             - $ref: '#/components/schemas/DraftScheduleOutcome'
+    DraftArticle:
+      description: |
+        What makes a draft that of an article: the draft's `text` is the body in Markdown. The title
+        and the summary may be empty while the user writes; publishing the draft checks them as
+        `createArticle` does.
+      type: object
+      required:
+        - title
+        - summary
+        - tags
+        - images
+      properties:
+        title:
+          description: The title, as plain text; empty while there is none.
+          type: string
+        summary:
+          description: The summary, as plain text; empty makes one from the body when the draft is published.
+          type: string
+        cover:
+          description: The cover image; omitted when there is none.
+          allOf:
+            - $ref: '#/components/schemas/StatusMediaItem'
+        tags:
+          description: The hashtags, as the user gave them.
+          type: array
+          items:
+            type: string
+        images:
+          description: |
+            The IDs of the user's own uploads that the body shows as images (`![alt](media:ID)`),
+            each once, ordered by ID; the server finds them in the body at each save, and keeps the
+            uploads while the draft names them.
+          type: array
+          items:
+            $ref: '#/components/schemas/Id'
+    DraftArticleInput:
+      description: |
+        Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+        has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+        `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+      type: object
+      properties:
+        title:
+          description: The title, as plain text; omitted or empty while there is none.
+          type: string
+          maxLength: 200
+        summary:
+          $ref: '#/components/schemas/ArticleSummary'
+        cover:
+          description: The cover image, one of the user's own uploads, processed or not.
+          allOf:
+            - $ref: '#/components/schemas/StatusMediaItem'
+        tags:
+          description: The hashtags, with or without `#`; checked when the draft is published.
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 257
     DraftFailureReason:
       description: |
         Why a scheduled post was not published at its time; the draft stays, to fix and schedule
@@ -14982,6 +15048,8 @@ components:
             - $ref: '#/components/schemas/StatusMediaInput'
         poll:
           $ref: '#/components/schemas/DraftPoll'
+        article:
+          $ref: '#/components/schemas/DraftArticleInput'
     DraftScheduleOutcome:
       description: How the newest schedule of a draft that is over ended.
       type: object

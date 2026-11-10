@@ -10391,10 +10391,13 @@ type DomainMutePage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// Draft A draft of a post, saved on the server so that the user goes on writing it on another device,
-// and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+// Draft A draft of a post or of an article (`article`), saved on the server so that the user goes on
+// writing it on another device, and publishes it at once or at a chosen time. Only the user reads
+// it; it is never federated.
 type Draft struct {
-	CreatedAt time.Time `json:"created_at"`
+	// Article What makes the draft that of an article; left out for the draft of a post.
+	Article   *DraftArticle `json:"article,omitempty"`
+	CreatedAt time.Time     `json:"created_at"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
@@ -10448,6 +10451,47 @@ type Draft struct {
 	Visibility Visibility `json:"visibility"`
 }
 
+// DraftArticle What makes a draft that of an article: the draft's `text` is the body in Markdown. The title
+// and the summary may be empty while the user writes; publishing the draft checks them as
+// `createArticle` does.
+type DraftArticle struct {
+	// Cover The cover image; omitted when there is none.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Images The IDs of the user's own uploads that the body shows as images (`![alt](media:ID)`),
+	// each once, ordered by ID; the server finds them in the body at each save, and keeps the
+	// uploads while the draft names them.
+	Images []Id `json:"images"`
+
+	// Summary The summary, as plain text; empty makes one from the body when the draft is published.
+	Summary string `json:"summary"`
+
+	// Tags The hashtags, as the user gave them.
+	Tags []string `json:"tags"`
+
+	// Title The title, as plain text; empty while there is none.
+	Title string `json:"title"`
+}
+
+// DraftArticleInput Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+// has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+// `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+type DraftArticleInput struct {
+	// Cover The cover image, one of the user's own uploads, processed or not.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags, with or without `#`; checked when the draft is published.
+	Tags *[]string `json:"tags,omitempty"`
+
+	// Title The title, as plain text; omitted or empty while there is none.
+	Title *string `json:"title,omitempty"`
+}
+
 // DraftFailureReason Why a scheduled post was not published at its time; the draft stays, to fix and schedule
 // again. `restricted`: the account may not post (a moderation action, a suspension, or an
 // account that is not active). `reply_unavailable`: the post it replies to is gone, hidden from
@@ -10487,6 +10531,11 @@ type DraftPoll struct {
 // post would refuse (empty, or longer than `max_post_characters`), up to 100,000 characters, and
 // media that are still being processed; publishing it checks it as a new post.
 type DraftRequest struct {
+	// Article Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+	// has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+	// `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+	Article *DraftArticleInput `json:"article,omitempty"`
+
 	// InReplyToId The post to reply to, checked when the draft is scheduled and published.
 	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
 
@@ -24188,7 +24237,9 @@ type ClientInterface interface {
 	// PublishDraft Publish a draft now
 	//
 	// Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-	// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+	// and deletes the draft with its schedule; the draft of an article (`article`) is published with
+	// those of `createArticle`, and the status has its `content`. A draft that cannot be published
+	// stays as it was.
 	//
 	// Corresponds with POST /drafts/{id}/publish (the `PublishDraft` operationId).
 	PublishDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -34602,7 +34653,9 @@ func (c *Client) UpdateDraft(ctx context.Context, id DraftId, params *UpdateDraf
 // PublishDraft Publish a draft now
 //
 // Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+// and deletes the draft with its schedule; the draft of an article (`article`) is published with
+// those of `createArticle`, and the status has its `content`. A draft that cannot be published
+// stays as it was.
 //
 // Corresponds with POST /drafts/{id}/publish (the `PublishDraft` operationId).
 func (c *Client) PublishDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -63988,7 +64041,9 @@ type ClientWithResponsesInterface interface {
 	// PublishDraftWithResponse Publish a draft now
 	//
 	// Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-	// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+	// and deletes the draft with its schedule; the draft of an article (`article`) is published with
+	// those of `createArticle`, and the status has its `content`. A draft that cannot be published
+	// stays as it was.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -102420,7 +102475,9 @@ func (c *ClientWithResponses) UpdateDraftWithResponse(ctx context.Context, id Dr
 // PublishDraftWithResponse Publish a draft now
 //
 // Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+// and deletes the draft with its schedule; the draft of an article (`article`) is published with
+// those of `createArticle`, and the status has its `content`. A draft that cannot be published
+// stays as it was.
 //
 // Returns a wrapper object for the known response body format(s).
 //

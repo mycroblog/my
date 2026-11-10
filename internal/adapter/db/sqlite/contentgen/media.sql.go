@@ -103,6 +103,8 @@ WHERE media_files.id = ?1
   AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = ?1)
   AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = ?1)
   AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = ?1)
+  AND NOT EXISTS (SELECT 1 FROM draft_articles dc WHERE dc.cover_media_id = ?1)
+  AND NOT EXISTS (SELECT 1 FROM draft_article_images di WHERE di.media_id = ?1)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = ?1)
 `
 
@@ -457,6 +459,8 @@ SELECT m.id, CAST(EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.me
   OR EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = m.id)
   OR EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = m.id)
   OR EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
+  OR EXISTS (SELECT 1 FROM draft_articles dc WHERE dc.cover_media_id = m.id)
+  OR EXISTS (SELECT 1 FROM draft_article_images di WHERE di.media_id = m.id)
   OR EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id) AS BOOLEAN) AS attached
 FROM media_files m
 WHERE m.owner_account_id = ?1 AND m.origin = 'upload' AND m.id > ?2
@@ -657,6 +661,8 @@ WHERE m.origin = 'upload' AND m.id > ?1 AND m.id < ?2
   AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
+  AND NOT EXISTS (SELECT 1 FROM draft_articles dc WHERE dc.cover_media_id = m.id)
+  AND NOT EXISTS (SELECT 1 FROM draft_article_images di WHERE di.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id)
 ORDER BY m.id
 LIMIT ?3

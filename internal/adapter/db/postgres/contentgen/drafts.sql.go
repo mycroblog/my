@@ -76,6 +76,33 @@ func (q *Queries) DeleteDraft(ctx context.Context, id string) (int64, error) {
 	return result.RowsAffected(), nil
 }
 
+const deleteDraftArticle = `-- name: DeleteDraftArticle :exec
+DELETE FROM draft_articles WHERE draft_id = $1
+`
+
+func (q *Queries) DeleteDraftArticle(ctx context.Context, draftID string) error {
+	_, err := q.db.Exec(ctx, deleteDraftArticle, draftID)
+	return err
+}
+
+const deleteDraftArticleImages = `-- name: DeleteDraftArticleImages :exec
+DELETE FROM draft_article_images WHERE draft_id = $1
+`
+
+func (q *Queries) DeleteDraftArticleImages(ctx context.Context, draftID string) error {
+	_, err := q.db.Exec(ctx, deleteDraftArticleImages, draftID)
+	return err
+}
+
+const deleteDraftArticleTags = `-- name: DeleteDraftArticleTags :exec
+DELETE FROM draft_article_tags WHERE draft_id = $1
+`
+
+func (q *Queries) DeleteDraftArticleTags(ctx context.Context, draftID string) error {
+	_, err := q.db.Exec(ctx, deleteDraftArticleTags, draftID)
+	return err
+}
+
 const deleteDraftAttachments = `-- name: DeleteDraftAttachments :exec
 DELETE FROM draft_attachments WHERE draft_id = $1
 `
@@ -171,6 +198,23 @@ func (q *Queries) GetDraft(ctx context.Context, id string) (Draft, error) {
 	row := q.db.QueryRow(ctx, getDraft, id)
 	var i Draft
 	err := row.Scan(&i.ID, &i.AccountID, &i.CreatedAt)
+	return i, err
+}
+
+const getDraftArticle = `-- name: GetDraftArticle :one
+SELECT draft_id, title, summary, cover_media_id, cover_description FROM draft_articles WHERE draft_id = $1
+`
+
+func (q *Queries) GetDraftArticle(ctx context.Context, draftID string) (DraftArticle, error) {
+	row := q.db.QueryRow(ctx, getDraftArticle, draftID)
+	var i DraftArticle
+	err := row.Scan(
+		&i.DraftID,
+		&i.Title,
+		&i.Summary,
+		&i.CoverMediaID,
+		&i.CoverDescription,
+	)
 	return i, err
 }
 
@@ -325,6 +369,61 @@ func (q *Queries) InsertDraft(ctx context.Context, arg InsertDraftParams) error 
 	return err
 }
 
+const insertDraftArticle = `-- name: InsertDraftArticle :exec
+
+INSERT INTO draft_articles (draft_id, title, summary, cover_media_id, cover_description)
+VALUES ($1, $2, $3, $4::uuid, $5::text)
+`
+
+type InsertDraftArticleParams struct {
+	DraftID          string
+	Title            string
+	Summary          string
+	CoverMediaID     *string
+	CoverDescription *string
+}
+
+// The article of a draft (ADR-0160 section 2).
+func (q *Queries) InsertDraftArticle(ctx context.Context, arg InsertDraftArticleParams) error {
+	_, err := q.db.Exec(ctx, insertDraftArticle,
+		arg.DraftID,
+		arg.Title,
+		arg.Summary,
+		arg.CoverMediaID,
+		arg.CoverDescription,
+	)
+	return err
+}
+
+const insertDraftArticleImage = `-- name: InsertDraftArticleImage :exec
+INSERT INTO draft_article_images (draft_id, media_id) VALUES ($1, $2)
+`
+
+type InsertDraftArticleImageParams struct {
+	DraftID string
+	MediaID string
+}
+
+func (q *Queries) InsertDraftArticleImage(ctx context.Context, arg InsertDraftArticleImageParams) error {
+	_, err := q.db.Exec(ctx, insertDraftArticleImage, arg.DraftID, arg.MediaID)
+	return err
+}
+
+const insertDraftArticleTag = `-- name: InsertDraftArticleTag :exec
+INSERT INTO draft_article_tags (draft_id, position, name) VALUES ($1, $2, $3)
+`
+
+type InsertDraftArticleTagParams struct {
+	DraftID  string
+	Position int32
+	Name     string
+}
+
+func (q *Queries) InsertDraftArticleTag(ctx context.Context, arg InsertDraftArticleTagParams) error {
+	_, err := q.db.Exec(ctx, insertDraftArticleTag, arg.DraftID, arg.Position, arg.Name)
+	return err
+}
+
 const insertDraftAttachment = `-- name: InsertDraftAttachment :exec
 INSERT INTO draft_attachments (draft_id, position, media_id, description) VALUES ($1, $2, $3, $4)
 `
@@ -465,6 +564,54 @@ func (q *Queries) InsertScheduledDraft(ctx context.Context, arg InsertScheduledD
 		arg.PublishAt,
 	)
 	return err
+}
+
+const listDraftArticleImages = `-- name: ListDraftArticleImages :many
+SELECT media_id FROM draft_article_images WHERE draft_id = $1 ORDER BY media_id
+`
+
+func (q *Queries) ListDraftArticleImages(ctx context.Context, draftID string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listDraftArticleImages, draftID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var media_id string
+		if err := rows.Scan(&media_id); err != nil {
+			return nil, err
+		}
+		items = append(items, media_id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDraftArticleTags = `-- name: ListDraftArticleTags :many
+SELECT name FROM draft_article_tags WHERE draft_id = $1 ORDER BY position
+`
+
+func (q *Queries) ListDraftArticleTags(ctx context.Context, draftID string) ([]string, error) {
+	rows, err := q.db.Query(ctx, listDraftArticleTags, draftID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listDraftAttachments = `-- name: ListDraftAttachments :many

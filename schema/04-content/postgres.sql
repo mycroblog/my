@@ -940,6 +940,37 @@ CREATE TABLE draft_poll_options (
   PRIMARY KEY (draft_id, position)
 );
 
+-- Current value: what makes a draft the draft of an article (ADR-0160 §2): its title and summary,
+-- which may be empty while the author writes, and its cover with the cover's alt text, both NULL
+-- for none. The Markdown body is draft_contents.source_text.
+CREATE TABLE draft_articles (
+  draft_id uuid NOT NULL PRIMARY KEY,
+  title text NOT NULL,
+  summary text NOT NULL,
+  cover_media_id uuid,
+  cover_description text,
+  CONSTRAINT draft_articles_cover_check CHECK ((cover_media_id IS NULL) = (cover_description IS NULL))
+);
+CREATE INDEX draft_articles_cover_media_id ON draft_articles (cover_media_id);
+
+-- Current value: a hashtag that the editor gives the article of a draft.
+CREATE TABLE draft_article_tags (
+  draft_id uuid NOT NULL,
+  position integer NOT NULL CHECK (position BETWEEN 0 AND 9),
+  name text NOT NULL,
+  PRIMARY KEY (draft_id, position)
+);
+
+-- Current value: an upload of the author that the body of an article's draft names
+-- (![alt](media:ID)), written again from the body by every save. The cleanup of unattached
+-- uploads counts them as attached.
+CREATE TABLE draft_article_images (
+  draft_id uuid NOT NULL,
+  media_id uuid NOT NULL,
+  PRIMARY KEY (draft_id, media_id)
+);
+CREATE INDEX draft_article_images_media_id ON draft_article_images (media_id);
+
 -- Resource: one schedule of a draft, to publish it at publish_at. A new time is a new schedule
 -- after the outcome cancelled of the one before.
 CREATE TABLE draft_schedules (

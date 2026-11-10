@@ -281,4 +281,71 @@ func DraftRepositoryContract(t *testing.T, newHarness DraftRepositoryFactory) {
 			t.Errorf("ListUnattachedUploads after the draft went = %v, want [%s]", got, media)
 		}
 	})
+
+	t.Run("SavesAnArticleAndCountsItsImagesAsAttached", func(t *testing.T) {
+		t.Parallel()
+		h := setup(t)
+		ctx := t.Context()
+		account := ids.NewID()
+		cover, first, second := ids.NewID(), ids.NewID(), ids.NewID()
+		tx(t, h, func(tx uow.Tx) error {
+			for _, id := range []string{cover, first, second} {
+				err := h.Media.InsertMediaFile(ctx, tx, content.MediaFile{ID: id, OwnerAccountID: account, Origin: content.MediaOriginUpload, CreatedAt: at})
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		article := content.DraftContent{
+			Text: "# Body\n\n![one](media:" + first + ")", Visibility: content.VisibilityUnlisted, UpdatedAt: at,
+			Article: &content.DraftArticle{
+				Title: "A title", Cover: &content.ArticleCover{MediaID: cover}, Tags: []string{"cats", "dogs"}, Images: []string{first, second},
+			},
+		}
+		d := newDraft(t, h, account, article)
+		article.DraftID = d.ID
+		if got, err := h.Drafts.FindDraftContent(ctx, d.ID); err != nil || !reflect.DeepEqual(got, article) {
+			t.Errorf("FindDraftContent = %+v, %v; want %+v", got, err, article)
+		}
+		unattached := func() []string {
+			t.Helper()
+			got, err := h.Media.ListUnattachedUploads(ctx, "", at.Add(48*time.Hour), 10)
+			if err != nil {
+				t.Fatal(err)
+			}
+			return got
+		}
+		if got := unattached(); len(got) != 0 {
+			t.Errorf("ListUnattachedUploads = %v, want none: the article's draft uses the files", got)
+		}
+		owned, err := h.Media.ListOwnerUploads(ctx, account, "", 10)
+		if err != nil || len(owned) != 3 || !owned[0].Attached || !owned[1].Attached || !owned[2].Attached {
+			t.Errorf("ListOwnerUploads = %+v, %v; want every file attached", owned, err)
+		}
+		tx(t, h, func(tx uow.Tx) error {
+			for _, id := range []string{cover, first} {
+				if deleted, err := h.Media.DeleteUnattachedMedia(ctx, tx, id); err != nil || deleted {
+					t.Errorf("DeleteUnattachedMedia of %s = %v, %v; want it kept", id, deleted, err)
+				}
+			}
+			return nil
+		})
+		// A save that drops the cover and an image releases them.
+		kept := content.DraftContent{
+			DraftID: d.ID, Text: "![two](media:" + second + ")", Visibility: content.VisibilityPublic, UpdatedAt: at.Add(time.Second),
+			Article: &content.DraftArticle{Images: []string{second}},
+		}
+		tx(t, h, func(tx uow.Tx) error { return h.Drafts.SaveDraftContent(ctx, tx, kept) })
+		if got, err := h.Drafts.FindDraftContent(ctx, d.ID); err != nil || !reflect.DeepEqual(got, kept) {
+			t.Errorf("FindDraftContent after a save = %+v, %v; want %+v", got, err, kept)
+		}
+		if got := unattached(); !reflect.DeepEqual(got, []string{cover, first}) {
+			t.Errorf("ListUnattachedUploads after the save = %v, want [%s %s]", got, cover, first)
+		}
+		tx(t, h, func(tx uow.Tx) error { _, err := h.Drafts.DeleteDraft(ctx, tx, d.ID); return err })
+		if got := unattached(); len(got) != 3 {
+			t.Errorf("ListUnattachedUploads after the draft went = %v, want every file", got)
+		}
+	})
 }

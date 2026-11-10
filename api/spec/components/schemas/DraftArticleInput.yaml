@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+  has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+  `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+type: object
+properties:
+  title:
+    description: The title, as plain text; omitted or empty while there is none.
+    type: string
+    maxLength: 200
+  summary:
+    $ref: ./ArticleSummary.yaml
+  cover:
+    description: The cover image, one of the user's own uploads, processed or not.
+    allOf:
+      - $ref: ./StatusMediaItem.yaml
+  tags:
+    description: The hashtags, with or without `#`; checked when the draft is published.
+    type: array
+    maxItems: 10
+    items:
+      type: string
+      maxLength: 257

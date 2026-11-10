@@ -3015,7 +3015,9 @@ export interface paths {
         /**
          * Publish a draft now
          * @description Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-         *     and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+         *     and deletes the draft with its schedule; the draft of an article (`article`) is published with
+         *     those of `createArticle`, and the status has its `content`. A draft that cannot be published
+         *     stays as it was.
          */
         post: operations["publishDraft"];
         delete?: never;
@@ -9786,8 +9788,9 @@ export interface components {
             keys?: string[];
         };
         /**
-         * @description A draft of a post, saved on the server so that the user goes on writing it on another device,
-         *     and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+         * @description A draft of a post or of an article (`article`), saved on the server so that the user goes on
+         *     writing it on another device, and publishes it at once or at a chosen time. Only the user reads
+         *     it; it is never federated.
          */
         Draft: {
             id: components["schemas"]["Id"];
@@ -9813,6 +9816,8 @@ export interface components {
             /** @description The media to attach, in order. */
             media: components["schemas"]["StatusMediaItem"][];
             poll?: components["schemas"]["DraftPoll"];
+            /** @description What makes the draft that of an article; left out for the draft of a post. */
+            article?: components["schemas"]["DraftArticle"];
             /**
              * Format: date-time
              * @description When the draft is scheduled to be published; left out while it is not scheduled.
@@ -9820,6 +9825,41 @@ export interface components {
             scheduled_at?: string;
             /** @description How the newest schedule that is over ended; left out when none ended. */
             last_schedule?: components["schemas"]["DraftScheduleOutcome"];
+        };
+        /**
+         * @description What makes a draft that of an article: the draft's `text` is the body in Markdown. The title
+         *     and the summary may be empty while the user writes; publishing the draft checks them as
+         *     `createArticle` does.
+         */
+        DraftArticle: {
+            /** @description The title, as plain text; empty while there is none. */
+            title: string;
+            /** @description The summary, as plain text; empty makes one from the body when the draft is published. */
+            summary: string;
+            /** @description The cover image; omitted when there is none. */
+            cover?: components["schemas"]["StatusMediaItem"];
+            /** @description The hashtags, as the user gave them. */
+            tags: string[];
+            /**
+             * @description The IDs of the user's own uploads that the body shows as images (`![alt](media:ID)`),
+             *     each once, ordered by ID; the server finds them in the body at each save, and keeps the
+             *     uploads while the draft names them.
+             */
+            images: components["schemas"]["Id"][];
+        };
+        /**
+         * @description Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+         *     has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+         *     `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+         */
+        DraftArticleInput: {
+            /** @description The title, as plain text; omitted or empty while there is none. */
+            title?: string;
+            summary?: components["schemas"]["ArticleSummary"];
+            /** @description The cover image, one of the user's own uploads, processed or not. */
+            cover?: components["schemas"]["StatusMediaItem"];
+            /** @description The hashtags, with or without `#`; checked when the draft is published. */
+            tags?: string[];
         };
         /**
          * @description Why a scheduled post was not published at its time; the draft stays, to fix and schedule
@@ -9880,6 +9920,7 @@ export interface components {
              */
             media?: components["schemas"]["StatusMediaInput"];
             poll?: components["schemas"]["DraftPoll"];
+            article?: components["schemas"]["DraftArticleInput"];
         };
         /** @description How the newest schedule of a draft that is over ended. */
         DraftScheduleOutcome: {

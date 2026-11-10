@@ -56,8 +56,27 @@ type DraftContent struct {
 	InteractionPolicy map[InteractionKind]InteractionSetting
 	Attachments       []DraftAttachment
 	// Poll is the poll, nil for none.
-	Poll      *DraftPoll
+	Poll *DraftPoll
+	// Article makes the draft that of an article, whose Text is the body in Markdown; nil for a
+	// post.
+	Article   *DraftArticle
 	UpdatedAt time.Time
+}
+
+// DraftArticle is what makes a draft that of an article (draft_articles and its children,
+// ADR-0160 §2). Its title and summary may be empty while the author writes; publication checks
+// them as those of a new article.
+type DraftArticle struct {
+	Title   string
+	Summary string
+	// Cover is the cover image, nil for none.
+	Cover *ArticleCover
+	// Tags are the hashtags the editor gives the article, as the author typed them.
+	Tags []string
+	// Images are the uploads of the author that the body names (![alt](media:ID)), each once,
+	// ordered by ID. The server derives them from the body at each save, and the cleanup of
+	// unattached uploads keeps them.
+	Images []string
 }
 
 // Bounds of what a draft keeps. A draft keeps text the post limits would refuse, since its
@@ -69,6 +88,11 @@ const (
 	MaxDraftAttachments = 4
 	// MaxDraftMediaDescription is the number of characters of an alt text.
 	MaxDraftMediaDescription = 1500
+	// MaxDraftArticleImages is the number of uploads that the body of an article's draft names:
+	// the most that the instance setting max_article_images may be.
+	MaxDraftArticleImages = 100
+	// MaxDraftArticleTagLength is the number of characters of a hashtag of an article's draft.
+	MaxDraftArticleTagLength = 257
 )
 
 // ErrInvalidDraft reports draft content outside the bounds of a draft.
@@ -79,7 +103,8 @@ var ErrInvalidDraft = errors.New("content: the draft is not valid")
 // or interaction policy, more than MaxDraftAttachments files or one file twice, an alt text
 // longer than MaxDraftMediaDescription, a poll with media, or a poll with more than
 // MaxLocalPollOptions choices, a choice longer than MaxPollOptionLength, or a duration outside
-// [MinPollDuration, MaxPollDuration].
+// [MinPollDuration, MaxPollDuration]. A draft of an article (DraftArticle.Validate) has no
+// content warning, media, poll, reply, or quote, and is never direct.
 func (c DraftContent) Validate() error {
 	invalid := func(format string, args ...any) error {
 		return fmt.Errorf("%w: "+format, append([]any{ErrInvalidDraft}, args...)...)
@@ -131,6 +156,54 @@ func (c DraftContent) Validate() error {
 		}
 		if p.Duration < MinPollDuration || p.Duration > MaxPollDuration || p.Duration%time.Second != 0 {
 			return invalid("the poll duration %s is outside [%s, %s]", p.Duration, MinPollDuration, MaxPollDuration)
+		}
+	}
+	if a := c.Article; a != nil {
+		if c.SpoilerText != "" || len(c.Attachments) > 0 || c.Poll != nil || c.InReplyToID != "" || c.QuotedStatusID != "" {
+			return invalid("an article has no content warning, media, poll, reply, or quote")
+		}
+		if c.Visibility == VisibilityDirect {
+			return invalid("an article cannot be direct")
+		}
+		return a.Validate()
+	}
+	return nil
+}
+
+// Validate reports ErrInvalidDraft for an article that a draft cannot keep: a title or summary
+// that is not valid text or is longer than MaxArticleTitle or MaxArticleSummary, more than
+// MaxArticleTags hashtags or one longer than MaxDraftArticleTagLength, a cover without an ID or
+// with an alt text longer than MaxDraftMediaDescription, or more than MaxDraftArticleImages
+// images or one twice.
+func (a DraftArticle) Validate() error {
+	invalid := func(format string, args ...any) error {
+		return fmt.Errorf("%w: "+format, append([]any{ErrInvalidDraft}, args...)...)
+	}
+	if !ValidText(a.Title) || utf8.RuneCountInString(a.Title) > MaxArticleTitle {
+		return invalid("the title is not valid")
+	}
+	if !ValidText(a.Summary) || utf8.RuneCountInString(a.Summary) > MaxArticleSummary {
+		return invalid("the summary is not valid")
+	}
+	if len(a.Tags) > MaxArticleTags {
+		return invalid("%d hashtags, at most %d", len(a.Tags), MaxArticleTags)
+	}
+	for _, t := range a.Tags {
+		if !ValidText(t) || utf8.RuneCountInString(t) > MaxDraftArticleTagLength {
+			return invalid("a hashtag is not valid")
+		}
+	}
+	if c := a.Cover; c != nil {
+		if c.MediaID == "" || !ValidText(c.Description) || utf8.RuneCountInString(c.Description) > MaxDraftMediaDescription {
+			return invalid("the cover is not valid")
+		}
+	}
+	if len(a.Images) > MaxDraftArticleImages {
+		return invalid("%d images, at most %d", len(a.Images), MaxDraftArticleImages)
+	}
+	for i, id := range a.Images {
+		if id == "" || slices.Contains(a.Images[:i], id) {
+			return invalid("image %q is named twice or not named", id)
 		}
 	}
 	return nil

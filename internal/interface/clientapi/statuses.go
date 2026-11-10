@@ -574,6 +574,9 @@ func (s *Server) createdStatus(ctx context.Context, statusID string) (CreateStat
 	var out Status
 	if err == nil {
 		out, err = s.presentStatus(ctx, view)
+		if err == nil {
+			err = s.withArticleBody(ctx, &out, view)
+		}
 	}
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {

@@ -4,7 +4,9 @@ post:
   summary: Publish a draft now
   description: |
     Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-    and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+    and deletes the draft with its schedule; the draft of an article (`article`) is published with
+    those of `createArticle`, and the status has its `content`. A draft that cannot be published
+    stays as it was.
   tags: [drafts]
   security:
     - oauth2: ["write:statuses"]

@@ -185,7 +185,7 @@
 - `scheduled_drafts` は `my projection rebuild scheduled_drafts` で、下書きごとに結果の行の無い最新の `draft_schedules` から作り直せます。
 - 投稿の `id`・`published_at` は公開のときに作ります。自動削除の日数もそこから数えます。
 - 上限はインスタンス設定 `max_drafts`（予約の無い下書き）・`max_scheduled_posts`・`max_scheduled_posts_per_day`（`publish_at` の UTC の日）で、`scheduled_drafts` と `drafts` を数えます。予約できる時刻は `scheduled_post_min_lead_minutes`（既定 5 分）から `scheduled_post_max_lead_days`（既定 366 日）先までです。
-- `media.purge_unattached` は `draft_attachments` が参照するファイルを添付として数えます。下書きを消すと参照が外れ、次の実行で消えます。アカウントの消去は下書きの行をすべて消します。
+- `media.purge_unattached` は `draft_attachments`・`draft_article_images`・`draft_articles.cover_media_id` が参照するファイルを添付として数えます。下書きを消すと参照が外れ、次の実行で消えます。アカウントの消去は下書きの行をすべて消します。
 
 #### 記事
 
@@ -197,7 +197,7 @@
 | `status_revision_articles` | イベント（版の子） | `revision_id`（PK）, `title`（1〜200 文字。リモートは空も可）, `summary`（0〜500 文字、プレーンテキスト）, `summary_origin`（`enum(author, body)`） | 記事のすべての版が 1 行を持つ |
 | `status_revision_article_covers` | イベント（版の子） | `revision_id`（PK）, `media_id`, `description`（`text`、空なら代替テキストなし） | インデックス `(media_id)` |
 | `status_revision_article_images` | イベント（版の子） | `revision_id`, `position`（`int`、0 始まり）, `media_id`, `description`（`text`、空なら代替テキストなし） | PK `(revision_id, position)`。インデックス `(media_id)`。本文の中の画像で、同じファイルは最初の 1 回だけを記録し、インスタンス設定 `max_article_images` 件まで |
-| `draft_articles` | 現在値 | `draft_id`（PK）, `title`, `summary`, `cover_media_id`（NULL 可）, `cover_description`（`text`、NULL 可） | 記事の下書き。本文の Markdown は `draft_contents.source_text` |
+| `draft_articles` | 現在値 | `draft_id`（PK）, `title`, `summary`, `cover_media_id`（NULL 可）, `cover_description`（`text`、NULL 可） | 記事の下書き。本文の Markdown は `draft_contents.source_text`。CHECK `(cover_media_id IS NULL) = (cover_description IS NULL)`。インデックス `(cover_media_id)`（未添付の掃除） |
 | `draft_article_tags` | 現在値 | `draft_id`, `position`, `name` | PK `(draft_id, position)`。エディタで付けたハッシュタグ（10 件まで） |
 | `draft_article_images` | 現在値 | `draft_id`, `media_id` | PK `(draft_id, media_id)`。インデックス `(media_id)`（未添付の掃除）。保存のたびに本文の参照から作り直す |
 
@@ -212,6 +212,9 @@
 - 受信した `Article` も記事として取り込みます（[federation.md §4](../../federation.md#4-as2-の正規化)）。本文は記事用の許可リストでサニタイズし、`img` は受信した URL のまま保存して、最初の `max_article_images` 件を `remote_media`（`purpose = attachment`）に記録し `status_revision_article_images` に入れます。クライアント API は本文を返すときに、その URL をメディアプロキシの URL に置き換えます（メディアプロキシの鍵は変わり得るので、保存する HTML には入れません）。記録の無い画像はリンクにします。
   受信した記事の題は空でもよく、添付は投稿と同じに読みます。投稿か記事かは変わらないので、記事を投稿にする `Update`（またはその逆）は捨てます。
 - 記事の下書きは `drafts` に `draft_articles` の行を足したもので、予約（上の「下書きと予約投稿」）も同じに働きます。下書きを公開すると、記事の行も下書きの行と一緒に消えます。
+  - 下書きに残すのは書きかけの中身です: 題・要約は空でもよく（題 200 文字・要約 500 文字・ハッシュタグ 10 件まで）、カバーは本人のアップロードなら処理中でもよく、CW・添付・投票・返信先・引用先と `direct` は持てません。題・要約・ハッシュタグ・本文の上限は公開のときに記事として確かめます。
+  - `draft_article_images` は保存のたびに本文の `![代替テキスト](media:ID)` から、書いた本人のアップロード（処理中を含む）だけを 100 件まで作り直します。ほかの ID は記録せず、公開のときに代替テキストのリンクになります。
+  - 予約のときの検査は記事の作成と同じ（`CheckArticle`。外部の審査は呼ばず、処理中のカバーは通す）で、公開は `content.Service.CreateArticle` と同じ処理を同じ冪等キー（`draft:{draft_id}`）で通します。記事を書く権限（`article_authoring`）を失っていれば `restricted`、記事の検査で断られれば `invalid` で失敗します。
 
 #### ブースト
 

@@ -328,7 +328,8 @@ entries:
     notes:
       - "A draft is published through Service.create with the post's Idempotency-Key draft:{id}; the transaction deletes the schedule in effect first and then every row of the draft, so a second run of content.publish_scheduled_draft publishes nothing (ADR-0156 §5)."
       - "The checks of a new post run when a draft is scheduled (Service.Check: no decision hook, processing media pass) and again when it is published; a permanent failure ends the schedule as failed (DraftFailureReasonOf) and emits DraftScheduleFailed, a transient one is retried."
-      - "media.purge_unattached and the account erasure count draft_attachments as attached; the erasure deletes the drafts before the media."
+      - "media.purge_unattached and the account erasure count draft_attachments, draft_article_images, and draft_articles.cover_media_id as attached; the erasure deletes the drafts before the media."
+      - "A draft with DraftContent.Article is an article's draft (ADR-0160 §2): it is checked with Service.CheckArticle and published with Service.createArticle, and each save derives draft_article_images from the media:ID images of the body, keeping the author's uploads alone."
     userdocs: ["docs/operations/instance-settings.md#drafts-and-scheduled-posts", "docs/reference/jobs.md"]
   - name: link-card-crawler
     paths: ["internal/app/content/link_card*.go", "internal/domain/content/link_card*.go", "internal/domain/content/robots*.go", "app/web/src/features/about/components/LinkCardCrawler.tsx"]

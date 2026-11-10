@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What makes a draft that of an article: the draft's `text` is the body in Markdown. The title
+  and the summary may be empty while the user writes; publishing the draft checks them as
+  `createArticle` does.
+type: object
+required: [title, summary, tags, images]
+properties:
+  title:
+    description: The title, as plain text; empty while there is none.
+    type: string
+  summary:
+    description: The summary, as plain text; empty makes one from the body when the draft is published.
+    type: string
+  cover:
+    description: The cover image; omitted when there is none.
+    allOf:
+      - $ref: ./StatusMediaItem.yaml
+  tags:
+    description: The hashtags, as the user gave them.
+    type: array
+    items:
+      type: string
+  images:
+    description: |
+      The IDs of the user's own uploads that the body shows as images (`![alt](media:ID)`),
+      each once, ordered by ID; the server finds them in the body at each save, and keeps the
+      uploads while the draft names them.
+    type: array
+    items:
+      $ref: ./Id.yaml
