@@ -4,7 +4,7 @@
 // first, in the admin mode's table: a toolbar with the filter (kept in the URL by the route, web-client/README.md S3),
 // one page of the table at a time, previous / next. Each row names its domain, which links to the action's page
 // (/moderation/domain-actions/$id) with its comments, dates, and the lift; the list itself changes nothing.
-import { ButtonLink, Cluster, EmptyState, Link, ListToolbar, LocalNav, Select, SelectItem, Stack, Text } from "@my/ui";
+import { ButtonLink, Cluster, EmptyState, Link, ListToolbar, Select, SelectItem, Stack, Text } from "@my/ui";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type DomainAction, type DomainActionFilter, domainActionFilters, type DomainActionState } from "../api/staff";
 import { domainActionKindLabels, domainInText, useDomainActions } from "../hooks/useDomainActions";
@@ -35,28 +35,6 @@ function newDomainActionHref(domain: string | undefined): string {
   return domain === undefined
     ? "/moderation/domain-actions/new"
     : `/moderation/domain-actions/new?domain=${encodeURIComponent(domain)}`;
-}
-
-/** The pages of the screen under its heading: the list, and Mastodon's CSV. */
-export function DomainActionsNav({ current }: { current: "list" | "import" }) {
-  const t = useT();
-  return (
-    <LocalNav
-      label={t("client:admin.domain_actions.pages")}
-      items={[
-        {
-          href: "/moderation/domain-actions",
-          label: t("client:admin.domain_actions.list.title"),
-          current: current === "list",
-        },
-        {
-          href: "/moderation/domain-actions/import",
-          label: t("client:admin.domain_actions.csv.title"),
-          current: current === "import",
-        },
-      ]}
-    />
-  );
 }
 
 export type DomainActionsProps = {

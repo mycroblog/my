@@ -171,7 +171,8 @@ export const auditActorKindLabels: Readonly<Record<AuditActorKind, ClientMessage
 
 /**
  * The admin screen of an operation's target, where it has one; an account, a report, a domain, a sign-up block, a
- * role, a custom emoji, a webhook, an announcement, an invite, a relay, a billing source or a cost item.
+ * role, a custom emoji, a webhook, an announcement, an invite, a relay, a billing source, a cost item, an allowed
+ * domain or a blocklist subscription.
  * The other kinds of target (settings, rules, registrations) have no screen of their own, and a target that is
  * gone (erased past its retention, or deleted) has nothing left to show, so their entries show the label only.
  */
@@ -228,6 +229,11 @@ export function auditTargetHref(
     case "link_card_domain":
       // A rule has no screen of its own: the list of rules, which a removed rule has left.
       return "/admin/link-card-domains";
+    case "domain_allow":
+      // An allow has no screen of its own: the allowlist, which a removed allow has left.
+      return "/moderation/domain-actions/allowed";
+    case "domain_list_subscription":
+      return `/moderation/domain-actions/subscriptions/${id}`;
     case "custom_emoji_request":
       // A request has no screen of its own: the requests page of the custom emoji screen, in every state.
       return "/admin/custom-emojis/requests";
