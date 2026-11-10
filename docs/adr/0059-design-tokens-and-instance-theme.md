@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-20
 - Deciders: @rosylilly
-- Issue: #649, #664, #1691, #1692, #1693
+- Issue: #649, #664, #1691, #1692, #1693, #2754
 
 ## Decision（決定）
 
@@ -110,6 +110,7 @@
 - 元の形式は SVG だけである。
 - `thumbnail` / `preview_image`（バナー）はそのまま残す。役割が違う（大きな写真・イラスト）。
 - 未設定のものは、組み込みの my の絵（`icon.svg` などのビルドのファイル、`Wordmark`）を使う。設定を消すと組み込みに戻る。
+- **組み込みのリンクプレビューの画像**: 1200 × 630、不透明の白の地の中央に、標準のカラーのワードマーク（`Wordmark-Primary-Color`）を幅の約 6 割に収めて置いた PNG。サーバーは SVG を描かないので（§10）、リポジトリのスクリプトが SVG から作ってビルドのファイルとして持つ。比率は大きなカード（`summary_large_image`）が出る 1.91:1 にする。
 
 ### 9. SVG のサニタイズと検査（サーバー）
 
@@ -184,7 +185,7 @@ instance モジュールが持つ。テーブルの形は `docs/architecture/dat
   アイコンがあるときは `/apple-touch-icon.png` を管理者の 180 px の版で返す（`no-cache` と ETag で再検証、`cacheRevalidate` と同じ）。
 - **Web App Manifest**: `icons` を `pwa-512`・`pwa-192`・`maskable-512`・SVG（`sizes: "any"`）の順にする（最初を PNG にするのは、Misskey が最初のアイコンをサーバーのアイコンにするため）。
   インストール済みの PWA は、Android では Chrome が manifest を確かめたときに替わるが、デスクトップの Chrome はアイコンを替えない（入れ直すまで古いアイコン）。
-- **リンクプレビュー**: `og:image` の順に、`preview_image` の次・組み込みの画像の前として `preview-1200x630` を入れる。
+- **リンクプレビュー**: `og:image` の順に、`preview_image` と `thumbnail` の次・組み込みの画像の前として `preview-1200x630` を入れる（ADR-0028 §2）。
 - **メール**（ADR-0086 の例外）: ロゴがあるとき、外枠の MJML の先頭に `logo-mail`（ダークの地では `logo-dark-mail`、`prefers-color-scheme` のスタイルで切り替え）を
   `<img src="https://<host>/brand/…" width height alt="<サーバーの名前>">` で出す。URL は全員に同じで、受信者ごとの値を含めない（開封の追跡にしない）。
   外部の画像を読まないクライアントや設定では `alt` の名前が出る。ロゴがないときは画像を出さない。
@@ -216,6 +217,8 @@ instance モジュールが持つ。テーブルの形は `docs/architecture/dat
 - OGP は形式を決めていない（[ogp.me](https://ogp.me/)）ので、クローラーの扱いに依らないよう PNG だけを出す。Gmail は SVG を PNG に変換して出す（[Can I email](https://www.caniemail.com/features/image-svg/)、最終テスト 2026-09-16）ので、メールにも PNG を出す。
 
 トークンの上書きが `@layer` の外の `:root` の規則で Tailwind のユーティリティに効くことは、`app/web/e2e/instance-theme.spec.ts` で確かめている。
+
+組み込みのリンクプレビューの画像は、当初は標準のデザインにない青いグラデーションと吹き出しをサーバーがコードで描いていた。OGP の精査（#2754）で、プレビューがブランドに沿わず不具合に見えると分かり、決定者が白の地に標準のカラーのワードマークを置いた 1200 × 630 の画像にした（§8）。
 
 ## 採らなかった案
 
