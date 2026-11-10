@@ -2341,6 +2341,135 @@ func (e ErrorGroupState) Valid() bool {
 	}
 }
 
+// Defines values for EventAnswer.
+const (
+	EventAnswerDeclined EventAnswer = "declined"
+	EventAnswerGoing    EventAnswer = "going"
+	EventAnswerMaybe    EventAnswer = "maybe"
+)
+
+// Valid indicates whether the value is a known member of the EventAnswer enum.
+func (e EventAnswer) Valid() bool {
+	switch e {
+	case EventAnswerDeclined:
+		return true
+	case EventAnswerGoing:
+		return true
+	case EventAnswerMaybe:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventCancelReason.
+const (
+	EventCancelReasonModerator          EventCancelReason = "moderator"
+	EventCancelReasonOrganizer          EventCancelReason = "organizer"
+	EventCancelReasonOrganizerDeleted   EventCancelReason = "organizer_deleted"
+	EventCancelReasonOrganizerSuspended EventCancelReason = "organizer_suspended"
+)
+
+// Valid indicates whether the value is a known member of the EventCancelReason enum.
+func (e EventCancelReason) Valid() bool {
+	switch e {
+	case EventCancelReasonModerator:
+		return true
+	case EventCancelReasonOrganizer:
+		return true
+	case EventCancelReasonOrganizerDeleted:
+		return true
+	case EventCancelReasonOrganizerSuspended:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventPlaceDisclosure.
+const (
+	EventPlaceDisclosureApproved EventPlaceDisclosure = "approved"
+	EventPlaceDisclosureViewers  EventPlaceDisclosure = "viewers"
+)
+
+// Valid indicates whether the value is a known member of the EventPlaceDisclosure enum.
+func (e EventPlaceDisclosure) Valid() bool {
+	switch e {
+	case EventPlaceDisclosureApproved:
+		return true
+	case EventPlaceDisclosureViewers:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventPlaceKind.
+const (
+	EventPlaceKindPhysical EventPlaceKind = "physical"
+	EventPlaceKindUrl      EventPlaceKind = "url"
+	EventPlaceKindVoice    EventPlaceKind = "voice"
+)
+
+// Valid indicates whether the value is a known member of the EventPlaceKind enum.
+func (e EventPlaceKind) Valid() bool {
+	switch e {
+	case EventPlaceKindPhysical:
+		return true
+	case EventPlaceKindUrl:
+		return true
+	case EventPlaceKindVoice:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventState.
+const (
+	EventStateCancelled EventState = "cancelled"
+	EventStateScheduled EventState = "scheduled"
+)
+
+// Valid indicates whether the value is a known member of the EventState enum.
+func (e EventState) Valid() bool {
+	switch e {
+	case EventStateCancelled:
+		return true
+	case EventStateScheduled:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventVisibility.
+const (
+	EventVisibilityFollowers EventVisibility = "followers"
+	EventVisibilityFollowing EventVisibility = "following"
+	EventVisibilityInvited   EventVisibility = "invited"
+	EventVisibilityMutuals   EventVisibility = "mutuals"
+	EventVisibilityPublic    EventVisibility = "public"
+)
+
+// Valid indicates whether the value is a known member of the EventVisibility enum.
+func (e EventVisibility) Valid() bool {
+	switch e {
+	case EventVisibilityFollowers:
+		return true
+	case EventVisibilityFollowing:
+		return true
+	case EventVisibilityInvited:
+		return true
+	case EventVisibilityMutuals:
+		return true
+	case EventVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for FederationScopeImpactScope.
 const (
 	FederationScopeImpactScopeAllowlist FederationScopeImpactScope = "allowlist"
@@ -2833,6 +2962,7 @@ const (
 	InstanceSettingKeyDomainActionsRationaleVisibility   InstanceSettingKey = "domain_actions_rationale_visibility"
 	InstanceSettingKeyDomainActionsVisibility            InstanceSettingKey = "domain_actions_visibility"
 	InstanceSettingKeyDynamicClientRegistration          InstanceSettingKey = "dynamic_client_registration"
+	InstanceSettingKeyEventCreators                      InstanceSettingKey = "event_creators"
 	InstanceSettingKeyFeaturedAccounts                   InstanceSettingKey = "featured_accounts"
 	InstanceSettingKeyFederatedTimelineVisibility        InstanceSettingKey = "federated_timeline_visibility"
 	InstanceSettingKeyFederationMode                     InstanceSettingKey = "federation_mode"
@@ -2987,6 +3117,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyDomainActionsVisibility:
 		return true
 	case InstanceSettingKeyDynamicClientRegistration:
+		return true
+	case InstanceSettingKeyEventCreators:
 		return true
 	case InstanceSettingKeyFeaturedAccounts:
 		return true
@@ -4094,6 +4226,7 @@ func (e PaymentStatusWarnings) Valid() bool {
 const (
 	PermissionCreateArticles       Permission = "create_articles"
 	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
+	PermissionCreateEvents         Permission = "create_events"
 	PermissionCreateInvites        Permission = "create_invites"
 	PermissionKeepPostsLonger      Permission = "keep_posts_longer"
 	PermissionManageAccounts       Permission = "manage_accounts"
@@ -4125,6 +4258,8 @@ func (e Permission) Valid() bool {
 	case PermissionCreateArticles:
 		return true
 	case PermissionCreateCustomEmojis:
+		return true
+	case PermissionCreateEvents:
 		return true
 	case PermissionCreateInvites:
 		return true
@@ -10702,6 +10837,280 @@ type ErrorGroupSource string
 // it to `open`), or `muted` (it notifies nobody until it is unmuted).
 type ErrorGroupState string
 
+// Event An event of the local users of this server, as the user sees it. Times are in UTC;
+// `time_zone` is the event's own time zone, to show next to the user's. `places` holds only the
+// places that the user sees: `hidden_places` lists the kinds of the others, whose details never
+// reach the client.
+type Event struct {
+	// Cancellation The cancellation of an event.
+	Cancellation *EventCancellation `json:"cancellation,omitempty"`
+
+	// Capacity How many attendees may answer `going`; 0 for no limit.
+	Capacity int `json:"capacity"`
+
+	// Coorganizers The co-organizers, in the order the organizer named them; up to 3.
+	Coorganizers []Account `json:"coorganizers"`
+	CreatedAt    time.Time `json:"created_at"`
+
+	// Description Plain text; empty for none.
+	Description string    `json:"description"`
+	EndsAt      time.Time `json:"ends_at"`
+
+	// GoingCount How many attendees answer `going`.
+	GoingCount int `json:"going_count"`
+
+	// HiddenPlaces The kinds of the places that the user does not see.
+	HiddenPlaces []EventPlaceKind `json:"hidden_places"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Organizer An account, as clients show it.
+	Organizer Account `json:"organizer"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+	// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+	// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+	// event.
+	PlaceDisclosure EventPlaceDisclosure `json:"place_disclosure"`
+	Places          []EventPlace         `json:"places"`
+
+	// RevisedAt When the settings were last changed (the creation for an event never changed).
+	RevisedAt time.Time `json:"revised_at"`
+
+	// RevisionCount How many versions the settings have had, the first included.
+	RevisionCount int       `json:"revision_count"`
+	StartsAt      time.Time `json:"starts_at"`
+
+	// State Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
+	// `ends_at` is in the past.
+	State EventState `json:"state"`
+
+	// TimeZone The IANA name of the event's time zone, such as `Asia/Tokyo`.
+	TimeZone string `json:"time_zone"`
+	Title    string `json:"title"`
+
+	// Viewer What an event says of the user who reads it.
+	Viewer EventViewer `json:"viewer"`
+
+	// Visibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+	// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+	// whom the organizer follows, and `invited` the invited users only. The organizer, the
+	// co-organizers, the invited users, and the users who answered always see it, unless a block
+	// separates them from the organizer or a co-organizer.
+	Visibility EventVisibility `json:"visibility"`
+}
+
+// EventAnswer An answer to an event.
+type EventAnswer string
+
+// EventAttendee An attendee of an event, who answered `going` or `maybe`.
+type EventAttendee struct {
+	// Account An account, as clients show it.
+	Account Account `json:"account"`
+
+	// Answer An answer to an event.
+	Answer EventAnswer `json:"answer"`
+
+	// Approved Whether the organizer or a co-organizer approved the answer.
+	Approved bool `json:"approved"`
+}
+
+// EventAttendeePage A page of the attendees of an event, in the order of their answers.
+type EventAttendeePage struct {
+	Items []EventAttendee `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventCancelReason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+type EventCancelReason string
+
+// EventCancelRequest The cancellation of an event by its organizer.
+type EventCancelRequest struct {
+	// Note The reason, up to 500 characters, shown with the event; omitted for none.
+	Note *string `json:"note,omitempty"`
+}
+
+// EventCancellation The cancellation of an event.
+type EventCancellation struct {
+	CancelledAt time.Time `json:"cancelled_at"`
+
+	// Note The reason given for the cancellation; omitted for none.
+	Note *string `json:"note,omitempty"`
+
+	// Reason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+	// suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+	Reason EventCancelReason `json:"reason"`
+}
+
+// EventCreate A new event with a fixed date.
+type EventCreate struct {
+	// Capacity How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
+	Capacity *int `json:"capacity,omitempty"`
+
+	// Description Up to 3,000 characters of plain text; line breaks are kept.
+	Description *string `json:"description,omitempty"`
+
+	// EndsAt After `starts_at` and at most 7 days later.
+	EndsAt time.Time `json:"ends_at"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places; `approved` when omitted.
+	PlaceDisclosure *EventPlaceDisclosure `json:"place_disclosure,omitempty"`
+
+	// Places Up to 3 places, one of each kind.
+	Places *[]EventPlace `json:"places,omitempty"`
+
+	// StartsAt After now and at most a year ahead.
+	StartsAt time.Time `json:"starts_at"`
+
+	// TimeZone The IANA name of the event's time zone; the user's time zone when omitted.
+	TimeZone *string `json:"time_zone,omitempty"`
+
+	// Title 1 to 100 characters on one line.
+	Title string `json:"title"`
+
+	// Visibility Who sees the event; `public` when omitted.
+	Visibility *EventVisibility `json:"visibility,omitempty"`
+}
+
+// EventInvitation An invitation to an event. The invited user sees the event until the invitation is revoked,
+// whatever its visibility.
+type EventInvitation struct {
+	// Account An account, as clients show it.
+	Account Account `json:"account"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id        Id        `json:"id"`
+	InvitedAt time.Time `json:"invited_at"`
+
+	// InvitedById The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	InvitedById Id `json:"invited_by_id"`
+}
+
+// EventInvitationCreate An invitation of a user to an event.
+type EventInvitationCreate struct {
+	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	AccountId Id `json:"account_id"`
+}
+
+// EventInvitationPage A page of the invitations of an event that were not revoked, oldest first.
+type EventInvitationPage struct {
+	Items []EventInvitation `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventPage A page of the events that the user sees and that have not ended, the nearest start first.
+type EventPage struct {
+	Items []Event `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// EventPlace A place of an event. A `physical` place has a `name`, an `address`, and an optional map link in
+// `url`; a `url` place has a `name` and a `url`; a `voice` place has `speakers`, who may speak
+// without asking in the voice chat room that opens when the event starts. A URL is an `http` or
+// `https` URL of up to 2,000 characters, which the server never fetches. The fields that a kind
+// does not have are omitted.
+type EventPlace struct {
+	// Address Up to 500 characters; line breaks are kept.
+	Address *string `json:"address,omitempty"`
+
+	// Kind The kind of a place: `voice` a voice chat room of this server, `physical` a place to meet in
+	// person, and `url` a link such as a stream or a meeting of another service.
+	Kind EventPlaceKind `json:"kind"`
+
+	// Name Up to 100 characters on one line.
+	Name *string `json:"name,omitempty"`
+
+	// Speakers Who may speak without asking in the room; `manual` when omitted.
+	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
+	Url      *string            `json:"url,omitempty"`
+}
+
+// EventPlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+// event.
+type EventPlaceDisclosure string
+
+// EventPlaceKind The kind of a place: `voice` a voice chat room of this server, `physical` a place to meet in
+// person, and `url` a link such as a stream or a meeting of another service.
+type EventPlaceKind string
+
+// EventRSVP An answer to an event.
+type EventRSVP struct {
+	// Answer An answer to an event.
+	Answer EventAnswer `json:"answer"`
+}
+
+// EventState Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
+// `ends_at` is in the past.
+type EventState string
+
+// EventUpdate Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
+// date (`starts_at` and `ends_at` together) is checked as a new event's.
+type EventUpdate struct {
+	Capacity    *int       `json:"capacity,omitempty"`
+	Description *string    `json:"description,omitempty"`
+	EndsAt      *time.Time `json:"ends_at,omitempty"`
+
+	// PlaceDisclosure Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+	// organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+	// and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+	// event.
+	PlaceDisclosure *EventPlaceDisclosure `json:"place_disclosure,omitempty"`
+	Places          *[]EventPlace         `json:"places,omitempty"`
+	StartsAt        *time.Time            `json:"starts_at,omitempty"`
+	TimeZone        *string               `json:"time_zone,omitempty"`
+	Title           *string               `json:"title,omitempty"`
+
+	// Visibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+	// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+	// whom the organizer follows, and `invited` the invited users only. The organizer, the
+	// co-organizers, the invited users, and the users who answered always see it, unless a block
+	// separates them from the organizer or a co-organizer.
+	Visibility *EventVisibility `json:"visibility,omitempty"`
+}
+
+// EventViewer What an event says of the user who reads it.
+type EventViewer struct {
+	// Answer The user's answer; omitted before the user answers.
+	Answer *EventAnswer `json:"answer,omitempty"`
+
+	// Approved Whether the organizer or a co-organizer approved the user's answer.
+	Approved bool `json:"approved"`
+
+	// Coorganizer Whether the user co-organizes the event.
+	Coorganizer bool `json:"coorganizer"`
+
+	// Invited Whether the user has an invitation that was not revoked.
+	Invited bool `json:"invited"`
+
+	// Organizer Whether the user organizes the event.
+	Organizer bool `json:"organizer"`
+}
+
+// EventVisibility Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+// `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+// whom the organizer follows, and `invited` the invited users only. The organizer, the
+// co-organizers, the invited users, and the users who answered always see it, unless a block
+// separates them from the organizer or a co-organizer.
+type EventVisibility string
+
 // ExternalAuthorizationStart Where the browser goes to sign in at a login provider.
 type ExternalAuthorizationStart struct {
 	// ExpiresAt When `start_url` stops working.
@@ -13684,8 +14093,10 @@ type PaymentStatusWarnings string
 // deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
 // permission (only the built-in admin role by default). `create_articles`: writing new
 // articles with `createArticle` while the instance setting `article_authoring` is
-// `permission`, a member permission (only the built-in admin role by default). The others
-// guard no client API operation yet.
+// `permission`, a member permission (only the built-in admin role by default).
+// `create_events`: creating events on `POST /events` while the instance setting
+// `event_creators` is `permitted`, a member permission (only the built-in admin role by
+// default). The others guard no client API operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts
@@ -14101,6 +14512,20 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
 //     co-hosts of the room.
 //   - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+//   - `/api/v1/problems/event-not-eligible` (403): the user may not create events.
+//   - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
+//     co-organizers of the event.
+//   - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
+//   - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+//   - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
+//   - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
+//     room: the voice chat is off, or its organizer may not host rooms.
+//   - `/api/v1/problems/event-already-invited` (409): the account is already invited to the event.
+//   - `/api/v1/problems/event-invalid-invitee` (422): the account cannot be invited to the event.
+//   - `/api/v1/problems/event-invalid-coorganizer` (422): the account cannot co-organize the event.
+//   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
+//     it can.
+//   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
 //   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
 //     be searched (`Instance.full_text_search.available`).
 //   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
@@ -16455,6 +16880,16 @@ type DraftId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type ErrorGroupId = Id
 
+// EventAccountId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type EventAccountId = Id
+
+// EventId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type EventId = Id
+
 // HashtagName defines model for HashtagName.
 type HashtagName = string
 
@@ -17188,6 +17623,33 @@ type UpdateDraftParams struct {
 	IfMatch *IfMatch `json:"If-Match,omitempty"`
 }
 
+// ListEventsParams defines parameters for ListEvents.
+type ListEventsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListEventAttendeesParams defines parameters for ListEventAttendees.
+type ListEventAttendeesParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListEventInvitationsParams defines parameters for ListEventInvitations.
+type ListEventInvitationsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // GetFinanceCostTotalsParams defines parameters for GetFinanceCostTotals.
 type GetFinanceCostTotalsParams struct {
 	Granularity CostGranularity `form:"granularity" json:"granularity"`
@@ -17736,6 +18198,21 @@ type UpdateDraftJSONRequestBody = DraftRequest
 
 // ScheduleDraftJSONRequestBody defines body for ScheduleDraft for application/json ContentType.
 type ScheduleDraftJSONRequestBody = DraftScheduleRequest
+
+// CreateEventJSONRequestBody defines body for CreateEvent for application/json ContentType.
+type CreateEventJSONRequestBody = EventCreate
+
+// UpdateEventJSONRequestBody defines body for UpdateEvent for application/json ContentType.
+type UpdateEventJSONRequestBody = EventUpdate
+
+// CancelEventJSONRequestBody defines body for CancelEvent for application/json ContentType.
+type CancelEventJSONRequestBody = EventCancelRequest
+
+// InviteToEventJSONRequestBody defines body for InviteToEvent for application/json ContentType.
+type InviteToEventJSONRequestBody = EventInvitationCreate
+
+// AnswerEventJSONRequestBody defines body for AnswerEvent for application/json ContentType.
+type AnswerEventJSONRequestBody = EventRSVP
 
 // SetFeaturedTagsJSONRequestBody defines body for SetFeaturedTags for application/json ContentType.
 type SetFeaturedTagsJSONRequestBody = SetFeaturedTagsRequest
@@ -18657,6 +19134,48 @@ type ServerInterface interface {
 	// ScheduleDraft Schedule a draft, or move its schedule
 	// (PUT /drafts/{id}/schedule)
 	ScheduleDraft(w http.ResponseWriter, r *http.Request, id DraftId)
+	// ListEvents List the upcoming events
+	// (GET /events)
+	ListEvents(w http.ResponseWriter, r *http.Request, params ListEventsParams)
+	// CreateEvent Create an event
+	// (POST /events)
+	CreateEvent(w http.ResponseWriter, r *http.Request)
+	// GetEvent Get an event
+	// (GET /events/{id})
+	GetEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	// UpdateEvent Change an event
+	// (PATCH /events/{id})
+	UpdateEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	// ListEventAttendees List the attendees of an event
+	// (GET /events/{id}/attendees)
+	ListEventAttendees(w http.ResponseWriter, r *http.Request, id EventId, params ListEventAttendeesParams)
+	// RevokeEventAttendeeApproval Revoke the approval of an attendee of an event
+	// (DELETE /events/{id}/attendees/{account_id}/approval)
+	RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// ApproveEventAttendee Approve an attendee of an event
+	// (PUT /events/{id}/attendees/{account_id}/approval)
+	ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// CancelEvent Cancel an event
+	// (POST /events/{id}/cancel)
+	CancelEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	// RemoveEventCoorganizer Remove a co-organizer of an event
+	// (DELETE /events/{id}/coorganizers/{account_id})
+	RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// AssignEventCoorganizer Name a co-organizer of an event
+	// (PUT /events/{id}/coorganizers/{account_id})
+	AssignEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// ListEventInvitations List the invitations of an event
+	// (GET /events/{id}/invitations)
+	ListEventInvitations(w http.ResponseWriter, r *http.Request, id EventId, params ListEventInvitationsParams)
+	// InviteToEvent Invite a user to an event
+	// (POST /events/{id}/invitations)
+	InviteToEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	// RevokeEventInvitation Revoke an invitation to an event
+	// (DELETE /events/{id}/invitations/{account_id})
+	RevokeEventInvitation(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// AnswerEvent Answer an event
+	// (PUT /events/{id}/rsvp)
+	AnswerEvent(w http.ResponseWriter, r *http.Request, id EventId)
 	// ListDataExports List the authenticated user's data exports
 	// (GET /exports)
 	ListDataExports(w http.ResponseWriter, r *http.Request)
@@ -26734,6 +27253,481 @@ func (siw *ServerInterfaceWrapper) ScheduleDraft(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// ListEvents operation middleware
+func (siw *ServerInterfaceWrapper) ListEvents(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListEventsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEvents(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CreateEvent operation middleware
+func (siw *ServerInterfaceWrapper) CreateEvent(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateEvent(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetEvent operation middleware
+func (siw *ServerInterfaceWrapper) GetEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEvent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateEvent operation middleware
+func (siw *ServerInterfaceWrapper) UpdateEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateEvent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListEventAttendees operation middleware
+func (siw *ServerInterfaceWrapper) ListEventAttendees(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListEventAttendeesParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEventAttendees(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeEventAttendeeApproval operation middleware
+func (siw *ServerInterfaceWrapper) RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeEventAttendeeApproval(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ApproveEventAttendee operation middleware
+func (siw *ServerInterfaceWrapper) ApproveEventAttendee(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ApproveEventAttendee(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelEvent operation middleware
+func (siw *ServerInterfaceWrapper) CancelEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelEvent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RemoveEventCoorganizer operation middleware
+func (siw *ServerInterfaceWrapper) RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RemoveEventCoorganizer(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AssignEventCoorganizer operation middleware
+func (siw *ServerInterfaceWrapper) AssignEventCoorganizer(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AssignEventCoorganizer(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListEventInvitations operation middleware
+func (siw *ServerInterfaceWrapper) ListEventInvitations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListEventInvitationsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEventInvitations(w, r, id, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// InviteToEvent operation middleware
+func (siw *ServerInterfaceWrapper) InviteToEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.InviteToEvent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevokeEventInvitation operation middleware
+func (siw *ServerInterfaceWrapper) RevokeEventInvitation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "account_id" -------------
+	var accountId EventAccountId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "account_id", r.PathValue("account_id"), &accountId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevokeEventInvitation(w, r, id, accountId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AnswerEvent operation middleware
+func (siw *ServerInterfaceWrapper) AnswerEvent(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AnswerEvent(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListDataExports operation middleware
 func (siw *ServerInterfaceWrapper) ListDataExports(w http.ResponseWriter, r *http.Request) {
 
@@ -31882,6 +32876,20 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms/{id}/reactions", wrapper.ReactInVoiceRoom)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/voice/rooms/{id}/summary", wrapper.GetVoiceRoomSummary)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/voice/history", wrapper.ListVoiceHistory)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events", wrapper.ListEvents)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events", wrapper.CreateEvent)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}", wrapper.GetEvent)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/events/{id}", wrapper.UpdateEvent)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/cancel", wrapper.CancelEvent)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/rsvp", wrapper.AnswerEvent)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/attendees", wrapper.ListEventAttendees)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/attendees/{account_id}/approval", wrapper.RevokeEventAttendeeApproval)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/attendees/{account_id}/approval", wrapper.ApproveEventAttendee)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/invitations", wrapper.ListEventInvitations)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/invitations", wrapper.InviteToEvent)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/invitations/{account_id}", wrapper.RevokeEventInvitation)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/coorganizers/{account_id}", wrapper.RemoveEventCoorganizer)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/coorganizers/{account_id}", wrapper.AssignEventCoorganizer)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/queue", wrapper.GetAdminQueue)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs", wrapper.ListAdminJobs)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs/{id}", wrapper.GetAdminJob)
@@ -47950,6 +48958,869 @@ func (response ScheduleDraftdefaultApplicationProblemPlusJSONResponse) VisitSche
 	return err
 }
 
+type ListEventsRequestObject struct {
+	Params ListEventsParams
+}
+
+type ListEventsResponseObject interface {
+	VisitListEventsResponse(w http.ResponseWriter) error
+}
+
+type ListEvents200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListEvents200JSONResponse struct {
+	Body    EventPage
+	Headers ListEvents200ResponseHeaders
+}
+
+func (response ListEvents200JSONResponse) VisitListEventsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListEventsdefaultApplicationProblemPlusJSONResponse) VisitListEventsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEventRequestObject struct {
+	Body *CreateEventJSONRequestBody
+}
+
+type CreateEventResponseObject interface {
+	VisitCreateEventResponse(w http.ResponseWriter) error
+}
+
+type CreateEvent201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type CreateEvent201JSONResponse struct {
+	Body    Event
+	Headers CreateEvent201ResponseHeaders
+}
+
+func (response CreateEvent201JSONResponse) VisitCreateEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CreateEventdefaultApplicationProblemPlusJSONResponse) VisitCreateEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEventRequestObject struct {
+	Id EventId `json:"id"`
+}
+
+type GetEventResponseObject interface {
+	VisitGetEventResponse(w http.ResponseWriter) error
+}
+
+type GetEvent200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetEvent200JSONResponse struct {
+	Body    Event
+	Headers GetEvent200ResponseHeaders
+}
+
+func (response GetEvent200JSONResponse) VisitGetEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetEventdefaultApplicationProblemPlusJSONResponse) VisitGetEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEventRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *UpdateEventJSONRequestBody
+}
+
+type UpdateEventResponseObject interface {
+	VisitUpdateEventResponse(w http.ResponseWriter) error
+}
+
+type UpdateEvent200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type UpdateEvent200JSONResponse struct {
+	Body    Event
+	Headers UpdateEvent200ResponseHeaders
+}
+
+func (response UpdateEvent200JSONResponse) VisitUpdateEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UpdateEventdefaultApplicationProblemPlusJSONResponse) VisitUpdateEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventAttendeesRequestObject struct {
+	Id     EventId `json:"id"`
+	Params ListEventAttendeesParams
+}
+
+type ListEventAttendeesResponseObject interface {
+	VisitListEventAttendeesResponse(w http.ResponseWriter) error
+}
+
+type ListEventAttendees200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListEventAttendees200JSONResponse struct {
+	Body    EventAttendeePage
+	Headers ListEventAttendees200ResponseHeaders
+}
+
+func (response ListEventAttendees200JSONResponse) VisitListEventAttendeesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventAttendeesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListEventAttendeesdefaultApplicationProblemPlusJSONResponse) VisitListEventAttendeesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeEventAttendeeApprovalRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type RevokeEventAttendeeApprovalResponseObject interface {
+	VisitRevokeEventAttendeeApprovalResponse(w http.ResponseWriter) error
+}
+
+type RevokeEventAttendeeApproval200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RevokeEventAttendeeApproval200JSONResponse struct {
+	Body    EventAttendee
+	Headers RevokeEventAttendeeApproval200ResponseHeaders
+}
+
+func (response RevokeEventAttendeeApproval200JSONResponse) VisitRevokeEventAttendeeApprovalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeEventAttendeeApprovaldefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeEventAttendeeApprovaldefaultApplicationProblemPlusJSONResponse) VisitRevokeEventAttendeeApprovalResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveEventAttendeeRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type ApproveEventAttendeeResponseObject interface {
+	VisitApproveEventAttendeeResponse(w http.ResponseWriter) error
+}
+
+type ApproveEventAttendee200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ApproveEventAttendee200JSONResponse struct {
+	Body    EventAttendee
+	Headers ApproveEventAttendee200ResponseHeaders
+}
+
+func (response ApproveEventAttendee200JSONResponse) VisitApproveEventAttendeeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ApproveEventAttendeedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ApproveEventAttendeedefaultApplicationProblemPlusJSONResponse) VisitApproveEventAttendeeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelEventRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *CancelEventJSONRequestBody
+}
+
+type CancelEventResponseObject interface {
+	VisitCancelEventResponse(w http.ResponseWriter) error
+}
+
+type CancelEvent200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type CancelEvent200JSONResponse struct {
+	Body    Event
+	Headers CancelEvent200ResponseHeaders
+}
+
+func (response CancelEvent200JSONResponse) VisitCancelEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CancelEventdefaultApplicationProblemPlusJSONResponse) VisitCancelEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveEventCoorganizerRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type RemoveEventCoorganizerResponseObject interface {
+	VisitRemoveEventCoorganizerResponse(w http.ResponseWriter) error
+}
+
+type RemoveEventCoorganizer200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RemoveEventCoorganizer200JSONResponse struct {
+	Body    Event
+	Headers RemoveEventCoorganizer200ResponseHeaders
+}
+
+func (response RemoveEventCoorganizer200JSONResponse) VisitRemoveEventCoorganizerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RemoveEventCoorganizerdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RemoveEventCoorganizerdefaultApplicationProblemPlusJSONResponse) VisitRemoveEventCoorganizerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AssignEventCoorganizerRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type AssignEventCoorganizerResponseObject interface {
+	VisitAssignEventCoorganizerResponse(w http.ResponseWriter) error
+}
+
+type AssignEventCoorganizer200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type AssignEventCoorganizer200JSONResponse struct {
+	Body    Event
+	Headers AssignEventCoorganizer200ResponseHeaders
+}
+
+func (response AssignEventCoorganizer200JSONResponse) VisitAssignEventCoorganizerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AssignEventCoorganizerdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AssignEventCoorganizerdefaultApplicationProblemPlusJSONResponse) VisitAssignEventCoorganizerResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventInvitationsRequestObject struct {
+	Id     EventId `json:"id"`
+	Params ListEventInvitationsParams
+}
+
+type ListEventInvitationsResponseObject interface {
+	VisitListEventInvitationsResponse(w http.ResponseWriter) error
+}
+
+type ListEventInvitations200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListEventInvitations200JSONResponse struct {
+	Body    EventInvitationPage
+	Headers ListEventInvitations200ResponseHeaders
+}
+
+func (response ListEventInvitations200JSONResponse) VisitListEventInvitationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventInvitationsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListEventInvitationsdefaultApplicationProblemPlusJSONResponse) VisitListEventInvitationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InviteToEventRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *InviteToEventJSONRequestBody
+}
+
+type InviteToEventResponseObject interface {
+	VisitInviteToEventResponse(w http.ResponseWriter) error
+}
+
+type InviteToEvent201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type InviteToEvent201JSONResponse struct {
+	Body    EventInvitation
+	Headers InviteToEvent201ResponseHeaders
+}
+
+func (response InviteToEvent201JSONResponse) VisitInviteToEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type InviteToEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response InviteToEventdefaultApplicationProblemPlusJSONResponse) VisitInviteToEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevokeEventInvitationRequestObject struct {
+	Id        EventId        `json:"id"`
+	AccountId EventAccountId `json:"account_id"`
+}
+
+type RevokeEventInvitationResponseObject interface {
+	VisitRevokeEventInvitationResponse(w http.ResponseWriter) error
+}
+
+type RevokeEventInvitation204Response struct {
+}
+
+func (response RevokeEventInvitation204Response) VisitRevokeEventInvitationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type RevokeEventInvitationdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevokeEventInvitationdefaultApplicationProblemPlusJSONResponse) VisitRevokeEventInvitationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnswerEventRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *AnswerEventJSONRequestBody
+}
+
+type AnswerEventResponseObject interface {
+	VisitAnswerEventResponse(w http.ResponseWriter) error
+}
+
+type AnswerEvent200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type AnswerEvent200JSONResponse struct {
+	Body    Event
+	Headers AnswerEvent200ResponseHeaders
+}
+
+func (response AnswerEvent200JSONResponse) VisitAnswerEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AnswerEventdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AnswerEventdefaultApplicationProblemPlusJSONResponse) VisitAnswerEventResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListDataExportsRequestObject struct {
 }
 
@@ -58943,6 +60814,48 @@ type StrictServerInterface interface {
 	// ScheduleDraft Schedule a draft, or move its schedule
 	// (PUT /drafts/{id}/schedule)
 	ScheduleDraft(ctx context.Context, request ScheduleDraftRequestObject) (ScheduleDraftResponseObject, error)
+	// ListEvents List the upcoming events
+	// (GET /events)
+	ListEvents(ctx context.Context, request ListEventsRequestObject) (ListEventsResponseObject, error)
+	// CreateEvent Create an event
+	// (POST /events)
+	CreateEvent(ctx context.Context, request CreateEventRequestObject) (CreateEventResponseObject, error)
+	// GetEvent Get an event
+	// (GET /events/{id})
+	GetEvent(ctx context.Context, request GetEventRequestObject) (GetEventResponseObject, error)
+	// UpdateEvent Change an event
+	// (PATCH /events/{id})
+	UpdateEvent(ctx context.Context, request UpdateEventRequestObject) (UpdateEventResponseObject, error)
+	// ListEventAttendees List the attendees of an event
+	// (GET /events/{id}/attendees)
+	ListEventAttendees(ctx context.Context, request ListEventAttendeesRequestObject) (ListEventAttendeesResponseObject, error)
+	// RevokeEventAttendeeApproval Revoke the approval of an attendee of an event
+	// (DELETE /events/{id}/attendees/{account_id}/approval)
+	RevokeEventAttendeeApproval(ctx context.Context, request RevokeEventAttendeeApprovalRequestObject) (RevokeEventAttendeeApprovalResponseObject, error)
+	// ApproveEventAttendee Approve an attendee of an event
+	// (PUT /events/{id}/attendees/{account_id}/approval)
+	ApproveEventAttendee(ctx context.Context, request ApproveEventAttendeeRequestObject) (ApproveEventAttendeeResponseObject, error)
+	// CancelEvent Cancel an event
+	// (POST /events/{id}/cancel)
+	CancelEvent(ctx context.Context, request CancelEventRequestObject) (CancelEventResponseObject, error)
+	// RemoveEventCoorganizer Remove a co-organizer of an event
+	// (DELETE /events/{id}/coorganizers/{account_id})
+	RemoveEventCoorganizer(ctx context.Context, request RemoveEventCoorganizerRequestObject) (RemoveEventCoorganizerResponseObject, error)
+	// AssignEventCoorganizer Name a co-organizer of an event
+	// (PUT /events/{id}/coorganizers/{account_id})
+	AssignEventCoorganizer(ctx context.Context, request AssignEventCoorganizerRequestObject) (AssignEventCoorganizerResponseObject, error)
+	// ListEventInvitations List the invitations of an event
+	// (GET /events/{id}/invitations)
+	ListEventInvitations(ctx context.Context, request ListEventInvitationsRequestObject) (ListEventInvitationsResponseObject, error)
+	// InviteToEvent Invite a user to an event
+	// (POST /events/{id}/invitations)
+	InviteToEvent(ctx context.Context, request InviteToEventRequestObject) (InviteToEventResponseObject, error)
+	// RevokeEventInvitation Revoke an invitation to an event
+	// (DELETE /events/{id}/invitations/{account_id})
+	RevokeEventInvitation(ctx context.Context, request RevokeEventInvitationRequestObject) (RevokeEventInvitationResponseObject, error)
+	// AnswerEvent Answer an event
+	// (PUT /events/{id}/rsvp)
+	AnswerEvent(ctx context.Context, request AnswerEventRequestObject) (AnswerEventResponseObject, error)
 	// ListDataExports List the authenticated user's data exports
 	// (GET /exports)
 	ListDataExports(ctx context.Context, request ListDataExportsRequestObject) (ListDataExportsResponseObject, error)
@@ -66636,6 +68549,413 @@ func (sh *strictHandler) ScheduleDraft(w http.ResponseWriter, r *http.Request, i
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ScheduleDraftResponseObject); ok {
 		if err := validResponse.VisitScheduleDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEvents operation middleware
+func (sh *strictHandler) ListEvents(w http.ResponseWriter, r *http.Request, params ListEventsParams) {
+	var request ListEventsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEvents(ctx, request.(ListEventsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEvents")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEventsResponseObject); ok {
+		if err := validResponse.VisitListEventsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateEvent operation middleware
+func (sh *strictHandler) CreateEvent(w http.ResponseWriter, r *http.Request) {
+	var request CreateEventRequestObject
+
+	var body CreateEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateEvent(ctx, request.(CreateEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateEventResponseObject); ok {
+		if err := validResponse.VisitCreateEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetEvent operation middleware
+func (sh *strictHandler) GetEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request GetEventRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEvent(ctx, request.(GetEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEventResponseObject); ok {
+		if err := validResponse.VisitGetEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateEvent operation middleware
+func (sh *strictHandler) UpdateEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request UpdateEventRequestObject
+
+	request.Id = id
+
+	var body UpdateEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateEvent(ctx, request.(UpdateEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateEventResponseObject); ok {
+		if err := validResponse.VisitUpdateEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEventAttendees operation middleware
+func (sh *strictHandler) ListEventAttendees(w http.ResponseWriter, r *http.Request, id EventId, params ListEventAttendeesParams) {
+	var request ListEventAttendeesRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEventAttendees(ctx, request.(ListEventAttendeesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEventAttendees")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEventAttendeesResponseObject); ok {
+		if err := validResponse.VisitListEventAttendeesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeEventAttendeeApproval operation middleware
+func (sh *strictHandler) RevokeEventAttendeeApproval(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request RevokeEventAttendeeApprovalRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeEventAttendeeApproval(ctx, request.(RevokeEventAttendeeApprovalRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeEventAttendeeApproval")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeEventAttendeeApprovalResponseObject); ok {
+		if err := validResponse.VisitRevokeEventAttendeeApprovalResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ApproveEventAttendee operation middleware
+func (sh *strictHandler) ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request ApproveEventAttendeeRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ApproveEventAttendee(ctx, request.(ApproveEventAttendeeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ApproveEventAttendee")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ApproveEventAttendeeResponseObject); ok {
+		if err := validResponse.VisitApproveEventAttendeeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelEvent operation middleware
+func (sh *strictHandler) CancelEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request CancelEventRequestObject
+
+	request.Id = id
+
+	var body CancelEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		if !errors.Is(err, io.EOF) {
+			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+			return
+		}
+	} else {
+		request.Body = &body
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelEvent(ctx, request.(CancelEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelEventResponseObject); ok {
+		if err := validResponse.VisitCancelEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RemoveEventCoorganizer operation middleware
+func (sh *strictHandler) RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request RemoveEventCoorganizerRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RemoveEventCoorganizer(ctx, request.(RemoveEventCoorganizerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RemoveEventCoorganizer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RemoveEventCoorganizerResponseObject); ok {
+		if err := validResponse.VisitRemoveEventCoorganizerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AssignEventCoorganizer operation middleware
+func (sh *strictHandler) AssignEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request AssignEventCoorganizerRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AssignEventCoorganizer(ctx, request.(AssignEventCoorganizerRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AssignEventCoorganizer")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AssignEventCoorganizerResponseObject); ok {
+		if err := validResponse.VisitAssignEventCoorganizerResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEventInvitations operation middleware
+func (sh *strictHandler) ListEventInvitations(w http.ResponseWriter, r *http.Request, id EventId, params ListEventInvitationsParams) {
+	var request ListEventInvitationsRequestObject
+
+	request.Id = id
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEventInvitations(ctx, request.(ListEventInvitationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEventInvitations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEventInvitationsResponseObject); ok {
+		if err := validResponse.VisitListEventInvitationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// InviteToEvent operation middleware
+func (sh *strictHandler) InviteToEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request InviteToEventRequestObject
+
+	request.Id = id
+
+	var body InviteToEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.InviteToEvent(ctx, request.(InviteToEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "InviteToEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(InviteToEventResponseObject); ok {
+		if err := validResponse.VisitInviteToEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevokeEventInvitation operation middleware
+func (sh *strictHandler) RevokeEventInvitation(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId) {
+	var request RevokeEventInvitationRequestObject
+
+	request.Id = id
+	request.AccountId = accountId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevokeEventInvitation(ctx, request.(RevokeEventInvitationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevokeEventInvitation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevokeEventInvitationResponseObject); ok {
+		if err := validResponse.VisitRevokeEventInvitationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AnswerEvent operation middleware
+func (sh *strictHandler) AnswerEvent(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request AnswerEventRequestObject
+
+	request.Id = id
+
+	var body AnswerEventJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AnswerEvent(ctx, request.(AnswerEventRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AnswerEvent")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AnswerEventResponseObject); ok {
+		if err := validResponse.VisitAnswerEventResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

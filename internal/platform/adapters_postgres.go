@@ -14,6 +14,7 @@ import (
 	postgresdiagnostics "github.com/mycroblog/my/internal/adapter/db/postgres/diagnostics"
 	postgresfederation "github.com/mycroblog/my/internal/adapter/db/postgres/federation"
 	postgresfinance "github.com/mycroblog/my/internal/adapter/db/postgres/finance"
+	postgresgathering "github.com/mycroblog/my/internal/adapter/db/postgres/gathering"
 	postgresgraph "github.com/mycroblog/my/internal/adapter/db/postgres/graph"
 	postgreshook "github.com/mycroblog/my/internal/adapter/db/postgres/hook"
 	postgresidentity "github.com/mycroblog/my/internal/adapter/db/postgres/identity"
@@ -72,7 +73,7 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 		medias: postgrescontent.NewMediaRepository(d), emojis: postgrescontent.NewCustomEmojiRepository(d),
 		feds: postgresfederation.NewRepository(d), mods: postgresmoderation.NewRepository(d), hooks: postgreswebhook.NewRepository(d),
 		finance: postgresfinance.NewRepository(d), payments: postgressupporters.NewPaymentRepository(d), supporters: postgressupporters.NewSupporterRepository(d),
-		voice: postgresvoice.NewRepository(d), diagnostics: postgresdiagnostics.NewRepository(d), translations: postgrestranslation.NewRepository(d), search: postgressearch.NewRepository(d),
+		voice: postgresvoice.NewRepository(d), gatherings: postgresgathering.NewRepository(d), diagnostics: postgresdiagnostics.NewRepository(d), translations: postgrestranslation.NewRepository(d), search: postgressearch.NewRepository(d),
 		decisions: postgreshook.NewRepository(d), existingStatuses: postgrescontent.NewStatusRepository(d), drafts: postgrescontent.NewStatusRepository(d),
 		retention: retentionRepositories{
 			statuses: postgrescontent.NewStatusRepository(d), purges: postgresfederation.NewRepository(d), profiles: postgresaccount.NewRepository(d), emojis: postgrescontent.NewCustomEmojiRepository(d),

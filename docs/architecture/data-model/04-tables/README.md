@@ -18,6 +18,7 @@
 - [4.16 hook](16-hook.md)
 - [4.17 translation](17-translation.md)
 - [4.18 search](18-search.md)
+- [4.19 gathering](19-gathering.md)
 
 ### 4.0 所有モジュール
 
@@ -40,4 +41,5 @@
 | `hook` | `hook_decisions`, `hook_decision_statuses`, `hook_decision_overrides`, `hook_decision_appeals`, `hook_decision_appeal_decisions` | `hook_account_exemptions` |
 | `translation` | | `status_translations`, `status_translation_attachments`, `status_translation_poll_options`, `translation_account_usage`, `translation_server_usage` |
 | `search` | | `search_rebuild`, `search_rebuild_failures` |
+| `gathering` | `gatherings`, `gathering_revisions`, `gathering_revision_places`, `gathering_schedule_confirmations`, `gathering_invitations`, `gathering_invitation_revocations`, `gathering_rsvps`, `gathering_rsvp_approvals`, `gathering_coorganizer_changes`, `gathering_cancellations` | `gathering_heads`, `gathering_attendees`, `gathering_coorganizers` |
 | 基盤 | `job_attempts`, `data_upgrade_runs` | `jobs`, `dead_jobs`, `kv_entries` |

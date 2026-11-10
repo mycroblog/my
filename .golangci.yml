@@ -263,6 +263,24 @@ linters:
           allow:
             - $gostd
             - github.com/mycroblog/my/internal/domain/voice
+        domain-gathering:
+          list-mode: strict
+          files:
+            - "**/internal/domain/gathering/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/domain/gathering
+        app-gathering:
+          list-mode: strict
+          files:
+            - "**/internal/app/gathering/**"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/domain/gathering
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/i18n
+            # Counting the grapheme clusters of an event's title (ADR-0161 §5): pure-Go Unicode data, not an external resource.
+            - github.com/rivo/uniseg
         app-voice:
           list-mode: strict
           files:
@@ -716,6 +734,26 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
             - github.com/mycroblog/my/internal/adapter/db/postgres/moderation$
             - github.com/mycroblog/my/schema/12-finance$
+        db-gathering:
+          list-mode: strict
+          files:
+            - "**/internal/adapter/db/sqlite/gathering/**"
+            - "**/internal/adapter/db/postgres/gathering/**"
+            - "!$test"
+          allow:
+            - $gostd
+            - github.com/mycroblog/my/internal/app
+            - github.com/mycroblog/my/internal/domain
+            - github.com/jackc/pgx/v5
+            - github.com/mycroblog/my/internal/adapter/db/sqlite$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/gatheringgen$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/account$
+            - github.com/mycroblog/my/internal/adapter/db/sqlite/hook$
+            - github.com/mycroblog/my/internal/adapter/db/postgres$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/gatheringgen$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/account$
+            - github.com/mycroblog/my/internal/adapter/db/postgres/hook$
+            - github.com/mycroblog/my/schema/19-gathering$
         db-graph:
           list-mode: strict
           files:

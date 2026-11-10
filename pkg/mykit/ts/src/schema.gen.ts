@@ -5121,6 +5121,274 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the upcoming events
+         * @description The events that the user sees and that have not ended, the nearest start first. A page may
+         *     hold fewer events than `limit` and still have a `next_cursor`.
+         */
+        get: operations["listEvents"];
+        put?: never;
+        /**
+         * Create an event
+         * @description Creates an event that the user organizes, with a fixed date. The user must be a local,
+         *     unrestricted user who may create events (the instance setting `event_creators`, or the
+         *     `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+         *     place needs the voice chat on and a user who may host its rooms: a 422
+         *     `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+         *     (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+         *     the past are a 422.
+         */
+        post: operations["createEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get an event
+         * @description The event, as the user sees it: the places that the user does not see are left out. A 404
+         *     for an event that the user does not see.
+         */
+        get: operations["getEvent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change an event
+         * @description Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+         *     organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+         *     `voice` place needs the organizer to be able to host rooms (a 422
+         *     `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+         */
+        patch: operations["updateEvent"];
+        trace?: never;
+    };
+    "/events/{id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel an event
+         * @description Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+         *     more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+         *     A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+         */
+        post: operations["cancelEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/rsvp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Answer an event
+         * @description Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+         *     starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+         *     reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+         *     answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+         *     `declined` are never refused. `declined` ends an approval. A 409
+         *     `/api/v1/problems/event-closed` for an event that started or was cancelled.
+         */
+        put: operations["answerEvent"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/attendees": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the attendees of an event
+         * @description The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
+         *     sees the event.
+         */
+        get: operations["listEventAttendees"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/attendees/{account_id}/approval": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["EventAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Approve an attendee of an event
+         * @description Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
+         *     co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
+         *     the approved. An approval ends when the attendee answers `declined`. A 422
+         *     `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
+         *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         */
+        put: operations["approveEventAttendee"];
+        post?: never;
+        /**
+         * Revoke the approval of an attendee of an event
+         * @description Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
+         *     did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         */
+        delete: operations["revokeEventAttendeeApproval"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the invitations of an event
+         * @description The invitations of the event that were not revoked, oldest first, for the organizer and the
+         *     co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+         */
+        get: operations["listEventInvitations"];
+        put?: never;
+        /**
+         * Invite a user to an event
+         * @description Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+         *     from now on, whatever its visibility. A user is invited to an event once (a 409
+         *     `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+         *     `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+         *     the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+         *     most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         */
+        post: operations["inviteToEvent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/invitations/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["EventAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Revoke an invitation to an event
+         * @description Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
+         *     only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
+         *     invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         */
+        delete: operations["revokeEventInvitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/coorganizers/{account_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["EventAccountId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Name a co-organizer of an event
+         * @description Names a local user a co-organizer of the event, by its organizer: a co-organizer changes the
+         *     event, invites, and approves attendees, and sees every place. An event has at most 3
+         *     co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
+         *     `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
+         *     organizer, or is in a block relation with the organizer or a co-organizer. A 403
+         *     `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         */
+        put: operations["assignEventCoorganizer"];
+        post?: never;
+        /**
+         * Remove a co-organizer of an event
+         * @description Removes a co-organizer of the event, by its organizer. A 403
+         *     `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+         */
+        delete: operations["removeEventCoorganizer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/client_errors": {
         parameters: {
             query?: never;
@@ -13540,6 +13808,213 @@ export interface components {
          * @enum {string}
          */
         ErrorGroupState: "open" | "resolved" | "muted";
+        /**
+         * @description An event of the local users of this server, as the user sees it. Times are in UTC;
+         *     `time_zone` is the event's own time zone, to show next to the user's. `places` holds only the
+         *     places that the user sees: `hidden_places` lists the kinds of the others, whose details never
+         *     reach the client.
+         */
+        Event: {
+            id: components["schemas"]["Id"];
+            organizer: components["schemas"]["Account"];
+            /** @description The co-organizers, in the order the organizer named them; up to 3. */
+            coorganizers: components["schemas"]["Account"][];
+            title: string;
+            /** @description Plain text; empty for none. */
+            description: string;
+            visibility: components["schemas"]["EventVisibility"];
+            /** @description The IANA name of the event's time zone, such as `Asia/Tokyo`. */
+            time_zone: string;
+            place_disclosure: components["schemas"]["EventPlaceDisclosure"];
+            /** @description How many attendees may answer `going`; 0 for no limit. */
+            capacity: number;
+            places: components["schemas"]["EventPlace"][];
+            /** @description The kinds of the places that the user does not see. */
+            hidden_places: components["schemas"]["EventPlaceKind"][];
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            state: components["schemas"]["EventState"];
+            cancellation?: components["schemas"]["EventCancellation"];
+            /** @description How many attendees answer `going`. */
+            going_count: number;
+            /** Format: date-time */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the settings were last changed (the creation for an event never changed).
+             */
+            revised_at: string;
+            /** @description How many versions the settings have had, the first included. */
+            revision_count: number;
+            viewer: components["schemas"]["EventViewer"];
+        };
+        /**
+         * @description An answer to an event.
+         * @enum {string}
+         */
+        EventAnswer: "going" | "maybe" | "declined";
+        /** @description An attendee of an event, who answered `going` or `maybe`. */
+        EventAttendee: {
+            account: components["schemas"]["Account"];
+            answer: components["schemas"]["EventAnswer"];
+            /** @description Whether the organizer or a co-organizer approved the answer. */
+            approved: boolean;
+        };
+        /** @description A page of the attendees of an event, in the order of their answers. */
+        EventAttendeePage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["EventAttendee"][];
+        };
+        /**
+         * @description Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+         *     suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+         * @enum {string}
+         */
+        EventCancelReason: "organizer" | "moderator" | "organizer_suspended" | "organizer_deleted";
+        /** @description The cancellation of an event by its organizer. */
+        EventCancelRequest: {
+            /** @description The reason, up to 500 characters, shown with the event; omitted for none. */
+            note?: string;
+        };
+        /** @description The cancellation of an event. */
+        EventCancellation: {
+            reason: components["schemas"]["EventCancelReason"];
+            /** @description The reason given for the cancellation; omitted for none. */
+            note?: string;
+            /** Format: date-time */
+            cancelled_at: string;
+        };
+        /** @description A new event with a fixed date. */
+        EventCreate: {
+            /** @description 1 to 100 characters on one line. */
+            title: string;
+            /** @description Up to 3,000 characters of plain text; line breaks are kept. */
+            description?: string;
+            /** @description Who sees the event; `public` when omitted. */
+            visibility?: components["schemas"]["EventVisibility"];
+            /** @description The IANA name of the event's time zone; the user's time zone when omitted. */
+            time_zone?: string;
+            /** @description Who sees the `physical` and `url` places; `approved` when omitted. */
+            place_disclosure?: components["schemas"]["EventPlaceDisclosure"];
+            /** @description How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit. */
+            capacity?: number;
+            /** @description Up to 3 places, one of each kind. */
+            places?: components["schemas"]["EventPlace"][];
+            /**
+             * Format: date-time
+             * @description After now and at most a year ahead.
+             */
+            starts_at: string;
+            /**
+             * Format: date-time
+             * @description After `starts_at` and at most 7 days later.
+             */
+            ends_at: string;
+        };
+        /**
+         * @description An invitation to an event. The invited user sees the event until the invitation is revoked,
+         *     whatever its visibility.
+         */
+        EventInvitation: {
+            id: components["schemas"]["Id"];
+            account: components["schemas"]["Account"];
+            invited_by_id: components["schemas"]["Id"];
+            /** Format: date-time */
+            invited_at: string;
+        };
+        /** @description An invitation of a user to an event. */
+        EventInvitationCreate: {
+            account_id: components["schemas"]["Id"];
+        };
+        /** @description A page of the invitations of an event that were not revoked, oldest first. */
+        EventInvitationPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["EventInvitation"][];
+        };
+        /** @description A page of the events that the user sees and that have not ended, the nearest start first. */
+        EventPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["Event"][];
+        };
+        /**
+         * @description A place of an event. A `physical` place has a `name`, an `address`, and an optional map link in
+         *     `url`; a `url` place has a `name` and a `url`; a `voice` place has `speakers`, who may speak
+         *     without asking in the voice chat room that opens when the event starts. A URL is an `http` or
+         *     `https` URL of up to 2,000 characters, which the server never fetches. The fields that a kind
+         *     does not have are omitted.
+         */
+        EventPlace: {
+            kind: components["schemas"]["EventPlaceKind"];
+            /** @description Up to 100 characters on one line. */
+            name?: string;
+            /** @description Up to 500 characters; line breaks are kept. */
+            address?: string;
+            url?: string;
+            /** @description Who may speak without asking in the room; `manual` when omitted. */
+            speakers?: components["schemas"]["VoiceRoomSpeakers"];
+        };
+        /**
+         * @description Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+         *     organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+         *     and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+         *     event.
+         * @enum {string}
+         */
+        EventPlaceDisclosure: "approved" | "viewers";
+        /**
+         * @description The kind of a place: `voice` a voice chat room of this server, `physical` a place to meet in
+         *     person, and `url` a link such as a stream or a meeting of another service.
+         * @enum {string}
+         */
+        EventPlaceKind: "voice" | "physical" | "url";
+        /** @description An answer to an event. */
+        EventRSVP: {
+            answer: components["schemas"]["EventAnswer"];
+        };
+        /**
+         * @description Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
+         *     `ends_at` is in the past.
+         * @enum {string}
+         */
+        EventState: "scheduled" | "cancelled";
+        /**
+         * @description Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
+         *     date (`starts_at` and `ends_at` together) is checked as a new event's.
+         */
+        EventUpdate: {
+            title?: string;
+            description?: string;
+            visibility?: components["schemas"]["EventVisibility"];
+            time_zone?: string;
+            place_disclosure?: components["schemas"]["EventPlaceDisclosure"];
+            capacity?: number;
+            places?: components["schemas"]["EventPlace"][];
+            /** Format: date-time */
+            starts_at?: string;
+            /** Format: date-time */
+            ends_at?: string;
+        };
+        /** @description What an event says of the user who reads it. */
+        EventViewer: {
+            /** @description Whether the user organizes the event. */
+            organizer: boolean;
+            /** @description Whether the user co-organizes the event. */
+            coorganizer: boolean;
+            /** @description Whether the user has an invitation that was not revoked. */
+            invited: boolean;
+            /** @description The user's answer; omitted before the user answers. */
+            answer?: components["schemas"]["EventAnswer"];
+            /** @description Whether the organizer or a co-organizer approved the user's answer. */
+            approved: boolean;
+        };
+        /**
+         * @description Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+         *     `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+         *     whom the organizer follows, and `invited` the invited users only. The organizer, the
+         *     co-organizers, the invited users, and the users who answered always see it, unless a block
+         *     separates them from the organizer or a co-organizer.
+         * @enum {string}
+         */
+        EventVisibility: "public" | "followers" | "following" | "mutuals" | "invited";
         /** @description Where the browser goes to sign in at a login provider. */
         ExternalAuthorizationStart: {
             /** @description The URL on this server that sends the browser on to the provider. */
@@ -14217,7 +14692,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -15598,11 +16073,13 @@ export interface components {
          *     deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
          *     permission (only the built-in admin role by default). `create_articles`: writing new
          *     articles with `createArticle` while the instance setting `article_authoring` is
-         *     `permission`, a member permission (only the built-in admin role by default). The others
-         *     guard no client API operation yet.
+         *     `permission`, a member permission (only the built-in admin role by default).
+         *     `create_events`: creating events on `POST /events` while the instance setting
+         *     `event_creators` is `permitted`, a member permission (only the built-in admin role by
+         *     default). The others guard no client API operation yet.
          * @enum {string}
          */
-        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors" | "manage_login_providers" | "create_invites" | "keep_posts_longer" | "create_articles";
+        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors" | "manage_login_providers" | "create_invites" | "keep_posts_longer" | "create_articles" | "create_events";
         /**
          * @description A local custom emoji that the picker offers. Picking it inserts
          *     `:shortcode:` into the text.
@@ -16006,6 +16483,20 @@ export interface components {
          *     - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
          *       co-hosts of the room.
          *     - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+         *     - `/api/v1/problems/event-not-eligible` (403): the user may not create events.
+         *     - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
+         *       co-organizers of the event.
+         *     - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
+         *     - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+         *     - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
+         *     - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
+         *       room: the voice chat is off, or its organizer may not host rooms.
+         *     - `/api/v1/problems/event-already-invited` (409): the account is already invited to the event.
+         *     - `/api/v1/problems/event-invalid-invitee` (422): the account cannot be invited to the event.
+         *     - `/api/v1/problems/event-invalid-coorganizer` (422): the account cannot co-organize the event.
+         *     - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
+         *       it can.
+         *     - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
          *     - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
          *       be searched (`Instance.full_text_search.available`).
          *     - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
@@ -18562,6 +19053,10 @@ export interface components {
         DraftId: components["schemas"]["Id"];
         /** @description The ID of the error group. */
         ErrorGroupId: components["schemas"]["Id"];
+        /** @description The ID of the account. */
+        EventAccountId: components["schemas"]["Id"];
+        /** @description The ID of the event. */
+        EventId: components["schemas"]["Id"];
         /** @description The ID of the domain action. */
         DomainActionId: components["schemas"]["Id"];
         /** @description The ID of the decision. */
@@ -24270,6 +24765,392 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VoiceRoomHistoryPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listEvents: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the events. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCreate"];
+            };
+        };
+        responses: {
+            /** @description The event. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The event. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventUpdate"];
+            };
+        };
+        responses: {
+            /** @description The event. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    cancelEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["EventCancelRequest"];
+            };
+        };
+        responses: {
+            /** @description The event. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    answerEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRSVP"];
+            };
+        };
+        responses: {
+            /** @description The event. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listEventAttendees: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the attendees. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAttendeePage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    approveEventAttendee: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["EventAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The attendee. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAttendee"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokeEventAttendeeApproval: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["EventAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The attendee. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventAttendee"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listEventInvitations: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the invitations. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventInvitationPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    inviteToEvent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventInvitationCreate"];
+            };
+        };
+        responses: {
+            /** @description The invitation. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventInvitation"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    revokeEventInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["EventAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    assignEventCoorganizer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["EventAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The event. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeEventCoorganizer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the account. */
+                account_id: components["parameters"]["EventAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The event. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
                 };
             };
             default: components["responses"]["Problem"];

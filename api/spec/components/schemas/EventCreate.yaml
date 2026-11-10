@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT
+description: A new event with a fixed date.
+type: object
+required: [title, starts_at, ends_at]
+properties:
+  title:
+    description: 1 to 100 characters on one line.
+    type: string
+  description:
+    description: Up to 3,000 characters of plain text; line breaks are kept.
+    type: string
+  visibility:
+    description: Who sees the event; `public` when omitted.
+    allOf:
+      - $ref: ./EventVisibility.yaml
+  time_zone:
+    description: The IANA name of the event's time zone; the user's time zone when omitted.
+    type: string
+  place_disclosure:
+    description: Who sees the `physical` and `url` places; `approved` when omitted.
+    allOf:
+      - $ref: ./EventPlaceDisclosure.yaml
+  capacity:
+    description: How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
+    type: integer
+  places:
+    description: Up to 3 places, one of each kind.
+    type: array
+    items:
+      $ref: ./EventPlace.yaml
+  starts_at:
+    description: After now and at most a year ahead.
+    type: string
+    format: date-time
+  ends_at:
+    description: After `starts_at` and at most 7 days later.
+    type: string
+    format: date-time

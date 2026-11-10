@@ -942,5 +942,49 @@
   "errors.draft.schedule_too_far": {
     "defaultMessage": "{days, plural, one {Schedule the post at most # day from now.} other {Schedule the post at most # days from now.}}",
     "description": "Detail of the HTTP 422 API error when the time of a schedule is too far ahead. {days} is how many days ahead a post may be scheduled at most."
+  },
+  "errors.event.not_eligible": {
+    "defaultMessage": "You may not create events.",
+    "description": "API error title for HTTP 403 when a user who may not organize events creates or revises one (ADR-0161 §3: a local, unrestricted account, with the create_events permission unless everyone may create events)."
+  },
+  "errors.event.not_organizer": {
+    "defaultMessage": "Only the organizer or a co-organizer of the event may do this.",
+    "description": "API error title for HTTP 403 when someone who neither organizes nor co-organizes an event revises it, invites to it, or approves its attendees."
+  },
+  "errors.event.organizer_only": {
+    "defaultMessage": "Only the organizer of the event may do this.",
+    "description": "API error title for HTTP 403 when a co-organizer of an event changes its visibility, names or removes a co-organizer, or cancels it."
+  },
+  "errors.event.closed": {
+    "defaultMessage": "The event takes no more changes.",
+    "description": "API error title for HTTP 409 when an event was cancelled, or an answer comes after it started."
+  },
+  "errors.event.full": {
+    "defaultMessage": "The event is full.",
+    "description": "API error title for HTTP 409 when a user answers going to an event whose attendees who answer going reached its capacity."
+  },
+  "errors.event.voice_unavailable": {
+    "defaultMessage": "The event cannot be held in a voice chat room.",
+    "description": "API error title for HTTP 422 when an event gets a voice chat room as a place while voice chat is off or its organizer may not host rooms."
+  },
+  "errors.event.already_invited": {
+    "defaultMessage": "That user is already invited to the event.",
+    "description": "API error title for HTTP 409 when an organizer invites a user to an event a second time (a user is invited once, even after a revocation)."
+  },
+  "errors.event.invalid_invitee": {
+    "defaultMessage": "That user cannot be invited to the event.",
+    "description": "API error title for HTTP 422 when the invited user is not a local, active user, organizes the event, or is in a block relation with an organizer."
+  },
+  "errors.event.invalid_coorganizer": {
+    "defaultMessage": "That user cannot co-organize the event.",
+    "description": "API error title for HTTP 422 when the named co-organizer is not a local, active user, is the organizer, or is in a block relation with an organizer."
+  },
+  "errors.event.too_many_coorganizers": {
+    "defaultMessage": "The event has as many co-organizers as it may.",
+    "description": "API error title for HTTP 409 when the organizer names a co-organizer past the limit of three."
+  },
+  "errors.event.not_attending": {
+    "defaultMessage": "That user has not answered going or maybe.",
+    "description": "API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event."
   }
 }

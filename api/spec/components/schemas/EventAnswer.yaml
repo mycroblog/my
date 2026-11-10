@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: An answer to an event.
+type: string
+enum: [going, maybe, declined]

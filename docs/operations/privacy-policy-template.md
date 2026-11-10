@@ -71,7 +71,7 @@ A [retention hold](moderation.md#holds) stops erasure for one account, so every 
 The server removes these only when an account is erased, or never. A law may ask you to justify keeping them, or to remove them by other means, so decide what your policy says about each.
 
 - The rows of an active account: email addresses, past profile versions, past post versions, notifications, follows, and the registration application of a rejected user. An account that nobody deletes stays.
-- What stays after erasure: the account's URI and username (so that neither can be reused), its lifecycle events, the record that a post was deleted, moderation records until their own period ends, invites and role grants, account moves, voice chat rooms without their names and descriptions.
+- What stays after erasure: the account's URI and username (so that neither can be reused), its lifecycle events, the record that a post was deleted, moderation records until their own period ends, invites and role grants, account moves, voice chat rooms without their names and descriptions, events without the titles, descriptions, and places their authors wrote, and the invitations and answers to events.
 - Supporter records (subscriptions, state changes, payments, refunds, chargebacks), kept for accounting and for reconciling with the provider. The server does not delete a customer at the payment provider: do that in the provider's dashboard if your obligations allow it.
 - An action with no end (a `ban`, or a `suspend` without an end time), until it is lifted. Open reports.
 - Remote accounts, until their server deletes them.
@@ -168,6 +168,8 @@ This policy covers people with an account here, people who read pages here witho
 | Sign-up blocks: an email domain, a hashed email address, or an IP range | Preventing repeat abuse | While in effect, and 30 days after the lift or expiry |
 | {{IF voice}} Voice chat rooms: name, description, hosts, and how they ended | Showing and moderating rooms | Kept. The name and description you wrote are emptied when your account is erased |
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
+| Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
+| Invitations to events, your answers, and their approval | Showing who comes, and showing the address and link to the approved | Kept |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
 | Copies of activities sent to and received from other servers | Delivering, retrying, and rejecting duplicates | 30 days. The first delivery of a post stays until 30 days after the post or its author is deleted |

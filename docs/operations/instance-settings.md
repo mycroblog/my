@@ -90,6 +90,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `user_app_registration` | `true` / `false` | `true` | Whether signed-in users can register their own OAuth apps (public or confidential) with the client API (`POST /api/v1/oauth_apps`). When `false`, registering answers 403. Listing, changing, and deleting registered apps, reissuing secrets, issuing a token to yourself, and authorization by other users keep working |
 | `voice_room_starters` | `everyone` / `permitted` | `permitted` | Who can open voice chat rooms, while the configuration `voice` is not `off` ([configuration](../reference/configuration.md#voice)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `start_voice_rooms`, which only the built-in `admin` role has by default and which a role of a supporter plan may have |
 | `voice_public_summary` | `true` / `false` | `false` | Whether the page of a voice chat room whose visibility is `local` shows its name, description, host, and whether it is still open to visitors who are not signed in to this server and to remote users, and in its link preview. The participants are never shown. When `false`, those visitors see only that the room is for the local users of this server |
+| `event_creators` | `everyone` / `permitted` | `everyone` | Who can create events ([events](#events)). `everyone`: every signed-in local user who is not suspended or limited. `permitted`: only the holders of the permission `create_events`, which only the built-in `admin` role has by default and which a role of a supporter plan may have |
 | `public_counts` | `true` / `false` | `true` | Whether the landing page (`/`, signed out) and `GET /api/v1/instance/overview` show how many members the server has, how many public posts its users made on each of the last 7 days, and when the server started. Only public posts of this server's users count; the numbers are refreshed every few minutes. When `false`, the API leaves them out |
 | `featured_accounts` | usernames of up to 20 local accounts, separated by spaces or commas (empty = none) | empty | The accounts that the suggestions of people to follow show first, in this order, before the people of this server who posted recently. An account whose owner turned off "Suggest my account and find it by part of its name" is not suggested. See [suggestions](#suggestions-of-accounts) |
 | `login_providers_only` | `true` / `false` | `false` | Whether registration and sign-in are limited to the login providers while at least one is enabled: passwords and passkeys no longer sign in, and users without a linked provider cannot sign in again once their sessions end. With no enabled provider it does not apply. `my instance set` prints how many active users have no link to an enabled provider. See [limit sign-in to login providers](login-providers.md#limit-sign-in-to-login-providers). |
@@ -235,6 +236,22 @@ the summary, and the cover; the body shows where the article is opened.
   for new accounts, `auto_delete_max_allow_articles` under a maximum).
 - `GET /api/v1/instance` returns the limits in `limits.articles` and the authoring setting in `article_authoring`. Set
   them with `my instance set`, for example `my instance set article_authoring permission`.
+
+### Events
+
+Local users plan events with a date, a time zone, and up to three places: a voice chat room of this server, a place to
+meet in person, and a link. Events are for the users of this server only: they are never federated, and remote users
+and visitors who are not signed in see none of them.
+
+- Who may create one is `event_creators`. An organizer must also be able to open voice chat rooms (`voice_room_starters`
+  and the configuration `voice`) to hold an event in one.
+- The organizer chooses who sees the event: every local user, the organizer's followers, the people the organizer
+  follows, mutual follows, or only the invited. The invited and those who answered always see it, and a block between
+  a user and the organizer or a co-organizer hides it from that user.
+- The address and the link of an event are shown only to the attendees that the organizer or a co-organizer approved,
+  unless the organizer shows them to everyone who sees the event. Links must be `http` or `https`, and the server never
+  opens them.
+- A user creates at most 10 events an hour, and an event sends at most 100 invitations an hour.
 
 ### Texts (one key, one value)
 

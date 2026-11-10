@@ -391,6 +391,8 @@ type Options struct {
 	// Voice runs the voice chat rooms (voice.go); nil, while the voice chat is off, answers 404
 	// to their operations.
 	Voice VoiceRooms
+	// Events runs the events of the local users (events.go); nil answers 404 to their operations.
+	Events Events
 	// VoiceModeration reports the rooms, ends them for the moderators, and reads their records
 	// for the reports (admin_voice.go), with the voice chat off too; nil reports no room.
 	VoiceModeration VoiceModeration

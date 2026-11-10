@@ -147,6 +147,50 @@
     "defaultMessage": "‮⊥ɥǝ ǝɯɐıʅ ɐppɹǝss ıs uoʇ snddɹǝssǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.event.already_invited": {
+    "defaultMessage": "‮⊥ɥɐʇ nsǝɹ ıs ɐʅɹǝɐpʎ ıuʌıʇǝp ʇo ʇɥǝ ǝʌǝuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.closed": {
+    "defaultMessage": "‮⊥ɥǝ ǝʌǝuʇ ʇɐʞǝs uo ɯoɹǝ ɔɥɐuƃǝs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.full": {
+    "defaultMessage": "‮⊥ɥǝ ǝʌǝuʇ ıs ɟnʅʅ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.invalid_coorganizer": {
+    "defaultMessage": "‮⊥ɥɐʇ nsǝɹ ɔɐuuoʇ ɔo-oɹƃɐuızǝ ʇɥǝ ǝʌǝuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.invalid_invitee": {
+    "defaultMessage": "‮⊥ɥɐʇ nsǝɹ ɔɐuuoʇ qǝ ıuʌıʇǝp ʇo ʇɥǝ ǝʌǝuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.not_attending": {
+    "defaultMessage": "‮⊥ɥɐʇ nsǝɹ ɥɐs uoʇ ɐusʍǝɹǝp ƃoıuƃ oɹ ɯɐʎqǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.not_eligible": {
+    "defaultMessage": "‮⅄on ɯɐʎ uoʇ ɔɹǝɐʇǝ ǝʌǝuʇs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.not_organizer": {
+    "defaultMessage": "‮Ouʅʎ ʇɥǝ oɹƃɐuızǝɹ oɹ ɐ ɔo-oɹƃɐuızǝɹ oɟ ʇɥǝ ǝʌǝuʇ ɯɐʎ po ʇɥıs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.organizer_only": {
+    "defaultMessage": "‮Ouʅʎ ʇɥǝ oɹƃɐuızǝɹ oɟ ʇɥǝ ǝʌǝuʇ ɯɐʎ po ʇɥıs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.too_many_coorganizers": {
+    "defaultMessage": "‮⊥ɥǝ ǝʌǝuʇ ɥɐs ɐs ɯɐuʎ ɔo-oɹƃɐuızǝɹs ɐs ıʇ ɯɐʎ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.event.voice_unavailable": {
+    "defaultMessage": "‮⊥ɥǝ ǝʌǝuʇ ɔɐuuoʇ qǝ ɥǝʅp ıu ɐ ʌoıɔǝ ɔɥɐʇ ɹooɯ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.export.in_progress": {
     "defaultMessage": "‮∀u ɐɹɔɥıʌǝ oɟ ʎonɹ pɐʇɐ ıs ɐʅɹǝɐpʎ qǝıuƃ dɹǝdɐɹǝp. Mɐıʇ nuʇıʅ ıʇ ıs ɹǝɐpʎ.‬",
     "description": "Generated from en by tools/i18n; do not edit."

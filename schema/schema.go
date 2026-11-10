@@ -37,6 +37,7 @@ import (
 	hook "github.com/mycroblog/my/schema/16-hook"
 	translation "github.com/mycroblog/my/schema/17-translation"
 	search "github.com/mycroblog/my/schema/18-search"
+	gathering "github.com/mycroblog/my/schema/19-gathering"
 	"github.com/mycroblog/my/schema/ddl"
 )
 
@@ -45,7 +46,7 @@ var Modules = []*ddl.Module{
 	identity.Module, account.Module, moderation.Module, content.Module, graph.Module, timeline.Module,
 	notification.Module, federation.Module, instance.Module, infrastructure.Module, webhook.Module,
 	finance.Module, supporters.Module, voice.Module, diagnostics.Module, hook.Module,
-	translation.Module, search.Module,
+	translation.Module, search.Module, gathering.Module,
 }
 
 // SQLite is the sqlite.sql files of Modules, concatenated in name order.

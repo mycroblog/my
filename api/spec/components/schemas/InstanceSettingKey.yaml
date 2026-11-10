@@ -117,3 +117,4 @@ enum:
   - max_article_images
   - auto_delete_default_keep_articles
   - auto_delete_max_allow_articles
+  - event_creators

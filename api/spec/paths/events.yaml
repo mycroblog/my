@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listEvents
+  summary: List the upcoming events
+  description: |
+    The events that the user sees and that have not ended, the nearest start first. A page may
+    hold fewer events than `limit` and still have a `next_cursor`.
+  tags: [events]
+  security:
+    - oauth2: ["read:events"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the events.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/EventPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: createEvent
+  summary: Create an event
+  description: |
+    Creates an event that the user organizes, with a fixed date. The user must be a local,
+    unrestricted user who may create events (the instance setting `event_creators`, or the
+    `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+    place needs the voice chat on and a user who may host its rooms: a 422
+    `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+    (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+    the past are a 422.
+  tags: [events]
+  security:
+    - oauth2: ["write:events"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/EventCreate.yaml
+  responses:
+    "201":
+      description: The event.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Event.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

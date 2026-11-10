@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: An invitation of a user to an event.
+type: object
+required: [account_id]
+properties:
+  account_id:
+    $ref: ./Id.yaml

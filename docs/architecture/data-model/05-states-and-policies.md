@@ -109,3 +109,14 @@
 - **再有効化**: 状態の画面のボタンで `reactivated`（`initiated_by = self`）を記録します。削除の日付を過ぎていれば、ジョブが記録する前でも断り、ログインもできません。効いている処分はそのままで、`feed_author_restrictions` はそのときの処分の制限に置き換えます。
 - **削除**: 1 時間ごとの `account.execute_deletions` が、`since` が 30 日より前の `deactivated` を行ロックのもとで読み直して `deleted`（`initiated_by = system`）を記録します。以後は本人の削除と同じ経路です。ログインできるほかの管理者がいなければ、admin ロールのロックのもとで確かめて記録せず、次の実行でもう一度確かめます（`account.Service.SetDeletionHold`、`identity.Service.IsLastAdministratorTx`）。無効化中の管理者は、ログインできる管理者に数えません。
 - **`ban` との順序**: `ban` は `deletion_scheduled` に移るので、その時点から再有効化できず、`ban` の期日に従います。`deletion_canceled` は `active` に戻します。`retention_holds` は消去を止めるだけで、削除は止めません。
+
+### 5.7 イベントの判定
+
+イベント（§4.19）が見えるか・その場所が見えるか・主催できるかは、`internal/domain/gathering` の純粋な関数が決めます（[ADR-0161](../../adr/0161-events.md) §3・§9）。
+フォロー（承認済みの `follow_edges`）・ブロック（`block_edges`、どちら向きも）・招待・出欠・承認・アカウントの状態と制限は `internal/app/gathering` が集めて `gathering.Facts` / `gathering.OrganizerFacts` で渡します。
+一覧・イベントのページ・出欠・招待・API のすべてがこれを通り、見えない場所は `internal/app/gathering` の外に出しません（`View.HiddenPlaces` は種類だけ）。
+
+- `CanSee(event, viewer, facts)`: 1. 未ログイン・リモート・凍結・削除の閲覧者は偽、2. 主催者か共同主催者とブロックの関係なら偽、3. 主催者・共同主催者は真、4. 取り消されていない招待があれば真、5. 出欠に答えていれば真（答えは「行かない」を含む）、6. `visibility` が `public` なら真、`followers` は主催者をフォローしていれば真、`following` は主催者にフォローされていれば真、`mutuals` は相互フォローなら真、`invited` は偽。中止したイベントと終わったイベントにも同じ規則を使います。
+- `CanSeePlace(event, kind, viewer, facts)`: `CanSee` が真で、主催者か共同主催者、場所が通話（`voice`）、`place_disclosure` が `viewers`、承認されている（`gathering_attendees.approved`）のどれか。
+- `CanOrganize(facts)`: ローカルの有効なアカウントで、制限されておらず、`event_creators` が `everyone` か権限 `create_events` を持つ。作るときと主催者が改版するときに検査します。通話の場所を足すときは、主催者が `voice.CanHost` を満たし、通話が `off` でないことも要ります。
+- 「フォロワー」「フォローしている人」「相互フォロー」の基準は主催者です（主催者は変わりません）。

@@ -131,6 +131,10 @@
     "defaultMessage": "記事の作成",
     "description": "Name of the permission create_articles: writing new articles (long posts in Markdown), while the server lets only the holders of this permission write them."
   },
+  "admin.roles.permission.create_events": {
+    "defaultMessage": "イベントを作る",
+    "description": "Name of the permission create_events: creating events and organizing them, while the server lets only the holders of this permission create them."
+  },
   "admin.roles.permission.manage_errors": {
     "defaultMessage": "エラー",
     "description": "Name of the permission manage_errors: the groups of the errors that the server and the web client report, resolving and muting them, and their notifications and webhook events."

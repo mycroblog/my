@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/EventId.yaml
+post:
+  operationId: cancelEvent
+  summary: Cancel an event
+  description: |
+    Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+    more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+    A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+  tags: [events]
+  security:
+    - oauth2: ["write:events"]
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/EventCancelRequest.yaml
+  responses:
+    "200":
+      description: The event.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Event.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

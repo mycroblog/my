@@ -33,8 +33,10 @@ description: |
   deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
   permission (only the built-in admin role by default). `create_articles`: writing new
   articles with `createArticle` while the instance setting `article_authoring` is
-  `permission`, a member permission (only the built-in admin role by default). The others
-  guard no client API operation yet.
+  `permission`, a member permission (only the built-in admin role by default).
+  `create_events`: creating events on `POST /events` while the instance setting
+  `event_creators` is `permitted`, a member permission (only the built-in admin role by
+  default). The others guard no client API operation yet.
 type: string
 enum:
   - manage_reports
@@ -62,3 +64,4 @@ enum:
   - create_invites
   - keep_posts_longer
   - create_articles
+  - create_events

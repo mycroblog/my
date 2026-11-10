@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: An answer to an event.
+type: object
+required: [answer]
+properties:
+  answer:
+    $ref: ./EventAnswer.yaml

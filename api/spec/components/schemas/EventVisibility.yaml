@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+  `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+  whom the organizer follows, and `invited` the invited users only. The organizer, the
+  co-organizers, the invited users, and the users who answered always see it, unless a block
+  separates them from the organizer or a co-organizer.
+type: string
+enum: [public, followers, following, mutuals, invited]

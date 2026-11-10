@@ -113,6 +113,12 @@ tags:
       a `read:voice` or `write:voice` scope, except the summary of a room for the visitors who
       do not see it. Every operation answers 404 while the voice chat is off on the server, and
       for a room that the user does not see.
+  - name: events
+    description: |
+      The events of the local users: creating, changing, and cancelling them, answering them,
+      the attendees and their approval, the invitations, and the co-organizers. Nothing of them
+      is federated. The operations need a `read:events` or `write:events` scope, and answer 404
+      for an event that the user does not see.
   - name: client-errors
     description: The uncaught errors of the web client, which it reports to its own server.
   - name: admin-moderation
@@ -7139,6 +7145,412 @@ paths:
                 $ref: '#/components/schemas/VoiceRoomHistoryPage'
         default:
           $ref: '#/components/responses/Problem'
+  /events:
+    get:
+      operationId: listEvents
+      summary: List the upcoming events
+      description: |
+        The events that the user sees and that have not ended, the nearest start first. A page may
+        hold fewer events than `limit` and still have a `next_cursor`.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the events.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createEvent
+      summary: Create an event
+      description: |
+        Creates an event that the user organizes, with a fixed date. The user must be a local,
+        unrestricted user who may create events (the instance setting `event_creators`, or the
+        `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
+        place needs the voice chat on and a user who may host its rooms: a 422
+        `/api/v1/problems/event-voice-unavailable` otherwise. A user creates at most 10 events an hour
+        (a 429 with `Retry-After`). Invalid settings, a URL other than `http` or `https`, and a date in
+        the past are a 422.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCreate'
+      responses:
+        '201':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      operationId: getEvent
+      summary: Get an event
+      description: |
+        The event, as the user sees it: the places that the user does not see are left out. A 404
+        for an event that the user does not see.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateEvent
+      summary: Change an event
+      description: |
+        Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+        organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
+        `voice` place needs the organizer to be able to host rooms (a 422
+        `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventUpdate'
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/cancel:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    post:
+      operationId: cancelEvent
+      summary: Cancel an event
+      description: |
+        Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
+        more answers or changes. A 403 `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+        A 409 `/api/v1/problems/event-closed` for an event cancelled already.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCancelRequest'
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/rsvp:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    put:
+      operationId: answerEvent
+      summary: Answer an event
+      description: |
+        Answers the event `going`, `maybe`, or `declined`, as often as the user likes until it
+        starts; the answer puts the user's name in the attendee list, which everyone who sees the event
+        reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
+        answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
+        `declined` are never refused. `declined` ends an approval. A 409
+        `/api/v1/problems/event-closed` for an event that started or was cancelled.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRSVP'
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/attendees:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      operationId: listEventAttendees
+      summary: List the attendees of an event
+      description: |
+        The attendees who answer `going` or `maybe`, in the order of their answers, for everyone who
+        sees the event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the attendees.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAttendeePage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/attendees/{account_id}/approval:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventAccountId'
+    put:
+      operationId: approveEventAttendee
+      summary: Approve an attendee of an event
+      description: |
+        Approves the answer of an attendee who answers `going` or `maybe`, by the organizer or a
+        co-organizer: the attendee sees the `physical` and `url` places of an event that shows them to
+        the approved. An approval ends when the attendee answers `declined`. A 422
+        `/api/v1/problems/event-not-attending` for a user who does not answer `going` or `maybe`.
+        A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '200':
+          description: The attendee.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAttendee'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: revokeEventAttendeeApproval
+      summary: Revoke the approval of an attendee of an event
+      description: |
+        Revokes the approval of an attendee, by the organizer or a co-organizer. A 404 for a user who
+        did not answer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '200':
+          description: The attendee.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventAttendee'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/invitations:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      operationId: listEventInvitations
+      summary: List the invitations of an event
+      description: |
+        The invitations of the event that were not revoked, oldest first, for the organizer and the
+        co-organizers. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the invitations.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInvitationPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: inviteToEvent
+      summary: Invite a user to an event
+      description: |
+        Invites a local user to the event, by the organizer or a co-organizer: the user sees the event
+        from now on, whatever its visibility. A user is invited to an event once (a 409
+        `/api/v1/problems/event-already-invited`, also after a revocation). A 422
+        `/api/v1/problems/event-invalid-invitee` for a user who is not a local, active user, organizes
+        the event, or is in a block relation with the organizer or a co-organizer. An event sends at
+        most 100 invitations an hour (a 429 with `Retry-After`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventInvitationCreate'
+      responses:
+        '201':
+          description: The invitation.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventInvitation'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/invitations/{account_id}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventAccountId'
+    delete:
+      operationId: revokeEventInvitation
+      summary: Revoke an invitation to an event
+      description: |
+        Revokes the invitation of a user, by the organizer or a co-organizer: the user sees the event
+        only as its visibility allows, or while the user's answer stands. A 404 for a user who was not
+        invited. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '204':
+          description: Done.
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/coorganizers/{account_id}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventAccountId'
+    put:
+      operationId: assignEventCoorganizer
+      summary: Name a co-organizer of an event
+      description: |
+        Names a local user a co-organizer of the event, by its organizer: a co-organizer changes the
+        event, invites, and approves attendees, and sees every place. An event has at most 3
+        co-organizers (a 409 `/api/v1/problems/event-too-many-coorganizers`). A 422
+        `/api/v1/problems/event-invalid-coorganizer` for a user who is not a local, active user, is the
+        organizer, or is in a block relation with the organizer or a co-organizer. A 403
+        `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: removeEventCoorganizer
+      summary: Remove a co-organizer of an event
+      description: |
+        Removes a co-organizer of the event, by its organizer. A 403
+        `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
   /client_errors:
     post:
       operationId: reportClientError
@@ -12872,6 +13284,7 @@ components:
             read:bookmarks: Read the user's bookmarks.
             read:custom_emojis: Read the custom emoji the user made and their requests for new ones.
             read:direct: Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
+            read:events: Read the events the user sees, their attendees, and the invitations of the events the user organizes.
             read:filters: Read the user's keyword filters.
             read:finance: Read the totals of the instance's costs and income, as far as the user's roles allow.
             read:follows: Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
@@ -12885,6 +13298,7 @@ components:
             write:blocks: Block and unblock accounts.
             write:bookmarks: Bookmark posts and remove bookmarks.
             write:custom_emojis: Request new custom emoji, and change and delete the ones the user made.
+            write:events: Create, change, and cancel events, answer them, approve their attendees, invite to them, and name their co-organizers.
             write:favourites: Favourite posts and react to them with emoji, and take both back.
             write:filters: Create, change, and delete the user's keyword filters.
             write:follows: Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
@@ -13014,6 +13428,20 @@ components:
       in: path
       required: true
       description: The ID of the error group.
+      schema:
+        $ref: '#/components/schemas/Id'
+    EventAccountId:
+      name: account_id
+      in: path
+      required: true
+      description: The ID of the account.
+      schema:
+        $ref: '#/components/schemas/Id'
+    EventId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the event.
       schema:
         $ref: '#/components/schemas/Id'
     DomainActionId:
@@ -21228,6 +21656,378 @@ components:
         - open
         - resolved
         - muted
+    Event:
+      description: |
+        An event of the local users of this server, as the user sees it. Times are in UTC;
+        `time_zone` is the event's own time zone, to show next to the user's. `places` holds only the
+        places that the user sees: `hidden_places` lists the kinds of the others, whose details never
+        reach the client.
+      type: object
+      required:
+        - id
+        - organizer
+        - coorganizers
+        - title
+        - description
+        - visibility
+        - time_zone
+        - place_disclosure
+        - capacity
+        - places
+        - hidden_places
+        - starts_at
+        - ends_at
+        - state
+        - going_count
+        - created_at
+        - revised_at
+        - revision_count
+        - viewer
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        organizer:
+          $ref: '#/components/schemas/Account'
+        coorganizers:
+          description: The co-organizers, in the order the organizer named them; up to 3.
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        title:
+          type: string
+        description:
+          description: Plain text; empty for none.
+          type: string
+        visibility:
+          $ref: '#/components/schemas/EventVisibility'
+        time_zone:
+          description: The IANA name of the event's time zone, such as `Asia/Tokyo`.
+          type: string
+        place_disclosure:
+          $ref: '#/components/schemas/EventPlaceDisclosure'
+        capacity:
+          description: How many attendees may answer `going`; 0 for no limit.
+          type: integer
+        places:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventPlace'
+        hidden_places:
+          description: The kinds of the places that the user does not see.
+          type: array
+          items:
+            $ref: '#/components/schemas/EventPlaceKind'
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        state:
+          $ref: '#/components/schemas/EventState'
+        cancellation:
+          $ref: '#/components/schemas/EventCancellation'
+        going_count:
+          description: How many attendees answer `going`.
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        revised_at:
+          description: When the settings were last changed (the creation for an event never changed).
+          type: string
+          format: date-time
+        revision_count:
+          description: How many versions the settings have had, the first included.
+          type: integer
+        viewer:
+          $ref: '#/components/schemas/EventViewer'
+    EventAnswer:
+      description: An answer to an event.
+      type: string
+      enum:
+        - going
+        - maybe
+        - declined
+    EventAttendee:
+      description: An attendee of an event, who answered `going` or `maybe`.
+      type: object
+      required:
+        - account
+        - answer
+        - approved
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        answer:
+          $ref: '#/components/schemas/EventAnswer'
+        approved:
+          description: Whether the organizer or a co-organizer approved the answer.
+          type: boolean
+    EventAttendeePage:
+      description: A page of the attendees of an event, in the order of their answers.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/EventAttendee'
+    EventCancelReason:
+      description: |
+        Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
+        suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
+      type: string
+      enum:
+        - organizer
+        - moderator
+        - organizer_suspended
+        - organizer_deleted
+    EventCancelRequest:
+      description: The cancellation of an event by its organizer.
+      type: object
+      properties:
+        note:
+          description: The reason, up to 500 characters, shown with the event; omitted for none.
+          type: string
+    EventCancellation:
+      description: The cancellation of an event.
+      type: object
+      required:
+        - reason
+        - cancelled_at
+      properties:
+        reason:
+          $ref: '#/components/schemas/EventCancelReason'
+        note:
+          description: The reason given for the cancellation; omitted for none.
+          type: string
+        cancelled_at:
+          type: string
+          format: date-time
+    EventCreate:
+      description: A new event with a fixed date.
+      type: object
+      required:
+        - title
+        - starts_at
+        - ends_at
+      properties:
+        title:
+          description: 1 to 100 characters on one line.
+          type: string
+        description:
+          description: Up to 3,000 characters of plain text; line breaks are kept.
+          type: string
+        visibility:
+          description: Who sees the event; `public` when omitted.
+          allOf:
+            - $ref: '#/components/schemas/EventVisibility'
+        time_zone:
+          description: The IANA name of the event's time zone; the user's time zone when omitted.
+          type: string
+        place_disclosure:
+          description: Who sees the `physical` and `url` places; `approved` when omitted.
+          allOf:
+            - $ref: '#/components/schemas/EventPlaceDisclosure'
+        capacity:
+          description: How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
+          type: integer
+        places:
+          description: Up to 3 places, one of each kind.
+          type: array
+          items:
+            $ref: '#/components/schemas/EventPlace'
+        starts_at:
+          description: After now and at most a year ahead.
+          type: string
+          format: date-time
+        ends_at:
+          description: After `starts_at` and at most 7 days later.
+          type: string
+          format: date-time
+    EventInvitation:
+      description: |
+        An invitation to an event. The invited user sees the event until the invitation is revoked,
+        whatever its visibility.
+      type: object
+      required:
+        - id
+        - account
+        - invited_by_id
+        - invited_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        account:
+          $ref: '#/components/schemas/Account'
+        invited_by_id:
+          $ref: '#/components/schemas/Id'
+        invited_at:
+          type: string
+          format: date-time
+    EventInvitationCreate:
+      description: An invitation of a user to an event.
+      type: object
+      required:
+        - account_id
+      properties:
+        account_id:
+          $ref: '#/components/schemas/Id'
+    EventInvitationPage:
+      description: A page of the invitations of an event that were not revoked, oldest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/EventInvitation'
+    EventPage:
+      description: A page of the events that the user sees and that have not ended, the nearest start first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Event'
+    EventPlace:
+      description: |
+        A place of an event. A `physical` place has a `name`, an `address`, and an optional map link in
+        `url`; a `url` place has a `name` and a `url`; a `voice` place has `speakers`, who may speak
+        without asking in the voice chat room that opens when the event starts. A URL is an `http` or
+        `https` URL of up to 2,000 characters, which the server never fetches. The fields that a kind
+        does not have are omitted.
+      type: object
+      required:
+        - kind
+      properties:
+        kind:
+          $ref: '#/components/schemas/EventPlaceKind'
+        name:
+          description: Up to 100 characters on one line.
+          type: string
+        address:
+          description: Up to 500 characters; line breaks are kept.
+          type: string
+        url:
+          type: string
+        speakers:
+          description: Who may speak without asking in the room; `manual` when omitted.
+          allOf:
+            - $ref: '#/components/schemas/VoiceRoomSpeakers'
+    EventPlaceDisclosure:
+      description: |
+        Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
+        organizer or a co-organizer approved, and `viewers` everyone who sees the event. The organizer
+        and the co-organizers see them always, and a `voice` place is shown to everyone who sees the
+        event.
+      type: string
+      enum:
+        - approved
+        - viewers
+    EventPlaceKind:
+      description: |
+        The kind of a place: `voice` a voice chat room of this server, `physical` a place to meet in
+        person, and `url` a link such as a stream or a meeting of another service.
+      type: string
+      enum:
+        - voice
+        - physical
+        - url
+    EventRSVP:
+      description: An answer to an event.
+      type: object
+      required:
+        - answer
+      properties:
+        answer:
+          $ref: '#/components/schemas/EventAnswer'
+    EventState:
+      description: |
+        Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
+        `ends_at` is in the past.
+      type: string
+      enum:
+        - scheduled
+        - cancelled
+    EventUpdate:
+      description: |
+        Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
+        date (`starts_at` and `ends_at` together) is checked as a new event's.
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        visibility:
+          $ref: '#/components/schemas/EventVisibility'
+        time_zone:
+          type: string
+        place_disclosure:
+          $ref: '#/components/schemas/EventPlaceDisclosure'
+        capacity:
+          type: integer
+        places:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventPlace'
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+    EventViewer:
+      description: What an event says of the user who reads it.
+      type: object
+      required:
+        - organizer
+        - coorganizer
+        - invited
+        - approved
+      properties:
+        organizer:
+          description: Whether the user organizes the event.
+          type: boolean
+        coorganizer:
+          description: Whether the user co-organizes the event.
+          type: boolean
+        invited:
+          description: Whether the user has an invitation that was not revoked.
+          type: boolean
+        answer:
+          description: The user's answer; omitted before the user answers.
+          allOf:
+            - $ref: '#/components/schemas/EventAnswer'
+        approved:
+          description: Whether the organizer or a co-organizer approved the user's answer.
+          type: boolean
+    EventVisibility:
+      description: |
+        Who sees an event: `public` every local user, `followers` the users who follow the organizer,
+        `following` the users the organizer follows, `mutuals` the users who follow the organizer and
+        whom the organizer follows, and `invited` the invited users only. The organizer, the
+        co-organizers, the invited users, and the users who answered always see it, unless a block
+        separates them from the organizer or a co-organizer.
+      type: string
+      enum:
+        - public
+        - followers
+        - following
+        - mutuals
+        - invited
     ExternalAuthorizationStart:
       description: Where the browser goes to sign in at a login provider.
       type: object
@@ -22379,6 +23179,7 @@ components:
         - max_article_images
         - auto_delete_default_keep_articles
         - auto_delete_max_allow_articles
+        - event_creators
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -24525,8 +25326,10 @@ components:
         deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
         permission (only the built-in admin role by default). `create_articles`: writing new
         articles with `createArticle` while the instance setting `article_authoring` is
-        `permission`, a member permission (only the built-in admin role by default). The others
-        guard no client API operation yet.
+        `permission`, a member permission (only the built-in admin role by default).
+        `create_events`: creating events on `POST /events` while the instance setting
+        `event_creators` is `permitted`, a member permission (only the built-in admin role by
+        default). The others guard no client API operation yet.
       type: string
       enum:
         - manage_reports
@@ -24554,6 +25357,7 @@ components:
         - create_invites
         - keep_posts_longer
         - create_articles
+        - create_events
     PickerCustomEmoji:
       description: |
         A local custom emoji that the picker offers. Picking it inserts
@@ -25050,6 +25854,20 @@ components:
         - `/api/v1/problems/voice-not-host-or-cohost` (403): the operation is for the host and the
           co-hosts of the room.
         - `/api/v1/problems/voice-too-many-cohosts` (409): the room has as many co-hosts as it can.
+        - `/api/v1/problems/event-not-eligible` (403): the user may not create events.
+        - `/api/v1/problems/event-not-organizer` (403): the operation is for the organizer and the
+          co-organizers of the event.
+        - `/api/v1/problems/event-organizer-only` (403): the operation is for the organizer of the event.
+        - `/api/v1/problems/event-closed` (409): the event was cancelled, or has started for an answer.
+        - `/api/v1/problems/event-full` (409): the attendees who answer `going` reached the capacity.
+        - `/api/v1/problems/event-voice-unavailable` (422): the event cannot be held in a voice chat
+          room: the voice chat is off, or its organizer may not host rooms.
+        - `/api/v1/problems/event-already-invited` (409): the account is already invited to the event.
+        - `/api/v1/problems/event-invalid-invitee` (422): the account cannot be invited to the event.
+        - `/api/v1/problems/event-invalid-coorganizer` (422): the account cannot co-organize the event.
+        - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
+          it can.
+        - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
         - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
           be searched (`Instance.full_text_search.available`).
         - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: A page of the attendees of an event, in the order of their answers.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./EventAttendee.yaml

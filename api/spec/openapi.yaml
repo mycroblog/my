@@ -116,6 +116,12 @@ tags:
       a `read:voice` or `write:voice` scope, except the summary of a room for the visitors who
       do not see it. Every operation answers 404 while the voice chat is off on the server, and
       for a room that the user does not see.
+  - name: events
+    description: |
+      The events of the local users: creating, changing, and cancelling them, answering them,
+      the attendees and their approval, the invitations, and the co-organizers. Nothing of them
+      is federated. The operations need a `read:events` or `write:events` scope, and answer 404
+      for an event that the user does not see.
   - name: client-errors
     description: The uncaught errors of the web client, which it reports to its own server.
   - name: admin-moderation
@@ -500,6 +506,24 @@ paths:
     $ref: ./paths/voice_rooms_{id}_summary.yaml
   /voice/history:
     $ref: ./paths/voice_history.yaml
+  /events:
+    $ref: ./paths/events.yaml
+  /events/{id}:
+    $ref: ./paths/events_{id}.yaml
+  /events/{id}/cancel:
+    $ref: ./paths/events_{id}_cancel.yaml
+  /events/{id}/rsvp:
+    $ref: ./paths/events_{id}_rsvp.yaml
+  /events/{id}/attendees:
+    $ref: ./paths/events_{id}_attendees.yaml
+  /events/{id}/attendees/{account_id}/approval:
+    $ref: ./paths/events_{id}_attendees_{account_id}_approval.yaml
+  /events/{id}/invitations:
+    $ref: ./paths/events_{id}_invitations.yaml
+  /events/{id}/invitations/{account_id}:
+    $ref: ./paths/events_{id}_invitations_{account_id}.yaml
+  /events/{id}/coorganizers/{account_id}:
+    $ref: ./paths/events_{id}_coorganizers_{account_id}.yaml
   /client_errors:
     $ref: ./paths/client_errors.yaml
   /admin/queue:
@@ -900,6 +924,7 @@ components:
             "read:bookmarks": Read the user's bookmarks.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
             "read:direct": Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
+            "read:events": Read the events the user sees, their attendees, and the invitations of the events the user organizes.
             "read:filters": Read the user's keyword filters.
             "read:finance": Read the totals of the instance's costs and income, as far as the user's roles allow.
             "read:follows": Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
@@ -913,6 +938,7 @@ components:
             "write:blocks": Block and unblock accounts.
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
+            "write:events": Create, change, and cancel events, answer them, approve their attendees, invite to them, and name their co-organizers.
             "write:favourites": Favourite posts and react to them with emoji, and take both back.
             "write:filters": Create, change, and delete the user's keyword filters.
             "write:follows": Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
@@ -961,6 +987,10 @@ components:
       $ref: ./components/parameters/DraftId.yaml
     ErrorGroupId:
       $ref: ./components/parameters/ErrorGroupId.yaml
+    EventAccountId:
+      $ref: ./components/parameters/EventAccountId.yaml
+    EventId:
+      $ref: ./components/parameters/EventId.yaml
     DomainActionId:
       $ref: ./components/parameters/DomainActionId.yaml
     HookDecisionId:
@@ -1785,6 +1815,46 @@ components:
       $ref: ./components/schemas/ErrorGroupSource.yaml
     ErrorGroupState:
       $ref: ./components/schemas/ErrorGroupState.yaml
+    Event:
+      $ref: ./components/schemas/Event.yaml
+    EventAnswer:
+      $ref: ./components/schemas/EventAnswer.yaml
+    EventAttendee:
+      $ref: ./components/schemas/EventAttendee.yaml
+    EventAttendeePage:
+      $ref: ./components/schemas/EventAttendeePage.yaml
+    EventCancelReason:
+      $ref: ./components/schemas/EventCancelReason.yaml
+    EventCancelRequest:
+      $ref: ./components/schemas/EventCancelRequest.yaml
+    EventCancellation:
+      $ref: ./components/schemas/EventCancellation.yaml
+    EventCreate:
+      $ref: ./components/schemas/EventCreate.yaml
+    EventInvitation:
+      $ref: ./components/schemas/EventInvitation.yaml
+    EventInvitationCreate:
+      $ref: ./components/schemas/EventInvitationCreate.yaml
+    EventInvitationPage:
+      $ref: ./components/schemas/EventInvitationPage.yaml
+    EventPage:
+      $ref: ./components/schemas/EventPage.yaml
+    EventPlace:
+      $ref: ./components/schemas/EventPlace.yaml
+    EventPlaceDisclosure:
+      $ref: ./components/schemas/EventPlaceDisclosure.yaml
+    EventPlaceKind:
+      $ref: ./components/schemas/EventPlaceKind.yaml
+    EventRSVP:
+      $ref: ./components/schemas/EventRSVP.yaml
+    EventState:
+      $ref: ./components/schemas/EventState.yaml
+    EventUpdate:
+      $ref: ./components/schemas/EventUpdate.yaml
+    EventViewer:
+      $ref: ./components/schemas/EventViewer.yaml
+    EventVisibility:
+      $ref: ./components/schemas/EventVisibility.yaml
     ExternalAuthorizationStart:
       $ref: ./components/schemas/ExternalAuthorizationStart.yaml
     ExternalConfirmationRequest:

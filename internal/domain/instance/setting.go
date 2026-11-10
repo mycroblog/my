@@ -116,6 +116,8 @@ const (
 	SettingVoiceRoomStarters              SettingKey = "voice_room_starters"
 	SettingVoicePublicSummary             SettingKey = "voice_public_summary"
 	SettingVoiceParticipantsRetentionDays SettingKey = "voice_participants_retention_days"
+	// SettingEventCreators decides who may create events (ADR-0161 §3).
+	SettingEventCreators SettingKey = "event_creators"
 
 	// The decision hooks (ADR-0147 §5): the mode of each hook, what each does when its plugin fails
 	// while it enforces, and how many days the records of the decisions stay.
@@ -342,6 +344,16 @@ type VoiceRoomStarters string
 const (
 	VoiceRoomStartersEveryone  VoiceRoomStarters = "everyone"  // every signed-in local user
 	VoiceRoomStartersPermitted VoiceRoomStarters = "permitted" // the holders of start_voice_rooms
+)
+
+// EventCreators is the value of SettingEventCreators (ADR-0161 §3): who may create events among
+// the local users who may organize them.
+type EventCreators string
+
+// Event creators values.
+const (
+	EventCreatorsEveryone  EventCreators = "everyone"  // every signed-in local user
+	EventCreatorsPermitted EventCreators = "permitted" // the holders of create_events
 )
 
 // InviteCreators is the value of SettingInviteCreators (ADR-0106 §14): who may create invites of
@@ -744,6 +756,11 @@ var definitions = []Definition{
 	{
 		Key: SettingHookDecisionsRetentionDays, Kind: KindInt, Default: strconv.Itoa(DefaultHookDecisionsRetentionDays), Min: MinHookDecisionsRetentionDays, Max: MaxRetention,
 		Doc: "How many days the records of the decisions of the decision hooks are kept. A decision stays longer while a post's sensitive mark rests on it, a retention hold preserves its account, or its author can still appeal it (ADR-0147 §6).",
+	},
+	{
+		Key: SettingEventCreators, Kind: KindEnum, Default: string(EventCreatorsEveryone),
+		Choices: []string{string(EventCreatorsEveryone), string(EventCreatorsPermitted)},
+		Doc:     "Who may create events: everyone (every signed-in local user who is not suspended or limited) or permitted (only the holders of the create_events permission) (ADR-0161 §3).",
 	},
 	{
 		Key: SettingInviteCreators, Kind: KindEnum, Default: string(InviteCreatorsPermitted),
@@ -1466,6 +1483,15 @@ func (s Settings) VoiceRoomStarters() VoiceRoomStarters {
 		return VoiceRoomStartersEveryone
 	}
 	return VoiceRoomStartersPermitted
+}
+
+// EventCreators returns the value of SettingEventCreators; an unexpected value is everyone, the
+// default.
+func (s Settings) EventCreators() EventCreators {
+	if v, _ := s.Value(SettingEventCreators); v == string(EventCreatorsPermitted) {
+		return EventCreatorsPermitted
+	}
+	return EventCreatorsEveryone
 }
 
 // InviteCreators returns the value of SettingInviteCreators; an unexpected value is permitted.

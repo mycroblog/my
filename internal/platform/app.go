@@ -32,6 +32,7 @@ import (
 	appdiagnostics "github.com/mycroblog/my/internal/app/diagnostics"
 	"github.com/mycroblog/my/internal/app/federation"
 	"github.com/mycroblog/my/internal/app/finance"
+	appgathering "github.com/mycroblog/my/internal/app/gathering"
 	"github.com/mycroblog/my/internal/app/graph"
 	apphook "github.com/mycroblog/my/internal/app/hook"
 	"github.com/mycroblog/my/internal/app/identity"
@@ -212,6 +213,8 @@ type App struct {
 	// VoiceRooms runs the voice chat rooms (ADR-0100) and their jobs; its use cases answer
 	// ErrDisabled while Voice is off.
 	VoiceRooms *appvoice.Service
+	// Events runs the events of the local users (ADR-0161).
+	Events *appgathering.Service
 	// Hooks runs the decision hooks (ADR-0147). A module that owns a subject takes it as apphook.Gate.
 	Hooks *apphook.Service
 	// mediaCheck is the hook media.check that the media processing and the posts share.
@@ -581,7 +584,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpSearch(ctx, cfg, repos.search, opts); err != nil {
 		return nil, err
 	}
-	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias, repos.voice, repos.translations); err != nil {
+	if err := a.setUpErasure(repos.identities, repos.accounts, repos.statuses, repos.follows, repos.feeds, repos.notifs, repos.medias, repos.voice, repos.translations, repos.gatherings); err != nil {
 		return nil, err
 	}
 	a.setUpRemoteActors(cfg, repos.feds)
@@ -598,6 +601,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpVoice(cfg, repos.voice); err != nil {
 		return nil, err
 	}
+	a.setUpGathering(repos.gatherings)
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {
 		return nil, err
 	}

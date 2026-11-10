@@ -193,6 +193,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadDirect() string {
 	return l.format("server:auth.authorize.scope.read_direct", nil)
 }
 
+// ServerAuthAuthorizeScopeReadEvents formats "server:auth.authorize.scope.read_events". Permission (OAuth scope read:events) listed on the authorization page.
+//
+//	en: Read the events you can see
+func (l *Localizer) ServerAuthAuthorizeScopeReadEvents() string {
+	return l.format("server:auth.authorize.scope.read_events", nil)
+}
+
 // ServerAuthAuthorizeScopeReadFilters formats "server:auth.authorize.scope.read_filters". Permission (OAuth scope read:filters) listed on the authorization page.
 //
 //	en: Read your keyword filters
@@ -289,6 +296,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteBookmarks() string {
 //	en: Request new custom emoji, and change and delete the ones you made
 func (l *Localizer) ServerAuthAuthorizeScopeWriteCustomEmojis() string {
 	return l.format("server:auth.authorize.scope.write_custom_emojis", nil)
+}
+
+// ServerAuthAuthorizeScopeWriteEvents formats "server:auth.authorize.scope.write_events". Permission (OAuth scope write:events) listed on the authorization page.
+//
+//	en: Create, change, and cancel events, answer them, and invite people to them
+func (l *Localizer) ServerAuthAuthorizeScopeWriteEvents() string {
+	return l.format("server:auth.authorize.scope.write_events", nil)
 }
 
 // ServerAuthAuthorizeScopeWriteFavourites formats "server:auth.authorize.scope.write_favourites". Permission (OAuth scope write:favourites) listed on the authorization page.
@@ -1818,6 +1832,83 @@ func (l *Localizer) ServerErrorsEmailAlreadyVerified() string {
 //	en: The email address is not suppressed.
 func (l *Localizer) ServerErrorsEmailNotSuppressed() string {
 	return l.format("server:errors.email.not_suppressed", nil)
+}
+
+// ServerErrorsEventAlreadyInvited formats "server:errors.event.already_invited". API error title for HTTP 409 when an organizer invites a user to an event a second time (a user is invited once, even after a revocation).
+//
+//	en: That user is already invited to the event.
+func (l *Localizer) ServerErrorsEventAlreadyInvited() string {
+	return l.format("server:errors.event.already_invited", nil)
+}
+
+// ServerErrorsEventClosed formats "server:errors.event.closed". API error title for HTTP 409 when an event was cancelled, or an answer comes after it started.
+//
+//	en: The event takes no more changes.
+func (l *Localizer) ServerErrorsEventClosed() string {
+	return l.format("server:errors.event.closed", nil)
+}
+
+// ServerErrorsEventFull formats "server:errors.event.full". API error title for HTTP 409 when a user answers going to an event whose attendees who answer going reached its capacity.
+//
+//	en: The event is full.
+func (l *Localizer) ServerErrorsEventFull() string {
+	return l.format("server:errors.event.full", nil)
+}
+
+// ServerErrorsEventInvalidCoorganizer formats "server:errors.event.invalid_coorganizer". API error title for HTTP 422 when the named co-organizer is not a local, active user, is the organizer, or is in a block relation with an organizer.
+//
+//	en: That user cannot co-organize the event.
+func (l *Localizer) ServerErrorsEventInvalidCoorganizer() string {
+	return l.format("server:errors.event.invalid_coorganizer", nil)
+}
+
+// ServerErrorsEventInvalidInvitee formats "server:errors.event.invalid_invitee". API error title for HTTP 422 when the invited user is not a local, active user, organizes the event, or is in a block relation with an organizer.
+//
+//	en: That user cannot be invited to the event.
+func (l *Localizer) ServerErrorsEventInvalidInvitee() string {
+	return l.format("server:errors.event.invalid_invitee", nil)
+}
+
+// ServerErrorsEventNotAttending formats "server:errors.event.not_attending". API error title for HTTP 422 when an organizer approves a user who did not answer going or maybe to the event.
+//
+//	en: That user has not answered going or maybe.
+func (l *Localizer) ServerErrorsEventNotAttending() string {
+	return l.format("server:errors.event.not_attending", nil)
+}
+
+// ServerErrorsEventNotEligible formats "server:errors.event.not_eligible". API error title for HTTP 403 when a user who may not organize events creates or revises one (ADR-0161 §3: a local, unrestricted account, with the create_events permission unless everyone may create events).
+//
+//	en: You may not create events.
+func (l *Localizer) ServerErrorsEventNotEligible() string {
+	return l.format("server:errors.event.not_eligible", nil)
+}
+
+// ServerErrorsEventNotOrganizer formats "server:errors.event.not_organizer". API error title for HTTP 403 when someone who neither organizes nor co-organizes an event revises it, invites to it, or approves its attendees.
+//
+//	en: Only the organizer or a co-organizer of the event may do this.
+func (l *Localizer) ServerErrorsEventNotOrganizer() string {
+	return l.format("server:errors.event.not_organizer", nil)
+}
+
+// ServerErrorsEventOrganizerOnly formats "server:errors.event.organizer_only". API error title for HTTP 403 when a co-organizer of an event changes its visibility, names or removes a co-organizer, or cancels it.
+//
+//	en: Only the organizer of the event may do this.
+func (l *Localizer) ServerErrorsEventOrganizerOnly() string {
+	return l.format("server:errors.event.organizer_only", nil)
+}
+
+// ServerErrorsEventTooManyCoorganizers formats "server:errors.event.too_many_coorganizers". API error title for HTTP 409 when the organizer names a co-organizer past the limit of three.
+//
+//	en: The event has as many co-organizers as it may.
+func (l *Localizer) ServerErrorsEventTooManyCoorganizers() string {
+	return l.format("server:errors.event.too_many_coorganizers", nil)
+}
+
+// ServerErrorsEventVoiceUnavailable formats "server:errors.event.voice_unavailable". API error title for HTTP 422 when an event gets a voice chat room as a place while voice chat is off or its organizer may not host rooms.
+//
+//	en: The event cannot be held in a voice chat room.
+func (l *Localizer) ServerErrorsEventVoiceUnavailable() string {
+	return l.format("server:errors.event.voice_unavailable", nil)
 }
 
 // ServerErrorsExportInProgress formats "server:errors.export.in_progress". API error title for HTTP 409 when the user asks for an archive of their data while another one is still being built.
