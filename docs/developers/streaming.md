@@ -35,6 +35,8 @@ From the top of the diagram down, between the client and the server:
 | `announcement` | An `Announcement` that was published or changed. |
 | `announcement_removed` | `{"id": "..."}`: an announcement no longer shows. |
 
+The user's keyword filters apply to the events as to the timelines and notifications they come from: a post that a filter with the action `hide` matches is never sent, nor is its notification, and a post that only `warn` filters match arrives with them in its `filtered`.
+
 The server sends a comment line (`: heartbeat`) every 30 seconds. Ignore events you do not know: new ones can appear ([stability](stability.md)).
 
 ## Staying connected

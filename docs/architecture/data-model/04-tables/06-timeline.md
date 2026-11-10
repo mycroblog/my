@@ -53,6 +53,24 @@
 - リストは投影ではないので、`timeline.RebuildProjections` は空にしません。再構築した `feed_follow_edges` に行のないメンバーだけを消します（§9）。
 - アカウントの消去（§8）は、本人のリスト（名前とメンバーを含む）と、ほかの人のリストの本人のメンバーの行を消します。
 
+#### キーワードフィルタ
+
+閲覧者が登録した語に一致した投稿を、選んだ文脈で畳むか除きます（FR-209、[ADR-0157](../../../adr/0157-keyword-filters.md)）。表は `timeline` が持ち、書くのも読むのも `timeline` だけです。照合は読み取りのたびに行い（§6）、結果は保存しません。
+
+| テーブル | 分類 | カラム | 制約 / 用途 |
+| --- | --- | --- | --- |
+| `keyword_filters` | リソース | `id`, `account_id`（持ち主）, `created_at` | PK `(id)`、インデックス `(account_id, id)`（持ち主の一覧・数・照合する語の読み取り・消去） |
+| `keyword_filter_settings` | 現在値 | `filter_id`, `title`（書記素で 1〜50）, `action`（`enum(warn, hide)`）, `expires_at`（NULL 可） | PK `(filter_id)`、部分インデックス `(expires_at) WHERE expires_at IS NOT NULL`（期限切れの掃除）。変更は上書きし、履歴を持たない（ADR-0020 規約 5） |
+| `keyword_filter_contexts` | 現在値 | `filter_id`, `context`（`enum(home, notifications, public, thread, account)`） | PK `(filter_id, context)`。1 つ以上。JSON にしない |
+| `keyword_filter_words` | 現在値 | `filter_id`, `normalized_word`, `word`（入力した語）, `whole_word`（`bool`）, `position`（入力の順） | PK `(filter_id, normalized_word)`。正規化（ADR-0157 §4: NFKC → 小文字 → カタカナをひらがな → 空白を 1 つ）した形で 1 つのフィルタに 1 度だけ |
+
+- 持ち主のコマンドが書きます。変更は設定を上書きし、文脈と語を同じトランザクションで消して入れ直します。削除は語・文脈・設定・フィルタを同じトランザクションで消します。
+- 上限は 1 人 100 フィルタ・1 フィルタ 100 語・1 人のすべてのフィルタで 1,000 語、1 語は正規化した後の書記素で 1〜100 です（ADR-0157 §9）。数は書く前に同じトランザクションで数えます。
+- `expires_at` は「この時刻まで効く」という値で、状態を表す日時ではありません（`feed_exclusions.expires_at` と同じ）。読み取りは NULL か `:now` より後のものだけを照合に使います。
+  期限を過ぎたフィルタは消さず、一覧で期限切れと示し、期限を延ばせば再び効きます。定期ジョブ `timeline.purge_keyword_filters`（1 時間ごと）が、期限から 30 日を過ぎたものを、1 回のトランザクションで 200 件ずつ消します。
+- 照合の読み取り（`ListActiveKeywordFilterWords`）は、閲覧者（ストリームでは購読者の全員）の、文脈に当たる有効なフィルタの語を、持ち主・フィルタ・`position` の順に 1 回で読みます。フィルタの無い閲覧者は 0 行で終わります。
+- 投影ではないので、`timeline.RebuildProjections` は空にしません。アカウントの消去（§8）で本人のフィルタ（設定・文脈・語を含む）を消します。
+
 #### ダイレクトメッセージ
 
 閲覧者が送った・受け取った `direct` の投稿を、会話（`content` の `status_conversations`、[ADR-0154](../../../adr/0154-conversations.md)）ごとにまとめます（FR-212、§6.4）。表は `timeline` が持ち、書くのも読むのも `timeline` だけです。

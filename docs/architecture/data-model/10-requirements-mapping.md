@@ -29,6 +29,7 @@
 | FR-205 通知 | M | `notifications`, `notification_dismissals`, `notification_read_markers`, `post_subscriptions`, `post_subscription_requests` |
 | FR-206 Web Push | S | `push_subscriptions`, `push_subscription_alerts` |
 | FR-210 通知の設定 | S | `notification_settings`、`user_tokens.unsubscribe_category` |
+| FR-209 キーワードフィルタ | S | `keyword_filters`, `keyword_filter_settings`, `keyword_filter_contexts`, `keyword_filter_words`（照合は読み取りのたび、§6） |
 | FR-211 リスト | S | `lists`, `list_names`, `list_members`, `feed_follow_edges`, `feed_entries` |
 | FR-212 ダイレクトメッセージの一覧 | S | `feed_conversation_participants`, `feed_conversations`, `feed_conversation_reads`, `feed_conversation_hides`, `status_conversations`, `conversation_merges` |
 | FR-208 言語フィルタ | S | `user_timeline_languages`, `feed_entries.language` |
