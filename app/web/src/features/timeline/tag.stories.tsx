@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The timeline of a hashtag (/tags/{tag}; FR-203) in the states of ADR-0079 §13
+// The timeline of a hashtag (/tags/{tag}; FR-203; web-client/screens/tag.md) in the states of ADR-0079 §13, with the
+// button that follows it (the viewer follows #sourdough in the default handlers)
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { type Schemas, statusPage } from "../../test/fixtures";
@@ -40,7 +41,10 @@ type Story = StoryObj<typeof meta>;
 /** The posts with the hashtag. */
 export const Normal: Story = {};
 
-/** To someone who is not signed in. */
+/** A hashtag the viewer does not follow yet: the follow button is the page's one main button. */
+export const NotFollowed: Story = { parameters: { screen: { path: "/tags/rye" } } };
+
+/** To someone who is not signed in: no follow button. */
 export const SignedOut: Story = { parameters: { screen: { signedIn: false } } };
 
 /** A hashtag nobody used yet. */

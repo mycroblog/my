@@ -8,6 +8,11 @@ export function profilePath(acct: string): string {
   return `/@${acct}`;
 }
 
+/** The page of a hashtag (without its `#`): its posts, and following it. */
+export function tagPath(tag: string): string {
+  return `/tags/${encodeURIComponent(tag)}`;
+}
+
 /** The pages of the accounts that follow an account, and that an account follows. */
 export function followListPath(acct: string, list: "followers" | "following"): string {
   return `/@${acct}/${list}`;

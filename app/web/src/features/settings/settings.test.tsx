@@ -814,6 +814,7 @@ describe("profile", () => {
       "Header image",
       "Name and bio",
       "Fields",
+      "Featured hashtags",
       "Followers and bots",
       "Discovery",
       "Search engines and AI",
@@ -1367,6 +1368,7 @@ describe("the settings page", () => {
       Relationships: [
         "/settings/follow-requests",
         "/settings/interaction-requests",
+        "/settings/followed-tags",
         "/settings/blocks",
         "/settings/mutes",
         "/settings/domain-mutes",

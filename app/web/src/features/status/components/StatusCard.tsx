@@ -301,6 +301,30 @@ function StatusCardContent({
         context: <PostCardContext kind="pin">{t("client:status.pin.label")}</PostCardContext>,
       })}
       {...(!pinned &&
+        view.boostedBy === null &&
+        view.followedTags.length > 0 && {
+          context: (
+            <PostCardContext kind="hashtag">
+              {/* Why a post of someone the viewer does not follow is on the home timeline, with the way to the
+                  hashtag's page, where the follow can be undone (ADR-0013 §28). The hashtags are the users' text. */}
+              {intl.formatMessage(
+                { id: "client:tag.followed_mark" },
+                {
+                  count: view.followedTags.length,
+                  tags: intl.formatList(
+                    view.followedTags.map((tag) => (
+                      <PostCardNameLink key={tag.name} href={tag.href}>
+                        {t("client:tag.title", { tag: tag.name })}
+                      </PostCardNameLink>
+                    )),
+                    { type: "conjunction" },
+                  ),
+                },
+              )}
+            </PostCardContext>
+          ),
+        })}
+      {...(!pinned &&
         view.boostedBy !== null && {
           context: (
             <PostCardContext kind="boost">

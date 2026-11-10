@@ -1,6 +1,154 @@
 {
+  "tag.featured.add": {
+    "defaultMessage": "ハッシュタグを追加",
+    "description": "Button in the profile settings that adds a row for one more featured hashtag."
+  },
+  "tag.featured.count": {
+    "defaultMessage": "{count, plural, other {投稿 # 件}}",
+    "description": "How many of an account's public and unlisted posts have a featured hashtag, on its profile, when none has a date."
+  },
+  "tag.featured.description": {
+    "defaultMessage": "プロフィールにこの順で並べるハッシュタグです ({max} 個まで)。それぞれに、公開と未収載の投稿のうちそのタグの付いた数が出ます。",
+    "description": "Description of the featured hashtags in the profile settings. {max} is the most, 10."
+  },
+  "tag.featured.field": {
+    "defaultMessage": "ハッシュタグ {number}",
+    "description": "Label of the field of one featured hashtag in the profile settings. {number} is its place, 1 to 10."
+  },
+  "tag.featured.move_down": {
+    "defaultMessage": "ハッシュタグ {number} を下へ",
+    "description": "Icon button and its tooltip that moves a featured hashtag one place down. {number} is its place."
+  },
+  "tag.featured.move_up": {
+    "defaultMessage": "ハッシュタグ {number} を上へ",
+    "description": "Icon button and its tooltip that moves a featured hashtag one place up. {number} is its place."
+  },
+  "tag.featured.moved": {
+    "defaultMessage": "{tag} を {position} 番目に動かしました。",
+    "description": "Announced once a featured hashtag moved. {tag} is the hashtag with its #; {position} its new place, from 1."
+  },
+  "tag.featured.moved_empty": {
+    "defaultMessage": "空のハッシュタグを {position} 番目に動かしました。",
+    "description": "Announced once an empty row of the featured hashtags moved. {position} is its new place, from 1."
+  },
+  "tag.featured.remove": {
+    "defaultMessage": "ハッシュタグ {number} を外す",
+    "description": "Button in the profile settings that removes one featured hashtag. {number} is its place."
+  },
+  "tag.featured.save_failed": {
+    "defaultMessage": "注目のハッシュタグを保存できませんでした: {reason}",
+    "description": "Result of saving the profile settings when the featured hashtags were not saved. {reason} says why."
+  },
+  "tag.featured.stats": {
+    "defaultMessage": "{count, plural, other {投稿 # 件}}、最後は {date}",
+    "description": "How many of an account's public and unlisted posts have a featured hashtag, and when one last had it, on its profile. {date} is a formatted date."
+  },
+  "tag.featured.title": {
+    "defaultMessage": "注目のハッシュタグ",
+    "description": "Heading of the hashtags a profile features, on the profile and in the profile settings."
+  },
+  "tag.featured.too_many": {
+    "defaultMessage": "注目のハッシュタグは {max} 個までです。",
+    "description": "Result of saving the profile settings with too many featured hashtags. {max} is the most, 10."
+  },
+  "tag.follow": {
+    "defaultMessage": "フォロー",
+    "description": "Button on a hashtag's page that follows the hashtag, so that its posts join the user's home timeline."
+  },
+  "tag.follow.description": {
+    "defaultMessage": "フォローすると、フォローしていない人の公開の投稿もホームに入ります。",
+    "description": "Sentence under the follow button of a hashtag's page, saying what following the hashtag does."
+  },
+  "tag.follow.failed": {
+    "defaultMessage": "{tag} のフォローを変更できませんでした: {reason}",
+    "description": "Toast when following or unfollowing a hashtag failed. {tag} is the hashtag with its #; {reason} says why."
+  },
+  "tag.follow.too_many": {
+    "defaultMessage": "フォローできるハッシュタグは {max} 個までです。ほかのものをフォローするには、どれかのフォローをやめてください。",
+    "description": "Shown when the user follows the most hashtags allowed. {max} is that number, 100."
+  },
+  "tag.followed": {
+    "defaultMessage": "{tag} をフォローしました。",
+    "description": "Announced, and shown above the list of followed hashtags, once the user followed a hashtag. {tag} is the hashtag with its #, for example '#cats'."
+  },
+  "tag.followed_list.count": {
+    "defaultMessage": "{count, plural, other {フォローしているハッシュタグ {max} 個中 # 個}}",
+    "description": "What the count beside the list of followed hashtags means, read aloud. {count} is how many the user follows; {max} is the most they can, 100."
+  },
+  "tag.followed_list.description": {
+    "defaultMessage": "これらのハッシュタグの付いた公開の投稿は、フォローしていない人のものもホームに入ります。ブーストは入りません。",
+    "description": "Description of the list of followed hashtags in the settings."
+  },
+  "tag.followed_list.empty": {
+    "defaultMessage": "フォローしているハッシュタグはありません",
+    "description": "Heading of the empty list of followed hashtags."
+  },
+  "tag.followed_list.empty.description": {
+    "defaultMessage": "ここか、ハッシュタグのページでフォローすると、その投稿がホームに入ります。",
+    "description": "Sentence of the empty list of followed hashtags, which leads to following one."
+  },
+  "tag.followed_list.follow": {
+    "defaultMessage": "フォローする",
+    "description": "Button that submits the form that follows a hashtag, in the settings."
+  },
+  "tag.followed_list.follow_failed": {
+    "defaultMessage": "ハッシュタグをフォローできませんでした: {reason}",
+    "description": "Error of the form that follows a hashtag. {reason} says why."
+  },
+  "tag.followed_list.list.title": {
+    "defaultMessage": "フォローしているハッシュタグ",
+    "description": "Heading of the list of the hashtags the user follows, in the settings."
+  },
+  "tag.followed_list.new.title": {
+    "defaultMessage": "ハッシュタグをフォロー",
+    "description": "Button that opens the form that follows a hashtag, and the title of that form, in the settings."
+  },
+  "tag.followed_list.since": {
+    "defaultMessage": "{date} にフォロー",
+    "description": "When the user followed a hashtag, on its row in the settings. {date} is a formatted date."
+  },
+  "tag.followed_list.title": {
+    "defaultMessage": "フォローしたハッシュタグ",
+    "description": "Title of the settings page and menu item that lists the hashtags the user follows."
+  },
+  "tag.followed_list.unfollow": {
+    "defaultMessage": "フォローをやめる",
+    "description": "Button on a row of the list of followed hashtags that unfollows the hashtag."
+  },
+  "tag.followed_list.unfollow_failed": {
+    "defaultMessage": "{tag} のフォローをやめられませんでした: {reason}",
+    "description": "Shown above the list of followed hashtags when unfollowing one failed. {tag} is the hashtag with its #; {reason} says why."
+  },
+  "tag.followed_mark": {
+    "defaultMessage": "{count, plural, other {フォロー中のハッシュタグ}} {tags}",
+    "description": "Line above a post on the home timeline that is there only because it has a hashtag the user follows, from someone the user does not follow. {tags} is the hashtags with their #, as links, for example '#cats' or '#cats and #dogs'; {count} is how many."
+  },
+  "tag.following": {
+    "defaultMessage": "フォロー中",
+    "description": "Button on a hashtag's page while the user follows the hashtag; pressing it unfollows the hashtag."
+  },
+  "tag.name": {
+    "defaultMessage": "ハッシュタグ",
+    "description": "Label of the field where the user types a hashtag to follow."
+  },
+  "tag.name.description": {
+    "defaultMessage": "# は付けても付けなくてもかまいません (#パン など)。文字・数字・_ が使えます。",
+    "description": "Help under the field where the user types a hashtag."
+  },
+  "tag.name.invalid": {
+    "defaultMessage": "ハッシュタグには文字・数字・_ だけが使え、文字を 1 つ以上含みます。",
+    "description": "Error of a hashtag field when the text is not a hashtag."
+  },
+  "tag.name.required": {
+    "defaultMessage": "ハッシュタグを入力してください。",
+    "description": "Error of the hashtag field when it is empty."
+  },
   "tag.title": {
     "defaultMessage": "#{tag}",
     "description": "Heading and document title of the page with the posts of one hashtag. {tag} is the hashtag without the #, for example 'cats'."
+  },
+  "tag.unfollowed": {
+    "defaultMessage": "{tag} のフォローをやめました。",
+    "description": "Announced once the user unfollowed a hashtag. {tag} is the hashtag with its #, for example '#cats'."
   }
 }
