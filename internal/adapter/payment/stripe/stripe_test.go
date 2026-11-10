@@ -3,6 +3,7 @@
 package stripe
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -61,7 +62,7 @@ func TestPaymentProviderContract(t *testing.T) {
 		p, f, _ := newOnFake(t, s)
 		return supporterstest.PaymentUnderTest{
 			Provider: p, Deliver: f.deliver(testSigningKey), CheckoutHosts: []string{CheckoutHost}, PortalHosts: []string{PortalHost},
-			TimedSignature: true,
+			TimedSignature: true, Expected: &supporterstest.PaymentExpected{Money: expectedMoney(s)},
 			DeclineChanges: func(sub supporters.SubscriptionRef, declined bool) {
 				f.mu.Lock()
 				defer f.mu.Unlock()
@@ -77,6 +78,25 @@ func TestPaymentProviderContract(t *testing.T) {
 			},
 		}
 	})
+}
+
+// expectedMoney is what the adapter reports of the money of s on the fake: the movements of the
+// scenario, each but a fee naming the PaymentIntent of its charge, which the fake names after the
+// charge when the scenario names none.
+func expectedMoney(s supporterstest.PaymentScenario) []supporters.MoneyMovement {
+	all := supporterstest.PaymentMovements(s)
+	intents := map[string]supporters.PaymentRef{}
+	for i, m := range s.Money {
+		switch {
+		case m.Kind == supporters.MoneyFee:
+		case m.Kind.HasParent():
+			all[i].Payment = cmp.Or(m.Payment, intents[m.ParentID])
+		default:
+			intents[m.ID] = cmp.Or(m.Payment, supporters.PaymentRef("pi_"+cmp.Or(m.Object, m.ID)))
+			all[i].Payment = intents[m.ID]
+		}
+	}
+	return all
 }
 
 func scenario() supporterstest.PaymentScenario {

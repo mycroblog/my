@@ -167,6 +167,9 @@ func (f *fakeAPI) load(s supporterstest.PaymentScenario) {
 			"url": nil, "expires_at": s.Now.Add(-time.Hour).Unix(),
 		}
 	}
+	for _, c := range s.OneTimeCheckouts {
+		f.checkouts[string(c.Ref)] = oneTimeSession(c, s.Now.Add(-time.Hour))
+	}
 	objects := map[string]string{}
 	for _, m := range s.Money {
 		objects[m.ID] = cmp.Or(m.Object, m.ID)
@@ -176,6 +179,23 @@ func (f *fakeAPI) load(s supporterstest.PaymentScenario) {
 	}
 	for _, n := range s.Changes {
 		f.events = append(f.events, f.event(n, false, n.OccurredAt))
+	}
+}
+
+// oneTimeSession is a session in payment mode in the state of a result.
+func oneTimeSession(c supporters.OneTimeResult, expires time.Time) obj {
+	status := map[supporters.OneTimeStatus]string{
+		supporters.OneTimeOpen: "open", supporters.OneTimePaid: "complete", supporters.OneTimeExpired: "expired",
+	}[c.Status]
+	paid := "unpaid"
+	if c.Status == supporters.OneTimePaid {
+		paid = "paid"
+	}
+	return obj{
+		"id": string(c.Ref), "object": "checkout.session", "mode": "payment", "status": status, "payment_status": paid,
+		"client_reference_id": c.LocalID, "metadata": obj{metaTipID: c.LocalID},
+		"customer": nil, "subscription": nil, "payment_intent": nullable(string(c.Payment)),
+		"amount_total": c.AmountMinor, "currency": strings.ToLower(c.Currency), "url": nil, "expires_at": expires.Unix(),
 	}
 }
 
@@ -232,7 +252,7 @@ func (f *fakeAPI) putMoney(s supporterstest.PaymentScenario, i int, m supporters
 	pi := ""
 	switch m.Kind {
 	case supporters.MoneyPayment:
-		pi = "pi_" + object
+		pi = cmp.Or(string(m.Payment), "pi_"+object)
 		f.charges[object] = obj{
 			"id": object, "object": "charge", "amount": m.GrossMinor, "currency": cur, "status": "succeeded",
 			"balance_transaction": ref{id: btID, get: f.btGetter(btID)}, "payment_intent": pi,
@@ -265,14 +285,14 @@ func (f *fakeAPI) putMoney(s supporterstest.PaymentScenario, i int, m supporters
 		parent := objects[m.ParentID]
 		f.refunds = append(f.refunds, obj{
 			"id": object, "object": "refund", "amount": -m.GrossMinor, "currency": cur, "status": "succeeded",
-			"charge": ref{id: parent, get: f.getter(f.charges, parent)}, "payment_intent": "pi_" + parent,
+			"charge": ref{id: parent, get: f.getter(f.charges, parent)}, "payment_intent": f.chargeIntent(parent),
 			"balance_transaction": btID,
 		})
 	case supporters.MoneyChargeback, supporters.MoneyChargebackReversal:
 		parent := objects[m.ParentID]
 		f.disputes[object] = obj{
 			"id": object, "object": "dispute", "amount": -m.GrossMinor, "currency": cur, "status": "needs_response",
-			"charge": ref{id: parent, get: f.getter(f.charges, parent)}, "payment_intent": "pi_" + parent,
+			"charge": ref{id: parent, get: f.getter(f.charges, parent)}, "payment_intent": f.chargeIntent(parent),
 		}
 	}
 	if m.Pending {
@@ -301,6 +321,14 @@ func (f *fakeAPI) putMoney(s supporterstest.PaymentScenario, i int, m supporters
 			"source": source,
 		},
 	})
+}
+
+// chargeIntent is the payment intent of a charge, which its refunds and disputes name.
+func (f *fakeAPI) chargeIntent(charge string) string {
+	if pi, ok := f.charges[charge]["payment_intent"].(string); ok {
+		return pi
+	}
+	return "pi_" + charge
 }
 
 func (f *fakeAPI) getter(m map[string]obj, id string) func() obj { return func() obj { return m[id] } }
@@ -845,9 +873,13 @@ func (f *fakeAPI) serveCheckouts(w http.ResponseWriter, r *http.Request, parts [
 	case r.Method == "POST" && len(parts) == 2 && parts[1] == "sessions":
 		form := r.Form
 		local := form.Get("client_reference_id")
+		if form.Get("mode") == "payment" {
+			f.createOneTime(w, r)
+			return
+		}
 		switch {
 		case form.Get("mode") != "subscription":
-			f.bad(w, "mode must be subscription")
+			f.bad(w, "mode must be subscription or payment")
 			return
 		case f.price(form.Get("line_items[0][price]")) == nil:
 			f.missing(w, "price")
@@ -913,6 +945,82 @@ func (f *fakeAPI) serveCheckouts(w http.ResponseWriter, r *http.Request, parts [
 	default:
 		f.missing(w, "route")
 	}
+}
+
+// createOneTime creates a session in payment mode with one line item priced inline, as the
+// adapter asks for a tip: cards only, without Adaptive Pricing, customer, or submit_type, our ID on
+// the session and its payment, and an amount within Stripe's limits.
+func (f *fakeAPI) createOneTime(w http.ResponseWriter, r *http.Request) {
+	form := r.Form
+	local := form.Get("client_reference_id")
+	amount, err := strconv.ParseInt(form.Get("line_items[0][price_data][unit_amount]"), 10, 64)
+	cur := form.Get("line_items[0][price_data][currency]")
+	minimum, known := minimumAmounts[strings.ToUpper(cur)]
+	switch {
+	case !slices.Equal(formList(form, "allowed_payment_method_types"), []string{"card"}):
+		f.bad(w, "a one-time checkout takes cards only")
+		return
+	case form.Get("adaptive_pricing[enabled]") != "false":
+		f.bad(w, "Adaptive Pricing must be off")
+		return
+	case form.Get("line_items[0][price]") != "" || form.Get("line_items[0][quantity]") != "1" || form.Get("line_items[1][quantity]") != "":
+		f.bad(w, "one line item priced inline")
+		return
+	case err != nil || cur != strings.ToLower(cur) || !known || amount < minimum || amount > 99_999_999:
+		f.fail(w, http.StatusBadRequest, "invalid_request_error", "amount_too_small", "the amount is outside Stripe's limits")
+		return
+	case form.Get("line_items[0][price_data][product_data][name]") == "":
+		f.bad(w, "the line item has no name")
+		return
+	case !strings.Contains(form.Get("success_url"), "{CHECKOUT_SESSION_ID}"):
+		f.bad(w, "success_url without the checkout's ID")
+		return
+	case local == "" || form.Get("metadata[my_tip_id]") != local || form.Get("payment_intent_data[metadata][my_tip_id]") != local:
+		f.bad(w, "our ID is not on the checkout and its payment")
+		return
+	case form.Get("customer") != "" || form.Get("customer_creation") == "always" || form.Get("submit_type") != "":
+		f.bad(w, "a tip creates no customer and keeps the default button")
+		return
+	}
+	exp, _ := strconv.ParseInt(form.Get("expires_at"), 10, 64)
+	if d := time.Unix(exp, 0).Sub(f.now()); d < 30*time.Minute || d > 24*time.Hour {
+		f.bad(w, "expires_at must be 30 minutes to 24 hours from now")
+		return
+	}
+	id := f.nextID("cs_test")
+	c := oneTimeSession(supporters.OneTimeResult{Ref: supporters.CheckoutRef(id), Status: supporters.OneTimeOpen, LocalID: local}, time.Unix(exp, 0))
+	c["url"] = cmp.Or(f.checkoutURL, "https://"+CheckoutHost+"/c/pay/"+id)
+	c["metadata"], c["customer_email"], c["locale"] = metadata(form), nullable(form.Get("customer_email")), form.Get("locale")
+	c["success_url"], c["cancel_url"], c["amount_total"], c["currency"] = form.Get("success_url"), form.Get("cancel_url"), amount, cur
+	f.checkouts[id] = c
+	f.respond(w, r, c)
+}
+
+// payOneTime completes an open session in payment mode as the hosted page does with a card that
+// succeeds: a PaymentIntent and its charge, booked as a balance transaction. It returns the
+// PaymentIntent's ID.
+func (f *fakeAPI) payOneTime(t *testing.T, id string) string {
+	t.Helper()
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	c := f.checkouts[id]
+	if c == nil || c["mode"] != "payment" || c["status"] != "open" {
+		t.Fatalf("session %s is %v, want an open one-time checkout", id, c)
+	}
+	pi, charge, bt := f.nextID("pi"), f.nextID("ch"), f.nextID("txn")
+	amount, cur := c["amount_total"].(int64), c["currency"].(string)
+	f.intents[pi] = obj{"id": pi, "object": "payment_intent", "latest_charge": charge, "status": "succeeded", "metadata": c["metadata"]}
+	f.charges[charge] = obj{
+		"id": charge, "object": "charge", "amount": amount, "currency": cur, "status": "succeeded",
+		"balance_transaction": ref{id: bt, get: f.btGetter(bt)}, "payment_intent": pi,
+	}
+	created := f.now().Unix()
+	f.bts = append(f.bts, &fakeBT{source: charge, created: created, seq: len(f.bts), o: obj{
+		"id": bt, "object": "balance_transaction", "amount": amount, "fee": 0, "net": amount, "currency": cur, "created": created,
+		"reporting_category": "charge", "type": "charge", "status": "available", "source": ref{id: charge, get: f.getter(f.charges, charge)},
+	}})
+	c["status"], c["payment_status"], c["payment_intent"], c["url"] = "complete", "paid", pi, nil
+	return pi
 }
 
 func (f *fakeAPI) portal(w http.ResponseWriter, r *http.Request, parts []string) {

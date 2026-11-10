@@ -129,9 +129,10 @@ func moneyKind(bt *stripe.BalanceTransaction) (supporters.MoneyKind, bool) {
 	return "", false
 }
 
-// movement maps a balance transaction read with its source expanded. A payment belongs to the
-// subscription of its invoice and covers the invoice's period; a refund, a chargeback, or a
-// reversal belongs to the payment of its charge.
+// movement maps a balance transaction read with its source expanded. A payment names its
+// PaymentIntent, belongs to the subscription of its invoice, and covers the invoice's period; a
+// payment of no invoice, such as a tip's, belongs to no subscription. A refund, a chargeback, or a
+// reversal belongs to the payment of its charge, and names the same PaymentIntent.
 func (p *Provider) movement(ctx context.Context, bt *stripe.BalanceTransaction) (supporters.MoneyMovement, bool, error) {
 	kind, ok := moneyKind(bt)
 	if !ok {
@@ -176,6 +177,7 @@ func (p *Provider) movement(ctx context.Context, bt *stripe.BalanceTransaction) 
 			pi = paymentIntentID(parent.chargePI)
 		}
 	}
+	m.Payment = supporters.PaymentRef(pi)
 	if pi != "" {
 		l, err := p.link(ctx, pi)
 		if err != nil {
@@ -326,8 +328,9 @@ func (c *linkCache) put(k string, l subscriptionLink) {
 	c.m[k] = l
 }
 
-// Resolve implements supporters.PaymentProvider. A subscription's or a checkout's notice names
-// what to re-read. A notice of money re-reads the balance transactions of its object: of an
+// Resolve implements supporters.PaymentProvider. A subscription's notice names what to re-read;
+// a checkout's reads the session, whose mode tells a one-time checkout (Change.OneTimeCheckout)
+// from a subscription's (Change.Checkout). A notice of money re-reads the balance transactions of its object: of an
 // invoice, those of the charges that paid it, with its subscription; of a charge, its payment
 // and its refunds'; of a refund or a dispute, its own. The subscriptions of the movements are
 // re-read too.
@@ -337,7 +340,7 @@ func (p *Provider) Resolve(ctx context.Context, n supporters.Notice) (supporters
 	case supporters.NoticeSubscription:
 		ch.Subscriptions = []supporters.SubscriptionRef{supporters.SubscriptionRef(n.ObjectID)}
 	case supporters.NoticeCheckout:
-		ch.Checkout = supporters.CheckoutRef(n.ObjectID)
+		return p.resolveCheckout(ctx, supporters.CheckoutRef(n.ObjectID))
 	case supporters.NoticeMoney:
 		var err error
 		ch, err = p.resolveMoney(ctx, n.ObjectID)
