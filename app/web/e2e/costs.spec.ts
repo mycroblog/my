@@ -134,6 +134,7 @@ async function serveCosts(
     finance_visibility: visibility,
     income_visibility: income,
     supporters_enabled: false,
+    tips_enabled: false,
     supporter_list_visibility: "off",
     voice_enabled: false,
     voice_room_starters: "permitted",

@@ -5,10 +5,11 @@ description: |
   date in the provider's reporting time zone. A payment carries the billing period it pays
   for (`covers_starts_on` to `covers_ends_on`) when it has one; a refund, a chargeback, or a
   reversal carries the provider ID of its payment (`parent_provider_id`). `subscription_id`
-  names the subscription while it is known, and `account_id` and `username` its subscriber's
-  local account while the account exists; a fee of no subscription has none of them.
+  names the subscription while it is known, and `tip_id` the tip of a `one_time` movement while
+  its record is kept; `account_id` and `username` are the local account of the subscriber or of
+  the user who paid the tip while the account exists. A fee of no subscription has none of them.
 type: object
-required: [id, provider, provider_id, kind, occurred_at, occurred_on, gross, fee, net, recorded_at]
+required: [id, provider, provider_id, kind, source, occurred_at, occurred_on, gross, fee, net, recorded_at]
 properties:
   id:
     $ref: ./Id.yaml
@@ -18,14 +19,18 @@ properties:
     type: string
   kind:
     $ref: ./IncomeKind.yaml
+  source:
+    $ref: ./IncomeSource.yaml
   parent_provider_id:
     type: string
   subscription_id:
     $ref: ./Id.yaml
+  tip_id:
+    $ref: ./Id.yaml
   account_id:
     $ref: ./Id.yaml
   username:
-    description: The subscriber's username; omitted with `account_id` for an erased account.
+    description: The username of the subscriber or of the user who paid the tip; omitted with `account_id` for an erased account.
     type: string
   occurred_at:
     type: string

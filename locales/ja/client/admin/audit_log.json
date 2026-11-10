@@ -459,6 +459,18 @@
     "defaultMessage": "課金の機能を無効化",
     "description": "Kind of an audited operation: an administrator disabled the supporter program."
   },
+  "admin.audit_log.action.supporter_tips_enabled": {
+    "defaultMessage": "チップを有効化",
+    "description": "Kind of an audited operation: an administrator enabled the tips, one-time payments to the server's operation."
+  },
+  "admin.audit_log.action.supporter_tips_revised": {
+    "defaultMessage": "チップの金額を変更",
+    "description": "Kind of an audited operation: an administrator changed the amounts that the tips offer."
+  },
+  "admin.audit_log.action.supporter_tips_disabled": {
+    "defaultMessage": "チップを無効化",
+    "description": "Kind of an audited operation: an administrator disabled the tips."
+  },
   "admin.audit_log.action.supporter_plan_created": {
     "defaultMessage": "プランを作成",
     "description": "Kind of an audited operation: an administrator created a supporter plan."

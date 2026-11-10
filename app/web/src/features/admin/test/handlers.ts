@@ -506,9 +506,11 @@ function emptyIncomeTotals(url: URL): Schemas["AdminIncomeTotals"] {
         fee: [],
         net: [],
         balance: [],
+        net_by_source: [],
       },
     ],
     plans: [],
+    tips: false,
     rules: { week_start: "monday", providers: [], amortize_after_days: 31 },
   };
 }

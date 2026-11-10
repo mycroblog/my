@@ -74,6 +74,12 @@ func (s *Server) incomeTotals(ctx context.Context, q costTotalsQuery, v incomeVi
 			return IncomeTotals{}, nil, err
 		}
 		out.Plans = &plans
+		// The tips show as a row of their own, without their amount or their count (ADR-0162 §16).
+		tips, err := s.tipsEnabled(ctx)
+		if err != nil {
+			return IncomeTotals{}, nil, err
+		}
+		out.Tips = &tips
 	}
 	return out, nil, nil
 }
@@ -221,14 +227,22 @@ func (s *Server) GetIncomeTotals(ctx context.Context, req GetIncomeTotalsRequest
 	if err != nil {
 		return nil, err
 	}
+	tips, err := s.tipsEnabled(ctx)
+	if err != nil {
+		return nil, err
+	}
 	out := AdminIncomeTotals{
 		Granularity: params.Granularity, Basis: basis, Periods: make([]AdminIncomePeriodTotal, 0, len(totals)), Plans: plans,
-		Rules: s.incomeRules(),
+		Tips: tips, Rules: s.incomeRules(),
 	}
 	for _, t := range totals {
+		bySource := make([]IncomeSourceNet, 0, len(t.NetBySource))
+		for _, src := range t.NetBySource {
+			bySource = append(bySource, IncomeSourceNet{Source: IncomeSource(src.Source), Net: newMoneys(src.Net)})
+		}
 		out.Periods = append(out.Periods, AdminIncomePeriodTotal{
 			Label: t.Period.Label, StartsOn: t.Period.Range.Start.String(), EndsOn: t.Period.Range.End.String(),
-			Gross: newMoneys(t.Gross), Fee: newMoneys(t.Fee), Net: newMoneys(t.Net), Balance: newMoneys(t.Balance),
+			Gross: newMoneys(t.Gross), Fee: newMoneys(t.Fee), Net: newMoneys(t.Net), Balance: newMoneys(t.Balance), NetBySource: bySource,
 		})
 	}
 	cache := cacheNoStore
@@ -287,7 +301,7 @@ func (s *Server) ListIncomeMovements(ctx context.Context, req ListIncomeMovement
 
 func newIncomeMovement(e appfinance.IncomeEntry) IncomeMovement {
 	out := IncomeMovement{
-		Id: e.ID, Provider: e.Provider, ProviderId: e.ProviderID, Kind: IncomeKind(e.Kind), OccurredAt: e.OccurredAt.UTC(),
+		Id: e.ID, Provider: e.Provider, ProviderId: e.ProviderID, Kind: IncomeKind(e.Kind), Source: IncomeSource(e.Source), OccurredAt: e.OccurredAt.UTC(),
 		OccurredOn: e.OccurredOn.String(), Gross: newMoney(e.Gross), Fee: newMoney(e.Fee), Net: newMoney(e.Net),
 		RecordedAt: e.RecordedAt.UTC(),
 	}
@@ -296,6 +310,9 @@ func newIncomeMovement(e appfinance.IncomeEntry) IncomeMovement {
 	}
 	if e.SubscriptionID != "" {
 		out.SubscriptionId = &e.SubscriptionID
+	}
+	if e.TipID != "" {
+		out.TipId = &e.TipID
 	}
 	if e.Subscriber.AccountID != "" {
 		out.AccountId, out.Username = &e.Subscriber.AccountID, &e.Subscriber.Username

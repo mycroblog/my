@@ -127,6 +127,8 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		Costs: a.Finance, Income: a.Finance, FundingMeters: a.Finance,
 		// The supporter program (ADR-0072) and the page of its commerce disclosures (§13).
 		Supporters: a.Supporters, OwnSupporters: a.Supporters, CommerceDisclosurePath: web.PathAboutCommerceDisclosure,
+		// The tips (ADR-0162).
+		Tips: a.Supporters,
 		// The payment provider's state and the reconciliation by hand (ADR-0074 §4).
 		Payments:    a.paymentsAPI(),
 		RateLimiter: a.RateLimiter, AccountLimit: accountLimit, ClientLimit: clientLimits(func(ctx context.Context) (map[string]int64, error) {

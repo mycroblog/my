@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: The amounts that a tip may be, smallest first, all in one currency.
+type: object
+required: [amounts]
+properties:
+  amounts:
+    type: array
+    minItems: 1
+    maxItems: 6
+    items:
+      $ref: ./Money.yaml

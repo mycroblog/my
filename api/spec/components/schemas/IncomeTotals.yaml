@@ -2,8 +2,10 @@
 description: |
   The income totals over the periods from the one that holds `from` to the one that holds
   `to`, oldest first. `plans`, the number of members of each supporter plan
-  now, is present only where the plans are shown. No answer carries individual payments, the
-  subscribers, the amounts of each plan, or the gross and the fees.
+  now, is present only where the plans are shown, with `tips`, whether the totals include the
+  tips because the server takes them now. No answer carries individual payments, the
+  subscribers, the amounts of each plan, the amount or the number of the tips, or the gross and
+  the fees.
 type: object
 required: [granularity, basis, periods, rules]
 properties:
@@ -19,5 +21,7 @@ properties:
     type: array
     items:
       $ref: ./IncomePlanCount.yaml
+  tips:
+    type: boolean
   rules:
     $ref: ./IncomeTotalsRules.yaml

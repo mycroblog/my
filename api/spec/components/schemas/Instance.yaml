@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: Public information about the instance.
 type: object
-required: [domain, name, version, source_url, registrations, login_providers_only, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, link_cards, link_cards_ignore_robots_txt, finance_visibility, income_visibility, supporters_enabled, supporter_list_visibility, voice_enabled, voice_room_starters, full_text_search, translation, single_user]
+required: [domain, name, version, source_url, registrations, login_providers_only, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, link_cards, link_cards_ignore_robots_txt, finance_visibility, income_visibility, supporters_enabled, tips_enabled, supporter_list_visibility, voice_enabled, voice_room_starters, full_text_search, translation, single_user]
 properties:
   domain:
     description: The domain that serves the instance.
@@ -84,6 +84,11 @@ properties:
     description: |
       Whether the supporter program is enabled: its plans (`GET /instance/supporter_plans`)
       and the subscriptions show only then.
+    type: boolean
+  tips_enabled:
+    description: |
+      Whether the server takes tips, one-time payments to its operation with nothing in return:
+      their amounts (`GET /instance/tip_amounts`) and the tips show only then.
     type: boolean
   supporter_list_visibility:
     $ref: ./InstanceAudience.yaml

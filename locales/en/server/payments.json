@@ -162,5 +162,9 @@
   "payments.test_mode": {
     "defaultMessage": "Test mode: nothing is charged.",
     "description": "Banner of the PAY.JP checkout and card pages with test keys."
+  },
+  "payments.tip_description": {
+    "defaultMessage": "Tip for {server}",
+    "description": "Line item of the payment provider's checkout of a tip, a one-time payment to the server's operation with nothing in return (ADR-0162 §1). {server} is the name of the server. Never word it as a donation."
   }
 }

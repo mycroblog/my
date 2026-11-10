@@ -144,6 +144,7 @@ function incomeTotals(url: URL): Schemas["AdminIncomeTotals"] {
         fee: [yen(fee)],
         net: [yen(gross - fee)],
         balance: [yen(gross - fee - costs)],
+        net_by_source: [{ source: "subscription", net: [yen(gross - fee)] }],
       };
     }),
     plans: [
@@ -151,6 +152,7 @@ function incomeTotals(url: URL): Schemas["AdminIncomeTotals"] {
       { plan_id: "0199f0e0-0000-7000-8000-00000000aa02", name: "Patron", members: 9 },
       { plan_id: "0199f0e0-0000-7000-8000-00000000aa03", name: "Early bird", members: 0 },
     ],
+    tips: false,
     rules: {
       week_start: "monday",
       providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }],
@@ -244,6 +246,7 @@ const movements: Schemas["IncomeMovement"][] = [
     provider: "stripe",
     provider_id: `txn_${String(index)}`,
     kind: "payment",
+    source: "subscription",
     subscription_id: `0199f0e0-0000-7000-8000-00000000cc0${String(index)}`,
     account_id: `0199f0e0-0000-7000-8000-00000000dd0${String(index)}`,
     username,
@@ -261,6 +264,7 @@ const movements: Schemas["IncomeMovement"][] = [
     provider: "stripe",
     provider_id: "txn_fee",
     kind: "fee",
+    source: "unknown",
     occurred_at: "2026-10-11T00:00:00Z",
     occurred_on: "2026-10-11",
     gross: yen(0),
@@ -273,6 +277,7 @@ const movements: Schemas["IncomeMovement"][] = [
     provider: "stripe",
     provider_id: "txn_refund",
     kind: "refund",
+    source: "subscription",
     parent_provider_id: "txn_0",
     subscription_id: "0199f0e0-0000-7000-8000-00000000cc09",
     occurred_at: "2026-10-09T00:00:00Z",

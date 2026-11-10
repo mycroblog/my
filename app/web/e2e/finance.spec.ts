@@ -109,6 +109,10 @@ function incomeTotals(url: URL): Schemas["AdminIncomeTotals"] {
       fee: index === cost.periods.length - 1 ? [{ amount: "432", currency: "JPY" }] : [],
       net: index === cost.periods.length - 1 ? [{ amount: "11568", currency: "JPY" }] : [],
       balance: index === cost.periods.length - 1 ? [{ amount: "11428", currency: "JPY" }] : [],
+      net_by_source:
+        index === cost.periods.length - 1
+          ? [{ source: "subscription", net: [{ amount: "11568", currency: "JPY" }] }]
+          : [],
     })),
     plans: [
       {
@@ -117,6 +121,7 @@ function incomeTotals(url: URL): Schemas["AdminIncomeTotals"] {
         members: 1,
       },
     ],
+    tips: false,
     rules: {
       week_start: "monday",
       providers: [{ provider: "stripe", time_zone: "Asia/Tokyo" }],
@@ -132,6 +137,7 @@ const movements: Schemas["IncomeMovement"][] = [
     provider: "stripe",
     provider_id: "txn_1PaymentWithARatherLongIdentifierThatDoesNotWrap",
     kind: "payment",
+    source: "subscription",
     subscription_id: "0192f0c4-7a8e-7000-8000-0000000000d2",
     account_id: "0192f0c4-7a8e-7000-8000-0000000000d3",
     username: "a_supporter_with_a_rather_long_username_that_does_not_wrap",
@@ -149,6 +155,7 @@ const movements: Schemas["IncomeMovement"][] = [
     provider: "stripe",
     provider_id: "txn_fee",
     kind: "fee",
+    source: "unknown",
     occurred_at: "2026-10-11T00:00:00Z",
     occurred_on: "2026-10-11",
     gross: { amount: "0", currency: "JPY" },

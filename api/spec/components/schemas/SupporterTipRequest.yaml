@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: A tip to start, of one of the amounts of `GET /instance/tip_amounts`.
+type: object
+required: [amount]
+properties:
+  amount:
+    $ref: ./Money.yaml

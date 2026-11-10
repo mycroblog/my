@@ -180,6 +180,10 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		}
 		out.SupportersEnabled = enabled
 	}
+	// Whether the server takes tips (ADR-0162 §17).
+	if out.TipsEnabled, err = s.tipsEnabled(ctx); err != nil {
+		return nil, err
+	}
 	// The external reviews in use, which the information page states (ADR-0147 §12).
 	if s.o.HookDecisions != nil {
 		used, err := s.o.HookDecisions.InUse(ctx)

@@ -654,6 +654,29 @@ paths:
                 $ref: '#/components/schemas/SupporterListPage'
         default:
           $ref: '#/components/responses/Problem'
+  /instance/tip_amounts:
+    get:
+      operationId: getInstanceTipAmounts
+      summary: Get the amounts of the tips
+      description: |
+        The amounts that a tip, a one-time payment to the server's operation with nothing in
+        return, may be: the operator's choices, smallest first, in one currency. A 404 while the
+        server takes no tips (`Instance.tips_enabled`).
+      tags:
+        - instance
+      security: []
+      responses:
+        '200':
+          description: The amounts.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TipAmounts'
+        default:
+          $ref: '#/components/responses/Problem'
   /accounts/verify_credentials:
     get:
       operationId: verifyAccountCredentials
@@ -6392,6 +6415,76 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SupporterPortal'
+        default:
+          $ref: '#/components/responses/Problem'
+  /supporter/tips:
+    post:
+      operationId: startSupporterTip
+      summary: Start a tip
+      description: |
+        Starts a tip of one of the amounts of `GET /instance/tip_amounts` and returns the payment
+        provider's hosted checkout of that one payment, which the client opens in the same tab; no
+        card details reach this server. The checkout returns to `/settings/supporter/tip` of the web
+        client with `tip` (the tip's ID) and `checkout` (`success` or `canceled`) in its query.
+        A user has one open tip at most: starting again makes the open tip's checkout unpayable
+        first, and when it was paid already, `redirect_url` is the return of that tip instead of a
+        checkout. Only a local user with a verified primary address may tip: a 422
+        `/api/v1/problems/supporter-ineligible` otherwise, and a 422
+        `/api/v1/problems/supporter-tip-amount` for an amount that is not one of the choices. The
+        starts are limited per user (5 an hour, 20 a day) and for the whole server (100 an hour):
+        a 429 beyond them, with `Retry-After`. A 409 `/api/v1/problems/supporter-tip-pending` when
+        another start of the user's runs at the same time. A 404 while the server takes no tips.
+        From the announcement of the closure of the service on, nobody tips: a 409
+        `/api/v1/problems/service-closing`.
+      tags:
+        - supporters
+      security:
+        - oauth2:
+            - write:supporters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SupporterTipRequest'
+      responses:
+        '200':
+          description: The checkout to open.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupporterTipCheckout'
+        default:
+          $ref: '#/components/responses/Problem'
+  /supporter/tips/{id}:
+    get:
+      operationId: getOwnSupporterTip
+      summary: Get a tip of the authenticated user
+      description: |
+        The state of a tip of the authenticated user: `open` until its payment or the end of its
+        checkout, then `paid` or `expired`. While it is `open`, reading it makes the server read the
+        checkout again from the payment provider, so the return from the checkout reads it again
+        shortly until it is `paid`. Another user's tip and an unknown one are a 404.
+      tags:
+        - supporters
+      security:
+        - oauth2:
+            - read:supporters
+      parameters:
+        - $ref: '#/components/parameters/SupporterTipId'
+      responses:
+        '200':
+          description: The tip.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupporterTip'
         default:
           $ref: '#/components/responses/Problem'
   /voice/rooms:
@@ -13475,6 +13568,54 @@ paths:
           $ref: '#/components/responses/AdminSupporterProgram'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/supporter_tips:
+    get:
+      operationId: getSupporterTips
+      x-permission: manage_supporters
+      summary: Get the tips
+      description: |
+        Whether the server takes tips, one-time payments to its operation, and their amounts, with
+        what enabling them needs. Needs the `manage_supporters` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminSupporterTips'
+        default:
+          $ref: '#/components/responses/Problem'
+    put:
+      operationId: setSupporterTips
+      x-permission: manage_supporters
+      summary: Enable or disable the tips
+      description: |
+        Enables the tips with their amounts, changes the amounts, or disables the tips. Enabling
+        them needs the supporter program enabled on the configured payment provider, which takes
+        one-time payments: a 409 `/api/v1/problems/tips-unavailable` otherwise. The amounts are 1 to
+        6 different amounts in one currency, each from ¥100 to ¥100,000 or from US$1 to US$1,000 and
+        at least the provider's smallest one-time charge: a 422 `/api/v1/problems/invalid-tip-amounts`
+        whose `reason` says which rule they break. Asking for the state the tips are in changes
+        nothing. Recorded in the audit log. Needs the `manage_supporters` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminSupporterTipsRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminSupporterTips'
+        '422':
+          $ref: '#/components/responses/TipAmountsProblem'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/supporter_plans:
     get:
       operationId: listAdminSupporterPlans
@@ -14171,6 +14312,13 @@ components:
       description: The ID of the subscription.
       schema:
         $ref: '#/components/schemas/Id'
+    SupporterTipId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the tip.
+      schema:
+        $ref: '#/components/schemas/Id'
     VoiceAccountId:
       name: account_id
       in: path
@@ -14476,6 +14624,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AdminSupporterProgram'
+    AdminSupporterTips:
+      description: The tips.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminSupporterTips'
     AdminTheme:
       description: The current theme.
       headers:
@@ -14717,6 +14874,19 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/SupporterPlanProblem'
+    TipAmountsProblem:
+      description: The amounts of the tips break a rule; nothing was changed.
+      headers:
+        Content-Language:
+          description: The locale of `title` and `detail`.
+          schema:
+            type: string
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/TipAmountsProblem'
     WebhookProblem:
       description: The webhook breaks a rule; nothing was changed.
       headers:
@@ -16684,7 +16854,9 @@ components:
         `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
         `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
         the item's name. On the `supporter_program`: `supporter_program_enabled`,
-        `supporter_program_disabled`; the label is the payment provider's name. On a
+        `supporter_program_disabled`, where the label is the payment provider's name, and
+        `supporter_tips_enabled`, `supporter_tips_revised` (their amounts), and
+        `supporter_tips_disabled`, where the label is the currency and the amounts in minor units. On a
         `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
         `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
         `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
@@ -16787,6 +16959,9 @@ components:
         - cost_item_deleted
         - supporter_program_enabled
         - supporter_program_disabled
+        - supporter_tips_enabled
+        - supporter_tips_revised
+        - supporter_tips_disabled
         - supporter_plan_created
         - supporter_plan_revised
         - supporter_plan_retired
@@ -17334,6 +17509,8 @@ components:
         A week, month, or year of the income totals as the administrators see it: the `gross`, the
         provider's `fee`, and the `net` (gross less fee) of each currency, sorted by currency code,
         and the `balance`, the net less the costs of each currency under the same basis.
+        `net_by_source` is the net of each source that the period has: the subscriptions, the tips
+        (`one_time`), and the movements of neither.
       type: object
       required:
         - label
@@ -17343,6 +17520,7 @@ components:
         - fee
         - net
         - balance
+        - net_by_source
       properties:
         label:
           type: string
@@ -17366,17 +17544,22 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Money'
+        net_by_source:
+          type: array
+          items:
+            $ref: '#/components/schemas/IncomeSourceNet'
     AdminIncomeTotals:
       description: |
         The income totals as the administrators see them over the periods from the one that holds
         `from` to the one that holds `to`, oldest first, with the number of members of each
-        supporter plan now.
+        supporter plan now, and `tips`, whether the server takes tips now.
       type: object
       required:
         - granularity
         - basis
         - periods
         - plans
+        - tips
         - rules
       properties:
         granularity:
@@ -17391,6 +17574,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/IncomePlanCount'
+        tips:
+          type: boolean
         rules:
           $ref: '#/components/schemas/IncomeTotalsRules'
     AdminInstanceHealth:
@@ -19685,6 +19870,70 @@ components:
       properties:
         enabled:
           type: boolean
+    AdminSupporterTipLimits:
+      description: The smallest and largest amount that the tips may offer in a currency.
+      type: object
+      required:
+        - minimum
+        - maximum
+      properties:
+        minimum:
+          $ref: '#/components/schemas/Money'
+        maximum:
+          $ref: '#/components/schemas/Money'
+    AdminSupporterTips:
+      description: |
+        The tips: whether the operator enabled them (`enabled`) with their `amounts`, and whether users
+        may tip now (`accepting`), which also needs the supporter program enabled on the configured
+        payment provider. `one_time_payments` reports whether that provider takes one-time payments,
+        and `limits` the smallest and largest amount of each currency that the tips may offer on it.
+        `server_limit_reached` reports that the starts of the last hour reached the limit of the whole
+        server, which may be card testing.
+      type: object
+      required:
+        - enabled
+        - accepting
+        - one_time_payments
+        - amounts
+        - limits
+        - server_limit_reached
+      properties:
+        enabled:
+          type: boolean
+        accepting:
+          type: boolean
+        one_time_payments:
+          type: boolean
+        amounts:
+          description: The amounts, smallest first; empty while the tips are disabled.
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
+        limits:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminSupporterTipLimits'
+        server_limit_reached:
+          type: boolean
+        changed_at:
+          description: When the tips were last enabled, changed, or disabled; omitted for never.
+          type: string
+          format: date-time
+    AdminSupporterTipsRequest:
+      description: |
+        Enables the tips with their amounts, all in one currency, or disables them (`enabled` false,
+        without amounts).
+      type: object
+      required:
+        - enabled
+      properties:
+        enabled:
+          type: boolean
+        amounts:
+          type: array
+          maxItems: 6
+          items:
+            $ref: '#/components/schemas/Money'
     AdminSupporterSubscription:
       description: |
         A subscription as the administrators see it, without the history of its payments.
@@ -23415,6 +23664,29 @@ components:
         - chargeback
         - chargeback_reversal
         - fee
+    IncomeSource:
+      description: |
+        Where a money movement comes from: a subscription to a supporter plan (`subscription`), a tip
+        (`one_time`), or neither (`unknown`: a payment taken outside this server, or a fee of no
+        subscription). A refund, a chargeback, or a reversal has the source of its payment.
+      type: string
+      enum:
+        - subscription
+        - one_time
+        - unknown
+    IncomeSourceNet:
+      description: The net of one source over a period, by currency.
+      type: object
+      required:
+        - source
+        - net
+      properties:
+        source:
+          $ref: '#/components/schemas/IncomeSource'
+        net:
+          type: array
+          items:
+            $ref: '#/components/schemas/Money'
     IncomeMovement:
       description: |
         A money movement of the payment provider as the income records keep it:
@@ -23422,14 +23694,16 @@ components:
         date in the provider's reporting time zone. A payment carries the billing period it pays
         for (`covers_starts_on` to `covers_ends_on`) when it has one; a refund, a chargeback, or a
         reversal carries the provider ID of its payment (`parent_provider_id`). `subscription_id`
-        names the subscription while it is known, and `account_id` and `username` its subscriber's
-        local account while the account exists; a fee of no subscription has none of them.
+        names the subscription while it is known, and `tip_id` the tip of a `one_time` movement while
+        its record is kept; `account_id` and `username` are the local account of the subscriber or of
+        the user who paid the tip while the account exists. A fee of no subscription has none of them.
       type: object
       required:
         - id
         - provider
         - provider_id
         - kind
+        - source
         - occurred_at
         - occurred_on
         - gross
@@ -23445,14 +23719,18 @@ components:
           type: string
         kind:
           $ref: '#/components/schemas/IncomeKind'
+        source:
+          $ref: '#/components/schemas/IncomeSource'
         parent_provider_id:
           type: string
         subscription_id:
           $ref: '#/components/schemas/Id'
+        tip_id:
+          $ref: '#/components/schemas/Id'
         account_id:
           $ref: '#/components/schemas/Id'
         username:
-          description: The subscriber's username; omitted with `account_id` for an erased account.
+          description: The username of the subscriber or of the user who paid the tip; omitted with `account_id` for an erased account.
           type: string
         occurred_at:
           type: string
@@ -23548,8 +23826,10 @@ components:
       description: |
         The income totals over the periods from the one that holds `from` to the one that holds
         `to`, oldest first. `plans`, the number of members of each supporter plan
-        now, is present only where the plans are shown. No answer carries individual payments, the
-        subscribers, the amounts of each plan, or the gross and the fees.
+        now, is present only where the plans are shown, with `tips`, whether the totals include the
+        tips because the server takes them now. No answer carries individual payments, the
+        subscribers, the amounts of each plan, the amount or the number of the tips, or the gross and
+        the fees.
       type: object
       required:
         - granularity
@@ -23569,6 +23849,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/IncomePlanCount'
+        tips:
+          type: boolean
         rules:
           $ref: '#/components/schemas/IncomeTotalsRules'
     IncomeTotalsRules:
@@ -23631,6 +23913,7 @@ components:
         - finance_visibility
         - income_visibility
         - supporters_enabled
+        - tips_enabled
         - supporter_list_visibility
         - voice_enabled
         - voice_room_starters
@@ -23719,6 +24002,11 @@ components:
           description: |
             Whether the supporter program is enabled: its plans (`GET /instance/supporter_plans`)
             and the subscriptions show only then.
+          type: boolean
+        tips_enabled:
+          description: |
+            Whether the server takes tips, one-time payments to its operation with nothing in return:
+            their amounts (`GET /instance/tip_amounts`) and the tips show only then.
           type: boolean
         supporter_list_visibility:
           $ref: '#/components/schemas/InstanceAudience'
@@ -26913,6 +27201,14 @@ components:
           nothing was charged; update the card and try again.
         - `/api/v1/problems/supporter-payment-processing` (409): the payment of a change of plan has
           not settled. The plan stays, and moves if the payment succeeds.
+        - `/api/v1/problems/supporter-tip-amount` (422): the amount of the tip is not one of the
+          amounts of `GET /instance/tip_amounts`.
+        - `/api/v1/problems/supporter-tip-pending` (409): another start of a tip of the user's runs at
+          the same time; try again.
+        - `/api/v1/problems/tips-unavailable` (409): the tips need the supporter program enabled on
+          the configured payment provider, which takes one-time payments.
+        - `/api/v1/problems/invalid-tip-amounts` (422): the amounts of the tips break a rule;
+          `reason` says which.
         - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
         - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
         - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the
@@ -28805,6 +29101,91 @@ components:
           description: The portal, to open in the same tab.
           type: string
           format: uri
+    SupporterTip:
+      description: A tip of the authenticated user.
+      type: object
+      required:
+        - id
+        - state
+        - amount
+        - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        state:
+          $ref: '#/components/schemas/SupporterTipState'
+        amount:
+          $ref: '#/components/schemas/Money'
+        created_at:
+          type: string
+          format: date-time
+        paid_at:
+          description: When the payment was recorded; omitted unless `paid`.
+          type: string
+          format: date-time
+    SupporterTipCheckout:
+      description: The payment provider's hosted checkout of a tip.
+      type: object
+      required:
+        - tip_id
+        - redirect_url
+      properties:
+        tip_id:
+          $ref: '#/components/schemas/Id'
+        redirect_url:
+          description: Where to go next, in the same tab, which is the checkout unless the open tip was paid already.
+          type: string
+          format: uri
+    SupporterTipRequest:
+      description: A tip to start, of one of the amounts of `GET /instance/tip_amounts`.
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          $ref: '#/components/schemas/Money'
+    SupporterTipState:
+      description: |
+        The state of a tip: `open` until its payment or the end of its checkout, `paid` once its
+        payment settled, and `expired` when its checkout ended unpaid.
+      type: string
+      enum:
+        - open
+        - paid
+        - expired
+    TipAmounts:
+      description: The amounts that a tip may be, smallest first, all in one currency.
+      type: object
+      required:
+        - amounts
+      properties:
+        amounts:
+          type: array
+          minItems: 1
+          maxItems: 6
+          items:
+            $ref: '#/components/schemas/Money'
+    TipAmountsProblem:
+      description: |
+        The problem of amounts of the tips that break a rule (422,
+        `/api/v1/problems/invalid-tip-amounts`); `reason` says which.
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            reason:
+              $ref: '#/components/schemas/TipAmountsProblemReason'
+    TipAmountsProblemReason:
+      description: |
+        The rule that the amounts of the tips break: `count` (1 to 6 different amounts in one
+        currency), `currency` (a currency that the tips and the payment provider take: JPY or USD),
+        or `range` (each from ¥100 to ¥100,000 or from US$1 to US$1,000, and at least the provider's
+        smallest one-time charge).
+      type: string
+      enum:
+        - count
+        - currency
+        - range
     SupporterProgramWarning:
       description: |
         What an administrator should look at in the supporter program. `no_provider`: no payment

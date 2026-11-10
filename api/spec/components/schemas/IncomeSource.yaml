@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Where a money movement comes from: a subscription to a supporter plan (`subscription`), a tip
+  (`one_time`), or neither (`unknown`: a payment taken outside this server, or a fee of no
+  subscription). A refund, a chargeback, or a reversal has the source of its payment.
+type: string
+enum: [subscription, one_time, unknown]

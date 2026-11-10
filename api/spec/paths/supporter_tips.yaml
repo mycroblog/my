@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: startSupporterTip
+  summary: Start a tip
+  description: |
+    Starts a tip of one of the amounts of `GET /instance/tip_amounts` and returns the payment
+    provider's hosted checkout of that one payment, which the client opens in the same tab; no
+    card details reach this server. The checkout returns to `/settings/supporter/tip` of the web
+    client with `tip` (the tip's ID) and `checkout` (`success` or `canceled`) in its query.
+    A user has one open tip at most: starting again makes the open tip's checkout unpayable
+    first, and when it was paid already, `redirect_url` is the return of that tip instead of a
+    checkout. Only a local user with a verified primary address may tip: a 422
+    `/api/v1/problems/supporter-ineligible` otherwise, and a 422
+    `/api/v1/problems/supporter-tip-amount` for an amount that is not one of the choices. The
+    starts are limited per user (5 an hour, 20 a day) and for the whole server (100 an hour):
+    a 429 beyond them, with `Retry-After`. A 409 `/api/v1/problems/supporter-tip-pending` when
+    another start of the user's runs at the same time. A 404 while the server takes no tips.
+    From the announcement of the closure of the service on, nobody tips: a 409
+    `/api/v1/problems/service-closing`.
+  tags: [supporters]
+  security:
+    - oauth2: ["write:supporters"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/SupporterTipRequest.yaml
+  responses:
+    "200":
+      description: The checkout to open.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/SupporterTipCheckout.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: The payment provider's hosted checkout of a tip.
+type: object
+required: [tip_id, redirect_url]
+properties:
+  tip_id:
+    $ref: ./Id.yaml
+  redirect_url:
+    description: Where to go next, in the same tab, which is the checkout unless the open tip was paid already.
+    type: string
+    format: uri

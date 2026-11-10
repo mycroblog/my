@@ -121,6 +121,7 @@ async function serveApi(
         finance_visibility: "private",
         income_visibility: "private",
         supporters_enabled: true,
+        tips_enabled: false,
         supporter_list_visibility: "everyone",
         voice_enabled: false,
         voice_room_starters: "permitted",

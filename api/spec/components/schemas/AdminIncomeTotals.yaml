@@ -2,9 +2,9 @@
 description: |
   The income totals as the administrators see them over the periods from the one that holds
   `from` to the one that holds `to`, oldest first, with the number of members of each
-  supporter plan now.
+  supporter plan now, and `tips`, whether the server takes tips now.
 type: object
-required: [granularity, basis, periods, plans, rules]
+required: [granularity, basis, periods, plans, tips, rules]
 properties:
   granularity:
     $ref: ./CostGranularity.yaml
@@ -18,5 +18,7 @@ properties:
     type: array
     items:
       $ref: ./IncomePlanCount.yaml
+  tips:
+    type: boolean
   rules:
     $ref: ./IncomeTotalsRules.yaml

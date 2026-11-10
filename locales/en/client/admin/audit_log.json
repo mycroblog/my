@@ -459,6 +459,18 @@
     "defaultMessage": "Supporter program disabled",
     "description": "Kind of an audited operation: an administrator disabled the supporter program."
   },
+  "admin.audit_log.action.supporter_tips_enabled": {
+    "defaultMessage": "Tips enabled",
+    "description": "Kind of an audited operation: an administrator enabled the tips, one-time payments to the server's operation."
+  },
+  "admin.audit_log.action.supporter_tips_revised": {
+    "defaultMessage": "Tip amounts changed",
+    "description": "Kind of an audited operation: an administrator changed the amounts that the tips offer."
+  },
+  "admin.audit_log.action.supporter_tips_disabled": {
+    "defaultMessage": "Tips disabled",
+    "description": "Kind of an audited operation: an administrator disabled the tips."
+  },
   "admin.audit_log.action.supporter_plan_created": {
     "defaultMessage": "Supporter plan created",
     "description": "Kind of an audited operation: an administrator created a supporter plan."

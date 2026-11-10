@@ -3090,6 +3090,62 @@ func (l *Localizer) ServerErrorsSupportersSubscriptionState() string {
 	return l.format("server:errors.supporters.subscription_state", nil)
 }
 
+// ServerErrorsSupportersTipAmount formats "server:errors.supporters.tip_amount". API error title for HTTP 422 when a user starts a tip of an amount that is not one of the operator's choices (ADR-0162 §6).
+//
+//	en: The tip must be one of the server's amounts.
+func (l *Localizer) ServerErrorsSupportersTipAmount() string {
+	return l.format("server:errors.supporters.tip_amount", nil)
+}
+
+// ServerErrorsSupportersTipAmountDetail formats "server:errors.supporters.tip_amount_detail". API error detail for HTTP 422 when a tip is not of one of the server's amounts.
+//
+//	en: Choose one of the amounts that the server offers.
+func (l *Localizer) ServerErrorsSupportersTipAmountDetail() string {
+	return l.format("server:errors.supporters.tip_amount_detail", nil)
+}
+
+// ServerErrorsSupportersTipAmountsInvalid formats "server:errors.supporters.tip_amounts_invalid". API error title for HTTP 422 when the amounts of the tips break a rule; the detail says which (ADR-0162 §6).
+//
+//	en: The amounts of the tips cannot be saved.
+func (l *Localizer) ServerErrorsSupportersTipAmountsInvalid() string {
+	return l.format("server:errors.supporters.tip_amounts_invalid", nil)
+}
+
+// ServerErrorsSupportersTipAmountsInvalidDetail formats "server:errors.supporters.tip_amounts_invalid_detail". API error detail for HTTP 422 when the amounts of the tips break a rule. {reason} is count, currency, or range.
+//
+//	en: {reason, select, count {Choose 1 to 6 different amounts in one currency.} currency {Tips take yen or US dollars, and the payment provider must take the currency.} range {Each amount must be from 100 to 100,000 yen or from 1 to 1,000 US dollars, and at least the payment provider's smallest charge.} other {The amounts break a rule.}}
+func (l *Localizer) ServerErrorsSupportersTipAmountsInvalidDetail(reason string) string {
+	return l.format("server:errors.supporters.tip_amounts_invalid_detail", map[string]any{"reason": reason})
+}
+
+// ServerErrorsSupportersTipPending formats "server:errors.supporters.tip_pending". API error title for HTTP 409 when two starts of a tip of one user run at the same time (ADR-0162 §13).
+//
+//	en: Another tip of yours is starting.
+func (l *Localizer) ServerErrorsSupportersTipPending() string {
+	return l.format("server:errors.supporters.tip_pending", nil)
+}
+
+// ServerErrorsSupportersTipPendingDetail formats "server:errors.supporters.tip_pending_detail". API error detail for HTTP 409 when another start of a tip of the user runs.
+//
+//	en: Try again in a moment.
+func (l *Localizer) ServerErrorsSupportersTipPendingDetail() string {
+	return l.format("server:errors.supporters.tip_pending_detail", nil)
+}
+
+// ServerErrorsSupportersTipsUnavailable formats "server:errors.supporters.tips_unavailable". API error title for HTTP 409 when an administrator enables the tips while the supporter program is disabled or the payment provider takes no one-time payments (ADR-0162 §3).
+//
+//	en: Tips are not available on this server.
+func (l *Localizer) ServerErrorsSupportersTipsUnavailable() string {
+	return l.format("server:errors.supporters.tips_unavailable", nil)
+}
+
+// ServerErrorsSupportersTipsUnavailableDetail formats "server:errors.supporters.tips_unavailable_detail". API error detail for HTTP 409 when the tips cannot be enabled.
+//
+//	en: Enable the supporter program on a payment provider that takes one-time payments first.
+func (l *Localizer) ServerErrorsSupportersTipsUnavailableDetail() string {
+	return l.format("server:errors.supporters.tips_unavailable_detail", nil)
+}
+
 // ServerErrorsSupportersUnavailable formats "server:errors.supporters.unavailable". API error title for HTTP 409 when the supporter program cannot be enabled or used: no payment provider is configured, the server sends no email, or the configured provider is not the program's (ADR-0072 §2).
 //
 //	en: The supporter program is not available on this server.
@@ -4726,6 +4782,13 @@ func (l *Localizer) ServerPaymentsPortalTitle() string {
 //	en: Test mode: nothing is charged.
 func (l *Localizer) ServerPaymentsTestMode() string {
 	return l.format("server:payments.test_mode", nil)
+}
+
+// ServerPaymentsTipDescription formats "server:payments.tip_description". Line item of the payment provider's checkout of a tip, a one-time payment to the server's operation with nothing in return (ADR-0162 §1). {server} is the name of the server. Never word it as a donation.
+//
+//	en: Tip for {server}
+func (l *Localizer) ServerPaymentsTipDescription(server string) string {
+	return l.format("server:payments.tip_description", map[string]any{"server": server})
 }
 
 // ServerPreviewAboutTitle formats "server:preview.about_title". Title of the link preview (og:title and the page title) of the instance's information page (/about). {instance} is the instance name.

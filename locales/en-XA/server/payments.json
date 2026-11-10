@@ -162,5 +162,9 @@
   "payments.test_mode": {
     "defaultMessage": "[Ŧḗḗşŧ ḿǿǿḓḗḗ: ƞǿǿŧħīƞɠ īş ƈħȧȧřɠḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "payments.tip_description": {
+    "defaultMessage": "[Ŧīƥ ƒǿǿř {server}]",
+    "description": "Generated from en by tools/i18n; do not edit."
   }
 }
