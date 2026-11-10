@@ -67,6 +67,8 @@ func (r *Repository) ExistingAuditTargets(ctx context.Context, kind moderation.A
 		out, err = q.ListExistingAppealIDs(ctx, list)
 	case moderation.AuditTargetSignupBlock:
 		out, err = q.ListExistingSignupBlockIDs(ctx, list)
+	case moderation.AuditTargetDomainAllow:
+		out, err = q.ListExistingDomainAllows(ctx, list)
 	default:
 		return nil, fmt.Errorf("sqlite: the existence of %s targets is not recorded here", kind)
 	}

@@ -297,7 +297,8 @@ type AuditTarget struct {
 }
 
 // GoneAuditTargets returns the targets of entries that no longer exist: accounts, reports,
-// appeals, and sign-up blocks erased (past their retention, ADR-0058), and roles, login providers,
+// appeals, and sign-up blocks erased (past their retention, ADR-0058), allows of domains removed from
+// the allowlist, and roles, login providers,
 // custom emoji, custom emoji requests, webhooks, relays, and link card rules deleted (through
 // Deps.AuditTargets). It looks up each kind of target once for all the entries. A domain, a user, a
 // setting, a rule, an announcement, and an invite are never removed, a canceled cost item keeps its
@@ -312,7 +313,8 @@ func (s *Service) GoneAuditTargets(ctx context.Context, entries []moderation.Aud
 		}
 		seen[t] = true
 		switch e.TargetKind {
-		case moderation.AuditTargetAccount, moderation.AuditTargetReport, moderation.AuditTargetAppeal, moderation.AuditTargetSignupBlock:
+		case moderation.AuditTargetAccount, moderation.AuditTargetReport, moderation.AuditTargetAppeal, moderation.AuditTargetSignupBlock,
+			moderation.AuditTargetDomainAllow:
 			ids[e.TargetKind] = append(ids[e.TargetKind], e.TargetID)
 		case moderation.AuditTargetRole, moderation.AuditTargetCustomEmoji, moderation.AuditTargetCustomEmojiRequest, moderation.AuditTargetWebhook,
 			moderation.AuditTargetRelay, moderation.AuditTargetLoginProvider, moderation.AuditTargetLinkCardDomain:

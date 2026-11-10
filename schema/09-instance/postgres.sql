@@ -26,7 +26,7 @@ CREATE TABLE instance_setting_revisions (
     'moderation_actions_retention_days', 'audit_log_retention_days',
     'search_indexing', 'ai_usage', 'indexable_default', 'security_contact', 'require_media_description', 'link_cards', 'link_cards_ignore_robots_txt',
     'finance_visibility', 'finance_viewer_item_names', 'finance_viewer_item_memos', 'finance_viewer_income',
-    'supporter_list_visibility', 'income_visibility', 'federation_mode', 'oauth_metadata_document_clients', 'dynamic_client_registration',
+    'supporter_list_visibility', 'income_visibility', 'federation_mode', 'federation_scope', 'oauth_metadata_document_clients', 'dynamic_client_registration',
     'user_app_registration', 'voice_room_starters', 'voice_public_summary', 'voice_participants_retention_days',
     'invite_creators', 'member_invite_max_active', 'member_invite_max_uses', 'member_invite_max_lifetime_seconds',
     'public_counts', 'featured_accounts', 'login_providers_only',

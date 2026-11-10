@@ -20,7 +20,7 @@ func (r *Repository) InsertSeverance(ctx context.Context, tx uow.Tx, s moderatio
 		return false, err
 	}
 	n, err := q.InsertRelationshipSeverance(ctx, moderationgen.InsertRelationshipSeveranceParams{
-		ID: s.ID, DomainActionID: sqlite.ToNullString(s.DomainActionID), ActionID: sqlite.ToNullString(s.ActionID), AccountID: s.AccountID,
+		ID: s.ID, DomainActionID: sqlite.ToNullString(s.DomainActionID), ActionID: sqlite.ToNullString(s.ActionID), AllowlistCutoffID: sqlite.ToNullString(s.AllowlistCutoffID), AccountID: s.AccountID,
 		FollowersLost: int64(s.FollowersLost), FollowingLost: int64(s.FollowingLost), OccurredAt: sqlite.ToMillis(s.OccurredAt),
 	})
 	if err != nil {
@@ -54,7 +54,7 @@ func (r *Repository) InsertSeverances(ctx context.Context, tx uow.Tx, ss []moder
 		return nil, err
 	}
 	inserted, err := q.InsertRelationshipSeverances(ctx, moderationgen.InsertRelationshipSeverancesParams{
-		DomainActionID: sqlite.ToNullString(ss[0].DomainActionID), ActionID: sqlite.ToNullString(ss[0].ActionID),
+		DomainActionID: sqlite.ToNullString(ss[0].DomainActionID), ActionID: sqlite.ToNullString(ss[0].ActionID), AllowlistCutoffID: sqlite.ToNullString(ss[0].AllowlistCutoffID),
 		OccurredAt: sqlite.ToMillis(ss[0].OccurredAt), Severances: string(list),
 	})
 	if err != nil {
@@ -79,9 +79,9 @@ func (r *Repository) FindSeverance(ctx context.Context, accountID, id string) (m
 func severanceFrom(row moderationgen.GetRelationshipSeveranceRow) moderation.SeveranceRecord {
 	return moderation.SeveranceRecord{
 		Severance: moderation.Severance{
-			ID: row.ID, DomainActionID: row.DomainActionID.String, ActionID: row.ActionID.String, AccountID: row.AccountID,
+			ID: row.ID, DomainActionID: row.DomainActionID.String, ActionID: row.ActionID.String, AllowlistCutoffID: row.AllowlistCutoffID.String, AccountID: row.AccountID,
 			FollowersLost: int(row.FollowersLost), FollowingLost: int(row.FollowingLost), OccurredAt: sqlite.FromMillis(row.OccurredAt),
 		},
-		Domain: row.TargetDomain.String, TargetAccountID: row.TargetAccountID.String,
+		Domain: row.TargetDomain, TargetAccountID: row.TargetAccountID.String,
 	}
 }

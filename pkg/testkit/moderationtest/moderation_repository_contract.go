@@ -27,7 +27,8 @@ import (
 // the lists of reports, of actions, and of domain actions newest first with their filters and
 // keyset pages; the notes and reopenings of a report and the counts of a target's history; what
 // the rebuild of the projections reads and deletes; and the reads in a transaction that see what
-// it wrote. The moderation use cases on top of it are ModerationFlows, which
+// it wrote; and the allowlist of federation (AllowlistContract). The moderation use cases on top
+// of it are ModerationFlows, which
 // internal/flowtest/moderation runs once on SQLite.
 func ModerationContract(t *testing.T, newHarness ModerationFactory) {
 	t.Helper()
@@ -44,6 +45,7 @@ func ModerationContract(t *testing.T, newHarness ModerationFactory) {
 		{"ReadsAndDeletesForTheRebuild", modRepoRebuild},
 		{"ReadsWhatItsTransactionWrote", modRepoTxReads},
 	})
+	t.Run("Allowlist", func(t *testing.T) { AllowlistContract(t, newHarness) })
 }
 
 type modRepoCase struct {

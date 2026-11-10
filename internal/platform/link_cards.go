@@ -57,7 +57,9 @@ func localHosts(cfg *config.Config) []string {
 }
 
 // linkCardDomains reads the domain actions on the hosts of link cards from the moderation
-// policy and the rules of the crawler from the instance module, which take canonical hosts.
+// policy and the rules of the crawler from the instance module, which take canonical hosts. The
+// hosts are websites, not servers to federate with, so the allowlist of federation_scope does not
+// bear on them (the policy is unscoped).
 type linkCardDomains struct{ a *App }
 
 func (d linkCardDomains) FederationSuspended(ctx context.Context, host string) (bool, error) {
@@ -65,7 +67,7 @@ func (d linkCardDomains) FederationSuspended(ctx context.Context, host string) (
 	if err != nil {
 		return false, nil
 	}
-	return d.a.ModerationPolicy.FederationSuspended(ctx, h)
+	return d.a.ModerationPolicy.Unscoped().FederationSuspended(ctx, h)
 }
 
 func (d linkCardDomains) RejectsMedia(ctx context.Context, host string) (bool, error) {
@@ -73,7 +75,7 @@ func (d linkCardDomains) RejectsMedia(ctx context.Context, host string) (bool, e
 	if err != nil {
 		return false, nil
 	}
-	return d.a.ModerationPolicy.RejectsMedia(ctx, h)
+	return d.a.ModerationPolicy.Unscoped().RejectsMedia(ctx, h)
 }
 
 func (d linkCardDomains) FetchStopped(ctx context.Context, host string) (bool, error) {
@@ -110,7 +112,7 @@ func (d linkCardDomains) HostRules(ctx context.Context, hosts []string) (map[str
 			all = append(all, c)
 		}
 	}
-	restrictions, err := d.a.ModerationPolicy.DomainRestrictionsAmong(ctx, all)
+	restrictions, err := d.a.ModerationPolicy.Unscoped().DomainRestrictionsAmong(ctx, all)
 	if err != nil {
 		return nil, err
 	}

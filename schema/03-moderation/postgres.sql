@@ -271,14 +271,16 @@ CREATE TABLE audit_log_entries (
     'voice_room_ended', 'login_provider_created', 'login_provider_updated', 'login_provider_deleted',
     'login_provider_enabled', 'login_provider_disabled', 'login_provider_secret_rotated',
     'link_card_domain_fetch_stopped', 'link_card_domain_images_stopped', 'link_card_domain_rule_removed',
-    'instance_marked_available'
+    'instance_marked_available',
+    'domain_allow_added', 'domain_allow_removed'
   )),
   target_kind text NOT NULL CHECK (target_kind IN (
     'account', 'status', 'domain', 'report', 'appeal', 'user', 'role', 'setting', 'rule',
     'signup_block', 'custom_emoji', 'webhook', 'announcement', 'invite', 'relay', 'billing_source',
     'cost_item', 'supporter_program', 'supporter_plan', 'supporter_subscription', 'custom_emoji_request',
     'payment_provider', 'oauth_client', 'oauth_client_host', 'instance', 'voice_room', 'login_provider',
-    'link_card_domain', 'hook_decision'
+    'link_card_domain', 'hook_decision',
+    'domain_allow'
   )),
   target_id text COLLATE "C" NOT NULL,
   target_label text NOT NULL,
@@ -295,8 +297,9 @@ CREATE INDEX audit_log_entries_actor_user_id_id ON audit_log_entries (actor_user
 -- ---------------------------------------------------------------------------------------------
 
 -- Event: the active follows that one local account lost when a domain (domain_action_id) or a
--- remote account (action_id) was suspended; exactly one of the two is set. One row per account
--- and action, so that processing the same action again records and notifies nothing more.
+-- remote account (action_id) was suspended, or when the allowlist cut a domain off
+-- (allowlist_cutoff_id, ADR-0159 §3); exactly one of the three is set. One row per account and
+-- action, so that processing the same action again records and notifies nothing more.
 CREATE TABLE relationship_severances (
   id uuid NOT NULL PRIMARY KEY,
   domain_action_id uuid,
@@ -304,12 +307,16 @@ CREATE TABLE relationship_severances (
   account_id uuid NOT NULL,
   followers_lost integer NOT NULL CHECK (followers_lost >= 0),
   following_lost integer NOT NULL CHECK (following_lost >= 0),
+  allowlist_cutoff_id uuid,
   occurred_at timestamptz NOT NULL,
-  CONSTRAINT relationship_severances_action_check CHECK ((domain_action_id IS NULL) <> (action_id IS NULL))
+  CONSTRAINT relationship_severances_action_check CHECK (
+    (domain_action_id IS NOT NULL)::int + (action_id IS NOT NULL)::int + (allowlist_cutoff_id IS NOT NULL)::int = 1
+  )
 );
 CREATE INDEX relationship_severances_account_id_id ON relationship_severances (account_id, id DESC);
 CREATE UNIQUE INDEX relationship_severances_domain_action_id_account_id ON relationship_severances (domain_action_id, account_id);
 CREATE UNIQUE INDEX relationship_severances_action_id_account_id ON relationship_severances (action_id, account_id);
+CREATE UNIQUE INDEX relationship_severances_allowlist_cutoff_id_account_id ON relationship_severances (allowlist_cutoff_id, account_id);
 
 -- ---------------------------------------------------------------------------------------------
 -- moderation: appeals of actions on local accounts (#337, data-model §4.3, FR-707, ADR-0058).
@@ -401,3 +408,31 @@ CREATE TABLE retention_hold_releases (
 -- The purge of remote statuses keeps the statuses that a report or an action points at.
 CREATE INDEX report_statuses_status_id ON report_statuses (status_id);
 CREATE INDEX moderation_action_statuses_status_id ON moderation_action_statuses (status_id);
+
+-- ---------------------------------------------------------------------------------------------
+-- moderation: the allowlist of federation (#2580, data-model §4.3, ADR-0159 §1-§3). Owned by
+-- internal/app/moderation.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: a domain allowed to federate while the instance setting federation_scope is
+-- allowlist; the allow covers its subdomains. Removing it deletes the row (the audit log keeps
+-- the addition and the removal). created_by_user_id is NULL for the CLI.
+CREATE TABLE domain_allows (
+  domain text NOT NULL PRIMARY KEY,
+  comment text CHECK (comment IS NULL OR length(comment) <= 5000),
+  created_by_user_id uuid,
+  created_at timestamptz NOT NULL
+);
+
+-- Event: the allowlist cut the domains off that it does not allow: the switch of
+-- federation_scope to allowlist (scope_switched), or the removal of the allow of domain while it
+-- is allowlist (allow_removed). Its relationship_severances record the follows it ended.
+-- issued_by_user_id is NULL for the CLI.
+CREATE TABLE allowlist_cutoffs (
+  id uuid NOT NULL PRIMARY KEY,
+  cause text NOT NULL CHECK (cause IN ('scope_switched', 'allow_removed')),
+  domain text,
+  issued_by_user_id uuid,
+  occurred_at timestamptz NOT NULL,
+  CHECK ((cause = 'allow_removed') = (domain IS NOT NULL))
+);

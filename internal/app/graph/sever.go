@@ -99,6 +99,25 @@ func (s *Service) CounterpartsOf(ctx context.Context, tx uow.Tx, ids []string) (
 	return out, nil
 }
 
+// ActiveFollow is an accepted follow of FolloweeAccountID by FollowerAccountID.
+type ActiveFollow struct{ FollowerAccountID, FolloweeAccountID string }
+
+// ActiveFollowsOf returns, inside tx, the accepted follows into and out of each of ids, each once,
+// for the counts of what a severance would end before it does (ADR-0159 §3).
+func (s *Service) ActiveFollowsOf(ctx context.Context, tx uow.Tx, ids []string) ([]ActiveFollow, error) {
+	edges, err := s.d.Repository.ListEdgesOfAccounts(ctx, tx, ids)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ActiveFollow, 0, len(edges))
+	for _, e := range edges {
+		if e.State == graph.StateActive {
+			out = append(out, ActiveFollow{FollowerAccountID: e.FollowerAccountID, FolloweeAccountID: e.FolloweeAccountID})
+		}
+	}
+	return out, nil
+}
+
 // SeverAmong is SeverDirected of each account of others with its others, by account, in dir as
 // seen from the account: the follows of all the pairs end together, with a number of statements
 // that does not grow with them, and one FollowsTerminated tells the projectors. A follow between

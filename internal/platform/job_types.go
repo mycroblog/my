@@ -70,6 +70,7 @@ var jobTypes = []string{
 	"metrics.snapshot",
 	"moderation.expire_restrictions",
 	"moderation.purge_records",
+	"moderation.sever_allowlist",
 	"moderation.sever_domain",
 	"notification.closure_due",
 	"notification.closure_fanout",

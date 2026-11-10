@@ -22,11 +22,12 @@ FROM moderation_appeals a LEFT JOIN moderation_appeal_decisions d ON d.appeal_id
 WHERE a.id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY a.id;
 
 -- name: ListRelationshipSeverancesOf :many
-SELECT s.id, s.domain_action_id, s.action_id, s.account_id, s.followers_lost, s.following_lost, s.occurred_at,
-  d.domain AS target_domain, a.target_account_id
+SELECT s.id, s.domain_action_id, s.action_id, s.allowlist_cutoff_id, s.account_id, s.followers_lost, s.following_lost, s.occurred_at,
+  COALESCE(d.domain, c.domain, '') AS target_domain, a.target_account_id
 FROM relationship_severances s
 LEFT JOIN domain_moderation_actions d ON d.id = s.domain_action_id
 LEFT JOIN moderation_actions a ON a.id = s.action_id
+LEFT JOIN allowlist_cutoffs c ON c.id = s.allowlist_cutoff_id
 WHERE s.account_id = sqlc.arg(account_id) AND s.id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) ORDER BY s.id;
 
 -- name: ListReportsByIDs :many

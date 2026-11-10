@@ -73,6 +73,7 @@ const (
 // retention) and the expiry and purge schedules on sched.
 func (s *Service) RegisterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
 	reg.Register(JobSeverDomain, s.handleSeverDomain)
+	reg.Register(JobSeverAllowlist, s.handleSeverAllowlist)
 	reg.Register(JobExpireRestrictions, func(ctx context.Context, _ queue.Job) queue.Result {
 		if _, err := s.ExpireAccountRestrictions(ctx); err != nil {
 			return queue.Retry(0, err)

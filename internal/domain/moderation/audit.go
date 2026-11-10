@@ -110,6 +110,9 @@ const (
 	// AuditTargetLinkCardDomain is the domain of a rule of the link card crawler; its ID and its
 	// label are the canonical domain.
 	AuditTargetLinkCardDomain AuditTargetKind = "link_card_domain"
+	// AuditTargetDomainAllow is a domain of the allowlist of federation (ADR-0159 §8); its ID and
+	// its label are the canonical domain.
+	AuditTargetDomainAllow AuditTargetKind = "domain_allow"
 )
 
 var auditTargetKinds = []AuditTargetKind{
@@ -120,6 +123,7 @@ var auditTargetKinds = []AuditTargetKind{
 	AuditTargetSupporterSubscription, AuditTargetCustomEmojiRequest, AuditTargetPaymentProvider,
 	AuditTargetOAuthClient, AuditTargetOAuthClientHost, AuditTargetInstance, AuditTargetVoiceRoom,
 	AuditTargetLoginProvider, AuditTargetLinkCardDomain, AuditTargetHookDecision,
+	AuditTargetDomainAllow,
 }
 
 // AuditTargetKinds returns every kind of target, in the order of the schema's CHECK.
@@ -369,6 +373,12 @@ const (
 	// deliveries to it resume. The event of the health is its own record, which the entry does not
 	// point at.
 	AuditInstanceMarkedAvailable AuditAction = "instance_marked_available"
+	// AuditDomainAllowAdded and AuditDomainAllowRemoved: a domain was added to the allowlist of
+	// federation, and removed from it (ADR-0159 §8). The rows are resources that a removal
+	// deletes (domain_allows), so these entries have no source event, except a removal while
+	// federation_scope is allowlist, whose source is the allowlist_cutoffs row that it caused.
+	AuditDomainAllowAdded   AuditAction = "domain_allow_added"
+	AuditDomainAllowRemoved AuditAction = "domain_allow_removed"
 )
 
 // auditActions maps each action to the kind of its target, in the order of the schema's CHECK.
@@ -476,6 +486,8 @@ var auditActions = []struct {
 	{AuditLinkCardDomainImagesStopped, AuditTargetLinkCardDomain},
 	{AuditLinkCardDomainRuleRemoved, AuditTargetLinkCardDomain},
 	{AuditInstanceMarkedAvailable, AuditTargetDomain},
+	{AuditDomainAllowAdded, AuditTargetDomainAllow},
+	{AuditDomainAllowRemoved, AuditTargetDomainAllow},
 }
 
 // AuditActions returns every audited operation, in the order of the schema's CHECK.

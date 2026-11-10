@@ -261,6 +261,8 @@ type Deps struct {
 	// AuditTargets tells which roles, custom emoji, and webhooks named by the audit log still
 	// exist (GoneAuditTargets); nil reports none of them gone.
 	AuditTargets AuditTargets
+	// Scopes reads the instance setting federation_scope (allowlist.go); nil is open.
+	Scopes FederationScopes
 }
 
 // AuditTargets looks up the targets of the audit log that other modules own and delete: roles

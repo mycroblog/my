@@ -155,6 +155,8 @@ type Repository interface {
 	SignupBlockRepository
 	// The rebuild of the projections (projection.go).
 	ProjectionRepository
+	// The allowlist of federation (allowlist.go).
+	AllowlistRepository
 }
 
 // ReportQuery selects the reports of a list.

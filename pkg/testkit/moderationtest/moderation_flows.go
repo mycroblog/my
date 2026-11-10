@@ -52,6 +52,8 @@ type ModerationFactory func(t *testing.T, opts uow.Options) ModerationHarness
 // filed report tells whether it is the target's only open one, and the open reports are counted.
 // Moderators also write notes on a report, reopen a resolved one, see its target's other reports
 // and actions, and an action that follows from a report resolves it as actioned once, each audited.
+// The allowlist of federation cuts off the domains it does not allow while federation_scope is
+// allowlist (moderationAllowlist).
 // The accounts are in-memory stand-ins. These are the flows of ADR-0153 §1, which
 // internal/flowtest/moderation runs once on SQLite; ModerationContract checks the repository's
 // methods on every adapter.
@@ -82,6 +84,7 @@ func ModerationFlows(t *testing.T, newHarness ModerationFactory) {
 		{"NotesReopensAndResolvesByAction", moderationNotesAndReopenings},
 		{"RebuildAgreesWithTheCommands", moderationProjectionEqualsRebuild},
 		{"ReadsInTheTransactionsOfItsEvents", moderationReadsInTransaction},
+		{"AllowlistCutsOffTheDomainsItDoesNotAllow", moderationAllowlist},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newModerationEnv(t, newHarness)) })

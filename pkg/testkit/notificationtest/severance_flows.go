@@ -19,6 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/federationtest"
+	"github.com/mycroblog/my/pkg/testkit/moderationtest"
 )
 
 // SeveranceHarness is one database under test for SeveranceContract and SeveranceFlows: the
@@ -42,7 +43,8 @@ type SeveranceFactory func(t *testing.T, opts uow.Options) SeveranceHarness
 // nothing; each local account that lost an active follow gets one relationships_severed
 // notification whose severance counts what it lost, a lost follow request counts nothing, the
 // follows stay ended after the lift, and processing the same suspension again, or another
-// suspension of the same account, records and notifies nothing more.
+// suspension of the same account, records and notifies nothing more. The cutoffs of the allowlist
+// (ADR-0159 §3) end the follows with the domains it does not allow in the same way.
 func SeveranceFlows(t *testing.T, newHarness SeveranceFactory) {
 	t.Helper()
 	cases := []struct {
@@ -51,6 +53,7 @@ func SeveranceFlows(t *testing.T, newHarness SeveranceFactory) {
 	}{
 		{"RemoteAccountSuspension", severanceOfAccount},
 		{"DomainSuspension", severanceOfDomain},
+		{"AllowlistCutoffs", severanceOfAllowlist},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newSeveranceEnv(t, newHarness)) })
@@ -63,6 +66,8 @@ type severanceEnv struct {
 	// jobs holds the moderation jobs, apart from the federation jobs of federationtest.RemoteFollowEnv.
 	jobs     *federationtest.FedJobs
 	handlers *queue.JobHandlerRegistry
+	// scopes is the federation_scope that the moderation service reads, open at first.
+	scopes *moderationtest.StubScopes
 }
 
 func newSeveranceEnv(t *testing.T, newHarness SeveranceFactory) *severanceEnv {
@@ -76,10 +81,14 @@ func newSeveranceEnv(t *testing.T, newHarness SeveranceFactory) *severanceEnv {
 		mods, projectors = h.Moderation, opts.Projectors
 		return h.RemoteFollowHarness
 	})
-	e := &severanceEnv{RemoteFollowEnv: re, jobs: &federationtest.FedJobs{Seen: map[string]bool{}}, handlers: &queue.JobHandlerRegistry{}}
+	e := &severanceEnv{
+		RemoteFollowEnv: re, jobs: &federationtest.FedJobs{Seen: map[string]bool{}}, handlers: &queue.JobHandlerRegistry{},
+		scopes: &moderationtest.StubScopes{},
+	}
 	e.mod = appmoderation.NewService(appmoderation.Deps{
 		UnitOfWork: re.H.UnitOfWork, Repository: mods, Accounts: re.Accounts, Clock: re.Clock, IDs: re.IDs,
 		Follows: re.Graph, Directory: re.Accounts, Outbox: queue.AfterCommit(projectors, e.jobs, nil), FanOutSize: 1,
+		Scopes: e.scopes,
 	})
 	e.mod.RegisterJobs(e.handlers, queue.NewScheduler(e.jobs, re.Clock, nil))
 	return e
