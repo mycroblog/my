@@ -231,7 +231,7 @@ func (r *reconciliation) notice(ctx context.Context, n Notice) error {
 	return nil
 }
 
-// openCheckouts is stage 2.
+// openCheckouts is stage 2: the open checkouts of the subscriptions, then of the tips.
 func (r *reconciliation) openCheckouts(ctx context.Context) error {
 	refs, err := r.p.d.Syncer.OpenCheckouts(ctx, r.p.d.Provider.Name(), r.now)
 	if err != nil {
@@ -245,6 +245,36 @@ func (r *reconciliation) openCheckouts(ctx context.Context) error {
 		if err := r.refetch(ctx, sub); err != nil {
 			return err
 		}
+	}
+	return r.openTipCheckouts(ctx)
+}
+
+// openTipCheckouts re-reads the checkouts of the open tips (ADR-0162 §14): an hour at most, one
+// per user, so they are few.
+func (r *reconciliation) openTipCheckouts(ctx context.Context) error {
+	ot, ok := r.p.d.Provider.(OneTimePayments)
+	if !ok {
+		return nil
+	}
+	refs, err := r.p.d.Syncer.OpenTipCheckouts(ctx, r.p.d.Provider.Name(), r.now)
+	if err != nil {
+		return fmt.Errorf("%w: %w", errSyncer, err)
+	}
+	for _, ref := range refs {
+		if r.checkouts[ref] {
+			continue
+		}
+		if !r.take() {
+			return errRequestCap
+		}
+		res, err := ot.GetOneTimeCheckout(ctx, ref)
+		if err != nil {
+			return err
+		}
+		if _, err := r.p.d.Syncer.SyncTip(ctx, r.p.d.Provider.Name(), res); err != nil {
+			return fmt.Errorf("%w: %w", errSyncer, err)
+		}
+		r.checkouts[ref] = true
 	}
 	return nil
 }

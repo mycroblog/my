@@ -59,7 +59,7 @@ func (q *Queries) DeleteCostItemHead(ctx context.Context, costItemID string) err
 }
 
 const findIncomeMovementID = `-- name: FindIncomeMovementID :one
-SELECT id FROM income_movements WHERE provider = $1 AND provider_movement_id = $2
+SELECT id, source FROM income_movements WHERE provider = $1 AND provider_movement_id = $2
 `
 
 type FindIncomeMovementIDParams struct {
@@ -67,11 +67,16 @@ type FindIncomeMovementIDParams struct {
 	ProviderMovementID string
 }
 
-func (q *Queries) FindIncomeMovementID(ctx context.Context, arg FindIncomeMovementIDParams) (string, error) {
+type FindIncomeMovementIDRow struct {
+	ID     string
+	Source string
+}
+
+func (q *Queries) FindIncomeMovementID(ctx context.Context, arg FindIncomeMovementIDParams) (FindIncomeMovementIDRow, error) {
 	row := q.db.QueryRow(ctx, findIncomeMovementID, arg.Provider, arg.ProviderMovementID)
-	var id string
-	err := row.Scan(&id)
-	return id, err
+	var i FindIncomeMovementIDRow
+	err := row.Scan(&i.ID, &i.Source)
+	return i, err
 }
 
 const getCostItemCurrentForUpdate = `-- name: GetCostItemCurrentForUpdate :one
@@ -347,9 +352,9 @@ func (q *Queries) InsertImportedCostRevision(ctx context.Context, arg InsertImpo
 const insertIncomeMovement = `-- name: InsertIncomeMovement :execrows
 
 INSERT INTO income_movements (
-  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, occurred_at, occurred_on, covers_starts_on,
-  covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, tip_id, source, occurred_at,
+  occurred_on, covers_starts_on, covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 ON CONFLICT (provider, provider_movement_id) DO NOTHING
 `
 
@@ -360,6 +365,8 @@ type InsertIncomeMovementParams struct {
 	Kind               string
 	ParentMovementID   *string
 	SubscriptionID     *string
+	TipID              *string
+	Source             string
 	OccurredAt         time.Time
 	OccurredOn         pgtype.Date
 	CoversStartsOn     pgtype.Date
@@ -382,6 +389,8 @@ func (q *Queries) InsertIncomeMovement(ctx context.Context, arg InsertIncomeMove
 		arg.Kind,
 		arg.ParentMovementID,
 		arg.SubscriptionID,
+		arg.TipID,
+		arg.Source,
 		arg.OccurredAt,
 		arg.OccurredOn,
 		arg.CoversStartsOn,
@@ -628,7 +637,7 @@ func (q *Queries) ListImportedCostHeads(ctx context.Context, arg ListImportedCos
 }
 
 const listIncomeMovements = `-- name: ListIncomeMovements :many
-SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.occurred_at, m.occurred_on, m.covers_starts_on,
+SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.tip_id, m.source, m.occurred_at, m.occurred_on, m.covers_starts_on,
   m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency, m.recorded_at, p.provider_movement_id AS parent_provider_movement_id
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE m.occurred_on >= $1::date AND m.occurred_on <= $2::date
@@ -653,6 +662,8 @@ type ListIncomeMovementsRow struct {
 	ProviderMovementID       string
 	Kind                     string
 	SubscriptionID           *string
+	TipID                    *string
+	Source                   string
 	OccurredAt               time.Time
 	OccurredOn               pgtype.Date
 	CoversStartsOn           pgtype.Date
@@ -688,6 +699,8 @@ func (q *Queries) ListIncomeMovements(ctx context.Context, arg ListIncomeMovemen
 			&i.ProviderMovementID,
 			&i.Kind,
 			&i.SubscriptionID,
+			&i.TipID,
+			&i.Source,
 			&i.OccurredAt,
 			&i.OccurredOn,
 			&i.CoversStartsOn,
@@ -710,7 +723,7 @@ func (q *Queries) ListIncomeMovements(ctx context.Context, arg ListIncomeMovemen
 }
 
 const listIncomeMovementsInWindow = `-- name: ListIncomeMovementsInWindow :many
-SELECT m.kind, m.occurred_on, m.covers_starts_on, m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency,
+SELECT m.kind, m.source, m.occurred_on, m.covers_starts_on, m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency,
   p.covers_starts_on AS parent_covers_starts_on, p.covers_ends_on AS parent_covers_ends_on
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE (m.occurred_on >= $1::date AND m.occurred_on <= $2::date)
@@ -726,6 +739,7 @@ type ListIncomeMovementsInWindowParams struct {
 
 type ListIncomeMovementsInWindowRow struct {
 	Kind                 string
+	Source               string
 	OccurredOn           pgtype.Date
 	CoversStartsOn       pgtype.Date
 	CoversEndsOn         pgtype.Date
@@ -752,6 +766,7 @@ func (q *Queries) ListIncomeMovementsInWindow(ctx context.Context, arg ListIncom
 		var i ListIncomeMovementsInWindowRow
 		if err := rows.Scan(
 			&i.Kind,
+			&i.Source,
 			&i.OccurredOn,
 			&i.CoversStartsOn,
 			&i.CoversEndsOn,

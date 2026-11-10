@@ -182,6 +182,8 @@ type SubscriptionUser struct {
 // wrapping ErrNotFound. The database adapters pass supporterstest.SupporterRepositoryContract, and the
 // flows of the use cases on them are supporterstest.SupporterFlows (internal/flowtest/supporters).
 type Repository interface {
+	TipRepository
+
 	// InsertProgramChange records the program enabled or disabled.
 	InsertProgramChange(ctx context.Context, tx uow.Tx, c ProgramChange) error
 	// LastProgramChange returns the newest program change; ErrNotFound without one. tx may be nil.
@@ -296,7 +298,8 @@ type Repository interface {
 	ListListings(ctx context.Context, f ListingFilter) ([]Listing, error)
 	// DeleteListing removes a user from the supporter list.
 	DeleteListing(ctx context.Context, tx uow.Tx, userID string) error
-	// EraseUser deletes the listing and the customers of an erased user (ADR-0072 §10).
+	// EraseUser deletes the listing, the customers, and the tips with their records of an erased
+	// user (ADR-0072 §10, ADR-0162 §18).
 	EraseUser(ctx context.Context, tx uow.Tx, userID string) error
 	// RebuildProjections derives the plan heads, the price heads, and the subscription heads,
 	// live subscriptions, and deadlines again from the records.

@@ -77,6 +77,9 @@ const (
 	AuditCostItemDeleted                 = moderation.AuditCostItemDeleted
 	AuditSupporterProgramEnabled         = moderation.AuditSupporterProgramEnabled
 	AuditSupporterProgramDisabled        = moderation.AuditSupporterProgramDisabled
+	AuditSupporterTipsEnabled            = moderation.AuditSupporterTipsEnabled
+	AuditSupporterTipsRevised            = moderation.AuditSupporterTipsRevised
+	AuditSupporterTipsDisabled           = moderation.AuditSupporterTipsDisabled
 	AuditSupporterPlanCreated            = moderation.AuditSupporterPlanCreated
 	AuditSupporterPlanRevised            = moderation.AuditSupporterPlanRevised
 	AuditSupporterPlanRetired            = moderation.AuditSupporterPlanRetired

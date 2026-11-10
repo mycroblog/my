@@ -73,3 +73,20 @@ type SupporterSubscriptionDeadline struct {
 	Kind           string
 	DueAt          int64
 }
+
+type SupporterTip struct {
+	ID          string
+	UserID      string
+	AmountMinor int64
+	Currency    string
+	Provider    string
+	CreatedAt   int64
+}
+
+type SupporterTipChange struct {
+	ID              string
+	State           string
+	Currency        string
+	ChangedByUserID sql.NullString
+	ChangedAt       int64
+}

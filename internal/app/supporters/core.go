@@ -406,11 +406,27 @@ func (s *Service) checkoutEnded(ctx context.Context, id, provider string, res Ch
 
 // RecordMoney implements Syncer: it records the refunds and chargebacks of our subscriptions,
 // revokes a subscription at a full refund or a chargeback (and cancels it at the provider; a
-// partial refund keeps it, and a won dispute gives nothing back, ADR-0072 §7), and hands every
-// movement to the income records.
+// partial refund keeps it, and a won dispute gives nothing back, ADR-0072 §7), records the full
+// refunds, the chargebacks, and the won disputes of our tips (a partial refund is income alone,
+// ADR-0162 §15), and hands every movement to the income records with its source.
 func (s *Service) RecordMoney(ctx context.Context, provider string, ms []MoneyMovement) error {
+	tips, err := s.tipsOfMoney(ctx, provider, ms)
+	if err != nil {
+		return err
+	}
 	for _, m := range ms {
-		if !m.Final || m.Subscription == "" || (m.Kind != MoneyRefund && m.Kind != MoneyChargeback) {
+		if !m.Final {
+			continue
+		}
+		if tip := tips[m.Payment]; tip != "" && m.Subscription == "" {
+			if kind, ok := tipOutcomeOf(m); ok {
+				if _, err := s.recordTipOutcome(ctx, tip, kind, kernelTime(m.OccurredAt)); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+		if m.Subscription == "" || (m.Kind != MoneyRefund && m.Kind != MoneyChargeback) {
 			continue
 		}
 		if err := s.recordReversal(ctx, provider, m); err != nil {
@@ -418,7 +434,7 @@ func (s *Service) RecordMoney(ctx context.Context, provider string, ms []MoneyMo
 		}
 	}
 	if s.d.Income != nil {
-		return s.recordIncome(ctx, provider, ms)
+		return s.recordIncome(ctx, provider, ms, tips)
 	}
 	return nil
 }
@@ -688,8 +704,12 @@ func (s *Service) RunCommand(ctx context.Context, p commandPayload, key string) 
 }
 
 // QueueDeadlines is the work of JobDeadlines: it queues JobSync for the subscriptions whose
-// deadline passed (ADR-0072 §7), each once per deadline.
+// deadline passed (ADR-0072 §7), each once per deadline, and JobSyncTip for the open tips whose
+// checkout expired (ADR-0162 §13).
 func (s *Service) QueueDeadlines(ctx context.Context) error {
+	if err := s.queueDueTips(ctx); err != nil {
+		return err
+	}
 	due, err := s.d.Repository.DueDeadlines(ctx, s.now(), DeadlineBatch)
 	if err != nil || len(due) == 0 {
 		return err
@@ -730,6 +750,7 @@ func (s *Service) RegisterJobs(h *queue.JobHandlerRegistry, sc *queue.Scheduler)
 		return s.RunCommand(ctx, p, key)
 	})
 	s.registerClosureJobs(h)
+	s.registerTipJobs(h)
 	h.Register(JobDeadlines, func(ctx context.Context, _ queue.Job) queue.Result {
 		if err := s.QueueDeadlines(ctx); err != nil {
 			return queue.Retry(0, err)

@@ -39,6 +39,11 @@ type IncomeMovement struct {
 	// SubscriptionID is the supporters module's ID of the subscription; "" for a fee that belongs
 	// to none, and for a movement of a subscription that is not ours.
 	SubscriptionID string
+	// TipID is the supporters module's ID of the tip of a one_time movement; "" otherwise.
+	TipID string
+	// Source is a finance.IncomeSource: subscription, one_time (a tip), or unknown. RecordIncome
+	// gives a refund, a chargeback, or a reversal the source of its payment instead.
+	Source string
 	// OccurredAt is when the provider booked the movement, and OccurredOn its date (YYYY-MM-DD)
 	// in the provider's reporting time zone (§3).
 	OccurredAt time.Time
@@ -62,6 +67,8 @@ type IncomeRecord struct {
 	ParentMovementID string
 	ParentProviderID string
 	SubscriptionID   string
+	TipID            string
+	Source           finance.IncomeSource
 	OccurredAt       time.Time
 	OccurredOn       finance.Date
 	Covers           *finance.DateRange
@@ -81,9 +88,9 @@ type IncomeRepository interface {
 	// InsertIncome records a movement and reports whether it did: a movement already recorded
 	// (the same provider and provider ID) writes nothing.
 	InsertIncome(ctx context.Context, tx uow.Tx, r IncomeRecord) (bool, error)
-	// FindIncomeID returns the row of a provider's movement in tx; it fails with ErrNotFound
-	// when it is not recorded.
-	FindIncomeID(ctx context.Context, tx uow.Tx, provider, providerID string) (string, error)
+	// FindIncomeID returns the row of a provider's movement in tx and its source; it fails with
+	// ErrNotFound when it is not recorded.
+	FindIncomeID(ctx context.Context, tx uow.Tx, provider, providerID string) (string, finance.IncomeSource, error)
 	// KnownIncome returns the provider IDs among ids that are recorded.
 	KnownIncome(ctx context.Context, provider string, ids []string) ([]string, error)
 	// IncomeInWindow returns the movements whose place in the totals can meet window: those on
@@ -126,6 +133,11 @@ type SupporterDirectory interface {
 	// SubscriptionAccounts returns the local account of the subscriber of each subscription
 	// among ids, by subscription ID; an unknown subscription or an erased account is left out.
 	SubscriptionAccounts(ctx context.Context, ids []string) (map[string]Subscriber, error)
+	// TipAccounts returns the local account of the user of each tip among ids, by tip ID; an
+	// unknown or erased tip, or an erased account, is left out.
+	TipAccounts(ctx context.Context, ids []string) (map[string]Subscriber, error)
+	// TipsEnabled reports whether the server takes tips now (ADR-0162 §16).
+	TipsEnabled(ctx context.Context) (bool, error)
 	// ProviderRules returns the time zone of the configured payment provider; none without one.
 	ProviderRules() []ProviderRule
 }
@@ -156,8 +168,12 @@ func ParseIncome(m IncomeMovement) (IncomeRecord, error) {
 	if err != nil {
 		return IncomeRecord{}, err
 	}
+	source := finance.IncomeSource(m.Source)
+	if source == "" {
+		source = finance.SourceUnknown
+	}
 	r := IncomeRecord{
-		Provider: m.Provider, ProviderID: m.ProviderID, Kind: kind, SubscriptionID: m.SubscriptionID,
+		Provider: m.Provider, ProviderID: m.ProviderID, Kind: kind, SubscriptionID: m.SubscriptionID, TipID: m.TipID, Source: source,
 		OccurredAt: kernel.Normalize(m.OccurredAt), OccurredOn: on,
 		Gross: finance.Money{Minor: minor[0], Currency: c}, Fee: finance.Money{Minor: minor[1], Currency: c},
 		Net: finance.Money{Minor: minor[2], Currency: c},
@@ -178,12 +194,13 @@ func ParseIncome(m IncomeMovement) (IncomeRecord, error) {
 
 // movement returns the movement of r as the totals read it, without the period of its parent.
 func (r IncomeRecord) movement() finance.IncomeMovement {
-	return finance.IncomeMovement{Kind: r.Kind, OccurredOn: r.OccurredOn, Covers: r.Covers, Gross: r.Gross, Fee: r.Fee, Net: r.Net}
+	return finance.IncomeMovement{Kind: r.Kind, Source: r.Source, OccurredOn: r.OccurredOn, Covers: r.Covers, Gross: r.Gross, Fee: r.Fee, Net: r.Net}
 }
 
 // RecordIncome records the final money movements of a payment provider, each once however
 // often it comes (ADR-0067 §12), in order, one short transaction each: a refund, a chargeback,
-// or a reversal after its payment, which the batch or an earlier one recorded. It fails with
+// or a reversal after its payment, which the batch or an earlier one recorded, with the source
+// of its payment (ADR-0162 §16). It fails with
 // ErrIncomeParentMissing for a movement whose payment is not recorded, so that the job retries
 // once it is. A movement that breaks the rules of the income records is logged and left out,
 // since no retry would make it valid.
@@ -199,14 +216,14 @@ func (s *Service) RecordIncome(ctx context.Context, ms []IncomeMovement) error {
 		r.RecordedAt = kernel.Normalize(s.d.Clock.Now())
 		err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 			if m.ParentID != "" {
-				parent, err := s.d.Repository.FindIncomeID(ctx, tx, m.Provider, m.ParentID)
+				parent, source, err := s.d.Repository.FindIncomeID(ctx, tx, m.Provider, m.ParentID)
 				if errors.Is(err, ErrNotFound) {
 					return fmt.Errorf("%w: %s %s of %s", ErrIncomeParentMissing, m.Kind, m.ProviderID, m.ParentID)
 				}
 				if err != nil {
 					return err
 				}
-				r.ParentMovementID = parent
+				r.ParentMovementID, r.Source = parent, source
 			}
 			_, err := s.d.Repository.InsertIncome(ctx, tx, r)
 			return err
@@ -319,6 +336,16 @@ func (s *Service) PlanCounts(ctx context.Context) ([]PlanCount, error) {
 	return out, err
 }
 
+// TipsEnabled reports whether the server takes tips now, which the totals that show the plans
+// show as a row of their own without its amount or its count (ADR-0162 §16); false without the
+// supporters module.
+func (s *Service) TipsEnabled(ctx context.Context) (bool, error) {
+	if s.d.Supporters == nil {
+		return false, nil
+	}
+	return s.d.Supporters.TipsEnabled(ctx)
+}
+
 // IncomeRules returns the reporting time zones of the payment providers (ADR-0067 §13).
 func (s *Service) IncomeRules() []ProviderRule {
 	if s.d.Supporters == nil {
@@ -331,8 +358,9 @@ func (s *Service) IncomeRules() []ProviderRule {
 	return out
 }
 
-// IncomeEntry is a recorded movement with the local account of its subscriber, as the
-// administrators see it (ADR-0067 §16); Subscriber is the zero value without one.
+// IncomeEntry is a recorded movement with the local account of its subscriber, or of the user
+// who paid its tip, as the administrators see it (ADR-0067 §16, ADR-0162 §16); Subscriber is the
+// zero value without one.
 type IncomeEntry struct {
 	IncomeRecord
 	Subscriber Subscriber
@@ -345,21 +373,33 @@ func (s *Service) ListIncome(ctx context.Context, f IncomeFilter, before string,
 	if err != nil {
 		return nil, err
 	}
-	var ids []string
+	var ids, tips []string
 	for _, r := range rows {
 		if r.SubscriptionID != "" {
 			ids = append(ids, r.SubscriptionID)
 		}
+		if r.TipID != "" {
+			tips = append(tips, r.TipID)
+		}
 	}
-	accounts := map[string]Subscriber{}
+	accounts, tippers := map[string]Subscriber{}, map[string]Subscriber{}
 	if s.d.Supporters != nil && len(ids) > 0 {
 		if accounts, err = s.d.Supporters.SubscriptionAccounts(ctx, ids); err != nil {
 			return nil, fmt.Errorf("finance: read the subscribers: %w", err)
 		}
 	}
+	if s.d.Supporters != nil && len(tips) > 0 {
+		if tippers, err = s.d.Supporters.TipAccounts(ctx, tips); err != nil {
+			return nil, fmt.Errorf("finance: read the users of the tips: %w", err)
+		}
+	}
 	out := make([]IncomeEntry, len(rows))
 	for i, r := range rows {
-		out[i] = IncomeEntry{IncomeRecord: r, Subscriber: accounts[r.SubscriptionID]}
+		who := accounts[r.SubscriptionID]
+		if r.TipID != "" {
+			who = tippers[r.TipID]
+		}
+		out[i] = IncomeEntry{IncomeRecord: r, Subscriber: who}
 	}
 	return out, nil
 }

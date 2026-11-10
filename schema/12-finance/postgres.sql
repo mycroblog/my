@@ -161,7 +161,11 @@ CREATE TABLE imported_cost_heads (
 -- unit of its currency. occurred_on is occurred_at as a date in the provider's reporting time
 -- zone; covers_* is the billing period of a payment. parent_movement_id is the payment of a
 -- refund, a chargeback, or a reversal. subscription_id refers to the subscription without a
--- foreign key (NULL for a fee); no row holds a user.
+-- foreign key (NULL for a fee), and tip_id to the tip (ADR-0162) of a one_time movement while
+-- its record is kept; no row holds a user. source tells a movement of our subscriptions
+-- (subscription) and of our tips (one_time, ADR-0162) from one of neither (unknown: a payment
+-- taken outside my, a fee of no subscription); a refund, a chargeback, or a reversal has the
+-- source of its payment.
 CREATE TABLE income_movements (
   id uuid NOT NULL PRIMARY KEY,
   provider text NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
@@ -169,6 +173,8 @@ CREATE TABLE income_movements (
   kind text NOT NULL CHECK (kind IN ('payment', 'refund', 'chargeback', 'chargeback_reversal', 'fee')),
   parent_movement_id uuid,
   subscription_id uuid,
+  tip_id uuid,
+  source text NOT NULL CHECK (source IN ('subscription', 'one_time', 'unknown')),
   occurred_at timestamptz NOT NULL,
   occurred_on date NOT NULL,
   covers_starts_on date,
@@ -181,7 +187,8 @@ CREATE TABLE income_movements (
   CHECK (net_minor = gross_minor - fee_minor),
   CHECK ((covers_starts_on IS NULL) = (covers_ends_on IS NULL)),
   CHECK (covers_starts_on IS NULL OR (kind = 'payment' AND covers_starts_on <= covers_ends_on)),
-  CHECK (parent_movement_id IS NULL OR kind IN ('refund', 'chargeback', 'chargeback_reversal'))
+  CHECK (parent_movement_id IS NULL OR kind IN ('refund', 'chargeback', 'chargeback_reversal')),
+  CHECK (tip_id IS NULL OR source = 'one_time')
 );
 CREATE UNIQUE INDEX income_movements_provider_movement_id ON income_movements (provider, provider_movement_id);
 CREATE INDEX income_movements_occurred_on ON income_movements (occurred_on);

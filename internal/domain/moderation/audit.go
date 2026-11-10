@@ -314,6 +314,12 @@ const (
 	// disabled the supporter program (supporter_program_changes, ADR-0072 §2).
 	AuditSupporterProgramEnabled  AuditAction = "supporter_program_enabled"
 	AuditSupporterProgramDisabled AuditAction = "supporter_program_disabled"
+	// AuditSupporterTipsEnabled, AuditSupporterTipsRevised, AuditSupporterTipsDisabled: an
+	// administrator enabled the tips, changed their amounts, or disabled them
+	// (supporter_tip_changes, ADR-0162 §17). The target is the supporter program.
+	AuditSupporterTipsEnabled  AuditAction = "supporter_tips_enabled"
+	AuditSupporterTipsRevised  AuditAction = "supporter_tips_revised"
+	AuditSupporterTipsDisabled AuditAction = "supporter_tips_disabled"
 	// AuditSupporterPlanCreated, AuditSupporterPlanRevised, AuditSupporterPlanRetired: an
 	// administrator created a supporter plan, changed its terms, or retired it (supporter_plans,
 	// supporter_plan_revisions, supporter_plan_retirements).
@@ -495,6 +501,9 @@ var auditActions = []struct {
 	{AuditCostItemDeleted, AuditTargetCostItem},
 	{AuditSupporterProgramEnabled, AuditTargetSupporterProgram},
 	{AuditSupporterProgramDisabled, AuditTargetSupporterProgram},
+	{AuditSupporterTipsEnabled, AuditTargetSupporterProgram},
+	{AuditSupporterTipsRevised, AuditTargetSupporterProgram},
+	{AuditSupporterTipsDisabled, AuditTargetSupporterProgram},
 	{AuditSupporterPlanCreated, AuditTargetSupporterPlan},
 	{AuditSupporterPlanRevised, AuditTargetSupporterPlan},
 	{AuditSupporterPlanRetired, AuditTargetSupporterPlan},

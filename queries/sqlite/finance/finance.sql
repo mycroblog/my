@@ -137,13 +137,13 @@ ORDER BY h.source, h.billing_month, h.service, h.charge_type;
 -- InsertIncomeMovement writes nothing when the movement is already recorded.
 -- name: InsertIncomeMovement :execrows
 INSERT INTO income_movements (
-  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, occurred_at, occurred_on, covers_starts_on,
-  covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, tip_id, source, occurred_at,
+  occurred_on, covers_starts_on, covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (provider, provider_movement_id) DO NOTHING;
 
 -- name: FindIncomeMovementID :one
-SELECT id FROM income_movements WHERE provider = ? AND provider_movement_id = ?;
+SELECT id, source FROM income_movements WHERE provider = ? AND provider_movement_id = ?;
 
 -- KnownIncomeMovements returns the provider IDs among ids (a JSON array) that are recorded.
 -- name: KnownIncomeMovements :many
@@ -155,7 +155,7 @@ WHERE provider = sqlc.arg(provider) AND provider_movement_id IN (SELECT value FR
 -- and the movements on or before ends_on of a payment whose period ends on or after starts_on,
 -- with the period of their payment.
 -- name: ListIncomeMovementsInWindow :many
-SELECT m.kind, m.occurred_on, m.covers_starts_on, m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency,
+SELECT m.kind, m.source, m.occurred_on, m.covers_starts_on, m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency,
   p.covers_starts_on AS parent_covers_starts_on, p.covers_ends_on AS parent_covers_ends_on
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE (m.occurred_on >= sqlc.arg(starts_on) AND m.occurred_on <= sqlc.arg(ends_on))
@@ -166,7 +166,7 @@ ORDER BY m.occurred_on, m.id;
 -- ListIncomeMovements returns up to lim movements on the dates from starts_on to ends_on, of
 -- kind unless it is empty, newest first, before the movement before unless it is empty.
 -- name: ListIncomeMovements :many
-SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.occurred_at, m.occurred_on, m.covers_starts_on,
+SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.tip_id, m.source, m.occurred_at, m.occurred_on, m.covers_starts_on,
   m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency, m.recorded_at, p.provider_movement_id AS parent_provider_movement_id
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE m.occurred_on >= sqlc.arg(starts_on) AND m.occurred_on <= sqlc.arg(ends_on)

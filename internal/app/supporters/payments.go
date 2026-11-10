@@ -465,6 +465,17 @@ func (p *Payments) HandleNotice(ctx context.Context, n Notice) queue.Result {
 			subs = append(subs, res.Subscription)
 		}
 	}
+	if ch.OneTimeCheckout != "" {
+		if ot, ok := prov.(OneTimePayments); ok {
+			res, err := ot.GetOneTimeCheckout(ctx, ch.OneTimeCheckout)
+			if err != nil {
+				return p.providerFailure(ctx, "get one-time checkout", err)
+			}
+			if _, err := p.d.Syncer.SyncTip(ctx, name, res); err != nil {
+				return queue.Retry(0, err)
+			}
+		}
+	}
 	slices.Sort(subs)
 	for _, ref := range slices.Compact(subs) {
 		if ref == "" {

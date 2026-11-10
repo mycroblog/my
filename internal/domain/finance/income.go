@@ -52,11 +52,40 @@ func (k IncomeKind) HasParent() bool {
 	return k == IncomeRefund || k == IncomeChargeback || k == IncomeChargebackReversal
 }
 
+// IncomeSource is where a money movement comes from (ADR-0067 §12, ADR-0162 §8).
+type IncomeSource string
+
+// Income sources.
+const (
+	// SourceSubscription is a movement of a subscription of ours.
+	SourceSubscription IncomeSource = "subscription"
+	// SourceOneTime is a movement of a tip of ours (ADR-0162).
+	SourceOneTime IncomeSource = "one_time"
+	// SourceUnknown is a movement of neither: a payment taken outside my, or a fee of no
+	// subscription.
+	SourceUnknown IncomeSource = "unknown"
+)
+
+// IncomeSources returns every source, in a fixed order.
+func IncomeSources() []IncomeSource {
+	return []IncomeSource{SourceSubscription, SourceOneTime, SourceUnknown}
+}
+
+// Validate fails with ErrInvalidIncome for an unknown source.
+func (s IncomeSource) Validate() error {
+	if !slices.Contains(IncomeSources(), s) {
+		return fmt.Errorf("%w: source %q", ErrInvalidIncome, s)
+	}
+	return nil
+}
+
 // IncomeMovement is a recorded money movement as the income totals read it (income_movements):
-// its kind, the date it falls on in the provider's reporting time zone, the billing period that
+// its kind, its source, the date it falls on in the provider's reporting time zone, the billing period that
 // a payment pays for, and its gross, fee, and net in one currency.
 type IncomeMovement struct {
-	Kind       IncomeKind
+	Kind IncomeKind
+	// Source is where the movement comes from; "" counts as SourceUnknown in the totals.
+	Source     IncomeSource
 	OccurredOn Date
 	// Covers is the billing period of a payment; nil for the other kinds and for a payment
 	// without one.
@@ -73,6 +102,11 @@ type IncomeMovement struct {
 func (m IncomeMovement) Validate() error {
 	if err := m.Kind.Validate(); err != nil {
 		return err
+	}
+	if m.Source != "" {
+		if err := m.Source.Validate(); err != nil {
+			return err
+		}
 	}
 	if _, err := ParseCurrency(string(m.Net.Currency)); err != nil {
 		return err
@@ -129,12 +163,20 @@ func incomeEntries(m IncomeMovement, basis Basis, amount Money) []Entry {
 // IncomeTotal is what a period of the income totals carries: the net, the gross, and the fee of
 // each currency, sorted by currency code. A currency appears when a movement meets the period,
 // even with a zero amount. Fee is the gross less the net of the period, so that the three agree
-// however the days round.
+// however the days round. NetBySource is the net of each source that a movement of the period
+// has, in the order of IncomeSources: what the administrators see (ADR-0162 §16).
 type IncomeTotal struct {
-	Period Period
+	Period      Period
+	Net         []Money
+	Gross       []Money
+	Fee         []Money
+	NetBySource []SourceNet
+}
+
+// SourceNet is the net of one source over a period, by currency.
+type SourceNet struct {
+	Source IncomeSource
 	Net    []Money
-	Gross  []Money
-	Fee    []Money
 }
 
 // IncomeTotals places ms under basis (ADR-0067 §15) and totals each period by currency, never
@@ -144,12 +186,23 @@ func IncomeTotals(ms []IncomeMovement, basis Basis, periods []Period) []IncomeTo
 		return nil
 	}
 	var net, gross []Entry
+	bySource := map[IncomeSource][]Entry{}
 	for _, m := range ms {
-		net = append(net, incomeEntries(m, basis, m.Net)...)
+		e := incomeEntries(m, basis, m.Net)
+		net = append(net, e...)
 		gross = append(gross, incomeEntries(m, basis, m.Gross)...)
+		src := m.Source
+		if src == "" {
+			src = SourceUnknown
+		}
+		bySource[src] = append(bySource[src], e...)
 	}
 	netTotals := Summarize(net, periods)
 	grossTotals := Summarize(gross, periods)
+	sourceTotals := map[IncomeSource][]PeriodTotal{}
+	for src, e := range bySource {
+		sourceTotals[src] = Summarize(e, periods)
+	}
 	out := make([]IncomeTotal, len(periods))
 	for i, p := range periods {
 		t := IncomeTotal{Period: p, Net: netTotals[i].Totals, Gross: grossTotals[i].Totals, Fee: make([]Money, 0, len(netTotals[i].Totals))}
@@ -161,6 +214,12 @@ func IncomeTotals(ms []IncomeMovement, basis Basis, periods []Period) []IncomeTo
 				}
 			}
 			t.Fee = append(t.Fee, fee)
+		}
+		t.NetBySource = []SourceNet{}
+		for _, src := range IncomeSources() {
+			if st, ok := sourceTotals[src]; ok && len(st[i].Totals) > 0 {
+				t.NetBySource = append(t.NetBySource, SourceNet{Source: src, Net: st[i].Totals})
+			}
 		}
 		out[i] = t
 	}

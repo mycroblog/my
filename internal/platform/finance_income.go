@@ -89,6 +89,43 @@ func (d supporterDirectory) SubscriptionAccounts(ctx context.Context, ids []stri
 	return out, nil
 }
 
+func (d supporterDirectory) TipAccounts(ctx context.Context, ids []string) (map[string]finance.Subscriber, error) {
+	out := map[string]finance.Subscriber{}
+	if d.a.Supporters == nil {
+		return out, nil
+	}
+	users, err := d.a.Supporters.TipUsers(ctx, ids)
+	if err != nil || len(users) == 0 {
+		return out, err
+	}
+	accounts := map[string]finance.Subscriber{}
+	for tipID, userID := range users {
+		acct, read := accounts[userID]
+		if !read {
+			la, err := d.a.Accounts.LocalAccountOfUser(ctx, userID)
+			switch {
+			case errors.Is(err, account.ErrNotFound):
+			case err != nil:
+				return nil, err
+			default:
+				acct = finance.Subscriber{AccountID: la.AccountID, Username: la.Username}
+			}
+			accounts[userID] = acct
+		}
+		if acct.AccountID != "" {
+			out[tipID] = acct
+		}
+	}
+	return out, nil
+}
+
+func (d supporterDirectory) TipsEnabled(ctx context.Context) (bool, error) {
+	if d.a.Supporters == nil {
+		return false, nil
+	}
+	return d.a.Supporters.TipsEnabled(ctx)
+}
+
 func (d supporterDirectory) ProviderRules() []finance.ProviderRule {
 	if d.a.Supporters == nil {
 		return nil

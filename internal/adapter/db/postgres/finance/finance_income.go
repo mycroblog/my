@@ -51,6 +51,7 @@ func (r *Repository) InsertIncome(ctx context.Context, tx uow.Tx, rec appfinance
 	n, err := q.InsertIncomeMovement(ctx, financegen.InsertIncomeMovementParams{
 		ID: rec.ID, Provider: rec.Provider, ProviderMovementID: rec.ProviderID, Kind: string(rec.Kind),
 		ParentMovementID: postgres.ToNullString(rec.ParentMovementID), SubscriptionID: postgres.ToNullString(rec.SubscriptionID),
+		TipID: postgres.ToNullString(rec.TipID), Source: string(rec.Source),
 		OccurredAt: rec.OccurredAt, OccurredOn: toDate(rec.OccurredOn), CoversStartsOn: starts, CoversEndsOn: ends,
 		GrossMinor: rec.Gross.Minor, FeeMinor: rec.Fee.Minor, NetMinor: rec.Net.Minor, Currency: string(rec.Net.Currency),
 		RecordedAt: rec.RecordedAt,
@@ -59,16 +60,16 @@ func (r *Repository) InsertIncome(ctx context.Context, tx uow.Tx, rec appfinance
 }
 
 // FindIncomeID implements appfinance.Repository.
-func (r *Repository) FindIncomeID(ctx context.Context, tx uow.Tx, provider, providerID string) (string, error) {
+func (r *Repository) FindIncomeID(ctx context.Context, tx uow.Tx, provider, providerID string) (string, finance.IncomeSource, error) {
 	q, err := r.db.queries(tx)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	id, err := q.FindIncomeMovementID(ctx, financegen.FindIncomeMovementIDParams{Provider: provider, ProviderMovementID: providerID})
 	if err != nil {
-		return "", postgres.NotFound(err, appfinance.ErrNotFound, "income movement "+providerID)
+		return "", "", postgres.NotFound(err, appfinance.ErrNotFound, "income movement "+providerID)
 	}
-	return id, nil
+	return id.ID, finance.IncomeSource(id.Source), nil
 }
 
 // KnownIncome implements appfinance.Repository.
@@ -104,7 +105,7 @@ func (r *Repository) IncomeInWindow(ctx context.Context, window finance.DateRang
 		}
 		gross, fee, net := incomeMoney(row.GrossMinor, row.FeeMinor, row.NetMinor, row.Currency)
 		out[i] = finance.IncomeMovement{
-			Kind: finance.IncomeKind(row.Kind), OccurredOn: on, Covers: covers, ParentCovers: parent, Gross: gross, Fee: fee, Net: net,
+			Kind: finance.IncomeKind(row.Kind), Source: finance.IncomeSource(row.Source), OccurredOn: on, Covers: covers, ParentCovers: parent, Gross: gross, Fee: fee, Net: net,
 		}
 	}
 	return out, nil
@@ -133,8 +134,9 @@ func (r *Repository) ListIncome(ctx context.Context, f appfinance.IncomeFilter, 
 		}
 		gross, fee, net := incomeMoney(row.GrossMinor, row.FeeMinor, row.NetMinor, row.Currency)
 		out[i] = appfinance.IncomeRecord{
-			ID: row.ID, Provider: row.Provider, ProviderID: row.ProviderMovementID, Kind: finance.IncomeKind(row.Kind),
+			ID: row.ID, Provider: row.Provider, ProviderID: row.ProviderMovementID, Kind: finance.IncomeKind(row.Kind), Source: finance.IncomeSource(row.Source),
 			ParentProviderID: postgres.FromNullString(row.ParentProviderMovementID), SubscriptionID: postgres.FromNullString(row.SubscriptionID),
+			TipID:      postgres.FromNullString(row.TipID),
 			OccurredAt: row.OccurredAt, OccurredOn: on, Covers: covers, Gross: gross, Fee: fee, Net: net,
 			RecordedAt: row.RecordedAt,
 		}
