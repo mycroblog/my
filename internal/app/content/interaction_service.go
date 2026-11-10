@@ -67,9 +67,10 @@ func NewInteractions(d InteractionDeps) *Interactions {
 // Boost makes accountID boost statusID and returns the live boost. Boosting a status that the
 // account already boosts returns the existing boost. The boost copies the status's visibility;
 // a boost of a local status never federates (content.Boost.Federates, ADR-0017). A status whose
-// visibility does not allow the account to boost it fails with content.ErrNotBoostable, and an
-// account whose restrictions forbid posting or interacting with ErrPostingRestricted or
-// ErrInteractionRestricted.
+// visibility does not allow the account to boost it fails with content.ErrNotBoostable, one whose
+// boost rules do not admit the account at once with ErrBoostNotAllowed (content.MayInteract,
+// ADR-0155 §3), and an account whose restrictions forbid posting or interacting with
+// ErrPostingRestricted or ErrInteractionRestricted.
 func (s *Interactions) Boost(ctx context.Context, accountID, statusID string) (content.Boost, error) {
 	if err := s.checkRestrictions(ctx, accountID, true); err != nil {
 		return content.Boost{}, err
@@ -80,6 +81,9 @@ func (s *Interactions) Boost(ctx context.Context, accountID, statusID string) (c
 	}
 	if !st.Visibility.Boostable(st.AuthorAccountID == accountID) {
 		return content.Boost{}, fmt.Errorf("boost %s: %w", statusID, content.ErrNotBoostable)
+	}
+	if err := s.interactionReaders().localMayInteract(ctx, content.InteractionAnnounce, accountID, nil, st, ErrBoostNotAllowed); err != nil {
+		return content.Boost{}, err
 	}
 	id := s.d.IDs.NewID()
 	b := content.Boost{
@@ -391,6 +395,11 @@ func (s *Interactions) checkRestrictions(ctx context.Context, accountID string, 
 		return fmt.Errorf("account %s: %w", accountID, ErrInteractionRestricted)
 	}
 	return nil
+}
+
+// interactionReaders returns the ports that decide who may interact with a status.
+func (s *Interactions) interactionReaders() interactionReaders {
+	return interactionReaders{statuses: s.d.Statuses, policies: s.d.Quotes, relationships: s.d.Relationships, accounts: s.d.Accounts}
 }
 
 func (s *Interactions) audience() audience {

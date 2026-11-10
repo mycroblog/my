@@ -21,3 +21,15 @@ ON CONFLICT (status_id, kind, approval, audience, actor_uri) DO NOTHING;
 
 -- name: PurgeStatusInteractionPolicies :exec
 DELETE FROM status_interaction_policies WHERE status_id = ANY(sqlc.arg(ids)::uuid[]);
+
+-- The replies held out of the threads of their parents (held_replies, ADR-0155 section 6).
+
+-- name: InsertHeldReply :exec
+INSERT INTO held_replies (status_id, reason, held_at) VALUES ($1, $2, $3)
+ON CONFLICT (status_id) DO NOTHING;
+
+-- name: HeldReplyExists :one
+SELECT EXISTS (SELECT 1 FROM held_replies WHERE status_id = $1);
+
+-- name: PurgeHeldReplies :exec
+DELETE FROM held_replies WHERE status_id = ANY(sqlc.arg(ids)::uuid[]);

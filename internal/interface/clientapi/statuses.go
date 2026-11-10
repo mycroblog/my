@@ -154,6 +154,8 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 		return unprocessable(l.ServerErrorsStatusLocalUnavailable())
 	case errors.Is(err, appcontent.ErrReplyTargetNotFound):
 		return unprocessable(l.ServerErrorsStatusReplyNotFound())
+	case errors.Is(err, appcontent.ErrReplyNotAllowed):
+		return unprocessable(l.ServerErrorsStatusReplyNotAllowed())
 	case errors.Is(err, appcontent.ErrQuoteTargetNotFound):
 		return unprocessable(l.ServerErrorsStatusQuoteNotFound())
 	case errors.Is(err, appcontent.ErrQuoteNotAllowed):
@@ -174,6 +176,8 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 		return unprocessable(l.ServerErrorsStatusMissingMediaDescription())
 	case errors.Is(err, content.ErrNotBoostable):
 		return unprocessable(l.ServerErrorsStatusNotBoostable())
+	case errors.Is(err, appcontent.ErrBoostNotAllowed):
+		return unprocessable(l.ServerErrorsStatusBoostNotAllowed())
 	case errors.Is(err, content.ErrNotPinnable):
 		return unprocessable(l.ServerErrorsStatusNotPinnable())
 	case errors.Is(err, content.ErrPinLimit):

@@ -475,6 +475,10 @@
     "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ƈřḗḗȧȧŧḗḗḓ ẇīŧħ ŧħīş Īḓḗḗḿƥǿǿŧḗḗƞƈẏ-Ķḗḗẏ ħȧȧş ƀḗḗḗḗƞ ḓḗḗŀḗḗŧḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.status.boost_not_allowed": {
+    "defaultMessage": "[Ŧħḗḗ ȧȧŭŭŧħǿǿř ǿǿƒ ŧħīş ƥǿǿşŧ ḓǿǿḗḗş ƞǿǿŧ ŀḗḗŧ ẏǿǿŭŭ ƀǿǿǿǿşŧ īŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.status.edit_rejected": {
     "defaultMessage": "[Ŧħīş ḗḗḓīŧ ẇȧȧş ƞǿǿŧ şȧȧṽḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -589,6 +593,10 @@
   },
   "errors.status.rejected.detail": {
     "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř'ş ȧȧŭŭŧǿǿḿȧȧŧḗḗḓ řḗḗṽīḗḗẇ ḓīḓ ƞǿǿŧ ȧȧƈƈḗḗƥŧ ŧħīş ƥǿǿşŧ. Īƒ ẏǿǿŭŭ ŧħīƞķ ŧħīş īş ȧȧ ḿīşŧȧȧķḗḗ, ẏǿǿŭŭ ƈȧȧƞ ȧȧƥƥḗḗȧȧŀ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.reply_not_allowed": {
+    "defaultMessage": "[Ŧħḗḗ ȧȧŭŭŧħǿǿř ǿǿƒ ŧħīş ƥǿǿşŧ ḓǿǿḗḗş ƞǿǿŧ ŀḗḗŧ ẏǿǿŭŭ řḗḗƥŀẏ ŧǿǿ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.reply_not_found": {

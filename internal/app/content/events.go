@@ -29,6 +29,10 @@ type StatusCreated struct {
 	// ConversationID is the conversation that the status belongs to (ADR-0154 §2), after the
 	// merges that storing it caused, whose ConversationMerged events come before this one.
 	ConversationID string
+	// HeldReply is whether the status is a reply held out of the thread of its parent
+	// (held_replies, ADR-0155 §6): it is not linked to its parent nor counted, and it notifies
+	// no one.
+	HeldReply bool
 }
 
 // EventType implements uow.Event.
@@ -39,6 +43,8 @@ func (StatusCreated) EventType() string { return EventStatusCreated }
 type StatusRevised struct {
 	Status   content.Status
 	Revision content.Revision
+	// HeldReply is whether the status is a held reply (StatusCreated.HeldReply).
+	HeldReply bool
 }
 
 // EventType implements uow.Event.

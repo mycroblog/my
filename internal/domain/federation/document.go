@@ -46,11 +46,19 @@ func LDContext() []any {
 			"conversation":              "ostatus:conversation",
 			"gts":                       "https://gotosocial.org/ns#",
 			"interactionPolicy":         map[string]string{"@id": "gts:interactionPolicy", "@type": "@id"},
+			"canReply":                  map[string]string{"@id": "gts:canReply", "@type": "@id"},
+			"canAnnounce":               map[string]string{"@id": "gts:canAnnounce", "@type": "@id"},
 			"canQuote":                  map[string]string{"@id": "gts:canQuote", "@type": "@id"},
 			"automaticApproval":         map[string]string{"@id": "gts:automaticApproval", "@type": "@id"},
 			"manualApproval":            map[string]string{"@id": "gts:manualApproval", "@type": "@id"},
 			"interactingObject":         map[string]string{"@id": "gts:interactingObject", "@type": "@id"},
 			"interactionTarget":         map[string]string{"@id": "gts:interactionTarget", "@type": "@id"},
+			"ReplyRequest":              "gts:ReplyRequest",
+			"AnnounceRequest":           "gts:AnnounceRequest",
+			"ReplyAuthorization":        "gts:ReplyAuthorization",
+			"AnnounceAuthorization":     "gts:AnnounceAuthorization",
+			"replyAuthorization":        map[string]string{"@id": "gts:replyAuthorization", "@type": "@id"},
+			"announceAuthorization":     map[string]string{"@id": "gts:announceAuthorization", "@type": "@id"},
 			"quote":                     map[string]string{"@id": "https://w3id.org/fep/044f#quote", "@type": "@id"},
 			"quoteAuthorization":        map[string]string{"@id": "https://w3id.org/fep/044f#quoteAuthorization", "@type": "@id"},
 			"QuoteRequest":              "https://w3id.org/fep/044f#QuoteRequest",
@@ -261,14 +269,16 @@ type NoteDocument struct {
 	QuoteURL           IRI `json:"quoteUrl,omitempty"`
 	QuoteURI           IRI `json:"quoteUri,omitempty"`
 	QuoteAuthorization IRI `json:"quoteAuthorization,omitempty"`
-	// InteractionPolicy says who may quote the status.
+	// InteractionPolicy says who may reply to, boost, and quote the status.
 	InteractionPolicy *InteractionPolicy `json:"interactionPolicy,omitempty"`
 }
 
 // InteractionPolicy is the interactionPolicy of a status (GoToSocial's interaction policies,
-// FEP-044f): only canQuote.
+// FEP-044f): who may reply to it, boost it, and quote it. canLike is never sent (ADR-0155 §1).
 type InteractionPolicy struct {
-	CanQuote ApprovalPolicy `json:"canQuote"`
+	CanReply    ApprovalPolicy `json:"canReply"`
+	CanAnnounce ApprovalPolicy `json:"canAnnounce"`
+	CanQuote    ApprovalPolicy `json:"canQuote"`
 }
 
 // ApprovalPolicy is a can* of an interactionPolicy: whose interactions are approved

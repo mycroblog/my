@@ -16,7 +16,7 @@
 | `login_provider_heads` / `user_external_identities` | `login_provider_revisions`・`login_provider_state_changes`・`login_provider_secrets`、`external_identity_links`・`external_identity_unlinks` | 同期 |
 | `account_handles` / `remote_account_heads` / `account_profile_heads` | `local_accounts` と `remote_account_handle_verifications`、`remote_account_snapshots` と取得の結果、`account_profile_revisions` | 同期 |
 | `account_search_terms` | `account_handles`・`account_profile_heads`・`account_lifecycle_states` と `moderation` の凍結（`account_restrictions`） | 同期（再構築は Go の `account.SearchTermProjector.Rebuild`。`moderation` の後に走る） |
-| `status_heads` / `status_mention_index` / `status_reply_links` | `status_revisions` と子テーブル、`statuses`、`status_deletions` | 同期 |
+| `status_heads` / `status_mention_index` / `status_reply_links` | `status_revisions` と子テーブル、`statuses`、`status_deletions`、`held_replies` | 同期 |
 | `status_link_cards` | `status_revisions` の本文・ソース・添付・投票、`status_deletions` | 同期（URL は Go の `content.LinkCardURL` が選ぶので、`my projection` の対象ではない） |
 | `custom_emoji_pending_requests` | `custom_emoji_requests`, `custom_emoji_request_outcomes` | 同期 |
 | `status_reaction_counts` | `reactions`, `status_deletions` | 同期 |

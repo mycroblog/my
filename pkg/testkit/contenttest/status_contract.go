@@ -35,7 +35,8 @@ type StatusFactory func(t *testing.T, opts uow.Options) StatusHarness
 // the content module's synchronous projectors: storing statuses with their revisions and
 // children, the unique keys (URI, Idempotency-Key, revision seq, deletion), revisions moving
 // the head, deletions as tombstones that remove the status from every projection, reply links
-// in either order of arrival with the replies count, the post counters, tags, and the property
+// in either order of arrival with the replies count, held replies left out of both, the post
+// counters, tags, and the property
 // that incrementally updated projections equal a rebuild from the sources.
 func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 	t.Helper()
@@ -52,6 +53,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"DeletesStatuses", statusDeletes},
 		{"DeletesManyStatuses", statusDeletesMany},
 		{"LinksReplies", statusLinksReplies},
+		{"KeepsHeldRepliesOutOfTheThread", statusKeepsHeldReplies},
 		{"CountsPosts", statusCountsPosts},
 		{"CountsLocalPosts", statusCountsLocalPosts},
 		{"CountsDailyLocalPublicPosts", statusCountsDailyLocalPublicPosts},
@@ -761,6 +763,70 @@ func statusDeletes(t *testing.T, e *StatusEnv) {
 	if _, err := e.H.Statuses.FindCurrentRevision(ctx, s.ID); !errors.Is(err, appcontent.ErrNotFound) {
 		t.Errorf("FindCurrentRevision after a late revision = %v, want ErrNotFound", err)
 	}
+}
+
+// statusKeepsHeldReplies stores a held reply (held_replies) as the content module does, in the
+// transaction of its status: it is neither linked, nor counted, nor listed among the replies, and
+// a rebuild leaves it out the same way.
+func statusKeepsHeldReplies(t *testing.T, e *StatusEnv) {
+	ctx := t.Context()
+	parent := e.NewStatus(e.IDs.NewID(), content.VisibilityPublic)
+	e.mustCreate(t, parent)
+	admitted := e.NewStatus(e.IDs.NewID(), content.VisibilityPublic)
+	admitted.InReplyToURI = parent.URI
+	e.mustCreate(t, admitted)
+	held := e.NewStatus(e.IDs.NewID(), content.VisibilityPublic)
+	held.InReplyToURI = parent.URI
+	rev := e.FirstRevision(held)
+	h := content.HeldReply{StatusID: held.ID, Reason: content.HeldReplyRefused, HeldAt: e.Clock.Now()}
+	err := e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := e.H.Statuses.InsertStatus(ctx, tx, held); err != nil {
+			return err
+		}
+		if err := e.H.Statuses.InsertRevision(ctx, tx, rev); err != nil {
+			return err
+		}
+		if err := e.H.Statuses.InsertHeldReply(ctx, tx, h); err != nil {
+			return err
+		}
+		// Recording it again does nothing.
+		if err := e.H.Statuses.InsertHeldReply(ctx, tx, h); err != nil {
+			return err
+		}
+		return tx.Emit(ctx, appcontent.StatusCreated{Status: held, Revision: rev, HeldReply: true})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		for _, tc := range []struct {
+			id   string
+			want bool
+		}{{held.ID, true}, {admitted.ID, false}, {e.IDs.NewID(), false}} {
+			if got, err := e.H.Statuses.IsHeldReply(ctx, tx, tc.id); err != nil || got != tc.want {
+				t.Errorf("IsHeldReply(%s) = %t, %v; want %t", tc.id, got, err, tc.want)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	check := func(when string) {
+		t.Helper()
+		if links, err := e.H.Statuses.ListReplyLinks(ctx); err != nil || len(links) != 1 || links[0].StatusID != admitted.ID {
+			t.Errorf("%s: ListReplyLinks = %+v, %v; want the admitted reply alone", when, links, err)
+		}
+		if c := e.counters(t, parent.ID); c.RepliesCount != 1 {
+			t.Errorf("%s: replies count = %d, want 1", when, c.RepliesCount)
+		}
+		if got, err := e.H.Statuses.ListReplies(ctx, parent.URI); err != nil || len(got) != 1 || got[0].ID != admitted.ID {
+			t.Errorf("%s: ListReplies = %+v, %v; want the admitted reply alone", when, got, err)
+		}
+	}
+	check("incrementally")
+	statusConvergesToRebuild(t, e)
+	check("after a rebuild")
 }
 
 func statusLinksReplies(t *testing.T, e *StatusEnv) {

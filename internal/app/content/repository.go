@@ -79,8 +79,8 @@ type Repository interface {
 	// StatusConversations returns the conversation that each of statusIDs belongs to, by status,
 	// with one query; a status without one is left out.
 	StatusConversations(ctx context.Context, statusIDs []string) (map[string]content.Conversation, error)
-	// ListLiveConversationStatuses returns up to limit statuses of a conversation that are not
-	// deleted, in ID order after the ID after ("" for the first page).
+	// ListLiveConversationStatuses returns up to limit statuses of a conversation that are neither
+	// deleted nor held (held_replies), in ID order after the ID after ("" for the first page).
 	ListLiveConversationStatuses(ctx context.Context, conversationID, after string, limit int) ([]content.Status, error)
 
 	// Projections, written only by this module's projectors and rebuild.
@@ -99,8 +99,13 @@ type Repository interface {
 	IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bool, error)
 	// FindLiveStatusByURI returns the status with uri unless it is deleted.
 	FindLiveStatusByURI(ctx context.Context, tx uow.Tx, uri string) (content.Status, error)
-	// ListLiveRepliesTo returns the statuses that reply to uri and are not deleted, ordered by ID.
+	// ListLiveRepliesTo returns the statuses that reply to uri and are neither deleted nor held
+	// (held_replies), ordered by ID.
 	ListLiveRepliesTo(ctx context.Context, tx uow.Tx, uri string) ([]content.Status, error)
+	// InsertHeldReply records that a reply is held out of the thread of its parent (ADR-0155 §6);
+	// recording it again does nothing. IsHeldReply reports whether a status is held.
+	InsertHeldReply(ctx context.Context, tx uow.Tx, h content.HeldReply) error
+	IsHeldReply(ctx context.Context, tx uow.Tx, statusID string) (bool, error)
 	UpsertReplyLink(ctx context.Context, tx uow.Tx, l content.ReplyLink) error
 	// ReplyLink returns the link from a reply to its parent.
 	ReplyLink(ctx context.Context, tx uow.Tx, statusID string) (content.ReplyLink, error)
@@ -231,7 +236,8 @@ type Repository interface {
 	// ListTagsByPrefix returns up to limit tags whose NameNormalized is at least low and less
 	// than high, compared byte by byte, in that order (the prefix search of hashtags, ADR-0092 §1).
 	ListTagsByPrefix(ctx context.Context, low, high string, limit int) ([]content.Tag, error)
-	// ListReplies returns the statuses that reply to uri and are not deleted, ordered by ID.
+	// ListReplies returns the statuses that reply to uri and are neither deleted nor held, ordered
+	// by ID.
 	ListReplies(ctx context.Context, uri string) ([]content.Status, error)
 	// ListLiveRemoteStatusIDs returns up to limit remote statuses of an author that are not
 	// deleted, newest first, by ID, whose ID is below before ("" for the first page).

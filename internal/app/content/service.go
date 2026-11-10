@@ -536,10 +536,22 @@ func (s *Service) replay(ctx context.Context, authorID, key string) (Post, error
 
 // replyTarget returns the status that authorID replies to, provided that authorID may see it.
 // A status that does not exist, is deleted, or is hidden from the author fails alike with
-// ErrReplyTargetNotFound, so that a reply does not reveal it.
+// ErrReplyTargetNotFound, so that a reply does not reveal it; one whose reply rules do not admit
+// the author at once with ErrReplyNotAllowed (content.MayInteract, ADR-0155 §3, §7).
 func (s *Service) replyTarget(ctx context.Context, authorID, statusID string) (content.Status, error) {
-	st, _, err := s.visibleTo(ctx, authorID, statusID)
-	return st, err
+	st, in, err := s.visibleTo(ctx, authorID, statusID)
+	if err != nil {
+		return content.Status{}, err
+	}
+	if err := s.interactionReaders().localMayInteract(ctx, content.InteractionReply, authorID, &in, st, ErrReplyNotAllowed); err != nil {
+		return content.Status{}, err
+	}
+	return st, nil
+}
+
+// interactionReaders returns the ports that decide who may interact with a status.
+func (s *Service) interactionReaders() interactionReaders {
+	return interactionReaders{statuses: s.d.Repository, policies: s.d.Quotes, relationships: s.d.Relationships, accounts: s.d.Accounts}
 }
 
 // EditInput describes an edit of a local status.

@@ -116,6 +116,8 @@ type RemotePollInput struct {
 // §3; insertStatus). It emits StatusCreated, so that the projections, the timelines, and the
 // notifications see the post. The caller decides that the post is in scope (ADR-0006) and is not
 // tombstoned.
+// A reply to a local status whose reply rules do not admit its author is stored as a held reply
+// (heldReplyReason, ADR-0155 §6): out of the thread, uncounted, and notifying no one.
 //
 // A URI that a status already has fails with ErrStatusExists; the transaction must then be
 // abandoned (the status is already there).
@@ -137,9 +139,18 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 		InReplyToURI:    in.InReplyToURI,
 		PublishedAt:     published,
 	}
+	held, err := s.heldReply(ctx, tx, st, now)
+	if err != nil {
+		return Post{}, err
+	}
 	ins, err := s.insertStatus(ctx, tx, st, in.Conversation)
 	if err != nil {
 		return Post{}, err
+	}
+	if held != nil {
+		if err := s.d.Repository.InsertHeldReply(ctx, tx, *held); err != nil {
+			return Post{}, err
+		}
 	}
 	revisedAt := remoteRevisedAt(in.RevisedAt, published, now)
 	rev, err := s.remoteRevision(ctx, tx, in, st.ID, 1, revisedAt)
@@ -149,7 +160,7 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err := s.d.Repository.InsertRevision(ctx, tx, rev); err != nil {
 		return Post{}, err
 	}
-	if err := tx.Emit(ctx, StatusCreated{Status: st, Revision: rev, ConversationID: ins.ConversationID}); err != nil {
+	if err := tx.Emit(ctx, StatusCreated{Status: st, Revision: rev, ConversationID: ins.ConversationID, HeldReply: held != nil}); err != nil {
 		return Post{}, err
 	}
 	if err := s.recordQuote(ctx, tx, st, in.Quote); err != nil {
@@ -204,7 +215,13 @@ func (s *Service) ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err := s.d.Repository.InsertRevision(ctx, tx, rev); err != nil {
 		return false, err
 	}
-	if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev}); err != nil {
+	held := false
+	if st.InReplyToURI != "" {
+		if held, err = s.d.Repository.IsHeldReply(ctx, tx, st.ID); err != nil {
+			return false, err
+		}
+	}
+	if err := tx.Emit(ctx, StatusRevised{Status: st, Revision: rev, HeldReply: held}); err != nil {
 		return false, err
 	}
 	if in.Quote == nil {
@@ -537,3 +554,63 @@ func truncateRunes(s string, n int) string {
 }
 
 func clampFocus(v float64) float64 { return min(max(v, -1), 1) }
+
+// heldReply returns the held reply that st, a remote status being stored, is when it replies to a
+// stored local status whose reply rules do not admit its author (heldReplyReason), nil otherwise.
+func (s *Service) heldReply(ctx context.Context, tx uow.Tx, st content.Status, now time.Time) (*content.HeldReply, error) {
+	if st.InReplyToURI == "" {
+		return nil, nil
+	}
+	parent, err := s.d.Repository.FindLiveStatusByURI(ctx, tx, st.InReplyToURI)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return nil, nil // a remote parent that arrives later is not policed (ADR-0155 §6)
+	case err != nil:
+		return nil, err
+	case !parent.IsLocal:
+		return nil, nil
+	}
+	reason, ok, err := s.heldReplyReason(ctx, st.AuthorAccountID, parent)
+	if err != nil || !ok {
+		return nil, err
+	}
+	return &content.HeldReply{StatusID: st.ID, Reason: reason, HeldAt: now}, nil
+}
+
+// heldReplyReason returns why a reply of the remote account authorID to the local status parent
+// is held out of its thread (ADR-0155 §6), and false when the reply is admitted: the account may
+// see parent as an ActivityPub fetch by it would (content.CanView), neither blocks the other, and
+// the reply rules of parent admit it at once (content.MayInteract).
+func (s *Service) heldReplyReason(ctx context.Context, authorID string, parent content.Status) (content.HeldReplyReason, bool, error) {
+	restrictions, err := s.d.Restrictions.Restrictions(ctx, parent.AuthorAccountID)
+	if err != nil {
+		return "", false, err
+	}
+	r, err := s.d.Relationships.Relationship(ctx, authorID, parent.AuthorAccountID)
+	if err != nil {
+		return "", false, err
+	}
+	rel := content.Relation{Blocking: r.Blocking, BlockedBy: r.BlockedBy}
+	switch {
+	case r.ActivelyFollowing():
+		rel.Follow = content.FollowActive
+	case r.RequestedFollow():
+		rel.Follow = content.FollowPending
+	}
+	rev, err := s.d.Repository.FindCurrentRevision(ctx, parent.ID)
+	if err != nil {
+		return "", false, err
+	}
+	rel.Mentioned = slices.Contains(rev.MentionedAccountIDs, authorID)
+	viewer := content.Viewer{Kind: content.ViewerRemote, AccountID: authorID}
+	facts := content.StatusFacts{AuthorAccountID: parent.AuthorAccountID, AuthorIsLocal: parent.IsLocal, Visibility: parent.Visibility}
+	decision := content.InteractionDenied
+	if content.CanView(content.ContextObjectFetch, viewer, facts, restrictions.Author, rel) && !rel.Blocking && !rel.BlockedBy {
+		in := interactor{follows: r.ActivelyFollowing(), followedBy: r.ActivelyFollowedBy(), mentioned: rel.Mentioned}
+		if decision, err = s.interactionReaders().mayInteract(ctx, content.InteractionReply, authorID, false, &in, parent); err != nil {
+			return "", false, err
+		}
+	}
+	reason, held := content.HeldReplyReasonOf(decision)
+	return reason, held, nil
+}

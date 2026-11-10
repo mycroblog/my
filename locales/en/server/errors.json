@@ -351,6 +351,10 @@
     "defaultMessage": "The post created with this Idempotency-Key has been deleted.",
     "description": "Detail of the HTTP 409 API error when a client retries posting with an Idempotency-Key whose post was deleted. Idempotency-Key is a header name (not translated)."
   },
+  "errors.status.boost_not_allowed": {
+    "defaultMessage": "The author of this post does not let you boost it.",
+    "description": "Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them."
+  },
   "errors.status.empty_text": {
     "defaultMessage": "The post has no text.",
     "description": "Detail of the HTTP 422 API error when a post's text is empty or only spaces."
@@ -450,6 +454,10 @@
   "errors.status.reply_not_found": {
     "defaultMessage": "The post you are replying to was not found.",
     "description": "Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see."
+  },
+  "errors.status.reply_not_allowed": {
+    "defaultMessage": "The author of this post does not let you reply to it.",
+    "description": "Detail of the HTTP 422 API error when the author of a post chose who may reply to it and the user is not among them."
   },
   "errors.status.text_too_long": {
     "defaultMessage": "{max, plural, one {The text and content warning must be at most # character.} other {The text and content warning must be at most # characters.}}",

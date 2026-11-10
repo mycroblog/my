@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"time"
 )
 
 // This file holds who may reply to, boost, and quote a status (ADR-0155 §1–§5): the rules of a
@@ -340,4 +341,42 @@ func (r InteractionRule) includes(f InteractionFacts) bool {
 		return r.ActorURI != "" && r.ActorURI == f.ActorURI
 	}
 	return false
+}
+
+// HeldReplyReason is why a reply is held out of the thread of its parent: the decision of
+// MayInteract that did not admit it.
+type HeldReplyReason string
+
+// Held reply reasons (held_replies.reason).
+const (
+	// HeldReplyPending is a reply that a manual rule includes: it waits for the author's approval.
+	HeldReplyPending HeldReplyReason = "pending"
+	// HeldReplyRefused is a reply that no rule includes.
+	HeldReplyRefused HeldReplyReason = "refused"
+)
+
+// Valid reports whether r is a known reason.
+func (r HeldReplyReason) Valid() bool { return r == HeldReplyPending || r == HeldReplyRefused }
+
+// HeldReply is a remote reply to a local status that the status's reply rules did not admit
+// when it arrived (held_replies, ADR-0155 §6). It is stored and shown on its author's profile
+// and on its own, but it is not among the replies of its parent nor counted, and it notifies no
+// one. A later change of the rules does not release it, as it does not withdraw a reply admitted
+// before.
+type HeldReply struct {
+	StatusID string
+	Reason   HeldReplyReason
+	HeldAt   time.Time
+}
+
+// HeldReplyReasonOf returns the reason to hold a reply that d did not admit; ok is false for a
+// reply that d admits.
+func HeldReplyReasonOf(d InteractionDecision) (HeldReplyReason, bool) {
+	switch d {
+	case InteractionAllowed:
+		return "", false
+	case InteractionPending:
+		return HeldReplyPending, true
+	}
+	return HeldReplyRefused, true
 }

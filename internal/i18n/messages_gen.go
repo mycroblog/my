@@ -2373,6 +2373,13 @@ func (l *Localizer) ServerErrorsStatusAlreadyDeleted() string {
 	return l.format("server:errors.status.already_deleted", nil)
 }
 
+// ServerErrorsStatusBoostNotAllowed formats "server:errors.status.boost_not_allowed". Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them.
+//
+//	en: The author of this post does not let you boost it.
+func (l *Localizer) ServerErrorsStatusBoostNotAllowed() string {
+	return l.format("server:errors.status.boost_not_allowed", nil)
+}
+
 // ServerErrorsStatusEditRejected formats "server:errors.status.edit_rejected". API error title for HTTP 422 when the server's automated review of posts refused an edit of a post. Fixed text: it never says why.
 //
 //	en: This edit was not saved.
@@ -2584,6 +2591,13 @@ func (l *Localizer) ServerErrorsStatusRejected() string {
 //	en: This server's automated review did not accept this post. If you think this is a mistake, you can appeal.
 func (l *Localizer) ServerErrorsStatusRejectedDetail() string {
 	return l.format("server:errors.status.rejected.detail", nil)
+}
+
+// ServerErrorsStatusReplyNotAllowed formats "server:errors.status.reply_not_allowed". Detail of the HTTP 422 API error when the author of a post chose who may reply to it and the user is not among them.
+//
+//	en: The author of this post does not let you reply to it.
+func (l *Localizer) ServerErrorsStatusReplyNotAllowed() string {
+	return l.format("server:errors.status.reply_not_allowed", nil)
 }
 
 // ServerErrorsStatusReplyNotFound formats "server:errors.status.reply_not_found". Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see.

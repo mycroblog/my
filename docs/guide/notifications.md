@@ -7,7 +7,7 @@ Choose "Notifications" in the navigation. The navigation shows how many notifica
 
 When someone follows you, mentions you, or reacts to your posts, it shows up here. The kinds you may see are:
 
-- Mentions, quotes, boosts, favourites, and emoji reactions to your posts. Several boosts or favourites of one post are grouped into one line ("... and 2 others boosted your post").
+- Mentions, quotes, boosts, favourites, and emoji reactions to your posts. Several boosts or favourites of one post are grouped into one line ("... and 2 others boosted your post"). A reply or a boost from another server that is outside whom you let reply to or boost the post notifies no one (see [Posting](posting.md#other-things-to-know)).
 - Follows: someone followed you, requested to follow you, or accepted your follow request.
 - New posts of accounts whose posts you chose to be notified of ("Notify me of new posts").
 - A poll you took part in has ended.

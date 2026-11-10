@@ -351,6 +351,10 @@
     "defaultMessage": "この Idempotency-Key で作成された投稿は削除されています。",
     "description": "Detail of the HTTP 409 API error when a client retries posting with an Idempotency-Key whose post was deleted. Idempotency-Key is a header name (not translated)."
   },
+  "errors.status.boost_not_allowed": {
+    "defaultMessage": "この投稿の作者は、あなたがブーストすることを認めていません。",
+    "description": "Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them."
+  },
   "errors.status.empty_text": {
     "defaultMessage": "投稿の本文がありません。",
     "description": "Detail of the HTTP 422 API error when a post's text is empty or only spaces."
@@ -450,6 +454,10 @@
   "errors.status.reply_not_found": {
     "defaultMessage": "返信先の投稿が見つかりません。",
     "description": "Detail of the HTTP 422 API error when a reply targets a post that does not exist, was deleted, or that the user cannot see."
+  },
+  "errors.status.reply_not_allowed": {
+    "defaultMessage": "この投稿の作者は、あなたが返信することを認めていません。",
+    "description": "Detail of the HTTP 422 API error when the author of a post chose who may reply to it and the user is not among them."
   },
   "errors.status.text_too_long": {
     "defaultMessage": "{max, plural, other {本文と注意書きは合わせて # 文字以内にしてください。}}",

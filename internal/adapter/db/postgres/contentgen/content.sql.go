@@ -820,6 +820,7 @@ const listLiveRepliesTo = `-- name: ListLiveRepliesTo :many
 SELECT s.id, s.uri, s.url, s.author_account_id, s.is_local, s.visibility, s.in_reply_to_uri, s.published_at
 FROM statuses s
 WHERE s.in_reply_to_uri = $1 AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = s.id)
+  AND NOT EXISTS (SELECT 1 FROM held_replies h WHERE h.status_id = s.id)
 ORDER BY s.id
 `
 
@@ -1434,7 +1435,8 @@ INSERT INTO status_counters (status_id, replies_count, boosts_count, favourites_
 SELECT s.id,
   (SELECT COUNT(*) FROM statuses c
     WHERE c.in_reply_to_uri = s.uri AND c.visibility IN ('public', 'local', 'unlisted')
-      AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = c.id)),
+      AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = c.id)
+      AND NOT EXISTS (SELECT 1 FROM held_replies h WHERE h.status_id = c.id)),
   (SELECT COUNT(*) FROM boosts b
     WHERE b.status_id = s.id AND NOT EXISTS (SELECT 1 FROM boost_retractions r WHERE r.boost_id = b.id)),
   (SELECT COUNT(*) FROM favourites f WHERE f.status_id = s.id)
@@ -1481,6 +1483,7 @@ SELECT c.id, p.id, p.author_account_id
 FROM statuses c JOIN statuses p ON p.uri = c.in_reply_to_uri
 WHERE NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = c.id)
   AND NOT EXISTS (SELECT 1 FROM status_deletions d WHERE d.status_id = p.id)
+  AND NOT EXISTS (SELECT 1 FROM held_replies h WHERE h.status_id = c.id)
 `
 
 func (q *Queries) RebuildStatusReplyLinks(ctx context.Context) error {

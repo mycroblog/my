@@ -45,10 +45,14 @@ func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 		signal(e.(appgraph.FollowAccepted).Follow.FollowerAccountID)
 	})
 	r.OnCommit(appcontent.EventStatusCreated, func(_ context.Context, e uow.Event) {
-		signal(e.(appcontent.StatusCreated).Revision.MentionedAccountIDs...)
+		if ev := e.(appcontent.StatusCreated); !ev.HeldReply {
+			signal(ev.Revision.MentionedAccountIDs...)
+		}
 	})
 	r.OnCommit(appcontent.EventStatusRevised, func(_ context.Context, e uow.Event) {
-		signal(e.(appcontent.StatusRevised).Revision.MentionedAccountIDs...)
+		if ev := e.(appcontent.StatusRevised); !ev.HeldReply {
+			signal(ev.Revision.MentionedAccountIDs...)
+		}
 	})
 	r.OnCommit(appcontent.EventBoosted, func(_ context.Context, e uow.Event) {
 		signal(e.(appcontent.Boosted).Status.AuthorAccountID)

@@ -570,6 +570,16 @@ CREATE TABLE status_interaction_policies (
   PRIMARY KEY (status_id, kind, approval, audience, actor_uri)
 ) STRICT;
 
+-- Resource: a remote reply to a local status that the status's reply rules did not admit when it
+-- arrived (ADR-0155 §6): pending when a manual rule includes its author, refused otherwise. It
+-- stays out of the replies of its parent (status_reply_links, status_counters, the thread) and
+-- notifies no one; its author's profile and its own page still show it.
+CREATE TABLE held_replies (
+  status_id TEXT NOT NULL PRIMARY KEY,
+  reason TEXT NOT NULL CHECK (reason IN ('pending', 'refused')),
+  held_at INTEGER NOT NULL
+) STRICT;
+
 -- Resource: this server's approval of a quote of a local status (FEP-044f's QuoteAuthorization,
 -- ADR-0069 §1). quoting_uri is the quoting status, local or remote; its id is the IRI's last
 -- segment. A quoting status has one per quoted status.

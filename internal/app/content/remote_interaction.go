@@ -37,7 +37,9 @@ type RemoteBoostInput struct {
 // returns it. The account must be remote and able to see the status: a local status as an
 // ActivityPub fetch by that account would see it (content.CanView in ContextObjectFetch). A
 // local-visibility status, a followers-only status of someone else, a direct status, and an
-// Announce addressed to no one fail with content.ErrNotBoostable. The boost's ID has the time of
+// Announce addressed to no one fail with content.ErrNotBoostable, and a local status whose boost
+// rules do not admit the account at once with ErrBoostNotAllowed (ADR-0155 §6): such a boost is
+// not recorded, so it is neither counted nor notified. The boost's ID has the time of
 // the Announce, its visibility is the narrower of the Announce's and the status's, and it never
 // federates (content.Boost.Federates).
 //
@@ -55,6 +57,11 @@ func (s *Interactions) RecordRemoteBoost(ctx context.Context, in RemoteBoostInpu
 		return content.Boost{}, fmt.Errorf("boost %s by %s: %w", st.ID, in.BoosterAccountID, content.ErrNotBoostable)
 	case !vis.Valid(), vis == content.VisibilityDirect, vis == content.VisibilityLocal:
 		return content.Boost{}, fmt.Errorf("boost %s addressed as %q: %w", st.ID, in.Visibility, content.ErrNotBoostable)
+	}
+	if st.IsLocal {
+		if err := s.remoteMayBoost(ctx, in.BoosterAccountID, st); err != nil {
+			return content.Boost{}, err
+		}
 	}
 	at := s.remoteTime(in.BoostedAt)
 	b := content.Boost{
@@ -355,4 +362,18 @@ func (s *Interactions) remoteTime(at time.Time) time.Time {
 		return now
 	}
 	return at
+}
+
+// remoteMayBoost fails with ErrBoostNotAllowed unless the boost rules of the local status st admit
+// a boost by the remote account accountID, which may see it, at once. One that waits for the
+// author's approval is not recorded either: this server does not hold one yet.
+func (s *Interactions) remoteMayBoost(ctx context.Context, accountID string, st content.Status) error {
+	decision, err := s.interactionReaders().mayInteract(ctx, content.InteractionAnnounce, accountID, false, nil, st)
+	if err != nil {
+		return err
+	}
+	if decision != content.InteractionAllowed {
+		return fmt.Errorf("boost %s by %s: %w", st.ID, accountID, ErrBoostNotAllowed)
+	}
+	return nil
 }

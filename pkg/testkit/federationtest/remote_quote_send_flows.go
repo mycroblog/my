@@ -170,8 +170,9 @@ func remoteQuotesLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 		t.Errorf("content = %q, want the quote-inline fallback first", c)
 	}
 	policy, _ := json.Marshal(note["interactionPolicy"])
-	if string(policy) != `{"canQuote":{"automaticApproval":["`+string(federation.PublicIRI)+`"]}}` {
-		t.Errorf("interactionPolicy = %s, want everyone", policy)
+	everyone := `{"automaticApproval":["` + string(federation.PublicIRI) + `"]}`
+	if string(policy) != `{"canAnnounce":`+everyone+`,"canQuote":`+everyone+`,"canReply":`+everyone+`}` {
+		t.Errorf("interactionPolicy = %s, want everyone for every kind", policy)
 	}
 
 	// A quote of a local-visibility post keeps its approval for the embed on this server, and a
@@ -246,8 +247,8 @@ func remoteQuotesLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 	if updates != 1 {
 		t.Errorf("Updates after the policy changed = %d, want 1", updates)
 	}
-	// Every local post has rules of every kind; a change of the reply rules alone, which the
-	// Note does not carry, sends no Update.
+	// Every local post has rules of every kind; a change of the reply rules, which the Note
+	// carries as canReply, sends an Update too.
 	for _, st := range []content.Status{public, private} {
 		policy, err := e.content.FindInteractionPolicy(ctx, st.ID)
 		if err != nil {
@@ -265,13 +266,18 @@ func remoteQuotesLocalPosts(t *testing.T, e *remoteInteractionEnv) {
 		t.Errorf("SetInteractionPolicy(replies) = %+v, %v; want mentioned replies and the quote rules kept", got, err)
 	}
 	updates = 0
+	var last []byte
 	for _, a := range e.quoteActivities(t, federation.OutboundStatus, public.ID) {
 		if a.Type == federation.ActivityUpdate {
 			updates++
+			last = a.Raw
 		}
 	}
-	if updates != 1 {
-		t.Errorf("Updates after the reply rules changed = %d, want still 1", updates)
+	if updates != 2 {
+		t.Errorf("Updates after the reply rules changed = %d, want 2", updates)
+	}
+	if want := `"canReply":{"automaticApproval":["` + e.localIRI(author) + `"]}`; !strings.Contains(string(last), want) {
+		t.Errorf("the Update after the reply rules changed = %s, want %s: the author alone, who mentions no one", last, want)
 	}
 	// A quote that a manual rule admits waits for the author, without an approval.
 	byHand, err := e.content.Create(ctx, appcontent.CreateInput{
