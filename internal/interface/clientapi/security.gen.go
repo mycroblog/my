@@ -169,6 +169,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/events":                                                            {Operation: "listEvents", Scopes: []string{"read:events"}},
 	"GET /api/v1/events/{id}":                                                       {Operation: "getEvent", Scopes: []string{"read:events"}},
 	"GET /api/v1/events/{id}/attendees":                                             {Operation: "listEventAttendees", Scopes: []string{"read:events"}},
+	"GET /api/v1/events/{id}/calendar.ics":                                          {Operation: "getEventCalendar", Scopes: []string{"read:events"}},
 	"GET /api/v1/events/{id}/invitations":                                           {Operation: "listEventInvitations", Scopes: []string{"read:events"}},
 	"GET /api/v1/exports":                                                           {Operation: "listDataExports", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},
 	"GET /api/v1/exports/{id}/archive":                                              {Operation: "downloadDataExport", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},

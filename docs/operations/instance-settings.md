@@ -251,6 +251,9 @@ and visitors who are not signed in see none of them.
 - The address and the link of an event are shown only to the attendees that the organizer or a co-organizer approved,
   unless the organizer shows them to everyone who sees the event. Links must be `http` or `https`, and the server never
   opens them.
+- A user who sees an event can save it as an iCalendar (`.ics`) file to add to their own calendar. The file names only
+  the places that user sees, so an address kept for the approved attendees never appears in it. There is no calendar
+  subscription address.
 - A user creates at most 10 events an hour, and an event sends at most 100 invitations an hour.
 
 ### Texts (one key, one value)

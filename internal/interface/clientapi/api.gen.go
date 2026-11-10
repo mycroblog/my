@@ -19155,6 +19155,9 @@ type ServerInterface interface {
 	// ApproveEventAttendee Approve an attendee of an event
 	// (PUT /events/{id}/attendees/{account_id}/approval)
 	ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// GetEventCalendar Get an event as an iCalendar file
+	// (GET /events/{id}/calendar.ics)
+	GetEventCalendar(w http.ResponseWriter, r *http.Request, id EventId)
 	// CancelEvent Cancel an event
 	// (POST /events/{id}/cancel)
 	CancelEvent(w http.ResponseWriter, r *http.Request, id EventId)
@@ -27490,6 +27493,32 @@ func (siw *ServerInterfaceWrapper) ApproveEventAttendee(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// GetEventCalendar operation middleware
+func (siw *ServerInterfaceWrapper) GetEventCalendar(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEventCalendar(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CancelEvent operation middleware
 func (siw *ServerInterfaceWrapper) CancelEvent(w http.ResponseWriter, r *http.Request) {
 
@@ -32880,6 +32909,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events", wrapper.CreateEvent)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}", wrapper.GetEvent)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/events/{id}", wrapper.UpdateEvent)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/calendar.ics", wrapper.GetEventCalendar)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/cancel", wrapper.CancelEvent)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/rsvp", wrapper.AnswerEvent)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/attendees", wrapper.ListEventAttendees)
@@ -49396,6 +49426,76 @@ func (response ApproveEventAttendeedefaultApplicationProblemPlusJSONResponse) Vi
 	return err
 }
 
+type GetEventCalendarRequestObject struct {
+	Id EventId `json:"id"`
+}
+
+type GetEventCalendarResponseObject interface {
+	VisitGetEventCalendarResponse(w http.ResponseWriter) error
+}
+
+type GetEventCalendar200ResponseHeaders struct {
+	CacheControl       *string
+	ContentDisposition *string
+}
+
+type GetEventCalendar200TextcalendarResponse struct {
+	Body          io.Reader
+	Headers       GetEventCalendar200ResponseHeaders
+	ContentLength int64
+}
+
+func (response GetEventCalendar200TextcalendarResponse) VisitGetEventCalendarResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/calendar")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentDisposition != nil {
+		w.Header().Set("Content-Disposition", fmt.Sprint(*response.Headers.ContentDisposition))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetEventCalendardefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetEventCalendardefaultApplicationProblemPlusJSONResponse) VisitGetEventCalendarResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type CancelEventRequestObject struct {
 	Id   EventId `json:"id"`
 	Body *CancelEventJSONRequestBody
@@ -60835,6 +60935,9 @@ type StrictServerInterface interface {
 	// ApproveEventAttendee Approve an attendee of an event
 	// (PUT /events/{id}/attendees/{account_id}/approval)
 	ApproveEventAttendee(ctx context.Context, request ApproveEventAttendeeRequestObject) (ApproveEventAttendeeResponseObject, error)
+	// GetEventCalendar Get an event as an iCalendar file
+	// (GET /events/{id}/calendar.ics)
+	GetEventCalendar(ctx context.Context, request GetEventCalendarRequestObject) (GetEventCalendarResponseObject, error)
 	// CancelEvent Cancel an event
 	// (POST /events/{id}/cancel)
 	CancelEvent(ctx context.Context, request CancelEventRequestObject) (CancelEventResponseObject, error)
@@ -68746,6 +68849,32 @@ func (sh *strictHandler) ApproveEventAttendee(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ApproveEventAttendeeResponseObject); ok {
 		if err := validResponse.VisitApproveEventAttendeeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetEventCalendar operation middleware
+func (sh *strictHandler) GetEventCalendar(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request GetEventCalendarRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEventCalendar(ctx, request.(GetEventCalendarRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEventCalendar")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEventCalendarResponseObject); ok {
+		if err := validResponse.VisitGetEventCalendarResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

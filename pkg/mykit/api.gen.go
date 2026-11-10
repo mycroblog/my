@@ -24328,6 +24328,19 @@ type ClientInterface interface {
 	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 	ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetEventCalendar Get an event as an iCalendar file
+	//
+	// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+	// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+	// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+	// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+	// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+	// user sees: a hidden place never appears in the file. A 404 for an event that the user does
+	// not see.
+	//
+	// Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
+	GetEventCalendar(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CancelEventWithBody Cancel an event
 	//
 	// Cancels the event, by its organizer: it stays readable with its cancellation, and takes no
@@ -34849,6 +34862,29 @@ func (c *Client) RevokeEventAttendeeApproval(ctx context.Context, id EventId, ac
 // Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 func (c *Client) ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewApproveEventAttendeeRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetEventCalendar Get an event as an iCalendar file
+//
+// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+// user sees: a hidden place never appears in the file. A 404 for an event that the user does
+// not see.
+//
+// Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
+func (c *Client) GetEventCalendar(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEventCalendarRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -51649,6 +51685,40 @@ func NewApproveEventAttendeeRequest(server string, id EventId, accountId EventAc
 	return req, nil
 }
 
+// NewGetEventCalendarRequest constructs an http.Request for the GetEventCalendar method
+func NewGetEventCalendarRequest(server string, id EventId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/calendar.ics", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewCancelEventRequest calls the generic CancelEvent builder with application/json body
 func NewCancelEventRequest(server string, id EventId, body CancelEventJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -64071,6 +64141,21 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 	ApproveEventAttendeeWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*ApproveEventAttendeeResponse, error)
+
+	// GetEventCalendarWithResponse Get an event as an iCalendar file
+	//
+	// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+	// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+	// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+	// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+	// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+	// user sees: a hidden place never appears in the file. A 404 for an event that the user does
+	// not see.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
+	GetEventCalendarWithResponse(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*GetEventCalendarResponse, error)
 
 	// CancelEventWithBodyWithResponse Cancel an event
 	//
@@ -84299,6 +84384,65 @@ func (r ApproveEventAttendeeResponse) ContentType() string {
 	return ""
 }
 
+// GetEventCalendarResponse200Headers the declared response headers of an HTTP 200 response for GetEventCalendar
+type GetEventCalendarResponse200Headers struct {
+	CacheControl       *string
+	ContentDisposition *string
+}
+
+// GetEventCalendarResponseDefaultHeaders the declared response headers of an HTTP default response for GetEventCalendar
+type GetEventCalendarResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetEventCalendarResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetEventCalendarResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetEventCalendarResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetEventCalendarResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetEventCalendarResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetEventCalendarResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetEventCalendarResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetEventCalendarResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // CancelEventResponse200Headers the declared response headers of an HTTP 200 response for CancelEvent
 type CancelEventResponse200Headers struct {
 	CacheControl *string
@@ -102506,6 +102650,27 @@ func (c *ClientWithResponses) ApproveEventAttendeeWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseApproveEventAttendeeResponse(rsp)
+}
+
+// GetEventCalendarWithResponse Get an event as an iCalendar file
+//
+// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+// user sees: a hidden place never appears in the file. A 404 for an event that the user does
+// not see.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
+func (c *ClientWithResponses) GetEventCalendarWithResponse(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*GetEventCalendarResponse, error) {
+	rsp, err := c.GetEventCalendar(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetEventCalendarResponse(rsp)
 }
 
 // CancelEventWithBodyWithResponse Cancel an event
@@ -127548,6 +127713,83 @@ func ParseApproveEventAttendeeResponse(rsp *http.Response) (*ApproveEventAttende
 		response.Headers200 = &headers
 	case true:
 		var headers ApproveEventAttendeeResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetEventCalendarResponse parses an HTTP response from a GetEventCalendarWithResponse call
+func ParseGetEventCalendarResponse(rsp *http.Response) (*GetEventCalendarResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetEventCalendarResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetEventCalendarResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Disposition"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Disposition", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentDisposition = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetEventCalendarResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

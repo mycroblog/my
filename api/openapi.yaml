@@ -7263,6 +7263,41 @@ paths:
                 $ref: '#/components/schemas/Event'
         default:
           $ref: '#/components/responses/Problem'
+  /events/{id}/calendar.ics:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      operationId: getEventCalendar
+      summary: Get an event as an iCalendar file
+      description: |
+        The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+        the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+        updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+        zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+        `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+        user sees: a hidden place never appears in the file. A 404 for an event that the user does
+        not see.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      responses:
+        '200':
+          description: The iCalendar file.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Content-Disposition:
+              description: Names the file to save the event as, `<event id>.ics`.
+              schema:
+                type: string
+          content:
+            text/calendar:
+              schema:
+                type: string
+        default:
+          $ref: '#/components/responses/Problem'
   /events/{id}/cancel:
     parameters:
       - $ref: '#/components/parameters/EventId'

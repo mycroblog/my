@@ -510,6 +510,8 @@ paths:
     $ref: ./paths/events.yaml
   /events/{id}:
     $ref: ./paths/events_{id}.yaml
+  /events/{id}/calendar.ics:
+    $ref: ./paths/events_{id}_calendar.ics.yaml
   /events/{id}/cancel:
     $ref: ./paths/events_{id}_cancel.yaml
   /events/{id}/rsvp:

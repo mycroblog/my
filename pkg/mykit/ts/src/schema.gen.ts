@@ -5183,6 +5183,35 @@ export interface paths {
         patch: operations["updateEvent"];
         trace?: never;
     };
+    "/events/{id}/calendar.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get an event as an iCalendar file
+         * @description The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+         *     the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+         *     updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+         *     zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+         *     `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+         *     user sees: a hidden place never appears in the file. A 404 for an event that the user does
+         *     not see.
+         */
+        get: operations["getEventCalendar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/events/{id}/cancel": {
         parameters: {
             query?: never;
@@ -24872,6 +24901,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getEventCalendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The iCalendar file. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    /** @description Names the file to save the event as, `<event id>.ics`. */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": string;
                 };
             };
             default: components["responses"]["Problem"];

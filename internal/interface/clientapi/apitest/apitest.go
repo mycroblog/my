@@ -39,6 +39,8 @@ var load = sync.OnceValues(func() (*Spec, error) {
 	// The streaming endpoint's body is a text/event-stream, a string to the spec; tests check
 	// its events with ValidateSchema.
 	openapi3filter.RegisterBodyDecoder("text/event-stream", openapi3filter.PlainBodyDecoder)
+	// The iCalendar file of an event is a string to the spec too.
+	openapi3filter.RegisterBodyDecoder("text/calendar", openapi3filter.PlainBodyDecoder)
 	doc, err := openapi3.NewLoader().LoadFromData(api.Spec)
 	if err != nil {
 		return nil, err
