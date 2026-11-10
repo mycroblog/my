@@ -179,7 +179,8 @@ func (b *bonfire) note(ctx context.Context, id string) (map[string]any, error) {
 // TestInteractionApprovalBonfire: Bonfire Social 1.0 asks for and gives the approvals of quotes
 // (QuoteRequest, QuoteAuthorization, FEP-044f), and has none for replies and boosts: it reads only
 // the automaticApproval of canReply and canAnnounce and sends its replies and boosts without a
-// request (ADR-0155 §6). bonnie and alice follow each other.
+// request (ADR-0155 §6). bonnie and alice follow each other for the replies and boosts; for the
+// quotes, alice alone follows bonnie.
 func TestInteractionApprovalBonfire(t *testing.T) {
 	e := stack(t)
 	b := newBonfire(e, bonfireUser, "FEDERATION_LIVE_BONFIRE_TOKEN")
@@ -235,6 +236,17 @@ func TestInteractionApprovalBonfire(t *testing.T) {
 			s, err := e.local.status(ctx, original.ID)
 			return err == nil && s.BoostsCount == 1, fmt.Sprintf("%d %v", s.BoostsCount, err)
 		})
+	})
+
+	// Bonfire answers our Accept of bonnie's quote only when it learned alice's status by fetching
+	// it, not from the Create that reaches bonnie as a follower (Compatibility notes in
+	// README.md): bonnie stops following alice for the quotes.
+	if err := b.unfollow(ctx, alice.ID); err != nil {
+		t.Fatal(err)
+	}
+	eventually(t, deliveryTimeout, localHandle+" is no longer followed by "+p.handle(), func() (bool, string) {
+		r, err := e.local.relationship(ctx, actor.ID)
+		return err == nil && !r.FollowedBy, fmt.Sprintf("%+v %v", r, err)
 	})
 
 	t.Run("quote from peer", func(t *testing.T) {
