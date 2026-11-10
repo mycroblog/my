@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 95 job types. 40 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 97 job types. 41 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -124,6 +124,8 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | `moderation.sever_allowlist` | Cuts the follows of local accounts with the servers that the allowlist of federation cuts off (when `federation_scope` becomes `allowlist`, or an allow is removed while it is), and records what each account lost. It cuts nothing once `federation_scope` is `open` again or the server is allowed again. Above 1,000 local accounts, the first job only queues jobs of the same type for up to 1,000 each. Running one again repeats nothing it did. | The switch to `allowlist`, or the removal of an allow | Default. A cutoff that is gone is dead at once. | Safe |
 | `moderation.expire_restrictions` | Removes expired account and domain restrictions, tells other servers when a suspension ends, and with a search backend queues `search.sync_author` or `search.sync_domain` for what they restricted. | Schedule | Default | Next run |
 | `moderation.purge_records` | Erases the moderation records past their retention, including released retention holds. | Schedule | Default | Next run |
+| `moderation.fetch_domain_lists` | Queues `moderation.fetch_domain_list` for every subscribed domain block list. | Schedule | Default | Next run |
+| `moderation.fetch_domain_list` | Fetches one subscribed domain block list, records the fetch, and replaces the domains the subscription holds. In the automatic mode it then issues and lifts the subscription's domain actions. A failed fetch is recorded and changes nothing else. | `moderation.fetch_domain_lists`, a new subscription or new settings of one, and **Fetch now** | Default. A subscription deleted since is done at once. | Safe |
 | `identity.reject_for_closure` | Rejects the pending registrations when the closure's notice period starts. Stops if the closure is withdrawn. | The closure being recorded | Default | Safe |
 | `instance.closure_delete_actors` | Records the `Delete` of one page of local accounts and passes them to the fan-out. | The closure being recorded, then itself | Default | Safe |
 | `instance.check_closure_delivery` | Records that the closure's deletes have all been delivered. | Schedule | Default | Next run |
@@ -223,6 +225,7 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `webhook.purge_messages` | 1 hour |
 | `account.prune_remote_profiles` | 24 hours |
 | `content.purge_link_cards` | 24 hours |
+| `moderation.fetch_domain_lists` | 24 hours |
 | `content.purge_remote_emojis` | 24 hours |
 | `diagnostics.purge_error_counts` | 24 hours |
 | `hook.purge_decisions` | 1 hour |

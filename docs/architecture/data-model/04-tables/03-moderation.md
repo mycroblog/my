@@ -61,6 +61,30 @@
 - インスタンス設定 `federation_scope`（§4.9）が `open` の間、許可は判定に影響しません。`allowlist` の間、許可の無いドメインは `suspend` の制限を持つものとして判定します（`domain_restrictions` には書かない）。
 - `allowlist` への切り替え（`scope_switched`）と、`allowlist` の間に許可を外して親ドメインの許可も無いとき（`allow_removed`）に `allowlist_cutoffs` を 1 行記録し、同じトランザクションでジョブ `moderation.sever_allowlist` を積みます。ジョブは `moderation.sever_domain` と同じく、ローカルのアカウントの 1 ページごとに 1 トランザクションでフォローを切り、`relationship_severances`（`allowlist_cutoff_id`）に記録します。実行時に設定が `open` に戻っていれば何も切りません。
 
+#### ドメインのブロックリストの購読
+
+他者が公開するドメインのブロックリストを購読し、その行をドメイン単位の処分にします（ADR-0159 §4・§5、FR-706 の CSV のインポートと同じ解析）。
+
+| テーブル | 分類 | カラム | 制約 |
+| --- | --- | --- | --- |
+| `domain_list_subscriptions` | リソース | `id`, `url`（`https`）, `format`（`enum(mastodon_csv, mastodon_json, plain_text)`）, `created_by_user_id`（NULL 可 = CLI）, `created_at` | |
+| `domain_list_subscription_revisions` | イベント（版） | `id`, `subscription_id`, `title`, `mode`（`enum(draft, automatic)`）, `suspend_as`（`enum(suspend, limit, ignore)`）, `silence_as`（`enum(limit, ignore)`）, `apply_reject_media` / `apply_reject_reports` / `public_comment_from_list`（`bool`）, `revised_by_user_id`（NULL 可 = CLI）, `revised_at` | インデックス `(subscription_id, id DESC)`。最新の版が効く |
+| `domain_list_subscription_deletions` | イベント | `subscription_id`（PK）, `lift_actions`（`bool`）, `deleted_by_user_id`（NULL 可 = CLI）, `deleted_at` | |
+| `domain_list_subscription_heads` | 現在値 | `subscription_id`（PK）, `etag` / `last_modified` / `digest`（NULL 可）, `consecutive_failures`（`int`）, `last_fetch_id`（NULL 可） | |
+| `domain_list_fetches` | イベント | `id`, `subscription_id`, `outcome`（`enum(applied, not_modified, failed)`）, `http_status`（NULL 可）, `error_code`（NULL 可。`enum(http_status, network, forbidden_destination, too_large, too_many_entries, malformed)`）, `entry_count`（`int`）, `fetched_at` | インデックス `(subscription_id, id DESC)`。CHECK `(outcome = 'failed') = (error_code IS NOT NULL)` |
+| `domain_list_entries` | 投影 | `subscription_id`, `domain`, `severity`（リストに書かれた重さ。知らない値も残す）, `reject_media` / `reject_reports` / `obfuscate`（`bool`）, `public_comment`（NULL 可）, `since_fetch_id` | PK `(subscription_id, domain)` |
+| `subscription_domain_actions` | イベント | `action_id`（PK。`domain_moderation_actions.id`）, `subscription_id`, `fetch_id`（NULL 可） | インデックス `(subscription_id)` |
+| `domain_list_draft_rejections` | イベント | `id`, `subscription_id`, `change_kind`（`enum(issue, lift)`）, `domain`, `kind`（処分の種類）, `entry_since_fetch_id`（`issue` だけ）, `action_id`（`lift` だけ）, `rejected_by_user_id`（NULL 可 = CLI）, `rejected_at` | インデックス `(subscription_id, id)`。CHECK で `change_kind` ごとに片方だけが値を持つ |
+
+- 取得は毎日 1 回（`moderation.fetch_domain_lists` が購読ごとに `moderation.fetch_domain_list` を積む）、購読の作成と設定の変更の直後、「今すぐ取得」で行います。`kernel.HTTPClient`（用途 `HTTPPurposeDomainList`、2 MiB・30 秒）で、`ETag` / `Last-Modified` の条件付き GET にします。取得（外部 I/O）はトランザクションの外で行い、取得の行・`domain_list_subscription_heads`・`domain_list_entries` を 1 つのトランザクションで書きます。前回と同じ中身（`digest`）は `not_modified` にします。
+- `domain_list_entries` は最後に読めたリストの中身で、正規化したドメインごとに 1 行です。重さを処分の種類に置き換えるのは読むときで（最新の版の `suspend_as` などによる）、設定を変えても行は書き直しません。`since_fetch_id` は、そのドメインが同じ内容で途切れずに載っている最初の取得で、内容が変わると新しい取得になります。再構築は、`etag` と `digest` を消して次の取得で作り直します（リストの本文は保存しません）。
+- 差分は `domain_list_entries` と、購読が下して効いている処分（`subscription_domain_actions`）から導きます（`moderation.DiffDomainList`）。足すのは、どの処分（人のものも、ほかの購読のものも）も同じ種類でそのドメインか親ドメインを覆っていない種類だけで、外すのはその購読が下した処分だけです。
+- 自動のモードは、下書きに回すもの（知らない重さ、1 回で 10 件を超えかつ購読の処分の半分を超える解除）を除いて、50 件ずつのトランザクションで解除してから発行します。各トランザクションで購読をロックし、その購読の効いている処分を読み直すので、同じ取得を 2 回処理しても重ねて発行しません。ある購読が処分を解除したら、同じジョブの中でほかの自動の購読が作成順に発行し直します。
+- 人が購読の処分を解除すると、そのドメインの項目の発行を退けた行（`domain_list_draft_rejections`、`issue`）を同じトランザクションで書き、リストの行が変わるまで発行し直しません。
+- 取得の失敗は `domain_list_fetches` と `consecutive_failures` だけを変え、3 回続いた取得で `moderation.domain_list_failing` を発行します（`manage_domains` を持つ人への通知 `admin_domain_list_failing`）。
+- 購読の削除は `domain_list_subscription_deletions` を書き、`domain_list_entries` を消します。`lift_actions` のときは先にその購読の処分を解除します。残した処分の `subscription_domain_actions` は残りますが、削除した購読は読まないので、人の処分と同じ扱いになります。
+- 管理 API の `AdminDomainAction`（と webhook の `domain_moderation_action.*`）は、`subscription_domain_actions` を結合して `subscription_id` を返します。
+
 #### 通報
 
 | テーブル | 分類 | カラム | 制約 |
@@ -116,7 +140,7 @@
 
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
-| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance, voice_room, login_provider, link_card_domain, hook_decision, domain_allow)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
+| `audit_log_entries` | イベント | `id`, `actor_kind`（`enum(user, cli, system, remote)`）, `actor_user_id`（NULL 可）, `action`（操作の enum）, `target_kind`（`enum(account, status, domain, report, appeal, user, role, setting, rule, signup_block, custom_emoji, webhook, announcement, invite, relay, billing_source, cost_item, supporter_program, supporter_plan, supporter_subscription, custom_emoji_request, payment_provider, oauth_client, oauth_client_host, instance, voice_room, login_provider, link_card_domain, hook_decision, domain_allow, domain_list_subscription)`）, `target_id`, `target_label`（`string(512)`。記録時の対象の表示名の写し）, `source_event_id`（NULL 可。元のイベントの行の ID）, `occurred_at` | 新しい順の一覧は PK を逆順に読む。インデックス `(target_kind, target_id, id DESC)`, `(actor_user_id, id DESC)`。CHECK `(actor_kind = 'user') = (actor_user_id IS NOT NULL)` |
 
 - 各モジュールの管理のユースケースが元のイベントと同じトランザクションで発行するドメインイベント（`moderation.audit_recorded`）を、`moderation` の同期の購読者が書きます。理由とメモの本文は写さず、`source_event_id` で元のイベントから引きます。
   記録の ID はトランザクションの前に作り、再試行しても同じ行を書きます。何も変えなかった操作（解除済みの処分の解除など）は記録しません。
@@ -143,6 +167,10 @@
   | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` | `login_provider` | `login_providers.id` | IdP の表示名 | `login_providers.id` / `login_provider_revisions.id` / `login_provider_state_changes.id` / `login_provider_secrets.id` |
   | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` | `link_card_domain` | 正規化したドメイン | 正規化したドメイン | なし（`link_card_domain_rules` は現在値） |
   | `domain_allow_added`, `domain_allow_removed` | `domain_allow` | 正規化したドメイン | 正規化したドメイン | なし（`domain_allows` はリソース）。`allowlist` の間の削除は `allowlist_cutoffs.id` |
+  | `domain_list_subscription_created`, `domain_list_subscription_updated`, `domain_list_subscription_deleted` | `domain_list_subscription` | `domain_list_subscriptions.id` | 購読の題名 | `domain_list_subscriptions.id` / `domain_list_subscription_revisions.id` / `domain_list_subscription_deletions.subscription_id` |
+  | `domain_list_draft_accepted` | `domain_list_subscription` | `domain_list_subscriptions.id` | 購読の題名 | 発行・解除した `domain_moderation_actions.id`（処分の `domain_action_issued` / `domain_action_lifted` も記録する） |
+  | `domain_list_draft_rejected` | `domain_list_subscription` | `domain_list_subscriptions.id` | 購読の題名 | `domain_list_draft_rejections.id` |
+  | `domain_list_fetch_queued` | `domain_list_subscription` | `domain_list_subscriptions.id` | 購読の題名 | なし（取得の行は取得のときに書く） |
   | `appeal_upheld`, `appeal_overturned` | `appeal` | `moderation_appeals.id` | 申し立てたアカウントのハンドル | `moderation_appeal_decisions.appeal_id`（= `moderation_appeals.id`） |
   | `revealed_private_data` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | なし（元の記録を持たない操作） |
   | `two_factor_disabled` | `account` | `accounts.id` | ローカルアカウントのハンドル（`@alice`） | `totp_enrollment_revocations.enrollment_id` |
