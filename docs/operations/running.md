@@ -20,7 +20,7 @@ In the Docker Compose setup (`deploy/docker/compose.yaml`; see [Deploying with D
 If the schema is not applied, the process still starts and readiness returns 503, and it serves nothing else until the schema is there.
 
 The first `my serve` or `my` command that uses the database records `host` and `account_domain` in it. When the configuration differs from the recorded values, `my serve` logs `start failed` with both pairs of values and exits with code 1, and the commands print the same error. The exceptions are `my schema apply` and `my db backup`, which do not check, and the maintenance mode, which does not read the database. `my config check -instance` and `my db upgrade -check` check but record nothing.
-A process that could not read the database when it started is not ready until it can, and until then it runs no jobs and answers `503` with `Retry-After` to every request except the three health checks below (`/healthz`, `/readyz`, `/api/v1/instance/health`). This is also what a server started before `my schema apply` does. If it then finds different values, it stops with the same error.
+A process that could not read the database when it started is not ready until it can, and until then it runs no jobs and answers `503` with `Retry-After` to every request except the three health checks below (`/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health`). This is also what a server started before `my schema apply` does. If it then finds different values, it stops with the same error.
 
 In the `production` profile, `my config check` also checks that the valid settings suit a production instance: errors, such as a `host` that other servers cannot reach or a KEK that is not random, make it exit 1, and warnings, such as `mail = none`, do not.
 `my serve` logs both as warnings when it starts but starts anyway, so run `my config check` as a step of the deployment.
@@ -266,7 +266,7 @@ The metrics are listed below. In Prometheus, `.` in a name becomes `_` and a uni
 | `my.metrics.snapshot.age` | Gauge, seconds | `my.metrics.snapshot.part` (`queue` / `totals`) |
 | `my.errors.reported` | Counter | `my.error.source` (`server` / `web`), `my.error.kind` (`panic` / `error`). One per [error report](#error-reports) |
 
-Health checks (`/healthz`, `/readyz`) are not measured. No label contains a remote domain, account, URL or client IP.
+Health checks (`/healthz`, `/readyz`, `/health/live`, `/health/ready`) are not measured. No label contains a remote domain, account, URL or client IP.
 `my.queue.*`, `my.instance.*`, `my.media.stored_bytes`, `my.db.size`, `my.federation.instances` and `my.billing.import.failing` are values for the whole instance: every process reports the same value from one snapshot kept in the key-value store.
 
 ### System metrics
@@ -600,14 +600,15 @@ So a queue that cannot keep up gets up to 500 duplicate signals a minute. They d
 
 | Path | Kind | When it returns 200 |
 | --- | --- | --- |
-| `GET /healthz` | liveness | The process can answer HTTP. It does not look at dependencies such as the database (so a slow database does not restart the process) |
-| `GET /readyz` | readiness | The database is reachable and the schema is applied |
+| `GET /healthz`, `GET /health/live` | liveness | The process can answer HTTP. It does not look at dependencies such as the database (so a slow database does not restart the process) |
+| `GET /readyz`, `GET /health/ready` | readiness | The database is reachable and the schema is applied |
 | `GET /api/v1/instance/health` | Uptime monitoring, status pages and clients (served by the `web` role) | The same as readiness. The result is cached in the process for 60 seconds |
 
-- A 200 from `/healthz` or `/readyz` has the body `{"status":"ok"}`.
+- Cloud Run reserves some paths that end in `z`, `/healthz` among them, and answers them itself with a `404`; behind it, call `/health/live` and `/health/ready`, which answer the same.
+- A 200 from any of them has the body `{"status":"ok"}`.
 - `/readyz` checks the database on every request, and concurrent requests share one check.
 - `/api/v1/instance/health` returns 200 and `{"status":"ok","checked_at":"<RFC 3339>"}` when healthy, and 503 and `{"status":"unavailable","checked_at":...}` on failure (`Cache-Control: no-store`).
-  Each process touches the database at most once a minute however often it is monitored or requested, and it looks at neither the access token nor the rate limit. Point uptime monitors at this endpoint, not at the probe (`/readyz`).
+  Each process touches the database at most once a minute however often it is monitored or requested, and it looks at neither the access token nor the rate limit. Point uptime monitors at this endpoint, not at the probe (`/readyz` or `/health/ready`).
   For per-service setup, monitoring interval and cost, and how maintenance is treated, see the [uptime monitoring guide](monitoring.md).
 - All three log at the Debug level in the access log and create no trace span.
 - When readiness is not met, the response is 503 with an RFC 9457 `application/problem+json` body.

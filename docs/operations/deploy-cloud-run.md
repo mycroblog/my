@@ -116,7 +116,7 @@ To keep the KEK in Cloud KMS from the start, replace the `kek` block in `main.tf
 
 ### 5. Create what the migration needs
 
-The service's startup probe waits for `/readyz`, which answers `503` until the schema exists, so the schema has to come first. Create the migration job and what it depends on, which includes the load balancer's address, since the server's settings name it:
+The service's startup probe waits for `/health/ready`, which answers `503` until the schema exists, so the schema has to come first. Create the migration job and what it depends on, which includes the load balancer's address, since the server's settings name it:
 
 ```sh
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
@@ -195,7 +195,7 @@ The script does this, and stops at the first step that fails:
 1. Switches the service to the [maintenance mode](maintenance.md) with `--maintenance`.
 2. Gives the migration job the new image.
 3. Runs `my config check`, `my db upgrade -check`, `my schema apply`, and `my db upgrade`, each waiting for the one before.
-4. Deploys the new revision, without the maintenance mode. It takes traffic only when its startup probe passes on `/readyz`.
+4. Deploys the new revision, without the maintenance mode. It takes traffic only when its startup probe passes on `/health/ready`.
 
 Without `--maintenance`, the old revision keeps serving during steps 2 and 3, which [is not guaranteed to work](database.md#the-server-during-an-upgrade). Add `--allow-destructive` when the release notes call for it. Pin a digest with `--image ghcr.io/mycroblog/my:0.2.0@sha256:...`, which the [production checklist](production-checklist.md#operations) recommends.
 
@@ -211,7 +211,7 @@ To go back after the schema changed, restore the backup: see [Rolling back](data
 
 ## Monitoring and alerts
 
-The module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) adds an uptime check of `/readyz`, alert policies with the names of [the runbook](alerts.md), and email notifications. It has never been applied, so try it once by making a check fail. Enable `monitoring.googleapis.com` first, and read what the check costs in its README: each run wakes an instance, and through `/readyz` the database, which adds to [the tick's trade-off](#costs).
+The module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) adds an uptime check of `/health/live`, alert policies with the names of [the runbook](alerts.md), and email notifications. It has never been applied, so try it once by making a check fail. Enable `monitoring.googleapis.com` first, and read what the check costs in its README: each run wakes an instance, and the database too if you point it at `/health/ready`, which adds to [the tick's trade-off](#costs).
 
 ## Changing a backend
 

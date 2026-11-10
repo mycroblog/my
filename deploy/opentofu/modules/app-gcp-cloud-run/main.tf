@@ -444,7 +444,7 @@ resource "google_cloud_run_v2_service" "server" {
       # recorded, which also holds back a revision rolled out before the migration.
       startup_probe {
         http_get {
-          path = "/readyz"
+          path = "/health/ready"
           port = 8080
         }
         timeout_seconds   = 5
@@ -454,7 +454,7 @@ resource "google_cloud_run_v2_service" "server" {
 
       liveness_probe {
         http_get {
-          path = "/healthz"
+          path = "/health/live"
           port = 8080
         }
         timeout_seconds   = 5
@@ -619,7 +619,7 @@ resource "google_cloud_run_v2_service" "worker" {
       # recorded, which also holds back a revision rolled out before the migration.
       startup_probe {
         http_get {
-          path = "/readyz"
+          path = "/health/ready"
           port = 8080
         }
         timeout_seconds   = 5
@@ -629,7 +629,7 @@ resource "google_cloud_run_v2_service" "worker" {
 
       liveness_probe {
         http_get {
-          path = "/healthz"
+          path = "/health/live"
           port = 8080
         }
         timeout_seconds   = 5

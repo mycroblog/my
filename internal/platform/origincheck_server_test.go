@@ -60,7 +60,7 @@ func TestServeRefusesWhatDidNotComeThroughTheCDN(t *testing.T) {
 			t.Errorf("%s %s with the secret = 403", r.method, r.target)
 		}
 	}
-	for _, target := range []string{platform.PathLiveness, platform.PathReadiness, platform.PathInstanceHealth} {
+	for _, target := range []string{platform.PathLiveness, platform.PathReadiness, platform.PathHealthLive, platform.PathHealthReady, platform.PathInstanceHealth} {
 		if resp, body := s.do(t, http.MethodGet, target, nil); resp.StatusCode != http.StatusOK {
 			t.Errorf("GET %s without the secret = %d %s, want 200", target, resp.StatusCode, body)
 		}
@@ -130,7 +130,7 @@ func TestMaintenanceModeChecksTheOrigin(t *testing.T) {
 			t.Errorf("GET %s with the secret = %d, want the maintenance's 503", target, rec.Code)
 		}
 	}
-	for _, target := range []string{platform.PathLiveness, platform.PathReadiness} {
+	for _, target := range []string{platform.PathLiveness, platform.PathReadiness, platform.PathHealthLive, platform.PathHealthReady} {
 		if rec := serve(http.MethodGet, target, nil); rec.Code != http.StatusOK {
 			t.Errorf("GET %s = %d, want 200", target, rec.Code)
 		}

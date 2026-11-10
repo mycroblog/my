@@ -251,6 +251,8 @@ func TestOriginCheckExemptions(t *testing.T) {
 		{http.MethodGet, PathLiveness, true},
 		{http.MethodHead, PathLiveness, true},
 		{http.MethodGet, PathReadiness, true},
+		{http.MethodGet, PathHealthLive, true},
+		{http.MethodHead, PathHealthReady, true},
 		{http.MethodGet, PathInstanceHealth, true},
 		{http.MethodPost, "/_internal/jobs", true},
 		{http.MethodPost, "/_internal/tick", true},

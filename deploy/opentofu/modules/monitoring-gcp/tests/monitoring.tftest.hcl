@@ -46,12 +46,12 @@ run "every_alert_of_the_runbook_is_a_policy_or_listed_as_not_expressible" {
   }
 }
 
-run "the_default_check_is_of_readyz_at_the_longest_period_from_three_checkers" {
+run "the_default_check_is_of_health_live_at_the_longest_period_from_three_checkers" {
   command = plan
 
   assert {
-    condition     = google_monitoring_uptime_check_config.ready.http_check[0].path == "/readyz"
-    error_message = "the check is of /readyz"
+    condition     = google_monitoring_uptime_check_config.ready.http_check[0].path == "/health/live"
+    error_message = "the check is of /health/live"
   }
 
   assert {
@@ -101,6 +101,39 @@ run "a_period_cloud_monitoring_has_not_fails" {
   }
 
   expect_failures = [var.uptime_period]
+}
+
+run "a_path_that_cloud_run_reserves_fails" {
+  command = plan
+
+  variables {
+    uptime_path = "/healthz"
+  }
+
+  expect_failures = [var.uptime_path]
+}
+
+run "the_readyz_path_fails_too" {
+  command = plan
+
+  variables {
+    uptime_path = "/readyz"
+  }
+
+  expect_failures = [var.uptime_path]
+}
+
+run "the_readiness_path_is_accepted" {
+  command = plan
+
+  variables {
+    uptime_path = "/health/ready"
+  }
+
+  assert {
+    condition     = google_monitoring_uptime_check_config.ready.http_check[0].path == "/health/ready"
+    error_message = "the check is of /health/ready"
+  }
 }
 
 run "only_the_check_and_the_snapshot_watch_for_absence" {

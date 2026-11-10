@@ -252,6 +252,8 @@ func TestAccessLogMetricLabels(t *testing.T) {
 	}
 	s.do(t, http.MethodGet, "/ap/nope", nil)
 	s.do(t, http.MethodGet, platform.PathLiveness, nil)
+	s.do(t, http.MethodGet, platform.PathHealthLive, nil)
+	s.do(t, http.MethodGet, platform.PathHealthReady, nil)
 
 	lines := map[string]map[string]any{}
 	for line := range strings.Lines(s.logs.String()) {
@@ -287,8 +289,10 @@ func TestAccessLogMetricLabels(t *testing.T) {
 			t.Errorf("%s: no request_id", path)
 		}
 	}
-	if m := lines[platform.PathLiveness]; m != nil && (m["http.route"] != nil || m["my.surface"] != nil) {
-		t.Errorf("the health check has a route: %v", m)
+	for _, path := range []string{platform.PathLiveness, platform.PathHealthLive, platform.PathHealthReady} {
+		if m := lines[path]; m != nil && (m["http.route"] != nil || m["my.surface"] != nil) {
+			t.Errorf("the health check %s has a route: %v", path, m)
+		}
 	}
 	if strings.Contains(s.logs.String(), "secret") {
 		t.Errorf("the access log has the query string:\n%s", s.logs.String())

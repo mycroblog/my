@@ -136,7 +136,7 @@ var schema = []field{
 	},
 	{
 		key: "maintenance",
-		doc: "Starts `my serve` in the maintenance mode, also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz` and `/readyz` answer `200` with `{\"status\":\"maintenance\"}`. Switch it by redeploying ([maintenance](../operations/maintenance.md)).",
+		doc: "Starts `my serve` in the maintenance mode, also set by `my serve -maintenance`. The process then opens no adapter and reads only the settings marked for it (the listen address, the host and origins, the proxies, `status_page_url`, and the `maintenance_*` settings), so that it starts while the database, the KV, or the queue is out of reach. Whatever the `role`, it serves HTTP only and answers every request with a `503` that says the server is under maintenance; `/healthz`, `/readyz`, `/health/live`, and `/health/ready` answer `200` with `{\"status\":\"maintenance\"}`. Switch it by redeploying ([maintenance](../operations/maintenance.md)).",
 		def: "false",
 		choices: []choice{
 			{value: "false", doc: "Normal operation."},
