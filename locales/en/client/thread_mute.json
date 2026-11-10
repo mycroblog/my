@@ -1,0 +1,26 @@
+{
+  "thread_mute.action": {
+    "defaultMessage": "Mute this thread",
+    "description": "Item of a post's menu that mutes the thread (conversation) of the post: the user is no longer notified of replies, mentions, boosts, favourites, reactions, or quotes in it; the posts still appear in timelines."
+  },
+  "thread_mute.done": {
+    "defaultMessage": "Thread muted. Its posts still appear in your timelines, but it no longer notifies you.",
+    "description": "Toast after the user muted the thread of a post."
+  },
+  "thread_mute.failed": {
+    "defaultMessage": "Could not mute the thread: {reason}",
+    "description": "Toast when muting the thread of a post failed. {reason} is the server's or the network's reason."
+  },
+  "thread_mute.undo_action": {
+    "defaultMessage": "Unmute this thread",
+    "description": "Item of a post's menu, in place of 'Mute this thread' while the thread of the post is muted, that ends the mute."
+  },
+  "thread_mute.undo_failed": {
+    "defaultMessage": "Could not unmute the thread: {reason}",
+    "description": "Toast when unmuting the thread of a post failed. {reason} is the server's or the network's reason."
+  },
+  "thread_mute.undone": {
+    "defaultMessage": "Thread unmuted. It notifies you again.",
+    "description": "Toast after the user unmuted the thread of a post."
+  }
+}
