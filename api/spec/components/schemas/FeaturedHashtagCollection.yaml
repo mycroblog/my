@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The hashtags that an account features on its profile, at most 10, in the order it chose.
+type: object
+required: [items]
+properties:
+  items:
+    type: array
+    maxItems: 10
+    items:
+      $ref: ./FeaturedHashtag.yaml

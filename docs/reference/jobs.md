@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 98 job types. 41 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 99 job types. 41 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -42,7 +42,8 @@ A job type can also be registered or do its work only with some settings; **Need
 | `federation.update_poll` | Sends the current counts of a local poll to other servers. Votes that arrive while it waits share one job. | A vote in a local poll, after a short delay, or the end of the poll | Default | Safe |
 | `federation.fetch_object` | Fetches one remote post and queues the fetches of its ancestors and replies, within the limits in its payload. A post that cannot be fetched or is not taken ends the job. | A post whose thread is incomplete | Default, only for failures of this server's stores | Safe |
 | `federation.fetch_outbox` | Fetches the first page of a remote account's outbox and stores its recent public posts. At most one per account per day. | A local user viewing a remote account | Default, only for failures of this server's stores | Safe |
-| `federation.fetch_featured` | Fetches a remote account's featured collection and makes its pins match. A collection that cannot be fetched leaves the pins as they are. | A remote actor being stored, or an activity about its pins | Default, only for failures of this server's stores | Safe |
+| `federation.fetch_featured` | Fetches a remote account's featured collection and makes its pins match. A collection that cannot be fetched leaves the pins as they are. | A remote actor being stored, or an activity about its pins or featured hashtags | Default, only for failures of this server's stores | Safe |
+| `federation.fetch_featured_tags` | Fetches a remote account's featured hashtags collection and makes its featured hashtags match, up to 10. A collection that cannot be fetched leaves them as they are. | A remote actor being stored, or an activity about its pins or featured hashtags | Default, only for failures of this server's stores | Safe |
 | `federation.verify_quote` | Fetches the post a remote post quotes and verifies the quote's approval. Without an approval the quote stays pending. | A remote post with a quote | Default, only for failures of this server's stores | Safe |
 | `federation.refetch_status` | Fetches one stored remote post again and records what its origin serves now: a revision, poll counts, or its deletion. | `federation.refetch_walk`, or `my admin refetch status` | Default, only for failures of this server's stores | Safe |
 | `federation.refetch_walk` | Walks the remote posts of an account or domain, newest first, and queues a `federation.refetch_status` for each, one batch per minute. | `my admin refetch account` or `domain` | Default | Safe |

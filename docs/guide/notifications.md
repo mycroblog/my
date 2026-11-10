@@ -38,4 +38,6 @@ other way either.
 - **Sound**: "Play a sound for new notifications" plays a sound on this device while the app is open.
 - **Email**: only on servers that send email. The link at the bottom of a notification email stops the emails of that kind ("Stop these emails"); the notifications still appear in the app. If emails to your address bounce or are marked as spam, the settings page says so ("Email delivery") and explains how to start receiving them again.
 
-Accounts you mute do not notify you (see [Blocking, muting, and reporting](safety.md)).
+Accounts you mute do not notify you (see [Blocking, muting, and reporting](safety.md)). A keyword filter that applies to
+notifications leaves out a notification about a post it hides, from the list, the unread count, push notifications, and
+email; a notification about a post it only folds names the filter in its push notification and email instead of saying more.

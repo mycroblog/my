@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: A page of notification requests, the one with the newest notification first.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./NotificationRequest.yaml

@@ -123,11 +123,17 @@ type Options struct {
 	// Subscriptions runs the viewer's subscriptions to new posts; nil answers their operations
 	// 404 and presents Relationship.notify false.
 	Subscriptions PostSubscriptions
+	// ThreadMutes mutes and unmutes the threads of statuses for the viewer and presents
+	// Status.muted; nil answers their operations 404 and presents Status.muted false.
+	ThreadMutes ThreadMutes
 	// Notifications runs the use cases of the viewer's notifications.
 	Notifications Notifications
 	// NotificationPreferences reads and changes the viewer's notification settings; nil answers
 	// their operations 404.
 	NotificationPreferences NotificationPreferences
+	// NotificationPolicies reads and changes the viewer's notification policy and runs the
+	// requests of the filtered notifications; nil answers their operations 404.
+	NotificationPolicies NotificationPolicies
 	// Push runs the Web Push subscription use cases and gives Instance.push_server_key; nil
 	// sends no Web Push.
 	Push WebPush
@@ -160,6 +166,14 @@ type Options struct {
 	// FollowedTags keeps the hashtags that the viewer follows; nil answers their operations with
 	// 404, and lists none.
 	FollowedTags FollowedTags
+	// KeywordFilters keeps the viewer's keyword filters; nil answers their operations with 404.
+	KeywordFilters KeywordFilters
+	// StatusFilters judges the statuses that the timelines, threads, notifications, and streams
+	// show against their viewers' keyword filters; nil judges none.
+	StatusFilters StatusFilters
+	// FeaturedTags keeps the hashtags that accounts feature on their profiles; nil answers the
+	// change with 404, and lists none.
+	FeaturedTags FeaturedTags
 	// Conversations reads and keeps the viewer's direct messages by conversation and tells the
 	// streams how a conversation shows; nil answers their operations with 404 and streams no
 	// conversation events.

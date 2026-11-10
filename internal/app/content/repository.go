@@ -98,6 +98,9 @@ type Repository interface {
 	LockStatusKeys(ctx context.Context, tx uow.Tx, keys []string) error
 	// IsDeleted reports whether a status has a deletion.
 	IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bool, error)
+	// PrivateMentionTx reports whether a status is direct, and whether its conversation holds
+	// a direct status of recipientID that mentions sourceID, inside tx.
+	PrivateMentionTx(ctx context.Context, tx uow.Tx, statusID, recipientID, sourceID string) (direct, solicited bool, err error)
 	// FindLiveStatusByURI returns the status with uri unless it is deleted.
 	FindLiveStatusByURI(ctx context.Context, tx uow.Tx, uri string) (content.Status, error)
 	// ListLiveRepliesTo returns the statuses that reply to uri and are neither deleted nor held

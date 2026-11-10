@@ -627,9 +627,21 @@
     "defaultMessage": "This is the only administrator of this server. Make another user an administrator first.",
     "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
   },
+  "errors.featured_tags.too_many": {
+    "defaultMessage": "You can feature at most 10 hashtags on your profile.",
+    "description": "API error title for HTTP 422 when the user asks to feature more hashtags on their profile than the limit."
+  },
   "errors.followed_tags.too_many": {
     "defaultMessage": "You already follow the most hashtags allowed. Unfollow one first.",
     "description": "API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags."
+  },
+  "errors.keyword_filters.too_many": {
+    "defaultMessage": "You already have the most keyword filters allowed. Delete one first.",
+    "description": "API error title for HTTP 422 when the user creates another keyword filter beyond the limit of filters."
+  },
+  "errors.keyword_filters.too_many_words": {
+    "defaultMessage": "A keyword filter has at most 100 words, and all your filters at most 1,000. Remove some first.",
+    "description": "API error title for HTTP 422 when the words of a keyword filter, or of all the user's filters, would pass their limit."
   },
   "errors.list_members.not_followed": {
     "defaultMessage": "Only accounts you follow can be added to a list.",

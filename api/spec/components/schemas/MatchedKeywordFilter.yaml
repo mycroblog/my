@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The keyword filter that a post matched, as far as a folded post shows it.
+type: object
+required: [id, title]
+properties:
+  id:
+    $ref: ./Id.yaml
+  title:
+    description: The title of the filter, which the folded post shows.
+    type: string

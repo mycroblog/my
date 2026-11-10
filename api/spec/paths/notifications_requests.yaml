@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listNotificationRequests
+  summary: List the notification requests
+  description: |
+    The sources whose notifications the user's notification policy filtered, one request per
+    source, the one with the newest notification first. The sources that the user blocks, is
+    blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
+    left out.
+  tags: [notifications]
+  security:
+    - oauth2: ["read:notifications"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of requests.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/NotificationRequestPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

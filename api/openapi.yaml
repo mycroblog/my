@@ -65,7 +65,7 @@ tags:
       within the caps of the instance settings, listing them, and revoking them. The operations
       need a `read:accounts` or `write:accounts` scope.
   - name: notifications
-    description: The authenticated user's notifications, their read marker, and dismissals.
+    description: The authenticated user's notifications, their read marker, dismissals, and the requests of the notifications that the notification policy filtered.
   - name: push
     description: The Web Push subscription of the access token's grant.
   - name: statuses
@@ -76,6 +76,8 @@ tags:
     description: The home, local, hashtag, list, and account timelines.
   - name: lists
     description: The authenticated user's lists of the accounts the user follows, which only the user sees.
+  - name: filters
+    description: The authenticated user's keyword filters, which fold or leave out the posts that match them.
   - name: conversations
     description: The authenticated user's direct messages by conversation, with what the user read and hid.
   - name: reports
@@ -1042,6 +1044,59 @@ paths:
                 $ref: '#/components/schemas/NotificationSettings'
         default:
           $ref: '#/components/responses/Problem'
+  /preferences/notification_policy:
+    get:
+      operationId: getNotificationPolicy
+      summary: Get the authenticated user's notification policy
+      description: |
+        What happens to the notifications of other accounts, by condition on their source: listed,
+        filtered into the request of their source, or dropped.
+      tags:
+        - preferences
+      security:
+        - oauth2:
+            - read:accounts
+      responses:
+        '200':
+          description: The policy.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPolicy'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateNotificationPolicy
+      summary: Change the authenticated user's notification policy
+      description: |
+        Changes the actions of the conditions in the body and keeps the others. The notifications
+        already created stay where they went.
+      tags:
+        - preferences
+      security:
+        - oauth2:
+            - write:accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationPolicyUpdate'
+      responses:
+        '200':
+          description: The policy after the change.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPolicy'
+        default:
+          $ref: '#/components/responses/Problem'
   /preferences/supporter_listing:
     get:
       operationId: getSupporterListing
@@ -1498,7 +1553,7 @@ paths:
     get:
       operationId: exportCsv
       x-first-party-only: true
-      summary: Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
+      summary: Export the authenticated user's follows, followed hashtags, blocks, mutes, muted domains, or bookmarks as CSV
       description: |
         Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
         Mastodon and this server import: `following` is `following_accounts.csv`
@@ -1507,7 +1562,9 @@ paths:
         `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
         `domain_mutes` is `blocked_domains.csv` (one domain per line, the domains the user
         mutes, which Mastodon imports as blocked domains), and `bookmarks` is `bookmarks.csv`
-        (one post URI per line, the posts the user may still see).
+        (one post URI per line, the posts the user may still see). `followed_tags` is
+        `followed_hashtags.csv` (one hashtag per line without its `#`, the latest followed
+        first), a file of this server that Mastodon neither exports nor imports.
         Addresses are `username@domain`, with the account domain for this server's accounts;
         remote accounts whose handle is unconfirmed are left out. At most 30 exports per account
         are accepted every hour.
@@ -1530,7 +1587,9 @@ paths:
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
             Content-Disposition:
-              description: Names the file to save the CSV as, the name Mastodon gives it.
+              description: |
+                Names the file to save the CSV as, the name Mastodon gives it (for
+                `followed_tags`, `followed_hashtags.csv`).
               schema:
                 type: string
           content:
@@ -1567,9 +1626,10 @@ paths:
     post:
       operationId: startDataImport
       x-first-party-only: true
-      summary: Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+      summary: Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
       description: |
-        Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+        Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+        server (`exportCsv`). The file's
         entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
         `overwrite` also removes what the user has of `kind` that the file does not list. The
         server carries the import out in the background: it resolves remote accounts and posts
@@ -1610,8 +1670,8 @@ paths:
         Reads a CSV file as `startDataImport` would and tells what importing it would do,
         changing nothing. The header row is optional, a leading `@` of an address is dropped,
         and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-        `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-        `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+        `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+        `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
         new posts, notifications of a muted account hidden. The `Languages` column of a follow
         is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
       tags:
@@ -2756,6 +2816,36 @@ paths:
           $ref: '#/components/responses/ListCollection'
         default:
           $ref: '#/components/responses/Problem'
+  /accounts/{id}/featured_tags:
+    get:
+      operationId: listAccountFeaturedTags
+      summary: List the hashtags an account features
+      description: |
+        The hashtags that the account features on its profile (at most 10), in the order it chose.
+        For a remote account they are those its server lists, as this server last fetched them
+        with the account. The counts read only the account's `public` and `unlisted` posts that
+        this server has, so a remote account's may be lower than on its server.
+
+        An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+        deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
+      tags:
+        - accounts
+      security:
+        - {}
+        - oauth2:
+            - read:accounts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The account.
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        '200':
+          $ref: '#/components/responses/FeaturedHashtagCollection'
+        default:
+          $ref: '#/components/responses/Problem'
   /accounts/{id}/mute:
     post:
       operationId: muteAccount
@@ -3581,7 +3671,9 @@ paths:
         The user's notifications, newest first. Dismissed notifications, notifications about
         deleted posts, and notifications from accounts that the user blocks, is blocked by, or
         mutes with notifications hidden are left out, also those that came before the block or
-        mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
+        mute. The notifications that the user's notification policy filtered wait in the
+        notification requests instead, until the user accepts the request of their source. The
+        moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
         `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
         `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
         the user's roles no longer grant the permission they need.
@@ -3693,6 +3785,150 @@ paths:
       responses:
         '204':
           description: The notification is dismissed.
+        default:
+          $ref: '#/components/responses/Problem'
+  /notifications/requests:
+    get:
+      operationId: listNotificationRequests
+      summary: List the notification requests
+      description: |
+        The sources whose notifications the user's notification policy filtered, one request per
+        source, the one with the newest notification first. The sources that the user blocks, is
+        blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
+        left out.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - read:notifications
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of requests.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRequestPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /notifications/requests/summary:
+    get:
+      operationId: getNotificationRequestSummary
+      summary: Count the notification requests
+      description: The number of requests that the list of requests shows, and of their notifications.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - read:notifications
+      responses:
+        '200':
+          description: The counts.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRequestSummary'
+        default:
+          $ref: '#/components/responses/Problem'
+  /notifications/requests/{id}:
+    get:
+      operationId: getNotificationRequest
+      summary: Get a notification request
+      description: The request of a source account; a 404 when the list of requests does not show one.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - read:notifications
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '200':
+          description: The request.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationRequest'
+        default:
+          $ref: '#/components/responses/Problem'
+  /notifications/requests/{id}/notifications:
+    get:
+      operationId: listNotificationRequestNotifications
+      summary: List the notifications of a notification request
+      description: |
+        The notifications waiting in the request of a source account, newest first, without the
+        dismissed ones and those about deleted posts; a 404 when the list of requests does not show
+        the request.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - read:notifications
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of notifications.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /notifications/requests/{id}/accept:
+    post:
+      operationId: acceptNotificationRequest
+      summary: Accept a notification request
+      description: |
+        Moves the notifications of the request into the list, unread when they are newer than the
+        read marker, without delivering them, and accepts the later notifications of the source
+        whatever the policy says. A 404 when the source has no request.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - write:notifications
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '204':
+          description: The request is accepted.
+        default:
+          $ref: '#/components/responses/Problem'
+  /notifications/requests/{id}/dismiss:
+    post:
+      operationId: dismissNotificationRequest
+      summary: Dismiss a notification request
+      description: |
+        Removes the notifications of the request, which are never listed. The source is not
+        accepted: a later notification that the policy filters opens a new request. A 404 when the
+        source has no request.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - write:notifications
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+      responses:
+        '204':
+          description: The request is dismissed.
         default:
           $ref: '#/components/responses/Problem'
   /push/subscription:
@@ -4181,6 +4417,47 @@ paths:
       security:
         - oauth2:
             - write:bookmarks
+      responses:
+        '200':
+          $ref: '#/components/responses/StatusAfterAction'
+        default:
+          $ref: '#/components/responses/Problem'
+  /statuses/{id}/mute:
+    parameters:
+      - $ref: '#/components/parameters/StatusId'
+    post:
+      operationId: muteStatusThread
+      summary: Mute the thread of a status
+      description: |
+        Mutes the thread (conversation) that the status belongs to: from then on, replies and
+        mentions in it, boosts, favourites, reactions, and quotes of its posts, and new posts
+        in it by accounts the user is notified of no longer notify the user, the user's own
+        posts in the thread included. Notifications that came before stay, and the posts still
+        appear in timelines. The mute has no expiry and follows the thread when it is joined
+        with another. Muting a thread that is already muted changes nothing; the status's
+        `muted` tells the state.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:mutes
+      responses:
+        '200':
+          $ref: '#/components/responses/StatusAfterAction'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: unmuteStatusThread
+      summary: Unmute the thread of a status
+      description: |
+        Ends the mute of the thread that the status belongs to. What happened in the thread
+        while it was muted does not notify the user afterwards. Without a mute it changes
+        nothing.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:mutes
       responses:
         '200':
           $ref: '#/components/responses/StatusAfterAction'
@@ -4791,6 +5068,145 @@ paths:
           $ref: '#/components/responses/FollowedHashtagCollection'
         default:
           $ref: '#/components/responses/Problem'
+  /filters:
+    get:
+      operationId: listKeywordFilters
+      summary: List the user's keyword filters
+      description: Every keyword filter of the user (at most 100), oldest first, the expired ones too. Nobody else sees them.
+      tags:
+        - filters
+      security:
+        - oauth2:
+            - read:filters
+      responses:
+        '200':
+          $ref: '#/components/responses/KeywordFilterCollection'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createKeywordFilter
+      summary: Create a keyword filter
+      description: |
+        Creates a keyword filter, which applies at once to every post the contexts show, old ones
+        too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+        a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+        in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+      tags:
+        - filters
+      security:
+        - oauth2:
+            - write:filters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KeywordFilterRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/KeywordFilter'
+        default:
+          $ref: '#/components/responses/Problem'
+  /filters/{id}:
+    get:
+      operationId: getKeywordFilter
+      summary: Get a keyword filter
+      description: A keyword filter of the user. Another user's filter is a 404, as if it did not exist.
+      tags:
+        - filters
+      security:
+        - oauth2:
+            - read:filters
+      parameters:
+        - $ref: '#/components/parameters/KeywordFilterId'
+      responses:
+        '200':
+          $ref: '#/components/responses/KeywordFilter'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateKeywordFilter
+      summary: Change a keyword filter
+      description: |
+        Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+        `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+        user's filter is a 404.
+      tags:
+        - filters
+      security:
+        - oauth2:
+            - write:filters
+      parameters:
+        - $ref: '#/components/parameters/KeywordFilterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KeywordFilterRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/KeywordFilter'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteKeywordFilter
+      summary: Delete a keyword filter
+      description: Deletes the filter with its words. Another user's filter is a 404.
+      tags:
+        - filters
+      security:
+        - oauth2:
+            - write:filters
+      parameters:
+        - $ref: '#/components/parameters/KeywordFilterId'
+      responses:
+        '204':
+          description: The filter is deleted.
+        default:
+          $ref: '#/components/responses/Problem'
+  /featured_tags:
+    get:
+      operationId: listFeaturedTags
+      summary: List the hashtags the user features
+      description: |
+        The hashtags that the user features on their profile (at most 10), in the order the user
+        chose, with how many of the user's `public` and `unlisted` posts carry each.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - read:accounts
+      responses:
+        '200':
+          $ref: '#/components/responses/FeaturedHashtagCollection'
+        default:
+          $ref: '#/components/responses/Problem'
+    put:
+      operationId: setFeaturedTags
+      summary: Choose the hashtags the user features
+      description: |
+        Replaces the hashtags that the user features on their profile with `names`, in their
+        order; a hashtag that no post has used yet can be featured. The other servers that follow
+        the user learn of the change as of a change of the profile. A name that is no hashtag is a
+        422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+        changes nothing.
+      tags:
+        - accounts
+      security:
+        - oauth2:
+            - write:accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetFeaturedTagsRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/FeaturedHashtagCollection'
+        default:
+          $ref: '#/components/responses/Problem'
   /timelines/home:
     get:
       operationId: getHomeTimeline
@@ -5209,7 +5625,11 @@ paths:
         - `list_update`: the same post or boost, once for each of the viewer's lists whose
           timeline shows it (its author is a member), right after its `update`. `data` is
           `{"list_id": "<list id>", "status": <Status>}`.
-        - `notification`: a new notification. `data` is a `Notification`.
+        - `notification`: a new notification. `data` is a `Notification`. A notification that the
+          user's notification policy filters into a notification request sends none.
+        - `notification_requests`: the counts of the notification requests changed (a notification
+          was filtered into one, or one was accepted or dismissed). `data` is a
+          `NotificationRequestSummary`.
         - `conversation`: a conversation of the direct messages changed: a `direct` post that the
           user sent or received arrived in it, or the user read it on a device. `data` is a
           `Conversation`, as `listConversations` shows it; nothing is sent for a conversation that it
@@ -12060,28 +12480,30 @@ components:
             write: Change everything the user can change.
             follow: Read and change follows, blocks, and mutes.
             push: Receive Web Push notifications.
-            read:accounts: Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings, aliases, and automatic deletion policy.
+            read:accounts: Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings and policy, aliases, and automatic deletion policy.
             read:blocks: Read the accounts the user blocks.
             read:bookmarks: Read the user's bookmarks.
             read:custom_emojis: Read the custom emoji the user made and their requests for new ones.
             read:direct: Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
+            read:filters: Read the user's keyword filters.
             read:finance: Read the totals of the instance's costs and income, as far as the user's roles allow.
             read:follows: Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
             read:mutes: Read the accounts and domains the user mutes.
-            read:notifications: Read the user's notifications.
+            read:notifications: Read the user's notifications and the notification requests.
             read:reports: Read the reports the user filed and whether they are resolved.
             read:statuses: Read posts and timelines.
             read:supporters: Read the user's own supporter subscription.
             read:voice: Read the voice chat rooms the user sees.
-            write:accounts: Change the user's profile, preferences, notification settings, badges, and supporter listing.
+            write:accounts: Change the user's profile, featured hashtags, preferences, notification settings and policy, badges, and supporter listing.
             write:blocks: Block and unblock accounts.
             write:bookmarks: Bookmark posts and remove bookmarks.
             write:custom_emojis: Request new custom emoji, and change and delete the ones the user made.
             write:favourites: Favourite posts and react to them with emoji, and take both back.
+            write:filters: Create, change, and delete the user's keyword filters.
             write:follows: Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
             write:media: Upload media, read their state while they process, and change their descriptions.
-            write:mutes: Mute and unmute accounts and domains.
-            write:notifications: Mark notifications read and dismiss them.
+            write:mutes: Mute and unmute accounts, domains, and threads.
+            write:notifications: Mark notifications read and dismiss them, and accept and dismiss the notification requests.
             write:reports: Report accounts and posts to the moderators.
             write:statuses: Post, edit, delete, boost, and pin posts, vote in polls, and set who may quote a post.
             write:supporters: Subscribe to the supporter plans, and change, cancel, and resume the subscription (first-party clients only).
@@ -12328,6 +12750,13 @@ components:
       in: path
       required: true
       description: The ID of the list.
+      schema:
+        $ref: '#/components/schemas/Id'
+    KeywordFilterId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the keyword filter.
       schema:
         $ref: '#/components/schemas/Id'
     HashtagName:
@@ -13020,6 +13449,33 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/FollowedHashtagCollection'
+    KeywordFilter:
+      description: The keyword filter.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/KeywordFilter'
+    KeywordFilterCollection:
+      description: The user's keyword filters, oldest first.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/KeywordFilterCollection'
+    FeaturedHashtagCollection:
+      description: The hashtags that the account features on its profile, in the order it chose.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FeaturedHashtagCollection'
   schemas:
     AdminBrandImage:
       description: |
@@ -19706,14 +20162,16 @@ components:
           minimum: 0
     DataImportKind:
       description: |
-        What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
-        accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-        domains the user mutes; Mastodon's `blocked_domains.csv` with the header
-        `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
-        posts the user bookmarked).
+        What a CSV file lists: `following` (the accounts the user follows), `followed_tags` (the
+        hashtags the user follows, `followed_hashtags.csv`: one hashtag per line without its `#`,
+        a file of this server that Mastodon does not have), `blocks` (the accounts the user
+        blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the domains the user mutes;
+        Mastodon's `blocked_domains.csv` with the header `#domain`, which a Mastodon user's blocked
+        domains become here), or `bookmarks` (the posts the user bookmarked).
       type: string
       enum:
         - following
+        - followed_tags
         - blocks
         - mutes
         - domain_mutes
@@ -21848,6 +22306,228 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/FollowedHashtag'
+    KeywordFilter:
+      description: |
+        A keyword filter of the user, which only the user sees. The server matches the posts it
+        returns against the filters of their contexts, so every client gets the same result; the
+        user's own posts and boosts are never matched.
+      type: object
+      required:
+        - id
+        - title
+        - action
+        - contexts
+        - keywords
+        - expired
+        - created_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        title:
+          description: The name of the filter, 1 to 50 characters, which a folded post shows.
+          type: string
+        action:
+          $ref: '#/components/schemas/KeywordFilterAction'
+        contexts:
+          description: Where the filter applies, at least one.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/KeywordFilterContext'
+        keywords:
+          description: The words of the filter, in the order given; a post matches the filter when it matches any of them.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/KeywordFilterKeyword'
+        expires_at:
+          description: |
+            When the filter stops applying; omitted for a filter that never does. An expired filter
+            stays, applying nowhere, and applies again when its expiry moves later.
+          type: string
+          format: date-time
+        expired:
+          description: Whether the filter has expired and applies nowhere.
+          type: boolean
+        created_at:
+          description: When the user created the filter.
+          type: string
+          format: date-time
+    KeywordFilterAction:
+      description: |
+        What a keyword filter does to a post that matches it: `warn` returns the post with the filter
+        in its `filtered`, and clients fold it behind the filter's title; `hide` leaves the post out,
+        as if the user could not see it.
+      type: string
+      enum:
+        - warn
+        - hide
+    KeywordFilterCollection:
+      description: The user's keyword filters, oldest first, the expired ones too.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/KeywordFilter'
+    KeywordFilterContext:
+      description: |
+        Where a keyword filter applies: `home` (the home timeline and the timelines of lists),
+        `notifications` (the notifications, their stream, Web Push, and email), `public` (the local,
+        federated, and hashtag timelines and their streams), `thread` (the posts before and after a
+        post), and `account` (the posts and pinned posts of a profile).
+      type: string
+      enum:
+        - home
+        - notifications
+        - public
+        - thread
+        - account
+    KeywordFilterKeyword:
+      description: A word of a keyword filter.
+      type: object
+      required:
+        - keyword
+        - whole_word
+      properties:
+        keyword:
+          description: |
+            The word or phrase, as the user typed it. It matches the text, the content warning, the
+            poll's choices, and the alt text of a post, each on its own, regardless of case, of
+            half-width and full-width forms, and of katakana and hiragana; runs of white space match
+            one space. Up to 100 characters once normalized.
+          type: string
+          minLength: 1
+          maxLength: 400
+        whole_word:
+          description: |
+            Whether the word matches only where no letter, digit, or `_` touches it. Characters of
+            scripts that do not separate words with spaces (Chinese, Japanese, Thai, and the like)
+            never count as touching, so there the word matches anywhere.
+          type: boolean
+    KeywordFilterRequest:
+      description: |
+        A keyword filter as the user writes it. A field that is not one is a 422 naming it; the
+        same word twice (once normalized) is kept once.
+      type: object
+      required:
+        - title
+        - action
+        - contexts
+        - keywords
+      properties:
+        title:
+          description: |
+            1 to 50 characters (grapheme clusters) on one line, without control characters. White
+            space around it is removed.
+          type: string
+          minLength: 1
+          maxLength: 400
+        action:
+          $ref: '#/components/schemas/KeywordFilterAction'
+        contexts:
+          description: Where the filter applies, at least one.
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/KeywordFilterContext'
+        keywords:
+          description: |
+            1 to 100 words. White space around each is removed. The user's filters have at most
+            1,000 words in all.
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/KeywordFilterKeyword'
+        expires_at:
+          description: When the filter stops applying; omit it for a filter that never does.
+          type: string
+          format: date-time
+    FilterResult:
+      description: A keyword filter of the user with the action `warn` that a post matched, and the words it matched.
+      type: object
+      required:
+        - filter
+        - keyword_matches
+      properties:
+        filter:
+          $ref: '#/components/schemas/MatchedKeywordFilter'
+        keyword_matches:
+          description: The words of the filter that the post matched, as the user typed them.
+          type: array
+          minItems: 1
+          items:
+            type: string
+    MatchedKeywordFilter:
+      description: The keyword filter that a post matched, as far as a folded post shows it.
+      type: object
+      required:
+        - id
+        - title
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        title:
+          description: The title of the filter, which the folded post shows.
+          type: string
+    FeaturedHashtag:
+      description: |
+        A hashtag that an account features on its profile, with how many of the account's `public`
+        and `unlisted` posts that this server has carry it. The account's posts of the other
+        visibilities are never counted.
+      type: object
+      required:
+        - name
+        - url
+        - statuses_count
+      properties:
+        name:
+          description: The hashtag without `#`, as first written on the server.
+          type: string
+        url:
+          description: The hashtag's page.
+          type: string
+          format: uri
+        statuses_count:
+          description: How many of the account's `public` and `unlisted` posts carry the hashtag now.
+          type: integer
+          format: int64
+          minimum: 0
+        last_status_at:
+          description: |
+            When one of those posts was last posted or edited with the hashtag; absent when none
+            carries it.
+          type: string
+          format: date-time
+    FeaturedHashtagCollection:
+      description: The hashtags that an account features on its profile, at most 10, in the order it chose.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/FeaturedHashtag'
+    SetFeaturedTagsRequest:
+      description: The hashtags to feature on the user's profile, in the order to show them.
+      type: object
+      required:
+        - names
+      properties:
+        names:
+          description: |
+            The hashtags, with or without `#`, at most 10; a hashtag given twice counts once. An
+            empty list features none.
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 257
     ListRequest:
       description: The name of a list.
       type: object
@@ -22484,6 +23164,120 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/Notification'
+    NotificationPolicy:
+      description: |
+        What the authenticated user's notification policy does with the notifications of other
+        accounts, by condition on their source. A notification that meets several conditions takes
+        the strictest action (`drop` before `filter` before `accept`); one that meets none is
+        accepted. Every condition accepts until the user chooses. The policy applies to `follow`,
+        `follow_request`, `mention`, `boost`, `favourite`, `reaction`, `quote`, and
+        `voice_room_invited`; the notifications the user asked for, those of the moderators, and the
+        notices of the server (moderation, reports, appeals, the service closure, the supporters, the
+        announcements) are never filtered or dropped. A source whose request the user accepted meets
+        no condition, and a source the user follows meets none but `limited_account`. A change
+        applies to the notifications created after it.
+      type: object
+      required:
+        - not_following
+        - not_follower
+        - new_account
+        - unsolicited_private_mention
+        - limited_account
+      properties:
+        not_following:
+          description: Sources that the user does not follow (a follow request waiting for approval does not count).
+          $ref: '#/components/schemas/NotificationPolicyAction'
+        not_follower:
+          description: Sources that do not follow the user.
+          $ref: '#/components/schemas/NotificationPolicyAction'
+        new_account:
+          description: Sources whose account was created less than 30 days ago.
+          $ref: '#/components/schemas/NotificationPolicyAction'
+        unsolicited_private_mention:
+          description: |
+            Mentions in a direct post that does not answer a direct post of the user that mentioned
+            the source in the same conversation.
+          $ref: '#/components/schemas/NotificationPolicyAction'
+        limited_account:
+          description: Sources that a moderator limited, by themselves or by their domain.
+          $ref: '#/components/schemas/NotificationPolicyAction'
+    NotificationPolicyAction:
+      description: |
+        What the notification policy does with the notifications whose source meets a condition.
+        `accept` lists them and delivers them as the notification settings say; `filter` keeps them
+        out of the list and the unread count, in the request of their source, and delivers them
+        nowhere (no Web Push, email, sound, or streaming event); `drop` creates no notification.
+      type: string
+      enum:
+        - accept
+        - filter
+        - drop
+    NotificationPolicyUpdate:
+      description: Changes of the authenticated user's notification policy; an omitted condition keeps its action.
+      type: object
+      properties:
+        not_following:
+          $ref: '#/components/schemas/NotificationPolicyAction'
+        not_follower:
+          $ref: '#/components/schemas/NotificationPolicyAction'
+        new_account:
+          $ref: '#/components/schemas/NotificationPolicyAction'
+        unsolicited_private_mention:
+          $ref: '#/components/schemas/NotificationPolicyAction'
+        limited_account:
+          $ref: '#/components/schemas/NotificationPolicyAction'
+    NotificationRequest:
+      description: |
+        The filtered notifications of one source that wait for the authenticated user to accept or
+        dismiss them. The request is named by the ID of its source account.
+      type: object
+      required:
+        - id
+        - account
+        - notifications_count
+      properties:
+        id:
+          description: The ID of the source account, which names the request.
+          $ref: '#/components/schemas/Id'
+        account:
+          $ref: '#/components/schemas/Account'
+        notifications_count:
+          description: The number of notifications waiting in the request.
+          type: integer
+          format: int64
+          minimum: 1
+        last_notification:
+          description: The newest notification of the request; omitted when it can no longer be shown.
+          $ref: '#/components/schemas/Notification'
+    NotificationRequestPage:
+      description: A page of notification requests, the one with the newest notification first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/NotificationRequest'
+    NotificationRequestSummary:
+      description: How many notification requests wait for the authenticated user.
+      type: object
+      required:
+        - accounts_count
+        - notifications_count
+      properties:
+        accounts_count:
+          description: The number of requests, one per source account.
+          type: integer
+          format: int64
+          minimum: 0
+        notifications_count:
+          description: The number of notifications in them.
+          type: integer
+          format: int64
+          minimum: 0
     NotificationSettingCell:
       description: One channel of one row of the notification settings.
       type: object
@@ -23684,6 +24478,10 @@ components:
           this problem; signing in and resetting a password stay available outside the client API.
         - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
           allowed. Unmute one first.
+        - `/api/v1/problems/too-many-keyword-filters` (422): the user already has the most keyword
+          filters allowed. Delete one first.
+        - `/api/v1/problems/too-many-filter-keywords` (422): the words would pass the most a keyword
+          filter, or all the user's filters together, may have. Remove some first.
         - `/api/v1/problems/too-many-lists` (422): the user already has the most lists allowed.
           Delete one first.
         - `/api/v1/problems/too-many-list-members` (422): the list already has the most members
@@ -23692,6 +24490,8 @@ components:
           follow request was accepted) can be added to a list.
         - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
           hashtags allowed (100). Unfollow one first.
+        - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
+          than allowed (10).
         - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
           account's actor, or to the user itself.
         - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
@@ -24687,8 +25487,8 @@ components:
       type: string
     Status:
       description: |
-        A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-        describe the authenticated user's relation to it and are omitted for anonymous
+        A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
+        `muted` describe the authenticated user's relation to it and are omitted for anonymous
         requests; `pinned` is only given to the author.
 
         In a timeline, a boost is a status of the booster with `boost` set to the boosted
@@ -24715,6 +25515,7 @@ components:
         - boosts_count
         - favourites_count
         - reactions
+        - filtered
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -24782,6 +25583,19 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StatusTag'
+        filtered:
+          description: |
+            The user's keyword filters with the action `warn` that the post matched where it is shown,
+            with the words each matched; empty when none did, and always for an anonymous request.
+            Clients fold a post with any behind the titles of its filters, with a way to show it. A
+            post that matches a filter with the action `hide` is left out instead, except the post
+            that `GET /api/v1/statuses/{id}` shows, which is folded. In a
+            timeline, a boost carries the filters that the boosted post matched. A quoted post carries
+            its own: a quote that matches folds only the quote, even for `hide`. The user's own posts
+            and boosts, and what they quote, never match.
+          type: array
+          items:
+            $ref: '#/components/schemas/FilterResult'
         followed_tags:
           description: |
             On the home timeline and its stream, the names (without `#`) of the hashtags that the
@@ -24825,6 +25639,11 @@ components:
           type: boolean
         bookmarked:
           description: Whether the authenticated user bookmarked the status.
+          type: boolean
+        muted:
+          description: |
+            Whether the authenticated user mutes the thread (conversation) of the status, which
+            keeps the user from being notified of what happens in it (`muteStatusThread`).
           type: boolean
         pinned:
           description: Whether the status is pinned to the author's profile; given only to the author.

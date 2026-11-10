@@ -70,6 +70,9 @@ type accountParts struct {
 	profiles map[string]string
 	// emojis are the custom emoji that can be shown, by ID.
 	emojis map[string]appcontent.CustomEmojiView
+	// threadMuted are, by viewer account and then status, the statuses of the views presented
+	// whose thread the viewer mutes (statusParts).
+	threadMuted map[string]map[string]bool
 }
 
 // customEmojis presents the custom emoji with an ID in ids that can be shown, in the order of

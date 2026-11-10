@@ -159,6 +159,10 @@
     "defaultMessage": "[Ŧħḗḗ ƈǿǿƞƒīřḿȧȧŧīǿǿƞ ẇīŧħ ŧħḗḗ ŀīƞķḗḗḓ ȧȧƈƈǿǿŭŭƞŧ ḗḗẋƥīřḗḗḓ ǿǿř ẇȧȧş ȧȧŀřḗḗȧȧḓẏ ŭŭşḗḗḓ. Ŧřẏ ȧȧɠȧȧīƞ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.featured_tags.too_many": {
+    "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞ ƒḗḗȧȧŧŭŭřḗḗ ȧȧŧ ḿǿǿşŧ 10 ħȧȧşħŧȧȧɠş ǿǿƞ ẏǿǿŭŭř ƥřǿǿƒīŀḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.federation_restricted": {
     "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř ḓǿǿḗḗş ƞǿǿŧ ƒḗḗḓḗḗřȧȧŧḗḗ īƞ ŧħḗḗ ḓīřḗḗƈŧīǿǿƞ ŧħȧȧŧ ŧħīş ƞḗḗḗḗḓş.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -261,6 +265,14 @@
   },
   "errors.invites.too_many": {
     "defaultMessage": "[Ẏǿǿŭŭ ħȧȧṽḗḗ ȧȧş ḿȧȧƞẏ ŭŭşȧȧƀŀḗḗ īƞṽīŧḗḗş ȧȧş ȧȧŀŀǿǿẇḗḗḓ. Řḗḗṽǿǿķḗḗ ǿǿƞḗḗ, ǿǿř ẇȧȧīŧ ŭŭƞŧīŀ ǿǿƞḗḗ ḗḗẋƥīřḗḗş ǿǿř īş ŭŭşḗḗḓ ŭŭƥ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.keyword_filters.too_many": {
+    "defaultMessage": "[Ẏǿǿŭŭ ȧȧŀřḗḗȧȧḓẏ ħȧȧṽḗḗ ŧħḗḗ ḿǿǿşŧ ķḗḗẏẇǿǿřḓ ƒīŀŧḗḗřş ȧȧŀŀǿǿẇḗḗḓ. Ḓḗḗŀḗḗŧḗḗ ǿǿƞḗḗ ƒīřşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.keyword_filters.too_many_words": {
+    "defaultMessage": "[Ȧ ķḗḗẏẇǿǿřḓ ƒīŀŧḗḗř ħȧȧş ȧȧŧ ḿǿǿşŧ 100 ẇǿǿřḓş, ȧȧƞḓ ȧȧŀŀ ẏǿǿŭŭř ƒīŀŧḗḗřş ȧȧŧ ḿǿǿşŧ 1,000. Řḗḗḿǿǿṽḗḗ şǿǿḿḗḗ ƒīřşŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.last_administrator": {

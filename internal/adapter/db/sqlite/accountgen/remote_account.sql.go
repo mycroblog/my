@@ -154,7 +154,7 @@ func (q *Queries) GetLatestRemoteAccountHandleVerification(ctx context.Context, 
 const getLatestRemoteAccountSnapshot = `-- name: GetLatestRemoteAccountSnapshot :one
 SELECT id, account_id, preferred_username, profile_url, inbox_url, shared_inbox_url, outbox_url,
   followers_url, following_url, featured_url, followers_total, following_total, statuses_total,
-  document_digest, fetched_at
+  document_digest, fetched_at, featured_tags_url
 FROM remote_account_snapshots WHERE account_id = ?1 ORDER BY id DESC LIMIT 1
 `
 
@@ -178,6 +178,7 @@ func (q *Queries) GetLatestRemoteAccountSnapshot(ctx context.Context, accountID 
 		&i.StatusesTotal,
 		&i.DocumentDigest,
 		&i.FetchedAt,
+		&i.FeaturedTagsUrl,
 	)
 	return i, err
 }
@@ -272,11 +273,11 @@ const insertRemoteAccountSnapshot = `-- name: InsertRemoteAccountSnapshot :exec
 INSERT INTO remote_account_snapshots (
   id, account_id, preferred_username, profile_url, inbox_url, shared_inbox_url, outbox_url,
   followers_url, following_url, featured_url, followers_total, following_total, statuses_total,
-  document_digest, fetched_at
+  document_digest, fetched_at, featured_tags_url
 ) VALUES (
   ?1, ?2, ?3, ?4, ?5, ?6, ?7,
   ?8, ?9, ?10, ?11, ?12, ?13,
-  ?14, ?15
+  ?14, ?15, ?16
 )
 `
 
@@ -296,6 +297,7 @@ type InsertRemoteAccountSnapshotParams struct {
 	StatusesTotal     sql.NullInt64
 	DocumentDigest    []byte
 	FetchedAt         int64
+	FeaturedTagsUrl   sql.NullString
 }
 
 func (q *Queries) InsertRemoteAccountSnapshot(ctx context.Context, arg InsertRemoteAccountSnapshotParams) error {
@@ -315,6 +317,7 @@ func (q *Queries) InsertRemoteAccountSnapshot(ctx context.Context, arg InsertRem
 		arg.StatusesTotal,
 		arg.DocumentDigest,
 		arg.FetchedAt,
+		arg.FeaturedTagsUrl,
 	)
 	return err
 }

@@ -59,8 +59,11 @@ type NotificationFactory func(t *testing.T, opts uow.Options) NotificationHarnes
 // need, emailed by a job to those who get them by email, and left out once the permission is
 // gone; the decision on an appeal to the account that appealed; the notification settings, their
 // defaults and fixed rows, and the types turned off in the app, which create nothing; the
-// emails of the notifications that stay unread; and the subscriptions to new posts with their
-// status notifications.
+// emails of the notifications that stay unread; the subscriptions to new posts with their
+// status notifications; the thread mutes, which follow a merge of conversations; and the
+// notification policy, which accepts everything by default, filters into the requests of the
+// sources, which are accepted or dismissed, drops, takes the strictest action of the conditions
+// met, and never touches the notices of the instance.
 func NotificationFlows(t *testing.T, newHarness NotificationFactory) {
 	t.Helper()
 	cases := []struct {
@@ -92,6 +95,13 @@ func NotificationFlows(t *testing.T, newHarness NotificationFactory) {
 		{"NotifiesSubscribersOfNewPosts", notificationNewPosts},
 		{"AppliesNotificationSettings", notificationSettings},
 		{"EmailsUnreadNotifications", notificationEmails},
+		{"MutesThreads", notificationThreadMutes},
+		{"AcceptsEverythingByDefault", notificationPolicyDefaults},
+		{"FiltersIntoRequests", notificationPolicyFilters},
+		{"DismissesRequests", notificationPolicyDismisses},
+		{"TakesTheStrictestAction", notificationPolicyStrictest},
+		{"FiltersUnsolicitedPrivateMentions", notificationPolicyPrivateMentions},
+		{"FiltersLimitedAccountsButNotNotices", notificationPolicyLimited},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newNotificationEnv(t, newHarness)) })
@@ -105,10 +115,13 @@ type notificationEnv struct {
 	content      *appcontent.Service
 	interactions *appcontent.Interactions
 	svc          *appnotification.Service
+	mutes        *appnotification.ThreadMutes
 	deps         appnotification.ProjectorDeps
 	reach        *contractReach
 	// only holds just the notification projectors, for projecting an event again.
 	only *uow.Projectors
+	// signals records the stream signals of the committed events.
+	signals *recordedSignals
 	// staff stands in for the roles and addresses of the moderators and users; outbox keeps the
 	// email jobs that the projectors enqueue.
 	staff  *stubStaff
@@ -138,27 +151,33 @@ func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificat
 	appgraph.RegisterProjectors(captured.Projectors, nh.Graph)
 	appcontent.RegisterProjectors(captured.Projectors, nh.Statuses)
 	appcontent.RegisterInteractionProjectors(captured.Projectors, nh.Interactions)
-	deps := appnotification.ProjectorDeps{
-		Repository: nh.Notifications, Accounts: ae.Accounts, Relationships: e.graph, Reach: e.reach, IDs: ae.IDs,
-		Email: &appnotification.EmailScheduler{Outbox: e.outbox, Clock: ae.Clock}, PostJobs: e.postJobs,
-	}
-	e.deps = deps
-	appnotification.RegisterProjectors(captured.Projectors, deps)
-	appnotification.RegisterProjectors(e.only, deps)
-	modDeps := appnotification.ModeratorDeps{Repository: nh.Notifications, Staff: e.staff, IDs: ae.IDs, Outbox: e.outbox}
-	appnotification.RegisterModeratorProjectors(captured.Projectors, modDeps)
-	appnotification.RegisterModeratorProjectors(e.only, modDeps)
 	e.content = appcontent.NewService(appcontent.Deps{
 		UnitOfWork: nh.UnitOfWork, Repository: nh.Statuses, Accounts: ae.Accounts, Relationships: e.graph,
 		MaxStatusLength: func(context.Context) (int, error) { return 500, nil },
 		Clock:           ae.Clock, IDs: ae.IDs, Host: testkit.ContractHost,
+	})
+	deps := appnotification.ProjectorDeps{
+		Repository: nh.Notifications, Accounts: ae.Accounts, Relationships: e.graph, Reach: e.reach, Conversations: e.content,
+		IDs: ae.IDs, Email: &appnotification.EmailScheduler{Outbox: e.outbox, Clock: ae.Clock}, PostJobs: e.postJobs,
+		Ages: ae.Accounts, Mentions: e.content,
+	}
+	e.deps = deps
+	appnotification.RegisterProjectors(captured.Projectors, deps)
+	appnotification.RegisterProjectors(e.only, deps)
+	e.signals = &recordedSignals{}
+	appnotification.RegisterCommitHooks(captured.Projectors, e.signals)
+	modDeps := appnotification.ModeratorDeps{Repository: nh.Notifications, Staff: e.staff, IDs: ae.IDs, Outbox: e.outbox}
+	appnotification.RegisterModeratorProjectors(captured.Projectors, modDeps)
+	appnotification.RegisterModeratorProjectors(e.only, modDeps)
+	e.mutes = appnotification.NewThreadMutes(appnotification.ThreadMuteDeps{
+		UnitOfWork: nh.UnitOfWork, Repository: nh.Notifications, Conversations: e.content, Clock: ae.Clock,
 	})
 	e.interactions = appcontent.NewInteractions(appcontent.InteractionDeps{
 		UnitOfWork: nh.UnitOfWork, Statuses: nh.Statuses, Interactions: nh.Interactions,
 		Accounts: ae.Accounts, Relationships: e.graph, Clock: ae.Clock, IDs: ae.IDs, Host: testkit.ContractHost,
 	})
 	e.svc = appnotification.NewService(appnotification.Deps{
-		UnitOfWork: nh.UnitOfWork, Repository: nh.Notifications, Clock: ae.Clock, Staff: e.staff,
+		UnitOfWork: nh.UnitOfWork, Repository: nh.Notifications, Clock: ae.Clock, IDs: ae.IDs, Staff: e.staff,
 	})
 	return e
 }

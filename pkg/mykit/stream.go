@@ -30,7 +30,8 @@ const (
 )
 
 // StreamEvent is an event of GET /streaming: one of *UpdateEvent, *ListUpdateEvent, *NotificationEvent,
-// *ConversationEvent, *AnnouncementEvent, *AnnouncementRemovedEvent, and *UnknownEvent. Branch on it with a type switch.
+// *ConversationEvent, *AnnouncementEvent, *AnnouncementRemovedEvent, *NotificationRequestsEvent, and *UnknownEvent.
+// Branch on it with a type switch.
 type StreamEvent interface {
 	// EventName is the `event` field of the event, such as "update".
 	EventName() string
@@ -59,6 +60,11 @@ type AnnouncementEvent struct{ Announcement Announcement }
 // AnnouncementRemovedEvent is an announcement that no longer shows.
 type AnnouncementRemovedEvent struct{ ID string }
 
+// NotificationRequestsEvent tells the new counts of the notification requests: a notification that the user's
+// notification policy filtered arrived, or a request was accepted or dismissed. The filtered notification itself
+// comes with no NotificationEvent.
+type NotificationRequestsEvent struct{ Summary NotificationRequestSummary }
+
 // UnknownEvent is an event that this version of the library does not know, which a newer server may send. Name
 // is its `event` field ("message" when it has none) and Data its data, unparsed.
 type UnknownEvent struct {
@@ -83,6 +89,9 @@ func (*AnnouncementEvent) EventName() string { return "announcement" }
 
 // EventName is "announcement_removed".
 func (*AnnouncementRemovedEvent) EventName() string { return "announcement_removed" }
+
+// EventName is "notification_requests".
+func (*NotificationRequestsEvent) EventName() string { return "notification_requests" }
 
 // EventName is the event's own name.
 func (e *UnknownEvent) EventName() string { return e.Name }
@@ -345,6 +354,9 @@ func parseStreamEvent(ev rawEvent) (StreamEvent, error) {
 		}
 		e.ID = removed.ID
 		return e, nil
+	case "notification_requests":
+		e := &NotificationRequestsEvent{}
+		typed, target = e, &e.Summary
 	default:
 		return &UnknownEvent{Name: ev.name, Data: ev.data}, nil
 	}

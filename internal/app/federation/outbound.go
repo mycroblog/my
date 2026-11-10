@@ -12,6 +12,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/queue"
+	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/federation"
 )
@@ -140,6 +141,8 @@ type ActorHiding interface {
 //     A boost of a local status (Boost.Federates is false) is not recorded (ADR-0017).
 //   - account.profile_revised of a local profile (ProfileRevised.Federates): Update of the
 //     actor.
+//   - timeline.featured_tags_changed of a local account: Update of the actor, whose featuredTags
+//     collection the remote servers fetch again (ADR-0006 §17).
 //   - account.aliases_changed of a local account: Update of the actor, recorded only when the
 //     federation mode publishes (ADR-0089).
 //   - account.lifecycle_event_recorded of a local account's deletion: Delete of the actor. Of a
@@ -306,6 +309,16 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 		return rec.record(ctx, tx, federation.OutboundActivity{
 			Type: federation.ActivityUpdate, ActorAccountID: ev.Revision.AccountID,
 			ObjectKind: federation.OutboundAccount, ObjectID: ev.Revision.AccountID, CreatedAt: ev.Revision.RevisedAt,
+		}, "")
+	})
+	r.Register(apptimeline.EventFeaturedTagsChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(apptimeline.FeaturedTagsChanged)
+		if !ok {
+			return nil
+		}
+		return rec.record(ctx, tx, federation.OutboundActivity{
+			Type: federation.ActivityUpdate, ActorAccountID: ev.AccountID,
+			ObjectKind: federation.OutboundAccount, ObjectID: ev.AccountID, CreatedAt: ev.ChangedAt,
 		}, "")
 	})
 	r.Register(appaccount.EventAliasesChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {

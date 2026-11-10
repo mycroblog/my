@@ -12,6 +12,15 @@ import (
 	"database/sql"
 )
 
+const eraseConversationMutesOf = `-- name: EraseConversationMutesOf :exec
+DELETE FROM conversation_mutes WHERE account_id = ?1
+`
+
+func (q *Queries) EraseConversationMutesOf(ctx context.Context, accountID string) error {
+	_, err := q.db.ExecContext(ctx, eraseConversationMutesOf, accountID)
+	return err
+}
+
 const eraseDeletedStatusesOfStatuses = `-- name: EraseDeletedStatusesOfStatuses :exec
 DELETE FROM notification_deleted_statuses WHERE status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
 `

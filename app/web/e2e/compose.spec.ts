@@ -185,6 +185,7 @@ async function serveApi(page: Page): Promise<Posted[]> {
         boosts_count: 0,
         favourites_count: 0,
         reactions: [],
+        filtered: [],
       });
     }
     // The completion's searches (ADR-0092 §1) find Carol and one hashtag whatever is typed.
@@ -623,6 +624,7 @@ async function serveHomeTimeline(page: Page): Promise<void> {
     boosts_count: 0,
     favourites_count: 0,
     reactions: [],
+    filtered: [],
   });
   // Registered after serveApi's route, so Playwright asks this one first.
   await page.route("**/api/v1/timelines/home*", (route) =>

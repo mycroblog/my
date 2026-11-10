@@ -10,6 +10,13 @@ import (
 	"time"
 )
 
+type FeaturedTag struct {
+	AccountID  string
+	TagID      string
+	Ordinal    int32
+	FeaturedAt time.Time
+}
+
 type FeedAuthorRestriction struct {
 	AccountID      string
 	Restriction    string
@@ -85,6 +92,11 @@ type FeedTagFollow struct {
 	AccountID  string
 	TagID      string
 	FollowedAt time.Time
+}
+
+type KeywordFilterContext struct {
+	FilterID string
+	Context  string
 }
 
 type ListMember struct {

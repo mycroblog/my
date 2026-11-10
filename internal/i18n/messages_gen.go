@@ -186,6 +186,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeReadDirect() string {
 	return l.format("server:auth.authorize.scope.read_direct", nil)
 }
 
+// ServerAuthAuthorizeScopeReadFilters formats "server:auth.authorize.scope.read_filters". Permission (OAuth scope read:filters) listed on the authorization page.
+//
+//	en: Read your keyword filters
+func (l *Localizer) ServerAuthAuthorizeScopeReadFilters() string {
+	return l.format("server:auth.authorize.scope.read_filters", nil)
+}
+
 // ServerAuthAuthorizeScopeReadFinance formats "server:auth.authorize.scope.read_finance". Permission (OAuth scope read:finance) listed on the authorization page.
 //
 //	en: Read the totals of the instance's costs and income, as far as your roles allow
@@ -284,6 +291,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteFavourites() string {
 	return l.format("server:auth.authorize.scope.write_favourites", nil)
 }
 
+// ServerAuthAuthorizeScopeWriteFilters formats "server:auth.authorize.scope.write_filters". Permission (OAuth scope write:filters) listed on the authorization page.
+//
+//	en: Create, change, and delete your keyword filters
+func (l *Localizer) ServerAuthAuthorizeScopeWriteFilters() string {
+	return l.format("server:auth.authorize.scope.write_filters", nil)
+}
+
 // ServerAuthAuthorizeScopeWriteFollows formats "server:auth.authorize.scope.write_follows". Permission (OAuth scope write:follows) listed on the authorization page.
 //
 //	en: Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts
@@ -300,7 +314,7 @@ func (l *Localizer) ServerAuthAuthorizeScopeWriteMedia() string {
 
 // ServerAuthAuthorizeScopeWriteMutes formats "server:auth.authorize.scope.write_mutes". Permission (OAuth scope write:mutes) listed on the authorization page.
 //
-//	en: Mute and unmute accounts and domains
+//	en: Mute and unmute accounts, domains, and threads
 func (l *Localizer) ServerAuthAuthorizeScopeWriteMutes() string {
 	return l.format("server:auth.authorize.scope.write_mutes", nil)
 }
@@ -1820,6 +1834,13 @@ func (l *Localizer) ServerErrorsExternalConfirmationExpired() string {
 	return l.format("server:errors.external_confirmation.expired", nil)
 }
 
+// ServerErrorsFeaturedTagsTooMany formats "server:errors.featured_tags.too_many". API error title for HTTP 422 when the user asks to feature more hashtags on their profile than the limit.
+//
+//	en: You can feature at most 10 hashtags on your profile.
+func (l *Localizer) ServerErrorsFeaturedTagsTooMany() string {
+	return l.format("server:errors.featured_tags.too_many", nil)
+}
+
 // ServerErrorsFederationRestricted formats "server:errors.federation_restricted". API error title for HTTP 403 when the instance's federation mode (off, inbound only, or outbound only) does not let the operation through: following or resolving a remote account, or quoting a remote post.
 //
 //	en: This server does not federate in the direction that this needs.
@@ -2000,6 +2021,20 @@ func (l *Localizer) ServerErrorsInvitesRegistrationClosed() string {
 //	en: You have as many usable invites as allowed. Revoke one, or wait until one expires or is used up.
 func (l *Localizer) ServerErrorsInvitesTooMany() string {
 	return l.format("server:errors.invites.too_many", nil)
+}
+
+// ServerErrorsKeywordFiltersTooMany formats "server:errors.keyword_filters.too_many". API error title for HTTP 422 when the user creates another keyword filter beyond the limit of filters.
+//
+//	en: You already have the most keyword filters allowed. Delete one first.
+func (l *Localizer) ServerErrorsKeywordFiltersTooMany() string {
+	return l.format("server:errors.keyword_filters.too_many", nil)
+}
+
+// ServerErrorsKeywordFiltersTooManyWords formats "server:errors.keyword_filters.too_many_words". API error title for HTTP 422 when the words of a keyword filter, or of all the user's filters, would pass their limit.
+//
+//	en: A keyword filter has at most 100 words, and all your filters at most 1,000. Remove some first.
+func (l *Localizer) ServerErrorsKeywordFiltersTooManyWords() string {
+	return l.format("server:errors.keyword_filters.too_many_words", nil)
 }
 
 // ServerErrorsLastAdministrator formats "server:errors.last_administrator". API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account.
@@ -4696,6 +4731,22 @@ func (l *Localizer) ServerPushCustomEmojiRequestDecided(instance string) string 
 //	en: {name} favourited your post
 func (l *Localizer) ServerPushFavourite(name string) string {
 	return l.format("server:push.favourite", map[string]any{"name": name})
+}
+
+// ServerPushFilteredArgs holds the arguments of ServerPushFiltered, passed by name.
+//
+//exhaustruct:enforce
+type ServerPushFilteredArgs struct {
+	_      struct{} // forces keyed fields
+	Filter string
+	Title  string
+}
+
+// ServerPushFiltered formats "server:push.filtered". Web Push notification, and the subject of its email, about a post that one of the user's keyword filters with the action warn matched: it says what the notification is and names the filter instead of showing more. {title} is the usual text of the notification, such as “Alice mentioned you”; {filter} is the title of the filter, as the user wrote it.
+//
+//	en: {title} (matches your filter “{filter}”)
+func (l *Localizer) ServerPushFiltered(args ServerPushFilteredArgs) string {
+	return l.format("server:push.filtered", map[string]any{"filter": args.Filter, "title": args.Title})
 }
 
 // ServerPushFollow formats "server:push.follow". Web Push notification. {name} is the display name, or the @handle, of the account that followed the user.

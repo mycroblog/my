@@ -39,6 +39,9 @@ type Deps struct {
 	// Tags finds and stores the hashtags that accounts follow (ADR-0013 §27); the followed
 	// hashtags need it.
 	Tags Tags
+	// Statuses presents the statuses that the notification module asks to judge by ID against
+	// keyword filters (Service.JudgeStatuses); nil fails those.
+	Statuses StatusViews
 }
 
 // Service reads the home, local, hashtag, and profile timelines (FR-201 to FR-204, FR-208) from

@@ -96,6 +96,7 @@ function post(n: number): Status {
     boosts_count: 0,
     favourites_count: 0,
     reactions: [],
+    filtered: [],
   };
 }
 

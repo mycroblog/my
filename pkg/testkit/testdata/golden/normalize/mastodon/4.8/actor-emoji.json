@@ -9,6 +9,7 @@
       }
     ],
     "Featured": "https://mastodon.example/users/alice/collections/featured",
+    "FeaturedTags": "https://mastodon.example/users/alice/collections/tags",
     "Fields": [
       {
         "Name": "Website",

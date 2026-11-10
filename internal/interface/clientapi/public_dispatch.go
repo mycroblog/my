@@ -11,6 +11,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/stream"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
+	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
 // publicResultTTL is how long the dispatcher keeps what it decided and presented of an entry for
@@ -180,8 +181,10 @@ func (s *Server) publicStatuses(ctx context.Context, tl stream.Timeline, id stri
 	return out, nil
 }
 
-// statusesFor is statuses of the posts of items for each of viewers, by viewer account, with
-// the statuses presented to all of them through one ViewsFor and their accounts read once.
+// statusesFor is statuses of the posts of items for each of viewers in the public timelines,
+// by viewer account, with the statuses presented to all of them through one ViewsFor, their
+// accounts read once, and the viewers' keyword filters of the public timelines read together: a
+// post that a hide filter of a viewer matches is left out of that viewer's (ADR-0157 §7).
 func (s *Server) statusesFor(ctx context.Context, views viewsBatch, viewers []appcontent.Viewer, items []statusItem) (map[string][]Status, error) {
 	ids := make([]string, len(items))
 	for i, it := range items {
@@ -199,11 +202,23 @@ func (s *Server) statusesFor(ctx context.Context, views viewsBatch, viewers []ap
 	if err != nil {
 		return nil, err
 	}
+	filters := map[string]*apptimeline.StatusFilter{}
+	if s.o.StatusFilters != nil {
+		accountIDs := make([]string, len(viewers))
+		for i, v := range viewers {
+			accountIDs[i] = v.AccountID
+		}
+		if filters, err = s.o.StatusFilters.StatusFiltersOf(ctx, accountIDs, timeline.FilterContextPublic); err != nil {
+			return nil, err
+		}
+	}
 	out := make(map[string][]Status, len(viewers))
 	for _, v := range viewers {
 		byID := map[string]Status{}
 		for _, view := range byViewer[v.AccountID] {
-			byID[view.Status.ID] = s.newStatus(view, parts)
+			if st := s.newStatus(view, parts); applyJudgement(&st, filters[v.AccountID].Judge(view, ""), false) {
+				byID[view.Status.ID] = st
+			}
 		}
 		sts := make([]Status, 0, len(items))
 		for _, it := range items {

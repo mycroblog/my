@@ -89,6 +89,10 @@ type StatusHandlersDeps struct {
 	// Pins mirrors the featured collections of remote accounts (JobFetchFeatured, ADR-0006);
 	// without Pins (or Profiles), featured collections are not fetched.
 	Pins RemotePins
+	// FeaturedTags mirrors the featuredTags collections of remote accounts
+	// (JobFetchFeaturedTags, ADR-0006 §17); without FeaturedTags (or Profiles), featuredTags
+	// collections are not fetched.
+	FeaturedTags RemoteFeaturedTags
 	// Relayed records the posts that only a relay brought in, and RelayPolicy keeps out those of
 	// restricted authors (ADR-0006); without Relayed, nothing a relay brings in is stored.
 	Relayed     RelayedStatuses
@@ -134,7 +138,7 @@ func NewStatusHandlers(d StatusHandlersDeps) *StatusHandlers {
 }
 
 // Register sets the handlers of Create, Update, and Delete, and of the Add and Remove of the
-// pinned posts (FeaturedChanged), on p.
+// pinned posts and featured hashtags (FeaturedChanged), on p.
 func (h *StatusHandlers) Register(p *InboxProcessor) {
 	p.Handle(federation.ActivityCreate, h.Create)
 	p.Handle(federation.ActivityUpdate, h.Update)

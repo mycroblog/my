@@ -150,7 +150,7 @@ func remoteSnapshotFrom(row accountgen.RemoteAccountSnapshot) account.RemoteSnap
 		ID: row.ID, AccountID: row.AccountID, PreferredUsername: row.PreferredUsername,
 		ProfileURL: postgres.FromNullString(row.ProfileUrl), InboxURL: row.InboxUrl, SharedInboxURL: postgres.FromNullString(row.SharedInboxUrl),
 		OutboxURL: postgres.FromNullString(row.OutboxUrl), FollowersURL: postgres.FromNullString(row.FollowersUrl), FollowingURL: postgres.FromNullString(row.FollowingUrl),
-		FeaturedURL: postgres.FromNullString(row.FeaturedUrl), FollowersTotal: row.FollowersTotal,
+		FeaturedURL: postgres.FromNullString(row.FeaturedUrl), FeaturedTagsURL: postgres.FromNullString(row.FeaturedTagsUrl), FollowersTotal: row.FollowersTotal,
 		FollowingTotal: row.FollowingTotal, StatusesTotal: row.StatusesTotal,
 		DocumentDigest: row.DocumentDigest, FetchedAt: postgres.UTC(row.FetchedAt),
 	}
@@ -185,7 +185,8 @@ func (r *Repository) InsertRemoteSnapshot(ctx context.Context, tx uow.Tx, s acco
 		ProfileUrl: postgres.ToNullString(s.ProfileURL), InboxUrl: s.InboxURL, SharedInboxUrl: postgres.ToNullString(s.SharedInboxURL),
 		OutboxUrl: postgres.ToNullString(s.OutboxURL), FollowersUrl: postgres.ToNullString(s.FollowersURL),
 		FollowingUrl: postgres.ToNullString(s.FollowingURL), FeaturedUrl: postgres.ToNullString(s.FeaturedURL),
-		FollowersTotal: s.FollowersTotal, FollowingTotal: s.FollowingTotal,
+		FeaturedTagsUrl: postgres.ToNullString(s.FeaturedTagsURL),
+		FollowersTotal:  s.FollowersTotal, FollowingTotal: s.FollowingTotal,
 		StatusesTotal: s.StatusesTotal, DocumentDigest: s.DocumentDigest, FetchedAt: s.FetchedAt,
 	})
 	return postgres.Wrap(err, "insert remote account snapshot")

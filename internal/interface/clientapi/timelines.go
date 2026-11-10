@@ -57,9 +57,15 @@ type statusItem struct {
 	FollowedTags []string
 }
 
-// statuses presents items in order as viewer sees them. An item whose status, boost, or
-// booster is gone or hidden (since the page was read) is left out.
-func (s *Server) statuses(ctx context.Context, viewer appcontent.Viewer, items []statusItem) ([]Status, error) {
+// statuses presents items in order as viewer sees them in the filter context c (noFilter for
+// none). An item whose status, boost, or booster is gone or hidden (since the page was read) is
+// left out, and so is one that a hide filter of the viewer matches in c (ADR-0157 §7); the page
+// keeps its cursor, so it may hold fewer items than its limit.
+func (s *Server) statuses(ctx context.Context, viewer appcontent.Viewer, c timeline.FilterContext, items []statusItem) ([]Status, error) {
+	f, err := s.statusFilter(ctx, viewer, c)
+	if err != nil {
+		return nil, err
+	}
 	var statusIDs, boostIDs []string
 	for _, it := range items {
 		statusIDs = append(statusIDs, it.StatusID)
@@ -70,6 +76,10 @@ func (s *Server) statuses(ctx context.Context, viewer appcontent.Viewer, items [
 	views, err := s.o.TimelineReader.Views(ctx, viewer, statusIDs)
 	if err != nil {
 		return nil, err
+	}
+	viewByID := make(map[string]appcontent.StatusView, len(views))
+	for _, v := range views {
+		viewByID[v.Status.ID] = v
 	}
 	boosts := map[string]content.Boost{}
 	// The boosters, read together; nil for one that no longer exists.
@@ -118,7 +128,9 @@ func (s *Server) statuses(ctx context.Context, viewer appcontent.Viewer, items [
 			if len(it.FollowedTags) > 0 {
 				st.FollowedTags = &it.FollowedTags
 			}
-			out = append(out, st)
+			if applyJudgement(&st, f.Judge(viewByID[it.StatusID], ""), false) {
+				out = append(out, st)
+			}
 			continue
 		}
 		b, ok := boosts[it.BoostID]
@@ -130,12 +142,16 @@ func (s *Server) statuses(ctx context.Context, viewer appcontent.Viewer, items [
 			continue
 		}
 		boosted := st
-		out = append(out, Status{
+		row := Status{
 			Id: b.ID, Uri: b.URI, CreatedAt: b.BoostedAt, Account: s.newAccount(*booster, parts),
 			Visibility: st.Visibility, Language: st.Language, Boost: &boosted,
 			MediaAttachments: []MediaAttachment{}, Mentions: []StatusMention{}, Tags: []StatusTag{}, Emojis: []CustomEmoji{},
-			Reactions: []StatusReaction{},
-		})
+			Reactions: []StatusReaction{}, Filtered: []FilterResult{},
+		}
+		// A boost is judged by the boosted status, and its row carries the marks (ADR-0157 §3).
+		if applyJudgement(&row, f.Judge(viewByID[it.StatusID], b.BoosterAccountID), false) {
+			out = append(out, row)
+		}
 	}
 	return out, nil
 }
@@ -162,12 +178,12 @@ func (s *Server) timelineQuery(ctx context.Context, v *Viewer, cursor *Cursor, l
 
 // statusPage presents a page of a timeline. An anonymous page is the same for every visitor,
 // so shared caches may keep it briefly (ADR-0016); a viewer's page is not stored.
-func (s *Server) statusPage(ctx context.Context, v *Viewer, items []statusItem, next string) (StatusPageJSONResponse, error) {
+func (s *Server) statusPage(ctx context.Context, v *Viewer, c timeline.FilterContext, items []statusItem, next string) (StatusPageJSONResponse, error) {
 	cache := cachePublic
 	if v != nil {
 		cache = cacheNoStore
 	}
-	statuses, err := s.statuses(ctx, contentViewer(ctx), items)
+	statuses, err := s.statuses(ctx, contentViewer(ctx), c, items)
 	if err != nil {
 		return StatusPageJSONResponse{}, err
 	}
@@ -208,7 +224,7 @@ func (s *Server) GetHomeTimeline(ctx context.Context, req GetHomeTimelineRequest
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.statusPage(ctx, v, entryItems(p.Entries), p.Next)
+	res, err := s.statusPage(ctx, v, timeline.FilterContextHome, entryItems(p.Entries), p.Next)
 	return GetHomeTimeline200JSONResponse{res}, err
 }
 
@@ -235,7 +251,7 @@ func (s *Server) GetLocalTimeline(ctx context.Context, req GetLocalTimelineReque
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.statusPage(ctx, v, entryItems(p.Entries), p.Next)
+	res, err := s.statusPage(ctx, v, timeline.FilterContextPublic, entryItems(p.Entries), p.Next)
 	return GetLocalTimeline200JSONResponse{res}, err
 }
 
@@ -294,7 +310,7 @@ func (s *Server) GetFederatedTimeline(ctx context.Context, req GetFederatedTimel
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.statusPage(ctx, v, entryItems(p.Entries), p.Next)
+	res, err := s.statusPage(ctx, v, timeline.FilterContextPublic, entryItems(p.Entries), p.Next)
 	return GetFederatedTimeline200JSONResponse{res}, err
 }
 
@@ -319,7 +335,7 @@ func (s *Server) GetHashtagTimeline(ctx context.Context, req GetHashtagTimelineR
 	case !errors.Is(err, appcontent.ErrNotFound):
 		return nil, err
 	}
-	res, err := s.statusPage(ctx, v, entryItems(p.Entries), p.Next)
+	res, err := s.statusPage(ctx, v, timeline.FilterContextPublic, entryItems(p.Entries), p.Next)
 	return GetHashtagTimeline200JSONResponse{res}, err
 }
 
@@ -355,7 +371,7 @@ func (s *Server) ListAccountStatuses(ctx context.Context, req ListAccountStatuse
 			if err != nil {
 				return nil, err
 			}
-			if body.Items, err = s.presentStatuses(ctx, views); err != nil {
+			if body.Items, err = s.filteredStatuses(ctx, cv, timeline.FilterContextAccount, views); err != nil {
 				return nil, err
 			}
 		}
@@ -375,7 +391,7 @@ func (s *Server) ListAccountStatuses(ctx context.Context, req ListAccountStatuse
 	if err != nil {
 		return nil, err
 	}
-	res, err := s.statusPage(ctx, v, entryItems(p.Entries), p.Next)
+	res, err := s.statusPage(ctx, v, timeline.FilterContextAccount, entryItems(p.Entries), p.Next)
 	if err != nil {
 		return nil, err
 	}

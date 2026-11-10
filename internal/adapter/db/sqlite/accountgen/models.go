@@ -161,4 +161,5 @@ type RemoteAccountSnapshot struct {
 	StatusesTotal     sql.NullInt64
 	DocumentDigest    []byte
 	FetchedAt         int64
+	FeaturedTagsUrl   sql.NullString
 }

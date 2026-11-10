@@ -169,6 +169,8 @@ type App struct {
 	voiceNotifier *notification.VoiceNotifier
 	// Subscriptions keeps the local accounts' subscriptions to new posts (ADR-0086).
 	Subscriptions *notification.Subscriptions
+	// ThreadMutes keeps the local accounts' mutes of conversations (ADR-0158 §8).
+	ThreadMutes *notification.ThreadMutes
 	// Push registers the Web Push subscriptions and sends the notifications to them (FR-206).
 	Push *notification.PushService
 	// Streams is the broker of the streaming endpoint that cfg.Stream selects: a stream.Hub,

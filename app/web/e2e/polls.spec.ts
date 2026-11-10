@@ -84,6 +84,7 @@ const post: Status = {
   boosts_count: 0,
   favourites_count: 0,
   reactions: [],
+  filtered: [],
   favourited: false,
   boosted: false,
   bookmarked: false,

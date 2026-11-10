@@ -342,6 +342,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - 注目のハッシュタグ（`featuredTags`、[ADR-0006](../adr/0006-federation-protocol-scope.md) §17）: 同じ保存のときに、文書が Actor と同じオリジンの `featuredTags` を宣言していれば、ジョブ `federation.fetch_featured_tags`（冪等キー `fetch_featured_tags:<account_id>`）を投入します。
     ジョブはコレクションの項目か `first` のページ（同じオリジンのものだけ。2 ページ目はたどらない）から `Hashtag` の名前を 10 件まで読み、そのアカウントの注目のハッシュタグを置き換えます。空のコレクションと `featuredTags` を宣言しなくなった文書は消し、取得できなければ残して完了にします。
     数と最後の使用は、ローカルと同じく、このサーバーが知るそのアカウントの `public` / `unlisted` の投稿から数えます。
+    コレクションの URL は `remote_account_snapshots.featured_tags_url` に、名前は `timeline.Service.ReplaceRemoteFeaturedTags` が `featured_tags` に置きます。`Hashtag` の項目は `id` を持たないので、正規化はほかの項目と分けて名前だけを `federation.Collection.Hashtags` に読みます。
+    1 回の文書はコレクションとページの 2 件（`FeaturedTagsMaxDocuments`）までです。コントラクトテストは `federationtest.RemoteStatusContract` で、Mastodon の `featured-tags.json` を取り込みます。
   - `GET /api/v1/accounts/{id}/statuses?pinned=true` はローカルと同じく `status_pins` を返すので、リモートのアカウントのプロフィールの先頭にも固定した投稿が出ます。コントラクトテストは `federationtest.RemoteStatusContract` で、Mastodon・Misskey・GoToSocial の `featured.json` を取り込みます。
 - 判定フック `inbound.actor`（ADR-0147 §2）: Actor の文書を保存するとき（初めての取得・取り直し・Actor 自身の `Update`）、トランザクションの前に `account.ReviewRemoteProfile` が保存するとおりにサニタイズしたプロフィール（表示名・自己紹介・項目と、アイコンとヘッダーの URL）とそのダイジェストを求め、今の版のダイジェスト（`remote_profile_revisions.profile_digest`）と違うときだけフックに尋ねます。対象のキーは `<Actor の URI>#<ダイジェストの 16 進>` です。
   - `enforce` の `drop` は、既知の Actor では `RemoteActorInput.KeepProfile` で表示名・自己紹介・項目・アイコン・ヘッダーとそのカスタム絵文字を前の版のまま残し、スナップショット（inbox などのエンドポイント）・鍵・ハンドルと、`locked`・`bot`・`discoverable`・`indexable` は保存します。鍵とエンドポイントを捨てると署名の検証と配送が壊れ、`locked` と `indexable` はフォローの仕方と索引への同意を表すからです。初めての取得では、フォローとメンションの解決に行が要るので `drop` を `flag` として扱います。
@@ -434,6 +436,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `graph.blocked` / `graph.unblocked`（相手がリモート） | `Block` / `Undo Block` | 相手の inbox |
 | `account.profile_revised`（ローカルのプロフィールの 2 版目以降。最初の版はアカウントの作成で、まだだれもフォローしていない） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.aliases_changed`（ローカルのアカウントの別名の追加・削除。ADR-0089。連合の向きが `publish` を通すときだけ積む） | `Update`（Actor の文書） | リモートフォロワーの inbox |
+| `timeline.featured_tags_changed`（ローカルのアカウントの注目のハッシュタグの変更。ADR-0006 §17。受け取ったサーバーは `featuredTags` を取得し直す） | `Update`（Actor の文書） | リモートフォロワーの inbox |
 | `account.lifecycle_event_recorded`（ローカルのアカウントの `deleted`） | `Delete`（Actor の `id`） | リモートフォロワーの inbox + 既知の shared inbox（[data-model §8](data-model/08-deletion-and-purge.md#8-削除と消去)） |
 | `moderation.account_suspension_changed`（ローカルのアカウントの凍結と、その終わり。§11.1。本人が無効化している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |
 | `account.lifecycle_event_recorded`（ローカルのアカウントの `deactivated` / `reactivated`。§11.2。凍結している間は積まない） | `Update`（Actor の文書） | リモートフォロワーの inbox + 既知の shared inbox |

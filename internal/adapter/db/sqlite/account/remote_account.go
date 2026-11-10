@@ -150,7 +150,7 @@ func remoteSnapshotFrom(row accountgen.RemoteAccountSnapshot) account.RemoteSnap
 		ID: row.ID, AccountID: row.AccountID, PreferredUsername: row.PreferredUsername,
 		ProfileURL: row.ProfileUrl.String, InboxURL: row.InboxUrl, SharedInboxURL: row.SharedInboxUrl.String,
 		OutboxURL: row.OutboxUrl.String, FollowersURL: row.FollowersUrl.String, FollowingURL: row.FollowingUrl.String,
-		FeaturedURL: row.FeaturedUrl.String, FollowersTotal: sqlite.FromNullInt64(row.FollowersTotal),
+		FeaturedURL: row.FeaturedUrl.String, FeaturedTagsURL: row.FeaturedTagsUrl.String, FollowersTotal: sqlite.FromNullInt64(row.FollowersTotal),
 		FollowingTotal: sqlite.FromNullInt64(row.FollowingTotal), StatusesTotal: sqlite.FromNullInt64(row.StatusesTotal),
 		DocumentDigest: row.DocumentDigest, FetchedAt: sqlite.FromMillis(row.FetchedAt),
 	}
@@ -189,7 +189,8 @@ func (r *Repository) InsertRemoteSnapshot(ctx context.Context, tx uow.Tx, s acco
 		ProfileUrl: sqlite.ToNullString(s.ProfileURL), InboxUrl: s.InboxURL, SharedInboxUrl: sqlite.ToNullString(s.SharedInboxURL),
 		OutboxUrl: sqlite.ToNullString(s.OutboxURL), FollowersUrl: sqlite.ToNullString(s.FollowersURL),
 		FollowingUrl: sqlite.ToNullString(s.FollowingURL), FeaturedUrl: sqlite.ToNullString(s.FeaturedURL),
-		FollowersTotal: sqlite.ToNullInt64(s.FollowersTotal), FollowingTotal: sqlite.ToNullInt64(s.FollowingTotal),
+		FeaturedTagsUrl: sqlite.ToNullString(s.FeaturedTagsURL),
+		FollowersTotal:  sqlite.ToNullInt64(s.FollowersTotal), FollowingTotal: sqlite.ToNullInt64(s.FollowingTotal),
 		StatusesTotal: sqlite.ToNullInt64(s.StatusesTotal), DocumentDigest: s.DocumentDigest, FetchedAt: sqlite.ToMillis(s.FetchedAt),
 	})
 	return sqlite.Wrap(err, "insert remote account snapshot")

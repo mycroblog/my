@@ -14,6 +14,7 @@ type Status = components["schemas"]["Status"];
 type Notification = components["schemas"]["Notification"];
 type Conversation = components["schemas"]["Conversation"];
 type Announcement = components["schemas"]["Announcement"];
+type NotificationRequestSummary = components["schemas"]["NotificationRequestSummary"];
 
 /** A timeline whose new posts GET /streaming/timelines/{timeline} streams. */
 export type StreamTimeline = "local" | "federated";
@@ -29,6 +30,7 @@ export type StreamEvent =
   | { type: "conversation"; conversation: Conversation }
   | { type: "announcement"; announcement: Announcement }
   | { type: "announcement_removed"; id: string }
+  | { type: "notification_requests"; summary: NotificationRequestSummary }
   | { type: "unknown"; event: string; data: string };
 
 /** How long a stream may stay silent before the client drops it: two of the server's heartbeats, 30 seconds apart. */
@@ -281,7 +283,7 @@ function dispatch(events: ServerSentEvent[], options: StreamOptions): void {
   }
 }
 
-/** The events of the spec, whose data is an object with an `id`, but `list_update`'s. */
+/** The events of the spec, whose data is an object with an `id`, but `list_update`'s and `notification_requests`'s. */
 const knownEvents: ReadonlySet<string> = new Set([
   "update",
   "list_update",
@@ -289,14 +291,16 @@ const knownEvents: ReadonlySet<string> = new Set([
   "conversation",
   "announcement",
   "announcement_removed",
+  "notification_requests",
 ]);
 
 /**
  * Types an event by its name: the data of `update`, `notification`, `conversation`, and `announcement` is the
  * server's Status, Notification, Conversation, and Announcement, that of `list_update` a list's ID and a Status (once for each of the user's lists
- * whose timeline shows the post of an `update`), and that of `announcement_removed` the announcement's ID. An unknown
- * name is an `unknown` event. It throws for a known event whose data is no JSON object with an `id` (for
- * `list_update`, with a `list_id` and a `status` that has an `id`).
+ * whose timeline shows the post of an `update`), that of `announcement_removed` the announcement's ID, and that of
+ * `notification_requests` the counts of the notification requests. An unknown name is an `unknown` event. It throws
+ * for a known event whose data is no JSON object with an `id` (for `list_update`, with a `list_id` and a `status` that
+ * has an `id`; for `notification_requests`, with the two counts).
  */
 export function parseStreamEvent({ event, data }: ServerSentEvent): StreamEvent {
   if (!knownEvents.has(event)) return { type: "unknown", event, data };
@@ -317,6 +321,13 @@ export function parseStreamEvent({ event, data }: ServerSentEvent): StreamEvent 
       throw new Error(`mykit: the data of a stream event "${event}" has no list_id or status`);
     }
     return { type: "list_update", listId, status: status as Status };
+  }
+  if (event === "notification_requests") {
+    const summary = (value ?? {}) as Record<string, unknown>;
+    if (typeof summary["accounts_count"] !== "number" || typeof summary["notifications_count"] !== "number") {
+      throw new Error(`mykit: the data of a stream event "${event}" has no counts`);
+    }
+    return { type: "notification_requests", summary: summary as NotificationRequestSummary };
   }
   if (typeof value !== "object" || value === null || typeof (value as Record<string, unknown>)["id"] !== "string") {
     throw new Error(`mykit: the data of a stream event "${event}" has no id`);

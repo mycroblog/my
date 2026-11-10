@@ -21,6 +21,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/timeline"
 	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/contenttest"
 )
@@ -315,7 +316,22 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 					return err
 				}
 			}
-			return nil
+			// Alice keeps two keyword filters.
+			for range 2 {
+				f := timeline.KeywordFilter{
+					ID: e.IDs.NewID(), AccountID: aliceID, Title: "spoilers", Action: timeline.FilterWarn,
+					Contexts: []timeline.FilterContext{timeline.FilterContextHome},
+					Words:    []timeline.FilterWord{{Word: "Spoiler", Normalized: "spoiler"}}, CreatedAt: e.Clock.Now(),
+				}
+				if err := feeds.InsertKeywordFilter(ctx, tx, f); err != nil {
+					return err
+				}
+			}
+			// Alice features two hashtags.
+			return feeds.ReplaceFeaturedTags(ctx, tx, aliceID, []apptimeline.FeaturedTagRow{
+				{AccountID: aliceID, TagID: e.IDs.NewID(), Ordinal: 1, FeaturedAt: e.Clock.Now()},
+				{AccountID: aliceID, TagID: e.IDs.NewID(), Ordinal: 2, FeaturedAt: e.Clock.Now()},
+			})
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -326,6 +342,8 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 	e.rows(t, "lists", "owner_account_id", aliceID, 1)
 	e.rows(t, "list_members", "member_account_id", aliceID, 1)
 	e.rows(t, "feed_tag_follows", "account_id", aliceID, 2)
+	e.rows(t, "keyword_filters", "account_id", aliceID, 2)
+	e.rows(t, "featured_tags", "account_id", aliceID, 2)
 
 	e.deleteAccount(t, aliceID)
 	e.Clock.Advance(appaccount.ErasureDelay)
@@ -364,6 +382,8 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 	e.rows(t, "feed_follow_edges", "follower_account_id", aliceID, 0)
 	e.rows(t, "feed_follow_edges", "followee_account_id", aliceID, 0)
 	e.rows(t, "feed_tag_follows", "account_id", aliceID, 0)
+	e.rows(t, "keyword_filters", "account_id", aliceID, 0)
+	e.rows(t, "featured_tags", "account_id", aliceID, 0)
 	e.rows(t, "mutes", "target_account_id", aliceID, 0)
 	e.rows(t, "feed_exclusions", "viewer_account_id", aliceID, 0)
 	e.rows(t, "feed_domain_mutes", "viewer_account_id", aliceID, 0)

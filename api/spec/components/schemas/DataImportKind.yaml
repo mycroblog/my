@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: MIT
 description: |
-  What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
-  accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-  domains the user mutes; Mastodon's `blocked_domains.csv` with the header
-  `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
-  posts the user bookmarked).
+  What a CSV file lists: `following` (the accounts the user follows), `followed_tags` (the
+  hashtags the user follows, `followed_hashtags.csv`: one hashtag per line without its `#`,
+  a file of this server that Mastodon does not have), `blocks` (the accounts the user
+  blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the domains the user mutes;
+  Mastodon's `blocked_domains.csv` with the header `#domain`, which a Mastodon user's blocked
+  domains become here), or `bookmarks` (the posts the user bookmarked).
 type: string
-enum: [following, blocks, mutes, domain_mutes, bookmarks]
+enum: [following, followed_tags, blocks, mutes, domain_mutes, bookmarks]

@@ -75,6 +75,12 @@ type ProfileTimeline interface {
 	Profile(ctx context.Context, viewer appcontent.Viewer, authorAccountID string, f apptimeline.ProfileFilter, q apptimeline.Query) (apptimeline.Page, error)
 }
 
+// FeaturedTagReader reads the hashtags that a local account features on its profile, in its
+// order (ADR-0006 §17); *apptimeline.Service implements it.
+type FeaturedTagReader interface {
+	FeaturedTags(ctx context.Context, accountID string) ([]apptimeline.FeaturedTag, error)
+}
+
 // StatusReader presents statuses to a viewer and resolves the parts of the revisions that Notes
 // present; *appcontent.Reader implements it.
 type StatusReader interface {
@@ -111,6 +117,9 @@ type ObjectsDeps struct {
 	Graph    ObjectGraph
 	Timeline ProfileTimeline
 	Reader   StatusReader
+	// FeaturedTags reads the featured hashtags of the featuredTags collections; nil serves them
+	// empty.
+	FeaturedTags FeaturedTagReader
 	// Images reads the avatars and headers of the actors that archives export; nil exports none.
 	Images ProfileImages
 	// Aliases reads the aliases of the actors that archives export; nil exports none.
@@ -483,6 +492,32 @@ func (o *Objects) Featured(ctx context.Context, accountID string) ([]federation.
 		out = append(out, note)
 	}
 	return out, nil
+}
+
+// FeaturedTags returns the Hashtags of the hashtags that the local account a features on its
+// profile, in its order: name is the hashtag with its #, and href the page of the account's posts
+// with it, as Mastodon's featuredTags collection has them (ADR-0006 §17).
+func (o *Objects) FeaturedTags(ctx context.Context, a appaccount.Actor) ([]federation.TagDocument, error) {
+	out := []federation.TagDocument{}
+	if o.d.FeaturedTags == nil || a.Local == nil {
+		return out, nil
+	}
+	tags, err := o.d.FeaturedTags.FeaturedTags(ctx, a.Account.ID)
+	if err != nil {
+		return nil, err
+	}
+	for _, t := range tags {
+		out = append(out, federation.TagDocument{
+			Type: federation.TagHashtag, Href: FeaturedTagURL(o.d.Host, a.Local.Username, t.Tag.NameNormalized), Name: "#" + t.Tag.Name,
+		})
+	}
+	return out, nil
+}
+
+// FeaturedTagURL returns the page of the posts of a local username on host with a hashtag, for a
+// normalized tag name: the href of the Hashtag of a featured hashtag.
+func FeaturedTagURL(host, username, nameNormalized string) string {
+	return ProfileURL(host, username) + "/tagged/" + url.PathEscape(nameNormalized)
 }
 
 // viewNote returns the Note of a status as an anonymous visitor sees it, from the parts that the

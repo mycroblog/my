@@ -191,6 +191,13 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				},
 			},
 			{
+				Name: "notification_requests", Module: "notification",
+				Tables: []string{"notification_requests"},
+				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
+					return notification.RebuildRequests(ctx, u, r.notifications)
+				},
+			},
+			{
 				Name: "notification_deleted_statuses", Module: "notification",
 				Tables: []string{"notification_deleted_statuses"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {

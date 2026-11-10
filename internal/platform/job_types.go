@@ -28,6 +28,7 @@ var jobTypes = []string{
 	"federation.deliver",
 	"federation.fanout",
 	"federation.fetch_featured",
+	"federation.fetch_featured_tags",
 	"federation.fetch_object",
 	"federation.fetch_outbox",
 	"federation.inbox",

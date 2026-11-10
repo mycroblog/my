@@ -14,9 +14,10 @@ import (
 
 // setUpExports builds the exports of the users' data (FR-008) and registers their jobs. The
 // archive holds the actor and the outbox as the federation module writes them, the user's own
-// moderation records (ADR-0058), and the follows, blocks, mutes, muted domains, and bookmarks as the CSV files
-// of Mastodon (identity.Imports). It comes after the blob store; the entries read the status
-// reader and the imports, which are built later, only when a job runs.
+// moderation records (ADR-0058) and keyword filters (ADR-0157 §8) as JSON, the follows, blocks,
+// mutes, muted domains, and bookmarks as the CSV files of Mastodon, and the followed hashtags as
+// a CSV file of the same form (identity.Imports). It comes after the blob store; the entries read
+// the status reader and the imports, which are built later, only when a job runs.
 func (a *App) setUpExports(repo identity.Repository) {
 	outbox := a.Outbox
 	if outbox == nil {
@@ -31,6 +32,9 @@ func (a *App) setUpExports(repo identity.Repository) {
 			return a.archiveObjects().ArchiveOutbox(ctx, accountID, w)
 		}},
 		{Name: "moderation.json", Write: a.Moderation.WriteOwnRecords},
+		{Name: "keyword_filters.json", Write: func(ctx context.Context, accountID string, w io.Writer) error {
+			return a.Timeline.WriteKeywordFilters(ctx, accountID, w)
+		}},
 	}
 	for _, kind := range domidentity.ImportKinds {
 		entries = append(entries, identity.ArchiveEntry{Name: kind.FileName(), Write: func(ctx context.Context, accountID string, w io.Writer) error {

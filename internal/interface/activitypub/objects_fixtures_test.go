@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync"
 
+	appaccount "github.com/mycroblog/my/internal/app/account"
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
@@ -35,6 +36,8 @@ type fakeObjects struct {
 	requests []*appfederation.SignedRequest
 	outbox   []federation.ActivityDocument
 	featured []federation.NoteDocument
+	// featuredTags are the Hashtags of every actor's featured-tags collection.
+	featuredTags []federation.TagDocument
 	// authorizedFetch is the authorized fetch setting.
 	authorizedFetch bool
 	err             error
@@ -132,6 +135,13 @@ func (f *fakeObjects) Outbox(_ context.Context, _ string, before string) (appfed
 
 func (f *fakeObjects) Featured(context.Context, string) ([]federation.NoteDocument, error) {
 	return f.featured, f.err
+}
+
+func (f *fakeObjects) FeaturedTags(context.Context, appaccount.Actor) ([]federation.TagDocument, error) {
+	if f.featuredTags == nil {
+		return []federation.TagDocument{}, f.err
+	}
+	return f.featuredTags, f.err
 }
 
 func (f *fakeObjects) Conversation(_ context.Context, _ appfederation.Requester, id string, _ bool, _ string) (appfederation.ConversationCollection, error) {

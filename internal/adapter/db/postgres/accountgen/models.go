@@ -161,4 +161,5 @@ type RemoteAccountSnapshot struct {
 	StatusesTotal     *int64
 	DocumentDigest    []byte
 	FetchedAt         time.Time
+	FeaturedTagsUrl   *string
 }

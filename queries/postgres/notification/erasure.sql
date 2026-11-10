@@ -65,3 +65,6 @@ DELETE FROM post_subscriptions WHERE post_subscriptions.target_account_id = sqlc
 DELETE FROM post_subscription_requests WHERE post_subscription_requests.target_account_id = sqlc.arg(account_id) AND post_subscription_requests.account_id IN (
   SELECT x.account_id FROM post_subscription_requests x WHERE x.target_account_id = sqlc.arg(account_id)
   ORDER BY x.account_id LIMIT sqlc.arg(lim));
+
+-- name: EraseConversationMutesOf :exec
+DELETE FROM conversation_mutes WHERE account_id = sqlc.arg(account_id);

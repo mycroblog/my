@@ -638,12 +638,12 @@ CREATE TABLE data_export_results (
 CREATE INDEX data_export_results_expires_at ON data_export_results (expires_at);
 
 -- Resource: a user's import of a Mastodon CSV file of follows, blocks, mutes, bookmarks, or
--- muted domains.
+-- muted domains, or of the CSV file of followed hashtags.
 CREATE TABLE data_imports (
   id uuid NOT NULL PRIMARY KEY,
   user_id uuid NOT NULL,
   account_id uuid NOT NULL,
-  kind text NOT NULL CHECK (kind IN ('following', 'blocks', 'mutes', 'bookmarks', 'domain_mutes')),
+  kind text NOT NULL CHECK (kind IN ('following', 'blocks', 'mutes', 'bookmarks', 'domain_mutes', 'followed_tags')),
   mode text NOT NULL CHECK (mode IN ('merge', 'overwrite')),
   created_at timestamptz NOT NULL
 );

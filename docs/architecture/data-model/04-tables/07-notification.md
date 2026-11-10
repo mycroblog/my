@@ -13,7 +13,13 @@
 | `push_subscription_alerts` | 現在値 | `subscription_id`, `notification_type` | PK `(subscription_id, notification_type)` |
 | `post_subscriptions` | 現在値 | `account_id`（購読する人）, `target_account_id`（対象のアカウント）, `created_at` | PK `(account_id, target_account_id)`。CHECK `account_id <> target_account_id`。インデックス `(account_id, created_at, target_account_id)`（購読の一覧。新しい順のキーセット）、`(target_account_id, account_id)`（投稿の通知の購読者の走査）。1 人あたり 1,000 件まで（ADR-0086） |
 | `post_subscription_requests` | 現在値 | `account_id`, `target_account_id`, `created_at` | PK `(account_id, target_account_id)`。インデックス `(target_account_id, account_id)`。承認待ちのリモートのフォローと同時に頼まれた購読 |
+| `conversation_mutes` | 現在値 | `account_id`（ミュートした人）, `conversation_id`（`content` の `conversations`）, `created_at` | PK `(account_id, conversation_id)`。インデックス `(conversation_id, account_id)`（通知の受け取る人の照合と併合）。スレッドのミュート（ADR-0158 §8）。会話の併合で行を併合先へ移す |
 | `notification_settings` | 現在値 | `account_id`, `notification_group`（`enum(mention, follow, follow_request, follow_accepted, boost, favourite, reaction, quote, poll_closed, account_moved, voice, admin_report, admin_sign_up, admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved, admin_service_closure_due, admin_error_group, admin_hook_failing, admin_domain_list_failing, moderation, status, announcement, auto_delete_limit, interaction_request, scheduled_status_failed)`）, `channel`（`enum(in_app, email)`）, `enabled`（`bool`）, `updated_at` | PK `(account_id, notification_group, channel)`。CHECK `moderation` は `email` だけ（FR-210、ADR-0086 §13） |
+| `notification_policies` | 現在値 | `account_id`, `policy_condition`（`enum(not_following, not_follower, new_account, unsolicited_private_mention, limited_account)`）, `policy_action`（`enum(accept, filter, drop)`）, `updated_at` | PK `(account_id, policy_condition)`。行が無い条件は受け入れる（ADR-0158 §2） |
+| `notification_filterings` | イベント | `notification_id`（PK）, `recipient_account_id`, `source_account_id` | 通知の部分型。作成時にポリシーが保留した通知。作成後に変えない。インデックス `(recipient_account_id, source_account_id, notification_id)`, `(source_account_id)` |
+| `notification_accepted_sources` | リソース | `recipient_account_id`, `source_account_id`, `created_at` | PK `(recipient_account_id, source_account_id)`。CHECK `recipient_account_id <> source_account_id`。受け入れ待ちを受け入れた差出人。インデックス `(source_account_id)` |
+| `notification_request_dismissals` | イベント | `id`, `recipient_account_id`, `source_account_id`, `last_notification_id`, `dismissed_at` | 受け入れ待ちを閉じたこと。閉じた時点の最新の保留した通知まで。インデックス `(recipient_account_id, source_account_id, last_notification_id)`, `(source_account_id)` |
+| `notification_requests` | 投影 | `recipient_account_id`, `source_account_id`, `notifications_count`（`bigint`）, `last_notification_id` | PK `(recipient_account_id, source_account_id)`。CHECK `notifications_count > 0`。上の 3 つから作る受け入れ待ち。インデックス `(recipient_account_id, last_notification_id)`, `(source_account_id)` |
 
 - 通知は `notification` の同期 projector が、`graph` と `content` のドメインイベントから同じトランザクションで作ります（§2.1）。
 
@@ -43,6 +49,22 @@
   - 一覧と未読数は、`source_account_id` を `target_account_id` とする受け取る人の行のうち、読み取り時点で有効なもの（`expires_at` が NULL か現在時刻より後）がある通知を除きます。解除や期限切れで行が無効になれば、その通知はまた見えます。差出人の無い通知（`moderation_notice`）は除きません。
   - 作成時の判定は残します。ミュート中に起きたことは、解除しても通知になりません。
   - `graph.domain_muted` は `notification_domain_exclusions` に行を作り、`graph.domain_unmuted` は消します。一覧と未読数は、`source_domain` がその行のドメインかそのサブドメインである通知を除きます。
+- スレッドのミュート（ADR-0158 §8）は、ローカルの利用者が `content` の会話（ADR-0154）ごとに `conversation_mutes` に持ちます。期限はありません。
+  - 利用者は見られる投稿からその会話をミュートし、解除します（クライアント API の `muteStatusThread`・`unmuteStatusThread`）。書き込みは、`content` の公開 API `LockConversationOfTx` で投稿の今の会話を、併合が取るのと同じロックの下で引いてから行うので、同時の併合に取り残されません。
+  - 作成時に、`mention`（返信を含む）と `status` はその投稿の、`boost`・`favourite`・`reaction` は対象の投稿の、`quote` は引用された投稿の会話を受け取る人がミュートしていれば、通知を作りません（破棄）。自分の投稿のスレッドにも効きます。ほかの種類、とくにインスタンスとモデレーターからの知らせには効きません。照合はブロック・ミュート・ドメインのミュート・`unsolicited_reach` の後、アプリ内の設定の前に行い、`content` の公開 API で投稿の会話を引き、`conversation_mutes` を引きます。だれもミュートしていなければ、2 つの読み取りの間に併合されていないかを併合先（`FinalConversationTx`）で確かめ、併合先のミュートも見ます。
+  - 作成時の判定だけに効きます。ミュートする前の通知は隠さず、解除してもミュート中に起きたことは通知になりません。タイムラインには会話の投稿がそのまま出ます。
+  - `content.conversation_merged` の同期 projector が、併合のトランザクションで、併合された会話の行を併合先へ移します。両方をミュートしていた人の行は 1 つにします（併合先の行を残す）。同じイベントを何度処理しても結果は同じです。
+  - クライアント API の `Status.muted` は、閲覧者がその投稿の会話をミュートしているかを返します。表示する投稿の会話（`content` の `ConversationsOf`）と閲覧者たちのミュートを、ページごとに 2 回の読み取りで引きます。
+  - アカウントの消去（§8）は、その人の行を消します。
+- 通知のポリシー（ADR-0158）は、ほかの利用者の行動から生まれる種類（`follow`・`follow_request`・`mention`・`boost`・`favourite`・`reaction`・`quote`・`voice_room_invited`）を、作成時に 1 回だけ、受け入れる・保留する・破棄するに振り分けます。
+  - 判定は、上の作らない規則・スレッドのミュート・アプリ内の設定のあとに、ドメインの `notification.Classify`（条件の事実とポリシーから動作を返す純粋な関数）で行います。呼ぶのは通知を作る projector だけです。当てはまった条件の動作のうち最も厳しいもの（破棄 > 保留 > 受け入れる）を採ります。
+  - 条件の事実は同じトランザクションで他モジュールの公開 API から得ます。`not_following`・`not_follower` は `graph` の `Follows` を両方向に、`new_account` は `account` の `CreatedAtTx`（`accounts.created_at`。30 日未満）、`unsolicited_private_mention` は `content` の `PrivateMentionTx`（投稿が `direct` で、その会話に、受け取る人の書いた差出人をメンションする `direct` の投稿が無い）、`limited_account` はポート `ReachPolicy` です。受け取る人のポリシーをまとめて読み、すべて受け入れるポリシー（既定）では事実を読みません。
+  - 受け入れた差出人（`notification_accepted_sources`）はどの条件にも当てはまらず、受け取る人がフォローしている差出人は `limited_account` 以外に当てはまりません。
+  - 破棄は通知を作りません。保留は通知を作り、`notification_filterings` に行を足し、その（受け取る人、差出人）の `notification_requests` を作り直します。Web Push とメールのジョブは積みません。一覧に出ないので、ストリームも通知を流しません。保留・受け入れ・閉じるは同じトランザクションでイベント `notification.requests_changed` を出し、コミット後にその人のストリームへ合図します。ストリームは受け入れ待ちの数を読み、前に送った数と違えば `notification_requests` を流します（ADR-0158 §7）。
+  - 一覧・未読数・`Listed` は、`notification_filterings` にある通知のうち、差出人を受け入れていないもの、または閉じたこと（`last_notification_id` がその通知以上）があるものを除きます。受け入れれば、閉じていない保留した通知は一覧に出て、既読位置より新しければ未読に数えます。
+  - `notification_requests` は、（受け取る人、差出人）ごとに、受け入れておらず閉じたことにも含まれない保留した通知の数と最新の通知です。保留・受け入れ（`notification_accepted_sources` の挿入）・閉じる（`notification_request_dismissals` の挿入）・投稿についての通知の消去のたびに、同じトランザクションでその組の行を元の 3 つから作り直します。再構築（`my projection rebuild notification_requests`）は全体を作り直します。
+  - アカウントの消去は、そのアカウントが受け取る人か差出人のポリシー・保留・受け入れ・閉じたこと・受け入れ待ちの行を消します（§8）。
+  - 受け入れ待ちの一覧と数は、差出人が受け取る人の `notification_exclusions`（有効なもの）か、最新の通知の `source_domain` が `notification_domain_exclusions` にある組を除きます。受け入れ待ちの通知の一覧は、消した通知と削除された投稿についての通知を除きます。
 - 交流の承認の通知（ADR-0155 §10）は `content` のドメインイベントから作ります。どれも `status_id` と差出人を持ちます。
 
   | ドメインイベント | 種類 | 受け取る人 | 差出人・`status_id` | `dedupe_key` |

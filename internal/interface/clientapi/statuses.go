@@ -16,6 +16,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/timeline"
 	"github.com/mycroblog/my/internal/i18n"
 )
 
@@ -265,12 +266,16 @@ func (s *Server) presentStatuses(ctx context.Context, views []appcontent.StatusV
 
 // statusParts reads the parts of the authors of views, of the statuses they quote, and of more
 // accounts, and the profile pages of the accounts that they mention, together
-// (Server.accountParts).
+// (Server.accountParts), and the threads that the viewers of views mute (Server.threadMuted).
 func (s *Server) statusParts(ctx context.Context, views []appcontent.StatusView, more ...appaccount.Actor) (accountParts, error) {
 	actors := slices.Clone(more)
 	var mentioned []appaccount.Actor
 	var emojis []string
+	var seen []statusViewRef
 	add := func(v appcontent.StatusView) {
+		if v.Relation != nil {
+			seen = append(seen, statusViewRef{accountID: v.Relation.AccountID, statusID: v.Status.ID})
+		}
 		actors = append(actors, v.Author)
 		if v.Card != nil && v.Card.Author != nil {
 			actors = append(actors, *v.Card.Author)
@@ -284,7 +289,14 @@ func (s *Server) statusParts(ctx context.Context, views []appcontent.StatusView,
 			add(*v.Quote.Status)
 		}
 	}
-	return s.readAccountParts(ctx, actors, mentioned, emojis)
+	parts, err := s.readAccountParts(ctx, actors, mentioned, emojis)
+	if err != nil {
+		return accountParts{}, err
+	}
+	if parts.threadMuted, err = s.threadMuted(ctx, seen); err != nil {
+		return accountParts{}, err
+	}
+	return parts, nil
 }
 
 // newStatus presents a status as the Status schema; parts holds its author's images and the
@@ -302,6 +314,7 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		RepliesCount:     int(v.Counters.RepliesCount), BoostsCount: int(v.Counters.BoostsCount),
 		FavouritesCount: int(v.Counters.FavouritesCount),
 		Reactions:       newStatusReactions(v.Reactions, v.Relation != nil),
+		Filtered:        []FilterResult{},
 	}
 	// A local status's page is derived from its author's current username (ADR-0018) and served
 	// by the web client's origin.
@@ -337,6 +350,8 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 	}
 	if r := v.Relation; r != nil {
 		out.Favourited, out.Boosted, out.Bookmarked = &r.Favourited, &r.Boosted, &r.Bookmarked
+		muted := parts.threadMuted[r.AccountID][st.ID]
+		out.Muted = &muted
 		if r.Author {
 			out.Pinned = &r.Pinned
 		}
@@ -603,6 +618,13 @@ func (s *Server) GetStatus(ctx context.Context, req GetStatusRequestObject) (Get
 	if err != nil {
 		return nil, err
 	}
+	// The status the viewer opened is folded even for a hide filter of threads: a link that
+	// shows nothing reads as a broken one (ADR-0157 §6).
+	f, err := s.statusFilter(ctx, contentViewer(ctx), timeline.FilterContextThread)
+	if err != nil {
+		return nil, err
+	}
+	applyJudgement(&body, f.Judge(view, ""), true)
 	return GetStatus200JSONResponse{
 		Body:    body,
 		Headers: GetStatus200ResponseHeaders{CacheControl: statusCache(ctx)},
@@ -683,12 +705,21 @@ func (s *Server) GetStatusContext(ctx context.Context, req GetStatusContextReque
 	if err != nil {
 		return nil, err
 	}
+	// The statuses around the one opened leave out those that a hide filter of threads matches.
+	f, err := s.statusFilter(ctx, contentViewer(ctx), timeline.FilterContextThread)
+	if err != nil {
+		return nil, err
+	}
 	out := StatusContext{Ancestors: make([]Status, 0, len(thread.Ancestors)), Descendants: make([]Status, 0, len(thread.Descendants))}
 	for _, v := range thread.Ancestors {
-		out.Ancestors = append(out.Ancestors, s.newStatus(v, parts))
+		if st := s.newStatus(v, parts); applyJudgement(&st, f.Judge(v, ""), false) {
+			out.Ancestors = append(out.Ancestors, st)
+		}
 	}
 	for _, v := range thread.Descendants {
-		out.Descendants = append(out.Descendants, s.newStatus(v, parts))
+		if st := s.newStatus(v, parts); applyJudgement(&st, f.Judge(v, ""), false) {
+			out.Descendants = append(out.Descendants, st)
+		}
 	}
 	return GetStatusContext200JSONResponse{
 		Body: out, Headers: GetStatusContext200ResponseHeaders{CacheControl: statusCache(ctx)},

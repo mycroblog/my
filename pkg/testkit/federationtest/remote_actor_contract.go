@@ -94,7 +94,8 @@ func (r *remoteActorRepo) snapshot(t *testing.T, a account.Account, shared strin
 		ID: id, AccountID: a.ID, PreferredUsername: "user", ProfileURL: a.URI + "/profile/" + id,
 		InboxURL: a.URI + "/inbox", SharedInboxURL: shared, OutboxURL: a.URI + "/outbox",
 		FollowersURL: a.URI + "/followers", FollowingURL: a.URI + "/following", FeaturedURL: a.URI + "/featured",
-		FollowersTotal: &followers, DocumentDigest: []byte(id), FetchedAt: r.clock.Now(),
+		FeaturedTagsURL: a.URI + "/featured-tags",
+		FollowersTotal:  &followers, DocumentDigest: []byte(id), FetchedAt: r.clock.Now(),
 	}
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.h.Accounts.InsertRemoteSnapshot(ctx, tx, s) })
 	return s
@@ -131,7 +132,7 @@ func sameRemoteSnapshot(a, b account.RemoteSnapshot) bool {
 	return a.ID == b.ID && a.AccountID == b.AccountID && a.PreferredUsername == b.PreferredUsername &&
 		a.ProfileURL == b.ProfileURL && a.InboxURL == b.InboxURL && a.SharedInboxURL == b.SharedInboxURL &&
 		a.OutboxURL == b.OutboxURL && a.FollowersURL == b.FollowersURL && a.FollowingURL == b.FollowingURL &&
-		a.FeaturedURL == b.FeaturedURL && bytes.Equal(a.DocumentDigest, b.DocumentDigest) && a.FetchedAt.Equal(b.FetchedAt) &&
+		a.FeaturedURL == b.FeaturedURL && a.FeaturedTagsURL == b.FeaturedTagsURL && bytes.Equal(a.DocumentDigest, b.DocumentDigest) && a.FetchedAt.Equal(b.FetchedAt) &&
 		a.FollowersTotal != nil && b.FollowersTotal != nil && *a.FollowersTotal == *b.FollowersTotal &&
 		a.FollowingTotal == nil && b.FollowingTotal == nil && a.StatusesTotal == nil && b.StatusesTotal == nil
 }

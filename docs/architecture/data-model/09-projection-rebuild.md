@@ -27,6 +27,7 @@
 | `poll_tallies` | `poll_tally_observations`, `poll_tally_observation_counts` | 同期 |
 | `notification_exclusions` / `notification_domain_exclusions` | `blocks` と取り消し（`block_edges`）、`mutes`、`account_domain_mutes` | 同期 |
 | `notification_deleted_statuses` | `status_deletions` | 同期 |
+| `notification_requests` | `notification_filterings`、`notification_accepted_sources`、`notification_request_dismissals` | 同期 |
 | `instance_settings` / `instance_texts` / `instance_rule_heads` / `instance_theme` / `instance_brands` / `announcement_heads` / `service_closure_heads` | `instance_setting_revisions`、`instance_text_revisions`、`instance_rules` と `instance_rule_revisions`・`instance_rule_retirements`、`instance_theme_revisions`、`instance_brand_revisions`、`announcement_revisions`・`announcement_state_changes`、`service_closure_events`・`service_closure_schedules` | 同期 |
 | `webhook_endpoint_heads` / `webhook_endpoint_failures` | `webhook_endpoint_revisions`・`webhook_endpoint_state_changes`・`webhook_secrets`、`webhook_delivery_attempts` | 同期 |
 | `relay_states` | `relay_events` | 同期 |
@@ -39,7 +40,7 @@
 
 - CLI: `my projection list` は投影と所有モジュールと表を示します。投影の名前は所有モジュールの再構築関数の単位です
   （`instance`、`account`、`identity`、`moderation`、`graph`、`content`、`status_sensitivity_overrides`、`boost_edges`、`feeds`、`feed_restrictions`、
-  `notification_exclusions`、`notification_deleted_statuses`、`relay_states`、`webhook`、`finance`、`supporters`、`voice`、`diagnostics`）。
+  `notification_exclusions`、`notification_requests`、`notification_deleted_statuses`、`relay_states`、`webhook`、`finance`、`supporters`、`voice`、`diagnostics`）。
   `<name>` には投影の名前か、その表の名前を渡します。省略するとすべての投影です。
   - `my projection verify [<name>]` は、1 つのトランザクションの中で現在の表を読み、所有モジュールの再構築関数を実行し、結果の表を読んでロールバックします。
     差分の行（現在の表にあって作り直した結果にない行、その逆）を表示し、差分があれば 1 で終了します。何も変えません。

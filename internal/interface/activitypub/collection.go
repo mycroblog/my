@@ -91,17 +91,16 @@ func (h *Handler) collection(w http.ResponseWriter, r *http.Request) {
 	case collFeatured:
 		c, err = h.featured(r, a, id)
 	case collFeaturedTag:
-		// Mastodon publishes featured tags as an unordered Collection of Hashtag items.
-		c = orderedCollection{ID: id, Type: "Collection", Items: &[]any{}}
+		c, err = h.featuredTags(r, a, id)
 	}
 	if err != nil {
 		h.fail(w, r, err)
 		return
 	}
 	c.Context = contextActivityStreams
-	// Embedded documents have no context of their own, so a collection that embeds Notes or
-	// activities defines their terms. Followers and following hold ids alone.
-	if name == collFeatured || (name == collOutbox && paged) {
+	// Embedded documents have no context of their own, so a collection that embeds Notes,
+	// activities, or Hashtags defines their terms. Followers and following hold ids alone.
+	if name == collFeatured || name == collFeaturedTag || (name == collOutbox && paged) {
 		c.Context = federation.LDContext()
 	}
 	h.writeJSONCache(w, r, typeActivityJSON, acc.cache(true), c)
@@ -205,6 +204,21 @@ func (h *Handler) featured(r *http.Request, a appaccount.Actor, id string) (orde
 		items = append(items, n)
 	}
 	return orderedCollection{ID: id, Type: "OrderedCollection", TotalItems: int64(len(items)), OrderedItems: &items}, nil
+}
+
+// featuredTags returns the featured-tags collection of a: the hashtags it features, in its order.
+// Mastodon publishes featured tags as an unordered Collection of Hashtag items, and reads their
+// names alone.
+func (h *Handler) featuredTags(r *http.Request, a appaccount.Actor, id string) (orderedCollection, error) {
+	tags, err := h.o.Objects.FeaturedTags(r.Context(), a)
+	if err != nil {
+		return orderedCollection{}, err
+	}
+	items := make([]any, 0, len(tags))
+	for _, t := range tags {
+		items = append(items, t)
+	}
+	return orderedCollection{ID: id, Type: "Collection", TotalItems: int64(len(items)), Items: &items}, nil
 }
 
 // accountBatch is an Accounts that reads many accounts at once, as *appaccount.Service does.

@@ -1999,11 +1999,12 @@ func (e DataImportState) Valid() bool {
 
 // Defines values for DataImportKind.
 const (
-	DataImportKindBlocks      DataImportKind = "blocks"
-	DataImportKindBookmarks   DataImportKind = "bookmarks"
-	DataImportKindDomainMutes DataImportKind = "domain_mutes"
-	DataImportKindFollowing   DataImportKind = "following"
-	DataImportKindMutes       DataImportKind = "mutes"
+	DataImportKindBlocks       DataImportKind = "blocks"
+	DataImportKindBookmarks    DataImportKind = "bookmarks"
+	DataImportKindDomainMutes  DataImportKind = "domain_mutes"
+	DataImportKindFollowedTags DataImportKind = "followed_tags"
+	DataImportKindFollowing    DataImportKind = "following"
+	DataImportKindMutes        DataImportKind = "mutes"
 )
 
 // Valid indicates whether the value is a known member of the DataImportKind enum.
@@ -2014,6 +2015,8 @@ func (e DataImportKind) Valid() bool {
 	case DataImportKindBookmarks:
 		return true
 	case DataImportKindDomainMutes:
+		return true
+	case DataImportKindFollowedTags:
 		return true
 	case DataImportKindFollowing:
 		return true
@@ -3314,6 +3317,51 @@ func (e InviteCreatorKind) Valid() bool {
 	}
 }
 
+// Defines values for KeywordFilterAction.
+const (
+	KeywordFilterActionHide KeywordFilterAction = "hide"
+	KeywordFilterActionWarn KeywordFilterAction = "warn"
+)
+
+// Valid indicates whether the value is a known member of the KeywordFilterAction enum.
+func (e KeywordFilterAction) Valid() bool {
+	switch e {
+	case KeywordFilterActionHide:
+		return true
+	case KeywordFilterActionWarn:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for KeywordFilterContext.
+const (
+	KeywordFilterContextAccount       KeywordFilterContext = "account"
+	KeywordFilterContextHome          KeywordFilterContext = "home"
+	KeywordFilterContextNotifications KeywordFilterContext = "notifications"
+	KeywordFilterContextPublic        KeywordFilterContext = "public"
+	KeywordFilterContextThread        KeywordFilterContext = "thread"
+)
+
+// Valid indicates whether the value is a known member of the KeywordFilterContext enum.
+func (e KeywordFilterContext) Valid() bool {
+	switch e {
+	case KeywordFilterContextAccount:
+		return true
+	case KeywordFilterContextHome:
+		return true
+	case KeywordFilterContextNotifications:
+		return true
+	case KeywordFilterContextPublic:
+		return true
+	case KeywordFilterContextThread:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for LinkCardDomainMode.
 const (
 	LinkCardDomainModeNoFetch  LinkCardDomainMode = "no_fetch"
@@ -3638,6 +3686,27 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupSupporter:
 		return true
 	case NotificationGroupVoice:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationPolicyAction.
+const (
+	NotificationPolicyActionAccept NotificationPolicyAction = "accept"
+	NotificationPolicyActionDrop   NotificationPolicyAction = "drop"
+	NotificationPolicyActionFilter NotificationPolicyAction = "filter"
+)
+
+// Valid indicates whether the value is a known member of the NotificationPolicyAction enum.
+func (e NotificationPolicyAction) Valid() bool {
+	switch e {
+	case NotificationPolicyActionAccept:
+		return true
+	case NotificationPolicyActionDrop:
+		return true
+	case NotificationPolicyActionFilter:
 		return true
 	default:
 		return false
@@ -7320,8 +7389,8 @@ type AdminReportStatus struct {
 	// DeletedAt When the post was deleted, by its author or otherwise; omitted when it is not.
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
 
-	// Status A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-	// describe the authenticated user's relation to it and are omitted for anonymous
+	// Status A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
+	// `muted` describe the authenticated user's relation to it and are omitted for anonymous
 	// requests; `pinned` is only given to the author.
 	//
 	// In a timeline, a boost is a status of the booster with `boost` set to the boosted
@@ -9708,11 +9777,12 @@ type DataImport struct {
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	Id Id `json:"id"`
 
-	// Kind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
-	// accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-	// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
-	// `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
-	// posts the user bookmarked).
+	// Kind What a CSV file lists: `following` (the accounts the user follows), `followed_tags` (the
+	// hashtags the user follows, `followed_hashtags.csv`: one hashtag per line without its `#`,
+	// a file of this server that Mastodon does not have), `blocks` (the accounts the user
+	// blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the domains the user mutes;
+	// Mastodon's `blocked_domains.csv` with the header `#domain`, which a Mastodon user's blocked
+	// domains become here), or `bookmarks` (the posts the user bookmarked).
 	Kind DataImportKind `json:"kind"`
 
 	// Mode `merge` adds the file's entries and keeps what the user has; `overwrite` also removes
@@ -9732,11 +9802,12 @@ type DataImport struct {
 // DataImportState `in_progress` until every entry and removal is done, then `finished`.
 type DataImportState string
 
-// DataImportKind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
-// accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
-// `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
-// posts the user bookmarked).
+// DataImportKind What a CSV file lists: `following` (the accounts the user follows), `followed_tags` (the
+// hashtags the user follows, `followed_hashtags.csv`: one hashtag per line without its `#`,
+// a file of this server that Mastodon does not have), `blocks` (the accounts the user
+// blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the domains the user mutes;
+// Mastodon's `blocked_domains.csv` with the header `#domain`, which a Mastodon user's blocked
+// domains become here), or `bookmarks` (the posts the user bookmarked).
 type DataImportKind string
 
 // DataImportList The user's latest imports, newest first.
@@ -9766,11 +9837,12 @@ type DataImportPreview struct {
 
 // DataImportRequest A CSV file to import, and how.
 type DataImportRequest struct {
-	// Kind What a CSV file lists: `following` (the accounts the user follows), `blocks` (the
-	// accounts the user blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the
-	// domains the user mutes; Mastodon's `blocked_domains.csv` with the header
-	// `#domain`, which a Mastodon user's blocked domains become here), or `bookmarks` (the
-	// posts the user bookmarked).
+	// Kind What a CSV file lists: `following` (the accounts the user follows), `followed_tags` (the
+	// hashtags the user follows, `followed_hashtags.csv`: one hashtag per line without its `#`,
+	// a file of this server that Mastodon does not have), `blocks` (the accounts the user
+	// blocks), `mutes` (the accounts the user mutes), `domain_mutes` (the domains the user mutes;
+	// Mastodon's `blocked_domains.csv` with the header `#domain`, which a Mastodon user's blocked
+	// domains become here), or `bookmarks` (the posts the user bookmarked).
 	Kind DataImportKind `json:"kind"`
 
 	// Mode `merge` adds the file's entries and keeps what the user has; `overwrite` also removes
@@ -10437,6 +10509,29 @@ type ExternalConfirmationRequest struct {
 // (`POST /linked_identities/confirmation`) for this operation, in place of the password.
 type ExternalConfirmationToken = string
 
+// FeaturedHashtag A hashtag that an account features on its profile, with how many of the account's `public`
+// and `unlisted` posts that this server has carry it. The account's posts of the other
+// visibilities are never counted.
+type FeaturedHashtag struct {
+	// LastStatusAt When one of those posts was last posted or edited with the hashtag; absent when none
+	// carries it.
+	LastStatusAt *time.Time `json:"last_status_at,omitempty"`
+
+	// Name The hashtag without `#`, as first written on the server.
+	Name string `json:"name"`
+
+	// StatusesCount How many of the account's `public` and `unlisted` posts carry the hashtag now.
+	StatusesCount int64 `json:"statuses_count"`
+
+	// Url The hashtag's page.
+	Url string `json:"url"`
+}
+
+// FeaturedHashtagCollection The hashtags that an account features on its profile, at most 10, in the order it chose.
+type FeaturedHashtagCollection struct {
+	Items []FeaturedHashtag `json:"items"`
+}
+
 // FederationScopeImpact What switching the instance setting `federation_scope` to `allowlist` with the current
 // allowlist would end now: the accepted follows, in both directions, between the local accounts
 // and the accounts of the servers that the allowlist does not allow. The switch ends them for
@@ -10469,6 +10564,15 @@ type FederationScopeImpactDomain struct {
 
 	// Follows How many follows with its accounts would end.
 	Follows int `json:"follows"`
+}
+
+// FilterResult A keyword filter of the user with the action `warn` that a post matched, and the words it matched.
+type FilterResult struct {
+	// Filter The keyword filter that a post matched, as far as a folded post shows it.
+	Filter MatchedKeywordFilter `json:"filter"`
+
+	// KeywordMatches The words of the filter that the post matched, as the user typed them.
+	KeywordMatches []string `json:"keyword_matches"`
 }
 
 // FinanceCostItemLine The amount of a cost item, or of a service of the imported costs, in a currency over a
@@ -11570,6 +11674,93 @@ type IssueOAuthAppTokenRequest struct {
 	Scope *string `json:"scope,omitempty"`
 }
 
+// KeywordFilter A keyword filter of the user, which only the user sees. The server matches the posts it
+// returns against the filters of their contexts, so every client gets the same result; the
+// user's own posts and boosts are never matched.
+type KeywordFilter struct {
+	// Action What a keyword filter does to a post that matches it: `warn` returns the post with the filter
+	// in its `filtered`, and clients fold it behind the filter's title; `hide` leaves the post out,
+	// as if the user could not see it.
+	Action KeywordFilterAction `json:"action"`
+
+	// Contexts Where the filter applies, at least one.
+	Contexts []KeywordFilterContext `json:"contexts"`
+
+	// CreatedAt When the user created the filter.
+	CreatedAt time.Time `json:"created_at"`
+
+	// Expired Whether the filter has expired and applies nowhere.
+	Expired bool `json:"expired"`
+
+	// ExpiresAt When the filter stops applying; omitted for a filter that never does. An expired filter
+	// stays, applying nowhere, and applies again when its expiry moves later.
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Keywords The words of the filter, in the order given; a post matches the filter when it matches any of them.
+	Keywords []KeywordFilterKeyword `json:"keywords"`
+
+	// Title The name of the filter, 1 to 50 characters, which a folded post shows.
+	Title string `json:"title"`
+}
+
+// KeywordFilterAction What a keyword filter does to a post that matches it: `warn` returns the post with the filter
+// in its `filtered`, and clients fold it behind the filter's title; `hide` leaves the post out,
+// as if the user could not see it.
+type KeywordFilterAction string
+
+// KeywordFilterCollection The user's keyword filters, oldest first, the expired ones too.
+type KeywordFilterCollection struct {
+	Items []KeywordFilter `json:"items"`
+}
+
+// KeywordFilterContext Where a keyword filter applies: `home` (the home timeline and the timelines of lists),
+// `notifications` (the notifications, their stream, Web Push, and email), `public` (the local,
+// federated, and hashtag timelines and their streams), `thread` (the posts before and after a
+// post), and `account` (the posts and pinned posts of a profile).
+type KeywordFilterContext string
+
+// KeywordFilterKeyword A word of a keyword filter.
+type KeywordFilterKeyword struct {
+	// Keyword The word or phrase, as the user typed it. It matches the text, the content warning, the
+	// poll's choices, and the alt text of a post, each on its own, regardless of case, of
+	// half-width and full-width forms, and of katakana and hiragana; runs of white space match
+	// one space. Up to 100 characters once normalized.
+	Keyword string `json:"keyword"`
+
+	// WholeWord Whether the word matches only where no letter, digit, or `_` touches it. Characters of
+	// scripts that do not separate words with spaces (Chinese, Japanese, Thai, and the like)
+	// never count as touching, so there the word matches anywhere.
+	WholeWord bool `json:"whole_word"`
+}
+
+// KeywordFilterRequest A keyword filter as the user writes it. A field that is not one is a 422 naming it; the
+// same word twice (once normalized) is kept once.
+type KeywordFilterRequest struct {
+	// Action What a keyword filter does to a post that matches it: `warn` returns the post with the filter
+	// in its `filtered`, and clients fold it behind the filter's title; `hide` leaves the post out,
+	// as if the user could not see it.
+	Action KeywordFilterAction `json:"action"`
+
+	// Contexts Where the filter applies, at least one.
+	Contexts []KeywordFilterContext `json:"contexts"`
+
+	// ExpiresAt When the filter stops applying; omit it for a filter that never does.
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
+
+	// Keywords 1 to 100 words. White space around each is removed. The user's filters have at most
+	// 1,000 words in all.
+	Keywords []KeywordFilterKeyword `json:"keywords"`
+
+	// Title 1 to 50 characters (grapheme clusters) on one line, without control characters. White
+	// space around it is removed.
+	Title string `json:"title"`
+}
+
 // LiftAccountActionRequest Why an action on an account is lifted.
 type LiftAccountActionRequest struct {
 	Reason *string `json:"reason,omitempty"`
@@ -11854,6 +12045,17 @@ type LoginProvidersOnlyImpact struct {
 	// UsersWithoutProvider How many active local users have no link to one of those providers, or to the provider
 	// `provider_id` named. With no provider at all, it is every active local user.
 	UsersWithoutProvider int `json:"users_without_provider"`
+}
+
+// MatchedKeywordFilter The keyword filter that a post matched, as far as a folded post shows it.
+type MatchedKeywordFilter struct {
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Title The title of the filter, which the folded post shows.
+	Title string `json:"title"`
 }
 
 // MediaAnimatedVariants The moving renditions of an animation, absent for a still image: animated WebP for
@@ -12495,6 +12697,108 @@ type NotificationPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// NotificationPolicy What the authenticated user's notification policy does with the notifications of other
+// accounts, by condition on their source. A notification that meets several conditions takes
+// the strictest action (`drop` before `filter` before `accept`); one that meets none is
+// accepted. Every condition accepts until the user chooses. The policy applies to `follow`,
+// `follow_request`, `mention`, `boost`, `favourite`, `reaction`, `quote`, and
+// `voice_room_invited`; the notifications the user asked for, those of the moderators, and the
+// notices of the server (moderation, reports, appeals, the service closure, the supporters, the
+// announcements) are never filtered or dropped. A source whose request the user accepted meets
+// no condition, and a source the user follows meets none but `limited_account`. A change
+// applies to the notifications created after it.
+type NotificationPolicy struct {
+	// LimitedAccount Sources that a moderator limited, by themselves or by their domain.
+	LimitedAccount NotificationPolicyAction `json:"limited_account"`
+
+	// NewAccount Sources whose account was created less than 30 days ago.
+	NewAccount NotificationPolicyAction `json:"new_account"`
+
+	// NotFollower Sources that do not follow the user.
+	NotFollower NotificationPolicyAction `json:"not_follower"`
+
+	// NotFollowing Sources that the user does not follow (a follow request waiting for approval does not count).
+	NotFollowing NotificationPolicyAction `json:"not_following"`
+
+	// UnsolicitedPrivateMention Mentions in a direct post that does not answer a direct post of the user that mentioned
+	// the source in the same conversation.
+	UnsolicitedPrivateMention NotificationPolicyAction `json:"unsolicited_private_mention"`
+}
+
+// NotificationPolicyAction What the notification policy does with the notifications whose source meets a condition.
+// `accept` lists them and delivers them as the notification settings say; `filter` keeps them
+// out of the list and the unread count, in the request of their source, and delivers them
+// nowhere (no Web Push, email, sound, or streaming event); `drop` creates no notification.
+type NotificationPolicyAction string
+
+// NotificationPolicyUpdate Changes of the authenticated user's notification policy; an omitted condition keeps its action.
+type NotificationPolicyUpdate struct {
+	// LimitedAccount What the notification policy does with the notifications whose source meets a condition.
+	// `accept` lists them and delivers them as the notification settings say; `filter` keeps them
+	// out of the list and the unread count, in the request of their source, and delivers them
+	// nowhere (no Web Push, email, sound, or streaming event); `drop` creates no notification.
+	LimitedAccount *NotificationPolicyAction `json:"limited_account,omitempty"`
+
+	// NewAccount What the notification policy does with the notifications whose source meets a condition.
+	// `accept` lists them and delivers them as the notification settings say; `filter` keeps them
+	// out of the list and the unread count, in the request of their source, and delivers them
+	// nowhere (no Web Push, email, sound, or streaming event); `drop` creates no notification.
+	NewAccount *NotificationPolicyAction `json:"new_account,omitempty"`
+
+	// NotFollower What the notification policy does with the notifications whose source meets a condition.
+	// `accept` lists them and delivers them as the notification settings say; `filter` keeps them
+	// out of the list and the unread count, in the request of their source, and delivers them
+	// nowhere (no Web Push, email, sound, or streaming event); `drop` creates no notification.
+	NotFollower *NotificationPolicyAction `json:"not_follower,omitempty"`
+
+	// NotFollowing What the notification policy does with the notifications whose source meets a condition.
+	// `accept` lists them and delivers them as the notification settings say; `filter` keeps them
+	// out of the list and the unread count, in the request of their source, and delivers them
+	// nowhere (no Web Push, email, sound, or streaming event); `drop` creates no notification.
+	NotFollowing *NotificationPolicyAction `json:"not_following,omitempty"`
+
+	// UnsolicitedPrivateMention What the notification policy does with the notifications whose source meets a condition.
+	// `accept` lists them and delivers them as the notification settings say; `filter` keeps them
+	// out of the list and the unread count, in the request of their source, and delivers them
+	// nowhere (no Web Push, email, sound, or streaming event); `drop` creates no notification.
+	UnsolicitedPrivateMention *NotificationPolicyAction `json:"unsolicited_private_mention,omitempty"`
+}
+
+// NotificationRequest The filtered notifications of one source that wait for the authenticated user to accept or
+// dismiss them. The request is named by the ID of its source account.
+type NotificationRequest struct {
+	// Account An account, as clients show it.
+	Account Account `json:"account"`
+
+	// Id The ID of the source account, which names the request.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// LastNotification The newest notification of the request; omitted when it can no longer be shown.
+	LastNotification *Notification `json:"last_notification,omitempty"`
+
+	// NotificationsCount The number of notifications waiting in the request.
+	NotificationsCount int64 `json:"notifications_count"`
+}
+
+// NotificationRequestPage A page of notification requests, the one with the newest notification first.
+type NotificationRequestPage struct {
+	Items []NotificationRequest `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// NotificationRequestSummary How many notification requests wait for the authenticated user.
+type NotificationRequestSummary struct {
+	// AccountsCount The number of requests, one per source account.
+	AccountsCount int64 `json:"accounts_count"`
+
+	// NotificationsCount The number of notifications in them.
+	NotificationsCount int64 `json:"notifications_count"`
 }
 
 // NotificationScheduledStatusFailure The scheduled post that a `scheduled_status_failed` tells of: its draft, why it was not
@@ -13417,6 +13721,10 @@ type PreviewDomainBlockImportRequest struct {
 //     this problem; signing in and resetting a password stay available outside the client API.
 //   - `/api/v1/problems/too-many-domain-mutes` (422): the user already mutes the most domains
 //     allowed. Unmute one first.
+//   - `/api/v1/problems/too-many-keyword-filters` (422): the user already has the most keyword
+//     filters allowed. Delete one first.
+//   - `/api/v1/problems/too-many-filter-keywords` (422): the words would pass the most a keyword
+//     filter, or all the user's filters together, may have. Remove some first.
 //   - `/api/v1/problems/too-many-lists` (422): the user already has the most lists allowed.
 //     Delete one first.
 //   - `/api/v1/problems/too-many-list-members` (422): the list already has the most members
@@ -13425,6 +13733,8 @@ type PreviewDomainBlockImportRequest struct {
 //     follow request was accepted) can be added to a list.
 //   - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
 //     hashtags allowed (100). Unfollow one first.
+//   - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
+//     than allowed (10).
 //   - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
 //     account's actor, or to the user itself.
 //   - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
@@ -14055,6 +14365,13 @@ type SetBrandRequest struct {
 	Svg openapi_types.File `json:"svg"`
 }
 
+// SetFeaturedTagsRequest The hashtags to feature on the user's profile, in the order to show them.
+type SetFeaturedTagsRequest struct {
+	// Names The hashtags, with or without `#`, at most 10; a hashtag given twice counts once. An
+	// empty list features none.
+	Names []string `json:"names"`
+}
+
 // SetInstanceTextRequest A new revision of an instance text.
 type SetInstanceTextRequest struct {
 	// Body The text, in any language; empty clears it.
@@ -14109,8 +14426,8 @@ type SignupBlockImportSkippedReason string
 // SpoilerText The content warning; omitted or empty for none. It counts toward `max_post_characters`.
 type SpoilerText = string
 
-// Status A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-// describe the authenticated user's relation to it and are omitted for anonymous
+// Status A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
+// `muted` describe the authenticated user's relation to it and are omitted for anonymous
 // requests; `pinned` is only given to the author.
 //
 // In a timeline, a boost is a status of the booster with `boost` set to the boosted
@@ -14130,8 +14447,8 @@ type Status struct {
 	// Bookmarked Whether the authenticated user bookmarked the status.
 	Bookmarked *bool `json:"bookmarked,omitempty"`
 
-	// Boost A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-	// describe the authenticated user's relation to it and are omitted for anonymous
+	// Boost A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
+	// `muted` describe the authenticated user's relation to it and are omitted for anonymous
 	// requests; `pinned` is only given to the author.
 	//
 	// In a timeline, a boost is a status of the booster with `boost` set to the boosted
@@ -14185,6 +14502,16 @@ type Status struct {
 	// FavouritesCount The number of favourites.
 	FavouritesCount int `json:"favourites_count"`
 
+	// Filtered The user's keyword filters with the action `warn` that the post matched where it is shown,
+	// with the words each matched; empty when none did, and always for an anonymous request.
+	// Clients fold a post with any behind the titles of its filters, with a way to show it. A
+	// post that matches a filter with the action `hide` is left out instead, except the post
+	// that `GET /api/v1/statuses/{id}` shows, which is folded. In a
+	// timeline, a boost carries the filters that the boosted post matched. A quoted post carries
+	// its own: a quote that matches folds only the quote, even for `hide`. The user's own posts
+	// and boosts, and what they quote, never match.
+	Filtered []FilterResult `json:"filtered"`
+
 	// FollowedTags On the home timeline and its stream, the names (without `#`) of the hashtags that the
 	// user follows and the post carries, when the post is there only for them: its author is
 	// neither the user nor an account the user follows. Omitted everywhere else.
@@ -14216,6 +14543,10 @@ type Status struct {
 
 	// Mentions The accounts the text mentions.
 	Mentions []StatusMention `json:"mentions"`
+
+	// Muted Whether the authenticated user mutes the thread (conversation) of the status, which
+	// keeps the user from being notified of what happens in it (`muteStatusThread`).
+	Muted *bool `json:"muted,omitempty"`
 
 	// OmittedMediaCount The number of media attachments of a remote status that the server left out: it keeps
 	// the first four attachments of a remote post. Clients show that there are more and link
@@ -14354,8 +14685,8 @@ type StatusPage struct {
 // StatusQuote The status that a status quotes. Quotes are shown one level deep:
 // `quoted_status` has no `quote` of its own, and clients link to it instead.
 type StatusQuote struct {
-	// QuotedStatus A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-	// describe the authenticated user's relation to it and are omitted for anonymous
+	// QuotedStatus A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
+	// `muted` describe the authenticated user's relation to it and are omitted for anonymous
 	// requests; `pinned` is only given to the author.
 	//
 	// In a timeline, a boost is a status of the booster with `boost` set to the boosted
@@ -15849,6 +16180,11 @@ type InteractionRequestId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type InviteId = Id
 
+// KeywordFilterId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type KeywordFilterId = Id
+
 // Limit defines model for Limit.
 type Limit = int
 
@@ -15944,8 +16280,8 @@ type WebhookId = Id
 // AccountProfile An account, as clients show it.
 type AccountProfile = Account
 
-// StatusAfterAction A status (post), as the viewer sees it. `favourited`, `boosted`, and `bookmarked`
-// describe the authenticated user's relation to it and are omitted for anonymous
+// StatusAfterAction A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
+// `muted` describe the authenticated user's relation to it and are omitted for anonymous
 // requests; `pinned` is only given to the author.
 //
 // In a timeline, a boost is a status of the booster with `boost` set to the boosted
@@ -16686,6 +17022,24 @@ type ListNotificationsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListNotificationRequestsParams defines parameters for ListNotificationRequests.
+type ListNotificationRequestsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListNotificationRequestNotificationsParams defines parameters for ListNotificationRequestNotifications.
+type ListNotificationRequestNotificationsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListOwnReportsParams defines parameters for ListOwnReports.
 type ListOwnReportsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -17056,6 +17410,15 @@ type UpdateDraftJSONRequestBody = DraftRequest
 // ScheduleDraftJSONRequestBody defines body for ScheduleDraft for application/json ContentType.
 type ScheduleDraftJSONRequestBody = DraftScheduleRequest
 
+// SetFeaturedTagsJSONRequestBody defines body for SetFeaturedTags for application/json ContentType.
+type SetFeaturedTagsJSONRequestBody = SetFeaturedTagsRequest
+
+// CreateKeywordFilterJSONRequestBody defines body for CreateKeywordFilter for application/json ContentType.
+type CreateKeywordFilterJSONRequestBody = KeywordFilterRequest
+
+// UpdateKeywordFilterJSONRequestBody defines body for UpdateKeywordFilter for application/json ContentType.
+type UpdateKeywordFilterJSONRequestBody = KeywordFilterRequest
+
 // AppealHookDecisionJSONRequestBody defines body for AppealHookDecision for application/json ContentType.
 type AppealHookDecisionJSONRequestBody = AppealHookDecisionRequest
 
@@ -17118,6 +17481,9 @@ type PreviewAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
 
 // UpdateBadgeChoiceJSONRequestBody defines body for UpdateBadgeChoice for application/json ContentType.
 type UpdateBadgeChoiceJSONRequestBody = UpdateBadgeChoiceRequest
+
+// UpdateNotificationPolicyJSONRequestBody defines body for UpdateNotificationPolicy for application/json ContentType.
+type UpdateNotificationPolicyJSONRequestBody = NotificationPolicyUpdate
 
 // UpdateNotificationSettingsJSONRequestBody defines body for UpdateNotificationSettings for application/json ContentType.
 type UpdateNotificationSettingsJSONRequestBody = NotificationSettingsUpdate
@@ -19300,6 +19666,19 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
 	BlockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListAccountFeaturedTags List the hashtags an account features
+	//
+	// The hashtags that the account features on its profile (at most 10), in the order it chose.
+	// For a remote account they are those its server lists, as this server last fetched them
+	// with the account. The counts read only the account's `public` and `unlisted` posts that
+	// this server has, so a remote account's may be lower than on its server.
+	//
+	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+	// deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
+	//
+	// Corresponds with GET /accounts/{id}/featured_tags (the `ListAccountFeaturedTags` operationId).
+	ListAccountFeaturedTags(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UnfollowAccount Unfollow an account
 	//
@@ -22595,7 +22974,7 @@ type ClientInterface interface {
 	// Corresponds with POST /conversations/{id}/read (the `MarkConversationRead` operationId).
 	MarkConversationRead(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// ExportCsv Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
+	// ExportCsv Export the authenticated user's follows, followed hashtags, blocks, mutes, muted domains, or bookmarks as CSV
 	//
 	// Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
 	// Mastodon and this server import: `following` is `following_accounts.csv`
@@ -22604,7 +22983,9 @@ type ClientInterface interface {
 	// `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
 	// `domain_mutes` is `blocked_domains.csv` (one domain per line, the domains the user
 	// mutes, which Mastodon imports as blocked domains), and `bookmarks` is `bookmarks.csv`
-	// (one post URI per line, the posts the user may still see).
+	// (one post URI per line, the posts the user may still see). `followed_tags` is
+	// `followed_hashtags.csv` (one hashtag per line without its `#`, the latest followed
+	// first), a file of this server that Mastodon neither exports nor imports.
 	// Addresses are `username@domain`, with the account domain for this server's accounts;
 	// remote accounts whose handle is unconfirmed are left out. At most 30 exports per account
 	// are accepted every hour.
@@ -22918,6 +23299,107 @@ type ClientInterface interface {
 	// Corresponds with GET /exports/{id}/archive (the `DownloadDataExport` operationId).
 	DownloadDataExport(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListFeaturedTags List the hashtags the user features
+	//
+	// The hashtags that the user features on their profile (at most 10), in the order the user
+	// chose, with how many of the user's `public` and `unlisted` posts carry each.
+	//
+	// Corresponds with GET /featured_tags (the `ListFeaturedTags` operationId).
+	ListFeaturedTags(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetFeaturedTagsWithBody Choose the hashtags the user features
+	//
+	// Replaces the hashtags that the user features on their profile with `names`, in their
+	// order; a hashtag that no post has used yet can be featured. The other servers that follow
+	// the user learn of the change as of a change of the profile. A name that is no hashtag is a
+	// 422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+	// changes nothing.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /featured_tags (the `SetFeaturedTags` operationId).
+	SetFeaturedTagsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// SetFeaturedTags Choose the hashtags the user features
+	//
+	// Replaces the hashtags that the user features on their profile with `names`, in their
+	// order; a hashtag that no post has used yet can be featured. The other servers that follow
+	// the user learn of the change as of a change of the profile. A name that is no hashtag is a
+	// 422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+	// changes nothing.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /featured_tags (the `SetFeaturedTags` operationId).
+	SetFeaturedTags(ctx context.Context, body SetFeaturedTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListKeywordFilters List the user's keyword filters
+	//
+	// Every keyword filter of the user (at most 100), oldest first, the expired ones too. Nobody else sees them.
+	//
+	// Corresponds with GET /filters (the `ListKeywordFilters` operationId).
+	ListKeywordFilters(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateKeywordFilterWithBody Create a keyword filter
+	//
+	// Creates a keyword filter, which applies at once to every post the contexts show, old ones
+	// too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+	// a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+	// in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /filters (the `CreateKeywordFilter` operationId).
+	CreateKeywordFilterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateKeywordFilter Create a keyword filter
+	//
+	// Creates a keyword filter, which applies at once to every post the contexts show, old ones
+	// too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+	// a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+	// in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /filters (the `CreateKeywordFilter` operationId).
+	CreateKeywordFilter(ctx context.Context, body CreateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteKeywordFilter Delete a keyword filter
+	//
+	// Deletes the filter with its words. Another user's filter is a 404.
+	//
+	// Corresponds with DELETE /filters/{id} (the `DeleteKeywordFilter` operationId).
+	DeleteKeywordFilter(ctx context.Context, id KeywordFilterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetKeywordFilter Get a keyword filter
+	//
+	// A keyword filter of the user. Another user's filter is a 404, as if it did not exist.
+	//
+	// Corresponds with GET /filters/{id} (the `GetKeywordFilter` operationId).
+	GetKeywordFilter(ctx context.Context, id KeywordFilterId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateKeywordFilterWithBody Change a keyword filter
+	//
+	// Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+	// `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+	// user's filter is a 404.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	UpdateKeywordFilterWithBody(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateKeywordFilter Change a keyword filter
+	//
+	// Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+	// `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+	// user's filter is a 404.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	UpdateKeywordFilter(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetFinanceCostTotals Total the costs by period for the finance viewers
 	//
 	// The totals of the instance's costs for the holders of `view_finance`. It
@@ -23037,9 +23519,10 @@ type ClientInterface interface {
 	// Corresponds with GET /imports (the `ListDataImports` operationId).
 	ListDataImports(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// StartDataImportWithBody Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+	// StartDataImportWithBody Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
 	//
-	// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+	// Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+	// server (`exportCsv`). The file's
 	// entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 	// `overwrite` also removes what the user has of `kind` that the file does not list. The
 	// server carries the import out in the background: it resolves remote accounts and posts
@@ -23054,9 +23537,10 @@ type ClientInterface interface {
 	// Corresponds with POST /imports (the `StartDataImport` operationId).
 	StartDataImportWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// StartDataImport Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+	// StartDataImport Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
 	//
-	// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+	// Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+	// server (`exportCsv`). The file's
 	// entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 	// `overwrite` also removes what the user has of `kind` that the file does not list. The
 	// server carries the import out in the background: it resolves remote accounts and posts
@@ -23076,8 +23560,8 @@ type ClientInterface interface {
 	// Reads a CSV file as `startDataImport` would and tells what importing it would do,
 	// changing nothing. The header row is optional, a leading `@` of an address is dropped,
 	// and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-	// `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-	// `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+	// `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+	// `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
 	// new posts, notifications of a muted account hidden. The `Languages` column of a follow
 	// is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
 	//
@@ -23091,8 +23575,8 @@ type ClientInterface interface {
 	// Reads a CSV file as `startDataImport` would and tells what importing it would do,
 	// changing nothing. The header row is optional, a leading `@` of an address is dropped,
 	// and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-	// `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-	// `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+	// `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+	// `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
 	// new posts, notifications of a muted account hidden. The `Languages` column of a follow
 	// is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
 	//
@@ -23634,7 +24118,9 @@ type ClientInterface interface {
 	// The user's notifications, newest first. Dismissed notifications, notifications about
 	// deleted posts, and notifications from accounts that the user blocks, is blocked by, or
 	// mutes with notifications hidden are left out, also those that came before the block or
-	// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
+	// mute. The notifications that the user's notification policy filtered wait in the
+	// notification requests instead, until the user accepts the request of their source. The
+	// moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 	// `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
 	// the user's roles no longer grant the permission they need.
@@ -23678,6 +24164,57 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /notifications/marker (the `UpdateNotificationMarker` operationId).
 	UpdateNotificationMarker(ctx context.Context, body UpdateNotificationMarkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListNotificationRequests List the notification requests
+	//
+	// The sources whose notifications the user's notification policy filtered, one request per
+	// source, the one with the newest notification first. The sources that the user blocks, is
+	// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
+	// left out.
+	//
+	// Corresponds with GET /notifications/requests (the `ListNotificationRequests` operationId).
+	ListNotificationRequests(ctx context.Context, params *ListNotificationRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNotificationRequestSummary Count the notification requests
+	//
+	// The number of requests that the list of requests shows, and of their notifications.
+	//
+	// Corresponds with GET /notifications/requests/summary (the `GetNotificationRequestSummary` operationId).
+	GetNotificationRequestSummary(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNotificationRequest Get a notification request
+	//
+	// The request of a source account; a 404 when the list of requests does not show one.
+	//
+	// Corresponds with GET /notifications/requests/{id} (the `GetNotificationRequest` operationId).
+	GetNotificationRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AcceptNotificationRequest Accept a notification request
+	//
+	// Moves the notifications of the request into the list, unread when they are newer than the
+	// read marker, without delivering them, and accepts the later notifications of the source
+	// whatever the policy says. A 404 when the source has no request.
+	//
+	// Corresponds with POST /notifications/requests/{id}/accept (the `AcceptNotificationRequest` operationId).
+	AcceptNotificationRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DismissNotificationRequest Dismiss a notification request
+	//
+	// Removes the notifications of the request, which are never listed. The source is not
+	// accepted: a later notification that the policy filters opens a new request. A 404 when the
+	// source has no request.
+	//
+	// Corresponds with POST /notifications/requests/{id}/dismiss (the `DismissNotificationRequest` operationId).
+	DismissNotificationRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListNotificationRequestNotifications List the notifications of a notification request
+	//
+	// The notifications waiting in the request of a source account, newest first, without the
+	// dismissed ones and those about deleted posts; a 404 when the list of requests does not show
+	// the request.
+	//
+	// Corresponds with GET /notifications/requests/{id}/notifications (the `ListNotificationRequestNotifications` operationId).
+	ListNotificationRequestNotifications(ctx context.Context, id AccountId, params *ListNotificationRequestNotificationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// DismissNotification Dismiss a notification
 	//
@@ -24056,6 +24593,34 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 	UpdateBadgeChoice(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetNotificationPolicy Get the authenticated user's notification policy
+	//
+	// What happens to the notifications of other accounts, by condition on their source: listed,
+	// filtered into the request of their source, or dropped.
+	//
+	// Corresponds with GET /preferences/notification_policy (the `GetNotificationPolicy` operationId).
+	GetNotificationPolicy(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateNotificationPolicyWithBody Change the authenticated user's notification policy
+	//
+	// Changes the actions of the conditions in the body and keeps the others. The notifications
+	// already created stay where they went.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /preferences/notification_policy (the `UpdateNotificationPolicy` operationId).
+	UpdateNotificationPolicyWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateNotificationPolicy Change the authenticated user's notification policy
+	//
+	// Changes the actions of the conditions in the body and keeps the others. The notifications
+	// already created stay where they went.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /preferences/notification_policy (the `UpdateNotificationPolicy` operationId).
+	UpdateNotificationPolicy(ctx context.Context, body UpdateNotificationPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetNotificationSettings Get the authenticated user's notification settings
 	//
@@ -24441,6 +25006,28 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
 	SetStatusInteractionPolicy(ctx context.Context, id StatusId, body SetStatusInteractionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnmuteStatusThread Unmute the thread of a status
+	//
+	// Ends the mute of the thread that the status belongs to. What happened in the thread
+	// while it was muted does not notify the user afterwards. Without a mute it changes
+	// nothing.
+	//
+	// Corresponds with DELETE /statuses/{id}/mute (the `UnmuteStatusThread` operationId).
+	UnmuteStatusThread(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MuteStatusThread Mute the thread of a status
+	//
+	// Mutes the thread (conversation) that the status belongs to: from then on, replies and
+	// mentions in it, boosts, favourites, reactions, and quotes of its posts, and new posts
+	// in it by accounts the user is notified of no longer notify the user, the user's own
+	// posts in the thread included. Notifications that came before stay, and the posts still
+	// appear in timelines. The mute has no expiry and follows the thread when it is joined
+	// with another. Muting a thread that is already muted changes nothing; the status's
+	// `muted` tells the state.
+	//
+	// Corresponds with POST /statuses/{id}/mute (the `MuteStatusThread` operationId).
+	MuteStatusThread(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// UnpinStatus Unpin a status
 	//
@@ -26115,6 +26702,29 @@ func (c *Client) UnblockAccount(ctx context.Context, id AccountId, reqEditors ..
 // Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
 func (c *Client) BlockAccount(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewBlockAccountRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListAccountFeaturedTags List the hashtags an account features
+//
+// The hashtags that the account features on its profile (at most 10), in the order it chose.
+// For a remote account they are those its server lists, as this server last fetched them
+// with the account. The counts read only the account's `public` and `unlisted` posts that
+// this server has, so a remote account's may be lower than on its server.
+//
+// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+// deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
+//
+// Corresponds with GET /accounts/{id}/featured_tags (the `ListAccountFeaturedTags` operationId).
+func (c *Client) ListAccountFeaturedTags(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListAccountFeaturedTagsRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -32099,7 +32709,7 @@ func (c *Client) MarkConversationRead(ctx context.Context, id ConversationId, re
 	return c.Client.Do(req)
 }
 
-// ExportCsv Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
+// ExportCsv Export the authenticated user's follows, followed hashtags, blocks, mutes, muted domains, or bookmarks as CSV
 //
 // Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
 // Mastodon and this server import: `following` is `following_accounts.csv`
@@ -32108,7 +32718,9 @@ func (c *Client) MarkConversationRead(ctx context.Context, id ConversationId, re
 // `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
 // `domain_mutes` is `blocked_domains.csv` (one domain per line, the domains the user
 // mutes, which Mastodon imports as blocked domains), and `bookmarks` is `bookmarks.csv`
-// (one post URI per line, the posts the user may still see).
+// (one post URI per line, the posts the user may still see). `followed_tags` is
+// `followed_hashtags.csv` (one hashtag per line without its `#`, the latest followed
+// first), a file of this server that Mastodon neither exports nor imports.
 // Addresses are `username@domain`, with the account domain for this server's accounts;
 // remote accounts whose handle is unconfirmed are left out. At most 30 exports per account
 // are accepted every hour.
@@ -32702,6 +33314,207 @@ func (c *Client) DownloadDataExport(ctx context.Context, id Id, reqEditors ...Re
 	return c.Client.Do(req)
 }
 
+// ListFeaturedTags List the hashtags the user features
+//
+// The hashtags that the user features on their profile (at most 10), in the order the user
+// chose, with how many of the user's `public` and `unlisted` posts carry each.
+//
+// Corresponds with GET /featured_tags (the `ListFeaturedTags` operationId).
+func (c *Client) ListFeaturedTags(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListFeaturedTagsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetFeaturedTagsWithBody Choose the hashtags the user features
+//
+// Replaces the hashtags that the user features on their profile with `names`, in their
+// order; a hashtag that no post has used yet can be featured. The other servers that follow
+// the user learn of the change as of a change of the profile. A name that is no hashtag is a
+// 422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+// changes nothing.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /featured_tags (the `SetFeaturedTags` operationId).
+func (c *Client) SetFeaturedTagsWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetFeaturedTagsRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// SetFeaturedTags Choose the hashtags the user features
+//
+// Replaces the hashtags that the user features on their profile with `names`, in their
+// order; a hashtag that no post has used yet can be featured. The other servers that follow
+// the user learn of the change as of a change of the profile. A name that is no hashtag is a
+// 422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+// changes nothing.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /featured_tags (the `SetFeaturedTags` operationId).
+func (c *Client) SetFeaturedTags(ctx context.Context, body SetFeaturedTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewSetFeaturedTagsRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListKeywordFilters List the user's keyword filters
+//
+// Every keyword filter of the user (at most 100), oldest first, the expired ones too. Nobody else sees them.
+//
+// Corresponds with GET /filters (the `ListKeywordFilters` operationId).
+func (c *Client) ListKeywordFilters(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListKeywordFiltersRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateKeywordFilterWithBody Create a keyword filter
+//
+// Creates a keyword filter, which applies at once to every post the contexts show, old ones
+// too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+// a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+// in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /filters (the `CreateKeywordFilter` operationId).
+func (c *Client) CreateKeywordFilterWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateKeywordFilterRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateKeywordFilter Create a keyword filter
+//
+// Creates a keyword filter, which applies at once to every post the contexts show, old ones
+// too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+// a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+// in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /filters (the `CreateKeywordFilter` operationId).
+func (c *Client) CreateKeywordFilter(ctx context.Context, body CreateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateKeywordFilterRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteKeywordFilter Delete a keyword filter
+//
+// Deletes the filter with its words. Another user's filter is a 404.
+//
+// Corresponds with DELETE /filters/{id} (the `DeleteKeywordFilter` operationId).
+func (c *Client) DeleteKeywordFilter(ctx context.Context, id KeywordFilterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteKeywordFilterRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetKeywordFilter Get a keyword filter
+//
+// A keyword filter of the user. Another user's filter is a 404, as if it did not exist.
+//
+// Corresponds with GET /filters/{id} (the `GetKeywordFilter` operationId).
+func (c *Client) GetKeywordFilter(ctx context.Context, id KeywordFilterId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetKeywordFilterRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateKeywordFilterWithBody Change a keyword filter
+//
+// Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+// `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+// user's filter is a 404.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+func (c *Client) UpdateKeywordFilterWithBody(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateKeywordFilterRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateKeywordFilter Change a keyword filter
+//
+// Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+// `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+// user's filter is a 404.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+func (c *Client) UpdateKeywordFilter(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateKeywordFilterRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetFinanceCostTotals Total the costs by period for the finance viewers
 //
 // The totals of the instance's costs for the holders of `view_finance`. It
@@ -32921,9 +33734,10 @@ func (c *Client) ListDataImports(ctx context.Context, reqEditors ...RequestEdito
 	return c.Client.Do(req)
 }
 
-// StartDataImportWithBody Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+// StartDataImportWithBody Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
 //
-// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+// Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+// server (`exportCsv`). The file's
 // entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 // `overwrite` also removes what the user has of `kind` that the file does not list. The
 // server carries the import out in the background: it resolves remote accounts and posts
@@ -32948,9 +33762,10 @@ func (c *Client) StartDataImportWithBody(ctx context.Context, contentType string
 	return c.Client.Do(req)
 }
 
-// StartDataImport Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+// StartDataImport Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
 //
-// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+// Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+// server (`exportCsv`). The file's
 // entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 // `overwrite` also removes what the user has of `kind` that the file does not list. The
 // server carries the import out in the background: it resolves remote accounts and posts
@@ -32980,8 +33795,8 @@ func (c *Client) StartDataImport(ctx context.Context, body StartDataImportJSONRe
 // Reads a CSV file as `startDataImport` would and tells what importing it would do,
 // changing nothing. The header row is optional, a leading `@` of an address is dropped,
 // and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-// `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-// `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+// `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+// `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
 // new posts, notifications of a muted account hidden. The `Languages` column of a follow
 // is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
 //
@@ -33005,8 +33820,8 @@ func (c *Client) PreviewDataImportWithBody(ctx context.Context, contentType stri
 // Reads a CSV file as `startDataImport` would and tells what importing it would do,
 // changing nothing. The header row is optional, a leading `@` of an address is dropped,
 // and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-// `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-// `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+// `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+// `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
 // new posts, notifications of a muted account hidden. The `Languages` column of a follow
 // is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
 //
@@ -33958,7 +34773,9 @@ func (c *Client) ListMutes(ctx context.Context, params *ListMutesParams, reqEdit
 // The user's notifications, newest first. Dismissed notifications, notifications about
 // deleted posts, and notifications from accounts that the user blocks, is blocked by, or
 // mutes with notifications hidden are left out, also those that came before the block or
-// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
+// mute. The notifications that the user's notification policy filtered wait in the
+// notification requests instead, until the user accepts the request of their source. The
+// moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 // `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 // `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
 // the user's roles no longer grant the permission they need.
@@ -34033,6 +34850,117 @@ func (c *Client) UpdateNotificationMarkerWithBody(ctx context.Context, contentTy
 // Corresponds with PUT /notifications/marker (the `UpdateNotificationMarker` operationId).
 func (c *Client) UpdateNotificationMarker(ctx context.Context, body UpdateNotificationMarkerJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateNotificationMarkerRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListNotificationRequests List the notification requests
+//
+// The sources whose notifications the user's notification policy filtered, one request per
+// source, the one with the newest notification first. The sources that the user blocks, is
+// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
+// left out.
+//
+// Corresponds with GET /notifications/requests (the `ListNotificationRequests` operationId).
+func (c *Client) ListNotificationRequests(ctx context.Context, params *ListNotificationRequestsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListNotificationRequestsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetNotificationRequestSummary Count the notification requests
+//
+// The number of requests that the list of requests shows, and of their notifications.
+//
+// Corresponds with GET /notifications/requests/summary (the `GetNotificationRequestSummary` operationId).
+func (c *Client) GetNotificationRequestSummary(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNotificationRequestSummaryRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetNotificationRequest Get a notification request
+//
+// The request of a source account; a 404 when the list of requests does not show one.
+//
+// Corresponds with GET /notifications/requests/{id} (the `GetNotificationRequest` operationId).
+func (c *Client) GetNotificationRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNotificationRequestRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AcceptNotificationRequest Accept a notification request
+//
+// Moves the notifications of the request into the list, unread when they are newer than the
+// read marker, without delivering them, and accepts the later notifications of the source
+// whatever the policy says. A 404 when the source has no request.
+//
+// Corresponds with POST /notifications/requests/{id}/accept (the `AcceptNotificationRequest` operationId).
+func (c *Client) AcceptNotificationRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAcceptNotificationRequestRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DismissNotificationRequest Dismiss a notification request
+//
+// Removes the notifications of the request, which are never listed. The source is not
+// accepted: a later notification that the policy filters opens a new request. A 404 when the
+// source has no request.
+//
+// Corresponds with POST /notifications/requests/{id}/dismiss (the `DismissNotificationRequest` operationId).
+func (c *Client) DismissNotificationRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDismissNotificationRequestRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListNotificationRequestNotifications List the notifications of a notification request
+//
+// The notifications waiting in the request of a source account, newest first, without the
+// dismissed ones and those about deleted posts; a 404 when the list of requests does not show
+// the request.
+//
+// Corresponds with GET /notifications/requests/{id}/notifications (the `ListNotificationRequestNotifications` operationId).
+func (c *Client) ListNotificationRequestNotifications(ctx context.Context, id AccountId, params *ListNotificationRequestNotificationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListNotificationRequestNotificationsRequest(c.Server, id, params)
 	if err != nil {
 		return nil, err
 	}
@@ -34701,6 +35629,64 @@ func (c *Client) UpdateBadgeChoiceWithBody(ctx context.Context, roleId BadgeRole
 // Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 func (c *Client) UpdateBadgeChoice(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewUpdateBadgeChoiceRequest(c.Server, roleId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetNotificationPolicy Get the authenticated user's notification policy
+//
+// What happens to the notifications of other accounts, by condition on their source: listed,
+// filtered into the request of their source, or dropped.
+//
+// Corresponds with GET /preferences/notification_policy (the `GetNotificationPolicy` operationId).
+func (c *Client) GetNotificationPolicy(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetNotificationPolicyRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateNotificationPolicyWithBody Change the authenticated user's notification policy
+//
+// Changes the actions of the conditions in the body and keeps the others. The notifications
+// already created stay where they went.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /preferences/notification_policy (the `UpdateNotificationPolicy` operationId).
+func (c *Client) UpdateNotificationPolicyWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateNotificationPolicyRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateNotificationPolicy Change the authenticated user's notification policy
+//
+// Changes the actions of the conditions in the body and keeps the others. The notifications
+// already created stay where they went.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /preferences/notification_policy (the `UpdateNotificationPolicy` operationId).
+func (c *Client) UpdateNotificationPolicy(ctx context.Context, body UpdateNotificationPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateNotificationPolicyRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -35416,6 +36402,48 @@ func (c *Client) SetStatusInteractionPolicyWithBody(ctx context.Context, id Stat
 // Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
 func (c *Client) SetStatusInteractionPolicy(ctx context.Context, id StatusId, body SetStatusInteractionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewSetStatusInteractionPolicyRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnmuteStatusThread Unmute the thread of a status
+//
+// Ends the mute of the thread that the status belongs to. What happened in the thread
+// while it was muted does not notify the user afterwards. Without a mute it changes
+// nothing.
+//
+// Corresponds with DELETE /statuses/{id}/mute (the `UnmuteStatusThread` operationId).
+func (c *Client) UnmuteStatusThread(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnmuteStatusThreadRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MuteStatusThread Mute the thread of a status
+//
+// Mutes the thread (conversation) that the status belongs to: from then on, replies and
+// mentions in it, boosts, favourites, reactions, and quotes of its posts, and new posts
+// in it by accounts the user is notified of no longer notify the user, the user's own
+// posts in the thread included. Notifications that came before stay, and the posts still
+// appear in timelines. The mute has no expiry and follows the thread when it is joined
+// with another. Muting a thread that is already muted changes nothing; the status's
+// `muted` tells the state.
+//
+// Corresponds with POST /statuses/{id}/mute (the `MuteStatusThread` operationId).
+func (c *Client) MuteStatusThread(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMuteStatusThreadRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -37915,6 +38943,40 @@ func NewBlockAccountRequest(server string, id AccountId) (*http.Request, error) 
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListAccountFeaturedTagsRequest constructs an http.Request for the ListAccountFeaturedTags method
+func NewListAccountFeaturedTagsRequest(server string, id Id) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/accounts/%s/featured_tags", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -48285,6 +49347,255 @@ func NewDownloadDataExportRequest(server string, id Id) (*http.Request, error) {
 	return req, nil
 }
 
+// NewListFeaturedTagsRequest constructs an http.Request for the ListFeaturedTags method
+func NewListFeaturedTagsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/featured_tags")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewSetFeaturedTagsRequest calls the generic SetFeaturedTags builder with application/json body
+func NewSetFeaturedTagsRequest(server string, body SetFeaturedTagsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewSetFeaturedTagsRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewSetFeaturedTagsRequestWithBody constructs an http.Request for the SetFeaturedTags method, with any body, and a specified content type
+func NewSetFeaturedTagsRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/featured_tags")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListKeywordFiltersRequest constructs an http.Request for the ListKeywordFilters method
+func NewListKeywordFiltersRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/filters")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateKeywordFilterRequest calls the generic CreateKeywordFilter builder with application/json body
+func NewCreateKeywordFilterRequest(server string, body CreateKeywordFilterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateKeywordFilterRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateKeywordFilterRequestWithBody constructs an http.Request for the CreateKeywordFilter method, with any body, and a specified content type
+func NewCreateKeywordFilterRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/filters")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteKeywordFilterRequest constructs an http.Request for the DeleteKeywordFilter method
+func NewDeleteKeywordFilterRequest(server string, id KeywordFilterId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/filters/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetKeywordFilterRequest constructs an http.Request for the GetKeywordFilter method
+func NewGetKeywordFilterRequest(server string, id KeywordFilterId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/filters/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateKeywordFilterRequest calls the generic UpdateKeywordFilter builder with application/json body
+func NewUpdateKeywordFilterRequest(server string, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateKeywordFilterRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewUpdateKeywordFilterRequestWithBody constructs an http.Request for the UpdateKeywordFilter method, with any body, and a specified content type
+func NewUpdateKeywordFilterRequestWithBody(server string, id KeywordFilterId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/filters/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetFinanceCostTotalsRequest constructs an http.Request for the GetFinanceCostTotals method
 func NewGetFinanceCostTotalsRequest(server string, params *GetFinanceCostTotalsParams) (*http.Request, error) {
 	var err error
@@ -50442,6 +51753,274 @@ func NewUpdateNotificationMarkerRequestWithBody(server string, contentType strin
 	return req, nil
 }
 
+// NewListNotificationRequestsRequest constructs an http.Request for the ListNotificationRequests method
+func NewListNotificationRequestsRequest(server string, params *ListNotificationRequestsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/notifications/requests")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetNotificationRequestSummaryRequest constructs an http.Request for the GetNotificationRequestSummary method
+func NewGetNotificationRequestSummaryRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/notifications/requests/summary")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetNotificationRequestRequest constructs an http.Request for the GetNotificationRequest method
+func NewGetNotificationRequestRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/notifications/requests/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAcceptNotificationRequestRequest constructs an http.Request for the AcceptNotificationRequest method
+func NewAcceptNotificationRequestRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/notifications/requests/%s/accept", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewDismissNotificationRequestRequest constructs an http.Request for the DismissNotificationRequest method
+func NewDismissNotificationRequestRequest(server string, id AccountId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/notifications/requests/%s/dismiss", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListNotificationRequestNotificationsRequest constructs an http.Request for the ListNotificationRequestNotifications method
+func NewListNotificationRequestNotificationsRequest(server string, id AccountId, params *ListNotificationRequestNotificationsParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/notifications/requests/%s/notifications", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewDismissNotificationRequest constructs an http.Request for the DismissNotification method
 func NewDismissNotificationRequest(server string, id Id) (*http.Request, error) {
 	var err error
@@ -51146,6 +52725,73 @@ func NewUpdateBadgeChoiceRequestWithBody(server string, roleId BadgeRoleId, cont
 	}
 
 	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGetNotificationPolicyRequest constructs an http.Request for the GetNotificationPolicy method
+func NewGetNotificationPolicyRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/preferences/notification_policy")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateNotificationPolicyRequest calls the generic UpdateNotificationPolicy builder with application/json body
+func NewUpdateNotificationPolicyRequest(server string, body UpdateNotificationPolicyJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateNotificationPolicyRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdateNotificationPolicyRequestWithBody constructs an http.Request for the UpdateNotificationPolicy method, with any body, and a specified content type
+func NewUpdateNotificationPolicyRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/preferences/notification_policy")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
 	if err != nil {
 		return nil, err
 	}
@@ -52136,6 +53782,74 @@ func NewSetStatusInteractionPolicyRequestWithBody(server string, id StatusId, co
 	}
 
 	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewUnmuteStatusThreadRequest constructs an http.Request for the UnmuteStatusThread method
+func NewUnmuteStatusThreadRequest(server string, id StatusId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/statuses/%s/mute", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewMuteStatusThreadRequest constructs an http.Request for the MuteStatusThread method
+func NewMuteStatusThreadRequest(server string, id StatusId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/statuses/%s/mute", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
 
 	return req, nil
 }
@@ -55438,6 +57152,21 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /accounts/{id}/block (the `BlockAccount` operationId).
 	BlockAccountWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*BlockAccountResponse, error)
+
+	// ListAccountFeaturedTagsWithResponse List the hashtags an account features
+	//
+	// The hashtags that the account features on its profile (at most 10), in the order it chose.
+	// For a remote account they are those its server lists, as this server last fetched them
+	// with the account. The counts read only the account's `public` and `unlisted` posts that
+	// this server has, so a remote account's may be lower than on its server.
+	//
+	// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+	// deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /accounts/{id}/featured_tags (the `ListAccountFeaturedTags` operationId).
+	ListAccountFeaturedTagsWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*ListAccountFeaturedTagsResponse, error)
 
 	// UnfollowAccountWithResponse Unfollow an account
 	//
@@ -59037,7 +60766,7 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /conversations/{id}/read (the `MarkConversationRead` operationId).
 	MarkConversationReadWithResponse(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*MarkConversationReadResponse, error)
 
-	// ExportCsvWithResponse Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
+	// ExportCsvWithResponse Export the authenticated user's follows, followed hashtags, blocks, mutes, muted domains, or bookmarks as CSV
 	//
 	// Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
 	// Mastodon and this server import: `following` is `following_accounts.csv`
@@ -59046,7 +60775,9 @@ type ClientWithResponsesInterface interface {
 	// `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
 	// `domain_mutes` is `blocked_domains.csv` (one domain per line, the domains the user
 	// mutes, which Mastodon imports as blocked domains), and `bookmarks` is `bookmarks.csv`
-	// (one post URI per line, the posts the user may still see).
+	// (one post URI per line, the posts the user may still see). `followed_tags` is
+	// `followed_hashtags.csv` (one hashtag per line without its `#`, the latest followed
+	// first), a file of this server that Mastodon neither exports nor imports.
 	// Addresses are `username@domain`, with the account domain for this server's accounts;
 	// remote accounts whose handle is unconfirmed are left out. At most 30 exports per account
 	// are accepted every hour.
@@ -59392,6 +61123,115 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /exports/{id}/archive (the `DownloadDataExport` operationId).
 	DownloadDataExportWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*DownloadDataExportResponse, error)
 
+	// ListFeaturedTagsWithResponse List the hashtags the user features
+	//
+	// The hashtags that the user features on their profile (at most 10), in the order the user
+	// chose, with how many of the user's `public` and `unlisted` posts carry each.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /featured_tags (the `ListFeaturedTags` operationId).
+	ListFeaturedTagsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListFeaturedTagsResponse, error)
+
+	// SetFeaturedTagsWithBodyWithResponse Choose the hashtags the user features
+	//
+	// Replaces the hashtags that the user features on their profile with `names`, in their
+	// order; a hashtag that no post has used yet can be featured. The other servers that follow
+	// the user learn of the change as of a change of the profile. A name that is no hashtag is a
+	// 422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+	// changes nothing.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /featured_tags (the `SetFeaturedTags` operationId).
+	SetFeaturedTagsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetFeaturedTagsResponse, error)
+
+	// SetFeaturedTagsWithResponse Choose the hashtags the user features
+	//
+	// Replaces the hashtags that the user features on their profile with `names`, in their
+	// order; a hashtag that no post has used yet can be featured. The other servers that follow
+	// the user learn of the change as of a change of the profile. A name that is no hashtag is a
+	// 422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+	// changes nothing.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /featured_tags (the `SetFeaturedTags` operationId).
+	SetFeaturedTagsWithResponse(ctx context.Context, body SetFeaturedTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*SetFeaturedTagsResponse, error)
+
+	// ListKeywordFiltersWithResponse List the user's keyword filters
+	//
+	// Every keyword filter of the user (at most 100), oldest first, the expired ones too. Nobody else sees them.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /filters (the `ListKeywordFilters` operationId).
+	ListKeywordFiltersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListKeywordFiltersResponse, error)
+
+	// CreateKeywordFilterWithBodyWithResponse Create a keyword filter
+	//
+	// Creates a keyword filter, which applies at once to every post the contexts show, old ones
+	// too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+	// a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+	// in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /filters (the `CreateKeywordFilter` operationId).
+	CreateKeywordFilterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateKeywordFilterResponse, error)
+
+	// CreateKeywordFilterWithResponse Create a keyword filter
+	//
+	// Creates a keyword filter, which applies at once to every post the contexts show, old ones
+	// too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+	// a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+	// in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /filters (the `CreateKeywordFilter` operationId).
+	CreateKeywordFilterWithResponse(ctx context.Context, body CreateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateKeywordFilterResponse, error)
+
+	// DeleteKeywordFilterWithResponse Delete a keyword filter
+	//
+	// Deletes the filter with its words. Another user's filter is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /filters/{id} (the `DeleteKeywordFilter` operationId).
+	DeleteKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, reqEditors ...RequestEditorFn) (*DeleteKeywordFilterResponse, error)
+
+	// GetKeywordFilterWithResponse Get a keyword filter
+	//
+	// A keyword filter of the user. Another user's filter is a 404, as if it did not exist.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /filters/{id} (the `GetKeywordFilter` operationId).
+	GetKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, reqEditors ...RequestEditorFn) (*GetKeywordFilterResponse, error)
+
+	// UpdateKeywordFilterWithBodyWithResponse Change a keyword filter
+	//
+	// Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+	// `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+	// user's filter is a 404.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	UpdateKeywordFilterWithBodyWithResponse(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error)
+
+	// UpdateKeywordFilterWithResponse Change a keyword filter
+	//
+	// Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+	// `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+	// user's filter is a 404.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+	UpdateKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error)
+
 	// GetFinanceCostTotalsWithResponse Total the costs by period for the finance viewers
 	//
 	// The totals of the instance's costs for the holders of `view_finance`. It
@@ -59527,9 +61367,10 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /imports (the `ListDataImports` operationId).
 	ListDataImportsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListDataImportsResponse, error)
 
-	// StartDataImportWithBodyWithResponse Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+	// StartDataImportWithBodyWithResponse Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
 	//
-	// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+	// Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+	// server (`exportCsv`). The file's
 	// entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 	// `overwrite` also removes what the user has of `kind` that the file does not list. The
 	// server carries the import out in the background: it resolves remote accounts and posts
@@ -59544,9 +61385,10 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /imports (the `StartDataImport` operationId).
 	StartDataImportWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*StartDataImportResponse, error)
 
-	// StartDataImportWithResponse Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+	// StartDataImportWithResponse Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
 	//
-	// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+	// Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+	// server (`exportCsv`). The file's
 	// entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 	// `overwrite` also removes what the user has of `kind` that the file does not list. The
 	// server carries the import out in the background: it resolves remote accounts and posts
@@ -59566,8 +61408,8 @@ type ClientWithResponsesInterface interface {
 	// Reads a CSV file as `startDataImport` would and tells what importing it would do,
 	// changing nothing. The header row is optional, a leading `@` of an address is dropped,
 	// and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-	// `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-	// `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+	// `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+	// `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
 	// new posts, notifications of a muted account hidden. The `Languages` column of a follow
 	// is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
 	//
@@ -59581,8 +61423,8 @@ type ClientWithResponsesInterface interface {
 	// Reads a CSV file as `startDataImport` would and tells what importing it would do,
 	// changing nothing. The header row is optional, a leading `@` of an address is dropped,
 	// and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-	// `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-	// `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+	// `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+	// `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
 	// new posts, notifications of a muted account hidden. The `Languages` column of a follow
 	// is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
 	//
@@ -60174,7 +62016,9 @@ type ClientWithResponsesInterface interface {
 	// The user's notifications, newest first. Dismissed notifications, notifications about
 	// deleted posts, and notifications from accounts that the user blocks, is blocked by, or
 	// mutes with notifications hidden are left out, also those that came before the block or
-	// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
+	// mute. The notifications that the user's notification policy filtered wait in the
+	// notification requests instead, until the user accepts the request of their source. The
+	// moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 	// `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
 	// the user's roles no longer grant the permission they need.
@@ -60222,6 +62066,69 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /notifications/marker (the `UpdateNotificationMarker` operationId).
 	UpdateNotificationMarkerWithResponse(ctx context.Context, body UpdateNotificationMarkerJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateNotificationMarkerResponse, error)
+
+	// ListNotificationRequestsWithResponse List the notification requests
+	//
+	// The sources whose notifications the user's notification policy filtered, one request per
+	// source, the one with the newest notification first. The sources that the user blocks, is
+	// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
+	// left out.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /notifications/requests (the `ListNotificationRequests` operationId).
+	ListNotificationRequestsWithResponse(ctx context.Context, params *ListNotificationRequestsParams, reqEditors ...RequestEditorFn) (*ListNotificationRequestsResponse, error)
+
+	// GetNotificationRequestSummaryWithResponse Count the notification requests
+	//
+	// The number of requests that the list of requests shows, and of their notifications.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /notifications/requests/summary (the `GetNotificationRequestSummary` operationId).
+	GetNotificationRequestSummaryWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNotificationRequestSummaryResponse, error)
+
+	// GetNotificationRequestWithResponse Get a notification request
+	//
+	// The request of a source account; a 404 when the list of requests does not show one.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /notifications/requests/{id} (the `GetNotificationRequest` operationId).
+	GetNotificationRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*GetNotificationRequestResponse, error)
+
+	// AcceptNotificationRequestWithResponse Accept a notification request
+	//
+	// Moves the notifications of the request into the list, unread when they are newer than the
+	// read marker, without delivering them, and accepts the later notifications of the source
+	// whatever the policy says. A 404 when the source has no request.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /notifications/requests/{id}/accept (the `AcceptNotificationRequest` operationId).
+	AcceptNotificationRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*AcceptNotificationRequestResponse, error)
+
+	// DismissNotificationRequestWithResponse Dismiss a notification request
+	//
+	// Removes the notifications of the request, which are never listed. The source is not
+	// accepted: a later notification that the policy filters opens a new request. A 404 when the
+	// source has no request.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /notifications/requests/{id}/dismiss (the `DismissNotificationRequest` operationId).
+	DismissNotificationRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*DismissNotificationRequestResponse, error)
+
+	// ListNotificationRequestNotificationsWithResponse List the notifications of a notification request
+	//
+	// The notifications waiting in the request of a source account, newest first, without the
+	// dismissed ones and those about deleted posts; a 404 when the list of requests does not show
+	// the request.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /notifications/requests/{id}/notifications (the `ListNotificationRequestNotifications` operationId).
+	ListNotificationRequestNotificationsWithResponse(ctx context.Context, id AccountId, params *ListNotificationRequestNotificationsParams, reqEditors ...RequestEditorFn) (*ListNotificationRequestNotificationsResponse, error)
 
 	// DismissNotificationWithResponse Dismiss a notification
 	//
@@ -60622,6 +62529,36 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 	UpdateBadgeChoiceWithResponse(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBadgeChoiceResponse, error)
+
+	// GetNotificationPolicyWithResponse Get the authenticated user's notification policy
+	//
+	// What happens to the notifications of other accounts, by condition on their source: listed,
+	// filtered into the request of their source, or dropped.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /preferences/notification_policy (the `GetNotificationPolicy` operationId).
+	GetNotificationPolicyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNotificationPolicyResponse, error)
+
+	// UpdateNotificationPolicyWithBodyWithResponse Change the authenticated user's notification policy
+	//
+	// Changes the actions of the conditions in the body and keeps the others. The notifications
+	// already created stay where they went.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /preferences/notification_policy (the `UpdateNotificationPolicy` operationId).
+	UpdateNotificationPolicyWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateNotificationPolicyResponse, error)
+
+	// UpdateNotificationPolicyWithResponse Change the authenticated user's notification policy
+	//
+	// Changes the actions of the conditions in the body and keeps the others. The notifications
+	// already created stay where they went.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /preferences/notification_policy (the `UpdateNotificationPolicy` operationId).
+	UpdateNotificationPolicyWithResponse(ctx context.Context, body UpdateNotificationPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateNotificationPolicyResponse, error)
 
 	// GetNotificationSettingsWithResponse Get the authenticated user's notification settings
 	//
@@ -61045,6 +62982,32 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /statuses/{id}/interaction_policy (the `SetStatusInteractionPolicy` operationId).
 	SetStatusInteractionPolicyWithResponse(ctx context.Context, id StatusId, body SetStatusInteractionPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*SetStatusInteractionPolicyResponse, error)
+
+	// UnmuteStatusThreadWithResponse Unmute the thread of a status
+	//
+	// Ends the mute of the thread that the status belongs to. What happened in the thread
+	// while it was muted does not notify the user afterwards. Without a mute it changes
+	// nothing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /statuses/{id}/mute (the `UnmuteStatusThread` operationId).
+	UnmuteStatusThreadWithResponse(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*UnmuteStatusThreadResponse, error)
+
+	// MuteStatusThreadWithResponse Mute the thread of a status
+	//
+	// Mutes the thread (conversation) that the status belongs to: from then on, replies and
+	// mentions in it, boosts, favourites, reactions, and quotes of its posts, and new posts
+	// in it by accounts the user is notified of no longer notify the user, the user's own
+	// posts in the thread included. Notifications that came before stay, and the posts still
+	// appear in timelines. The mute has no expiry and follows the thread when it is joined
+	// with another. Muting a thread that is already muted changes nothing; the status's
+	// `muted` tells the state.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /statuses/{id}/mute (the `MuteStatusThread` operationId).
+	MuteStatusThreadWithResponse(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*MuteStatusThreadResponse, error)
 
 	// UnpinStatusWithResponse Unpin a status
 	//
@@ -63312,6 +65275,71 @@ func (r BlockAccountResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r BlockAccountResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListAccountFeaturedTagsResponse200Headers the declared response headers of an HTTP 200 response for ListAccountFeaturedTags
+type ListAccountFeaturedTagsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListAccountFeaturedTagsResponseDefaultHeaders the declared response headers of an HTTP default response for ListAccountFeaturedTags
+type ListAccountFeaturedTagsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListAccountFeaturedTagsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *FeaturedHashtagCollection
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListAccountFeaturedTagsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListAccountFeaturedTagsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListAccountFeaturedTagsResponse) GetJSON200() *FeaturedHashtagCollection {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListAccountFeaturedTagsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListAccountFeaturedTagsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListAccountFeaturedTagsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListAccountFeaturedTagsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListAccountFeaturedTagsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -78552,6 +80580,447 @@ func (r DownloadDataExportResponse) ContentType() string {
 	return ""
 }
 
+// ListFeaturedTagsResponse200Headers the declared response headers of an HTTP 200 response for ListFeaturedTags
+type ListFeaturedTagsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListFeaturedTagsResponseDefaultHeaders the declared response headers of an HTTP default response for ListFeaturedTags
+type ListFeaturedTagsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListFeaturedTagsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *FeaturedHashtagCollection
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListFeaturedTagsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListFeaturedTagsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListFeaturedTagsResponse) GetJSON200() *FeaturedHashtagCollection {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListFeaturedTagsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListFeaturedTagsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListFeaturedTagsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListFeaturedTagsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListFeaturedTagsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// SetFeaturedTagsResponse200Headers the declared response headers of an HTTP 200 response for SetFeaturedTags
+type SetFeaturedTagsResponse200Headers struct {
+	CacheControl *string
+}
+
+// SetFeaturedTagsResponseDefaultHeaders the declared response headers of an HTTP default response for SetFeaturedTags
+type SetFeaturedTagsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type SetFeaturedTagsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *FeaturedHashtagCollection
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *SetFeaturedTagsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *SetFeaturedTagsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r SetFeaturedTagsResponse) GetJSON200() *FeaturedHashtagCollection {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r SetFeaturedTagsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r SetFeaturedTagsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r SetFeaturedTagsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r SetFeaturedTagsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r SetFeaturedTagsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListKeywordFiltersResponse200Headers the declared response headers of an HTTP 200 response for ListKeywordFilters
+type ListKeywordFiltersResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListKeywordFiltersResponseDefaultHeaders the declared response headers of an HTTP default response for ListKeywordFilters
+type ListKeywordFiltersResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListKeywordFiltersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *KeywordFilterCollection
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListKeywordFiltersResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListKeywordFiltersResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListKeywordFiltersResponse) GetJSON200() *KeywordFilterCollection {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListKeywordFiltersResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListKeywordFiltersResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListKeywordFiltersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListKeywordFiltersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListKeywordFiltersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CreateKeywordFilterResponse201Headers the declared response headers of an HTTP 201 response for CreateKeywordFilter
+type CreateKeywordFilterResponse201Headers struct {
+	CacheControl *string
+}
+
+// CreateKeywordFilterResponseDefaultHeaders the declared response headers of an HTTP default response for CreateKeywordFilter
+type CreateKeywordFilterResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateKeywordFilterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *KeywordFilter
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateKeywordFilterResponse201Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateKeywordFilterResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateKeywordFilterResponse) GetJSON201() *KeywordFilter {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateKeywordFilterResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateKeywordFilterResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateKeywordFilterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateKeywordFilterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateKeywordFilterResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeleteKeywordFilterResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteKeywordFilter
+type DeleteKeywordFilterResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeleteKeywordFilterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeleteKeywordFilterResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeleteKeywordFilterResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteKeywordFilterResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteKeywordFilterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteKeywordFilterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteKeywordFilterResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetKeywordFilterResponse200Headers the declared response headers of an HTTP 200 response for GetKeywordFilter
+type GetKeywordFilterResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetKeywordFilterResponseDefaultHeaders the declared response headers of an HTTP default response for GetKeywordFilter
+type GetKeywordFilterResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetKeywordFilterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *KeywordFilter
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetKeywordFilterResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetKeywordFilterResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetKeywordFilterResponse) GetJSON200() *KeywordFilter {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetKeywordFilterResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetKeywordFilterResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetKeywordFilterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetKeywordFilterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetKeywordFilterResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateKeywordFilterResponse200Headers the declared response headers of an HTTP 200 response for UpdateKeywordFilter
+type UpdateKeywordFilterResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateKeywordFilterResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateKeywordFilter
+type UpdateKeywordFilterResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateKeywordFilterResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *KeywordFilter
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateKeywordFilterResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateKeywordFilterResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateKeywordFilterResponse) GetJSON200() *KeywordFilter {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateKeywordFilterResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateKeywordFilterResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateKeywordFilterResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateKeywordFilterResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateKeywordFilterResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetFinanceCostTotalsResponse200Headers the declared response headers of an HTTP 200 response for GetFinanceCostTotals
 type GetFinanceCostTotalsResponse200Headers struct {
 	CacheControl *string
@@ -81546,6 +84015,368 @@ func (r UpdateNotificationMarkerResponse) ContentType() string {
 	return ""
 }
 
+// ListNotificationRequestsResponse200Headers the declared response headers of an HTTP 200 response for ListNotificationRequests
+type ListNotificationRequestsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListNotificationRequestsResponseDefaultHeaders the declared response headers of an HTTP default response for ListNotificationRequests
+type ListNotificationRequestsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListNotificationRequestsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *NotificationRequestPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListNotificationRequestsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListNotificationRequestsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListNotificationRequestsResponse) GetJSON200() *NotificationRequestPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListNotificationRequestsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListNotificationRequestsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListNotificationRequestsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListNotificationRequestsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListNotificationRequestsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetNotificationRequestSummaryResponse200Headers the declared response headers of an HTTP 200 response for GetNotificationRequestSummary
+type GetNotificationRequestSummaryResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetNotificationRequestSummaryResponseDefaultHeaders the declared response headers of an HTTP default response for GetNotificationRequestSummary
+type GetNotificationRequestSummaryResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetNotificationRequestSummaryResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *NotificationRequestSummary
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetNotificationRequestSummaryResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetNotificationRequestSummaryResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetNotificationRequestSummaryResponse) GetJSON200() *NotificationRequestSummary {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetNotificationRequestSummaryResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetNotificationRequestSummaryResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNotificationRequestSummaryResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNotificationRequestSummaryResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetNotificationRequestSummaryResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetNotificationRequestResponse200Headers the declared response headers of an HTTP 200 response for GetNotificationRequest
+type GetNotificationRequestResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetNotificationRequestResponseDefaultHeaders the declared response headers of an HTTP default response for GetNotificationRequest
+type GetNotificationRequestResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetNotificationRequestResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *NotificationRequest
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetNotificationRequestResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetNotificationRequestResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetNotificationRequestResponse) GetJSON200() *NotificationRequest {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetNotificationRequestResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetNotificationRequestResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNotificationRequestResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNotificationRequestResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetNotificationRequestResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// AcceptNotificationRequestResponseDefaultHeaders the declared response headers of an HTTP default response for AcceptNotificationRequest
+type AcceptNotificationRequestResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type AcceptNotificationRequestResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *AcceptNotificationRequestResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AcceptNotificationRequestResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AcceptNotificationRequestResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AcceptNotificationRequestResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AcceptNotificationRequestResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AcceptNotificationRequestResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DismissNotificationRequestResponseDefaultHeaders the declared response headers of an HTTP default response for DismissNotificationRequest
+type DismissNotificationRequestResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DismissNotificationRequestResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DismissNotificationRequestResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DismissNotificationRequestResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DismissNotificationRequestResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DismissNotificationRequestResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DismissNotificationRequestResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DismissNotificationRequestResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListNotificationRequestNotificationsResponse200Headers the declared response headers of an HTTP 200 response for ListNotificationRequestNotifications
+type ListNotificationRequestNotificationsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListNotificationRequestNotificationsResponseDefaultHeaders the declared response headers of an HTTP default response for ListNotificationRequestNotifications
+type ListNotificationRequestNotificationsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListNotificationRequestNotificationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *NotificationPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListNotificationRequestNotificationsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListNotificationRequestNotificationsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListNotificationRequestNotificationsResponse) GetJSON200() *NotificationPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListNotificationRequestNotificationsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListNotificationRequestNotificationsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListNotificationRequestNotificationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListNotificationRequestNotificationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListNotificationRequestNotificationsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // DismissNotificationResponseDefaultHeaders the declared response headers of an HTTP default response for DismissNotification
 type DismissNotificationResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -82798,6 +85629,136 @@ func (r UpdateBadgeChoiceResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r UpdateBadgeChoiceResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetNotificationPolicyResponse200Headers the declared response headers of an HTTP 200 response for GetNotificationPolicy
+type GetNotificationPolicyResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetNotificationPolicyResponseDefaultHeaders the declared response headers of an HTTP default response for GetNotificationPolicy
+type GetNotificationPolicyResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetNotificationPolicyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *NotificationPolicy
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetNotificationPolicyResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetNotificationPolicyResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetNotificationPolicyResponse) GetJSON200() *NotificationPolicy {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetNotificationPolicyResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetNotificationPolicyResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetNotificationPolicyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetNotificationPolicyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetNotificationPolicyResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateNotificationPolicyResponse200Headers the declared response headers of an HTTP 200 response for UpdateNotificationPolicy
+type UpdateNotificationPolicyResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateNotificationPolicyResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateNotificationPolicy
+type UpdateNotificationPolicyResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateNotificationPolicyResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *NotificationPolicy
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateNotificationPolicyResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateNotificationPolicyResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateNotificationPolicyResponse) GetJSON200() *NotificationPolicy {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateNotificationPolicyResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateNotificationPolicyResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateNotificationPolicyResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateNotificationPolicyResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateNotificationPolicyResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -84447,6 +87408,136 @@ func (r SetStatusInteractionPolicyResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r SetStatusInteractionPolicyResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UnmuteStatusThreadResponse200Headers the declared response headers of an HTTP 200 response for UnmuteStatusThread
+type UnmuteStatusThreadResponse200Headers struct {
+	CacheControl *string
+}
+
+// UnmuteStatusThreadResponseDefaultHeaders the declared response headers of an HTTP default response for UnmuteStatusThread
+type UnmuteStatusThreadResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UnmuteStatusThreadResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusAfterAction
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UnmuteStatusThreadResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UnmuteStatusThreadResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnmuteStatusThreadResponse) GetJSON200() *StatusAfterAction {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UnmuteStatusThreadResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnmuteStatusThreadResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnmuteStatusThreadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnmuteStatusThreadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnmuteStatusThreadResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// MuteStatusThreadResponse200Headers the declared response headers of an HTTP 200 response for MuteStatusThread
+type MuteStatusThreadResponse200Headers struct {
+	CacheControl *string
+}
+
+// MuteStatusThreadResponseDefaultHeaders the declared response headers of an HTTP default response for MuteStatusThread
+type MuteStatusThreadResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type MuteStatusThreadResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *StatusAfterAction
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *MuteStatusThreadResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *MuteStatusThreadResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r MuteStatusThreadResponse) GetJSON200() *StatusAfterAction {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r MuteStatusThreadResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r MuteStatusThreadResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r MuteStatusThreadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MuteStatusThreadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r MuteStatusThreadResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -89002,6 +92093,27 @@ func (c *ClientWithResponses) BlockAccountWithResponse(ctx context.Context, id A
 		return nil, err
 	}
 	return ParseBlockAccountResponse(rsp)
+}
+
+// ListAccountFeaturedTagsWithResponse List the hashtags an account features
+//
+// The hashtags that the account features on its profile (at most 10), in the order it chose.
+// For a remote account they are those its server lists, as this server last fetched them
+// with the account. The counts read only the account's `public` and `unlisted` posts that
+// this server has, so a remote account's may be lower than on its server.
+//
+// An account that is not found by `getAccount` is a 404 here too: an unknown, suspended,
+// deactivated, or deleted account, the instance actor, and an account that blocks the viewer.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /accounts/{id}/featured_tags (the `ListAccountFeaturedTags` operationId).
+func (c *ClientWithResponses) ListAccountFeaturedTagsWithResponse(ctx context.Context, id Id, reqEditors ...RequestEditorFn) (*ListAccountFeaturedTagsResponse, error) {
+	rsp, err := c.ListAccountFeaturedTags(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListAccountFeaturedTagsResponse(rsp)
 }
 
 // UnfollowAccountWithResponse Unfollow an account
@@ -94210,7 +97322,7 @@ func (c *ClientWithResponses) MarkConversationReadWithResponse(ctx context.Conte
 	return ParseMarkConversationReadResponse(rsp)
 }
 
-// ExportCsvWithResponse Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
+// ExportCsvWithResponse Export the authenticated user's follows, followed hashtags, blocks, mutes, muted domains, or bookmarks as CSV
 //
 // Returns what the user has of `kind` now as the CSV file that Mastodon exports, which
 // Mastodon and this server import: `following` is `following_accounts.csv`
@@ -94219,7 +97331,9 @@ func (c *ClientWithResponses) MarkConversationReadWithResponse(ctx context.Conte
 // `muted_accounts.csv` (`Account address,Hide notifications`, the mutes in effect),
 // `domain_mutes` is `blocked_domains.csv` (one domain per line, the domains the user
 // mutes, which Mastodon imports as blocked domains), and `bookmarks` is `bookmarks.csv`
-// (one post URI per line, the posts the user may still see).
+// (one post URI per line, the posts the user may still see). `followed_tags` is
+// `followed_hashtags.csv` (one hashtag per line without its `#`, the latest followed
+// first), a file of this server that Mastodon neither exports nor imports.
 // Addresses are `username@domain`, with the account domain for this server's accounts;
 // remote accounts whose handle is unconfirmed are left out. At most 30 exports per account
 // are accepted every hour.
@@ -94733,6 +97847,175 @@ func (c *ClientWithResponses) DownloadDataExportWithResponse(ctx context.Context
 	return ParseDownloadDataExportResponse(rsp)
 }
 
+// ListFeaturedTagsWithResponse List the hashtags the user features
+//
+// The hashtags that the user features on their profile (at most 10), in the order the user
+// chose, with how many of the user's `public` and `unlisted` posts carry each.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /featured_tags (the `ListFeaturedTags` operationId).
+func (c *ClientWithResponses) ListFeaturedTagsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListFeaturedTagsResponse, error) {
+	rsp, err := c.ListFeaturedTags(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListFeaturedTagsResponse(rsp)
+}
+
+// SetFeaturedTagsWithBodyWithResponse Choose the hashtags the user features
+//
+// Replaces the hashtags that the user features on their profile with `names`, in their
+// order; a hashtag that no post has used yet can be featured. The other servers that follow
+// the user learn of the change as of a change of the profile. A name that is no hashtag is a
+// 422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+// changes nothing.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /featured_tags (the `SetFeaturedTags` operationId).
+func (c *ClientWithResponses) SetFeaturedTagsWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*SetFeaturedTagsResponse, error) {
+	rsp, err := c.SetFeaturedTagsWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetFeaturedTagsResponse(rsp)
+}
+
+// SetFeaturedTagsWithResponse Choose the hashtags the user features
+//
+// Replaces the hashtags that the user features on their profile with `names`, in their
+// order; a hashtag that no post has used yet can be featured. The other servers that follow
+// the user learn of the change as of a change of the profile. A name that is no hashtag is a
+// 422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+// changes nothing.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /featured_tags (the `SetFeaturedTags` operationId).
+func (c *ClientWithResponses) SetFeaturedTagsWithResponse(ctx context.Context, body SetFeaturedTagsJSONRequestBody, reqEditors ...RequestEditorFn) (*SetFeaturedTagsResponse, error) {
+	rsp, err := c.SetFeaturedTags(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseSetFeaturedTagsResponse(rsp)
+}
+
+// ListKeywordFiltersWithResponse List the user's keyword filters
+//
+// Every keyword filter of the user (at most 100), oldest first, the expired ones too. Nobody else sees them.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /filters (the `ListKeywordFilters` operationId).
+func (c *ClientWithResponses) ListKeywordFiltersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListKeywordFiltersResponse, error) {
+	rsp, err := c.ListKeywordFilters(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListKeywordFiltersResponse(rsp)
+}
+
+// CreateKeywordFilterWithBodyWithResponse Create a keyword filter
+//
+// Creates a keyword filter, which applies at once to every post the contexts show, old ones
+// too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+// a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+// in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /filters (the `CreateKeywordFilter` operationId).
+func (c *ClientWithResponses) CreateKeywordFilterWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateKeywordFilterResponse, error) {
+	rsp, err := c.CreateKeywordFilterWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateKeywordFilterResponse(rsp)
+}
+
+// CreateKeywordFilterWithResponse Create a keyword filter
+//
+// Creates a keyword filter, which applies at once to every post the contexts show, old ones
+// too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+// a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+// in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /filters (the `CreateKeywordFilter` operationId).
+func (c *ClientWithResponses) CreateKeywordFilterWithResponse(ctx context.Context, body CreateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateKeywordFilterResponse, error) {
+	rsp, err := c.CreateKeywordFilter(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateKeywordFilterResponse(rsp)
+}
+
+// DeleteKeywordFilterWithResponse Delete a keyword filter
+//
+// Deletes the filter with its words. Another user's filter is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /filters/{id} (the `DeleteKeywordFilter` operationId).
+func (c *ClientWithResponses) DeleteKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, reqEditors ...RequestEditorFn) (*DeleteKeywordFilterResponse, error) {
+	rsp, err := c.DeleteKeywordFilter(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteKeywordFilterResponse(rsp)
+}
+
+// GetKeywordFilterWithResponse Get a keyword filter
+//
+// A keyword filter of the user. Another user's filter is a 404, as if it did not exist.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /filters/{id} (the `GetKeywordFilter` operationId).
+func (c *ClientWithResponses) GetKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, reqEditors ...RequestEditorFn) (*GetKeywordFilterResponse, error) {
+	rsp, err := c.GetKeywordFilter(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetKeywordFilterResponse(rsp)
+}
+
+// UpdateKeywordFilterWithBodyWithResponse Change a keyword filter
+//
+// Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+// `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+// user's filter is a 404.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+func (c *ClientWithResponses) UpdateKeywordFilterWithBodyWithResponse(ctx context.Context, id KeywordFilterId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error) {
+	rsp, err := c.UpdateKeywordFilterWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateKeywordFilterResponse(rsp)
+}
+
+// UpdateKeywordFilterWithResponse Change a keyword filter
+//
+// Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+// `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+// user's filter is a 404.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /filters/{id} (the `UpdateKeywordFilter` operationId).
+func (c *ClientWithResponses) UpdateKeywordFilterWithResponse(ctx context.Context, id KeywordFilterId, body UpdateKeywordFilterJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateKeywordFilterResponse, error) {
+	rsp, err := c.UpdateKeywordFilter(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateKeywordFilterResponse(rsp)
+}
+
 // GetFinanceCostTotalsWithResponse Total the costs by period for the finance viewers
 //
 // The totals of the instance's costs for the holders of `view_finance`. It
@@ -94928,9 +98211,10 @@ func (c *ClientWithResponses) ListDataImportsWithResponse(ctx context.Context, r
 	return ParseListDataImportsResponse(rsp)
 }
 
-// StartDataImportWithBodyWithResponse Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+// StartDataImportWithBodyWithResponse Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
 //
-// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+// Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+// server (`exportCsv`). The file's
 // entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 // `overwrite` also removes what the user has of `kind` that the file does not list. The
 // server carries the import out in the background: it resolves remote accounts and posts
@@ -94951,9 +98235,10 @@ func (c *ClientWithResponses) StartDataImportWithBodyWithResponse(ctx context.Co
 	return ParseStartDataImportResponse(rsp)
 }
 
-// StartDataImportWithResponse Import a CSV file of follows, blocks, mutes, muted domains, or bookmarks
+// StartDataImportWithResponse Import a CSV file of follows, followed hashtags, blocks, mutes, muted domains, or bookmarks
 //
-// Imports a CSV file in the format that Mastodon exports (`exportCsv`). The file's
+// Imports a CSV file in the format that Mastodon exports, or for `followed_tags` that of this
+// server (`exportCsv`). The file's
 // entries are what `previewDataImport` reports; `merge` adds them and keeps the rest, and
 // `overwrite` also removes what the user has of `kind` that the file does not list. The
 // server carries the import out in the background: it resolves remote accounts and posts
@@ -94979,8 +98264,8 @@ func (c *ClientWithResponses) StartDataImportWithResponse(ctx context.Context, b
 // Reads a CSV file as `startDataImport` would and tells what importing it would do,
 // changing nothing. The header row is optional, a leading `@` of an address is dropped,
 // and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-// `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-// `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+// `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+// `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
 // new posts, notifications of a muted account hidden. The `Languages` column of a follow
 // is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
 //
@@ -95000,8 +98285,8 @@ func (c *ClientWithResponses) PreviewDataImportWithBodyWithResponse(ctx context.
 // Reads a CSV file as `startDataImport` would and tells what importing it would do,
 // changing nothing. The header row is optional, a leading `@` of an address is dropped,
 // and blank lines are ignored; a line that names no address (or for `bookmarks`, no
-// `http(s)` URL) is skipped as `invalid`, and one that repeats an earlier entry as
-// `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
+// `http(s)` URL; for `followed_tags`, nothing that can be a hashtag, with or without its
+// `#`) is skipped as `invalid`, and one that repeats an earlier entry as `duplicate`. Settings left out default as in Mastodon: boosts shown, no notifications of
 // new posts, notifications of a muted account hidden. The `Languages` column of a follow
 // is ignored. A file that is not CSV or has more than 10,000 entries is a 422.
 //
@@ -95839,7 +99124,9 @@ func (c *ClientWithResponses) ListMutesWithResponse(ctx context.Context, params 
 // The user's notifications, newest first. Dismissed notifications, notifications about
 // deleted posts, and notifications from accounts that the user blocks, is blocked by, or
 // mutes with notifications hidden are left out, also those that came before the block or
-// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
+// mute. The notifications that the user's notification policy filtered wait in the
+// notification requests instead, until the user accepts the request of their source. The
+// moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 // `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
 // `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
 // the user's roles no longer grant the permission they need.
@@ -95910,6 +99197,105 @@ func (c *ClientWithResponses) UpdateNotificationMarkerWithResponse(ctx context.C
 		return nil, err
 	}
 	return ParseUpdateNotificationMarkerResponse(rsp)
+}
+
+// ListNotificationRequestsWithResponse List the notification requests
+//
+// The sources whose notifications the user's notification policy filtered, one request per
+// source, the one with the newest notification first. The sources that the user blocks, is
+// blocked by, or mutes with notifications hidden, and those of a domain the user mutes, are
+// left out.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /notifications/requests (the `ListNotificationRequests` operationId).
+func (c *ClientWithResponses) ListNotificationRequestsWithResponse(ctx context.Context, params *ListNotificationRequestsParams, reqEditors ...RequestEditorFn) (*ListNotificationRequestsResponse, error) {
+	rsp, err := c.ListNotificationRequests(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListNotificationRequestsResponse(rsp)
+}
+
+// GetNotificationRequestSummaryWithResponse Count the notification requests
+//
+// The number of requests that the list of requests shows, and of their notifications.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /notifications/requests/summary (the `GetNotificationRequestSummary` operationId).
+func (c *ClientWithResponses) GetNotificationRequestSummaryWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNotificationRequestSummaryResponse, error) {
+	rsp, err := c.GetNotificationRequestSummary(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNotificationRequestSummaryResponse(rsp)
+}
+
+// GetNotificationRequestWithResponse Get a notification request
+//
+// The request of a source account; a 404 when the list of requests does not show one.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /notifications/requests/{id} (the `GetNotificationRequest` operationId).
+func (c *ClientWithResponses) GetNotificationRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*GetNotificationRequestResponse, error) {
+	rsp, err := c.GetNotificationRequest(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNotificationRequestResponse(rsp)
+}
+
+// AcceptNotificationRequestWithResponse Accept a notification request
+//
+// Moves the notifications of the request into the list, unread when they are newer than the
+// read marker, without delivering them, and accepts the later notifications of the source
+// whatever the policy says. A 404 when the source has no request.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /notifications/requests/{id}/accept (the `AcceptNotificationRequest` operationId).
+func (c *ClientWithResponses) AcceptNotificationRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*AcceptNotificationRequestResponse, error) {
+	rsp, err := c.AcceptNotificationRequest(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAcceptNotificationRequestResponse(rsp)
+}
+
+// DismissNotificationRequestWithResponse Dismiss a notification request
+//
+// Removes the notifications of the request, which are never listed. The source is not
+// accepted: a later notification that the policy filters opens a new request. A 404 when the
+// source has no request.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /notifications/requests/{id}/dismiss (the `DismissNotificationRequest` operationId).
+func (c *ClientWithResponses) DismissNotificationRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*DismissNotificationRequestResponse, error) {
+	rsp, err := c.DismissNotificationRequest(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDismissNotificationRequestResponse(rsp)
+}
+
+// ListNotificationRequestNotificationsWithResponse List the notifications of a notification request
+//
+// The notifications waiting in the request of a source account, newest first, without the
+// dismissed ones and those about deleted posts; a 404 when the list of requests does not show
+// the request.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /notifications/requests/{id}/notifications (the `ListNotificationRequestNotifications` operationId).
+func (c *ClientWithResponses) ListNotificationRequestNotificationsWithResponse(ctx context.Context, id AccountId, params *ListNotificationRequestNotificationsParams, reqEditors ...RequestEditorFn) (*ListNotificationRequestNotificationsResponse, error) {
+	rsp, err := c.ListNotificationRequestNotifications(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListNotificationRequestNotificationsResponse(rsp)
 }
 
 // DismissNotificationWithResponse Dismiss a notification
@@ -96484,6 +99870,54 @@ func (c *ClientWithResponses) UpdateBadgeChoiceWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseUpdateBadgeChoiceResponse(rsp)
+}
+
+// GetNotificationPolicyWithResponse Get the authenticated user's notification policy
+//
+// What happens to the notifications of other accounts, by condition on their source: listed,
+// filtered into the request of their source, or dropped.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /preferences/notification_policy (the `GetNotificationPolicy` operationId).
+func (c *ClientWithResponses) GetNotificationPolicyWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetNotificationPolicyResponse, error) {
+	rsp, err := c.GetNotificationPolicy(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetNotificationPolicyResponse(rsp)
+}
+
+// UpdateNotificationPolicyWithBodyWithResponse Change the authenticated user's notification policy
+//
+// Changes the actions of the conditions in the body and keeps the others. The notifications
+// already created stay where they went.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /preferences/notification_policy (the `UpdateNotificationPolicy` operationId).
+func (c *ClientWithResponses) UpdateNotificationPolicyWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateNotificationPolicyResponse, error) {
+	rsp, err := c.UpdateNotificationPolicyWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateNotificationPolicyResponse(rsp)
+}
+
+// UpdateNotificationPolicyWithResponse Change the authenticated user's notification policy
+//
+// Changes the actions of the conditions in the body and keeps the others. The notifications
+// already created stay where they went.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /preferences/notification_policy (the `UpdateNotificationPolicy` operationId).
+func (c *ClientWithResponses) UpdateNotificationPolicyWithResponse(ctx context.Context, body UpdateNotificationPolicyJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateNotificationPolicyResponse, error) {
+	rsp, err := c.UpdateNotificationPolicy(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateNotificationPolicyResponse(rsp)
 }
 
 // GetNotificationSettingsWithResponse Get the authenticated user's notification settings
@@ -97105,6 +100539,44 @@ func (c *ClientWithResponses) SetStatusInteractionPolicyWithResponse(ctx context
 		return nil, err
 	}
 	return ParseSetStatusInteractionPolicyResponse(rsp)
+}
+
+// UnmuteStatusThreadWithResponse Unmute the thread of a status
+//
+// Ends the mute of the thread that the status belongs to. What happened in the thread
+// while it was muted does not notify the user afterwards. Without a mute it changes
+// nothing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /statuses/{id}/mute (the `UnmuteStatusThread` operationId).
+func (c *ClientWithResponses) UnmuteStatusThreadWithResponse(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*UnmuteStatusThreadResponse, error) {
+	rsp, err := c.UnmuteStatusThread(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnmuteStatusThreadResponse(rsp)
+}
+
+// MuteStatusThreadWithResponse Mute the thread of a status
+//
+// Mutes the thread (conversation) that the status belongs to: from then on, replies and
+// mentions in it, boosts, favourites, reactions, and quotes of its posts, and new posts
+// in it by accounts the user is notified of no longer notify the user, the user's own
+// posts in the thread included. Notifications that came before stay, and the posts still
+// appear in timelines. The mute has no expiry and follows the thread when it is joined
+// with another. Muting a thread that is already muted changes nothing; the status's
+// `muted` tells the state.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /statuses/{id}/mute (the `MuteStatusThread` operationId).
+func (c *ClientWithResponses) MuteStatusThreadWithResponse(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*MuteStatusThreadResponse, error) {
+	rsp, err := c.MuteStatusThread(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMuteStatusThreadResponse(rsp)
 }
 
 // UnpinStatusWithResponse Unpin a status
@@ -100058,6 +103530,83 @@ func ParseBlockAccountResponse(rsp *http.Response) (*BlockAccountResponse, error
 		response.Headers200 = &headers
 	case true:
 		var headers BlockAccountResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListAccountFeaturedTagsResponse parses an HTTP response from a ListAccountFeaturedTagsWithResponse call
+func ParseListAccountFeaturedTagsResponse(rsp *http.Response) (*ListAccountFeaturedTagsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListAccountFeaturedTagsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FeaturedHashtagCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListAccountFeaturedTagsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListAccountFeaturedTagsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -118413,6 +121962,531 @@ func ParseDownloadDataExportResponse(rsp *http.Response) (*DownloadDataExportRes
 	return response, nil
 }
 
+// ParseListFeaturedTagsResponse parses an HTTP response from a ListFeaturedTagsWithResponse call
+func ParseListFeaturedTagsResponse(rsp *http.Response) (*ListFeaturedTagsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListFeaturedTagsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FeaturedHashtagCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListFeaturedTagsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListFeaturedTagsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseSetFeaturedTagsResponse parses an HTTP response from a SetFeaturedTagsWithResponse call
+func ParseSetFeaturedTagsResponse(rsp *http.Response) (*SetFeaturedTagsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &SetFeaturedTagsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FeaturedHashtagCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers SetFeaturedTagsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers SetFeaturedTagsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListKeywordFiltersResponse parses an HTTP response from a ListKeywordFiltersWithResponse call
+func ParseListKeywordFiltersResponse(rsp *http.Response) (*ListKeywordFiltersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListKeywordFiltersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest KeywordFilterCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListKeywordFiltersResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListKeywordFiltersResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCreateKeywordFilterResponse parses an HTTP response from a CreateKeywordFilterWithResponse call
+func ParseCreateKeywordFilterResponse(rsp *http.Response) (*CreateKeywordFilterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateKeywordFilterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest KeywordFilter
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers CreateKeywordFilterResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case true:
+		var headers CreateKeywordFilterResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeleteKeywordFilterResponse parses an HTTP response from a DeleteKeywordFilterWithResponse call
+func ParseDeleteKeywordFilterResponse(rsp *http.Response) (*DeleteKeywordFilterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteKeywordFilterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DeleteKeywordFilterResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetKeywordFilterResponse parses an HTTP response from a GetKeywordFilterWithResponse call
+func ParseGetKeywordFilterResponse(rsp *http.Response) (*GetKeywordFilterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetKeywordFilterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest KeywordFilter
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetKeywordFilterResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetKeywordFilterResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateKeywordFilterResponse parses an HTTP response from a UpdateKeywordFilterWithResponse call
+func ParseUpdateKeywordFilterResponse(rsp *http.Response) (*UpdateKeywordFilterResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateKeywordFilterResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest KeywordFilter
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateKeywordFilterResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateKeywordFilterResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseGetFinanceCostTotalsResponse parses an HTTP response from a GetFinanceCostTotalsWithResponse call
 func ParseGetFinanceCostTotalsResponse(rsp *http.Response) (*GetFinanceCostTotalsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -121977,6 +126051,440 @@ func ParseUpdateNotificationMarkerResponse(rsp *http.Response) (*UpdateNotificat
 	return response, nil
 }
 
+// ParseListNotificationRequestsResponse parses an HTTP response from a ListNotificationRequestsWithResponse call
+func ParseListNotificationRequestsResponse(rsp *http.Response) (*ListNotificationRequestsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListNotificationRequestsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NotificationRequestPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListNotificationRequestsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListNotificationRequestsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetNotificationRequestSummaryResponse parses an HTTP response from a GetNotificationRequestSummaryWithResponse call
+func ParseGetNotificationRequestSummaryResponse(rsp *http.Response) (*GetNotificationRequestSummaryResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNotificationRequestSummaryResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NotificationRequestSummary
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetNotificationRequestSummaryResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetNotificationRequestSummaryResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetNotificationRequestResponse parses an HTTP response from a GetNotificationRequestWithResponse call
+func ParseGetNotificationRequestResponse(rsp *http.Response) (*GetNotificationRequestResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNotificationRequestResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NotificationRequest
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetNotificationRequestResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetNotificationRequestResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseAcceptNotificationRequestResponse parses an HTTP response from a AcceptNotificationRequestWithResponse call
+func ParseAcceptNotificationRequestResponse(rsp *http.Response) (*AcceptNotificationRequestResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AcceptNotificationRequestResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers AcceptNotificationRequestResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDismissNotificationRequestResponse parses an HTTP response from a DismissNotificationRequestWithResponse call
+func ParseDismissNotificationRequestResponse(rsp *http.Response) (*DismissNotificationRequestResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DismissNotificationRequestResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DismissNotificationRequestResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListNotificationRequestNotificationsResponse parses an HTTP response from a ListNotificationRequestNotificationsWithResponse call
+func ParseListNotificationRequestNotificationsResponse(rsp *http.Response) (*ListNotificationRequestNotificationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListNotificationRequestNotificationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NotificationPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListNotificationRequestNotificationsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListNotificationRequestNotificationsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseDismissNotificationResponse parses an HTTP response from a DismissNotificationWithResponse call
 func ParseDismissNotificationResponse(rsp *http.Response) (*DismissNotificationResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -123441,6 +127949,160 @@ func ParseUpdateBadgeChoiceResponse(rsp *http.Response) (*UpdateBadgeChoiceRespo
 		response.Headers200 = &headers
 	case true:
 		var headers UpdateBadgeChoiceResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetNotificationPolicyResponse parses an HTTP response from a GetNotificationPolicyWithResponse call
+func ParseGetNotificationPolicyResponse(rsp *http.Response) (*GetNotificationPolicyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetNotificationPolicyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NotificationPolicy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetNotificationPolicyResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetNotificationPolicyResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateNotificationPolicyResponse parses an HTTP response from a UpdateNotificationPolicyWithResponse call
+func ParseUpdateNotificationPolicyResponse(rsp *http.Response) (*UpdateNotificationPolicyResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateNotificationPolicyResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NotificationPolicy
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateNotificationPolicyResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateNotificationPolicyResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -125411,6 +130073,160 @@ func ParseSetStatusInteractionPolicyResponse(rsp *http.Response) (*SetStatusInte
 		response.Headers200 = &headers
 	case true:
 		var headers SetStatusInteractionPolicyResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUnmuteStatusThreadResponse parses an HTTP response from a UnmuteStatusThreadWithResponse call
+func ParseUnmuteStatusThreadResponse(rsp *http.Response) (*UnmuteStatusThreadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnmuteStatusThreadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusAfterAction
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UnmuteStatusThreadResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UnmuteStatusThreadResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseMuteStatusThreadResponse parses an HTTP response from a MuteStatusThreadWithResponse call
+func ParseMuteStatusThreadResponse(rsp *http.Response) (*MuteStatusThreadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MuteStatusThreadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest StatusAfterAction
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers MuteStatusThreadResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers MuteStatusThreadResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

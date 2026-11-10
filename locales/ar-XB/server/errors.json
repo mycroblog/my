@@ -159,6 +159,10 @@
     "defaultMessage": "‮⊥ɥǝ ɔouɟıɹɯɐʇıou ʍıʇɥ ʇɥǝ ʅıuʞǝp ɐɔɔonuʇ ǝxdıɹǝp oɹ ʍɐs ɐʅɹǝɐpʎ nsǝp. ⊥ɹʎ ɐƃɐıu.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.featured_tags.too_many": {
+    "defaultMessage": "‮⅄on ɔɐu ɟǝɐʇnɹǝ ɐʇ ɯosʇ 10 ɥɐsɥʇɐƃs ou ʎonɹ dɹoɟıʅǝ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.federation_restricted": {
     "defaultMessage": "‮⊥ɥıs sǝɹʌǝɹ poǝs uoʇ ɟǝpǝɹɐʇǝ ıu ʇɥǝ pıɹǝɔʇıou ʇɥɐʇ ʇɥıs uǝǝps.‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -261,6 +265,14 @@
   },
   "errors.invites.too_many": {
     "defaultMessage": "‮⅄on ɥɐʌǝ ɐs ɯɐuʎ nsɐqʅǝ ıuʌıʇǝs ɐs ɐʅʅoʍǝp. ᴚǝʌoʞǝ ouǝ, oɹ ʍɐıʇ nuʇıʅ ouǝ ǝxdıɹǝs oɹ ıs nsǝp nd.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.keyword_filters.too_many": {
+    "defaultMessage": "‮⅄on ɐʅɹǝɐpʎ ɥɐʌǝ ʇɥǝ ɯosʇ ʞǝʎʍoɹp ɟıʅʇǝɹs ɐʅʅoʍǝp. ᗡǝʅǝʇǝ ouǝ ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.keyword_filters.too_many_words": {
+    "defaultMessage": "‮∀ ʞǝʎʍoɹp ɟıʅʇǝɹ ɥɐs ɐʇ ɯosʇ 100 ʍoɹps, ɐup ɐʅʅ ʎonɹ ɟıʅʇǝɹs ɐʇ ɯosʇ 1,000. ᴚǝɯoʌǝ soɯǝ ɟıɹsʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.last_administrator": {

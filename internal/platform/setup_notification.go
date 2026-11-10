@@ -9,6 +9,7 @@ import (
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/queue"
+	timelinedomain "github.com/mycroblog/my/internal/domain/timeline"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -19,7 +20,8 @@ import (
 // unread (ADR-0086 §11).
 func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository, pushes notification.PushRepository) error {
 	a.Notifications = notification.NewService(notification.Deps{
-		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, Staff: moderatorStaff{a}, Announcements: a.Instance,
+		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs, Staff: moderatorStaff{a}, Announcements: a.Instance,
+		Filters: notificationFilters{a},
 		// The supporter row of the settings is offered while the program is on; the supporters
 		// module is built after this one.
 		SupportersEnabled: func(ctx context.Context) (bool, error) {
@@ -40,9 +42,12 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 		outbox = queue.AfterCommit(a.Projectors, a.Jobs, a.Logger)
 	}
 	deps := notification.ProjectorDeps{
-		Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Reach: a.AccountPolicy, IDs: a.IDs, Push: pusher,
-		PostJobs: outbox,
+		Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Reach: a.AccountPolicy, Conversations: a.Content,
+		IDs: a.IDs, Push: pusher, PostJobs: outbox, Ages: a.Accounts, Mentions: a.Content,
 	}
+	a.ThreadMutes = notification.NewThreadMutes(notification.ThreadMuteDeps{
+		UnitOfWork: a.UnitOfWork, Repository: repo, Conversations: a.Content, Clock: a.Clock,
+	})
 	a.Subscriptions = notification.NewSubscriptions(notification.SubscriptionDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo, Accounts: a.Accounts, Relationships: a.Graph, Clock: a.Clock,
 	})
@@ -51,7 +56,7 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 		notification.RegisterEmailJobs(a.Handlers, notification.EmailDeps{
 			Notifications: a.Notifications, Audience: pushAudience{a}, Mailboxes: notificationMailboxes{a},
 			Mailer: a.Mailer, Rejections: a.Identity, Messages: a.Messages, Host: cfg.Host, InstanceName: a.instanceName,
-			MailSite: a.mailSite, WebOrigin: cfg.WebOrigin,
+			MailSite: a.mailSite, WebOrigin: cfg.WebOrigin, Filters: notificationFilters{a},
 		})
 	}
 	notification.RegisterProjectors(a.Projectors, deps)
@@ -64,6 +69,29 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 	a.setUpAnnouncementNotifications(repo, pusher)
 	a.setUpSupporterNotifications(cfg, repo, pusher)
 	return nil
+}
+
+// notificationFilters judges the statuses of notifications against their recipients' keyword
+// filters of the notifications through the timeline service (ADR-0157 §7).
+type notificationFilters struct{ a *App }
+
+// FilterStatuses implements notification.StatusFilters.
+func (f notificationFilters) FilterStatuses(ctx context.Context, accountID string, statusIDs []string) (map[string]notification.StatusVerdict, error) {
+	judged, err := f.a.Timeline.JudgeStatuses(ctx, accountID, timelinedomain.FilterContextNotifications, statusIDs)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]notification.StatusVerdict, len(judged))
+	for id, j := range judged {
+		v := notification.StatusVerdict{Hidden: j.Hide}
+		if !j.Hide {
+			for _, m := range j.Matches {
+				v.Warned = append(v.Warned, m.Filter.Title)
+			}
+		}
+		out[id] = v
+	}
+	return out, nil
 }
 
 // subscribedPosts implements notification.Posts on the content module.

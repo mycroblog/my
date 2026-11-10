@@ -62,6 +62,7 @@ export function status(n: number, a: Account, content: string, visibility: Visib
     boosts_count: 0,
     favourites_count: 0,
     reactions: [],
+    filtered: [],
   };
 }
 

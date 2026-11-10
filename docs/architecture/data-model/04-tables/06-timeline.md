@@ -6,9 +6,10 @@
 | --- | --- | --- | --- |
 | `feed_entries` | `id`（= 投稿の `status_id` またはブーストの `boost_id`）, `kind`（`enum(post, boost)`）, `status_id`, `author_account_id`（投稿者またはブーストした人）, `author_domain`, `original_author_account_id`（元投稿の作者。投稿なら `author_account_id` と同じ）, `original_author_domain`, `visibility`, `is_local`（投稿者またはブーストした人がローカルか）, `language`（`lang`。現在版の言語）, `revision_seq`（`int`。現在版の `seq`）, `is_reply`（`bool`。投稿が返信か。ブーストは常に偽） | PK `(id)`。インデックス `(author_account_id, id)`、`(status_id)`（版・削除での更新）、部分インデックス `(id) WHERE is_local AND kind = 'post' AND visibility IN ('public','local')`（ローカル）、`(id) WHERE kind = 'post' AND visibility = 'public'`（連合） | 投稿・版（言語）・削除・ブースト・ブースト取り消し。インデックス `(original_author_account_id)` |
 | `feed_direct_recipients` | `entry_id`, `recipient_account_id` | PK `(recipient_account_id, entry_id)`、インデックス `(entry_id)`。`direct` 投稿の宛先（現在版のメンション） | 投稿・版・削除 |
-| `feed_tag_entries` | `tag_id`, `entry_id`, `author_account_id`, `visibility`, `is_local`, `revised_at`（現在版の `revised_at`） | PK `(tag_id, entry_id)`、インデックス `(entry_id)`、部分インデックス `(tag_id, revised_at) WHERE visibility IN ('public','local','unlisted')`（`tag_usage.last_used_at`）。現在版のタグ。公開範囲は不変なので非正規化してよい（FR-203） | 投稿・版・削除 |
+| `feed_tag_entries` | `tag_id`, `entry_id`, `author_account_id`, `visibility`, `is_local`, `revised_at`（現在版の `revised_at`） | PK `(tag_id, entry_id)`、インデックス `(entry_id)`、部分インデックス `(tag_id, revised_at) WHERE visibility IN ('public','local','unlisted')`（`tag_usage.last_used_at`）、`(author_account_id, tag_id, revised_at) WHERE visibility IN ('public','unlisted')`（注目のハッシュタグの数）。現在版のタグ。公開範囲は不変なので非正規化してよい（FR-203） | 投稿・版・削除 |
 | `tag_usage` | `tag_id`, `statuses_count`（`bigint`、1 以上）, `last_used_at` | PK `(tag_id)`。タグごとの `public` / `local` / `unlisted` の投稿の数と、それらの `feed_tag_entries.revised_at` の最大。ハッシュタグの前方一致の検索（FR-119, FR-306, ADR-0092 §1） | 投稿・版・削除（`feed_tag_entries` と同じ更新） |
 | `feed_tag_follows` | `account_id`, `tag_id`, `followed_at` | PK `(account_id, tag_id)`、インデックス `(tag_id)`（消去）。現在値。利用者がフォローしたハッシュタグ（1 人 100 まで、ADR-0013 §27） | 利用者のコマンドが書く（投影ではない） |
+| `featured_tags` | `account_id`, `tag_id`, `ordinal`（`int`、1〜10。持ち主の順）, `featured_at` | PK `(account_id, tag_id)`、一意インデックス `(account_id, ordinal)`。現在値。プロフィールの注目のハッシュタグ（1 人 10 まで、ADR-0006 §17） | ローカルは利用者のコマンド、リモートは `featuredTags` の取得が書く（投影ではない） |
 | `feed_follow_edges` | `follower_account_id`, `followee_account_id`, `show_boosts` | PK `(follower_account_id, followee_account_id)`。`active` のフォローだけ | フォロー（自動承認）・承認・終了、フォローごとの設定。インデックス `(followee_account_id)` |
 | `feed_exclusions` | `viewer_account_id`, `target_account_id`, `reason`（`enum(block, blocked_by, mute)`）, `expires_at`（NULL 可。ミュートの期限） | PK `(viewer_account_id, target_account_id, reason)` | ブロック（両方向の 2 行）・ブロックの解除・ミュート・ミュートの解除。インデックス `(target_account_id)` |
 | `feed_domain_mutes` | `viewer_account_id`, `domain` | PK `(viewer_account_id, domain)`。サブドメインにも効く（FR-304） | ドメインのミュート・解除 |
@@ -31,6 +32,11 @@
   イベントは処分と解除のたびに、その後に有効な制限（制限ごとに最も遅い期限）を載せるので、projector はそのアカウント・ドメインの 3 つの制限を、載っているものは書き、載っていないものは消します。
 - `feed_tag_follows` は投影ではなく利用者の操作の記録で、`timeline` のコマンドが書きます。`timeline.RebuildProjections` は空にしません。フォローの解除は行を消し、履歴を持ちません（ADR-0020 規約 5）。
   上限は 1 人 100 タグで、数は挿入の後に数えるので、フォロー済みのタグをフォローし直しても上限で断られません。アカウントの消去（§8）で本人の行を消します。
+- `featured_tags` も投影ではなく、`timeline.RebuildProjections` は空にしません。ローカルのアカウントの行は本人のコマンド（`timeline.Service.SetFeaturedTags`）が一覧ごと置き換え、変わったときだけ `timeline.featured_tags_changed` を出して Actor の `Update` を配送させます（federation.md §7.1）。
+  リモートのアカウントの行は Actor の `featuredTags` の写しで、ジョブ `federation.fetch_featured_tags` が `timeline.Service.ReplaceRemoteFeaturedTags` で置き換えます（federation.md §6.2）。どちらも、残るタグの `featured_at` は最初に載せた時刻のままです。
+  タグは `content` の `tags` に同じトランザクションで作るので（`EnsureTagTx`）、まだ投稿に使われていないタグも載せられます。
+  投稿の数と最後の使用は保存せず、読むたびに `feed_tag_entries` の部分インデックス `(author_account_id, tag_id, revised_at)` から、そのアカウントの `public` / `unlisted` の投稿だけを数えます（`private` / `direct` / `local` の投稿は、数から存在が漏れるので数えません）。リモートのアカウントも、このサーバーが受け取った投稿だけを数えます。
+  アカウントの消去（§8）で本人の行を消します。
 - 将来 fan-out-on-write に切り替える場合も、`home_feed`（閲覧者 × エントリ）をこのモジュールの投影として追加するだけで済みます（ADR-0013）。
 
 #### リスト
@@ -52,6 +58,24 @@
 - リストのタイムラインは新しい投影を作らず、`feed_entries` を `list_members` で絞って読みます（§6、ADR-0013）。
 - リストは投影ではないので、`timeline.RebuildProjections` は空にしません。再構築した `feed_follow_edges` に行のないメンバーだけを消します（§9）。
 - アカウントの消去（§8）は、本人のリスト（名前とメンバーを含む）と、ほかの人のリストの本人のメンバーの行を消します。
+
+#### キーワードフィルタ
+
+閲覧者が登録した語に一致した投稿を、選んだ文脈で畳むか除きます（FR-209、[ADR-0157](../../../adr/0157-keyword-filters.md)）。表は `timeline` が持ち、書くのも読むのも `timeline` だけです。照合は読み取りのたびに行い（§6）、結果は保存しません。
+
+| テーブル | 分類 | カラム | 制約 / 用途 |
+| --- | --- | --- | --- |
+| `keyword_filters` | リソース | `id`, `account_id`（持ち主）, `created_at` | PK `(id)`、インデックス `(account_id, id)`（持ち主の一覧・数・照合する語の読み取り・消去） |
+| `keyword_filter_settings` | 現在値 | `filter_id`, `title`（書記素で 1〜50）, `action`（`enum(warn, hide)`）, `expires_at`（NULL 可） | PK `(filter_id)`。変更は上書きし、履歴を持たない（ADR-0020 規約 5） |
+| `keyword_filter_contexts` | 現在値 | `filter_id`, `context`（`enum(home, notifications, public, thread, account)`） | PK `(filter_id, context)`。1 つ以上。JSON にしない |
+| `keyword_filter_words` | 現在値 | `filter_id`, `normalized_word`, `word`（入力した語）, `whole_word`（`bool`）, `position`（入力の順） | PK `(filter_id, normalized_word)`。正規化（ADR-0157 §4: NFKC → 小文字 → カタカナをひらがな → 空白を 1 つ）した形で 1 つのフィルタに 1 度だけ |
+
+- 持ち主のコマンドが書きます。変更は設定を上書きし、文脈と語を同じトランザクションで消して入れ直します。削除は語・文脈・設定・フィルタを同じトランザクションで消します。
+- 上限は 1 人 100 フィルタ・1 フィルタ 100 語・1 人のすべてのフィルタで 1,000 語、1 語は正規化した後の書記素で 1〜100 です（ADR-0157 §9）。数は書く前に同じトランザクションで数えます。
+- `expires_at` は「この時刻まで効く」という値で、状態を表す日時ではありません（`feed_exclusions.expires_at` と同じ）。読み取りは NULL か `:now` より後のものだけを照合に使います。
+  期限を過ぎたフィルタは消さず、一覧で期限切れと示し、期限を延ばせば再び効きます（ADR-0157 §6）。期限切れを消す定期ジョブはありません。
+- 照合の読み取り（`ListActiveKeywordFilterWords`）は、閲覧者（ストリームでは購読者の全員）の、文脈に当たる有効なフィルタの語を、持ち主・フィルタ・`position` の順に 1 回で読みます。フィルタの無い閲覧者は 0 行で終わります。
+- 投影ではないので、`timeline.RebuildProjections` は空にしません。アカウントの消去（§8）で本人のフィルタ（設定・文脈・語を含む）を消します。データのエクスポート（FR-008）のアーカイブには、本人のフィルタすべてを `keyword_filters.json` として入れます（`timeline.Service.WriteKeywordFilters`、§4.1）。
 
 #### ダイレクトメッセージ
 
