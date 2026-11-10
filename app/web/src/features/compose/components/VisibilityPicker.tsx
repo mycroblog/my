@@ -23,6 +23,8 @@ export type VisibilityPickerProps = {
   onChange: (value: Visibility) => void;
   /** The account's posting limits: the visibilities outside them are unavailable. Null keeps every one. */
   limits: PostingLimits | null;
+  /** Whether the post replies to a direct message: only `direct` is available, and the group says why. */
+  directReply?: boolean;
   isDisabled?: boolean;
 };
 
@@ -32,16 +34,24 @@ export type VisibilityPickerProps = {
  * visibilities as a radio group, each with who can see it (ADR-0017; WAI-ARIA APG radio group and dialog
  * patterns), without `local` on a one-person server (ADR-0152 §5). Choosing does not close the popover, because the arrow keys choose as they move.
  * While a restriction narrows what the account can post, the wider visibilities are disabled and the
- * group says why (data-model/05-states-and-policies.md §5.4). On a server that allows a translation provider a
+ * group says why (data-model/05-states-and-policies.md §5.4). A reply to a direct message stays direct, so the others
+ * are disabled the same way and the group says so (ADR-0154 §6). On a server that allows a translation provider a
  * narrow visibility, the group also says that a reader's request can send the text there (ADR-0148 §6).
  */
-export function VisibilityPicker({ value, onChange, limits, isDisabled = false }: VisibilityPickerProps) {
+export function VisibilityPicker({
+  value,
+  onChange,
+  limits,
+  directReply = false,
+  isDisabled = false,
+}: VisibilityPickerProps) {
   const t = useT();
   const descriptionId = useId();
   const [isOpen, setIsOpen] = useState(false);
   const title = t("client:compose.visibility.title");
-  const ceilingHint =
-    limits === null
+  const ceilingHint = directReply
+    ? t("client:compose.visibility.direct_reply")
+    : limits === null
       ? undefined
       : t("client:compose.visibility.ceiling", { visibility: t(visibilityLabel[limits.visibility_ceiling]) });
   const translationNote = useTranslationDisclosure();
@@ -87,7 +97,9 @@ export function VisibilityPicker({ value, onChange, limits, isDisabled = false }
                   key={visibility}
                   value={visibility}
                   description={t(visibilityDescription[visibility])}
-                  isDisabled={limits !== null && !limits.visibilities.includes(visibility)}
+                  isDisabled={
+                    directReply ? visibility !== "direct" : limits !== null && !limits.visibilities.includes(visibility)
+                  }
                 >
                   {t(visibilityLabel[visibility])}
                 </Radio>

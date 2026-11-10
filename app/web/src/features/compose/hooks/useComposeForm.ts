@@ -30,7 +30,7 @@ import {
 import { type Draft, isEmptyDraft, type Rejection } from "./draftStore";
 import { newPoll, type PollDraft, pollProblem, pollRequest, withOption, withoutOption } from "./poll";
 import { type LanguageOption, languageOptions } from "./languages";
-import { countCharacters, defaultVisibility, domainMentions, postedVisibility } from "./policy";
+import { countCharacters, chosenVisibility, domainMentions, postedVisibility } from "./policy";
 import { rememberTags } from "./recentTags";
 import { type Attachments, descriptionFieldId, useAttachments } from "./useAttachments";
 import { type ComposeController, composeTextId, useComposeState } from "./useCompose";
@@ -78,6 +78,8 @@ export type ReadyComposeForm = {
   visibility: Visibility;
   /** What the account's restrictions let it post (data-model/05-states-and-policies.md §5.4), or null while they keep every visibility. */
   limits: PostingLimits | null;
+  /** Whether the post replies to a direct message, and so is direct whatever is chosen (chosenVisibility). */
+  directReply: boolean;
   /**
    * The accounts of other servers that the text mentions and that will not receive the post because it is
    * `local` and they do not follow the viewer (ADR-0017); empty for the other visibilities.
@@ -243,7 +245,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     preferredVisibility === undefined
       ? undefined
       : postedVisibility(
-          draft.visibility ?? defaultVisibility(preferredVisibility, replyPost),
+          chosenVisibility(draft.visibility, preferredVisibility, replyPost),
           limits,
           isSingleUser(instance.data),
         );
@@ -405,6 +407,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
       limits === undefined || limits.visibilities.length === offeredVisibilities(isSingleUser(instance.data)).length
         ? null
         : limits,
+    directReply: replyPost?.visibility === "direct",
     unreachedMentions,
     staysLocal,
     language,

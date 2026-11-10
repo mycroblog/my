@@ -50,6 +50,7 @@ export function ComposeTools({ form }: ComposeToolsProps) {
       <VisibilityPicker
         value={form.visibility}
         limits={form.limits}
+        directReply={form.directReply}
         onChange={(visibility) => {
           form.edit({ visibility });
         }}

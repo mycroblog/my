@@ -498,5 +498,9 @@
   "compose.rejected.appeal.window_closed": {
     "defaultMessage": "The time to appeal this decision has ended.",
     "description": "Shown in place of the appeal button when the server says the deadline to appeal the refusal of the post passed."
+  },
+  "compose.visibility.direct_reply": {
+    "defaultMessage": "A reply to a direct message stays “Mentioned people”, so that it reaches no one the conversation did not.",
+    "description": "Hint in the choice of visibility of a reply to a direct message, whose other choices are disabled. “Mentioned people” is compose.visibility.direct."
   }
 }

@@ -498,5 +498,9 @@
   "compose.rejected.appeal.window_closed": {
     "defaultMessage": "この判定に異議を申し立てられる期限は終わりました。",
     "description": "Shown in place of the appeal button when the server says the deadline to appeal the refusal of the post passed."
+  },
+  "compose.visibility.direct_reply": {
+    "defaultMessage": "DM への返信は、会話にいなかった人に届かないよう「メンションした人」のままです。",
+    "description": "Hint in the choice of visibility of a reply to a direct message, whose other choices are disabled. “Mentioned people” is compose.visibility.direct."
   }
 }

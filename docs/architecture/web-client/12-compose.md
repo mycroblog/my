@@ -41,6 +41,7 @@
   リロードやタブの異常終了で失わないように、アカウントごとのキー（`my:user:compose:<アカウント ID>`）で sessionStorage に保存する。このタブだけのもので、タブを閉じるかセッションが終わると消える（§10）。
   アップロードの途中のファイルは保存しない（再開できない）。アップロード済みの画像は ID と説明を保存し、リロード後はサーバーのサムネイルを表示する。
 - **既定値**: 公開範囲・引用できる人・言語は、利用者が選ぶまで `GET /preferences` の既定値に従う（state にコピーせず、表示のたびに求める）。返信の公開範囲の既定は、既定値と返信先のうち狭いほう（ADR-0017。`local` への返信は `local`）。
+  `direct` の投稿（DM）への返信は、選んだものによらず `direct` にする（`policy.ts` の `chosenVisibility`）。会話にいなかった人に広げないため（ADR-0154 §6）で、公開範囲の選択肢は `direct` のほかを無効にし、グループの説明でその理由を言う（[screens/direct-messages.md](screens/direct-messages.md)）。
   公開範囲は 5 段階を説明付きのラジオグループ（ポップオーバーの中）で選ぶ。
   `GET /instance` の `translation.providers` に `private` か `direct` を受け取れる提供元があるサーバーでだけ、グループの説明に、読者が翻訳を求めるとその公開範囲の本文がその提供元に送られることがあると書く（`hooks/useTranslationDisclosure`、ADR-0148 §6）。
   制限で公開範囲に上限があるとき（data-model/05-states-and-policies.md §5.4）は、閲覧者の `CredentialAccount` の `posting`（サーバーがドメインの規則から求めたもの）の `visibilities` にない選択肢を無効にし、ラジオグループの説明で上限を示す。
