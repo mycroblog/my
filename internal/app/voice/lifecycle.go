@@ -163,6 +163,9 @@ type evaluation struct {
 	// (Heartbeats.claim): only those end (disconnected), and ended records which did.
 	claimed map[string]bool
 	ended   map[string]bool
+	// wait reports a scheduled room that waits for its absent host (ADR-0100 §16), and waitOver
+	// that the wait ran out.
+	wait, waitOver bool
 }
 
 // roomTx runs fn in a transaction that first locks the rooms roomIDs, in the order of their IDs
@@ -231,13 +234,25 @@ func (s *Service) evaluate(ctx context.Context, roomID string, sweep bool) error
 		case !errors.Is(err, ErrNotFound):
 			return err
 		}
+		if e.wait, e.waitOver, err = s.waiting(ctx, nil, rec, ps, now); err != nil {
+			return err
+		}
 		if err := s.claimExpired(ctx, &e, ps, graceOver); err != nil {
 			return err
 		}
 		// A host who is in no participation of the room hands it over at once, as after the
-		// grace.
+		// grace, unless the room waits for its absent host.
 		hostExpired := !slices.ContainsFunc(ps, func(p Participant) bool { return p.AccountID == host })
 		changes := len(ps) == 0 || hostExpired
+		if e.wait {
+			hostExpired, changes = e.waitOver, e.waitOver
+			if len(ps) == 0 && !e.waitOver {
+				// A room that waits ends empty only once somebody came and everybody left.
+				if changes, err = s.d.Repository.Attended(ctx, nil, roomID); err != nil {
+					return err
+				}
+			}
+		}
 		for _, p := range ps {
 			if !e.live.expired(p.ParticipationID) {
 				continue
@@ -245,8 +260,9 @@ func (s *Service) evaluate(ctx context.Context, roomID string, sweep bool) error
 			changes = true
 			hostExpired = hostExpired || p.AccountID == host
 		}
-		// A grace that runs out, or a host who came back, changes the room.
-		changes = changes || inGrace
+		// A grace that runs out, or a host who came back, changes the room; the grace of a room
+		// that waits changes it only when it runs out.
+		changes = changes || (inGrace && !e.wait)
 		if !changes {
 			return nil
 		}
@@ -339,6 +355,8 @@ func (s *Service) evaluateTx(ctx context.Context, tx uow.Tx, rec RoomRecord, e e
 		}
 	}
 	switch {
+	case hostP == nil && e.wait:
+		return s.waitTx(ctx, tx, roomID, e, now)
 	case hostP == nil:
 		// The host is in no participation of the room: the room goes on to the next host
 		// at once, as after the grace.

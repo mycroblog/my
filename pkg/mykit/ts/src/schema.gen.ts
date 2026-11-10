@@ -4375,7 +4375,7 @@ export interface paths {
          *     `/api/v1/problems/voice-hosting-elsewhere` while the user hosts another open room. Joining
          *     leaves the room the user was in. Invalid settings are a 422.
          *     With `post`, the user's start post, which links the room, is posted with it: a 422 for a
-         *     room of the `mutuals` or `invited` visibility, which has none, and the errors of posting a
+         *     room of the `following`, `mutuals`, or `invited` visibility, which has none, and the errors of posting a
          *     status for a post that cannot be posted. The local followers of the user who see the room
          *     get a `voice_room_started` notification.
          */
@@ -17113,10 +17113,12 @@ export interface components {
          * @description Why a voice chat room ended: `host` the host ended it, `empty` nobody was left in it,
          *     `host_disconnected` the host lost the connection and nobody took over, `host_ineligible` the
          *     host may no longer host, `moderator` a moderator ended it, `time_limit` it reached the limit
-         *     of its duration, and `disabled` the voice chat was turned off.
+         *     of its duration, `disabled` the voice chat was turned off, `host_absent` the host of a room
+         *     opened for a scheduled time did not come by the end of its wait and nobody took over, and
+         *     `unattended` nobody came to such a room by the end of its wait.
          * @enum {string}
          */
-        VoiceEndReason: "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled";
+        VoiceEndReason: "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled" | "host_absent" | "unattended";
         /**
          * @description What the client of a session needs to connect to the audio of a room. `kind` is the method
          *     of the server (`p2p`, `livekit`, or `sora`); the client asks for a new grant before
@@ -17326,10 +17328,10 @@ export interface components {
         };
         /**
          * @description Who may become a speaker without asking: `everyone`, `followers` of the current host,
-         *     `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+         *     `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
          * @enum {string}
          */
-        VoiceRoomSpeakers: "everyone" | "followers" | "mutuals" | "manual";
+        VoiceRoomSpeakers: "everyone" | "followers" | "following" | "mutuals" | "manual";
         /**
          * @description What the page of a voice chat room shows to a visitor who does not see the room, such as a
          *     visitor who is not signed in or a user of another server: only the users of this server
@@ -17368,12 +17370,12 @@ export interface components {
         };
         /**
          * @description Who sees a voice chat room and may join it: `local` every local user, `followers` the
-         *     followers of the current host, `mutuals` those who follow the host and whom the host follows,
-         *     and `invited` only the invited users. The host, the co-hosts, the participants, and the
+         *     followers of the current host, `following` those whom the host follows, `mutuals` those who
+         *     follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
          *     invited users always see it, and a block with the host or a co-host always hides it.
          * @enum {string}
          */
-        VoiceRoomVisibility: "local" | "followers" | "mutuals" | "invited";
+        VoiceRoomVisibility: "local" | "followers" | "following" | "mutuals" | "invited";
         /** @description A session of the user in a voice chat room. */
         VoiceSession: {
             /** @description The `session` of the join. */
@@ -17384,8 +17386,8 @@ export interface components {
          *     `write:statuses` scope besides `write:voice`, or the request is a 403
          *     `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
          *     the `local` visibility and `private` for a room of the `followers` visibility, federated like
-         *     any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
-         *     visibility has no start post.
+         *     any other post, and the host deletes it like any other. A room of the `following`, `mutuals`,
+         *     or `invited` visibility has no start post.
          */
         VoiceStartPost: {
             /**
@@ -17427,11 +17429,12 @@ export interface components {
          *     which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
          *     `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
          *     `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
-         *     `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
+         *     `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`, `host_absent`,
+         *     `unattended`).
          */
         VoiceStreamEnd: {
             /** @enum {string} */
-            reason: "left" | "moved" | "disconnected" | "removed" | "blocked" | "suspended" | "room_ended" | "replaced" | "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled";
+            reason: "left" | "moved" | "disconnected" | "removed" | "blocked" | "suspended" | "room_ended" | "replaced" | "host" | "empty" | "host_disconnected" | "host_ineligible" | "moderator" | "time_limit" | "disabled" | "host_absent" | "unattended";
         };
         /**
          * grant

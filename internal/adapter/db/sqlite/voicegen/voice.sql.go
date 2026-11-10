@@ -143,6 +143,32 @@ func (q *Queries) GetVoiceRoom(ctx context.Context, id string) (GetVoiceRoomRow,
 	return i, err
 }
 
+const getVoiceRoomCohostCandidate = `-- name: GetVoiceRoomCohostCandidate :one
+SELECT c.position,
+  CAST(EXISTS (SELECT 1 FROM voice_room_cohost_changes x WHERE x.room_id = c.room_id AND x.account_id = c.account_id AND x.change = 'removed') AS INTEGER) AS removed
+FROM voice_room_cohost_candidates c
+WHERE c.room_id = ? AND c.account_id = ?
+`
+
+type GetVoiceRoomCohostCandidateParams struct {
+	RoomID    string
+	AccountID string
+}
+
+type GetVoiceRoomCohostCandidateRow struct {
+	Position int64
+	Removed  int64
+}
+
+// GetVoiceRoomCohostCandidate returns the position of a co-host candidate of a room and whether
+// the account was ever removed as a co-host of it.
+func (q *Queries) GetVoiceRoomCohostCandidate(ctx context.Context, arg GetVoiceRoomCohostCandidateParams) (GetVoiceRoomCohostCandidateRow, error) {
+	row := q.db.QueryRowContext(ctx, getVoiceRoomCohostCandidate, arg.RoomID, arg.AccountID)
+	var i GetVoiceRoomCohostCandidateRow
+	err := row.Scan(&i.Position, &i.Removed)
+	return i, err
+}
+
 const getVoiceRoomHostGrace = `-- name: GetVoiceRoomHostGrace :one
 SELECT room_id, ends_at FROM voice_room_host_graces WHERE room_id = ?
 `
@@ -222,6 +248,28 @@ func (q *Queries) GetVoiceRoomParticipationEnd(ctx context.Context, participatio
 	return i, err
 }
 
+const getVoiceRoomSchedule = `-- name: GetVoiceRoomSchedule :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE room_id = ?
+`
+
+func (q *Queries) GetVoiceRoomSchedule(ctx context.Context, roomID string) (VoiceRoomSchedule, error) {
+	row := q.db.QueryRowContext(ctx, getVoiceRoomSchedule, roomID)
+	var i VoiceRoomSchedule
+	err := row.Scan(&i.RoomID, &i.ScheduleKey, &i.WaitEndsAt)
+	return i, err
+}
+
+const getVoiceRoomScheduleByKey = `-- name: GetVoiceRoomScheduleByKey :one
+SELECT room_id, schedule_key, wait_ends_at FROM voice_room_schedules WHERE schedule_key = ?
+`
+
+func (q *Queries) GetVoiceRoomScheduleByKey(ctx context.Context, scheduleKey string) (VoiceRoomSchedule, error) {
+	row := q.db.QueryRowContext(ctx, getVoiceRoomScheduleByKey, scheduleKey)
+	var i VoiceRoomSchedule
+	err := row.Scan(&i.RoomID, &i.ScheduleKey, &i.WaitEndsAt)
+	return i, err
+}
+
 const insertVoiceRoom = `-- name: InsertVoiceRoom :exec
 
 
@@ -272,6 +320,22 @@ func (q *Queries) InsertVoiceRoomBan(ctx context.Context, arg InsertVoiceRoomBan
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const insertVoiceRoomCohostCandidate = `-- name: InsertVoiceRoomCohostCandidate :exec
+INSERT INTO voice_room_cohost_candidates (room_id, account_id, position) VALUES (?, ?, ?)
+ON CONFLICT (room_id, account_id) DO NOTHING
+`
+
+type InsertVoiceRoomCohostCandidateParams struct {
+	RoomID    string
+	AccountID string
+	Position  int64
+}
+
+func (q *Queries) InsertVoiceRoomCohostCandidate(ctx context.Context, arg InsertVoiceRoomCohostCandidateParams) error {
+	_, err := q.db.ExecContext(ctx, insertVoiceRoomCohostCandidate, arg.RoomID, arg.AccountID, arg.Position)
+	return err
 }
 
 const insertVoiceRoomCohostChange = `-- name: InsertVoiceRoomCohostChange :exec
@@ -610,6 +674,23 @@ func (q *Queries) InsertVoiceRoomRoleChange(ctx context.Context, arg InsertVoice
 	return err
 }
 
+const insertVoiceRoomSchedule = `-- name: InsertVoiceRoomSchedule :exec
+
+INSERT INTO voice_room_schedules (room_id, schedule_key, wait_ends_at) VALUES (?, ?, ?)
+`
+
+type InsertVoiceRoomScheduleParams struct {
+	RoomID      string
+	ScheduleKey string
+	WaitEndsAt  int64
+}
+
+// Scheduled rooms (ADR-0100 section 16) ------------------------------------------------------
+func (q *Queries) InsertVoiceRoomSchedule(ctx context.Context, arg InsertVoiceRoomScheduleParams) error {
+	_, err := q.db.ExecContext(ctx, insertVoiceRoomSchedule, arg.RoomID, arg.ScheduleKey, arg.WaitEndsAt)
+	return err
+}
+
 const insertVoiceRoomSpeakGrant = `-- name: InsertVoiceRoomSpeakGrant :exec
 INSERT INTO voice_room_speak_grants (id, room_id, account_id, change, changed_by_account_id, changed_at)
 VALUES (?, ?, ?, ?, ?, ?)
@@ -634,6 +715,18 @@ func (q *Queries) InsertVoiceRoomSpeakGrant(ctx context.Context, arg InsertVoice
 		arg.ChangedAt,
 	)
 	return err
+}
+
+const isVoiceRoomAttended = `-- name: IsVoiceRoomAttended :one
+SELECT CAST(EXISTS (SELECT 1 FROM voice_room_participations WHERE room_id = ?) AS INTEGER) AS attended
+`
+
+// IsVoiceRoomAttended reports whether anybody ever joined a room.
+func (q *Queries) IsVoiceRoomAttended(ctx context.Context, roomID string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, isVoiceRoomAttended, roomID)
+	var attended int64
+	err := row.Scan(&attended)
+	return attended, err
 }
 
 const isVoiceRoomBanned = `-- name: IsVoiceRoomBanned :one

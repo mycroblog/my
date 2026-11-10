@@ -66,3 +66,9 @@ type VoiceRoomRevisionHashtag struct {
 	Name           string
 	NameNormalized string
 }
+
+type VoiceRoomSchedule struct {
+	RoomID      string
+	ScheduleKey string
+	WaitEndsAt  int64
+}

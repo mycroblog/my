@@ -60,6 +60,10 @@ func TestCanSee(t *testing.T) {
 		{"mutuals is seen by a mutual", 7, open(VisibilityMutuals, SpeakersManual), local, Facts{FollowsHost: true, FollowedByHost: true}, true},
 		{"mutuals is not seen by a follower only", 7, open(VisibilityMutuals, SpeakersManual), local, Facts{FollowsHost: true}, false},
 		{"mutuals is not seen by someone the host follows only", 7, open(VisibilityMutuals, SpeakersManual), local, Facts{FollowedByHost: true}, false},
+		{"following is seen by someone the host follows", 7, open(VisibilityFollowing, SpeakersManual), local, Facts{FollowedByHost: true}, true},
+		{"following is seen by a mutual", 7, open(VisibilityFollowing, SpeakersManual), local, Facts{FollowsHost: true, FollowedByHost: true}, true},
+		{"following is not seen by a follower only", 7, open(VisibilityFollowing, SpeakersManual), local, Facts{FollowsHost: true}, false},
+		{"following is seen by an invited viewer", 6, open(VisibilityFollowing, SpeakersManual), local, Facts{Invited: true}, true},
 		{"invited is not seen without an invitation", 7, open(VisibilityInvited, SpeakersManual), local, Facts{FollowsHost: true, FollowedByHost: true}, false},
 		{"an unknown visibility is not seen", 7, open("public", SpeakersManual), local, Facts{}, false},
 	}
@@ -99,6 +103,10 @@ func TestCanSpeakFreely(t *testing.T) {
 		{"someone the host follows may not in a followers room", 4, open(VisibilityLocal, SpeakersFollowers), local, Facts{FollowedByHost: true}, false},
 		{"a mutual may in a mutuals room", 4, open(VisibilityLocal, SpeakersMutuals), local, Facts{FollowsHost: true, FollowedByHost: true}, true},
 		{"a follower only may not in a mutuals room", 4, open(VisibilityLocal, SpeakersMutuals), local, Facts{FollowsHost: true}, false},
+		{"someone the host follows may in a following room", 4, open(VisibilityLocal, SpeakersFollowing), local, Facts{FollowedByHost: true}, true},
+		{"a follower only may not in a following room", 4, open(VisibilityLocal, SpeakersFollowing), local, Facts{FollowsHost: true}, false},
+		{"a grant allows in a following room", 3, open(VisibilityLocal, SpeakersFollowing), local, Facts{SpeakGranted: true}, true},
+		{"a limited account the host follows may not in a following room", 2, open(VisibilityLocal, SpeakersFollowing), local, Facts{FollowedByHost: true, Limited: true}, false},
 		{"nobody may in a manual room", 4, open(VisibilityLocal, SpeakersManual), local, Facts{FollowsHost: true, FollowedByHost: true}, false},
 		{"an unknown setting allows nobody", 4, open(VisibilityLocal, "anyone"), local, Facts{}, false},
 	}
@@ -257,18 +265,19 @@ func TestValues(t *testing.T) {
 		valid []func() bool
 		bad   func() bool
 	}{
-		{"visibility", []func() bool{VisibilityLocal.Valid, VisibilityFollowers.Valid, VisibilityMutuals.Valid, VisibilityInvited.Valid}, Visibility("public").Valid},
-		{"speakers", []func() bool{SpeakersEveryone.Valid, SpeakersFollowers.Valid, SpeakersMutuals.Valid, SpeakersManual.Valid}, Speakers("all").Valid},
+		{"visibility", []func() bool{VisibilityLocal.Valid, VisibilityFollowers.Valid, VisibilityFollowing.Valid, VisibilityMutuals.Valid, VisibilityInvited.Valid}, Visibility("public").Valid},
+		{"speakers", []func() bool{SpeakersEveryone.Valid, SpeakersFollowers.Valid, SpeakersFollowing.Valid, SpeakersMutuals.Valid, SpeakersManual.Valid}, Speakers("all").Valid},
 		{"role", []func() bool{RoleSpeaker.Valid, RoleListener.Valid}, Role("host").Valid},
 		{"transport", []func() bool{TransportP2P.Valid, TransportLiveKit.Valid, TransportSora.Valid}, Transport("off").Valid},
 		{"end reason", []func() bool{
 			EndHost.Valid, EndEmpty.Valid, EndHostDisconnected.Valid, EndHostIneligible.Valid, EndModerator.Valid, EndTimeLimit.Valid, EndDisabled.Valid,
+			EndHostAbsent.Valid, EndUnattended.Valid,
 		}, EndReason("left").Valid},
 		{"participation end reason", []func() bool{
 			LeftRoom.Valid, MovedRoom.Valid, Disconnected.Valid, RemovedFromRoom.Valid, BlockedInRoom.Valid, SuspendedAccount.Valid, RoomEnded.Valid,
 		}, ParticipationEndReason("host").Valid},
 		{"host change reason", []func() bool{
-			HostOpened.Valid, HostHandedOver.Valid, HostDisconnected.Valid, HostIneligible.Valid, HostLeft.Valid,
+			HostOpened.Valid, HostHandedOver.Valid, HostDisconnected.Valid, HostIneligible.Valid, HostLeft.Valid, HostAbsent.Valid,
 		}, HostChangeReason("moderator").Valid},
 		{"co-host change", []func() bool{CohostAssigned.Valid, CohostRemoved.Valid}, CohostChange("granted").Valid},
 		{"speak grant change", []func() bool{SpeakGranted.Valid, SpeakRevoked.Valid}, SpeakGrantChange("raised").Valid},

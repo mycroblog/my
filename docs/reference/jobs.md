@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 99 job types. 41 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 100 job types. 41 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -152,10 +152,11 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | --- | --- | --- | --- | --- |
 | `voice.apply` | Applies one change of a room to its media transport: open, allow or stop audio, mute, remove, or close. Changes of one room run in order. | A committed change of a room | Default. Once it is dead, `voice.sweep` reconciles the room. | Safe. Opening does nothing for a room that ended, and allowing or stopping audio applies the participant's role now. A mute mutes the session again, and a removal or close that is done stays done. |
 | `voice.apply_media_event` | Applies one verified event from a media server to its room. | A webhook from a media server | Default | Safe. It compares the event with the room and the media server as they are now. |
-| `voice.sweep` | Evaluates every open room: participants' expiry, hosts' grace, rooms of a voice chat turned off, and rooms over the time limit. | Schedule | Default | Next run |
+| `voice.sweep` | Evaluates every open room: participants' expiry, hosts' grace, the wait of rooms opened for a scheduled time, rooms of a voice chat turned off, and rooms over the time limit. | Schedule | Default | Next run |
 | `voice.check_account` | Applies a change of an account to its participation: a suspended or deleted account leaves, and a host who is no longer eligible hands over. | A suspension, deletion, or restriction of an account in a room | Default | Safe. It reads the account and the room as they are now. |
 | `voice.check_block` | Applies a block between two participants of a room: the one who is not a host or co-host leaves. | A block | Default | Safe. A block that was lifted makes nobody leave. |
 | `voice.check_hosts` | Checks the eligibility of every open room's host. | A change of roles or of `voice_room_starters` while rooms are open | Default | Safe. It reads the hosts and the roles as they are now. |
+| `voice.invite_scheduled` | Copies up to 500 invited people into a room opened for a scheduled time, as listeners invited by its host, without notifying them. | A room opening for a scheduled time, or more people added to it | Default | Safe. Each person is invited to a room once. |
 | `voice.notify_started` | Tells the local followers of a host who can see a room that it opened. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. | A room opening | Default | Safe. Each notification is created once. |
 | `voice.purge_records` | Erases the participants' records of rooms that ended past their retention, except those a report or a hold preserves. | Schedule | Default | Next run |
 

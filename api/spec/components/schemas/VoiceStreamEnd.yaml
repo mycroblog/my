@@ -5,7 +5,8 @@ description: |
   which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
   `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
   `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
-  `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
+  `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`, `host_absent`,
+  `unattended`).
 type: object
 required: [reason]
 properties:
@@ -27,3 +28,5 @@ properties:
       - moderator
       - time_limit
       - disabled
+      - host_absent
+      - unattended

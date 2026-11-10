@@ -4,6 +4,7 @@ package voice
 
 import (
 	"strings"
+	"time"
 	"unicode"
 	"unicode/utf8"
 )
@@ -25,6 +26,14 @@ const (
 	MaxCohosts = 3
 )
 
+// The wait of a scheduled room: how long it stays open for its first participant and its host
+// (ADR-0100 §16).
+const (
+	DefaultScheduledWait = 30 * time.Minute
+	MinScheduledWait     = 5 * time.Minute
+	MaxScheduledWait     = 120 * time.Minute
+)
+
 // Visibility is who sees a room and may join it (voice_room_revisions.visibility).
 type Visibility string
 
@@ -34,6 +43,8 @@ const (
 	VisibilityLocal Visibility = "local"
 	// VisibilityFollowers: the followers of the current host.
 	VisibilityFollowers Visibility = "followers"
+	// VisibilityFollowing: the users whom the current host follows.
+	VisibilityFollowing Visibility = "following"
 	// VisibilityMutuals: the users who follow the current host and whom the host follows.
 	VisibilityMutuals Visibility = "mutuals"
 	// VisibilityInvited: the invited users only.
@@ -43,7 +54,7 @@ const (
 // Valid reports whether v is a known visibility.
 func (v Visibility) Valid() bool {
 	switch v {
-	case VisibilityLocal, VisibilityFollowers, VisibilityMutuals, VisibilityInvited:
+	case VisibilityLocal, VisibilityFollowers, VisibilityFollowing, VisibilityMutuals, VisibilityInvited:
 		return true
 	}
 	return false
@@ -58,6 +69,8 @@ const (
 	SpeakersEveryone Speakers = "everyone"
 	// SpeakersFollowers: the participants who follow the current host.
 	SpeakersFollowers Speakers = "followers"
+	// SpeakersFollowing: the participants whom the current host follows.
+	SpeakersFollowing Speakers = "following"
 	// SpeakersMutuals: the participants who follow the current host and whom the host follows.
 	SpeakersMutuals Speakers = "mutuals"
 	// SpeakersManual: nobody; the host and the co-hosts grant it.
@@ -67,7 +80,7 @@ const (
 // Valid reports whether s is a known speakers setting.
 func (s Speakers) Valid() bool {
 	switch s {
-	case SpeakersEveryone, SpeakersFollowers, SpeakersMutuals, SpeakersManual:
+	case SpeakersEveryone, SpeakersFollowers, SpeakersFollowing, SpeakersMutuals, SpeakersManual:
 		return true
 	}
 	return false
@@ -136,12 +149,17 @@ const (
 	EndTimeLimit EndReason = "time_limit"
 	// EndDisabled: the operator turned voice chat off.
 	EndDisabled EndReason = "disabled"
+	// EndHostAbsent: the host of a scheduled room did not come by the end of the wait, and no
+	// eligible co-host was in it (ADR-0100 §16).
+	EndHostAbsent EndReason = "host_absent"
+	// EndUnattended: nobody came to a scheduled room by the end of the wait (ADR-0100 §16).
+	EndUnattended EndReason = "unattended"
 )
 
 // Valid reports whether r is a known end reason.
 func (r EndReason) Valid() bool {
 	switch r {
-	case EndHost, EndEmpty, EndHostDisconnected, EndHostIneligible, EndModerator, EndTimeLimit, EndDisabled:
+	case EndHost, EndEmpty, EndHostDisconnected, EndHostIneligible, EndModerator, EndTimeLimit, EndDisabled, EndHostAbsent, EndUnattended:
 		return true
 	}
 	return false
@@ -192,12 +210,15 @@ const (
 	HostIneligible HostChangeReason = "host_ineligible"
 	// HostLeft: the host left and chose the next host.
 	HostLeft HostChangeReason = "host_left"
+	// HostAbsent: the host of a scheduled room did not come by the end of the wait, and a
+	// co-host in it took over (ADR-0100 §16).
+	HostAbsent HostChangeReason = "host_absent"
 )
 
 // Valid reports whether r is a known host change reason.
 func (r HostChangeReason) Valid() bool {
 	switch r {
-	case HostOpened, HostHandedOver, HostDisconnected, HostIneligible, HostLeft:
+	case HostOpened, HostHandedOver, HostDisconnected, HostIneligible, HostLeft, HostAbsent:
 		return true
 	}
 	return false

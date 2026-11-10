@@ -106,6 +106,7 @@ var jobTypes = []string{
 	"voice.check_account",
 	"voice.check_block",
 	"voice.check_hosts",
+	"voice.invite_scheduled",
 	"voice.notify_started",
 	"voice.purge_records",
 	"voice.sweep",

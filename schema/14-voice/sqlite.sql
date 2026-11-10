@@ -27,8 +27,8 @@ CREATE TABLE voice_room_revisions (
   room_id TEXT NOT NULL,
   name TEXT NOT NULL CHECK (length(name) <= 1000),
   description TEXT NOT NULL CHECK (length(description) <= 500),
-  visibility TEXT NOT NULL CHECK (visibility IN ('local', 'followers', 'mutuals', 'invited')),
-  speakers TEXT NOT NULL CHECK (speakers IN ('everyone', 'followers', 'mutuals', 'manual')),
+  visibility TEXT NOT NULL CHECK (visibility IN ('local', 'followers', 'following', 'mutuals', 'invited')),
+  speakers TEXT NOT NULL CHECK (speakers IN ('everyone', 'followers', 'following', 'mutuals', 'manual')),
   icon_emoji_key TEXT NOT NULL DEFAULT '' CHECK (length(icon_emoji_key) <= 100),
   icon_custom_emoji_id TEXT,
   revised_by_account_id TEXT NOT NULL,
@@ -57,7 +57,7 @@ CREATE TABLE voice_room_host_changes (
   id TEXT NOT NULL PRIMARY KEY,
   room_id TEXT NOT NULL,
   host_account_id TEXT NOT NULL,
-  reason TEXT NOT NULL CHECK (reason IN ('opened', 'handed_over', 'host_disconnected', 'host_ineligible', 'host_left')),
+  reason TEXT NOT NULL CHECK (reason IN ('opened', 'handed_over', 'host_disconnected', 'host_ineligible', 'host_left', 'host_absent')),
   changed_at INTEGER NOT NULL
 ) STRICT;
 CREATE INDEX voice_room_host_changes_room_id_id ON voice_room_host_changes (room_id, id DESC);
@@ -159,7 +159,7 @@ CREATE UNIQUE INDEX voice_room_bans_room_account ON voice_room_bans (room_id, ac
 -- that a moderator gave for ending it (moderator, ADR-0100 §11), '' for none.
 CREATE TABLE voice_room_endings (
   room_id TEXT NOT NULL PRIMARY KEY,
-  reason TEXT NOT NULL CHECK (reason IN ('host', 'empty', 'host_disconnected', 'host_ineligible', 'moderator', 'time_limit', 'disabled')),
+  reason TEXT NOT NULL CHECK (reason IN ('host', 'empty', 'host_disconnected', 'host_ineligible', 'moderator', 'time_limit', 'disabled', 'host_absent', 'unattended')),
   ended_by_account_id TEXT,
   ended_at INTEGER NOT NULL,
   note TEXT NOT NULL DEFAULT '' CHECK (length(note) <= 500)
@@ -192,9 +192,29 @@ CREATE TABLE voice_room_participants (
 CREATE UNIQUE INDEX voice_room_participants_participation_id ON voice_room_participants (participation_id);
 CREATE INDEX voice_room_participants_room_id ON voice_room_participants (room_id, participation_id);
 
--- Current value: the grace of a disconnected host, while it lasts (ADR-0100 §6); ends_at is the
--- deadline the decision set.
+-- Current value: the grace of a disconnected host, while it lasts (ADR-0100 §6), and the wait of
+-- the absent host of a scheduled room from its opening (§16); ends_at is the deadline the decision
+-- set.
 CREATE TABLE voice_room_host_graces (
   room_id TEXT NOT NULL PRIMARY KEY,
   ends_at INTEGER NOT NULL
+) STRICT;
+
+-- Resource: a room opened by a schedule of another module (ADR-0100 §16), one per room.
+-- schedule_key is the caller's key of the schedule, so that a job that opens it again returns the
+-- room; wait_ends_at is the end of the wait that the decision set.
+CREATE TABLE voice_room_schedules (
+  room_id TEXT NOT NULL PRIMARY KEY,
+  schedule_key TEXT NOT NULL CHECK (length(schedule_key) BETWEEN 1 AND 200),
+  wait_ends_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX voice_room_schedules_schedule_key ON voice_room_schedules (schedule_key);
+
+-- Resource: the co-host candidates of a scheduled room, in the order of their nomination
+-- (ADR-0100 §16): a candidate who joins becomes a co-host while fewer than three are.
+CREATE TABLE voice_room_cohost_candidates (
+  room_id TEXT NOT NULL,
+  account_id TEXT NOT NULL,
+  position INTEGER NOT NULL CHECK (position BETWEEN 0 AND 2),
+  PRIMARY KEY (room_id, account_id)
 ) STRICT;

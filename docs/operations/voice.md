@@ -48,7 +48,7 @@ The limits keep the cost of a paid media server bounded. `0` removes any of them
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `voice_max_room_duration` | `4h` | The longest a room stays open. A room that reaches it is ended. |
-| `voice_max_open_rooms` | `10` | How many rooms may be open at once on this server. |
+| `voice_max_open_rooms` | `10` | How many rooms may be open at once on this server. A room opened for a scheduled time counts from its opening, while it waits for its first participant. |
 | `voice_sfu_max_participants` | `10` | The room size for `livekit` and `sora`. |
 | `voice_p2p_max_participants` | `10` | The room size for `p2p`, from 2 to 50. |
 

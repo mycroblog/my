@@ -91,10 +91,10 @@
 通話のルーム（§4.14）が見えるか・許可なしに話者になれるか・ホストになれるかは、`internal/domain/voice` の純粋な関数が決めます（[ADR-0100](../../adr/0100-voice-chat-rooms.md) §2・§4）。
 フォロー（承認済みの `follow_edges`）・ブロック（`block_edges`、どちら向きも）・招待・禁止・明示の許可・アカウントの状態と制限は `internal/app/voice` が集めて `voice.Facts` / `voice.HostFacts` で渡します。
 
-- `CanSee(room, viewer, facts)`: 1. 終わったルームは偽、2. 未ログイン・リモート・凍結・削除の閲覧者は偽、3. ホストか共同ホストとブロックの関係なら偽、4. 退出させられた（禁止の）閲覧者は偽、5. ホスト・共同ホスト・参加者は真、6. 取り消されていない招待があれば真、7. `visibility` が `local` なら真、`followers` はホストをフォローしていれば真、`mutuals` は相互フォローなら真、`invited` は偽。
-- `CanSpeakFreely(room, participant, facts)`: 1. ホスト・共同ホストは真、2. 制限（limited）されたアカウントは明示の許可がなければ偽、3. 明示の許可（挙手の許可・ホストの許可・話者としての招待）があれば真、4. `speakers` が `everyone` なら真、`followers` はホストをフォローしていれば真、`mutuals` は相互フォローなら真、`manual` は偽。
+- `CanSee(room, viewer, facts)`: 1. 終わったルームは偽、2. 未ログイン・リモート・凍結・削除の閲覧者は偽、3. ホストか共同ホストとブロックの関係なら偽、4. 退出させられた（禁止の）閲覧者は偽、5. ホスト・共同ホスト・参加者は真、6. 取り消されていない招待があれば真、7. `visibility` が `local` なら真、`followers` はホストをフォローしていれば真、`following` はホストが閲覧者をフォローしていれば真、`mutuals` は相互フォローなら真、`invited` は偽。
+- `CanSpeakFreely(room, participant, facts)`: 1. ホスト・共同ホストは真、2. 制限（limited）されたアカウントは明示の許可がなければ偽、3. 明示の許可（挙手の許可・ホストの許可・話者としての招待）があれば真、4. `speakers` が `everyone` なら真、`followers` はホストをフォローしていれば真、`following` はホストが参加者をフォローしていれば真、`mutuals` は相互フォローなら真、`manual` は偽。
 - `CanHost(facts)`: ローカルの有効な（凍結・削除されていない）アカウントで、制限されておらず、`voice_room_starters` が `everyone` か権限 `start_voice_rooms` を持つ。`NextHost` は指名の順の共同ホスト（いまの参加の中で指名された人。§4.14）のうち `CanHost` が真の最初の人を返し、いなければルームは終わります。
-- 「フォロワー」「相互フォロー」の基準はその時のホスト（`voice_room_heads.host_account_id`）です。範囲を狭めても、ホストが交代しても、参加中の人は残ります（ADR-0100 §3）。
+- 「フォロワー」「フォローしている人」「相互フォロー」の基準はその時のホスト（`voice_room_heads.host_account_id`）です。範囲を狭めても、ホストが交代しても、参加中の人は残ります（ADR-0100 §3）。
 
 ### 5.6 本人による無効化
 

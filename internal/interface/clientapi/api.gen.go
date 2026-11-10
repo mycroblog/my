@@ -4776,10 +4776,12 @@ const (
 	VoiceEndReasonDisabled         VoiceEndReason = "disabled"
 	VoiceEndReasonEmpty            VoiceEndReason = "empty"
 	VoiceEndReasonHost             VoiceEndReason = "host"
+	VoiceEndReasonHostAbsent       VoiceEndReason = "host_absent"
 	VoiceEndReasonHostDisconnected VoiceEndReason = "host_disconnected"
 	VoiceEndReasonHostIneligible   VoiceEndReason = "host_ineligible"
 	VoiceEndReasonModerator        VoiceEndReason = "moderator"
 	VoiceEndReasonTimeLimit        VoiceEndReason = "time_limit"
+	VoiceEndReasonUnattended       VoiceEndReason = "unattended"
 )
 
 // Valid indicates whether the value is a known member of the VoiceEndReason enum.
@@ -4791,6 +4793,8 @@ func (e VoiceEndReason) Valid() bool {
 		return true
 	case VoiceEndReasonHost:
 		return true
+	case VoiceEndReasonHostAbsent:
+		return true
 	case VoiceEndReasonHostDisconnected:
 		return true
 	case VoiceEndReasonHostIneligible:
@@ -4798,6 +4802,8 @@ func (e VoiceEndReason) Valid() bool {
 	case VoiceEndReasonModerator:
 		return true
 	case VoiceEndReasonTimeLimit:
+		return true
+	case VoiceEndReasonUnattended:
 		return true
 	default:
 		return false
@@ -4865,6 +4871,7 @@ func (e VoiceRoomEntryRole) Valid() bool {
 const (
 	VoiceRoomSpeakersEveryone  VoiceRoomSpeakers = "everyone"
 	VoiceRoomSpeakersFollowers VoiceRoomSpeakers = "followers"
+	VoiceRoomSpeakersFollowing VoiceRoomSpeakers = "following"
 	VoiceRoomSpeakersManual    VoiceRoomSpeakers = "manual"
 	VoiceRoomSpeakersMutuals   VoiceRoomSpeakers = "mutuals"
 )
@@ -4875,6 +4882,8 @@ func (e VoiceRoomSpeakers) Valid() bool {
 	case VoiceRoomSpeakersEveryone:
 		return true
 	case VoiceRoomSpeakersFollowers:
+		return true
+	case VoiceRoomSpeakersFollowing:
 		return true
 	case VoiceRoomSpeakersManual:
 		return true
@@ -4906,6 +4915,7 @@ func (e VoiceRoomSummaryState) Valid() bool {
 // Defines values for VoiceRoomVisibility.
 const (
 	VoiceRoomVisibilityFollowers VoiceRoomVisibility = "followers"
+	VoiceRoomVisibilityFollowing VoiceRoomVisibility = "following"
 	VoiceRoomVisibilityInvited   VoiceRoomVisibility = "invited"
 	VoiceRoomVisibilityLocal     VoiceRoomVisibility = "local"
 	VoiceRoomVisibilityMutuals   VoiceRoomVisibility = "mutuals"
@@ -4915,6 +4925,8 @@ const (
 func (e VoiceRoomVisibility) Valid() bool {
 	switch e {
 	case VoiceRoomVisibilityFollowers:
+		return true
+	case VoiceRoomVisibilityFollowing:
 		return true
 	case VoiceRoomVisibilityInvited:
 		return true
@@ -4958,6 +4970,7 @@ const (
 	VoiceStreamEndReasonDisconnected     VoiceStreamEndReason = "disconnected"
 	VoiceStreamEndReasonEmpty            VoiceStreamEndReason = "empty"
 	VoiceStreamEndReasonHost             VoiceStreamEndReason = "host"
+	VoiceStreamEndReasonHostAbsent       VoiceStreamEndReason = "host_absent"
 	VoiceStreamEndReasonHostDisconnected VoiceStreamEndReason = "host_disconnected"
 	VoiceStreamEndReasonHostIneligible   VoiceStreamEndReason = "host_ineligible"
 	VoiceStreamEndReasonLeft             VoiceStreamEndReason = "left"
@@ -4968,6 +4981,7 @@ const (
 	VoiceStreamEndReasonRoomEnded        VoiceStreamEndReason = "room_ended"
 	VoiceStreamEndReasonSuspended        VoiceStreamEndReason = "suspended"
 	VoiceStreamEndReasonTimeLimit        VoiceStreamEndReason = "time_limit"
+	VoiceStreamEndReasonUnattended       VoiceStreamEndReason = "unattended"
 )
 
 // Valid indicates whether the value is a known member of the VoiceStreamEndReason enum.
@@ -4982,6 +4996,8 @@ func (e VoiceStreamEndReason) Valid() bool {
 	case VoiceStreamEndReasonEmpty:
 		return true
 	case VoiceStreamEndReasonHost:
+		return true
+	case VoiceStreamEndReasonHostAbsent:
 		return true
 	case VoiceStreamEndReasonHostDisconnected:
 		return true
@@ -5002,6 +5018,8 @@ func (e VoiceStreamEndReason) Valid() bool {
 	case VoiceStreamEndReasonSuspended:
 		return true
 	case VoiceStreamEndReasonTimeLimit:
+		return true
+	case VoiceStreamEndReasonUnattended:
 		return true
 	default:
 		return false
@@ -8025,12 +8043,12 @@ type AdminVoiceRoomRevision struct {
 	RevisedByAccountId Id `json:"revised_by_account_id"`
 
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers VoiceRoomSpeakers `json:"speakers"`
 
 	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// followers of the current host, `following` those whom the host follows, `mutuals` those who
+	// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 	// invited users always see it, and a block with the host or a co-host always hides it.
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
@@ -15425,7 +15443,9 @@ type Visibility string
 // VoiceEndReason Why a voice chat room ended: `host` the host ended it, `empty` nobody was left in it,
 // `host_disconnected` the host lost the connection and nobody took over, `host_ineligible` the
 // host may no longer host, `moderator` a moderator ended it, `time_limit` it reached the limit
-// of its duration, and `disabled` the voice chat was turned off.
+// of its duration, `disabled` the voice chat was turned off, `host_absent` the host of a room
+// opened for a scheduled time did not come by the end of its wait and nobody took over, and
+// `unattended` nobody came to such a room by the end of its wait.
 type VoiceEndReason string
 
 // VoiceGrant What the client of a session needs to connect to the audio of a room. `kind` is the method
@@ -15520,12 +15540,12 @@ type VoiceRoom struct {
 	ParticipantsCount int `json:"participants_count"`
 
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers VoiceRoomSpeakers `json:"speakers"`
 
 	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// followers of the current host, `following` those whom the host follows, `mutuals` those who
+	// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 	// invited users always see it, and a block with the host or a co-host always hides it.
 	Visibility VoiceRoomVisibility `json:"visibility"`
 }
@@ -15707,8 +15727,8 @@ type VoiceRoomSettings struct {
 	// `write:statuses` scope besides `write:voice`, or the request is a 403
 	// `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 	// the `local` visibility and `private` for a room of the `followers` visibility, federated like
-	// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
-	// visibility has no start post.
+	// any other post, and the host deletes it like any other. A room of the `following`, `mutuals`,
+	// or `invited` visibility has no start post.
 	Post *VoiceStartPost `json:"post,omitempty"`
 
 	// Speakers Who may become a speaker without asking; `manual` when omitted.
@@ -15719,7 +15739,7 @@ type VoiceRoomSettings struct {
 }
 
 // VoiceRoomSpeakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 type VoiceRoomSpeakers string
 
 // VoiceRoomSummary What the page of a voice chat room shows to a visitor who does not see the room, such as a
@@ -15768,19 +15788,19 @@ type VoiceRoomUpdate struct {
 	Name *string `json:"name,omitempty"`
 
 	// Speakers Who may become a speaker without asking: `everyone`, `followers` of the current host,
-	// `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
+	// `following` (those whom the host follows), `mutuals` with the host, or `manual` (nobody: the host and the co-hosts let them speak).
 	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
 
 	// Visibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-	// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-	// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+	// followers of the current host, `following` those whom the host follows, `mutuals` those who
+	// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 	// invited users always see it, and a block with the host or a co-host always hides it.
 	Visibility *VoiceRoomVisibility `json:"visibility,omitempty"`
 }
 
 // VoiceRoomVisibility Who sees a voice chat room and may join it: `local` every local user, `followers` the
-// followers of the current host, `mutuals` those who follow the host and whom the host follows,
-// and `invited` only the invited users. The host, the co-hosts, the participants, and the
+// followers of the current host, `following` those whom the host follows, `mutuals` those who
+// follow the host and whom the host follows, and `invited` only the invited users. The host, the co-hosts, the participants, and the
 // invited users always see it, and a block with the host or a co-host always hides it.
 type VoiceRoomVisibility string
 
@@ -15819,8 +15839,8 @@ type VoiceSignalKind string
 // `write:statuses` scope besides `write:voice`, or the request is a 403
 // `/api/v1/problems/insufficient-scope`. The link of the room is appended to the text on a line of its own. The post is the host's own: `local` for a room of
 // the `local` visibility and `private` for a room of the `followers` visibility, federated like
-// any other post, and the host deletes it like any other. A room of the `mutuals` or `invited`
-// visibility has no start post.
+// any other post, and the host deletes it like any other. A room of the `following`, `mutuals`,
+// or `invited` visibility has no start post.
 type VoiceStartPost struct {
 	// Language A BCP 47 language tag; the user's default post language when omitted.
 	Language *string `json:"language,omitempty"`
@@ -15834,7 +15854,8 @@ type VoiceStartPost struct {
 // which the stream ends. The `reason` of `removed` is why the session left the room (`left`,
 // `moved`, `disconnected`, `removed`, `blocked`, `suspended`, `room_ended`), the one of `replaced` is
 // `replaced`, and the one of `ended` is why the room ended (`host`, `empty`,
-// `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`).
+// `host_disconnected`, `host_ineligible`, `moderator`, `time_limit`, `disabled`, `host_absent`,
+// `unattended`).
 type VoiceStreamEnd struct {
 	Reason VoiceStreamEndReason `json:"reason"`
 }

@@ -31,7 +31,9 @@ import (
 // the invitations, and the bans and blocks (ADR-0100 §4, §5, §7, §11), a transport that gives no
 // grant leaving nothing behind, admissions and sessions that a change committed meanwhile does not
 // undo, and, on a media server, the reconciliation of voice.sweep and the events of
-// voice.apply_media_event (ADR-0101 §13). These are the flows of ADR-0153 §1, which
+// voice.apply_media_event (ADR-0101 §13), the following of the visibility and the speakers, and
+// the rooms opened by a schedule with their wait, co-host candidates, and invitations (ADR-0100
+// §3, §4, §16). These are the flows of ADR-0153 §1, which
 // internal/flowtest/voice runs once on SQLite; VoiceRoomsContract checks the repository's methods
 // on every adapter.
 func VoiceRoomsFlows(t *testing.T, newHarness VoiceFactory) {
@@ -77,6 +79,11 @@ func VoiceRoomsFlows(t *testing.T, newHarness VoiceFactory) {
 		{"ReportsAndEndsAsAModerator", roomsModeration, ""},
 		{"PurgesTheRecordsAfterTheRetention", roomsPurge, ""},
 		{"ErasesTheRevisionsOfAnAccount", roomsErasure, ""},
+		{"AdmitsAndLetsSpeakTheFollowing", roomsFollowing, ""},
+		{"OpensByASchedule", roomsScheduled, ""},
+		{"WaitsForTheFirstParticipantAndTheHost", roomsWaits, ""},
+		{"AssignsCandidatesAndEndsByTheSchedule", roomsScheduledCohosts, ""},
+		{"OpensAScheduledRoomOnTheMediaPathAtTheFirstJoin", roomsScheduledMedia, voice.TransportLiveKit},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
