@@ -41,3 +41,31 @@ other way either.
 Accounts you mute do not notify you (see [Blocking, muting, and reporting](safety.md)). A keyword filter that applies to
 notifications leaves out a notification about a post it hides, from the list, the unread count, push notifications, and
 email; a notification about a post it only folds names the filter in its push notification and email instead of saying more.
+
+## Holding notifications from people you don't know
+
+"Notification policy", at the bottom of the notification settings, chooses what happens to the notifications of people
+who meet each condition: "People you don't follow", "People who don't follow you", "New accounts" (created less than 30
+days ago), "Unrequested private mentions" (direct posts that mention you without replying to one of yours), and
+"Accounts limited by the moderators". For each condition you choose:
+
+- **Accept**: the notification appears and reaches you the ways you chose above. Every condition accepts until you change it.
+- **Hold**: the notification stays out of your notifications and the unread count, and sends no push notification, email, or sound. It waits in a request.
+- **Drop**: no notification is made. What the person did still happens; a follow still follows you.
+
+A notification that meets several conditions gets the strictest choice. People you follow, and people whose requests you
+accepted, meet none of the conditions but "Accounts limited by the moderators". Notifications from the moderators and
+from the server itself are never held or dropped. A change applies to the notifications that come after it.
+
+When notifications are held, the top of the notifications page shows "Notification requests from 2 people". It opens the
+list of requests, one per person who sent them. "View the notifications" shows what a person's request holds.
+
+- **Accept** moves the held notifications into your notifications and lets that person's later notifications through, whatever the policy says. It cannot be undone; mute or block the person to stop them again.
+- **Dismiss** removes the held notifications. The person is not accepted: a notification held later makes a new request.
+
+## Muting a thread
+
+"Mute this thread", in the "More actions" menu of a post, stops the notifications of its thread: replies and mentions in
+it, and boosts, favourites, reactions, and quotes of its posts, your own posts included. The posts still appear in your
+timelines, and the notifications you already got stay. "Unmute this thread" in the same menu ends the mute; what happened
+while it was muted does not notify you afterwards.

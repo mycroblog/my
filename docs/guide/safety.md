@@ -19,6 +19,11 @@ A block also hides the posts of the two of you from each other.
 whom. "Muted accounts", under "Relationships" in the settings, lists them, shows when a mute ends ("Until ...") and
 whether "Notifications hidden too", and lets you "Unmute".
 
+To stop only the notifications of one conversation and keep reading its posts, mute the thread instead (see
+[Muting a thread](notifications.md#muting-a-thread)). To hold the notifications of people you don't know until you
+accept them, use the notification policy (see
+[Holding notifications from people you don't know](notifications.md#holding-notifications-from-people-you-dont-know)).
+
 ## Muting a server
 
 "Muted domains", under "Relationships" in the settings, mutes a whole server (for example `mastodon.example`; its
