@@ -1103,6 +1103,61 @@ paths:
                 $ref: '#/components/schemas/NotificationPolicy'
         default:
           $ref: '#/components/responses/Problem'
+  /preferences/event_reminders:
+    get:
+      operationId: getEventReminders
+      summary: Get the authenticated user's reminders of events
+      description: |
+        How long before the start of an event that the user answered going or maybe an
+        `event_reminder` reminds the user: one day and one hour before until the user chooses.
+      tags:
+        - preferences
+      security:
+        - oauth2:
+            - read:accounts
+      responses:
+        '200':
+          description: The reminders.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventReminders'
+        default:
+          $ref: '#/components/responses/Problem'
+    put:
+      operationId: updateEventReminders
+      summary: Change the authenticated user's reminders of events
+      description: |
+        Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+        reminders of the upcoming events that the user answered going or maybe follow the change. A
+        422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+        longer than 7 days, or the same one twice; nothing is changed then.
+      tags:
+        - preferences
+      security:
+        - oauth2:
+            - write:accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventRemindersUpdate'
+      responses:
+        '200':
+          description: The reminders after the change.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventReminders'
+        default:
+          $ref: '#/components/responses/Problem'
   /preferences/supporter_listing:
     get:
       operationId: getSupporterListing
@@ -2770,6 +2825,9 @@ paths:
         The accounts that actively follow the account, newest follow first. Followers that
         block the viewer, are deactivated, or are deleted are left out, so a page may hold
         fewer than `limit` accounts before the last.
+
+        When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+        `/api/v1/problems/follows-hidden` (403); the owner always reads them.
       tags:
         - accounts
       security:
@@ -2792,6 +2850,9 @@ paths:
       description: |
         The accounts that the account actively follows, newest follow first, leaving out the
         same accounts as `listAccountFollowers`.
+
+        When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+        `/api/v1/problems/follows-hidden` (403); the owner always reads them.
       tags:
         - accounts
       security:
@@ -4416,7 +4477,9 @@ paths:
       summary: Publish a draft now
       description: |
         Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-        and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+        and deletes the draft with its schedule; the draft of an article (`article`) is published with
+        those of `createArticle`, and the status has its `content`. A draft that cannot be published
+        stays as it was.
       tags:
         - drafts
       security:
@@ -4488,6 +4551,53 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/StatusPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /statuses/lookup:
+    get:
+      operationId: lookupStatus
+      summary: Look up or resolve a status by its URL
+      description: |
+        Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+        else fetches it from its server, as a reply button of another server asks to (the page that
+        `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+        followed to the post's id. The post's parent is fetched too, one level. Posts of this
+        instance are found by their id only.
+
+        The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+        404, the same as a URL that leads to no post, or to an account.
+
+        Only signed-in users can look a status up (anonymous requests get the 401 of
+        `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+        `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+        `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+        other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+        found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+        fetched.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - read:statuses
+      parameters:
+        - name: uri
+          in: query
+          required: true
+          description: The `https` URL of the post.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 2048
+      responses:
+        '200':
+          description: The status.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
         default:
           $ref: '#/components/responses/Problem'
   /statuses/{id}:
@@ -7261,6 +7371,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/calendar.ics:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      operationId: getEventCalendar
+      summary: Get an event as an iCalendar file
+      description: |
+        The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+        the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+        updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+        zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+        `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+        user sees: a hidden place never appears in the file. A 404 for an event that the user does
+        not see.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      responses:
+        '200':
+          description: The iCalendar file.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+            Content-Disposition:
+              description: Names the file to save the event as, `<event id>.ics`.
+              schema:
+                type: string
+          content:
+            text/calendar:
+              schema:
+                type: string
         default:
           $ref: '#/components/responses/Problem'
   /events/{id}/cancel:
@@ -11440,7 +11585,13 @@ paths:
         The changes take effect on the next request. An unknown key, or a value its key
         rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
         current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-        through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+        through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+        publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+        while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+        while neither is, judged after the whole change, so another value is a 422; a change of
+        either visibility that leaves the stored value invalid turns it `off` with a revision of its
+        own. `funding_meter_target_amount` is above zero, with no more digits than
+        `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
         permission.
       tags:
         - admin-server
@@ -13250,7 +13401,7 @@ components:
         and its `type` tells what happened. The other objects that a notification carries need the
         scope that reads them elsewhere, and are omitted without it: `report` needs `read:reports`,
         `supporter_subscription` `read:supporters`, `custom_emoji_request` `read:custom_emojis`,
-        `relationship_severance` `read:follows`, and `voice_room` `read:voice`. `moderation_action`
+        `relationship_severance` `read:follows`, `voice_room` `read:voice`, and `event` `read:events`. `moderation_action`
         reaches first-party clients only.
       flows:
         authorizationCode:
@@ -14787,8 +14938,9 @@ components:
             maxLength: 300
     Draft:
       description: |
-        A draft of a post, saved on the server so that the user goes on writing it on another device,
-        and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+        A draft of a post or of an article (`article`), saved on the server so that the user goes on
+        writing it on another device, and publishes it at once or at a chosen time. Only the user reads
+        it; it is never federated.
       type: object
       required:
         - id
@@ -14837,6 +14989,10 @@ components:
             $ref: '#/components/schemas/StatusMediaItem'
         poll:
           $ref: '#/components/schemas/DraftPoll'
+        article:
+          description: What makes the draft that of an article; left out for the draft of a post.
+          allOf:
+            - $ref: '#/components/schemas/DraftArticle'
         scheduled_at:
           description: When the draft is scheduled to be published; left out while it is not scheduled.
           type: string
@@ -14845,6 +15001,65 @@ components:
           description: How the newest schedule that is over ended; left out when none ended.
           allOf:
             - $ref: '#/components/schemas/DraftScheduleOutcome'
+    DraftArticle:
+      description: |
+        What makes a draft that of an article: the draft's `text` is the body in Markdown. The title
+        and the summary may be empty while the user writes; publishing the draft checks them as
+        `createArticle` does.
+      type: object
+      required:
+        - title
+        - summary
+        - tags
+        - images
+      properties:
+        title:
+          description: The title, as plain text; empty while there is none.
+          type: string
+        summary:
+          description: The summary, as plain text; empty makes one from the body when the draft is published.
+          type: string
+        cover:
+          description: The cover image; omitted when there is none.
+          allOf:
+            - $ref: '#/components/schemas/StatusMediaItem'
+        tags:
+          description: The hashtags, as the user gave them.
+          type: array
+          items:
+            type: string
+        images:
+          description: |
+            The IDs of the user's own uploads that the body shows as images (`![alt](media:ID)`),
+            each once, ordered by ID; the server finds them in the body at each save, and keeps the
+            uploads while the draft names them.
+          type: array
+          items:
+            $ref: '#/components/schemas/Id'
+    DraftArticleInput:
+      description: |
+        Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+        has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+        `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+      type: object
+      properties:
+        title:
+          description: The title, as plain text; omitted or empty while there is none.
+          type: string
+          maxLength: 200
+        summary:
+          $ref: '#/components/schemas/ArticleSummary'
+        cover:
+          description: The cover image, one of the user's own uploads, processed or not.
+          allOf:
+            - $ref: '#/components/schemas/StatusMediaItem'
+        tags:
+          description: The hashtags, with or without `#`; checked when the draft is published.
+          type: array
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 257
     DraftFailureReason:
       description: |
         Why a scheduled post was not published at its time; the draft stays, to fix and schedule
@@ -14947,6 +15162,8 @@ components:
             - $ref: '#/components/schemas/StatusMediaInput'
         poll:
           $ref: '#/components/schemas/DraftPoll'
+        article:
+          $ref: '#/components/schemas/DraftArticleInput'
     DraftScheduleOutcome:
       description: How the newest schedule of a draft that is over ended.
       type: object
@@ -20671,6 +20888,7 @@ components:
             - ai_opt_out
             - feed_enabled
             - feed_follows_indexable
+            - follows_visibility
             - source
             - posting
             - permissions
@@ -20707,6 +20925,8 @@ components:
                 `indexable`. Setting `feed_enabled` makes the choice, and a later change of `indexable`
                 leaves it as it is.
               type: boolean
+            follows_visibility:
+              $ref: '#/components/schemas/FollowsVisibility'
             source:
               $ref: '#/components/schemas/AccountSource'
             posting:
@@ -21945,6 +22165,42 @@ components:
         - voice
         - physical
         - url
+    EventReminders:
+      description: The reminders of events of the authenticated user.
+      type: object
+      required:
+        - minutes_before
+        - defaults
+      properties:
+        minutes_before:
+          description: |
+            How many minutes before the start of an event each reminder is, from the earliest; empty
+            for no reminders.
+          type: array
+          maxItems: 3
+          items:
+            type: integer
+            minimum: 5
+            maximum: 10080
+        defaults:
+          description: Whether these are the defaults (one day and one hour before), as the user has not chosen.
+          type: boolean
+    EventRemindersUpdate:
+      description: A change of the reminders of events of the authenticated user.
+      type: object
+      properties:
+        minutes_before:
+          description: |
+            The reminders, in minutes before the start: at most 3, each from 5 minutes to 7 days
+            (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
+          type: array
+          maxItems: 3
+          items:
+            type: integer
+        defaults:
+          description: Restores the defaults (one day and one hour before) instead.
+          type: boolean
+          default: false
     EventRSVP:
       description: An answer to an event.
       type: object
@@ -22245,6 +22501,18 @@ components:
             `unsubscribeAccount` do; left out, the subscription stays as it is. For an account on another
             server, the subscription starts when that server accepts the follow.
           type: boolean
+    FollowsVisibility:
+      description: |
+        Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+        `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+        of it is approved; `private`, nobody. The owner always reads both, and the counts
+        (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+        number of follows and followers alone unless the lists are `public`.
+      type: string
+      enum:
+        - public
+        - followers
+        - private
     ForwardReportRequest:
       description: What a moderator sends with a report forwarded to the target's server.
       type: object
@@ -22256,6 +22524,70 @@ components:
             sent by a forward after filing.
           type: string
           maxLength: 1000
+    FundingMeter:
+      description: |
+        How far this month's net income goes toward the instance's monthly target (the instance
+        setting `funding_meter_visibility`): the income and the target are prorated as the totals
+        under the basis `amortized` are, and the month is the calendar month that holds today in UTC.
+        Only the income in the target's currency counts; no amount is converted. The target is the
+        one the operators set, or this month's costs while they are in one currency. `percent` alone
+        is published while the costs and the income are both private, so that no public amount turns
+        it into a private one; `income` and `target` are added only while both are public.
+      type: object
+      required:
+        - visibility
+        - label
+        - starts_on
+        - ends_on
+        - percent
+        - covered
+        - estimated
+        - rail
+      properties:
+        visibility:
+          description: |
+            `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+          type: string
+          enum:
+            - percent
+            - amounts
+        label:
+          description: The month, such as `2026-11`.
+          type: string
+        starts_on:
+          $ref: '#/components/schemas/CalendarDate'
+        ends_on:
+          $ref: '#/components/schemas/CalendarDate'
+        percent:
+          description: |
+            The net income over the target in whole percent, rounded down to 1%, so that 100 is
+            reached only when `covered` is true. It goes past 100, and is 0 while the net income is
+            not positive.
+          type: integer
+          format: int64
+          minimum: 0
+        covered:
+          description: Whether the net income reaches the target, that is, this month is covered.
+          type: boolean
+        estimated:
+          description: |
+            Whether the target is this month's costs and an imported usage charge of a billing month
+            that its provider has not closed is among them: the percentage may still change.
+          type: boolean
+        rail:
+          description: |
+            Whether the web client shows the meter in its right rail as well as on the about page (the
+            instance setting `funding_meter_rail`).
+          type: boolean
+        income:
+          description: This month's net income in the target's currency; only with `amounts`.
+          $ref: '#/components/schemas/Money'
+        target:
+          description: The monthly target; only with `amounts`.
+          $ref: '#/components/schemas/Money'
+        target_is_costs:
+          description: Whether the target is this month's costs; only with `amounts`.
+          type: boolean
     Id:
       description: The ID of a resource, a UUIDv7 in its canonical string form.
       type: string
@@ -22696,6 +23028,11 @@ components:
           $ref: '#/components/schemas/FinanceVisibility'
         income_visibility:
           $ref: '#/components/schemas/IncomeVisibility'
+        funding_meter:
+          description: |
+            The funding meter of this month, which the about page shows; absent while the instance
+            setting `funding_meter_visibility` is `off` or the month has no target.
+          $ref: '#/components/schemas/FundingMeter'
         single_user:
           description: |
             Whether the instance is a one-person server: the home of its operator alone, with nobody else
@@ -23180,6 +23517,10 @@ components:
         - auto_delete_default_keep_articles
         - auto_delete_max_allow_articles
         - event_creators
+        - funding_meter_visibility
+        - funding_meter_target_amount
+        - funding_meter_target_currency
+        - funding_meter_rail
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -23191,7 +23532,9 @@ components:
         a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
         `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
         provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-        comma-separated `provider=visibility|visibility` pairs, or empty for none.
+        comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+        decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+        empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
       type: string
       enum:
         - bool
@@ -23206,6 +23549,8 @@ components:
         - client_limits
         - provider_list
         - provider_visibilities
+        - decimal
+        - currency
     InstanceTextKey:
       description: |
         The key of an instance text: the name (one line), the short and full descriptions,
@@ -24302,6 +24647,15 @@ components:
             The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
             it is open and the user sees it; omitted otherwise, and without `read:voice`.
           $ref: '#/components/schemas/VoiceRoom'
+        event_id:
+          description: The event that an `event_*` notification is about.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        event:
+          description: |
+            The event that an `event_*` notification is about, as the user sees it now; omitted when
+            the user no longer sees it, for the other types, and without `read:events`.
+          $ref: '#/components/schemas/Event'
         error_group:
           description: What an `admin_error_group` tells of; omitted for the other types.
           $ref: '#/components/schemas/NotificationErrorGroup'
@@ -24322,7 +24676,8 @@ components:
         and off together. The ordinary notifications are one row per type (`mention`, `follow`,
         `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
         `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-        `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+        `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+        is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
         `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
         `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
         `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -24350,6 +24705,7 @@ components:
         - poll_closed
         - account_moved
         - voice
+        - event
         - status
         - admin_report
         - admin_sign_up
@@ -24703,6 +25059,18 @@ components:
         `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
         draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
         sends nothing.
+        The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+        sees it). `event_invited` tells that `account` invited the user, once per invitation;
+        `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+        user answered or to which the user was invited, once per date; `event_changed` that the date,
+        the places, or the voice chat room of an event that the user answered going or maybe to, or was
+        invited to, changed, once per change (a change of the title or the description sends
+        nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+        that the user answered going or maybe to starts soon, at each time before the start that the
+        user chose (`getEventReminders`), once per date and time, and never for a date that changed
+        since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+        the organizer that the voice chat room of the event cannot open. Their `account` is the
+        organizer, except for `event_invited`. Each is sent only while the user sees the event.
       type: string
       enum:
         - follow
@@ -24743,6 +25111,13 @@ components:
         - hook_appeal_decided
         - auto_delete_limit
         - scheduled_status_failed
+        - event_invited
+        - event_schedule_confirmed
+        - event_changed
+        - event_cancelled
+        - event_reminder
+        - event_started
+        - event_room_unavailable
         - reply_request
         - boost_request
         - quote_request
@@ -25732,6 +26107,9 @@ components:
           allowed. Remove one first.
         - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
           follow request was accepted) can be added to a list.
+        - `/api/v1/problems/follows-hidden` (403): the account's `follows_visibility` keeps its
+          follows and followers lists from the viewer (`/accounts/{id}/following`,
+          `/accounts/{id}/followers`). Its counts stay on the account.
         - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
           hashtags allowed (100). Unfollow one first.
         - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
@@ -26937,7 +27315,7 @@ components:
         - summary
       properties:
         title:
-          description: The title, as plain text.
+          description: The title, as plain text; empty only for an article from another server that has none.
           type: string
         summary:
           description: The summary, as plain text; the server makes one from the body when the author writes none.
@@ -27014,7 +27392,8 @@ components:
           description: |
             The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
             remote status is what the server's sanitizer kept of the received document. For an
-            article, its rendered body, or empty in lists (see above).
+            article, its rendered body, or empty in lists (see above); the images in the body of an
+            article from another server load through the server's media proxy.
           type: string
         article:
           $ref: '#/components/schemas/StatusArticle'
@@ -27959,6 +28338,8 @@ components:
             Whether the Atom feed of the account's public posts may be served. Setting it makes the
             owner's choice, which a later change of `indexable` leaves as it is.
           type: boolean
+        follows_visibility:
+          $ref: '#/components/schemas/FollowsVisibility'
     UpdateCustomEmojiRequest:
       description: The settings of a custom emoji to change; absent ones stay.
       type: object

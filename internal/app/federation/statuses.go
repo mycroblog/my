@@ -121,7 +121,7 @@ type StatusHandlersDeps struct {
 }
 
 // StatusHandlers are the inbox handlers of remote posts (federation.md §3.4): Create and Update
-// of Note, Question, and the converted types, Delete of a post, and Add and Remove of the pinned
+// of Note, Question, Article (an article, ADR-0160 §10), and the converted types, Delete of a post, and Add and Remove of the pinned
 // posts. Only posts related to a local
 // account are ingested (ADR-0006).
 type StatusHandlers struct {
@@ -265,6 +265,9 @@ func (h *StatusHandlers) Update(ctx context.Context, a *InboxActivity) error {
 		return fmt.Errorf("%w: Update of a deleted post %s", ErrDropActivity, obj.ID)
 	case errors.Is(err, appcontent.ErrNotAuthor):
 		return fmt.Errorf("%w: %s is not the author of %s", ErrDropActivity, a.Actor.Account.URI, obj.ID)
+	case errors.Is(err, appcontent.ErrNotArticle), errors.Is(err, appcontent.ErrArticleEditedAsPost):
+		// A post stays a post and an article an article (ADR-0160 §1).
+		return fmt.Errorf("%w: Update of %s as a %s: %w", ErrDropActivity, obj.ID, obj.RawType, err)
 	}
 	return err
 }
@@ -676,6 +679,24 @@ func (h *StatusHandlers) inputOf(author appaccount.Actor, fallback federation.Au
 	}
 	in.Quote = quoteInput(obj.Quote)
 	in.InteractionPolicy = interactionPolicyInput(obj, federation.IRI(author.Account.URI), cols)
+	in.Article = articleInput(obj.Article)
+	return in
+}
+
+// articleInput maps the article part of a received Article to what the content module stores
+// (ADR-0160 §10), nil for a post. This is the inbound conversion; the Article that this server
+// sends is built apart, with the documents of local posts.
+func articleInput(a *federation.ReceivedArticle) *appcontent.RemoteArticleInput {
+	if a == nil {
+		return nil
+	}
+	in := &appcontent.RemoteArticleInput{Title: a.Title, Summary: a.Summary}
+	if c := a.Cover; c != nil {
+		in.Cover = &appcontent.RemoteAttachmentInput{
+			Type: c.Type, URL: string(c.URL), ContentType: c.MediaType, Description: c.Name, Blurhash: c.Blurhash,
+			Width: c.Width, Height: c.Height,
+		}
+	}
 	return in
 }
 

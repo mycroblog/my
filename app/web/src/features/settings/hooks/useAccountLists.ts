@@ -10,7 +10,7 @@ import { useT } from "../../../lib/i18n";
 import { useViewer } from "../../session";
 import {
   type Account,
-  accountActionMutation,
+  followRequestMutation,
   endRelationMutation,
   blocksQueryOptions,
   cacheListChange,
@@ -152,11 +152,11 @@ export function useFollowRequests(): { list: AccountList<Account>; accept: Accou
   const query = useSuspenseInfiniteQuery(followRequestsQueryOptions(api));
   // The viewer has one more follower.
   const accept = useMutation({
-    ...accountActionMutation(api, "/follow_requests/{id}/accept"),
+    ...followRequestMutation(api, "accept"),
     onSuccess: useCacheListChange("accept"),
   });
   const reject = useMutation({
-    ...accountActionMutation(api, "/follow_requests/{id}/reject"),
+    ...followRequestMutation(api, "reject"),
     onSuccess: useCacheListChange("reject"),
   });
   return {

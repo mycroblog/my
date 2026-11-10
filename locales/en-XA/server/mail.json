@@ -131,6 +131,18 @@
     "defaultMessage": "[Ŭƞŧīŀ ŧħḗḗƞ, ẏǿǿŭŭř ǿǿẇƞ şḗḗŧŧīƞɠş ȧȧƥƥŀẏ. Ŧħḗḗ şḗḗŧŧīƞɠş ǿǿƒ ŧħḗḗ ȧȧŭŭŧǿǿḿȧȧŧīƈ ḓḗḗŀḗḗŧīǿǿƞ şħǿǿẇ ẇħīƈħ ǿǿƒ ẏǿǿŭŭř ƥǿǿşŧş ẇīŀŀ ƀḗḗ ḓḗḗŀḗḗŧḗḗḓ, ȧȧƞḓ ẏǿǿŭŭ ƈȧȧƞ ƈħȧȧƞɠḗḗ ŧħḗḗḿ ẇīŧħīƞ ŧħḗḗ şḗḗřṽḗḗř'ş ḿȧȧẋīḿŭŭḿ. Ḓḗḗŀḗḗŧḗḗḓ ƥǿǿşŧş ƈȧȧƞƞǿǿŧ ƀḗḗ řḗḗşŧǿǿřḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.event.coorganizer": {
+    "defaultMessage": "[Ƈǿǿ-ǿǿřɠȧȧƞīẑḗḗḓ ƀẏ {name}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.event.organizer": {
+    "defaultMessage": "[Ǿřɠȧȧƞīẑḗḗḓ ƀẏ {name}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.event.when": {
+    "defaultMessage": "[Ẇħḗḗƞ: {when}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.group.account_moved": {
     "defaultMessage": "[Ȧƈƈǿǿŭŭƞŧş ẏǿǿŭŭ ƒǿǿŀŀǿǿẇ ḿǿǿṽīƞɠ]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -185,6 +197,10 @@
   },
   "mail.group.boost": {
     "defaultMessage": "[Ɓǿǿǿǿşŧş]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.event": {
+    "defaultMessage": "[Ḗṽḗḗƞŧş]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.group.favourite": {

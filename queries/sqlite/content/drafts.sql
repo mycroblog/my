@@ -60,6 +60,36 @@ SELECT title FROM draft_poll_options WHERE draft_id = ? ORDER BY position;
 -- name: DeleteDraftPollOptions :exec
 DELETE FROM draft_poll_options WHERE draft_id = ?;
 
+-- The article of a draft (ADR-0160 section 2).
+
+-- name: InsertDraftArticle :exec
+INSERT INTO draft_articles (draft_id, title, summary, cover_media_id, cover_description)
+VALUES (sqlc.arg(draft_id), sqlc.arg(title), sqlc.arg(summary), CAST(sqlc.narg(cover_media_id) AS TEXT), CAST(sqlc.narg(cover_description) AS TEXT));
+
+-- name: GetDraftArticle :one
+SELECT draft_id, title, summary, cover_media_id, cover_description FROM draft_articles WHERE draft_id = ?;
+
+-- name: DeleteDraftArticle :exec
+DELETE FROM draft_articles WHERE draft_id = ?;
+
+-- name: InsertDraftArticleTag :exec
+INSERT INTO draft_article_tags (draft_id, position, name) VALUES (?, ?, ?);
+
+-- name: ListDraftArticleTags :many
+SELECT name FROM draft_article_tags WHERE draft_id = ? ORDER BY position;
+
+-- name: DeleteDraftArticleTags :exec
+DELETE FROM draft_article_tags WHERE draft_id = ?;
+
+-- name: InsertDraftArticleImage :exec
+INSERT INTO draft_article_images (draft_id, media_id) VALUES (?, ?);
+
+-- name: ListDraftArticleImages :many
+SELECT media_id FROM draft_article_images WHERE draft_id = ? ORDER BY media_id;
+
+-- name: DeleteDraftArticleImages :exec
+DELETE FROM draft_article_images WHERE draft_id = ?;
+
 -- name: InsertDraftSchedule :exec
 INSERT INTO draft_schedules (id, draft_id, publish_at, created_at) VALUES (?, ?, ?, ?);
 

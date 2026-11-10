@@ -51,6 +51,8 @@ type StatusReader interface {
 	Visible(ctx context.Context, viewer appcontent.Viewer, statusID string) (content.Status, error)
 	Live(ctx context.Context, statusID string) error
 	Source(ctx context.Context, viewer appcontent.Viewer, statusID string) (appcontent.StatusView, error)
+	// ArticleBody returns the body of a revision of an article as clients show it, "" for a post.
+	ArticleBody(ctx context.Context, rev content.Revision) (string, error)
 	Bookmarks(ctx context.Context, viewer appcontent.Viewer, before string, limit int) (appcontent.BookmarkPage, error)
 	Reactions(ctx context.Context, viewer appcontent.Viewer, statusID, emoji, before string, limit int) (appcontent.ReactedPage, error)
 	ReactionEmoji(ctx context.Context, e appcontent.ReactionEmoji) (appcontent.EmojiView, error)
@@ -572,6 +574,9 @@ func (s *Server) createdStatus(ctx context.Context, statusID string) (CreateStat
 	var out Status
 	if err == nil {
 		out, err = s.presentStatus(ctx, view)
+		if err == nil {
+			err = s.withArticleBody(ctx, &out, view)
+		}
 	}
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
@@ -626,7 +631,9 @@ func (s *Server) GetStatus(ctx context.Context, req GetStatusRequestObject) (Get
 	if err != nil {
 		return nil, err
 	}
-	withArticleBody(&body, view)
+	if err := s.withArticleBody(ctx, &body, view); err != nil {
+		return nil, err
+	}
 	// The status the viewer opened is folded even for a hide filter of threads: a link that
 	// shows nothing reads as a broken one (ADR-0157 §6).
 	f, err := s.statusFilter(ctx, contentViewer(ctx), timeline.FilterContextThread)
@@ -764,6 +771,9 @@ func (s *Server) GetStatusHistory(ctx context.Context, req GetStatusHistoryReque
 		}
 		if a := r.Revision.Article; a != nil {
 			e.Article = &StatusEditArticle{Title: a.Title, Summary: a.Summary}
+			if e.Content, err = s.o.StatusReader.ArticleBody(ctx, r.Revision); err != nil {
+				return nil, err
+			}
 		}
 		out.Items = append(out.Items, e)
 	}

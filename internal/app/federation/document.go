@@ -244,7 +244,8 @@ func approvalIRIs(a appcontent.InteractionAudience, actor federation.IRI, mentio
 // effective visibility vis to its followers and the mentioned accounts of parts, with the body of
 // rev: content per language, content warning, attachments, and the mentions, hashtags, and custom
 // emoji of parts as tag (federation.md §7.4, ADR-0051 §3). Its url is the status page under the author's current username
-// (ADR-0018). A zero updated leaves updated out.
+// (ADR-0018). A zero updated leaves updated out. A status with a poll is a Question, and an
+// article an Article (asArticle).
 func statusNote(st appcontent.Status, rev appcontent.Revision, author appaccount.Actor, vis appcontent.Visibility, parts appcontent.RevisionParts, updated time.Time, host, accountDomain string) federation.NoteDocument {
 	mentioned := make([]federation.IRI, 0, len(parts.Mentions))
 	for _, m := range parts.Mentions {
@@ -301,7 +302,7 @@ func statusNote(st appcontent.Status, rev appcontent.Revision, author appaccount
 	if p := parts.Poll; p != nil {
 		note = note.AsQuestion(questionPoll(p))
 	}
-	return note
+	return asArticle(note, rev, parts.Cover)
 }
 
 // questionPoll returns the poll of a Question from the poll as an anonymous viewer sees it: the
@@ -393,7 +394,7 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 			return nil, err
 		}
 		images.MovedTo = s.movedTo
-		return accountDocument(f.d.Host, act, s.actor, images, s.suspended)
+		return accountDocument(f.d.Host, f.d.AccountDomain, act, s.actor, images, s.suspended)
 	}
 	if act.ObjectKind == federation.OutboundMove {
 		return moveDocument(act, s.actor, s.movedTo)
@@ -463,12 +464,12 @@ func announceDocument(b appcontent.Boost, st appcontent.Status, actor federation
 // starts, the same document a GET of the actor returns; a later revision sends an Update of its
 // own. The document of a suspended actor is emptied and marked suspended (federation.md §11.1).
 // The Delete names the actor by its id.
-func accountDocument(host string, act federation.OutboundActivity, a appaccount.Actor, images ActorImages, suspended bool) ([]byte, error) {
+func accountDocument(host, accountDomain string, act federation.OutboundActivity, a appaccount.Actor, images ActorImages, suspended bool) ([]byte, error) {
 	actor := federation.IRI(a.Account.URI)
 	aud := federation.Audience{To: []federation.IRI{federation.PublicIRI}}
 	var object any = actor
 	if act.Type == federation.ActivityUpdate {
-		doc := LocalActorDocument(host, a, "", images)
+		doc := LocalActorDocument(host, accountDomain, a, "", images)
 		if suspended {
 			doc = doc.Suspend()
 		}

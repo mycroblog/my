@@ -246,9 +246,13 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 			},
 			{
 				Name: "gathering", Module: "gathering",
-				Tables: []string{"gathering_attendees", "gathering_heads", "gathering_coorganizers"},
+				Tables: []string{"gathering_attendees", "gathering_heads", "gathering_coorganizers", "gathering_dues"},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
-					return gathering.RebuildProjections(ctx, u, r.gatherings)
+					if err := gathering.RebuildProjections(ctx, u, r.gatherings); err != nil {
+						return err
+					}
+					// The due times read the heads and the attendees derived above.
+					return gathering.RebuildDues(ctx, u, r.gatherings, a.Clock.Now())
 				},
 			},
 			{

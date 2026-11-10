@@ -26,11 +26,22 @@ A profile has the button "Follow". Depending on the account it says something el
 When you follow an account on another server, the profile says "Waiting for ... to accept your follow request" until that
 server answers. Some servers do not follow accounts of other servers; the profile then says so.
 
+On another server's page, the buttons that follow an account or reply to a post can bring you to this server: enter your
+handle (`@username@server`) where that page asks for it. This server then opens "Open from another server", after you
+sign in, with the address of the account or the post. "Show the account" opens its profile here, where "Follow"
+follows it; "Reply to the post" opens the post here with a reply to it started. Nothing is looked up until you press the
+button.
+
 After you follow an account, the bell "Notify me of new posts" notifies you of each of its new posts.
 
 People who want to follow your account get a request when you approve your followers: see "Follow requests" in the
-settings, where you "Accept" or "Reject" each one. Your followers and the accounts you follow are on the profile page,
+settings, where you "Accept" or "Reject" each one, or "Approve" or "Decline" it from its notification. Your followers and the accounts you follow are on the profile page,
 which shows how many there are.
+
+"Who can see your follows and followers" under "Follows and followers" in the profile settings decides who can open
+those two lists: "Everyone" (the default), "Your followers" (people on this server whose follow you accepted), or
+"Only you". You always see both lists, and everyone still sees how many there are. Other servers get only the numbers
+unless you choose "Everyone". A list you cannot open says so in place of the accounts.
 
 ## Timelines
 

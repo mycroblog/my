@@ -15,7 +15,7 @@ import (
 // signed GETs (newObjects).
 func (a *App) setUpActivityPub(cfg *config.Config, version string) {
 	ap := activitypub.New(activitypub.Options{
-		Host: cfg.Host, AccountDomain: cfg.AccountDomain, SoftwareVersion: version, SourceURL: cfg.SourceURL,
+		Host: cfg.Host, AccountDomain: cfg.AccountDomain, WebOrigin: cfg.WebOrigin, SoftwareVersion: version, SourceURL: cfg.SourceURL,
 		InstanceName: a.instanceName,
 		Metadata:     a.nodeMetadata,
 		// Sign-ups that wait for a moderator's approval are open, as Mastodon reports them.

@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: MIT
+description: |
+  How far this month's net income goes toward the instance's monthly target (the instance
+  setting `funding_meter_visibility`): the income and the target are prorated as the totals
+  under the basis `amortized` are, and the month is the calendar month that holds today in UTC.
+  Only the income in the target's currency counts; no amount is converted. The target is the
+  one the operators set, or this month's costs while they are in one currency. `percent` alone
+  is published while the costs and the income are both private, so that no public amount turns
+  it into a private one; `income` and `target` are added only while both are public.
+type: object
+required: [visibility, label, starts_on, ends_on, percent, covered, estimated, rail]
+properties:
+  visibility:
+    description: |
+      `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+    type: string
+    enum: [percent, amounts]
+  label:
+    description: The month, such as `2026-11`.
+    type: string
+  starts_on:
+    $ref: ./CalendarDate.yaml
+  ends_on:
+    $ref: ./CalendarDate.yaml
+  percent:
+    description: |
+      The net income over the target in whole percent, rounded down to 1%, so that 100 is
+      reached only when `covered` is true. It goes past 100, and is 0 while the net income is
+      not positive.
+    type: integer
+    format: int64
+    minimum: 0
+  covered:
+    description: Whether the net income reaches the target, that is, this month is covered.
+    type: boolean
+  estimated:
+    description: |
+      Whether the target is this month's costs and an imported usage charge of a billing month
+      that its provider has not closed is among them: the percentage may still change.
+    type: boolean
+  rail:
+    description: |
+      Whether the web client shows the meter in its right rail as well as on the about page (the
+      instance setting `funding_meter_rail`).
+    type: boolean
+  income:
+    description: This month's net income in the target's currency; only with `amounts`.
+    $ref: ./Money.yaml
+  target:
+    description: The monthly target; only with `amounts`.
+    $ref: ./Money.yaml
+  target_is_costs:
+    description: Whether the target is this month's costs; only with `amounts`.
+    type: boolean

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 description: |
-  A draft of a post, saved on the server so that the user goes on writing it on another device,
-  and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+  A draft of a post or of an article (`article`), saved on the server so that the user goes on
+  writing it on another device, and publishes it at once or at a chosen time. Only the user reads
+  it; it is never federated.
 type: object
 required: [id, created_at, updated_at, text, spoiler_text, sensitive, visibility, media]
 properties:
@@ -42,6 +43,10 @@ properties:
       $ref: ./StatusMediaItem.yaml
   poll:
     $ref: ./DraftPoll.yaml
+  article:
+    description: What makes the draft that of an article; left out for the draft of a post.
+    allOf:
+      - $ref: ./DraftArticle.yaml
   scheduled_at:
     description: When the draft is scheduled to be published; left out while it is not scheduled.
     type: string

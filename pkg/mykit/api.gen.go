@@ -2525,6 +2525,45 @@ func (e FinanceVisibility) Valid() bool {
 	}
 }
 
+// Defines values for FollowsVisibility.
+const (
+	FollowsVisibilityFollowers FollowsVisibility = "followers"
+	FollowsVisibilityPrivate   FollowsVisibility = "private"
+	FollowsVisibilityPublic    FollowsVisibility = "public"
+)
+
+// Valid indicates whether the value is a known member of the FollowsVisibility enum.
+func (e FollowsVisibility) Valid() bool {
+	switch e {
+	case FollowsVisibilityFollowers:
+		return true
+	case FollowsVisibilityPrivate:
+		return true
+	case FollowsVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FundingMeterVisibility.
+const (
+	FundingMeterVisibilityAmounts FundingMeterVisibility = "amounts"
+	FundingMeterVisibilityPercent FundingMeterVisibility = "percent"
+)
+
+// Valid indicates whether the value is a known member of the FundingMeterVisibility enum.
+func (e FundingMeterVisibility) Valid() bool {
+	switch e {
+	case FundingMeterVisibilityAmounts:
+		return true
+	case FundingMeterVisibilityPercent:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HookAppealState.
 const (
 	HookAppealStateOverturned HookAppealState = "overturned"
@@ -2969,6 +3008,10 @@ const (
 	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
 	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyFundingMeterRail                   InstanceSettingKey = "funding_meter_rail"
+	InstanceSettingKeyFundingMeterTargetAmount           InstanceSettingKey = "funding_meter_target_amount"
+	InstanceSettingKeyFundingMeterTargetCurrency         InstanceSettingKey = "funding_meter_target_currency"
+	InstanceSettingKeyFundingMeterVisibility             InstanceSettingKey = "funding_meter_visibility"
 	InstanceSettingKeyHookDecisionsRetentionDays         InstanceSettingKey = "hook_decisions_retention_days"
 	InstanceSettingKeyHookInboundActorMode               InstanceSettingKey = "hook_inbound_actor_mode"
 	InstanceSettingKeyHookInboundActorOnFailure          InstanceSettingKey = "hook_inbound_actor_on_failure"
@@ -3134,6 +3177,14 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFinanceVisibility:
 		return true
+	case InstanceSettingKeyFundingMeterRail:
+		return true
+	case InstanceSettingKeyFundingMeterTargetAmount:
+		return true
+	case InstanceSettingKeyFundingMeterTargetCurrency:
+		return true
+	case InstanceSettingKeyFundingMeterVisibility:
+		return true
 	case InstanceSettingKeyHookDecisionsRetentionDays:
 		return true
 	case InstanceSettingKeyHookInboundActorMode:
@@ -3281,6 +3332,8 @@ const (
 	InstanceSettingKindAccounts             InstanceSettingKind = "accounts"
 	InstanceSettingKindBool                 InstanceSettingKind = "bool"
 	InstanceSettingKindClientLimits         InstanceSettingKind = "client_limits"
+	InstanceSettingKindCurrency             InstanceSettingKind = "currency"
+	InstanceSettingKindDecimal              InstanceSettingKind = "decimal"
 	InstanceSettingKindEmail                InstanceSettingKind = "email"
 	InstanceSettingKindEnum                 InstanceSettingKind = "enum"
 	InstanceSettingKindInt                  InstanceSettingKind = "int"
@@ -3301,6 +3354,10 @@ func (e InstanceSettingKind) Valid() bool {
 	case InstanceSettingKindBool:
 		return true
 	case InstanceSettingKindClientLimits:
+		return true
+	case InstanceSettingKindCurrency:
+		return true
+	case InstanceSettingKindDecimal:
 		return true
 	case InstanceSettingKindEmail:
 		return true
@@ -3772,6 +3829,7 @@ const (
 	NotificationGroupAnnouncement            NotificationGroup = "announcement"
 	NotificationGroupAutoDeleteLimit         NotificationGroup = "auto_delete_limit"
 	NotificationGroupBoost                   NotificationGroup = "boost"
+	NotificationGroupEvent                   NotificationGroup = "event"
 	NotificationGroupFavourite               NotificationGroup = "favourite"
 	NotificationGroupFollow                  NotificationGroup = "follow"
 	NotificationGroupFollowAccepted          NotificationGroup = "follow_accepted"
@@ -3821,6 +3879,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAutoDeleteLimit:
 		return true
 	case NotificationGroupBoost:
+		return true
+	case NotificationGroupEvent:
 		return true
 	case NotificationGroupFavourite:
 		return true
@@ -3937,6 +3997,13 @@ const (
 	NotificationTypeBoost                      NotificationType = "boost"
 	NotificationTypeBoostRequest               NotificationType = "boost_request"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
+	NotificationTypeEventCancelled             NotificationType = "event_cancelled"
+	NotificationTypeEventChanged               NotificationType = "event_changed"
+	NotificationTypeEventInvited               NotificationType = "event_invited"
+	NotificationTypeEventReminder              NotificationType = "event_reminder"
+	NotificationTypeEventRoomUnavailable       NotificationType = "event_room_unavailable"
+	NotificationTypeEventScheduleConfirmed     NotificationType = "event_schedule_confirmed"
+	NotificationTypeEventStarted               NotificationType = "event_started"
 	NotificationTypeFavourite                  NotificationType = "favourite"
 	NotificationTypeFollow                     NotificationType = "follow"
 	NotificationTypeFollowAccepted             NotificationType = "follow_accepted"
@@ -4002,6 +4069,20 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeBoostRequest:
 		return true
 	case NotificationTypeCustomEmojiRequestDecided:
+		return true
+	case NotificationTypeEventCancelled:
+		return true
+	case NotificationTypeEventChanged:
+		return true
+	case NotificationTypeEventInvited:
+		return true
+	case NotificationTypeEventReminder:
+		return true
+	case NotificationTypeEventRoomUnavailable:
+		return true
+	case NotificationTypeEventScheduleConfirmed:
+		return true
+	case NotificationTypeEventStarted:
 		return true
 	case NotificationTypeFavourite:
 		return true
@@ -7832,7 +7913,9 @@ type AdminSetting struct {
 	// a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
 	// `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
 	// provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-	// comma-separated `provider=visibility|visibility` pairs, or empty for none.
+	// comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+	// decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+	// empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -9835,6 +9918,13 @@ type CredentialAccount struct {
 	// FollowingCount The number of accounts that the account actively follows; present where `followers_count` is.
 	FollowingCount *int `json:"following_count,omitempty"`
 
+	// FollowsVisibility Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+	// `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+	// of it is approved; `private`, nobody. The owner always reads both, and the counts
+	// (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+	// number of follows and followers alone unless the lists are `public`.
+	FollowsVisibility FollowsVisibility `json:"follows_visibility"`
+
 	// Header The header image; omitted when there is none, as `avatar` is.
 	Header *MediaVariants `json:"header,omitempty"`
 
@@ -10391,10 +10481,13 @@ type DomainMutePage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// Draft A draft of a post, saved on the server so that the user goes on writing it on another device,
-// and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+// Draft A draft of a post or of an article (`article`), saved on the server so that the user goes on
+// writing it on another device, and publishes it at once or at a chosen time. Only the user reads
+// it; it is never federated.
 type Draft struct {
-	CreatedAt time.Time `json:"created_at"`
+	// Article What makes the draft that of an article; left out for the draft of a post.
+	Article   *DraftArticle `json:"article,omitempty"`
+	CreatedAt time.Time     `json:"created_at"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
@@ -10448,6 +10541,47 @@ type Draft struct {
 	Visibility Visibility `json:"visibility"`
 }
 
+// DraftArticle What makes a draft that of an article: the draft's `text` is the body in Markdown. The title
+// and the summary may be empty while the user writes; publishing the draft checks them as
+// `createArticle` does.
+type DraftArticle struct {
+	// Cover The cover image; omitted when there is none.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Images The IDs of the user's own uploads that the body shows as images (`![alt](media:ID)`),
+	// each once, ordered by ID; the server finds them in the body at each save, and keeps the
+	// uploads while the draft names them.
+	Images []Id `json:"images"`
+
+	// Summary The summary, as plain text; empty makes one from the body when the draft is published.
+	Summary string `json:"summary"`
+
+	// Tags The hashtags, as the user gave them.
+	Tags []string `json:"tags"`
+
+	// Title The title, as plain text; empty while there is none.
+	Title string `json:"title"`
+}
+
+// DraftArticleInput Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+// has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+// `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+type DraftArticleInput struct {
+	// Cover The cover image, one of the user's own uploads, processed or not.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags, with or without `#`; checked when the draft is published.
+	Tags *[]string `json:"tags,omitempty"`
+
+	// Title The title, as plain text; omitted or empty while there is none.
+	Title *string `json:"title,omitempty"`
+}
+
 // DraftFailureReason Why a scheduled post was not published at its time; the draft stays, to fix and schedule
 // again. `restricted`: the account may not post (a moderation action, a suspension, or an
 // account that is not active). `reply_unavailable`: the post it replies to is gone, hidden from
@@ -10487,6 +10621,11 @@ type DraftPoll struct {
 // post would refuse (empty, or longer than `max_post_characters`), up to 100,000 characters, and
 // media that are still being processed; publishing it checks it as a new post.
 type DraftRequest struct {
+	// Article Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+	// has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+	// `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+	Article *DraftArticleInput `json:"article,omitempty"`
+
 	// InReplyToId The post to reply to, checked when the draft is scheduled and published.
 	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
 
@@ -11058,6 +11197,26 @@ type EventRSVP struct {
 	Answer EventAnswer `json:"answer"`
 }
 
+// EventReminders The reminders of events of the authenticated user.
+type EventReminders struct {
+	// Defaults Whether these are the defaults (one day and one hour before), as the user has not chosen.
+	Defaults bool `json:"defaults"`
+
+	// MinutesBefore How many minutes before the start of an event each reminder is, from the earliest; empty
+	// for no reminders.
+	MinutesBefore []int `json:"minutes_before"`
+}
+
+// EventRemindersUpdate A change of the reminders of events of the authenticated user.
+type EventRemindersUpdate struct {
+	// Defaults Restores the defaults (one day and one hour before) instead.
+	Defaults *bool `json:"defaults,omitempty"`
+
+	// MinutesBefore The reminders, in minutes before the start: at most 3, each from 5 minutes to 7 days
+	// (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
+	MinutesBefore *[]int `json:"minutes_before,omitempty"`
+}
+
 // EventState Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
 // `ends_at` is in the past.
 type EventState string
@@ -11335,6 +11494,13 @@ type FollowedHashtagCollection struct {
 	Items []FollowedHashtag `json:"items"`
 }
 
+// FollowsVisibility Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+// `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+// of it is approved; `private`, nobody. The owner always reads both, and the counts
+// (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+// number of follows and followers alone unless the lists are `public`.
+type FollowsVisibility string
+
 // ForwardReportRequest What a moderator sends with a report forwarded to the target's server.
 type ForwardReportRequest struct {
 	// Comment Text for the moderators of the target's server, as plain text, up to 1,000 characters:
@@ -11342,6 +11508,57 @@ type ForwardReportRequest struct {
 	// sent by a forward after filing.
 	Comment *string `json:"comment,omitempty"`
 }
+
+// FundingMeter How far this month's net income goes toward the instance's monthly target (the instance
+// setting `funding_meter_visibility`): the income and the target are prorated as the totals
+// under the basis `amortized` are, and the month is the calendar month that holds today in UTC.
+// Only the income in the target's currency counts; no amount is converted. The target is the
+// one the operators set, or this month's costs while they are in one currency. `percent` alone
+// is published while the costs and the income are both private, so that no public amount turns
+// it into a private one; `income` and `target` are added only while both are public.
+type FundingMeter struct {
+	// Covered Whether the net income reaches the target, that is, this month is covered.
+	Covered bool `json:"covered"`
+
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
+	// of a payment on a card statement or an invoice.
+	EndsOn CalendarDate `json:"ends_on"`
+
+	// Estimated Whether the target is this month's costs and an imported usage charge of a billing month
+	// that its provider has not closed is among them: the percentage may still change.
+	Estimated bool `json:"estimated"`
+
+	// Income This month's net income in the target's currency; only with `amounts`.
+	Income *Money `json:"income,omitempty"`
+
+	// Label The month, such as `2026-11`.
+	Label string `json:"label"`
+
+	// Percent The net income over the target in whole percent, rounded down to 1%, so that 100 is
+	// reached only when `covered` is true. It goes past 100, and is 0 while the net income is
+	// not positive.
+	Percent int64 `json:"percent"`
+
+	// Rail Whether the web client shows the meter in its right rail as well as on the about page (the
+	// instance setting `funding_meter_rail`).
+	Rail bool `json:"rail"`
+
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
+	// of a payment on a card statement or an invoice.
+	StartsOn CalendarDate `json:"starts_on"`
+
+	// Target The monthly target; only with `amounts`.
+	Target *Money `json:"target,omitempty"`
+
+	// TargetIsCosts Whether the target is this month's costs; only with `amounts`.
+	TargetIsCosts *bool `json:"target_is_costs,omitempty"`
+
+	// Visibility `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+	Visibility FundingMeterVisibility `json:"visibility"`
+}
+
+// FundingMeterVisibility `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+type FundingMeterVisibility string
 
 // Hashtag A hashtag and whether the user follows it. The posts of the hashtags the user follows appear
 // on the home timeline.
@@ -11651,6 +11868,10 @@ type Instance struct {
 	// hashtags, which every server has. Clients read this to know whether to show an entry to it,
 	// without a search that fails.
 	FullTextSearch InstanceFullTextSearch `json:"full_text_search"`
+
+	// FundingMeter The funding meter of this month, which the about page shows; absent while the instance
+	// setting `funding_meter_visibility` is `off` or the month has no target.
+	FundingMeter *FundingMeter `json:"funding_meter,omitempty"`
 
 	// Icon A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 	// under `/brand/` on the server that name the revision, so their content never changes and
@@ -12118,7 +12339,9 @@ type InstanceSettingKey string
 // a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
 // `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
 // provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-// comma-separated `provider=visibility|visibility` pairs, or empty for none.
+// comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+// decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+// empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,
@@ -13136,6 +13359,13 @@ type Notification struct {
 	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
 	ErrorGroup *NotificationErrorGroup `json:"error_group,omitempty"`
 
+	// Event The event that an `event_*` notification is about, as the user sees it now; omitted when
+	// the user no longer sees it, for the other types, and without `read:events`.
+	Event *Event `json:"event,omitempty"`
+
+	// EventId The event that an `event_*` notification is about.
+	EventId *Id `json:"event_id,omitempty"`
+
 	// HookAppeal The user's appeal of a refused post that a `hook_appeal_decided` tells of, with its state;
 	// first-party clients only, and absent once the appeal is no longer kept.
 	HookAppeal *OwnHookAppeal `json:"hook_appeal,omitempty"`
@@ -13271,6 +13501,18 @@ type Notification struct {
 	// `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
 	// draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
 	// sends nothing.
+	// The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+	// sees it). `event_invited` tells that `account` invited the user, once per invitation;
+	// `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+	// user answered or to which the user was invited, once per date; `event_changed` that the date,
+	// the places, or the voice chat room of an event that the user answered going or maybe to, or was
+	// invited to, changed, once per change (a change of the title or the description sends
+	// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+	// that the user answered going or maybe to starts soon, at each time before the start that the
+	// user chose (`getEventReminders`), once per date and time, and never for a date that changed
+	// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+	// the organizer that the voice chat room of the event cannot open. Their `account` is the
+	// organizer, except for `event_invited`. Each is sent only while the user sees the event.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -13313,7 +13555,8 @@ type NotificationErrorGroupChange string
 // and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 // `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 // `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 // `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 // `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13505,7 +13748,8 @@ type NotificationSettingRow struct {
 	// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 	// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-	// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+	// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+	// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 	// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 	// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13562,7 +13806,8 @@ type NotificationSettingsUpdate struct {
 		// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 		// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-		// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+		// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+		// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 		// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 		// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13669,6 +13914,18 @@ type NotificationSettingsUpdateChangesChannel string
 // `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
 // draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
 // sends nothing.
+// The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+// sees it). `event_invited` tells that `account` invited the user, once per invitation;
+// `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+// user answered or to which the user was invited, once per date; `event_changed` that the date,
+// the places, or the voice chat room of an event that the user answered going or maybe to, or was
+// invited to, changed, once per change (a change of the title or the description sends
+// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+// that the user answered going or maybe to starts soon, at each time before the start that the
+// user chose (`getEventReminders`), once per date and time, and never for a date that changed
+// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+// the organizer that the voice chat room of the event cannot open. Their `account` is the
+// organizer, except for `event_invited`. Each is sent only while the user sees the event.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
@@ -14392,6 +14649,9 @@ type PreviewDomainBlockImportRequest struct {
 //     allowed. Remove one first.
 //   - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
 //     follow request was accepted) can be added to a list.
+//   - `/api/v1/problems/follows-hidden` (403): the account's `follows_visibility` keeps its
+//     follows and followers lists from the viewer (`/accounts/{id}/following`,
+//     `/accounts/{id}/followers`). Its counts stay on the account.
 //   - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
 //     hashtags allowed (100). Unfollow one first.
 //   - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
@@ -15178,7 +15438,8 @@ type Status struct {
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
 	// remote status is what the server's sanitizer kept of the received document. For an
-	// article, its rendered body, or empty in lists (see above).
+	// article, its rendered body, or empty in lists (see above); the images in the body of an
+	// article from another server load through the server's media proxy.
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -15306,7 +15567,7 @@ type StatusArticle struct {
 	// Summary The summary, as plain text; the server makes one from the body when the author writes none.
 	Summary string `json:"summary"`
 
-	// Title The title, as plain text.
+	// Title The title, as plain text; empty only for an article from another server that has none.
 	Title string `json:"title"`
 }
 
@@ -15982,6 +16243,13 @@ type UpdateCredentialsRequest struct {
 
 	// Fields The metadata fields, replacing the current ones; at most 4.
 	Fields *[]AccountFieldSource `json:"fields,omitempty"`
+
+	// FollowsVisibility Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+	// `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+	// of it is approved; `private`, nobody. The owner always reads both, and the counts
+	// (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+	// number of follows and followers alone unless the lists are `public`.
+	FollowsVisibility *FollowsVisibility `json:"follows_visibility,omitempty"`
 
 	// HeaderMediaId The ID of a processed image that the user uploaded, to become the header image;
 	// empty removes the header image.
@@ -17843,6 +18111,12 @@ type CreateStatusParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// LookupStatusParams defines parameters for LookupStatus.
+type LookupStatusParams struct {
+	// Uri The `https` URL of the post.
+	Uri string `form:"uri" json:"uri"`
+}
+
 // SearchStatusesParams defines parameters for SearchStatuses.
 type SearchStatusesParams struct {
 	// Q The words to find, 1 to 200 characters. Anything else is a 400.
@@ -18294,6 +18568,9 @@ type PreviewAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
 
 // UpdateBadgeChoiceJSONRequestBody defines body for UpdateBadgeChoice for application/json ContentType.
 type UpdateBadgeChoiceJSONRequestBody = UpdateBadgeChoiceRequest
+
+// UpdateEventRemindersJSONRequestBody defines body for UpdateEventReminders for application/json ContentType.
+type UpdateEventRemindersJSONRequestBody = EventRemindersUpdate
 
 // UpdateNotificationPolicyJSONRequestBody defines body for UpdateNotificationPolicy for application/json ContentType.
 type UpdateNotificationPolicyJSONRequestBody = NotificationPolicyUpdate
@@ -20552,6 +20829,9 @@ type ClientInterface interface {
 	// block the viewer, are deactivated, or are deleted are left out, so a page may hold
 	// fewer than `limit` accounts before the last.
 	//
+	// When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+	// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
+	//
 	// Corresponds with GET /accounts/{id}/followers (the `ListAccountFollowers` operationId).
 	ListAccountFollowers(ctx context.Context, id AccountId, params *ListAccountFollowersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -20559,6 +20839,9 @@ type ClientInterface interface {
 	//
 	// The accounts that the account actively follows, newest follow first, leaving out the
 	// same accounts as `listAccountFollowers`.
+	//
+	// When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+	// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
 	//
 	// Corresponds with GET /accounts/{id}/following (the `ListAccountFollowing` operationId).
 	ListAccountFollowing(ctx context.Context, id AccountId, params *ListAccountFollowingParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -23157,7 +23440,13 @@ type ClientInterface interface {
 	// The changes take effect on the next request. An unknown key, or a value its key
 	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+	// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+	// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+	// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+	// while neither is, judged after the whole change, so another value is a 422; a change of
+	// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+	// own. `funding_meter_target_amount` is above zero, with no more digits than
+	// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -23174,7 +23463,13 @@ type ClientInterface interface {
 	// The changes take effect on the next request. An unknown key, or a value its key
 	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+	// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+	// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+	// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+	// while neither is, judged after the whole change, so another value is a 422; a change of
+	// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+	// own. `funding_meter_target_amount` is above zero, with no more digits than
+	// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -24187,7 +24482,9 @@ type ClientInterface interface {
 	// PublishDraft Publish a draft now
 	//
 	// Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-	// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+	// and deletes the draft with its schedule; the draft of an article (`article`) is published with
+	// those of `createArticle`, and the status has its `content`. A draft that cannot be published
+	// stays as it was.
 	//
 	// Corresponds with POST /drafts/{id}/publish (the `PublishDraft` operationId).
 	PublishDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -24327,6 +24624,19 @@ type ClientInterface interface {
 	//
 	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 	ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetEventCalendar Get an event as an iCalendar file
+	//
+	// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+	// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+	// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+	// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+	// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+	// user sees: a hidden place never appears in the file. A 404 for an event that the user does
+	// not see.
+	//
+	// Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
+	GetEventCalendar(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// CancelEventWithBody Cancel an event
 	//
@@ -25770,6 +26080,38 @@ type ClientInterface interface {
 	// Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 	UpdateBadgeChoice(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetEventReminders Get the authenticated user's reminders of events
+	//
+	// How long before the start of an event that the user answered going or maybe an
+	// `event_reminder` reminds the user: one day and one hour before until the user chooses.
+	//
+	// Corresponds with GET /preferences/event_reminders (the `GetEventReminders` operationId).
+	GetEventReminders(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateEventRemindersWithBody Change the authenticated user's reminders of events
+	//
+	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+	// reminders of the upcoming events that the user answered going or maybe follow the change. A
+	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+	// longer than 7 days, or the same one twice; nothing is changed then.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+	UpdateEventRemindersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateEventReminders Change the authenticated user's reminders of events
+	//
+	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+	// reminders of the upcoming events that the user answered going or maybe follow the change. A
+	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+	// longer than 7 days, or the same one twice; nothing is changed then.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+	UpdateEventReminders(ctx context.Context, body UpdateEventRemindersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetNotificationPolicy Get the authenticated user's notification policy
 	//
 	// What happens to the notifications of other accounts, by condition on their source: listed,
@@ -26011,6 +26353,28 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /statuses (the `CreateStatus` operationId).
 	CreateStatus(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// LookupStatus Look up or resolve a status by its URL
+	//
+	// Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+	// else fetches it from its server, as a reply button of another server asks to (the page that
+	// `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+	// followed to the post's id. The post's parent is fetched too, one level. Posts of this
+	// instance are found by their id only.
+	//
+	// The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+	// 404, the same as a URL that leads to no post, or to an account.
+	//
+	// Only signed-in users can look a status up (anonymous requests get the 401 of
+	// `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+	// `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+	// `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+	// other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+	// found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+	// fetched.
+	//
+	// Corresponds with GET /statuses/lookup (the `LookupStatus` operationId).
+	LookupStatus(ctx context.Context, params *LookupStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SearchStatuses Search the text of posts
 	//
@@ -28013,6 +28377,9 @@ func (c *Client) RemoveFollower(ctx context.Context, id AccountId, reqEditors ..
 // block the viewer, are deactivated, or are deleted are left out, so a page may hold
 // fewer than `limit` accounts before the last.
 //
+// When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
+//
 // Corresponds with GET /accounts/{id}/followers (the `ListAccountFollowers` operationId).
 func (c *Client) ListAccountFollowers(ctx context.Context, id AccountId, params *ListAccountFollowersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAccountFollowersRequest(c.Server, id, params)
@@ -28030,6 +28397,9 @@ func (c *Client) ListAccountFollowers(ctx context.Context, id AccountId, params 
 //
 // The accounts that the account actively follows, newest follow first, leaving out the
 // same accounts as `listAccountFollowers`.
+//
+// When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
 //
 // Corresponds with GET /accounts/{id}/following (the `ListAccountFollowing` operationId).
 func (c *Client) ListAccountFollowing(ctx context.Context, id AccountId, params *ListAccountFollowingParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -32738,7 +33108,13 @@ func (c *Client) ListInstanceSettings(ctx context.Context, reqEditors ...Request
 // The changes take effect on the next request. An unknown key, or a value its key
 // rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 // current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+// while neither is, judged after the whole change, so another value is a 422; a change of
+// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+// own. `funding_meter_target_amount` is above zero, with no more digits than
+// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 // permission.
 //
 // Takes any type of body and a specified content type.
@@ -32765,7 +33141,13 @@ func (c *Client) UpdateInstanceSettingsWithBody(ctx context.Context, contentType
 // The changes take effect on the next request. An unknown key, or a value its key
 // rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 // current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+// while neither is, judged after the whole change, so another value is a 422; a change of
+// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+// own. `funding_meter_target_amount` is above zero, with no more digits than
+// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 // permission.
 //
 // Takes a body of the `application/json` content type.
@@ -34588,7 +34970,9 @@ func (c *Client) UpdateDraft(ctx context.Context, id DraftId, params *UpdateDraf
 // PublishDraft Publish a draft now
 //
 // Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+// and deletes the draft with its schedule; the draft of an article (`article`) is published with
+// those of `createArticle`, and the status has its `content`. A draft that cannot be published
+// stays as it was.
 //
 // Corresponds with POST /drafts/{id}/publish (the `PublishDraft` operationId).
 func (c *Client) PublishDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -34849,6 +35233,29 @@ func (c *Client) RevokeEventAttendeeApproval(ctx context.Context, id EventId, ac
 // Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 func (c *Client) ApproveEventAttendee(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewApproveEventAttendeeRequest(c.Server, id, accountId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetEventCalendar Get an event as an iCalendar file
+//
+// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+// user sees: a hidden place never appears in the file. A 404 for an event that the user does
+// not see.
+//
+// Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
+func (c *Client) GetEventCalendar(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEventCalendarRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -37461,6 +37868,68 @@ func (c *Client) UpdateBadgeChoice(ctx context.Context, roleId BadgeRoleId, body
 	return c.Client.Do(req)
 }
 
+// GetEventReminders Get the authenticated user's reminders of events
+//
+// How long before the start of an event that the user answered going or maybe an
+// `event_reminder` reminds the user: one day and one hour before until the user chooses.
+//
+// Corresponds with GET /preferences/event_reminders (the `GetEventReminders` operationId).
+func (c *Client) GetEventReminders(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetEventRemindersRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateEventRemindersWithBody Change the authenticated user's reminders of events
+//
+// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+// reminders of the upcoming events that the user answered going or maybe follow the change. A
+// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+// longer than 7 days, or the same one twice; nothing is changed then.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+func (c *Client) UpdateEventRemindersWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateEventRemindersRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateEventReminders Change the authenticated user's reminders of events
+//
+// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+// reminders of the upcoming events that the user answered going or maybe follow the change. A
+// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+// longer than 7 days, or the same one twice; nothing is changed then.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+func (c *Client) UpdateEventReminders(ctx context.Context, body UpdateEventRemindersJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateEventRemindersRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetNotificationPolicy Get the authenticated user's notification policy
 //
 // What happens to the notifications of other accounts, by condition on their source: listed,
@@ -37903,6 +38372,38 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 // Corresponds with POST /statuses (the `CreateStatus` operationId).
 func (c *Client) CreateStatus(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateStatusRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// LookupStatus Look up or resolve a status by its URL
+//
+// Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+// else fetches it from its server, as a reply button of another server asks to (the page that
+// `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+// followed to the post's id. The post's parent is fetched too, one level. Posts of this
+// instance are found by their id only.
+//
+// The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+// 404, the same as a URL that leads to no post, or to an account.
+//
+// Only signed-in users can look a status up (anonymous requests get the 401 of
+// `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+// `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+// `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+// other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+// found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+// fetched.
+//
+// Corresponds with GET /statuses/lookup (the `LookupStatus` operationId).
+func (c *Client) LookupStatus(ctx context.Context, params *LookupStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLookupStatusRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -51649,6 +52150,40 @@ func NewApproveEventAttendeeRequest(server string, id EventId, accountId EventAc
 	return req, nil
 }
 
+// NewGetEventCalendarRequest constructs an http.Request for the GetEventCalendar method
+func NewGetEventCalendarRequest(server string, id EventId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/calendar.ics", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewCancelEventRequest calls the generic CancelEvent builder with application/json body
 func NewCancelEventRequest(server string, id EventId, body CancelEventJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
@@ -55461,6 +55996,73 @@ func NewUpdateBadgeChoiceRequestWithBody(server string, roleId BadgeRoleId, cont
 	return req, nil
 }
 
+// NewGetEventRemindersRequest constructs an http.Request for the GetEventReminders method
+func NewGetEventRemindersRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/preferences/event_reminders")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateEventRemindersRequest calls the generic UpdateEventReminders builder with application/json body
+func NewUpdateEventRemindersRequest(server string, body UpdateEventRemindersJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateEventRemindersRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdateEventRemindersRequestWithBody constructs an http.Request for the UpdateEventReminders method, with any body, and a specified content type
+func NewUpdateEventRemindersRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/preferences/event_reminders")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewGetNotificationPolicyRequest constructs an http.Request for the GetNotificationPolicy method
 func NewGetNotificationPolicyRequest(server string) (*http.Request, error) {
 	var err error
@@ -56000,6 +56602,56 @@ func NewCreateStatusRequestWithBody(server string, params *CreateStatusParams, c
 			req.Header.Set("Idempotency-Key", headerParam0)
 		}
 
+	}
+
+	return req, nil
+}
+
+// NewLookupStatusRequest constructs an http.Request for the LookupStatus method
+func NewLookupStatusRequest(server string, params *LookupStatusParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/statuses/lookup")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "uri", params.Uri, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
 	}
 
 	return req, nil
@@ -59958,6 +60610,9 @@ type ClientWithResponsesInterface interface {
 	// block the viewer, are deactivated, or are deleted are left out, so a page may hold
 	// fewer than `limit` accounts before the last.
 	//
+	// When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+	// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /accounts/{id}/followers (the `ListAccountFollowers` operationId).
@@ -59967,6 +60622,9 @@ type ClientWithResponsesInterface interface {
 	//
 	// The accounts that the account actively follows, newest follow first, leaving out the
 	// same accounts as `listAccountFollowers`.
+	//
+	// When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+	// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -62795,7 +63453,13 @@ type ClientWithResponsesInterface interface {
 	// The changes take effect on the next request. An unknown key, or a value its key
 	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+	// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+	// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+	// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+	// while neither is, judged after the whole change, so another value is a 422; a change of
+	// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+	// own. `funding_meter_target_amount` is above zero, with no more digits than
+	// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -62812,7 +63476,13 @@ type ClientWithResponsesInterface interface {
 	// The changes take effect on the next request. An unknown key, or a value its key
 	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+	// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+	// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+	// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+	// while neither is, judged after the whole change, so another value is a 422; a change of
+	// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+	// own. `funding_meter_target_amount` is above zero, with no more digits than
+	// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -63917,7 +64587,9 @@ type ClientWithResponsesInterface interface {
 	// PublishDraftWithResponse Publish a draft now
 	//
 	// Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-	// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+	// and deletes the draft with its schedule; the draft of an article (`article`) is published with
+	// those of `createArticle`, and the status has its `content`. A draft that cannot be published
+	// stays as it was.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -64071,6 +64743,21 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with PUT /events/{id}/attendees/{account_id}/approval (the `ApproveEventAttendee` operationId).
 	ApproveEventAttendeeWithResponse(ctx context.Context, id EventId, accountId EventAccountId, reqEditors ...RequestEditorFn) (*ApproveEventAttendeeResponse, error)
+
+	// GetEventCalendarWithResponse Get an event as an iCalendar file
+	//
+	// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+	// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+	// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+	// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+	// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+	// user sees: a hidden place never appears in the file. A 404 for an event that the user does
+	// not see.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
+	GetEventCalendarWithResponse(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*GetEventCalendarResponse, error)
 
 	// CancelEventWithBodyWithResponse Cancel an event
 	//
@@ -65640,6 +66327,40 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PUT /preferences/badges/{role_id} (the `UpdateBadgeChoice` operationId).
 	UpdateBadgeChoiceWithResponse(ctx context.Context, roleId BadgeRoleId, body UpdateBadgeChoiceJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateBadgeChoiceResponse, error)
 
+	// GetEventRemindersWithResponse Get the authenticated user's reminders of events
+	//
+	// How long before the start of an event that the user answered going or maybe an
+	// `event_reminder` reminds the user: one day and one hour before until the user chooses.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /preferences/event_reminders (the `GetEventReminders` operationId).
+	GetEventRemindersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventRemindersResponse, error)
+
+	// UpdateEventRemindersWithBodyWithResponse Change the authenticated user's reminders of events
+	//
+	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+	// reminders of the upcoming events that the user answered going or maybe follow the change. A
+	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+	// longer than 7 days, or the same one twice; nothing is changed then.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+	UpdateEventRemindersWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateEventRemindersResponse, error)
+
+	// UpdateEventRemindersWithResponse Change the authenticated user's reminders of events
+	//
+	// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+	// reminders of the upcoming events that the user answered going or maybe follow the change. A
+	// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+	// longer than 7 days, or the same one twice; nothing is changed then.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+	UpdateEventRemindersWithResponse(ctx context.Context, body UpdateEventRemindersJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateEventRemindersResponse, error)
+
 	// GetNotificationPolicyWithResponse Get the authenticated user's notification policy
 	//
 	// What happens to the notifications of other accounts, by condition on their source: listed,
@@ -65899,6 +66620,30 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /statuses (the `CreateStatus` operationId).
 	CreateStatusWithResponse(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateStatusResponse, error)
+
+	// LookupStatusWithResponse Look up or resolve a status by its URL
+	//
+	// Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+	// else fetches it from its server, as a reply button of another server asks to (the page that
+	// `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+	// followed to the post's id. The post's parent is fetched too, one level. Posts of this
+	// instance are found by their id only.
+	//
+	// The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+	// 404, the same as a URL that leads to no post, or to an account.
+	//
+	// Only signed-in users can look a status up (anonymous requests get the 401 of
+	// `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+	// `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+	// `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+	// other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+	// found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+	// fetched.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /statuses/lookup (the `LookupStatus` operationId).
+	LookupStatusWithResponse(ctx context.Context, params *LookupStatusParams, reqEditors ...RequestEditorFn) (*LookupStatusResponse, error)
 
 	// SearchStatusesWithResponse Search the text of posts
 	//
@@ -84299,6 +85044,65 @@ func (r ApproveEventAttendeeResponse) ContentType() string {
 	return ""
 }
 
+// GetEventCalendarResponse200Headers the declared response headers of an HTTP 200 response for GetEventCalendar
+type GetEventCalendarResponse200Headers struct {
+	CacheControl       *string
+	ContentDisposition *string
+}
+
+// GetEventCalendarResponseDefaultHeaders the declared response headers of an HTTP default response for GetEventCalendar
+type GetEventCalendarResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetEventCalendarResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetEventCalendarResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetEventCalendarResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetEventCalendarResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetEventCalendarResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetEventCalendarResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetEventCalendarResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetEventCalendarResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // CancelEventResponse200Headers the declared response headers of an HTTP 200 response for CancelEvent
 type CancelEventResponse200Headers struct {
 	CacheControl *string
@@ -89984,6 +90788,136 @@ func (r UpdateBadgeChoiceResponse) ContentType() string {
 	return ""
 }
 
+// GetEventRemindersResponse200Headers the declared response headers of an HTTP 200 response for GetEventReminders
+type GetEventRemindersResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetEventRemindersResponseDefaultHeaders the declared response headers of an HTTP default response for GetEventReminders
+type GetEventRemindersResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetEventRemindersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventReminders
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetEventRemindersResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetEventRemindersResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetEventRemindersResponse) GetJSON200() *EventReminders {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetEventRemindersResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetEventRemindersResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetEventRemindersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetEventRemindersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetEventRemindersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateEventRemindersResponse200Headers the declared response headers of an HTTP 200 response for UpdateEventReminders
+type UpdateEventRemindersResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateEventRemindersResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateEventReminders
+type UpdateEventRemindersResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateEventRemindersResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventReminders
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateEventRemindersResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateEventRemindersResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateEventRemindersResponse) GetJSON200() *EventReminders {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateEventRemindersResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateEventRemindersResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateEventRemindersResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateEventRemindersResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateEventRemindersResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetNotificationPolicyResponse200Headers the declared response headers of an HTTP 200 response for GetNotificationPolicy
 type GetNotificationPolicyResponse200Headers struct {
 	CacheControl *string
@@ -90926,6 +91860,71 @@ func (r CreateStatusResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r CreateStatusResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// LookupStatusResponse200Headers the declared response headers of an HTTP 200 response for LookupStatus
+type LookupStatusResponse200Headers struct {
+	CacheControl *string
+}
+
+// LookupStatusResponseDefaultHeaders the declared response headers of an HTTP default response for LookupStatus
+type LookupStatusResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type LookupStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Status
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *LookupStatusResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *LookupStatusResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r LookupStatusResponse) GetJSON200() *Status {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r LookupStatusResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r LookupStatusResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r LookupStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LookupStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r LookupStatusResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -96552,6 +97551,9 @@ func (c *ClientWithResponses) RemoveFollowerWithResponse(ctx context.Context, id
 // block the viewer, are deactivated, or are deleted are left out, so a page may hold
 // fewer than `limit` accounts before the last.
 //
+// When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /accounts/{id}/followers (the `ListAccountFollowers` operationId).
@@ -96567,6 +97569,9 @@ func (c *ClientWithResponses) ListAccountFollowersWithResponse(ctx context.Conte
 //
 // The accounts that the account actively follows, newest follow first, leaving out the
 // same accounts as `listAccountFollowers`.
+//
+// When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -100661,7 +101666,13 @@ func (c *ClientWithResponses) ListInstanceSettingsWithResponse(ctx context.Conte
 // The changes take effect on the next request. An unknown key, or a value its key
 // rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 // current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+// while neither is, judged after the whole change, so another value is a 422; a change of
+// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+// own. `funding_meter_target_amount` is above zero, with no more digits than
+// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 // permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -100684,7 +101695,13 @@ func (c *ClientWithResponses) UpdateInstanceSettingsWithBodyWithResponse(ctx con
 // The changes take effect on the next request. An unknown key, or a value its key
 // rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 // current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+// while neither is, judged after the whole change, so another value is a 422; a change of
+// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+// own. `funding_meter_target_amount` is above zero, with no more digits than
+// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 // permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -102275,7 +103292,9 @@ func (c *ClientWithResponses) UpdateDraftWithResponse(ctx context.Context, id Dr
 // PublishDraftWithResponse Publish a draft now
 //
 // Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+// and deletes the draft with its schedule; the draft of an article (`article`) is published with
+// those of `createArticle`, and the status has its `content`. A draft that cannot be published
+// stays as it was.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -102506,6 +103525,27 @@ func (c *ClientWithResponses) ApproveEventAttendeeWithResponse(ctx context.Conte
 		return nil, err
 	}
 	return ParseApproveEventAttendeeResponse(rsp)
+}
+
+// GetEventCalendarWithResponse Get an event as an iCalendar file
+//
+// The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+// the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+// updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+// user sees: a hidden place never appears in the file. A 404 for an event that the user does
+// not see.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
+func (c *ClientWithResponses) GetEventCalendarWithResponse(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*GetEventCalendarResponse, error) {
+	rsp, err := c.GetEventCalendar(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetEventCalendarResponse(rsp)
 }
 
 // CancelEventWithBodyWithResponse Cancel an event
@@ -104772,6 +105812,58 @@ func (c *ClientWithResponses) UpdateBadgeChoiceWithResponse(ctx context.Context,
 	return ParseUpdateBadgeChoiceResponse(rsp)
 }
 
+// GetEventRemindersWithResponse Get the authenticated user's reminders of events
+//
+// How long before the start of an event that the user answered going or maybe an
+// `event_reminder` reminds the user: one day and one hour before until the user chooses.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /preferences/event_reminders (the `GetEventReminders` operationId).
+func (c *ClientWithResponses) GetEventRemindersWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetEventRemindersResponse, error) {
+	rsp, err := c.GetEventReminders(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetEventRemindersResponse(rsp)
+}
+
+// UpdateEventRemindersWithBodyWithResponse Change the authenticated user's reminders of events
+//
+// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+// reminders of the upcoming events that the user answered going or maybe follow the change. A
+// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+// longer than 7 days, or the same one twice; nothing is changed then.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+func (c *ClientWithResponses) UpdateEventRemindersWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateEventRemindersResponse, error) {
+	rsp, err := c.UpdateEventRemindersWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateEventRemindersResponse(rsp)
+}
+
+// UpdateEventRemindersWithResponse Change the authenticated user's reminders of events
+//
+// Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+// reminders of the upcoming events that the user answered going or maybe follow the change. A
+// 422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+// longer than 7 days, or the same one twice; nothing is changed then.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /preferences/event_reminders (the `UpdateEventReminders` operationId).
+func (c *ClientWithResponses) UpdateEventRemindersWithResponse(ctx context.Context, body UpdateEventRemindersJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateEventRemindersResponse, error) {
+	rsp, err := c.UpdateEventReminders(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateEventRemindersResponse(rsp)
+}
+
 // GetNotificationPolicyWithResponse Get the authenticated user's notification policy
 //
 // What happens to the notifications of other accounts, by condition on their source: listed,
@@ -105156,6 +106248,36 @@ func (c *ClientWithResponses) CreateStatusWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseCreateStatusResponse(rsp)
+}
+
+// LookupStatusWithResponse Look up or resolve a status by its URL
+//
+// Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+// else fetches it from its server, as a reply button of another server asks to (the page that
+// `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+// followed to the post's id. The post's parent is fetched too, one level. Posts of this
+// instance are found by their id only.
+//
+// The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+// 404, the same as a URL that leads to no post, or to an account.
+//
+// Only signed-in users can look a status up (anonymous requests get the 401 of
+// `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+// `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+// `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+// other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+// found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+// fetched.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /statuses/lookup (the `LookupStatus` operationId).
+func (c *ClientWithResponses) LookupStatusWithResponse(ctx context.Context, params *LookupStatusParams, reqEditors ...RequestEditorFn) (*LookupStatusResponse, error) {
+	rsp, err := c.LookupStatus(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLookupStatusResponse(rsp)
 }
 
 // SearchStatusesWithResponse Search the text of posts
@@ -127582,6 +128704,83 @@ func ParseApproveEventAttendeeResponse(rsp *http.Response) (*ApproveEventAttende
 	return response, nil
 }
 
+// ParseGetEventCalendarResponse parses an HTTP response from a GetEventCalendarWithResponse call
+func ParseGetEventCalendarResponse(rsp *http.Response) (*GetEventCalendarResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetEventCalendarResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetEventCalendarResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Disposition"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Disposition", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentDisposition = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetEventCalendarResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseCancelEventResponse parses an HTTP response from a CancelEventWithResponse call
 func ParseCancelEventResponse(rsp *http.Response) (*CancelEventResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -134359,6 +135558,160 @@ func ParseUpdateBadgeChoiceResponse(rsp *http.Response) (*UpdateBadgeChoiceRespo
 	return response, nil
 }
 
+// ParseGetEventRemindersResponse parses an HTTP response from a GetEventRemindersWithResponse call
+func ParseGetEventRemindersResponse(rsp *http.Response) (*GetEventRemindersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetEventRemindersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventReminders
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetEventRemindersResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetEventRemindersResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateEventRemindersResponse parses an HTTP response from a UpdateEventRemindersWithResponse call
+func ParseUpdateEventRemindersResponse(rsp *http.Response) (*UpdateEventRemindersResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateEventRemindersResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventReminders
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateEventRemindersResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateEventRemindersResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseGetNotificationPolicyResponse parses an HTTP response from a GetNotificationPolicyWithResponse call
 func ParseGetNotificationPolicyResponse(rsp *http.Response) (*GetNotificationPolicyResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -135462,6 +136815,83 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 		response.Headers422 = &headers
 	case true:
 		var headers CreateStatusResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseLookupStatusResponse parses an HTTP response from a LookupStatusWithResponse call
+func ParseLookupStatusResponse(rsp *http.Response) (*LookupStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LookupStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Status
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers LookupStatusResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers LookupStatusResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

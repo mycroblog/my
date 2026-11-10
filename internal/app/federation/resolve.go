@@ -188,6 +188,17 @@ func (r *Resolver) Resolve(ctx context.Context, query string) (Resolved, error) 
 	return Resolved{}, fmt.Errorf("%w: %s is neither an actor nor a post", ErrUnresolvable, target)
 }
 
+// Stored returns the stored account or status that the URL uri names by its IRI, without
+// fetching anything; found is false when the instance knows none, and a URL of this instance
+// that names nothing stored fails with ErrUnresolvable, as Resolve does.
+func (r *Resolver) Stored(ctx context.Context, uri string) (res Resolved, found bool, err error) {
+	target, err := fetchTarget(strings.TrimSpace(uri))
+	if err != nil {
+		return Resolved{}, false, fmt.Errorf("%w: %w", ErrUnresolvable, err)
+	}
+	return r.stored(ctx, target)
+}
+
 // stored returns the stored account or status with the IRI uri. An account must have a
 // confirmed handle, as ResolveURL requires.
 func (r *Resolver) stored(ctx context.Context, uri federation.IRI) (Resolved, bool, error) {

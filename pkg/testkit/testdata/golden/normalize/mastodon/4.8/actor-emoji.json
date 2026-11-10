@@ -36,6 +36,7 @@
     "SharedInbox": "https://mastodon.example/inbox",
     "Summary": "<p>Hello :blobcat:</p>",
     "Type": "Person",
-    "URL": "https://mastodon.example/@alice"
+    "URL": "https://mastodon.example/@alice",
+    "Webfinger": "alice@mastodon.example"
   }
 }

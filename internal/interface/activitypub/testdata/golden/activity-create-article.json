@@ -1,0 +1,147 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/activitystreams",
+    "https://w3id.org/security/v1",
+    {
+      "AnnounceAuthorization": "gts:AnnounceAuthorization",
+      "AnnounceRequest": "gts:AnnounceRequest",
+      "Emoji": "toot:Emoji",
+      "Hashtag": "as:Hashtag",
+      "PropertyValue": "schema:PropertyValue",
+      "QuoteAuthorization": "https://w3id.org/fep/044f#QuoteAuthorization",
+      "QuoteRequest": "https://w3id.org/fep/044f#QuoteRequest",
+      "ReplyAuthorization": "gts:ReplyAuthorization",
+      "ReplyRequest": "gts:ReplyRequest",
+      "_misskey_quote": "https://misskey-hub.net/ns#_misskey_quote",
+      "announceAuthorization": {
+        "@id": "gts:announceAuthorization",
+        "@type": "@id"
+      },
+      "automaticApproval": {
+        "@id": "gts:automaticApproval",
+        "@type": "@id"
+      },
+      "blurhash": "toot:blurhash",
+      "canAnnounce": {
+        "@id": "gts:canAnnounce",
+        "@type": "@id"
+      },
+      "canQuote": {
+        "@id": "gts:canQuote",
+        "@type": "@id"
+      },
+      "canReply": {
+        "@id": "gts:canReply",
+        "@type": "@id"
+      },
+      "conversation": "ostatus:conversation",
+      "discoverable": "toot:discoverable",
+      "featured": {
+        "@id": "toot:featured",
+        "@type": "@id"
+      },
+      "featuredTags": {
+        "@id": "toot:featuredTags",
+        "@type": "@id"
+      },
+      "focalPoint": {
+        "@container": "@list",
+        "@id": "toot:focalPoint"
+      },
+      "gts": "https://gotosocial.org/ns#",
+      "indexable": "toot:indexable",
+      "interactingObject": {
+        "@id": "gts:interactingObject",
+        "@type": "@id"
+      },
+      "interactionPolicy": {
+        "@id": "gts:interactionPolicy",
+        "@type": "@id"
+      },
+      "interactionTarget": {
+        "@id": "gts:interactionTarget",
+        "@type": "@id"
+      },
+      "manualApproval": {
+        "@id": "gts:manualApproval",
+        "@type": "@id"
+      },
+      "manuallyApprovesFollowers": "as:manuallyApprovesFollowers",
+      "movedTo": {
+        "@id": "as:movedTo",
+        "@type": "@id"
+      },
+      "ostatus": "http://ostatus.org#",
+      "quote": {
+        "@id": "https://w3id.org/fep/044f#quote",
+        "@type": "@id"
+      },
+      "quoteAuthorization": {
+        "@id": "https://w3id.org/fep/044f#quoteAuthorization",
+        "@type": "@id"
+      },
+      "quoteUri": "http://fedibird.com/ns#quoteUri",
+      "quoteUrl": "as:quoteUrl",
+      "replyAuthorization": {
+        "@id": "gts:replyAuthorization",
+        "@type": "@id"
+      },
+      "schema": "http://schema.org#",
+      "sensitive": "as:sensitive",
+      "suspended": "toot:suspended",
+      "toot": "http://joinmastodon.org/ns#",
+      "value": "schema:value",
+      "votersCount": "toot:votersCount"
+    }
+  ],
+  "id": "https://social.example.org/ap/objects/0192f3b0-2c3d-7e4f-8a00-1122334455aa/activity",
+  "type": "Create",
+  "actor": "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f",
+  "published": "2026-10-01T09:00:00Z",
+  "to": [
+    "https://www.w3.org/ns/activitystreams#Public"
+  ],
+  "cc": [
+    "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f/followers"
+  ],
+  "object": {
+    "id": "https://social.example.org/ap/objects/0192f3b0-2c3d-7e4f-8a00-1122334455aa",
+    "type": "Article",
+    "published": "2026-10-01T09:00:00Z",
+    "url": "https://social.example.org/@alice/status/0192f3b0-2c3d-7e4f-8a00-1122334455aa",
+    "attributedTo": "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f",
+    "to": [
+      "https://www.w3.org/ns/activitystreams#Public"
+    ],
+    "cc": [
+      "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f/followers"
+    ],
+    "name": "A climb",
+    "nameMap": {
+      "en": "A climb"
+    },
+    "summary": "How we climbed the mountain before the sun rose.",
+    "summaryMap": {
+      "en": "How we climbed the mountain before the sun rose."
+    },
+    "sensitive": false,
+    "content": "\u003ch2\u003eMorning\u003c/h2\u003e\n\u003cp\u003eWe climbed \u003cstrong\u003eearly\u003c/strong\u003e, past \u003ca href=\"https://example.org/ridge\" rel=\"nofollow noopener noreferrer\" target=\"_blank\"\u003ethe ridge\u003c/a\u003e.\u003c/p\u003e",
+    "attachment": [],
+    "tag": [
+      {
+        "type": "Hashtag",
+        "href": "https://social.example.org/tags/fediverse",
+        "name": "#FediVerse"
+      }
+    ],
+    "context": "https://social.example.org/ap/contexts/0192f3b0-2c3d-7e4f-8a00-1122334455c0",
+    "conversation": "https://social.example.org/ap/contexts/0192f3b0-2c3d-7e4f-8a00-1122334455c0",
+    "image": {
+      "type": "Image",
+      "mediaType": "image/jpeg",
+      "url": "https://files.social.example.org/media/r/large.jpg",
+      "name": "A mountain at dawn"
+    }
+  }
+}
+

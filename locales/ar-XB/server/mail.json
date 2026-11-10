@@ -131,6 +131,18 @@
     "defaultMessage": "‮∩uʇıʅ ʇɥǝu, ʎonɹ oʍu sǝʇʇıuƃs ɐddʅʎ. ⊥ɥǝ sǝʇʇıuƃs oɟ ʇɥǝ ɐnʇoɯɐʇıɔ pǝʅǝʇıou sɥoʍ ʍɥıɔɥ oɟ ʎonɹ dosʇs ʍıʅʅ qǝ pǝʅǝʇǝp, ɐup ʎon ɔɐu ɔɥɐuƃǝ ʇɥǝɯ ʍıʇɥıu ʇɥǝ sǝɹʌǝɹ's ɯɐxıɯnɯ. ᗡǝʅǝʇǝp dosʇs ɔɐuuoʇ qǝ ɹǝsʇoɹǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "mail.event.coorganizer": {
+    "defaultMessage": "‮Ↄo-oɹƃɐuızǝp qʎ {name}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.event.organizer": {
+    "defaultMessage": "‮Oɹƃɐuızǝp qʎ {name}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.event.when": {
+    "defaultMessage": "‮Mɥǝu: {when}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "mail.group.account_moved": {
     "defaultMessage": "‮∀ɔɔonuʇs ʎon ɟoʅʅoʍ ɯoʌıuƃ‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -185,6 +197,10 @@
   },
   "mail.group.boost": {
     "defaultMessage": "‮Ԑoosʇs‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "mail.group.event": {
+    "defaultMessage": "‮Ǝʌǝuʇs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "mail.group.favourite": {

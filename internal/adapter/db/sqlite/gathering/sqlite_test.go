@@ -22,3 +22,15 @@ func TestGatheringContract(t *testing.T) {
 		return gatheringtest.Harness{UnitOfWork: db, Gathering: NewRepository(db)}
 	})
 }
+
+func TestDueContract(t *testing.T) {
+	t.Parallel()
+	gatheringtest.DueContract(t, func(t *testing.T, opts uow.Options) gatheringtest.Harness {
+		db, err := sqlite.Open(t.Context(), sqlitetest.NewFile(t), opts)
+		if err != nil {
+			t.Fatalf("Open: %v", err)
+		}
+		t.Cleanup(func() { _ = db.Close() })
+		return gatheringtest.Harness{UnitOfWork: db, Gathering: NewRepository(db)}
+	})
+}

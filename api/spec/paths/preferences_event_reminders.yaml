@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getEventReminders
+  summary: Get the authenticated user's reminders of events
+  description: |
+    How long before the start of an event that the user answered going or maybe an
+    `event_reminder` reminds the user: one day and one hour before until the user chooses.
+  tags: [preferences]
+  security:
+    - oauth2: ["read:accounts"]
+  responses:
+    "200":
+      description: The reminders.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/EventReminders.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+put:
+  operationId: updateEventReminders
+  summary: Change the authenticated user's reminders of events
+  description: |
+    Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+    reminders of the upcoming events that the user answered going or maybe follow the change. A
+    422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+    longer than 7 days, or the same one twice; nothing is changed then.
+  tags: [preferences]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/EventRemindersUpdate.yaml
+  responses:
+    "200":
+      description: The reminders after the change.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/EventReminders.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

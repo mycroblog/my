@@ -4,13 +4,14 @@
 // events of the local users): sqlite.sql and postgres.sql (schema/README.md).
 //
 // It depends on the modules that internal/app/gathering imports (kernel and uow are
-// 10-infrastructure).
+// 10-infrastructure, and the notifications of the events are 07-notification).
 package gathering
 
 import (
 	_ "embed"
 
 	account "github.com/mycroblog/my/schema/02-account"
+	notification "github.com/mycroblog/my/schema/07-notification"
 	infrastructure "github.com/mycroblog/my/schema/10-infrastructure"
 	"github.com/mycroblog/my/schema/ddl"
 )
@@ -22,4 +23,4 @@ var sqlite string
 var postgres string
 
 // Module is the schema of 19-gathering.
-var Module = ddl.New("19-gathering", sqlite, postgres, account.Module, infrastructure.Module)
+var Module = ddl.New("19-gathering", sqlite, postgres, account.Module, notification.Module, infrastructure.Module)

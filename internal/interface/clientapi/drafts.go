@@ -281,6 +281,15 @@ func draftInput(body *DraftRequest) appcontent.DraftInput {
 			Multiple: deref(p.Multiple), HideTotals: deref(p.HideTotals),
 		}
 	}
+	if a := body.Article; a != nil {
+		in.Article = &appcontent.DraftArticleInput{Title: deref(a.Title), Summary: deref(a.Summary)}
+		if a.Tags != nil {
+			in.Article.Tags = *a.Tags
+		}
+		if c := a.Cover; c != nil {
+			in.Article.Cover = &appcontent.MediaInput{MediaID: knownID(c.Id), Description: deref(c.Description)}
+		}
+	}
 	return in
 }
 
@@ -354,6 +363,22 @@ func presentDraft(v appcontent.DraftView) Draft {
 		out.Poll = &DraftPoll{Options: p.Options, ExpiresIn: int(p.Duration / time.Second), Multiple: &multiple, HideTotals: &hide}
 		if out.Poll.Options == nil {
 			out.Poll.Options = []string{}
+		}
+	}
+	if a := c.Article; a != nil {
+		out.Article = &DraftArticle{Title: a.Title, Summary: a.Summary, Tags: a.Tags, Images: a.Images}
+		if out.Article.Tags == nil {
+			out.Article.Tags = []string{}
+		}
+		if out.Article.Images == nil {
+			out.Article.Images = []Id{}
+		}
+		if cv := a.Cover; cv != nil {
+			out.Article.Cover = &StatusMediaItem{Id: cv.MediaID}
+			if cv.Description != "" {
+				d := cv.Description
+				out.Article.Cover.Description = &d
+			}
 		}
 	}
 	if v.Scheduled != nil {

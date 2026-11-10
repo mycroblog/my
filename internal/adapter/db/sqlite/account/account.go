@@ -68,20 +68,21 @@ func (r *Repository) InsertProfileRevision(ctx context.Context, tx uow.Tx, rev a
 		return err
 	}
 	err = q.InsertProfileRevision(ctx, accountgen.InsertProfileRevisionParams{
-		ID:            rev.ID,
-		AccountID:     rev.AccountID,
-		Seq:           int64(rev.Seq),
-		DisplayName:   rev.DisplayName,
-		NoteHtml:      rev.NoteHTML,
-		Locked:        sqlite.BoolToInt(rev.Locked),
-		Bot:           sqlite.BoolToInt(rev.Bot),
-		Discoverable:  sqlite.BoolToInt(rev.Discoverable),
-		Indexable:     sqlite.BoolToInt(rev.Indexable),
-		AiOptOut:      sqlite.BoolToInt(rev.AIOptOut),
-		AvatarMediaID: sqlite.ToNullString(rev.AvatarMediaID),
-		HeaderMediaID: sqlite.ToNullString(rev.HeaderMediaID),
-		RevisedAt:     sqlite.ToMillis(rev.RevisedAt),
-		Feed:          string(rev.Feed.Normalize()),
+		ID:                rev.ID,
+		AccountID:         rev.AccountID,
+		Seq:               int64(rev.Seq),
+		DisplayName:       rev.DisplayName,
+		NoteHtml:          rev.NoteHTML,
+		Locked:            sqlite.BoolToInt(rev.Locked),
+		Bot:               sqlite.BoolToInt(rev.Bot),
+		Discoverable:      sqlite.BoolToInt(rev.Discoverable),
+		Indexable:         sqlite.BoolToInt(rev.Indexable),
+		AiOptOut:          sqlite.BoolToInt(rev.AIOptOut),
+		AvatarMediaID:     sqlite.ToNullString(rev.AvatarMediaID),
+		HeaderMediaID:     sqlite.ToNullString(rev.HeaderMediaID),
+		RevisedAt:         sqlite.ToMillis(rev.RevisedAt),
+		Feed:              string(rev.Feed.Normalize()),
+		FollowsVisibility: string(rev.FollowsVisibility.Normalize()),
 	})
 	if err != nil {
 		return sqlite.Wrap(err, "insert profile revision")
@@ -592,20 +593,21 @@ func currentProfile(ctx context.Context, q *accountgen.Queries, accountID string
 // profileRow returns the revision of row, without its fields, custom emoji, and source.
 func profileRow(row accountgen.AccountProfileRevision) account.ProfileRevision {
 	return account.ProfileRevision{
-		ID:            row.ID,
-		AccountID:     row.AccountID,
-		Seq:           int(row.Seq),
-		DisplayName:   row.DisplayName,
-		NoteHTML:      row.NoteHtml,
-		Locked:        row.Locked != 0,
-		Bot:           row.Bot != 0,
-		Discoverable:  row.Discoverable != 0,
-		Indexable:     row.Indexable != 0,
-		AIOptOut:      row.AiOptOut != 0,
-		AvatarMediaID: row.AvatarMediaID.String,
-		HeaderMediaID: row.HeaderMediaID.String,
-		RevisedAt:     sqlite.FromMillis(row.RevisedAt),
-		Feed:          account.FeedSetting(row.Feed),
+		ID:                row.ID,
+		AccountID:         row.AccountID,
+		Seq:               int(row.Seq),
+		DisplayName:       row.DisplayName,
+		NoteHTML:          row.NoteHtml,
+		Locked:            row.Locked != 0,
+		Bot:               row.Bot != 0,
+		Discoverable:      row.Discoverable != 0,
+		Indexable:         row.Indexable != 0,
+		AIOptOut:          row.AiOptOut != 0,
+		AvatarMediaID:     row.AvatarMediaID.String,
+		HeaderMediaID:     row.HeaderMediaID.String,
+		RevisedAt:         sqlite.FromMillis(row.RevisedAt),
+		Feed:              account.FeedSetting(row.Feed),
+		FollowsVisibility: account.FollowsVisibility(row.FollowsVisibility),
 	}
 }
 

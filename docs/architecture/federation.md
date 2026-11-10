@@ -191,7 +191,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `Undo` | `Follow` / `Like` / `EmojiReact` / `Announce` / `Block` / `Accept` | 対象の取り消し。`Undo Follow` は `graph.TerminateRemote`（`unfollowed`）で、`object` の `id` が主体のフォローに無ければ、埋め込みの `object.object`（ローカル）とのフォローで照合する（Misskey の `Undo` は送った `Follow` と違う `id` を持つ）。`Undo Accept` は `graph.RejectRemote` でフォローの終了として扱う。`Undo Like` / `Undo EmojiReact` は、主体が作った同じ URI の `reactions`、`favourites` の順に引き、どちらにも無ければ埋め込みの `object` を `Like` / `EmojiReact` の行と同じ規則で振り分けて、リアクションなら主体のその投稿への同じ絵文字のリアクションを、お気に入りなら主体のその投稿へのお気に入りを消す（ADR-0051 §6）。対象が URI だけなら、主体が作った同じ URI の `follows` / `reactions` / `favourites` / `boosts` / `blocks` を順に引く |
 | `Create` | `Note` / `Question` / `Article`（記事）。`Page` / `Event` / `Image` / `Video` / `Audio` は変換して取り込む | 取り込み範囲（ADR-0006）に入れば `content.IngestRemoteStatus`。オブジェクトの `id` は `actor` と同じオリジンで、`attributedTo` は（あれば）`actor` でなければならない。保存済みの投稿は何もせず、削除済みの投稿は捨てる。返信の扱いは下の「返信とブーストの承認」のとおりで、承認されていない返信（返信の依頼が `accepted` でないもの）も保存するが、スレッドと会話（`context`）の一覧・`status_reply_links`・`replies_count` に入れず、メンションの通知も作らない（その投稿の `Update` も同じ）。作者のプロフィールと投稿の個別の表示には出る。承認されると（`content.status_released`）スレッドに入り、メンションを通知する。`replyAuthorization` を持つ、リモートの投稿へのリモートの返信は、取り込んだ後にその承認を確かめる（`StatusHandlers.verifyThirdPartyReply`） |
 | `Create` | `name` を持ち、投票のあるローカルの投稿への返信の `Note`（投票への回答。Mastodon・Misskey・Pleroma（Akkoma）・GoToSocial が送る形） | `content.RecordRemotePollVote`（FR-112）。`name` が選択肢の題で、投稿としては取り込まない。同じ `Note` は 1 票で、締め切り後・無い選択肢・単一選択の 2 つ目の回答・主体が見られない投稿への回答は捨てる。投票のない投稿への返信は投稿として扱う |
-| `Update` | 投稿 | `content.ReviseRemoteStatus`（新しい版）。投稿の作者とアクティビティの主体が一致し、オリジンが同じであること（[ActivityPub §7.3](https://www.w3.org/TR/activitypub/#update-activity-inbox)）。未知の投稿は §3.3 のとおり `Create` として扱う |
+| `Update` | 投稿 | `content.ReviseRemoteStatus`（新しい版）。投稿の作者とアクティビティの主体が一致し、オリジンが同じであること（[ActivityPub §7.3](https://www.w3.org/TR/activitypub/#update-activity-inbox)）。未知の投稿は §3.3 のとおり `Create` として扱う。投稿か記事かは変わらないので、記事を `Article` でない投稿にする `Update` と、投稿を `Article` にする `Update` は捨てる（[ADR-0160](../adr/0160-articles.md) §1） |
 | `Update` | Actor（自分自身） | `RemoteActors.ReceiveActorUpdate`。オリジンが同じ埋め込みの文書で `account.UpsertRemoteActor`（内容が変わればプロフィールの版が増える）。その前に、プロフィールが変わっていれば判定フック `inbound.actor` に尋ねる（§6.2）。埋め込みが無い・`id` が主体と一致しなければ取得し直す。削除済みの Actor の `Update` は捨てる |
 | `Delete` | 投稿・`Tombstone` | `content.DeleteRemoteStatus`（`origin = remote`）。未知の URI が、承認済みの引用の `QuoteAuthorization` なら、その引用を `content.RevokeQuoteAuthorization` で取り消す（ADR-0069 §2。承認を出した人、つまり主体が引用された投稿の作者である引用だけ）。どちらでもなければ tombstone |
 | `QuoteRequest` | ローカルの投稿（`object`）を引用する主体の投稿（`instrument`。主体と同じオリジン） | `content.AnswerQuoteRequest` が答える（ADR-0069 §2、[ADR-0155](../adr/0155-interaction-policy.md) §6）。主体がリモートで、投稿を `ContextObjectFetch` で閲覧でき、ブロック関係と交流の禁止（FR-708）がなく、投稿の引用の自動の許可に当てはまり（`content.MayInteract`。`local` の投稿はリモートからは引用させない）、引用元の投稿が保存済みなら主体の投稿であるなら、依頼（`interaction_requests`）と承認（`interaction_authorizations`）を記録して、`result` にその `QuoteAuthorization` を付けた `Accept` を返す。同じ引用の 2 度目の依頼には同じ承認を返す。承認の許可だけに当てはまれば依頼を `pending` で記録して作者に通知し、何も返さない（作者が答えると下の「作者の答え」で送る）。それ以外は `Reject`。どちらも依頼を埋め込み、主体の inbox だけに送る。引用元の投稿が保存済みなら、その引用を一緒に承認する。保存済みの引用元がほかの人の投稿なら、何も記録せずに `Reject` を返す |
@@ -261,9 +261,9 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | リンクとオブジェクト | `object`・`inReplyTo`・`attributedTo`・`actor` などは、文字列（IRI）・`Link`（`href`）・埋め込みのオブジェクト（`id`）のどれでも IRI を取り出す。埋め込みの中身を使うのはオリジンが同じときだけ |
 | 公開の宛先 | `https://www.w3.org/ns/activitystreams#Public`、`as:Public`、`Public` を同じ値として扱う（[ActivityPub §5.6](https://www.w3.org/TR/activitypub/#public-addressing)） |
 | 公開範囲 | `to` に公開 → `public`、`cc` に公開 → `unlisted`、作者の `followers` が `to` / `cc` に → `private`、それ以外 → `direct`。投稿に `to` も `cc` も無ければ、作者が署名した（`trust = signed`）`Create` / `Update` の宛先を使う。ほかの人が署名したアクティビティの宛先は使わない。リモートの投稿が `local` になることはない |
-| 本文 | `contentMap` の言語ごとに 1 行（`status_revision_bodies`）。`content` だけなら `contentMap` の最初の言語、なければ `und` の 1 行。言語タグは BCP 47 として正規化し、不正なら `und`（NFR-I18N-5） |
+| 本文 | `contentMap` の言語ごとに 1 行（`status_revision_bodies`）。`contentMap` が無く `content` だけなら、`nameMap` の最初のキー、無ければ `summaryMap` の最初のキーの言語（Mastodon と同じ順。単一言語の `Article` は `content` だけを送り、言語を題と要約の写像で示す）、どれも無ければ `und` の 1 行。言語タグは BCP 47 として正規化し、不正なら `und`（NFR-I18N-5） |
 | CW | 記事でない投稿の `summary`（無ければ `summaryMap` の最初の値）をプレーンテキストにして `spoiler_text`。`sensitive` は `toot:sensitive` |
-| 記事 | `Article` は記事として取り込む（[ADR-0160](../adr/0160-articles.md) §10）。`name`（無ければ `nameMap` の最初の値、どちらも無ければ空）を題、`summary`（無ければ `summaryMap` の最初の値）をプレーンテキストの要約にし、CW にしない。要約が空なら本文から作る。`content` / `contentMap` は記事用の許可リストでサニタイズする（§5）。`image` の最初の画像をカバーにする |
+| 記事 | `Article` は変換せず、記事として取り込む（[ADR-0160](../adr/0160-articles.md) §10。正規化した `Object.Article` から `content.RemoteArticleInput` への受信の変換で、送信の組み立てとは別）。本文の言語は上の「本文」の規則で、`contentMap` が無ければ `nameMap` / `summaryMap` のキーから読む。`name`（無ければ `nameMap` の最初の値、どちらも無ければ空）を題（200 文字まで）、`summary`（無ければ `summaryMap` の最初の値）をプレーンテキストの要約（500 文字まで）にし、CW にしない。要約が空なら本文から作る（`summary_origin = body`）。`content` / `contentMap` は記事用の許可リストでサニタイズする（§5）。本文の `img` は、`http` / `https` の URL の最初の `max_article_images` 件（同じ URL は 1 件）を `remote_media`（`purpose = attachment`）に記録して `status_revision_article_images` に入れ、残りは代替テキストのリンクにする。`image` の最初の画像（IRI・`Link`・`Image`）を、宣言された `mediaType`・`name`・寸法とともにカバーにする。メンション・ハッシュタグ・カスタム絵文字・添付・公開範囲・`sensitive` は投稿と同じに読み、メンションは通知する |
 | 変換する型 | `Page` / `Event` / `Image` / `Video` / `Audio` は、`name` を太字の段落、`summary` を段落にし、`url` へのリンクを付けた本文にする（Mastodon の `CONVERTED_TYPES` から `Article` を除いたもの） |
 | `tag` | `Mention`（`href` を Actor の IRI として解決）、`Hashtag`（`name` から `#` を除いて `tags`）、`Emoji`（`icon.url`、カスタム絵文字。`name` の前後の `:` を外した shortcode が 128 文字を超えるものと、同じ shortcode の 2 つ目以降は捨てる）。Actor の `tag` の `Emoji` も同じ規則で読み、プロフィールの版に結ぶ |
 | 宛先のメンション | `to` / `cc` に含まれるローカルの Actor は、`tag` に無くてもメンションとして記録する（`direct` / `private` の閲覧判定のため） |
@@ -320,7 +320,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - 鍵は、`publicKey` の PEM（PKIX と PKCS #1）、`publicKey` が `id` だけで示す鍵の文書（取得する。2 件まで）、FEP-521a の `assertionMethod` の `Multikey`（Ed25519）から読みます。鍵の `id` は Actor と同じオリジンで、`owner` / `controller` は Actor でなければなりません。
 - `keyId` を取得して `Key` の文書が返ったら、`owner`（または `controller`）の Actor を取得します（ADR-0006）。
 - 初めて文書を保存したドメインは `remote_instances` に記録し、ジョブ `federation.observe_instance` が NodeInfo 2.x（`/.well-known/nodeinfo` が指す同じホストの文書）のソフトウェア名と版を `instance_nodeinfo_observations` に記録します（前回と同じなら記録しない）。
-- ハンドル（`account_handles`）は WebFinger で確かめたものだけです。`acct:{preferredUsername}@{Actor のホスト}` を引き、`self` リンクが Actor の `id` を指すこと、`subject` のドメインが異なるならそのドメインでも同じことを確かめます（ADR-0018 のドメイン分離に相当する構成）。
+- ハンドル（`account_handles`）は WebFinger で確かめたものだけです。Actor が `webfinger` でハンドルを名乗れば、先にそれを確かめます（[§6.5](#65-webfinger-の拡張)）。名乗らないか確かめられなければ、`acct:{preferredUsername}@{Actor のホスト}` を引き、`self` リンクが Actor の `id` を指すこと、`subject` のドメインが異なるならそのドメインでも同じことを確かめます（ADR-0018 のドメイン分離に相当する構成）。
   - `subject` のドメインにも §6.1 の取得先の規則が掛かります。自サーバーと `federation` の制限があるドメインには問い合わせず `mismatch` を記録し、`unavailable` のドメインには問い合わせず何も記録しません。
   - 答え（404 を含む）が確かめなければ `mismatch` を記録し、ハンドルを持たないアカウントとして扱います。
   - WebFinger が答えなかった（接続の失敗・429・5xx）ときは何も記録せず、それまでのハンドルを残します。
@@ -410,6 +410,21 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - アカウントは、削除されていないリモートの投稿を新しい順（`content.LiveRemoteStatusIDs`）に 100 件（`RefetchBatch`）ずつ、合わせて 1,000 件（`RefetchMaxStatuses`）までたどります。
   - ドメインは、そのドメインのリモートのアカウントを新しい順（`account.Search`）に 5 件（`RefetchAccountsBatch`）ずつ読み、アカウントごとに新しい投稿 20 件（`RefetchStatusesPerAccount`）まで、合わせて 1,000 件までたどります。
   - 続きのジョブは 1 分後（`RefetchBatchInterval`）に実行し、1 つのサーバーへの取得が一度に集まらないようにします。
+
+### 6.5 WebFinger の拡張
+
+- ローカルの Actor の文書（インスタンス Actor、凍結中の文書、Authorized Fetch の最小の文書、`Update` とエクスポートの文書を含む）は、FEP-2c59 の `webfinger` に `{username}@{account_domain}` を載せます。インスタンス Actor は `{account_domain}@{account_domain}` です。
+  その WebFinger の `subject` は同じハンドルで、`self` リンクは Actor の `id` そのものです（ADR-0018 §2）。`@context` は文脈の文書（`https://purl.archive.org/socialweb/webfinger`）を参照せず、`webfinger` の項（`https://purl.archive.org/socialweb/webfinger#webfinger`、`xsd:string`）を Actor の文脈の中で定義します。JSON-LD として読む相手が、文脈の文書を取得しなくても読めるようにするためです。
+- リモートの Actor の `webfinger`（先頭の `acct:` は除く）は名乗りで、保存の前に確かめます（`RemoteActors.checkHandle`）。名乗ったハンドルの WebFinger を `https://{domain}` に引き、`self` が Actor の `id` を指し、`subject`（あれば）が同じハンドルなら、それをハンドルとして `verified` を記録します。`preferredUsername` と違うユーザー名でもかまいません。
+  - 取得先の規則（§6.1）が掛かります。自サーバーと `federation` の制限があるドメインのハンドルは名乗りを無視し、`unavailable` のドメインと答えなかった WebFinger（接続の失敗・429・5xx）は何も記録せず、それまでのハンドルを残します。
+  - 答えが別の Actor を指す・`subject` が別のハンドル・404 などで確かめられないとき、またハンドルの形でないときは、FEP-2c59 のとおり名乗りを使わず、§6.2 の Mastodon と同じ方法（`preferredUsername` と Actor のホスト）でハンドルを確かめます。
+  - 名乗りを読むのは Actor の `id` から取得した文書と、Actor 自身が署名した `Update` だけです（§6.2 の保存の経路）。ほかの文書に埋め込まれた Actor の `webfinger` は使いません（FEP-2c59 の Security Considerations）。
+- ローカルのアカウントとインスタンス Actor の WebFinger は、`links` の最後に FEP-3b86 の Activity Intents を載せます。テンプレートはすべてのアカウントで同じ、Web クライアント（`web_origin`）の 1 つのページ `/intent` です（FEP-3b86 §3.6）。
+  - `https://w3id.org/fep/3b86/Follow`: `{web_origin}/intent?follow={object}`。アカウントを解決（`GET /api/v1/accounts/lookup?resolve=true`）して、フォローのボタンのあるプロフィールを開きます。
+  - `https://w3id.org/fep/3b86/Create`: `{web_origin}/intent?reply={inReplyTo}`。投稿を解決（`GET /api/v1/statuses/lookup`、`federation.Resolver`）して、その投稿の画面で返信を始めたフォームを開きます。
+  - ページはサインインを求め、サインインの後に同じページへ戻ります。開いただけでは何も解決せず、利用者がボタンを押してから解決します。ほかのサイトがブラウザをこのページへ送るだけで、このサーバーに取得させないためです（FEP-3b86 §6.1）。画面は [screens/intent.md](web-client/screens/intent.md) です。
+  - `on-success`・`on-cancel` はテンプレートに含めません。終えた後はこのサーバーの画面に残り、ほかのサイトへの転送（FEP-3b86 §6.2 の中継のページ）を持ちません。
+  - `GET /api/v1/statuses/lookup` は `federation.Resolver.Stored` で保存済みの投稿を引き、無ければ連合の向きが取り込む（`ingest`・`follow_out`）ときだけ `Resolve` で取得します。取得は `lookupAccount` の `resolve` と同じ回数の制限（アカウントごとに 30 回 / 5 分）を使い、見つけた投稿は `getStatus` と同じく `canView` を通して返します。
 
 ## 7. 送信（配送）
 
@@ -554,14 +569,38 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - 引用（FR-114、ADR-0069 §3）は、引用元の作者が外していなければ、`quote` と同じ IRI の `_misskey_quote`・`quoteUrl`・`quoteUri`、承認されていれば `quoteAuthorization` を付け、本文（`content` と `contentMap` のどの言語も）の前に `<p class="quote-inline">RE: <a href="{引用先の表示用 URL}">…</a></p>` を置きます（Mastodon と同じ形）。
   どの投稿にも `interactionPolicy` の `canReply`・`canAnnounce`・`canQuote` を付け、それぞれ `automaticApproval` と、承認の相手があれば `manualApproval` を持ちます（交流の許可は [ADR-0155](../adr/0155-interaction-policy.md) §9）。配送・投稿の GET・outbox・featured は同じ組み立てを通るので、同じ投稿の `Note` はどこでも同じ形です。相手ごとに、`everyone` は `Public`、`followers` は作者の followers とメンションした Actor と作者自身、`mentioned` はメンションした Actor と作者自身、`nobody` は作者自身です。公開範囲で決まる制限を値に反映し、`private` / `direct` の `canAnnounce`・`canQuote` と、`local` の 3 つはどれも作者自身です（`local` はリモートからはフォロワー限定に見えるため）。`canLike` は付けません。
 - 会話（[ADR-0154](../adr/0154-conversations.md) §5）は、投稿の会話（併合されていれば併合先）の IRI を `context` に、同じ値を `conversation` に載せます。Mastodon は受信で `conversation` だけを読むためです。IRI が `https` でない会話（Mastodon の `tag:` の URI）は `conversation` だけを載せます。併合のためだけの `Update` は送りません。
-- 記事（[ADR-0160](../adr/0160-articles.md) §9）は `Article` です。`name`（題）・`summary`（要約。空なら本文から作ったもの）・`content` / `contentMap`・`source`（`content` に Markdown の原文、`mediaType` に `text/markdown`）・`url`・`sensitive`（常に付ける）・`image`（カバーの `Image`）を付けます。
-  `tag` は `Hashtag`（エディタで付けたもの）と `Emoji` だけで、`Mention` を載せず、メンション先を宛先に加えません。`attachment` は載せません。`Create` / `Update` / `Delete`・宛先・引用の許可は Note と同じ組み立てを通ります。
+- 記事（[ADR-0160](../adr/0160-articles.md) §9）は `Article` です。`name`（題）・`summary`（要約。空なら本文から作ったもの）・`content`・`url`・`sensitive`（常に付ける）・`image`（カバーの `Image`）を付けます。
+  `tag` は `Hashtag`（エディタで付けたもの）と `Emoji` だけで、`Mention` を載せず、メンション先を宛先に加えません。本文の画像もカバーも `attachment` に載せず、`attachment` は空の配列です。`Create` / `Update` / `Delete`・宛先・引用の許可は Note と同じ組み立て（`federation.notes` の `statusNote` が作った Note を `asArticle` が `Article` にする）を通ります。
+  `image` は `Image` で、カバーの `large` の版の `url`・`mediaType` と代替テキストの `name` を持ちます。
+  本文は文書に 1 回だけ入れます。本文の言語が 1 つなら `contentMap` を付けず、言語は題と要約をその言語で引く `nameMap`・`summaryMap` で伝えます（Mastodon v4.7.3 の `ActivityPub::Parser::StatusParser#raw_language_code` は `contentMap`、無ければ `nameMap`、無ければ `summaryMap` の最初の鍵を投稿の言語にする）。複数の言語の本文を持つ記事は `contentMap` を付けます。Markdown の原文は `source` として送りません。本文の写しはどれも Misskey の inbox の 64 KiB（§7.5）に数えられ、`text/markdown` の `source` を読む主要な実装も無いためです。ほかのサーバーでの見え方と送る側が守る上限は §7.5 にあります。
 - 投票のある投稿は `Question` です（FR-112）。単一選択は `oneOf`、複数選択は `anyOf` に、選択肢ごとの `Note`（`name` は題、`replies` は `totalItems` だけの `Collection`）を載せ、`endTime`（締め切り）、締め切った後は `closed`（`endTime` と同じ時刻）、`votersCount`（`toot:votersCount`）を付けます。
   票数は文書を組み立てる時点の集計で、作者が締め切りまで票数を隠す投票では締め切りまで 0 です。編集されていない投稿の票数の `Update` は `updated` を持たず、受け取ったサーバーは投稿を編集済みにしません（Mastodon は投票だけの更新として扱う）。
 - Note は `federation.notes`（`internal/app/federation`）の 1 か所で組み立て、配送（`Create` / `Update` の `object`）とオブジェクトの GET（§10）が同じものを使います。版のメディア・メンション先・ハッシュタグ・カスタム絵文字は `content.Reader.Parts` で引きます。
 - `@context` は AS2・security・Mastodon 拡張（`toot:`。`Emoji` は `toot:Emoji`）と、引用の語彙（FEP-044f の `quote`・`quoteAuthorization`・`QuoteRequest`・`QuoteAuthorization`、GoToSocial の `interactionPolicy`・`canReply`・`canAnnounce`・`canQuote`・`automaticApproval`・`manualApproval`・`interactingObject`・`interactionTarget`・`ReplyRequest`・`AnnounceRequest`・`ReplyAuthorization`・`AnnounceAuthorization`・`replyAuthorization`・`announceAuthorization`、Misskey の `_misskey_quote`、`quoteUrl`、Fedibird の `quoteUri`）と、会話の `conversation`（`ostatus:conversation`）です（`federation.LDContext`）。配送では `proof` のために data integrity の文脈を足します（§7.3）。
 - ローカルの Actor の文書と、それを埋め込む `Update` の `@context` は、security の後に Controlled Identifiers（`https://www.w3.org/ns/cid/v1`）を足したものです（`federation.ActorLDContext`）。`assertionMethod` に Ed25519 の鍵を `Multikey`（`id` は `{actor}#ed25519-key`、`controller` は Actor、`publicKeyMultibase` は base58btc の `z6Mk…`）で載せます（FEP-521a）。RSA の鍵は `publicKey` に載せます。
 - ローカルの Actor の文書は、別名（`account_aliases`、ADR-0089）があれば `alsoKnownAs`（Actor の `id` の配列）に載せます。AS2 の文脈が定義する語なので `@context` は変えません。凍結中の文書（§11.1）には載せません。
+
+### 7.5 ほかのサーバーでの記事の見え方
+
+送った `Article`（§7.4）を主要な実装がどう受け取るかを、相互運用テスト（§12）が固定している版のソースコードで確かめた結果です（Mastodon v4.7.3、Misskey 2026.10.0、GoToSocial 0.22.1、Akkoma v3.20.0。2026-11-10 に読み、それぞれ最新の v4.7.5・2026.10.1・0.22.3・v3.20.1 との差も確かめた）。実地のサーバーで表示を見たものではありません。
+
+| 実装 | 見え方 | 受け取りの上限 | `source`（`text/markdown`） | `Update` |
+| --- | --- | --- | --- | --- |
+| Mastodon | `CONVERTED_TYPES` として変換し、`<h2>{name}</h2>`・`summary`・`url`（無ければ `id`）へのリンクだけを本文にする（`ActivityPub::Parser::StatusParser#text`）。`summary` は CW にしない（`spoiler_text` は空）ので畳まれない。`content` / `contentMap` と `image` は読まない。`name` と `summary` はエスケープせずに HTML に埋め込み、表示のサニタイズ（`MASTODON_STRICT`）を通す | inbox の POST と取得はどちらも 1 MiB（`MAX_JSON_SIZE`、`Request#body_with_limit`）。リモートの本文の長さの検査は無い | 読まない | 変換をやり直す。題と要約の編集は届き、本文の編集は表示に関係しない |
+| Misskey | 普通のノートにする（`validPost`）。空でない `summary` を CW にするので必ず畳まれる。`name` は保存するが表示しない（題は見えない）。本文は `content` の HTML を MFM に変えたもの（見出しと段落は空行で区切った段落、`pre` / `code` はコード、`blockquote` は引用、`li` は印の無い行、表は文字だけ、`hr` と `img` は落ちる）。`url` は保存するだけ、`image` は読まない | **inbox の POST の本文は 64 KiB まで**（`ActivityPubServerService` の `bodyLimit: 1024 * 64`、超えると 413）。本文は 8,192 文字（`DB_MAX_NOTE_TEXT_LENGTH`）で切る。`cw` は `varchar(512)`、`name` は `varchar(256)` | `text/x.misskeymarkdown` だけを原文として読み、`text/markdown` は無視して HTML から変換する | ノートの `Update` は捨てる（`Question` の票数だけを読む）。編集は届かない |
+| GoToSocial | `Note` と同じ経路で取り込み、`content` を全文で持つ。`summary` を CW にし、無ければ `name` を CW にするので、どの記事も畳まれる。サニタイズ（bluemonday）は `h1`〜`h6`・`hr`・`pre` / `code`・`blockquote`・リストを残し、`img` と表の要素を落とす（表の文字は残る）。`url` は投稿の URL、`image` は読まない | 本文の大きさの上限はコードに無い（リバースプロキシの上限は確かめていない）。リモートの本文と CW の長さを切らない。0.22.3 からは、オブジェクトの `id`・すべての `url`・`attributedTo`・取得した URL のホストが同じでなければ捨てる | 読まない | 取り直して本文の編集も反映する |
+| Akkoma | `Note`・`Page` と同じ検証で受け、`<p><a href="{url}">{name}</a></p>` の後に `content` の全文を出す。`summary` は CW（`spoiler_text`）になり畳まれる。既定のスクラバーは見出しと表を落とし（運営者が見出しを許しても `h6` は残らない）、`img` を残す（http(s) だけ）。`image` は読まない | `content` が 100,000 文字（`remote_limit`）を超える `Create` / `Update` を捨てる（切らない）。inbox の POST は 16 MB（`upload_limit`） | 保存するが、描画し直すのは `text/x.misskeymarkdown` だけ | `updated` が新しいときだけ反映し、反映する項目に `name` が無いので題の編集は届かない |
+
+出典は Mastodon の `app/lib/activitypub/activity.rb`・`parser/status_parser.rb`・`activity/create.rb`・`activity/update.rb`・`app/controllers/activitypub/inboxes_controller.rb`・`app/lib/request.rb`・`lib/sanitize_ext/sanitize_config.rb`、Misskey の `packages/backend/src/core/activitypub/type.ts`・`models/ApNoteService.ts`・`ApInboxService.ts`・`core/MfmService.ts`・`server/ActivityPubServerService.ts`・`core/NoteCreateService.ts`・`const.ts`・`models/Note.ts`、GoToSocial の `internal/ap/interfaces.go`・`internal/ap/normalize.go`・`internal/typeutils/astointernal.go`・`internal/text/sanitize.go`・`internal/federation/federatingdb/update.go`・`internal/federation/dereferencing/status_common.go`、Akkoma の `lib/pleroma/web/activity_pub/object_validators/article_note_page_validator.ex`・`activity_pub.ex`・`mastodon_api/views/status_view.ex`・`object/updater.ex`・`constants.ex`・`priv/scrubbers/default.ex`・`config/config.exs`（akkoma.dev の API で読んだ）です。
+
+送る側が守ること:
+
+- **Misskey の inbox の 64 KiB が最も狭い上限です。** このため本文を 1 回だけ送ります（`source` を送らず、言語が 1 つの本文には `contentMap` を付けない、§7.4）。文書には `@context` などの残りがおよそ 4 KB あり、JSON の文字列では `<`・`>`・`&` が 6 バイトの `\u003c` などになるので、本文の HTML がおよそ 50〜60 KB（タグの多い本文で 50 KB、タグの少ない日本語の本文で 60 KB ほど）を超える記事の `Create` / `Update` は、なお Misskey に 413 で断られます（配送は恒久的な失敗として扱う、§7.3）。複数の言語の本文を持つ記事は `contentMap` に本文が加わるので、その分だけ早く届きます。この上限を超える長い記事が Misskey に届かないことは、互換の限界として受け入れています。本文の上限 `max_article_bytes`（既定 100,000 バイト）は Akkoma の 100,000 文字とこのサーバーの受信の上限には収まりますが、Misskey には収まりません。
+- Misskey の `cw`（512 文字）と `name`（256 文字）の列の長さに、要約（500 文字まで）と題（200 文字まで）は収まります。
+- 要約は Mastodon では見える本文、Misskey・GoToSocial・Akkoma では CW です。どの実装でも要約が記事の入口になるので、要約を常に送ります（本文から作ったものを含む）。
+- GoToSocial 0.22.3 の同じホストの検査には、`url` を `id` と同じホスト（`{host}`）に置くことで合っています（ADR-0018）。
+- `text/markdown` の `source` を読む実装は無く、どれも `content` の HTML を使います。本文の画像は Akkoma だけ、表はどの実装でも既定では見えません。
+- 題と要約はプレーンテキストのまま送ります。Mastodon と Akkoma は題（Mastodon は要約も）をエスケープせずに HTML に埋め込むので、`<` や `&` を含む題はそれらの表示で崩れることがあります。
 
 ## 8. 公開範囲 `local` と連合
 
@@ -699,6 +738,8 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - コレクションはだれにも同じ内容を返します。outbox・followers・following は `totalItems` と最初のページ（`?page=true`）へのリンクを持つ `OrderedCollection` で、ページ（`OrderedCollectionPage`）は `partOf` と次のページ（`?max_id={カーソル}&page=true`）を持ちます（Mastodon と同じ形）。
   - outbox は、未ログインの閲覧者がプロフィールで見られる投稿（`public` / `unlisted`）の `Create` を、新しい順に 20 件ずつ返します。ブーストは載せません。`totalItems` は削除されていない投稿の数です（Mastodon と同じ）。
   - followers / following は、承認済みのフォローの相手の Actor の `id` を、新しいフォロー順に 40 件ずつ返します。有効でないアカウントは省き、`totalItems` はフォローの件数です。
+    持ち主が一覧の公開範囲（`follows_visibility`、FR-311）を `public` 以外にしたときは、`first` の無い `totalItems` だけの `OrderedCollection` を返し、ページは `403` です（Mastodon の隠したコレクションと同じ形）。
+    コレクションは要求者で答えを変えないので、承認済みのフォロワーに見せる `followers` も、ここでは `private` と同じに隠します。
   - featured は、ピン留めした投稿のうち未ログインで閲覧できるもの（`public` / `unlisted`）の `Note` を `orderedItems` に並べます。featured-tags は、持ち主が選んだ注目のハッシュタグ（10 件まで、持ち主の順）の `Hashtag`（`name` は `#` 付きの名前、`href` はそのプロフィールのタグの URL）を `items` に並べる `Collection` で、`totalItems` はその数です（ADR-0006 §17。Mastodon と同じ形）。
   - 埋め込む文書は `@context` を持たないので、outbox のページと featured の `@context` は §7.4 の文書と同じもの（`federation.LDContext`）で、埋め込む文書の語を定義します。それ以外は ActivityStreams だけです。
 - 会話のコレクション `GET /ap/contexts/{uuid}`（[ADR-0154](../adr/0154-conversations.md) §9）は、ほかのコレクションと違い、要求した相手によって内容が変わります。

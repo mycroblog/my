@@ -88,20 +88,21 @@ type AccountProfileFieldSource struct {
 }
 
 type AccountProfileRevision struct {
-	ID            string
-	AccountID     string
-	Seq           int32
-	DisplayName   string
-	NoteHtml      string
-	Locked        bool
-	Bot           bool
-	Discoverable  bool
-	Indexable     bool
-	AiOptOut      bool
-	AvatarMediaID *string
-	HeaderMediaID *string
-	RevisedAt     time.Time
-	Feed          string
+	ID                string
+	AccountID         string
+	Seq               int32
+	DisplayName       string
+	NoteHtml          string
+	Locked            bool
+	Bot               bool
+	Discoverable      bool
+	Indexable         bool
+	AiOptOut          bool
+	AvatarMediaID     *string
+	HeaderMediaID     *string
+	RevisedAt         time.Time
+	Feed              string
+	FollowsVisibility string
 }
 
 type AccountProfileRevisionEmoji struct {

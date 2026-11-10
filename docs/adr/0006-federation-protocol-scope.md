@@ -16,6 +16,7 @@
 | 互換拡張 | Mastodon 拡張（`toot:` 名前空間: `featured`, `discoverable`, `indexable`, `Emoji`, `sensitive`, `Hashtag` 等）、`contentMap`。受信の互換拡張に LitePub の `EmojiReact` と Misskey の `_misskey_reaction`（ADR-0051）、FEP-044f の語彙と `_misskey_quote`・`quoteUrl`・`quoteUri`（ADR-0069） |
 | リレー | Mastodon 方式と LitePub 方式の参加、`public` の投稿の送信と受信（§18〜§22） |
 | アカウントの移転 | `Move` と別名（`alsoKnownAs`）（ADR-0089） |
+| WebFinger の拡張 | Actor の `webfinger`（FEP-2c59。ローカルの Actor に載せ、リモートの Actor の名乗りは WebFinger で確かめてからハンドルにする）、Activity Intents（FEP-3b86 の `Follow` と `Create`。WebFinger に載せ、Web クライアントの `/intent` を開く）。federation.md §6.5 |
 | 任意 | Authorized Fetch（secure mode）、Object Integrity Proofs（FEP-8b32）は C |
 | 非対応 | AP C2S |
 

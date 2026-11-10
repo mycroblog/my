@@ -153,6 +153,7 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		return nil, err
 	}
 	voiceRooms := map[string]*VoiceRoom{}
+	events := map[string]*Event{}
 	var statusIDs []string
 	seen := map[string]bool{}
 	for _, n := range ns {
@@ -349,6 +350,15 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 			item.VoiceRoomId = &id
 			if viewer.Scope.Grants(identity.ScopeReadVoice) {
 				if item.VoiceRoom, err = s.notifiedVoiceRoom(ctx, accountID, id, voiceRooms); err != nil {
+					return nil, err
+				}
+			}
+		}
+		if n.GatheringID != "" {
+			id := n.GatheringID
+			item.EventId = &id
+			if viewer.Scope.Grants(identity.ScopeReadEvents) {
+				if item.Event, err = s.notifiedEvent(ctx, accountID, id, events); err != nil {
 					return nil, err
 				}
 			}

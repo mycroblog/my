@@ -819,6 +819,7 @@ describe("profile", () => {
       "Discovery",
       "Search engines and AI",
       "Feeds",
+      "Follows and followers",
     ]);
     // A form saved by its button has no switch (web-client/21-experience-principles.md §21.4).
     expect(screen.queryByRole("switch")).not.toBeInTheDocument();
@@ -926,6 +927,7 @@ describe("profile", () => {
         discoverable: true,
         indexable: true,
         ai_opt_out: false,
+        follows_visibility: "public",
         avatar_media_id: "0192f0c4-7a8e-7000-8000-00000000bbbb",
       },
     ]);
@@ -1024,6 +1026,19 @@ describe("profile", () => {
     await waitFor(() => {
       expect(changes.at(-1)).toEqual(expect.objectContaining({ indexable: true, feed_enabled: false }));
     });
+  });
+
+  test("who can see the follows and followers is chosen and saved with the profile", async () => {
+    const changes = profileServer();
+    const { user } = await renderApp({ path: "/settings/profile" });
+    const section = await screen.findByRole("region", { name: "Follows and followers" });
+    const group = within(section).getByRole("radiogroup", { name: "Who can see your follows and followers" });
+    expect(within(group).getByRole("radio", { name: "Everyone" })).toBeChecked();
+
+    await user.click(within(group).getByRole("radio", { name: "Your followers" }));
+    await user.click(screen.getByRole("button", { name: "Save profile" }));
+    expect((await screen.findAllByText("Your profile has been saved.")).length).toBeGreaterThan(0);
+    expect(changes.at(-1)).toEqual(expect.objectContaining({ follows_visibility: "followers" }));
   });
 
   test.each([

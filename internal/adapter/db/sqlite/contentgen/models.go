@@ -92,6 +92,14 @@ type Draft struct {
 	CreatedAt int64
 }
 
+type DraftArticle struct {
+	DraftID          string
+	Title            string
+	Summary          string
+	CoverMediaID     sql.NullString
+	CoverDescription sql.NullString
+}
+
 type DraftAttachment struct {
 	DraftID     string
 	Position    int64

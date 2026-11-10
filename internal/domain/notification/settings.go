@@ -54,6 +54,9 @@ const (
 	GroupAccountMoved   Group = "account_moved"
 	// GroupVoice is voice_room_started and voice_room_invited.
 	GroupVoice Group = "voice"
+	// GroupEvent is the notifications of the events (EventTypes, ADR-0161 §11): in the app on and
+	// email off by default; the email of an event_reminder is sent at once (EmailDelayOf).
+	GroupEvent Group = "event"
 	// GroupStatus is the new posts of the accounts that the user subscribes to (ADR-0086 §16); it
 	// has no email channel.
 	GroupStatus Group = "status"
@@ -115,6 +118,15 @@ const (
 // EmailDelay is how long after a notification its email waits to see whether the recipient
 // read it (ADR-0086 §11): for the groups whose email is DelayedEmail.
 const EmailDelay = 15 * time.Minute
+
+// EmailDelayOf is how long the email of a notification of type t waits: EmailDelay, except for an
+// event_reminder, whose email goes at once, since a late reminder is of little use (ADR-0161 §11).
+func EmailDelayOf(t Type) time.Duration {
+	if t == TypeEventReminder {
+		return 0
+	}
+	return EmailDelay
+}
 
 // Rule is how a channel of a group is set: Default is its value until the user chooses, a
 // Fixed channel is always on and cannot be chosen, and an Absent channel is never offered: it is
@@ -193,6 +205,7 @@ var Groups = []GroupSpec{
 	ordinary(GroupBoost), ordinary(GroupFavourite), ordinary(GroupReaction), ordinary(GroupQuote),
 	ordinary(GroupPollClosed), ordinary(GroupAccountMoved),
 	ordinary(GroupVoice, TypeVoiceRoomStarted, TypeVoiceRoomInvited),
+	ordinary(GroupEvent, EventTypes...),
 	{Group: GroupStatus, Section: SectionOrdinary, Types: []Type{TypeStatus}, InApp: ordinaryRules[0], Email: Rule{Absent: true}},
 	{
 		Group: GroupInteractionRequest, Section: SectionOrdinary,

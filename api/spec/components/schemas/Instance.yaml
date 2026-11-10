@@ -153,6 +153,11 @@ properties:
     $ref: ./FinanceVisibility.yaml
   income_visibility:
     $ref: ./IncomeVisibility.yaml
+  funding_meter:
+    description: |
+      The funding meter of this month, which the about page shows; absent while the instance
+      setting `funding_meter_visibility` is `off` or the month has no target.
+    $ref: ./FundingMeter.yaml
   single_user:
     description: |
       Whether the instance is a one-person server: the home of its operator alone, with nobody else

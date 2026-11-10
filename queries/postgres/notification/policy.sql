@@ -118,7 +118,7 @@ WHERE r.recipient_account_id = sqlc.arg(recipient_account_id)
 -- dismissed one by one, and not about a deleted status. A null before starts at the newest.
 -- name: ListNotificationRequestNotifications :many
 SELECT n.id, n.recipient_account_id, n.type, n.source_account_id, n.source_domain, n.status_id, n.moderation_action_id, n.report_id,
-  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.dedupe_key, n.created_at
+  n.subject_user_id, n.severance_id, n.appeal_id, n.custom_emoji_request_id, n.supporter_subscription_id, n.reaction_emoji, n.reaction_custom_emoji_id, n.account_move_id, n.account_move_outcome, n.service_closure_event_id, n.service_closure_change, n.voice_room_id, n.error_group_change, n.error_group_id, n.error_group_hour, n.announcement_id, n.hook_appeal_id, n.auto_delete_limit_notice_id, n.draft_schedule_id, n.gathering_id, n.dedupe_key, n.created_at
 FROM notification_filterings f JOIN notifications n ON n.id = f.notification_id
 WHERE f.recipient_account_id = sqlc.arg(recipient_account_id) AND f.source_account_id = sqlc.arg(source_account_id)
   AND (sqlc.narg(before)::uuid IS NULL OR f.notification_id < sqlc.narg(before)::uuid)

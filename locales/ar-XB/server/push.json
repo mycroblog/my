@@ -79,6 +79,38 @@
     "defaultMessage": "‮⊥ɥǝ ɐpɯıuısʇɹɐʇoɹs oɟ {instance} ɹǝʌıǝʍǝp ʎonɹ ɔnsʇoɯ ǝɯoɾı ɹǝbnǝsʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.event_cancelled": {
+    "defaultMessage": "‮{title} ʍɐs ɔɐuɔǝʅʅǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_changed": {
+    "defaultMessage": "‮⊥ɥǝ pɐʇǝ oɹ dʅɐɔǝ oɟ {title} ɔɥɐuƃǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_invited": {
+    "defaultMessage": "‮{name} ıuʌıʇǝp ʎon ʇo {title}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_reminder": {
+    "defaultMessage": "‮{unit,select,day{{count,plural,one{{title} sʇɐɹʇs ıu # pɐʎ} other{{title} sʇɐɹʇs ıu # pɐʎs}}} hour{{count,plural,one{{title} sʇɐɹʇs ıu # ɥonɹ} other{{title} sʇɐɹʇs ıu # ɥonɹs}}} other{{count,plural,one{{title} sʇɐɹʇs ıu # ɯıunʇǝ} other{{title} sʇɐɹʇs ıu # ɯıunʇǝs}}}}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_room_unavailable": {
+    "defaultMessage": "‮⊥ɥǝ ʌoıɔǝ ɔɥɐʇ ɹooɯ oɟ {title} ɔɐuuoʇ odǝu‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_schedule_confirmed": {
+    "defaultMessage": "‮⊥ɥǝ pɐʇǝ oɟ {title} ıs sǝʇ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_started": {
+    "defaultMessage": "‮{title} ıs sʇɐɹʇıuƃ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.event_untitled": {
+    "defaultMessage": "‮ɐu ǝʌǝuʇ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.favourite": {
     "defaultMessage": "‮{name} ɟɐʌonɹıʇǝp ʎonɹ dosʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."

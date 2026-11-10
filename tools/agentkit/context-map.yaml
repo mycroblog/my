@@ -328,7 +328,8 @@ entries:
     notes:
       - "A draft is published through Service.create with the post's Idempotency-Key draft:{id}; the transaction deletes the schedule in effect first and then every row of the draft, so a second run of content.publish_scheduled_draft publishes nothing (ADR-0156 §5)."
       - "The checks of a new post run when a draft is scheduled (Service.Check: no decision hook, processing media pass) and again when it is published; a permanent failure ends the schedule as failed (DraftFailureReasonOf) and emits DraftScheduleFailed, a transient one is retried."
-      - "media.purge_unattached and the account erasure count draft_attachments as attached; the erasure deletes the drafts before the media."
+      - "media.purge_unattached and the account erasure count draft_attachments, draft_article_images, and draft_articles.cover_media_id as attached; the erasure deletes the drafts before the media."
+      - "A draft with DraftContent.Article is an article's draft (ADR-0160 §2): it is checked with Service.CheckArticle and published with Service.createArticle, and each save derives draft_article_images from the media:ID images of the body, keeping the author's uploads alone."
     userdocs: ["docs/operations/instance-settings.md#drafts-and-scheduled-posts", "docs/reference/jobs.md"]
   - name: link-card-crawler
     paths: ["internal/app/content/link_card*.go", "internal/domain/content/link_card*.go", "internal/domain/content/robots*.go", "app/web/src/features/about/components/LinkCardCrawler.tsx"]
@@ -465,14 +466,15 @@ entries:
       - "The room streams (voice_stream.go) carry the voice_* signals of stream.Hub / stream.Relay, each at most 1 KiB: a signal or a grant for one session waits in the KeyValueStore (voice.message, 30 s) and only its ID crosses the Bus; mic, reactions, and mutes are never recorded."
     userdocs: ["docs/operations/voice.md", "docs/guide/voice-chat.md"]
   - name: module-gathering
-    paths: ["internal/domain/gathering/**", "internal/app/gathering/**", "internal/platform/gathering.go", "internal/adapter/db/*/gathering/**", "schema/19-gathering/**", "queries/*/gathering/gathering.sql", "pkg/testkit/gatheringtest/**", "internal/interface/clientapi/events*.go", "api/spec/paths/events*.yaml", "api/spec/components/*/Event*.yaml"]
+    paths: ["internal/domain/gathering/**", "internal/app/gathering/**", "internal/platform/gathering.go", "internal/adapter/db/*/gathering/**", "schema/19-gathering/**", "queries/*/gathering/gathering.sql", "queries/*/gathering/notifications.sql", "pkg/testkit/gatheringtest/**", "internal/interface/clientapi/events*.go", "internal/interface/clientapi/event_reminders.go", "api/spec/paths/events*.yaml", "api/spec/paths/preferences_event_reminders.yaml", "api/spec/components/*/Event*.yaml", "internal/app/notification/gathering.go"]
     docs: ["docs/architecture/data-model/04-tables/19-gathering.md#419-gathering", "docs/architecture/data-model/05-states-and-policies.md#57-イベントの判定", "docs/adr/0161-events.md"]
     notes:
       - "The code says gathering, the UI, the API, and the documents say event, so that it is not mistaken for an event table of ADR-0020. Nothing of it is federated (ADR-0161 §1)."
       - "Every read and operation decides who sees an event with gathering.CanSee and each place with gathering.CanSeePlace (ADR-0161 §9); internal/app/gathering gathers the facts, and a hidden place never leaves appgathering.View (only its kind, in HiddenPlaces)."
       - "A command writes the rows of its events, then emits the matching gathering.* event in the same transaction; the projectors derive gathering_attendees, gathering_heads (which counts the attendees, so the attendees come first), and gathering_coorganizers with the same SQL as the rebuild. State is never a nullable timestamp."
-      - "internal/app/gathering reads the accounts, roles, settings, and the voice chat through Members and the follows and blocks through Relations, which internal/platform/gathering.go implements; it imports no other module's internal/app but account (the eraser)."
-    userdocs: ["docs/operations/instance-settings.md#events"]
+      - "internal/app/gathering reads the accounts, roles, settings, and the voice chat through Members and the follows and blocks through Relations, which internal/platform/gathering.go implements; of the other modules' internal/app it imports account (the eraser) and notification (the notifications, through its GatheringNotifier), and notification never imports gathering."
+      - "The notifications (ADR-0161 §11) are gathering.notify jobs that a command or gathering.tick enqueues through the outbox; the job picks the recipients when it runs, 500 per job (queue.FanOut), checks CanSee, and its dedupe keys carry the confirmation of the date, so that a new date notifies again and a job of an old date nothing. gathering_dues holds the next time gathering.tick handles an event and is derived again in the transactions of the creation, a new date, an answer, a change of reminders, and the cancellation (dues.go)."
+    userdocs: ["docs/operations/instance-settings.md#events", "docs/reference/jobs.md#events", "docs/operations/running.md#how-late-periodic-jobs-run", "docs/operations/email.md"]
   - name: module-search
     paths: ["internal/app/search/**", "internal/adapter/search/**", "internal/platform/search.go", "internal/platform/adapters_search_*.go", "internal/platform/adapters_no_search_*.go", "internal/platform/config/*search_*.go", "pkg/testkit/searchtest/search_index_contract.go", "pkg/testkit/elasticsearchtest/**", "pkg/testkit/meilisearchtest/**", "pkg/testkit/searchtest/search_contract.go", "internal/adapter/db/*/search/**", "cmd/my/search.go", "schema/18-search/**", "queries/*/search/search.sql", "api/spec/components/schemas/InstanceFullTextSearch.yaml", "api/spec/paths/statuses_search.yaml", "internal/interface/clientapi/status_search.go"]
     docs: ["docs/adr/0149-full-text-search.md", "docs/adr/0146-plugin-protocol.md", "docs/architecture/data-model/04-tables/18-search.md"]
@@ -676,7 +678,7 @@ entries:
     userdocs: ["docs/developers/authentication.md", "docs/developers/rate-limits.md", "docs/developers/stability.md"]
   - name: activitypub
     paths: ["internal/interface/activitypub/**"]
-    docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get"]
+    docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get", "docs/architecture/federation.md#65-webfinger-の拡張"]
   - name: maintenance
     paths: ["internal/interface/maintenance/**", "internal/platform/maintenance.go", "cmd/my/maintenance*.go", "cmd/my/closure_export*.go"]
     docs: ["docs/adr/0088-service-shutdown-modes.md#8-メンテナンスモードの切り替え", "docs/adr/0088-service-shutdown-modes.md#18-メンテナンスモードとの関係", "docs/adr/0088-service-shutdown-modes.md#6-停止の後", "docs/operations/maintenance.md", "docs/operations/service-closure.md"]
@@ -853,7 +855,7 @@ entries:
       - "Unicode emoji are drawn with the Noto Color Emoji web font of @my/ui/emoji.css everywhere (ADR-0091), never with an OS-font check: the fonts cover every emoji of EMOJI_VERSION."
   - name: web-feature-search
     paths: ["app/web/src/features/search/**"]
-    docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー"]
+    docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー", "docs/architecture/web-client/screens/intent.md"]
     userdocs: ["docs/guide/following.md"]
   - name: web-feature-report
     paths: ["app/web/src/features/report/**"]

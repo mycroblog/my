@@ -77,6 +77,7 @@ func UnreadEmailDraft(l *i18n.Localizer, name, to string, p PushPayload, webOrig
 		// Posts are about to go for good (ADR-0151 §7): the email says so itself.
 		paragraphs = []string{p.Title, l.ServerMailAutoDeleteLimitDetail()}
 	}
+	paragraphs = append(paragraphs, p.Details...)
 	return kernel.MailDraft{
 		Category: kernel.MailNotification, To: to, Subject: p.Title,
 		Paragraphs:     paragraphs,

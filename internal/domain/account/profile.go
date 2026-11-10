@@ -28,11 +28,14 @@ type ProfileRevision struct {
 	AIOptOut bool
 	// Feed is whether the account's Atom feed is served (FR-213); remote profiles keep the zero
 	// value, which follows Indexable.
-	Feed          FeedSetting
-	AvatarMediaID string // "" when there is no avatar
-	HeaderMediaID string // "" when there is no header image
-	RevisedAt     time.Time
-	Fields        []ProfileField
+	Feed FeedSetting
+	// FollowsVisibility is who may read the account's follows and followers lists (FR-311);
+	// remote profiles keep the zero value, which is public.
+	FollowsVisibility FollowsVisibility
+	AvatarMediaID     string // "" when there is no avatar
+	HeaderMediaID     string // "" when there is no header image
+	RevisedAt         time.Time
+	Fields            []ProfileField
 	// EmojiIDs are the custom emoji of the display name, note, and fields (ADR-0051), sorted;
 	// they are the content module's custom_emojis rows.
 	EmojiIDs []string
@@ -47,6 +50,7 @@ type ProfileRevision struct {
 func (r ProfileRevision) SameContent(o ProfileRevision) bool {
 	if r.DisplayName != o.DisplayName || r.NoteHTML != o.NoteHTML || r.Locked != o.Locked || r.Bot != o.Bot ||
 		r.Discoverable != o.Discoverable || r.Indexable != o.Indexable || r.AIOptOut != o.AIOptOut || r.Feed.Normalize() != o.Feed.Normalize() ||
+		r.FollowsVisibility.Normalize() != o.FollowsVisibility.Normalize() ||
 		r.AvatarMediaID != o.AvatarMediaID || r.HeaderMediaID != o.HeaderMediaID || len(r.Fields) != len(o.Fields) ||
 		!slices.Equal(r.EmojiIDs, o.EmojiIDs) {
 		return false
@@ -106,6 +110,50 @@ func (r ProfileRevision) FeedEnabled() bool {
 // FeedFollowsIndexable reports whether the owner has made no explicit choice about the feed.
 func (r ProfileRevision) FeedFollowsIndexable() bool {
 	return r.Feed.Normalize() == FeedFollowIndexable
+}
+
+// FollowsVisibility is who may read the follows and followers lists of a local account
+// (FR-311): everyone, the account's approved followers, or the owner alone. The counts of the
+// lists stay visible to everyone whatever it is.
+type FollowsVisibility string
+
+// Visibilities of the follows and followers lists (account_profile_revisions.follows_visibility).
+const (
+	FollowsPublic    FollowsVisibility = "public"
+	FollowsFollowers FollowsVisibility = "followers"
+	FollowsPrivate   FollowsVisibility = "private"
+)
+
+// ParseFollowsVisibility returns the visibility named s, false for an unknown name.
+func ParseFollowsVisibility(s string) (FollowsVisibility, bool) {
+	switch v := FollowsVisibility(s); v {
+	case FollowsPublic, FollowsFollowers, FollowsPrivate:
+		return v, true
+	}
+	return "", false
+}
+
+// Normalize returns v, or FollowsPublic for the zero value or an unknown value.
+func (v FollowsVisibility) Normalize() FollowsVisibility {
+	switch v {
+	case FollowsFollowers, FollowsPrivate:
+		return v
+	}
+	return FollowsPublic
+}
+
+// FollowsReadable reports whether a viewer may read the follows and followers lists of the
+// account whose lists have visibility v: the owner always, an approved follower of the account
+// unless v is FollowsPrivate, and anyone else only when v is FollowsPublic. Every reader of the
+// lists (the client API, the ActivityPub collections) decides with it.
+func (v FollowsVisibility) FollowsReadable(owner, approvedFollower bool) bool {
+	switch v.Normalize() {
+	case FollowsPrivate:
+		return owner
+	case FollowsFollowers:
+		return owner || approvedFollower
+	}
+	return true
 }
 
 // ProfileField is one metadata field of a profile revision (FR-006), ordered by Position.

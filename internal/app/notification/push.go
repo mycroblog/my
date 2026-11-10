@@ -167,6 +167,10 @@ type pushJob struct {
 	AutoDeleteDaysLeft   int `json:"auto_delete_days_left,omitempty"`
 	// DraftFailureReason is why the scheduled post of a scheduled_status_failed was not published.
 	DraftFailureReason string `json:"draft_failure_reason,omitempty"`
+	// GatheringID is the event of an event_* notification; Event is what words it, as of the
+	// notification.
+	GatheringID string     `json:"gathering_id,omitempty"`
+	Event       *EventMail `json:"event,omitempty"`
 }
 
 // jobOf returns the payload of a job about n: JobPush to the subscription subscriptionID, or
@@ -177,6 +181,7 @@ func jobOf(n notification.Notification, subscriptionID string) pushJob {
 		SourceAccountID: n.SourceAccountID, StatusID: n.StatusID, ReportID: n.ReportID, AppealID: n.AppealID,
 		HookAppealID: n.HookAppealID, ServiceClosureChange: n.ServiceClosureChange, VoiceRoomID: n.VoiceRoomID,
 		ErrorGroupChange: n.ErrorGroupChange, ErrorGroupID: n.ErrorGroupID, AnnouncementID: n.AnnouncementID,
+		GatheringID: n.GatheringID,
 	}
 }
 
@@ -508,6 +513,9 @@ type PushPayload struct {
 	Lang string `json:"lang"`
 	// Path is the page of the web client that tapping the notification opens.
 	Path string `json:"path"`
+	// Details are the paragraphs that the notification's email adds below its subject, such as
+	// the start and the hosts of an event; the Web Push message carries none.
+	Details []string `json:"-"`
 }
 
 // message returns the payload of job's message, worded in the recipient's locale, and by the
@@ -571,7 +579,7 @@ func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18
 		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange, ErrorGroupID: job.ErrorGroupID,
 		AnnouncementID: job.AnnouncementID, AnnouncementTitle: job.AnnouncementTitle,
 		AutoDeleteMaxAgeDays: job.AutoDeleteMaxAgeDays, AutoDeleteDaysLeft: job.AutoDeleteDaysLeft,
-		DraftFailureReason: job.DraftFailureReason,
+		DraftFailureReason: job.DraftFailureReason, GatheringID: job.GatheringID, Event: job.Event,
 	}, instance), l, nil
 }
 
@@ -600,6 +608,10 @@ type Wording struct {
 	// DraftFailureReason is why the scheduled post of a scheduled_status_failed was not published
 	// (content.DraftFailureReason).
 	DraftFailureReason string
+	// GatheringID is the event of an event_* notification and Event what words it; nil words it
+	// without its title.
+	GatheringID string
+	Event       *EventMail
 }
 
 // DescribeNotification words n in the locale of l for the instance named instance: the title
@@ -729,6 +741,10 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		p.Path = AutoDeleteSettingsPath
 	case notification.TypeScheduledStatusFailed:
 		p.Title = l.ServerPushScheduledStatusFailed(i18n.ServerPushScheduledStatusFailedArgs{Instance: instance, Reason: n.DraftFailureReason})
+	case notification.TypeEventInvited, notification.TypeEventScheduleConfirmed, notification.TypeEventChanged,
+		notification.TypeEventCancelled, notification.TypeEventReminder, notification.TypeEventStarted,
+		notification.TypeEventRoomUnavailable:
+		p.Title, p.Path = describeEvent(l, n, name), EventPath(n.GatheringID)
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}

@@ -579,6 +579,42 @@
     "defaultMessage": "Feed address: {url}",
     "description": "The address of the user's Atom feed, shown while the feed is on. {url} is the address, which reads left to right."
   },
+  "settings.profile.follows": {
+    "defaultMessage": "Follows and followers",
+    "description": "Heading of the part of the profile form about who may read the lists of the accounts the user follows and of their followers."
+  },
+  "settings.profile.follows_visibility": {
+    "defaultMessage": "Who can see your follows and followers",
+    "description": "Label of the radio group that chooses who may read the user's follows and followers lists."
+  },
+  "settings.profile.follows_visibility.description": {
+    "defaultMessage": "Everyone can still see how many there are, and you always see both lists.",
+    "description": "Help text of the radio group of who may read the follows and followers lists."
+  },
+  "settings.profile.follows_visibility.public": {
+    "defaultMessage": "Everyone",
+    "description": "Option of who may read the follows and followers lists: everyone."
+  },
+  "settings.profile.follows_visibility.public.description": {
+    "defaultMessage": "Anyone can see whom you follow and who follows you, on this server and on others.",
+    "description": "Help text of the option that shows the follows and followers lists to everyone."
+  },
+  "settings.profile.follows_visibility.followers": {
+    "defaultMessage": "Your followers",
+    "description": "Option of who may read the follows and followers lists: the user's approved followers on this server."
+  },
+  "settings.profile.follows_visibility.followers.description": {
+    "defaultMessage": "Only people on this server who follow you, once you have accepted them, see the lists. Other servers see only how many there are.",
+    "description": "Help text of the option that shows the follows and followers lists to the user's approved followers only."
+  },
+  "settings.profile.follows_visibility.private": {
+    "defaultMessage": "Only you",
+    "description": "Option of who may read the follows and followers lists: the user alone."
+  },
+  "settings.profile.follows_visibility.private.description": {
+    "defaultMessage": "Nobody else sees the lists, only how many there are.",
+    "description": "Help text of the option that keeps the follows and followers lists to the user."
+  },
   "settings.profile.characters_left": {
     "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
     "description": "Character count under the bio field while the text is within the limit."
@@ -2354,6 +2390,10 @@
   "settings.notifications.group.voice": {
     "defaultMessage": "Voice chats",
     "description": "Row of the notification settings table: an account the user follows opened a voice chat room, or the user was invited to one."
+  },
+  "settings.notifications.group.event": {
+    "defaultMessage": "Events",
+    "description": "Row of the notification settings table: the invitations, changes of date or place, cancellations, reminders, and starts of the events of the server."
   },
   "settings.notifications.group.admin_report": {
     "defaultMessage": "Reports",

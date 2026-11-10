@@ -15,6 +15,7 @@ export type CredentialAccount = Schemas["CredentialAccount"];
 export type ProfileChange = Schemas["UpdateCredentialsRequest"];
 export type SearchIndexing = Schemas["SearchIndexing"];
 export type AIUsage = Schemas["AIUsage"];
+export type FollowsVisibility = Schemas["FollowsVisibility"];
 
 /** The signed-in user's preferences (GET /preferences). */
 export function preferencesQueryOptions(api: Api) {

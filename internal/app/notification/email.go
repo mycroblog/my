@@ -47,7 +47,7 @@ type EmailScheduler struct {
 	Clock  kernel.Clock
 }
 
-// enqueueWith enqueues JobNotificationEmail of n, to run notification.EmailDelay from now, when
+// enqueueWith enqueues JobNotificationEmail of n, to run notification.EmailDelayOf(n.Type) from now, when
 // n's group is emailed after the delay and c turns its email on, with the payload completed by
 // complete (nil completes nothing): what words the email that the notification row does not hold.
 // The idempotency key is the notification's, so that a retried transaction enqueues the job once.
@@ -77,7 +77,7 @@ func (m *EmailScheduler) enqueueAll(ctx context.Context, tx uow.Tx, ns []notific
 		}
 		jobs = append(jobs, queue.NewJob{
 			Type: JobNotificationEmail, Payload: payload, IdempotencyKey: JobNotificationEmail + ":" + n.ID,
-			RunAt: m.Clock.Now().Add(notification.EmailDelay),
+			RunAt: m.Clock.Now().Add(notification.EmailDelayOf(n.Type)),
 		})
 	}
 	if len(jobs) == 0 {
@@ -167,6 +167,13 @@ func sendNotificationEmail(ctx context.Context, d EmailDeps, run queue.Job, job 
 	}
 	if err != nil {
 		return err
+	}
+	if job.Event != nil {
+		names, err := eventHostNames(ctx, d.Audience, job.Event)
+		if err != nil {
+			return err
+		}
+		p.Details = EventDetails(l, job.Event, names)
 	}
 	site := mailSite(ctx, d.Host, d.MailSite)
 	draft, ok := UnreadEmailDraft(l, site.Name, box.Address, warned(l, p, verdict), d.WebOrigin, "")

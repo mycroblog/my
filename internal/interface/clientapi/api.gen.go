@@ -2527,6 +2527,45 @@ func (e FinanceVisibility) Valid() bool {
 	}
 }
 
+// Defines values for FollowsVisibility.
+const (
+	FollowsVisibilityFollowers FollowsVisibility = "followers"
+	FollowsVisibilityPrivate   FollowsVisibility = "private"
+	FollowsVisibilityPublic    FollowsVisibility = "public"
+)
+
+// Valid indicates whether the value is a known member of the FollowsVisibility enum.
+func (e FollowsVisibility) Valid() bool {
+	switch e {
+	case FollowsVisibilityFollowers:
+		return true
+	case FollowsVisibilityPrivate:
+		return true
+	case FollowsVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FundingMeterVisibility.
+const (
+	FundingMeterVisibilityAmounts FundingMeterVisibility = "amounts"
+	FundingMeterVisibilityPercent FundingMeterVisibility = "percent"
+)
+
+// Valid indicates whether the value is a known member of the FundingMeterVisibility enum.
+func (e FundingMeterVisibility) Valid() bool {
+	switch e {
+	case FundingMeterVisibilityAmounts:
+		return true
+	case FundingMeterVisibilityPercent:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HookAppealState.
 const (
 	HookAppealStateOverturned HookAppealState = "overturned"
@@ -2971,6 +3010,10 @@ const (
 	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
 	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyFundingMeterRail                   InstanceSettingKey = "funding_meter_rail"
+	InstanceSettingKeyFundingMeterTargetAmount           InstanceSettingKey = "funding_meter_target_amount"
+	InstanceSettingKeyFundingMeterTargetCurrency         InstanceSettingKey = "funding_meter_target_currency"
+	InstanceSettingKeyFundingMeterVisibility             InstanceSettingKey = "funding_meter_visibility"
 	InstanceSettingKeyHookDecisionsRetentionDays         InstanceSettingKey = "hook_decisions_retention_days"
 	InstanceSettingKeyHookInboundActorMode               InstanceSettingKey = "hook_inbound_actor_mode"
 	InstanceSettingKeyHookInboundActorOnFailure          InstanceSettingKey = "hook_inbound_actor_on_failure"
@@ -3136,6 +3179,14 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFinanceVisibility:
 		return true
+	case InstanceSettingKeyFundingMeterRail:
+		return true
+	case InstanceSettingKeyFundingMeterTargetAmount:
+		return true
+	case InstanceSettingKeyFundingMeterTargetCurrency:
+		return true
+	case InstanceSettingKeyFundingMeterVisibility:
+		return true
 	case InstanceSettingKeyHookDecisionsRetentionDays:
 		return true
 	case InstanceSettingKeyHookInboundActorMode:
@@ -3283,6 +3334,8 @@ const (
 	InstanceSettingKindAccounts             InstanceSettingKind = "accounts"
 	InstanceSettingKindBool                 InstanceSettingKind = "bool"
 	InstanceSettingKindClientLimits         InstanceSettingKind = "client_limits"
+	InstanceSettingKindCurrency             InstanceSettingKind = "currency"
+	InstanceSettingKindDecimal              InstanceSettingKind = "decimal"
 	InstanceSettingKindEmail                InstanceSettingKind = "email"
 	InstanceSettingKindEnum                 InstanceSettingKind = "enum"
 	InstanceSettingKindInt                  InstanceSettingKind = "int"
@@ -3303,6 +3356,10 @@ func (e InstanceSettingKind) Valid() bool {
 	case InstanceSettingKindBool:
 		return true
 	case InstanceSettingKindClientLimits:
+		return true
+	case InstanceSettingKindCurrency:
+		return true
+	case InstanceSettingKindDecimal:
 		return true
 	case InstanceSettingKindEmail:
 		return true
@@ -3774,6 +3831,7 @@ const (
 	NotificationGroupAnnouncement            NotificationGroup = "announcement"
 	NotificationGroupAutoDeleteLimit         NotificationGroup = "auto_delete_limit"
 	NotificationGroupBoost                   NotificationGroup = "boost"
+	NotificationGroupEvent                   NotificationGroup = "event"
 	NotificationGroupFavourite               NotificationGroup = "favourite"
 	NotificationGroupFollow                  NotificationGroup = "follow"
 	NotificationGroupFollowAccepted          NotificationGroup = "follow_accepted"
@@ -3823,6 +3881,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAutoDeleteLimit:
 		return true
 	case NotificationGroupBoost:
+		return true
+	case NotificationGroupEvent:
 		return true
 	case NotificationGroupFavourite:
 		return true
@@ -3939,6 +3999,13 @@ const (
 	NotificationTypeBoost                      NotificationType = "boost"
 	NotificationTypeBoostRequest               NotificationType = "boost_request"
 	NotificationTypeCustomEmojiRequestDecided  NotificationType = "custom_emoji_request_decided"
+	NotificationTypeEventCancelled             NotificationType = "event_cancelled"
+	NotificationTypeEventChanged               NotificationType = "event_changed"
+	NotificationTypeEventInvited               NotificationType = "event_invited"
+	NotificationTypeEventReminder              NotificationType = "event_reminder"
+	NotificationTypeEventRoomUnavailable       NotificationType = "event_room_unavailable"
+	NotificationTypeEventScheduleConfirmed     NotificationType = "event_schedule_confirmed"
+	NotificationTypeEventStarted               NotificationType = "event_started"
 	NotificationTypeFavourite                  NotificationType = "favourite"
 	NotificationTypeFollow                     NotificationType = "follow"
 	NotificationTypeFollowAccepted             NotificationType = "follow_accepted"
@@ -4004,6 +4071,20 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeBoostRequest:
 		return true
 	case NotificationTypeCustomEmojiRequestDecided:
+		return true
+	case NotificationTypeEventCancelled:
+		return true
+	case NotificationTypeEventChanged:
+		return true
+	case NotificationTypeEventInvited:
+		return true
+	case NotificationTypeEventReminder:
+		return true
+	case NotificationTypeEventRoomUnavailable:
+		return true
+	case NotificationTypeEventScheduleConfirmed:
+		return true
+	case NotificationTypeEventStarted:
 		return true
 	case NotificationTypeFavourite:
 		return true
@@ -7834,7 +7915,9 @@ type AdminSetting struct {
 	// a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
 	// `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
 	// provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-	// comma-separated `provider=visibility|visibility` pairs, or empty for none.
+	// comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+	// decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+	// empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -9836,6 +9919,13 @@ type CredentialAccount struct {
 	// FollowingCount The number of accounts that the account actively follows; present where `followers_count` is.
 	FollowingCount *int `json:"following_count,omitempty"`
 
+	// FollowsVisibility Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+	// `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+	// of it is approved; `private`, nobody. The owner always reads both, and the counts
+	// (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+	// number of follows and followers alone unless the lists are `public`.
+	FollowsVisibility FollowsVisibility `json:"follows_visibility"`
+
 	// Header The header image; omitted when there is none, as `avatar` is.
 	Header *MediaVariants `json:"header,omitempty"`
 
@@ -10390,10 +10480,13 @@ type DomainMutePage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
-// Draft A draft of a post, saved on the server so that the user goes on writing it on another device,
-// and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+// Draft A draft of a post or of an article (`article`), saved on the server so that the user goes on
+// writing it on another device, and publishes it at once or at a chosen time. Only the user reads
+// it; it is never federated.
 type Draft struct {
-	CreatedAt time.Time `json:"created_at"`
+	// Article What makes the draft that of an article; left out for the draft of a post.
+	Article   *DraftArticle `json:"article,omitempty"`
+	CreatedAt time.Time     `json:"created_at"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
@@ -10447,6 +10540,47 @@ type Draft struct {
 	Visibility Visibility `json:"visibility"`
 }
 
+// DraftArticle What makes a draft that of an article: the draft's `text` is the body in Markdown. The title
+// and the summary may be empty while the user writes; publishing the draft checks them as
+// `createArticle` does.
+type DraftArticle struct {
+	// Cover The cover image; omitted when there is none.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Images The IDs of the user's own uploads that the body shows as images (`![alt](media:ID)`),
+	// each once, ordered by ID; the server finds them in the body at each save, and keeps the
+	// uploads while the draft names them.
+	Images []Id `json:"images"`
+
+	// Summary The summary, as plain text; empty makes one from the body when the draft is published.
+	Summary string `json:"summary"`
+
+	// Tags The hashtags, as the user gave them.
+	Tags []string `json:"tags"`
+
+	// Title The title, as plain text; empty while there is none.
+	Title string `json:"title"`
+}
+
+// DraftArticleInput Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+// has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+// `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+type DraftArticleInput struct {
+	// Cover The cover image, one of the user's own uploads, processed or not.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags, with or without `#`; checked when the draft is published.
+	Tags *[]string `json:"tags,omitempty"`
+
+	// Title The title, as plain text; omitted or empty while there is none.
+	Title *string `json:"title,omitempty"`
+}
+
 // DraftFailureReason Why a scheduled post was not published at its time; the draft stays, to fix and schedule
 // again. `restricted`: the account may not post (a moderation action, a suspension, or an
 // account that is not active). `reply_unavailable`: the post it replies to is gone, hidden from
@@ -10486,6 +10620,11 @@ type DraftPoll struct {
 // post would refuse (empty, or longer than `max_post_characters`), up to 100,000 characters, and
 // media that are still being processed; publishing it checks it as a new post.
 type DraftRequest struct {
+	// Article Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+	// has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+	// `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+	Article *DraftArticleInput `json:"article,omitempty"`
+
 	// InReplyToId The post to reply to, checked when the draft is scheduled and published.
 	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
 
@@ -11057,6 +11196,26 @@ type EventRSVP struct {
 	Answer EventAnswer `json:"answer"`
 }
 
+// EventReminders The reminders of events of the authenticated user.
+type EventReminders struct {
+	// Defaults Whether these are the defaults (one day and one hour before), as the user has not chosen.
+	Defaults bool `json:"defaults"`
+
+	// MinutesBefore How many minutes before the start of an event each reminder is, from the earliest; empty
+	// for no reminders.
+	MinutesBefore []int `json:"minutes_before"`
+}
+
+// EventRemindersUpdate A change of the reminders of events of the authenticated user.
+type EventRemindersUpdate struct {
+	// Defaults Restores the defaults (one day and one hour before) instead.
+	Defaults *bool `json:"defaults,omitempty"`
+
+	// MinutesBefore The reminders, in minutes before the start: at most 3, each from 5 minutes to 7 days
+	// (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
+	MinutesBefore *[]int `json:"minutes_before,omitempty"`
+}
+
 // EventState Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
 // `ends_at` is in the past.
 type EventState string
@@ -11334,6 +11493,13 @@ type FollowedHashtagCollection struct {
 	Items []FollowedHashtag `json:"items"`
 }
 
+// FollowsVisibility Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+// `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+// of it is approved; `private`, nobody. The owner always reads both, and the counts
+// (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+// number of follows and followers alone unless the lists are `public`.
+type FollowsVisibility string
+
 // ForwardReportRequest What a moderator sends with a report forwarded to the target's server.
 type ForwardReportRequest struct {
 	// Comment Text for the moderators of the target's server, as plain text, up to 1,000 characters:
@@ -11341,6 +11507,57 @@ type ForwardReportRequest struct {
 	// sent by a forward after filing.
 	Comment *string `json:"comment,omitempty"`
 }
+
+// FundingMeter How far this month's net income goes toward the instance's monthly target (the instance
+// setting `funding_meter_visibility`): the income and the target are prorated as the totals
+// under the basis `amortized` are, and the month is the calendar month that holds today in UTC.
+// Only the income in the target's currency counts; no amount is converted. The target is the
+// one the operators set, or this month's costs while they are in one currency. `percent` alone
+// is published while the costs and the income are both private, so that no public amount turns
+// it into a private one; `income` and `target` are added only while both are public.
+type FundingMeter struct {
+	// Covered Whether the net income reaches the target, that is, this month is covered.
+	Covered bool `json:"covered"`
+
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
+	// of a payment on a card statement or an invoice.
+	EndsOn CalendarDate `json:"ends_on"`
+
+	// Estimated Whether the target is this month's costs and an imported usage charge of a billing month
+	// that its provider has not closed is among them: the percentage may still change.
+	Estimated bool `json:"estimated"`
+
+	// Income This month's net income in the target's currency; only with `amounts`.
+	Income *Money `json:"income,omitempty"`
+
+	// Label The month, such as `2026-11`.
+	Label string `json:"label"`
+
+	// Percent The net income over the target in whole percent, rounded down to 1%, so that 100 is
+	// reached only when `covered` is true. It goes past 100, and is 0 while the net income is
+	// not positive.
+	Percent int64 `json:"percent"`
+
+	// Rail Whether the web client shows the meter in its right rail as well as on the about page (the
+	// instance setting `funding_meter_rail`).
+	Rail bool `json:"rail"`
+
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
+	// of a payment on a card statement or an invoice.
+	StartsOn CalendarDate `json:"starts_on"`
+
+	// Target The monthly target; only with `amounts`.
+	Target *Money `json:"target,omitempty"`
+
+	// TargetIsCosts Whether the target is this month's costs; only with `amounts`.
+	TargetIsCosts *bool `json:"target_is_costs,omitempty"`
+
+	// Visibility `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+	Visibility FundingMeterVisibility `json:"visibility"`
+}
+
+// FundingMeterVisibility `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+type FundingMeterVisibility string
 
 // Hashtag A hashtag and whether the user follows it. The posts of the hashtags the user follows appear
 // on the home timeline.
@@ -11650,6 +11867,10 @@ type Instance struct {
 	// hashtags, which every server has. Clients read this to know whether to show an entry to it,
 	// without a search that fails.
 	FullTextSearch InstanceFullTextSearch `json:"full_text_search"`
+
+	// FundingMeter The funding meter of this month, which the about page shows; absent while the instance
+	// setting `funding_meter_visibility` is `off` or the month has no target.
+	FundingMeter *FundingMeter `json:"funding_meter,omitempty"`
 
 	// Icon A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 	// under `/brand/` on the server that name the revision, so their content never changes and
@@ -12117,7 +12338,9 @@ type InstanceSettingKey string
 // a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
 // `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
 // provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-// comma-separated `provider=visibility|visibility` pairs, or empty for none.
+// comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+// decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+// empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,
@@ -13134,6 +13357,13 @@ type Notification struct {
 	// ErrorGroup What an `admin_error_group` tells of; omitted for the other types.
 	ErrorGroup *NotificationErrorGroup `json:"error_group,omitempty"`
 
+	// Event The event that an `event_*` notification is about, as the user sees it now; omitted when
+	// the user no longer sees it, for the other types, and without `read:events`.
+	Event *Event `json:"event,omitempty"`
+
+	// EventId The event that an `event_*` notification is about.
+	EventId *Id `json:"event_id,omitempty"`
+
 	// HookAppeal The user's appeal of a refused post that a `hook_appeal_decided` tells of, with its state;
 	// first-party clients only, and absent once the appeal is no longer kept.
 	HookAppeal *OwnHookAppeal `json:"hook_appeal,omitempty"`
@@ -13269,6 +13499,18 @@ type Notification struct {
 	// `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
 	// draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
 	// sends nothing.
+	// The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+	// sees it). `event_invited` tells that `account` invited the user, once per invitation;
+	// `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+	// user answered or to which the user was invited, once per date; `event_changed` that the date,
+	// the places, or the voice chat room of an event that the user answered going or maybe to, or was
+	// invited to, changed, once per change (a change of the title or the description sends
+	// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+	// that the user answered going or maybe to starts soon, at each time before the start that the
+	// user chose (`getEventReminders`), once per date and time, and never for a date that changed
+	// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+	// the organizer that the voice chat room of the event cannot open. Their `account` is the
+	// organizer, except for `event_invited`. Each is sent only while the user sees the event.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -13311,7 +13553,8 @@ type NotificationErrorGroupChange string
 // and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 // `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 // `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 // `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 // `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13503,7 +13746,8 @@ type NotificationSettingRow struct {
 	// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 	// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 	// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-	// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+	// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+	// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 	// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 	// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13560,7 +13804,8 @@ type NotificationSettingsUpdate struct {
 		// and off together. The ordinary notifications are one row per type (`mention`, `follow`,
 		// `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
 		// `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-		// `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+		// `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+		// is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
 		// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 		// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -13667,6 +13912,18 @@ type NotificationSettingsUpdateChangesChannel string
 // `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
 // draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
 // sends nothing.
+// The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+// sees it). `event_invited` tells that `account` invited the user, once per invitation;
+// `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+// user answered or to which the user was invited, once per date; `event_changed` that the date,
+// the places, or the voice chat room of an event that the user answered going or maybe to, or was
+// invited to, changed, once per change (a change of the title or the description sends
+// nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+// that the user answered going or maybe to starts soon, at each time before the start that the
+// user chose (`getEventReminders`), once per date and time, and never for a date that changed
+// since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+// the organizer that the voice chat room of the event cannot open. Their `account` is the
+// organizer, except for `event_invited`. Each is sent only while the user sees the event.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
@@ -14390,6 +14647,9 @@ type PreviewDomainBlockImportRequest struct {
 //     allowed. Remove one first.
 //   - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
 //     follow request was accepted) can be added to a list.
+//   - `/api/v1/problems/follows-hidden` (403): the account's `follows_visibility` keeps its
+//     follows and followers lists from the viewer (`/accounts/{id}/following`,
+//     `/accounts/{id}/followers`). Its counts stay on the account.
 //   - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
 //     hashtags allowed (100). Unfollow one first.
 //   - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
@@ -15173,7 +15433,8 @@ type Status struct {
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
 	// remote status is what the server's sanitizer kept of the received document. For an
-	// article, its rendered body, or empty in lists (see above).
+	// article, its rendered body, or empty in lists (see above); the images in the body of an
+	// article from another server load through the server's media proxy.
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -15301,7 +15562,7 @@ type StatusArticle struct {
 	// Summary The summary, as plain text; the server makes one from the body when the author writes none.
 	Summary string `json:"summary"`
 
-	// Title The title, as plain text.
+	// Title The title, as plain text; empty only for an article from another server that has none.
 	Title string `json:"title"`
 }
 
@@ -15974,6 +16235,13 @@ type UpdateCredentialsRequest struct {
 
 	// Fields The metadata fields, replacing the current ones; at most 4.
 	Fields *[]AccountFieldSource `json:"fields,omitempty"`
+
+	// FollowsVisibility Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+	// `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+	// of it is approved; `private`, nobody. The owner always reads both, and the counts
+	// (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+	// number of follows and followers alone unless the lists are `public`.
+	FollowsVisibility *FollowsVisibility `json:"follows_visibility,omitempty"`
 
 	// HeaderMediaId The ID of a processed image that the user uploaded, to become the header image;
 	// empty removes the header image.
@@ -17834,6 +18102,12 @@ type CreateStatusParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// LookupStatusParams defines parameters for LookupStatus.
+type LookupStatusParams struct {
+	// Uri The `https` URL of the post.
+	Uri string `form:"uri" json:"uri"`
+}
+
 // SearchStatusesParams defines parameters for SearchStatuses.
 type SearchStatusesParams struct {
 	// Q The words to find, 1 to 200 characters. Anything else is a 400.
@@ -18285,6 +18559,9 @@ type PreviewAutoDeletePolicyJSONRequestBody = AutoDeletePolicy
 
 // UpdateBadgeChoiceJSONRequestBody defines body for UpdateBadgeChoice for application/json ContentType.
 type UpdateBadgeChoiceJSONRequestBody = UpdateBadgeChoiceRequest
+
+// UpdateEventRemindersJSONRequestBody defines body for UpdateEventReminders for application/json ContentType.
+type UpdateEventRemindersJSONRequestBody = EventRemindersUpdate
 
 // UpdateNotificationPolicyJSONRequestBody defines body for UpdateNotificationPolicy for application/json ContentType.
 type UpdateNotificationPolicyJSONRequestBody = NotificationPolicyUpdate
@@ -19155,6 +19432,9 @@ type ServerInterface interface {
 	// ApproveEventAttendee Approve an attendee of an event
 	// (PUT /events/{id}/attendees/{account_id}/approval)
 	ApproveEventAttendee(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
+	// GetEventCalendar Get an event as an iCalendar file
+	// (GET /events/{id}/calendar.ics)
+	GetEventCalendar(w http.ResponseWriter, r *http.Request, id EventId)
 	// CancelEvent Cancel an event
 	// (POST /events/{id}/cancel)
 	CancelEvent(w http.ResponseWriter, r *http.Request, id EventId)
@@ -19425,6 +19705,12 @@ type ServerInterface interface {
 	// UpdateBadgeChoice Show or hide the badge of a role on the authenticated user's profile
 	// (PUT /preferences/badges/{role_id})
 	UpdateBadgeChoice(w http.ResponseWriter, r *http.Request, roleId BadgeRoleId)
+	// GetEventReminders Get the authenticated user's reminders of events
+	// (GET /preferences/event_reminders)
+	GetEventReminders(w http.ResponseWriter, r *http.Request)
+	// UpdateEventReminders Change the authenticated user's reminders of events
+	// (PUT /preferences/event_reminders)
+	UpdateEventReminders(w http.ResponseWriter, r *http.Request)
 	// GetNotificationPolicy Get the authenticated user's notification policy
 	// (GET /preferences/notification_policy)
 	GetNotificationPolicy(w http.ResponseWriter, r *http.Request)
@@ -19470,6 +19756,9 @@ type ServerInterface interface {
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(w http.ResponseWriter, r *http.Request, params CreateStatusParams)
+	// LookupStatus Look up or resolve a status by its URL
+	// (GET /statuses/lookup)
+	LookupStatus(w http.ResponseWriter, r *http.Request, params LookupStatusParams)
 	// SearchStatuses Search the text of posts
 	// (GET /statuses/search)
 	SearchStatuses(w http.ResponseWriter, r *http.Request, params SearchStatusesParams)
@@ -27490,6 +27779,32 @@ func (siw *ServerInterfaceWrapper) ApproveEventAttendee(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// GetEventCalendar operation middleware
+func (siw *ServerInterfaceWrapper) GetEventCalendar(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEventCalendar(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CancelEvent operation middleware
 func (siw *ServerInterfaceWrapper) CancelEvent(w http.ResponseWriter, r *http.Request) {
 
@@ -29946,6 +30261,34 @@ func (siw *ServerInterfaceWrapper) UpdateBadgeChoice(w http.ResponseWriter, r *h
 	handler.ServeHTTP(w, r)
 }
 
+// GetEventReminders operation middleware
+func (siw *ServerInterfaceWrapper) GetEventReminders(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetEventReminders(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateEventReminders operation middleware
+func (siw *ServerInterfaceWrapper) UpdateEventReminders(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateEventReminders(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // GetNotificationPolicy operation middleware
 func (siw *ServerInterfaceWrapper) GetNotificationPolicy(w http.ResponseWriter, r *http.Request) {
 
@@ -30218,6 +30561,39 @@ func (siw *ServerInterfaceWrapper) CreateStatus(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateStatus(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// LookupStatus operation middleware
+func (siw *ServerInterfaceWrapper) LookupStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LookupStatusParams
+
+	// ------------- Required query parameter "uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "uri", r.URL.Query(), &params.Uri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "uri", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LookupStatus(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -32667,6 +33043,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences/notifications", wrapper.UpdateNotificationSettings)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/notification_policy", wrapper.GetNotificationPolicy)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/preferences/notification_policy", wrapper.UpdateNotificationPolicy)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/event_reminders", wrapper.GetEventReminders)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/event_reminders", wrapper.UpdateEventReminders)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.GetSupporterListing)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/preferences/supporter_listing", wrapper.UpdateSupporterListing)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/deactivation", wrapper.GetDeactivationPreview)
@@ -32785,6 +33163,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/drafts/{id}/schedule", wrapper.ScheduleDraft)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/drafts/{id}/publish", wrapper.PublishDraft)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/search", wrapper.SearchStatuses)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/lookup", wrapper.LookupStatus)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statuses/{id}", wrapper.DeleteStatus)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}", wrapper.GetStatus)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}", wrapper.EditStatus)
@@ -32880,6 +33259,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events", wrapper.CreateEvent)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}", wrapper.GetEvent)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/events/{id}", wrapper.UpdateEvent)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/calendar.ics", wrapper.GetEventCalendar)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/cancel", wrapper.CancelEvent)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/rsvp", wrapper.AnswerEvent)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/attendees", wrapper.ListEventAttendees)
@@ -49396,6 +49776,76 @@ func (response ApproveEventAttendeedefaultApplicationProblemPlusJSONResponse) Vi
 	return err
 }
 
+type GetEventCalendarRequestObject struct {
+	Id EventId `json:"id"`
+}
+
+type GetEventCalendarResponseObject interface {
+	VisitGetEventCalendarResponse(w http.ResponseWriter) error
+}
+
+type GetEventCalendar200ResponseHeaders struct {
+	CacheControl       *string
+	ContentDisposition *string
+}
+
+type GetEventCalendar200TextcalendarResponse struct {
+	Body          io.Reader
+	Headers       GetEventCalendar200ResponseHeaders
+	ContentLength int64
+}
+
+func (response GetEventCalendar200TextcalendarResponse) VisitGetEventCalendarResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/calendar")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentDisposition != nil {
+		w.Header().Set("Content-Disposition", fmt.Sprint(*response.Headers.ContentDisposition))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetEventCalendardefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetEventCalendardefaultApplicationProblemPlusJSONResponse) VisitGetEventCalendarResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type CancelEventRequestObject struct {
 	Id   EventId `json:"id"`
 	Body *CancelEventJSONRequestBody
@@ -54684,6 +55134,129 @@ func (response UpdateBadgeChoicedefaultApplicationProblemPlusJSONResponse) Visit
 	return err
 }
 
+type GetEventRemindersRequestObject struct {
+}
+
+type GetEventRemindersResponseObject interface {
+	VisitGetEventRemindersResponse(w http.ResponseWriter) error
+}
+
+type GetEventReminders200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetEventReminders200JSONResponse struct {
+	Body    EventReminders
+	Headers GetEventReminders200ResponseHeaders
+}
+
+func (response GetEventReminders200JSONResponse) VisitGetEventRemindersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetEventRemindersdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetEventRemindersdefaultApplicationProblemPlusJSONResponse) VisitGetEventRemindersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEventRemindersRequestObject struct {
+	Body *UpdateEventRemindersJSONRequestBody
+}
+
+type UpdateEventRemindersResponseObject interface {
+	VisitUpdateEventRemindersResponse(w http.ResponseWriter) error
+}
+
+type UpdateEventReminders200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type UpdateEventReminders200JSONResponse struct {
+	Body    EventReminders
+	Headers UpdateEventReminders200ResponseHeaders
+}
+
+func (response UpdateEventReminders200JSONResponse) VisitUpdateEventRemindersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type UpdateEventRemindersdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response UpdateEventRemindersdefaultApplicationProblemPlusJSONResponse) VisitUpdateEventRemindersResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type GetNotificationPolicyRequestObject struct {
 }
 
@@ -55559,6 +56132,68 @@ type CreateStatusdefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response CreateStatusdefaultApplicationProblemPlusJSONResponse) VisitCreateStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LookupStatusRequestObject struct {
+	Params LookupStatusParams
+}
+
+type LookupStatusResponseObject interface {
+	VisitLookupStatusResponse(w http.ResponseWriter) error
+}
+
+type LookupStatus200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type LookupStatus200JSONResponse struct {
+	Body    Status
+	Headers LookupStatus200ResponseHeaders
+}
+
+func (response LookupStatus200JSONResponse) VisitLookupStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LookupStatusdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response LookupStatusdefaultApplicationProblemPlusJSONResponse) VisitLookupStatusResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -60835,6 +61470,9 @@ type StrictServerInterface interface {
 	// ApproveEventAttendee Approve an attendee of an event
 	// (PUT /events/{id}/attendees/{account_id}/approval)
 	ApproveEventAttendee(ctx context.Context, request ApproveEventAttendeeRequestObject) (ApproveEventAttendeeResponseObject, error)
+	// GetEventCalendar Get an event as an iCalendar file
+	// (GET /events/{id}/calendar.ics)
+	GetEventCalendar(ctx context.Context, request GetEventCalendarRequestObject) (GetEventCalendarResponseObject, error)
 	// CancelEvent Cancel an event
 	// (POST /events/{id}/cancel)
 	CancelEvent(ctx context.Context, request CancelEventRequestObject) (CancelEventResponseObject, error)
@@ -61105,6 +61743,12 @@ type StrictServerInterface interface {
 	// UpdateBadgeChoice Show or hide the badge of a role on the authenticated user's profile
 	// (PUT /preferences/badges/{role_id})
 	UpdateBadgeChoice(ctx context.Context, request UpdateBadgeChoiceRequestObject) (UpdateBadgeChoiceResponseObject, error)
+	// GetEventReminders Get the authenticated user's reminders of events
+	// (GET /preferences/event_reminders)
+	GetEventReminders(ctx context.Context, request GetEventRemindersRequestObject) (GetEventRemindersResponseObject, error)
+	// UpdateEventReminders Change the authenticated user's reminders of events
+	// (PUT /preferences/event_reminders)
+	UpdateEventReminders(ctx context.Context, request UpdateEventRemindersRequestObject) (UpdateEventRemindersResponseObject, error)
 	// GetNotificationPolicy Get the authenticated user's notification policy
 	// (GET /preferences/notification_policy)
 	GetNotificationPolicy(ctx context.Context, request GetNotificationPolicyRequestObject) (GetNotificationPolicyResponseObject, error)
@@ -61150,6 +61794,9 @@ type StrictServerInterface interface {
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(ctx context.Context, request CreateStatusRequestObject) (CreateStatusResponseObject, error)
+	// LookupStatus Look up or resolve a status by its URL
+	// (GET /statuses/lookup)
+	LookupStatus(ctx context.Context, request LookupStatusRequestObject) (LookupStatusResponseObject, error)
 	// SearchStatuses Search the text of posts
 	// (GET /statuses/search)
 	SearchStatuses(ctx context.Context, request SearchStatusesRequestObject) (SearchStatusesResponseObject, error)
@@ -68753,6 +69400,32 @@ func (sh *strictHandler) ApproveEventAttendee(w http.ResponseWriter, r *http.Req
 	}
 }
 
+// GetEventCalendar operation middleware
+func (sh *strictHandler) GetEventCalendar(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request GetEventCalendarRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEventCalendar(ctx, request.(GetEventCalendarRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEventCalendar")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEventCalendarResponseObject); ok {
+		if err := validResponse.VisitGetEventCalendarResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CancelEvent operation middleware
 func (sh *strictHandler) CancelEvent(w http.ResponseWriter, r *http.Request, id EventId) {
 	var request CancelEventRequestObject
@@ -71227,6 +71900,61 @@ func (sh *strictHandler) UpdateBadgeChoice(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// GetEventReminders operation middleware
+func (sh *strictHandler) GetEventReminders(w http.ResponseWriter, r *http.Request) {
+	var request GetEventRemindersRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetEventReminders(ctx, request.(GetEventRemindersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetEventReminders")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetEventRemindersResponseObject); ok {
+		if err := validResponse.VisitGetEventRemindersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateEventReminders operation middleware
+func (sh *strictHandler) UpdateEventReminders(w http.ResponseWriter, r *http.Request) {
+	var request UpdateEventRemindersRequestObject
+
+	var body UpdateEventRemindersJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateEventReminders(ctx, request.(UpdateEventRemindersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateEventReminders")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateEventRemindersResponseObject); ok {
+		if err := validResponse.VisitUpdateEventRemindersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // GetNotificationPolicy operation middleware
 func (sh *strictHandler) GetNotificationPolicy(w http.ResponseWriter, r *http.Request) {
 	var request GetNotificationPolicyRequestObject
@@ -71628,6 +72356,32 @@ func (sh *strictHandler) CreateStatus(w http.ResponseWriter, r *http.Request, pa
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateStatusResponseObject); ok {
 		if err := validResponse.VisitCreateStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// LookupStatus operation middleware
+func (sh *strictHandler) LookupStatus(w http.ResponseWriter, r *http.Request, params LookupStatusParams) {
+	var request LookupStatusRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LookupStatus(ctx, request.(LookupStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LookupStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LookupStatusResponseObject); ok {
+		if err := validResponse.VisitLookupStatusResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

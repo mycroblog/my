@@ -158,7 +158,7 @@ func ProfileURL(host, username string) string { return "https://" + host + "/@" 
 // its preferredUsername is instanceUsername. images are the actor's avatar and header
 // (LocalActorImages), the Emoji tags of its profile (LocalActorEmojis), its aliases
 // (LocalActorAliases), and the actor it moved to (LocalActorMovedTo).
-func LocalActorDocument(host string, a appaccount.Actor, instanceUsername string, images ActorImages) federation.ActorDocument {
+func LocalActorDocument(host, accountDomain string, a appaccount.Actor, instanceUsername string, images ActorImages) federation.ActorDocument {
 	id := federation.IRI(a.Account.URI)
 	doc := federation.ActorDocument{
 		Context:    federation.ActorLDContext(),
@@ -183,6 +183,9 @@ func LocalActorDocument(host string, a appaccount.Actor, instanceUsername string
 		// The instance actor signs the instance's own requests and is followed by no one.
 		doc.PreferredUsername = instanceUsername
 		doc.ManuallyApprovesFollowers = true
+		if instanceUsername != "" {
+			doc.Webfinger = instanceUsername + "@" + accountDomain
+		}
 		return doc
 	}
 	doc.Featured = id + "/" + CollectionFeatured
@@ -190,6 +193,7 @@ func LocalActorDocument(host string, a appaccount.Actor, instanceUsername string
 	doc.MovedTo = images.MovedTo
 	if a.Local != nil {
 		doc.PreferredUsername = a.Local.Username
+		doc.Webfinger = a.Local.Username + "@" + accountDomain
 		doc.URL = ProfileURL(host, a.Local.Username)
 		if len(images.AlsoKnownAs) > 0 {
 			doc.AlsoKnownAs = images.AlsoKnownAs

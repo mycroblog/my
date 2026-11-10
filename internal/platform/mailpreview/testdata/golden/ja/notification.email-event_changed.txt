@@ -1,0 +1,18 @@
+Example Social に、まだ読んでいない通知があります。
+
+日時: 2026-12-05 21:00 (Asia/Tokyo)
+
+主催: Bob
+
+共同主催: Carol
+
+開く
+https://social.example/events/01JSAMPLE0EVENT000000000000
+
+-- 
+Example Social
+https://social.example
+連絡先: admin@social.example
+
+通知の設定で「イベント」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
+このメールを止める: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

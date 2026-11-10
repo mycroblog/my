@@ -78,7 +78,7 @@ type AccountRelationPath = "/accounts/{id}/block" | "/accounts/{id}/mute";
  * An action on the account with the given ID (POST `path`), as the options of TanStack Query's useMutation
  * (updatePreferencesMutation in me.ts says why not the client's own).
  */
-export function accountActionMutation(api: Api, path: AccountActionPath) {
+function accountActionMutation(api: Api, path: AccountActionPath) {
   return {
     mutationKey: ["post", path] as const,
     mutationFn: async (id: string) => {
@@ -180,6 +180,52 @@ export async function cacheListChange(
   // the follow counts, rejecting one only fetches it again.
   if (change !== "reject") await refreshRelationship(queryClient, change, relationship.id, viewerId);
   else await queryClient.invalidateQueries({ queryKey: ["get", "/accounts/verify_credentials"] });
+}
+
+/** An answer to a follow request: accepting it or rejecting it. */
+export type FollowRequestAnswer = "accept" | "reject";
+
+/**
+ * Answers the follow request of the account with the given ID (POST /follow_requests/{id}/accept or reject), like
+ * accountActionMutation: the settings' list and the notifications answer through the same calls.
+ */
+export function followRequestMutation(api: Api, answer: FollowRequestAnswer) {
+  return accountActionMutation(
+    api,
+    answer === "accept" ? "/follow_requests/{id}/accept" : "/follow_requests/{id}/reject",
+  );
+}
+
+/**
+ * What an answer to a follow request from outside the list changes in the cache: the relationship and the viewer's
+ * counts (cacheListChange), and the account leaves the cached follow requests. Resolves once that is done.
+ */
+export async function cacheFollowRequestAnswer(
+  queryClient: QueryClient,
+  api: Api,
+  answer: FollowRequestAnswer,
+  relationship: Relationship,
+  viewerId: string,
+): Promise<void> {
+  await cacheListChange(queryClient, answer, relationship, viewerId);
+  removeFromList(queryClient, api, answer, relationship.id);
+}
+
+/**
+ * Reads again what a follow request that the server no longer has (a 404: answered elsewhere, or withdrawn) leaves
+ * stale: the follow requests, the viewer's count of them, and the relationship with the account `id`.
+ */
+export async function forgetFollowRequest(queryClient: QueryClient, id: string): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["get", listPaths.followRequests] }),
+    queryClient.invalidateQueries({ queryKey: ["get", "/accounts/verify_credentials"] }),
+    queryClient.invalidateQueries({
+      predicate: (query) =>
+        query.queryKey[0] === "get" &&
+        query.queryKey[1] === "/accounts/relationships" &&
+        (query.state.data as Schemas["RelationshipList"] | undefined)?.items.some((item) => item.id === id) === true,
+    }),
+  ]);
 }
 
 function pageQuery(cursor: string | undefined): { limit: number; cursor?: string } {

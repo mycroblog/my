@@ -92,14 +92,16 @@
 
 ### 9. 送信
 
-- 記事は `Article` として送る。`name`（題）・`summary`（要約。空なら本文から作ったもの）・`content` と `contentMap`（描画した HTML）・`source`（`content` に Markdown の原文、`mediaType` に `text/markdown`）・`url`（表示用 URL）・`sensitive`（常に付ける）・`image`（カバー。`Image` で `url`・`mediaType`・`name`）・`tag`（`Hashtag` とカスタム絵文字の `Emoji`）を載せる。`attachment` は載せない。
+- 記事は `Article` として送る。`name`（題）・`summary`（要約。空なら本文から作ったもの）・`content`（描画した HTML）・`url`（表示用 URL）・`sensitive`（常に付ける）・`image`（カバー。`Image` で `url`・`mediaType`・`name`）・`tag`（`Hashtag` とカスタム絵文字の `Emoji`）を載せる。`attachment` は載せない。
+- 本文は文書に 1 回だけ入れる。Markdown の原文は `source` として送らない。本文の言語が 1 つなら `contentMap` を付けず、言語は題と要約をその言語で引く `nameMap`・`summaryMap` で伝える（Mastodon は `contentMap`、無ければ `nameMap`、無ければ `summaryMap` から投稿の言語を読む）。複数の言語の本文を持つ記事は `contentMap` を付ける。
+  Misskey は inbox の POST を 64 KiB で断り（#2592 で確かめた）、本文の写しはどれもそこに数えられるからである。それでも上限を超える長い記事が Misskey に届かないことは、互換の限界として受け入れる。
 - `Create`・`Update`・`Delete`・宛先・`@context`・引用の許可は投稿と同じ組み立て（`federation.notes`）を通り、型だけが変わる。
 - 2026-11-09 にソースコードを読んで確かめた、ほかのサーバーの受け取り方（実地の確認は #2592）:
 
 | サーバー | 受け取った `Article` の見え方 | 上限 | `source`（`text/markdown`） |
 | --- | --- | --- | --- |
 | Mastodon | `CONVERTED_TYPES`（`Image Audio Video Article Page Event`）として、`name` の `<h2>`・`summary`・`url` へのリンクだけの投稿にする。`summary` を CW にしない（`processed_spoiler_text` は空）。本文は読まない | JSON の取得は 1 MiB（`Request#body_with_limit`）。受信の本文の上限は要検証 | 読まない |
-| Misskey | `validPost` に `Article` を含み、普通のノートにする。`content` の HTML を MFM に変え、`summary` を CW にする。`name` は投票の回答の照合にだけ使う | ノートの本文を 8,192 文字（`DB_MAX_NOTE_TEXT_LENGTH`）で切る | `text/x.misskeymarkdown` だけを原文として読む |
+| Misskey | `validPost` に `Article` を含み、普通のノートにする。`content` の HTML を MFM に変え、`summary` を CW にする。`name` は投票の回答の照合にだけ使う | inbox の POST を 64 KiB で断る（`bodyLimit`、#2592）。ノートの本文を 8,192 文字（`DB_MAX_NOTE_TEXT_LENGTH`）で切る | `text/x.misskeymarkdown` だけを原文として読む |
 | GoToSocial | 型で分けず、`content` を全文で持つ。`summary`（無ければ `name`）を CW にする | 要検証 | 読まない（要検証） |
 | Akkoma | `Article` を `Note`・`Page` と同じ検証で受け、`content` を全文で持つ。`summary` を CW（subject）にする（要検証） | `remote_limit`（既定 100,000 文字）を超える投稿は捨てる | `text/x.misskeymarkdown` だけを描画し直す |
 
@@ -137,6 +139,8 @@ Akkoma の `article_note_page_validator.ex` と `config/config.exs`（本家 akk
 続けて決定者は、上限の値（§5）、本文の画像を `attachment` に載せないこと、受信した記事のメンションを投稿と同じに通知すること、全文で読むのは `Article` だけで `Page` は変換のままにすること、`keep_articles` を既定で有効にすること、API の形（§8）を決め、読む時間は持たないことにした。
 ほかのサーバーの受け取り方はソースコードを読んで確かめた内容で決め、実地の確認（#2592）で違いが見つかれば見直す。
 
+実地の確認の Issue（#2592）でほかのサーバーのソースコードを読み直すと、Misskey は inbox の POST の本文を 64 KiB で断っていた。§9 は当初、`content` と `contentMap` に描画した HTML を、`source` に Markdown の原文（`mediaType` は `text/markdown`）を載せるとしていたが、それでは本文が 3 回入り、20 KB ほどの記事で Misskey に届かなくなる。`text/markdown` の `source` を読む実装も調べた 4 つには無かった。決定者は、`source` を送らず、言語が 1 つの本文には `contentMap` を付けずに `nameMap`・`summaryMap` で言語を伝えると決め、それでも 64 KiB を超える長い記事が届かないことは互換の限界として受け入れた。
+
 上限の数え方は、ほかのサーバーの受け取り方をソースコードで調べて決めた（§9 の表）。Akkoma は 100,000 文字を超える投稿を捨て、このサーバー自身も本文 HTML 100 KiB を超える文書を読まないので、原文ではなく HTML で数える。
 
 ## 採らなかった案
@@ -148,6 +152,7 @@ Akkoma の `article_note_page_validator.ex` と `config/config.exs`（本家 akk
 - 外部の画像を `<img>` のまま、またはメディアプロキシ経由で出す: 書き手が手元の画像を使えるが、そのままでは読者のアドレスが外部へ漏れ、プロキシ経由でも書き手が任意の URL をサーバーに取りに行かせられる。アップロードすれば済む。
 - 本文の上限を原文の文字数（`max_status_length` と同じ数え方）にする: 書き手に分かりやすいが、表やリンクの多い記事は HTML が膨らみ、受け取る側の上限を超えて黙って捨てられる。
 - 本文の画像を `attachment` にも載せる（FEP-b2b8 の勧め）: 本文の `<img>` を落とすサーバーでも画像が見えるが、Mastodon は 4 件までの画像を題と要約の下に並べ、全文を持つサーバーでは本文と添付に同じ画像が二重に出る。
+- Markdown の原文を `source`（`text/markdown`）に、本文を `content` と `contentMap` の両方に載せる: 原文を読む相手には書いたままの文が届くが、調べた 4 つのサーバーのどれも `text/markdown` の `source` を読まず、本文が 3 回入って Misskey の inbox の 64 KiB に 20 KB ほどの記事で届く。
 - 記事を `Note` として送る: どのサーバーでも本文が見えるが、Mastodon は 500 文字を超える `Note` もそのまま長い投稿として流し、題と要約の区別が失われる。FEP-b2b8 も長い文章に `Note` を使わないよう勧める。
 - `preview`（FEP-b2b8 の要約の `Note`）を載せる: FEP は勧めるが、調べた 4 つのサーバーのどれも読まず、文書が大きくなるだけである。
 - 読む時間を持つ（書いたときに本文から数え、カードに出す）: 記事を開く前に長さが分かるが、要らないと決めた。言語ごとの読む速さの目安も根拠が弱い。

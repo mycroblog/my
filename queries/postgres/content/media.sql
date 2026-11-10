@@ -35,6 +35,8 @@ WHERE media_files.id = sqlc.arg(id)
   AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = sqlc.arg(id))
   AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = sqlc.arg(id))
   AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = sqlc.arg(id))
+  AND NOT EXISTS (SELECT 1 FROM draft_articles dc WHERE dc.cover_media_id = sqlc.arg(id))
+  AND NOT EXISTS (SELECT 1 FROM draft_article_images di WHERE di.media_id = sqlc.arg(id))
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = sqlc.arg(id));
 
 -- name: DeleteUploadedMedia :exec
@@ -76,6 +78,8 @@ WHERE m.origin = 'upload' AND m.id > COALESCE(sqlc.narg(after_id)::uuid, '000000
   AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
+  AND NOT EXISTS (SELECT 1 FROM draft_articles dc WHERE dc.cover_media_id = m.id)
+  AND NOT EXISTS (SELECT 1 FROM draft_article_images di WHERE di.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id)
 ORDER BY m.id
 LIMIT sqlc.arg(row_limit);
@@ -88,6 +92,8 @@ SELECT m.id, CAST(EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.me
   OR EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = m.id)
   OR EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = m.id)
   OR EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
+  OR EXISTS (SELECT 1 FROM draft_articles dc WHERE dc.cover_media_id = m.id)
+  OR EXISTS (SELECT 1 FROM draft_article_images di WHERE di.media_id = m.id)
   OR EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id) AS BOOLEAN) AS attached
 FROM media_files m
 WHERE m.owner_account_id = sqlc.arg(owner_account_id) AND m.origin = 'upload' AND m.id > COALESCE(sqlc.narg(after_id)::uuid, '00000000-0000-0000-0000-000000000000')

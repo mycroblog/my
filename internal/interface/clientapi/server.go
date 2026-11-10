@@ -79,6 +79,8 @@ type Options struct {
 	// Resolver fetches unknown remote accounts for lookupAccount's resolve; nil resolves none
 	// (lookups find only stored accounts).
 	Resolver AccountResolver
+	// StatusResolver finds and fetches the posts of lookupStatus; nil finds none (404).
+	StatusResolver StatusResolver
 	// Profiles changes the viewer's profile.
 	Profiles Profiles
 	// Aliases reads and changes the viewer's aliases (ADR-0089); nil answers their operations
@@ -309,6 +311,9 @@ type Options struct {
 	// Income totals the instance's income and lists its money movements (income.go); nil
 	// answers 404 to their operations.
 	Income Income
+	// FundingMeters measures the funding meter of GET /instance (funding_meter.go); nil shows
+	// none.
+	FundingMeters FundingMeters
 	// Supporters runs the supporter program, its plans, and their subscriptions
 	// (admin_supporters.go); nil answers 404 to their operations and a disabled program.
 	Supporters Supporters

@@ -83,7 +83,7 @@ var (
 		ObjectNote, ObjectQuestion, ObjectArticle, ObjectPage, ObjectEvent, ObjectImage, ObjectVideo,
 		ObjectAudio, ObjectTombstone, ObjectQuoteAuthorization, ObjectReplyAuthorization, ObjectAnnounceAuthorization,
 	}
-	convertedTypes  = []ObjectType{ObjectArticle, ObjectPage, ObjectEvent, ObjectImage, ObjectVideo, ObjectAudio}
+	convertedTypes  = []ObjectType{ObjectPage, ObjectEvent, ObjectImage, ObjectVideo, ObjectAudio}
 	actorTypes      = []ActorType{ActorPerson, ActorService, ActorApplication, ActorGroup, ActorOrganization}
 	collectionTypes = []string{"Collection", "OrderedCollection", "CollectionPage", "OrderedCollectionPage"}
 )
@@ -172,12 +172,11 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 		}
 	}
 	summary = plainText(summary)
-	if obj.Converted {
-		name := strings.TrimSpace(str(o.get("name")))
-		if name == "" {
-			name, _ = firstMapValue(o.get("nameMap"))
-			name = strings.TrimSpace(name)
-		}
+	switch {
+	case t == ObjectArticle:
+		obj.Article = &ReceivedArticle{Title: objectName(o), Summary: summary, Cover: n.cover(o.get("image"))}
+	case obj.Converted:
+		name := objectName(o)
 		link := obj.URL
 		if !webLink(link) {
 			link = obj.ID
@@ -187,7 +186,7 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 			lang = obj.Bodies[0].Language
 		}
 		obj.Bodies = []Body{{Language: lang, HTML: convertedBody(name, summary, link)}}
-	} else {
+	default:
 		obj.SpoilerText = summary
 		obj.Name = strings.TrimSpace(str(o.get("name")))
 	}
@@ -210,6 +209,49 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 	}
 	obj.ReplyAuthorization = n.firstRef(o.get("replyAuthorization"))
 	return obj, nil
+}
+
+// objectName returns the name of an object, else the first value of its nameMap, without the
+// white space around it.
+func objectName(o object) string {
+	name := strings.TrimSpace(str(o.get("name")))
+	if name == "" {
+		name, _ = firstMapValue(o.get("nameMap"))
+		name = strings.TrimSpace(name)
+	}
+	return name
+}
+
+// cover reads the cover of an Article: the first value of image that has a URL, an IRI, a Link,
+// or an Image with its url (an IRI or a Link), mediaType, name (the alt text), blurhash, width,
+// and height.
+func (n normalizer) cover(v any) *Attachment {
+	for _, v := range list(v) {
+		switch v := v.(type) {
+		case string:
+			if h := n.normalizeIRI(v); h != "" {
+				return &Attachment{Type: string(ObjectImage), URL: h}
+			}
+		case object:
+			l := n.firstLink(v.get("url"))
+			if l.Href == "" {
+				l = Link{Href: n.normalizeIRI(str(v.get("href"))), MediaType: strings.TrimSpace(str(v.get("mediaType")))}
+			}
+			if l.Href == "" {
+				continue
+			}
+			a := &Attachment{
+				Type: string(ObjectImage), URL: l.Href, MediaType: strings.TrimSpace(str(v.get("mediaType"))),
+				Name: strings.TrimSpace(str(v.get("name"))), Blurhash: str(v.get("blurhash")),
+				Width: integer(v.get("width")), Height: integer(v.get("height")),
+			}
+			if a.MediaType == "" {
+				a.MediaType = l.MediaType
+			}
+			return a
+		}
+	}
+	return nil
 }
 
 // maxConversationURILength bounds the tag: URI of a declared conversation, which NormalizeIRI does
@@ -365,6 +407,7 @@ func (n normalizer) actor(o object, t ActorType) (*Actor, error) {
 		ID:                        n.iri(o.get("id")),
 		Type:                      t,
 		PreferredUsername:         strings.TrimSpace(str(o.get("preferredUsername"))),
+		Webfinger:                 strings.TrimPrefix(strings.TrimSpace(str(o.get("webfinger"))), "acct:"),
 		Name:                      strings.TrimSpace(str(o.get("name"))),
 		URL:                       n.displayURL(o.get("url")),
 		Inbox:                     n.firstRef(o.get("inbox")),
@@ -535,9 +578,26 @@ func bodies(o object) ([]Body, error) {
 		}
 	}
 	if len(out) == 0 && content != "" {
-		out = []Body{{Language: UndeterminedLang, HTML: content}}
+		out = []Body{{Language: mapLanguage(o), HTML: content}}
 	}
 	return out, nil
+}
+
+// mapLanguage returns the language of a content without a contentMap, as Mastodon reads it: the
+// first key of nameMap, else of summaryMap, as a canonical BCP 47 tag; UndeterminedLang when
+// neither names a valid one. An Article in one language sends its content alone and names the
+// language in the maps of its title and summary.
+func mapLanguage(o object) string {
+	for _, prop := range []string{"nameMap", "summaryMap"} {
+		m, ok := o.get(prop).(object)
+		if !ok || len(m) == 0 {
+			continue
+		}
+		if lang := canonicalLanguage(m[0].key); lang != UndeterminedLang {
+			return lang
+		}
+	}
+	return UndeterminedLang
 }
 
 // body reads one HTML value and enforces MaxBodyBytes.

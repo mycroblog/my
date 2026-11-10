@@ -5,6 +5,9 @@ get:
   description: |
     The accounts that the account actively follows, newest follow first, leaving out the
     same accounts as `listAccountFollowers`.
+
+    When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+    `/api/v1/problems/follows-hidden` (403); the owner always reads them.
   tags: [accounts]
   security:
     - {}

@@ -127,7 +127,7 @@ func (w *noteWorld) Profile(context.Context, appcontent.Viewer, string, apptimel
 func (w *noteWorld) view() appcontent.StatusView {
 	return appcontent.StatusView{
 		Status: w.status, Revision: w.rev, Author: w.actors[aliceID],
-		Attachments: w.parts.Attachments, Mentions: w.parts.Mentions, Tags: w.parts.Tags,
+		Attachments: w.parts.Attachments, Cover: w.parts.Cover, Mentions: w.parts.Mentions, Tags: w.parts.Tags,
 	}
 }
 

@@ -36,6 +36,7 @@
 | `supporter_plan_heads` / `supporter_plan_price_heads` / `supporter_subscription_heads` / `supporter_live_subscriptions` / `supporter_subscription_deadlines` | `supporter_plan_revisions`・`supporter_plan_retirements`、`supporter_plan_prices`・`supporter_plan_price_archivals`、`supporter_subscriptions`・`supporter_subscription_transitions`・`supporter_grace_periods` | 同期 |
 | `voice_room_heads` / `voice_room_participants` | `voice_rooms`・`voice_room_revisions`・`voice_room_host_changes`・`voice_room_endings`、`voice_room_participations`・`voice_room_participation_ends`・`voice_room_role_changes`・`voice_room_hand_raises`・`voice_room_cohost_changes` | 同期（`voice_room_host_graces` は現在値で、再構築の対象でない） |
 | `gathering_attendees` / `gathering_heads` / `gathering_coorganizers` | `gathering_rsvps`・`gathering_rsvp_approvals`、`gatherings`・`gathering_revisions`・`gathering_schedule_confirmations`・`gathering_cancellations`、`gathering_coorganizer_changes` | 同期（`gathering_heads` は `gathering_attendees` の「行く」を数えるので、出欠を先に作る） |
+| `gathering_dues` | `gathering_heads`・`gathering_attendees`・`gathering_reminder_settings`・`gathering_reminder_offsets` | 同期。再構築は上の 3 つの後に、終わっていない予定のイベントの次の時刻を今から求め直す（過ぎたリマインダーは送らない） |
 | `error_group_states` | `error_groups`・`error_group_events` | 同期（`error_group_counts`・`error_group_samples` は現在値で、再構築の対象でない） |
 | カウンタ類 | 元のイベントの件数 | 同期（加算）＋定期検証 |
 

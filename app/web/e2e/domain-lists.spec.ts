@@ -36,6 +36,7 @@ const operator = {
   ai_opt_out: false,
   feed_enabled: true,
   feed_follows_indexable: true,
+  follows_visibility: "public",
   source: { note: "", fields: [] },
   posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
   permissions: ["manage_domains", "manage_settings"],

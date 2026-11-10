@@ -6,10 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
 )
 
@@ -188,10 +190,13 @@ type ArticlePreview struct {
 // its Markdown. Its mentions are links that notify nobody, and its hashtags are those of Tags.
 // An Idempotency-Key works as Create's.
 func (s *Service) CreateArticle(ctx context.Context, in CreateArticleInput) (Post, error) {
-	if in.Visibility.Valid() && !content.ArticleVisibility(in.Visibility) {
-		return Post{}, ErrArticleDirect
-	}
-	if err := s.checkNewVisibility(ctx, in.Visibility); err != nil {
+	return s.createArticle(ctx, in, nil)
+}
+
+// createArticle is CreateArticle, running before inside the transaction that writes the status,
+// as create does.
+func (s *Service) createArticle(ctx context.Context, in CreateArticleInput, before func(ctx context.Context, tx uow.Tx) error) (Post, error) {
+	if err := s.checkArticleVisibility(ctx, in.Visibility); err != nil {
 		return Post{}, err
 	}
 	if err := content.ValidateIdempotencyKey(in.IdempotencyKey); err != nil {
@@ -206,20 +211,55 @@ func (s *Service) CreateArticle(ctx context.Context, in CreateArticleInput) (Pos
 			return post, err
 		}
 	}
+	p, err := s.prepareCreateArticle(ctx, author, in, false)
+	if err != nil {
+		return Post{}, err
+	}
+	return s.commitCreate(ctx, author, p, in.IdempotencyKey, before)
+}
+
+// CheckArticle runs the checks of CreateArticle on in without writing anything or asking the
+// decision hook local.status, as Check does for a post: the checks that scheduling the draft of
+// an article makes (ADR-0156 §2). A cover still being processed passes.
+func (s *Service) CheckArticle(ctx context.Context, in CreateArticleInput) error {
+	if err := s.checkArticleVisibility(ctx, in.Visibility); err != nil {
+		return err
+	}
+	author, err := s.localActive(ctx, in.AuthorAccountID)
+	if err != nil {
+		return err
+	}
+	in.IdempotencyKey = ""
+	_, err = s.prepareCreateArticle(ctx, author, in, true)
+	return err
+}
+
+// checkArticleVisibility checks the visibility of a new article: checkNewVisibility, and never
+// direct (ErrArticleDirect).
+func (s *Service) checkArticleVisibility(ctx context.Context, v content.Visibility) error {
+	if v.Valid() && !content.ArticleVisibility(v) {
+		return ErrArticleDirect
+	}
+	return s.checkNewVisibility(ctx, v)
+}
+
+// prepareCreateArticle checks and builds the article of in by author, outside any transaction;
+// allowProcessing passes a cover whose processing has not finished.
+func (s *Service) prepareCreateArticle(ctx context.Context, author appaccount.Actor, in CreateArticleInput, allowProcessing bool) (PreparedCreate, error) {
 	restrictions, err := s.postingRestrictions(ctx, in.AuthorAccountID)
 	if err != nil {
-		return Post{}, err
+		return PreparedCreate{}, err
 	}
 	if err := s.mayWriteArticles(ctx, author); err != nil {
-		return Post{}, err
+		return PreparedCreate{}, err
 	}
-	body, err := s.prepareArticle(ctx, author, in.ArticleInput)
+	body, err := s.prepareArticle(ctx, author, in.ArticleInput, allowProcessing)
 	if err != nil {
-		return Post{}, err
+		return PreparedCreate{}, err
 	}
 	interaction, err := s.newInteractionSettings(ctx, author, in.InteractionPolicy)
 	if err != nil {
-		return Post{}, err
+		return PreparedCreate{}, err
 	}
 	id := s.d.IDs.NewID()
 	now := s.d.Clock.Now()
@@ -230,13 +270,12 @@ func (s *Service) CreateArticle(ctx context.Context, in CreateArticleInput) (Pos
 	rev := body.revision(s.d.IDs.NewID(), id, 1, now)
 	verdicts, err := s.attachmentVerdicts(ctx, in.AuthorAccountID, reviewedMedia(rev), nil)
 	if err != nil {
-		return Post{}, err
+		return PreparedCreate{}, err
 	}
-	p := PreparedCreate{
+	return PreparedCreate{
 		st: st, local: content.LocalStatus{StatusID: id, AuthorAccountID: in.AuthorAccountID, ClientID: in.ClientID, IdempotencyKey: in.IdempotencyKey},
 		rev: rev, tags: body.tags(s.d.IDs, now), interaction: interaction, media: verdicts, now: now,
-	}
-	return s.commitCreate(ctx, author, p, in.IdempotencyKey, nil)
+	}, nil
 }
 
 // EditArticle records a new revision of a local article (FR-109), checked as CreateArticle checks
@@ -261,7 +300,7 @@ func (s *Service) EditArticle(ctx context.Context, in EditArticleInput) (Post, e
 	if _, err := s.postingRestrictions(ctx, in.AccountID); err != nil {
 		return Post{}, err
 	}
-	body, err := s.prepareArticle(ctx, author, in.ArticleInput)
+	body, err := s.prepareArticle(ctx, author, in.ArticleInput, false)
 	if err != nil {
 		return Post{}, err
 	}
@@ -326,8 +365,9 @@ func (s *Service) articleLimits(ctx context.Context) (ArticleLimits, error) {
 
 // prepareArticle validates an article against its limits and the instance settings, resolves the
 // images and mentions of its body, and renders it. It runs before the transaction, since
-// resolving a remote handle may fetch it.
-func (s *Service) prepareArticle(ctx context.Context, author appaccount.Actor, in ArticleInput) (preparedText, error) {
+// resolving a remote handle may fetch it. allowProcessing passes a cover whose processing has not
+// finished.
+func (s *Service) prepareArticle(ctx context.Context, author appaccount.Actor, in ArticleInput, allowProcessing bool) (preparedText, error) {
 	title := strings.TrimSpace(in.Title)
 	if !content.ValidText(title) || title == "" || utf8.RuneCountInString(title) > content.MaxArticleTitle {
 		return preparedText{}, ErrInvalidArticleTitle
@@ -359,7 +399,7 @@ func (s *Service) prepareArticle(ctx context.Context, author appaccount.Actor, i
 		if err := checkDescription(c.MediaID, c.Description, requireDescription); err != nil {
 			return preparedText{}, err
 		}
-		if err := s.checkMedia(ctx, author.Account.ID, c.MediaID, false); err != nil {
+		if err := s.checkMedia(ctx, author.Account.ID, c.MediaID, allowProcessing); err != nil {
 			return preparedText{}, err
 		}
 		article.Cover = &content.ArticleCover{MediaID: c.MediaID, Description: c.Description}
@@ -505,6 +545,22 @@ func reviewedMedia(rev content.Revision) []content.Attachment {
 	}
 	for _, img := range a.Images {
 		out = append(out, content.Attachment{MediaID: img.MediaID, Description: img.Description})
+	}
+	return out
+}
+
+// articleMediaIDs returns the IDs of the uploads that the Markdown source names as images
+// (ArticleMediaScheme), each once, in order, outside code: what a draft of an article keeps as
+// attached (draft_article_images). They are not checked; the caller checks them.
+func (s *Service) articleMediaIDs(source string) []string {
+	if s.d.ArticleRenderer == nil {
+		return nil
+	}
+	var out []string
+	for _, dest := range s.d.ArticleRenderer.ArticleReferences(source).Images {
+		if id, ok := strings.CutPrefix(dest, ArticleMediaScheme); ok && id != "" && !slices.Contains(out, id) {
+			out = append(out, id)
+		}
 	}
 	return out
 }

@@ -92,6 +92,14 @@ type Draft struct {
 	CreatedAt time.Time
 }
 
+type DraftArticle struct {
+	DraftID          string
+	Title            string
+	Summary          string
+	CoverMediaID     *string
+	CoverDescription *string
+}
+
 type DraftAttachment struct {
 	DraftID     string
 	Position    int32

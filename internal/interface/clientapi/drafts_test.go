@@ -38,6 +38,12 @@ func (f *fakeDrafts) Create(_ context.Context, accountID string, in appcontent.D
 		Draft:   content.Draft{ID: id, AccountID: accountID, CreatedAt: at},
 		Content: content.DraftContent{DraftID: id, Text: in.Text, Visibility: in.Visibility, UpdatedAt: at},
 	}
+	if a := in.Article; a != nil {
+		v.Content.Article = &content.DraftArticle{Title: a.Title, Summary: a.Summary, Tags: a.Tags, Images: []string{"01890a5d-ac96-774b-bcce-b302099a8002"}}
+		if a.Cover != nil {
+			v.Content.Article.Cover = &content.ArticleCover{MediaID: a.Cover.MediaID, Description: a.Cover.Description}
+		}
+	}
 	f.byID[id] = v
 	return v, nil
 }
@@ -148,5 +154,29 @@ func TestDrafts(t *testing.T) {
 	res = e.draftRequest(t, http.MethodGet, "/drafts?scheduled=true", "", map[string]string{"Authorization": "Bearer read"})
 	if err := json.NewDecoder(res.Body).Decode(&page); err != nil || res.StatusCode != http.StatusOK {
 		t.Errorf("list = %d, %v; want 200 with a page", res.StatusCode, err)
+	}
+}
+
+// TestArticleDrafts checks the article of a draft at the API (ADR-0160 §8): the request's article
+// reaches the use case, and the draft answers it with the uploads its body shows.
+func TestArticleDrafts(t *testing.T) {
+	f := &fakeDrafts{byID: map[string]appcontent.DraftView{}, max: 1, clock: time.Date(2026, 11, 1, 0, 0, 0, 0, time.UTC)}
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.Drafts = f })
+
+	res := e.draftRequest(t, http.MethodPost, "/drafts", `{"text": "# Hi\n\n![a](media:01890a5d-ac96-774b-bcce-b302099a8002)", "visibility": "public",
+		"article": {"title": "", "summary": "Short.", "cover": {"id": "01890a5d-ac96-774b-bcce-b302099a8003", "description": "a cover"}, "tags": ["cats"]}}`, nil)
+	if res.StatusCode != http.StatusCreated {
+		t.Fatalf("create = %d, want 201", res.StatusCode)
+	}
+	got := decode[clientapi.Draft](t, res)
+	a := got.Article
+	if a == nil || a.Title != "" || a.Summary != "Short." || a.Cover == nil || a.Cover.Id != "01890a5d-ac96-774b-bcce-b302099a8003" ||
+		a.Cover.Description == nil || *a.Cover.Description != "a cover" || len(a.Tags) != 1 || a.Tags[0] != "cats" ||
+		len(a.Images) != 1 || a.Images[0] != "01890a5d-ac96-774b-bcce-b302099a8002" {
+		t.Errorf("create = %+v, want the article with its cover, hashtag, and image", a)
+	}
+	res = e.draftRequest(t, http.MethodGet, "/drafts/"+got.Id, "", map[string]string{"Authorization": "Bearer read"})
+	if res.StatusCode != http.StatusOK || decode[clientapi.Draft](t, res).Article == nil {
+		t.Errorf("get = %d, want the draft with its article", res.StatusCode)
 	}
 }

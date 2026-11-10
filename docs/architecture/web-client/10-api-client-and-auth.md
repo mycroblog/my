@@ -67,6 +67,11 @@ API の呼び出しとトークンは `lib/api`・`lib/auth` が 1 か所で扱�
     設定が真で、先頭にいて一時停止していないときは、押されるのを待たずに最初のページだけを取り直す。
     タイムラインは、ウィンドウのフォーカスやオンライン復帰では取り直さない（取り直すと先頭に投稿が差し込まれる）。
   - `notification` は読み取り位置（`/notifications/marker`）の未読数を 1 つ増やし、通知の一覧を古いことにする。表示中の一覧は変わらない。
+    利用者の投稿の数が変わる通知は、その投稿をどれかのキャッシュの答えが持つ（ブーストの中を含む）ときだけ、`GET /statuses/{id}` で読み直して、すべての写しに書く（`features/status/api/live.ts` の `receivePostNotification`、S8）。
+    読み直す投稿は、`favourite`・`reaction`・`boost` では `status`、`mention` では返信先（`status.in_reply_to_id`）、`quote` では引用された投稿（`status.quote.quoted_status`）。
+    書くのは数（返信・ブースト・お気に入り）とリアクションで、閲覧者自身の状態（お気に入り・リアクションの `me`・ブースト・`boost_approval`・ブックマーク）は、その投稿への閲覧者の操作（`useLikeSlot`・`useStatusActions` の mutation）が送信中か、読み直しを始めたあとに始まったときは書かない。楽観的更新を戻さないためである。
+    1 つの投稿についての通知は 1 秒の間まとめて 1 回だけ読み、読んでいる間に届いた通知はその後にもう 1 回読む。失敗と 404 は何も変えず、何も出さない（投稿も除かない）。再接続では何もしない（タイムラインの読み直しが拾う）。
+    ほかの人の投稿の数は、サーバーがイベントを送らないので追わない。
   - `announcement` はお知らせの一覧（`GET /announcements` のキャッシュ）の同じ ID のお知らせを置き換えるか、表示の始まりの順に加え、`announcement_removed` は一覧から外す。キャッシュがなければ何もしない（次に開いたときに読む）。
     過去を含む一覧（`GET /announcements/history` のキャッシュ）は、持っているお知らせなら置き換え、持っていない新しいお知らせと `announcement_removed`（取り下げか期間の変更かを区別できない）では無効化の印を付ける。
     1 つのお知らせ（`GET /announcements/{id}` のキャッシュ）は、持っていれば `announcement` で置き換え、`announcement_removed` で無効化の印を付ける。

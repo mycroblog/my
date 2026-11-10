@@ -8,12 +8,13 @@ Choose "Notifications" in the navigation. The navigation shows how many notifica
 When someone follows you, mentions you, or reacts to your posts, it shows up here. The kinds you may see are:
 
 - Mentions, quotes, boosts, favourites, and emoji reactions to your posts. Several boosts or favourites of one post are grouped into one line ("... and 2 others boosted your post"). A reply or a boost from another server that is outside whom you let reply to or boost the post, or that waits for your approval, notifies no one of a mention (see [Posting](posting.md#other-things-to-know)).
-- Follows: someone followed you, requested to follow you, or accepted your follow request.
+- Follows: someone followed you, requested to follow you, or accepted your follow request. A follow offers "Follow back", and a request that still waits offers "Approve" and "Decline": once you answer, the line says "Approved" or "Declined", and the request leaves "Follow requests" in the settings. A request already answered on another device, or withdrawn, shows no buttons.
 - Approval requests: someone asked to reply to, boost, or quote your post, which waits for your approval, and the author of a post approved or declined your own reply, boost, or quote. "Review the requests" opens the list where you answer them (see [Posting](posting.md#who-can-reply-boost-and-quote)).
 - New posts of accounts whose posts you chose to be notified of ("Notify me of new posts").
 - A poll you took part in has ended.
 - An account you follow moved to another account, and what happened to your follow.
 - Voice chat: someone started a voice chat room, or invited you to one.
+- Events: someone invited you to an event; an event you are going to, may go to, or were invited to changed its date, place, or voice chat room, or was cancelled; and an event you are going to or may go to starts soon (a reminder) or starts now. Reminders come one day and one hour before the start; an app can change these to up to three times, from 5 minutes to 7 days before, or turn them off. When the date changes, the reminders follow the new date. Event emails never say where the event is held, and reminder emails are sent at once instead of waiting for the notification to stay unread.
 - Notices from the moderators of the server, the result of an appeal, and the resolution of a report you filed.
 - Announcements and messages of the administrators about the server, for example when it is going to close.
 - The server's maximum for keeping posts will apply to your posts, and from when (see [Deleting old posts automatically](posting.md#deleting-old-posts-automatically)).

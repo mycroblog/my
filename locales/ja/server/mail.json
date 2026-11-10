@@ -287,6 +287,18 @@
     "defaultMessage": "{instance} に、まだ読んでいない通知があります。",
     "description": "Paragraph of the email of a notification that stayed unread for 15 minutes, below the subject that tells what happened. {instance} is the server's display name, or its domain name when it has none."
   },
+  "mail.event.when": {
+    "defaultMessage": "日時: {when}",
+    "description": "Paragraph of the email of a notification of an event: when it starts. {when} is the date and time of the start in the event's time zone, written as 2026-11-14 21:00 followed by the IANA name of the zone in parentheses, such as (Asia/Tokyo). The email never says where the event is held."
+  },
+  "mail.event.organizer": {
+    "defaultMessage": "主催: {name}",
+    "description": "Paragraph of the email of a notification of an event: who organizes it. {name} is the display name, or the @handle, of the organizer."
+  },
+  "mail.event.coorganizer": {
+    "defaultMessage": "共同主催: {name}",
+    "description": "Paragraph of the email of a notification of an event, one for each co-organizer. {name} is the display name, or the @handle, of a co-organizer."
+  },
   "mail.action.open_notification": {
     "defaultMessage": "開く",
     "description": "Label of the link in the email of a notification that opens the page of the notification in the web client: the post, the profile, or the notifications."
@@ -334,6 +346,10 @@
   "mail.group.voice": {
     "defaultMessage": "通話",
     "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings."
+  },
+  "mail.group.event": {
+    "defaultMessage": "イベント",
+    "description": "Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page: the invitations, changes, cancellations, reminders, and starts of events. Matches the row of the web client's notification settings."
   },
   "mail.group.admin_report": {
     "defaultMessage": "新しい通報",

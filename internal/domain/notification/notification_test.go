@@ -219,6 +219,33 @@ func TestValidateScheduledStatusFailed(t *testing.T) {
 	}
 }
 
+func TestValidateEventNotifications(t *testing.T) {
+	for _, typ := range EventTypes {
+		ok := Notification{ID: idN, RecipientAccountID: idA, SourceAccountID: idB, Type: typ, GatheringID: idR, DedupeKey: "k"}
+		if err := ok.Validate(); err != nil {
+			t.Errorf("Validate(%+v) = %v", ok, err)
+		}
+		if g, found := GroupOf(typ); !found || g.Group != GroupEvent {
+			t.Errorf("GroupOf(%s) = %+v, want the event group", typ, g)
+		}
+	}
+	for _, n := range []Notification{
+		{ID: idN, RecipientAccountID: idA, SourceAccountID: idB, Type: TypeEventReminder, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, Type: TypeEventReminder, GatheringID: idR, DedupeKey: "k"},
+		{ID: idN, RecipientAccountID: idA, SourceAccountID: idB, Type: TypeFollow, GatheringID: idR, DedupeKey: "k"},
+	} {
+		if err := n.Validate(); err == nil {
+			t.Errorf("Validate(%+v) = nil, want an error", n)
+		}
+	}
+	if EventReminderKey("c1", 60) == EventReminderKey("c2", 60) || EventReminderKey("c1", 60) == EventReminderKey("c1", 30) {
+		t.Error("EventReminderKey: want a key per date and time before the start")
+	}
+	if EmailDelayOf(TypeEventReminder) != 0 || EmailDelayOf(TypeEventChanged) != EmailDelay {
+		t.Error("EmailDelayOf: want a reminder emailed at once and the others after EmailDelay")
+	}
+}
+
 func TestHiddenTypes(t *testing.T) {
 	for _, tc := range []struct {
 		granted []Permission

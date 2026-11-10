@@ -27,6 +27,14 @@ function followListKey(id: string, list: FollowList) {
     : (["get", "/accounts/{id}/following", { params: { path: { id } } }, "pages"] as const);
 }
 
+/** The problem of a follow list that the account's owner keeps from the viewer (`follows_visibility`, FR-311). */
+const followsHiddenType = "/api/v1/problems/follows-hidden";
+
+/** Whether `error` says that the account's owner keeps the follow list from the viewer; its count stays on the profile. */
+export function isFollowsHidden(error: unknown): boolean {
+  return error instanceof ApiError && error.type === followsHiddenType;
+}
+
 /** The accounts that follow the account `id`, or that it follows, newest follow first, a page at a time. */
 export function followListQueryOptions(api: Api, id: string, list: FollowList) {
   return infiniteQueryOptions({

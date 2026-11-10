@@ -71,6 +71,9 @@ type Options struct {
 	Host string
 	// AccountDomain is the domain of handles; empty means Host.
 	AccountDomain string
+	// WebOrigin is the origin of the web client, where the Activity Intents of WebFinger
+	// (FEP-3b86) open; empty means https://{Host}.
+	WebOrigin string
 	// SoftwareVersion is the server version that NodeInfo reports.
 	SoftwareVersion string
 	// SourceURL is where users get the server's source code, an https URL or a mailto: address (NodeInfo
@@ -129,6 +132,9 @@ type Handler struct {
 func New(o Options) *Handler {
 	if o.AccountDomain == "" {
 		o.AccountDomain = o.Host
+	}
+	if o.WebOrigin == "" {
+		o.WebOrigin = "https://" + o.Host
 	}
 	if o.Problem == nil {
 		o.Problem = func(w http.ResponseWriter, _ *http.Request, status int) {

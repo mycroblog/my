@@ -31,6 +31,10 @@ type federationRepository interface {
 // newHTMLSanitizer returns the sanitizer of remote HTML (ADR-0019 §2).
 func newHTMLSanitizer() kernel.HTMLSanitizer { return htmlsanitizer.New() }
 
+// newRemoteArticleSanitizer returns the sanitizer of the bodies of received articles (ADR-0160
+// §10).
+func newRemoteArticleSanitizer() content.RemoteArticleSanitizer { return htmlsanitizer.New() }
+
 // recordRemoteImage records the avatar or header (prop) of a remote actor as a remote media file
 // of the actor, which the media proxy serves (federation.md §9).
 func (a *App) recordRemoteImage(ctx context.Context, tx uow.Tx, accountID, url string, prop domainaccount.ProfileProperty) (string, error) {

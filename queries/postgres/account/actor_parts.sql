@@ -14,7 +14,7 @@ SELECT account_id, username, username_normalized, domain FROM account_handles WH
 
 -- name: ListCurrentProfileRevisions :many
 SELECT r.id, r.account_id, r.seq, r.display_name, r.note_html, r.locked, r.bot, r.discoverable, r.indexable, r.ai_opt_out,
-  r.avatar_media_id, r.header_media_id, r.revised_at, r.feed
+  r.avatar_media_id, r.header_media_id, r.revised_at, r.feed, r.follows_visibility
 FROM account_profile_heads h JOIN account_profile_revisions r ON r.id = h.revision_id
 WHERE h.account_id = ANY(sqlc.arg(ids)::uuid[]) ORDER BY r.account_id;
 

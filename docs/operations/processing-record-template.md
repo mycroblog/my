@@ -211,11 +211,11 @@ Delete this activity when `translation_providers` is empty.
 
 | | |
 | --- | --- |
-| Purposes | Planning events of the local users, with their dates, places, invitations, and answers |
+| Purposes | Planning events of the local users, with their dates, places, invitations, and answers, and telling the people concerned of their changes and start |
 | Data subjects | Organizers, co-organizers, invited users, and attendees |
-| Personal data | Title, description, date, time zone, and places (a meeting place's address, a link) of each version of an event; organizers and co-organizers; invitations; answers and their approval; cancellations with their reason. Events are not federated |
-| Recipients | Hosting, the local users who see the event (the address and the link only to the approved attendees, unless the organizer shows them to all) |
-| Erasure | The title, description, and places of the versions an account wrote at its erasure. Events, their dates, invitations, and answers have no automatic end: {{PERIOD}} |
+| Personal data | Title, description, date, time zone, and places (a meeting place's address, a link) of each version of an event; organizers and co-organizers; invitations; answers and their approval; cancellations with their reason; how long before an event each user is reminded. Events are not federated |
+| Recipients | Hosting, the local users who see the event (the address and the link only to the approved attendees, unless the organizer shows them to all), and the email provider for the notification emails, which give the title, start, and organizers and never the places |
+| Erasure | The title, description, and places of the versions an account wrote, and its reminder times, at its erasure. Events, their dates, invitations, and answers have no automatic end: {{PERIOD}} |
 | Legal basis | {{e.g. contract, legitimate interests}} |
 
 ### Security measures (Article 30(1)(g))

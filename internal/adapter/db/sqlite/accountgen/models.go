@@ -88,20 +88,21 @@ type AccountProfileFieldSource struct {
 }
 
 type AccountProfileRevision struct {
-	ID            string
-	AccountID     string
-	Seq           int64
-	DisplayName   string
-	NoteHtml      string
-	Locked        int64
-	Bot           int64
-	Discoverable  int64
-	Indexable     int64
-	AiOptOut      int64
-	AvatarMediaID sql.NullString
-	HeaderMediaID sql.NullString
-	RevisedAt     int64
-	Feed          string
+	ID                string
+	AccountID         string
+	Seq               int64
+	DisplayName       string
+	NoteHtml          string
+	Locked            int64
+	Bot               int64
+	Discoverable      int64
+	Indexable         int64
+	AiOptOut          int64
+	AvatarMediaID     sql.NullString
+	HeaderMediaID     sql.NullString
+	RevisedAt         int64
+	Feed              string
+	FollowsVisibility string
 }
 
 type AccountProfileRevisionEmoji struct {

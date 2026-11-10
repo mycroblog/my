@@ -40,7 +40,7 @@ func (o *Objects) ArchiveActor(ctx context.Context, accountID string, w io.Write
 	}
 	enc := json.NewEncoder(w)
 	enc.SetEscapeHTML(false)
-	return enc.Encode(LocalActorDocument(o.d.Host, a, "", images))
+	return enc.Encode(LocalActorDocument(o.d.Host, o.d.AccountDomain, a, "", images))
 }
 
 // outboxArchive is the head of the outbox document of an archive; orderedItems and totalItems

@@ -3,7 +3,8 @@
 // to the features that own the cached data: new home entries wait behind the home timeline's "N new
 // posts" button (or join its cache while no page shows it), and so do the new entries of a loaded list's timeline
 // (`list_update`, ADR-0013 §13); notifications update the unread badge and play the
-// notification sound where this device has it on for their type (lib/notificationSound), the counts of the notification
+// notification sound where this device has it on for their type (lib/notificationSound), a favourite, reaction, boost,
+// reply, or quote of the viewer's post reads that post again where it is cached to show its new counts, the counts of the notification
 // requests update the row above the notifications (ADR-0158 §7), and a moderator's notifications of a new report or
 // registration read the Moderation entry's counts again, the conversations of the direct messages take their new place
 // in the list that the navigation's unread count reads, and the server's announcements join, change, or leave
@@ -14,6 +15,7 @@ import { catchUpAnnouncements, receiveAnnouncement, removeAnnouncement } from ".
 import { catchUpConversations, receiveConversation } from "../../features/direct-messages";
 import { refreshAdminCounts } from "../../features/moderation";
 import { catchUpNotifications, receiveNotification, receiveRequestSummary } from "../../features/notifications";
+import { receivePostNotification } from "../../features/status";
 import { catchUpHome, catchUpLists, receiveHomeStatus, receiveListStatus } from "../../features/timeline";
 import { useApi } from "../../lib/auth/SessionProvider";
 import { playNotificationSound } from "../../lib/notificationSound";
@@ -33,6 +35,7 @@ export function useLiveUpdates(): void {
           break;
         case "notification":
           receiveNotification(queryClient, api, event.notification);
+          receivePostNotification(queryClient, api, event.notification);
           refreshAdminCounts(queryClient, api, event.notification.type);
           playNotificationSound(event.notification.type);
           break;

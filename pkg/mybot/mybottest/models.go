@@ -30,18 +30,19 @@ func account(id, acct string, createdAt time.Time) mykit.Account {
 // credentialAccount is the bot's own account username, with the bot flag.
 func credentialAccount(id, username string, createdAt time.Time) mykit.CredentialAccount {
 	return mykit.CredentialAccount{
-		Id:          id,
-		Acct:        username,
-		Username:    username,
-		Domain:      Domain,
-		Bot:         true,
-		CreatedAt:   createdAt,
-		Uri:         "https://" + Domain + "/users/" + username,
-		Url:         "https://" + Domain + "/@" + username,
-		Badges:      []mykit.AccountBadge{},
-		Emojis:      []mykit.CustomEmoji{},
-		Fields:      []mykit.ProfileField{},
-		Permissions: []mykit.Permission{},
+		Id:                id,
+		Acct:              username,
+		Username:          username,
+		Domain:            Domain,
+		Bot:               true,
+		CreatedAt:         createdAt,
+		Uri:               "https://" + Domain + "/users/" + username,
+		Url:               "https://" + Domain + "/@" + username,
+		Badges:            []mykit.AccountBadge{},
+		Emojis:            []mykit.CustomEmoji{},
+		Fields:            []mykit.ProfileField{},
+		Permissions:       []mykit.Permission{},
+		FollowsVisibility: mykit.FollowsVisibilityPublic,
 		Posting: mykit.PostingLimits{
 			Visibilities: []mykit.Visibility{
 				mykit.VisibilityPublic, mykit.VisibilityLocal, mykit.VisibilityUnlisted, mykit.VisibilityPrivate, mykit.VisibilityDirect,

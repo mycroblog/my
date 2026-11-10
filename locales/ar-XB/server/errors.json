@@ -219,6 +219,10 @@
     "defaultMessage": "‮⅄on ɐʅɹǝɐpʎ ɟoʅʅoʍ ʇɥǝ ɯosʇ ɥɐsɥʇɐƃs ɐʅʅoʍǝp. ∩uɟoʅʅoʍ ouǝ ɟıɹsʇ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.follows_hidden": {
+    "defaultMessage": "‮⊥ɥıs ɐɔɔonuʇ ʞǝǝds ʍɥo ıʇ ɟoʅʅoʍs ɐup ʍɥo ɟoʅʅoʍs ıʇ ʇo ıʇsǝʅɟ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.forbidden": {
     "defaultMessage": "‮⅄on ɐɹǝ uoʇ ɐʅʅoʍǝp ʇo po ʇɥıs.‬",
     "description": "Generated from en by tools/i18n; do not edit."

@@ -69,6 +69,10 @@ type RemoteStatusInput struct {
 	// InteractionPolicy is the rules of the kinds that the post's interactionPolicy declares,
 	// none when it declares none (ADR-0155 §2, §4); every Update replaces them.
 	InteractionPolicy content.InteractionPolicy
+	// Article is the title, summary, and cover of an Article, which is stored as an article
+	// (ADR-0160 §10); nil for a post. The bodies of an article are sanitized with the allowlist
+	// of articles, and it has no content warning.
+	Article *RemoteArticleInput
 }
 
 // RemoteBody is the HTML of a remote post in one language (a canonical BCP 47 tag or "und").
@@ -147,6 +151,11 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err != nil {
 		return Post{}, err
 	}
+	if in.Article != nil {
+		if err := s.d.Repository.InsertArticle(ctx, tx, content.Article{StatusID: st.ID, AuthorAccountID: st.AuthorAccountID}); err != nil {
+			return Post{}, err
+		}
+	}
 	held, err := s.recordReplyHold(ctx, tx, hold)
 	if err != nil {
 		return Post{}, err
@@ -180,7 +189,9 @@ func (s *Service) IngestRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 // away (ADR-0069 §3), and one that names the quote it asked for records it
 // (recordRequestedQuote). The counts of the current poll are recorded either
 // way, when they are higher. It reports whether a revision was made. A status that does not
-// exist or is deleted fails with ErrNotFound; one of another author with ErrNotAuthor.
+// exist or is deleted fails with ErrNotFound; one of another author with ErrNotAuthor. A status
+// stays an article or a post (ADR-0160 §1): an Article of a post fails with ErrNotArticle, and a
+// post of an article with ErrArticleEditedAsPost.
 func (s *Service) ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteStatusInput) (bool, error) {
 	if err := s.checkRemote(in); err != nil {
 		return false, err
@@ -196,16 +207,19 @@ func (s *Service) ReviseRemoteStatus(ctx context.Context, tx uow.Tx, in RemoteSt
 	if err != nil {
 		return false, err
 	}
+	current, err := s.d.Repository.FindRevisionTx(ctx, tx, head.RevisionID)
+	if err != nil {
+		return false, err
+	}
+	if err := sameKind(current, in); err != nil {
+		return false, fmt.Errorf("status %s: %w", in.URI, err)
+	}
 	now := s.d.Clock.Now()
 	if err := s.recordRemoteInteractionPolicy(ctx, tx, st, in.InteractionPolicy, false); err != nil {
 		return false, err
 	}
 	revisedAt := remoteRevisedAt(in.RevisedAt, st.PublishedAt, now)
 	if !revisedAt.After(head.LastRevisedAt) {
-		current, err := s.d.Repository.FindRevisionTx(ctx, tx, head.RevisionID)
-		if err != nil {
-			return false, err
-		}
 		return false, s.observePoll(ctx, tx, current.Poll, in.Poll, now)
 	}
 	rev, err := s.remoteRevision(ctx, tx, in, st.ID, head.Seq+1, revisedAt)
@@ -351,9 +365,15 @@ func remoteRevisedAt(revisedAt, published, now time.Time) time.Time {
 }
 
 // remoteRevision builds the revision of a remote post, recording its custom emoji, hashtags, and
-// attachments in tx.
+// attachments in tx, and of an article its cover and the images of its body (remoteArticle).
 func (s *Service) remoteRevision(ctx context.Context, tx uow.Tx, in RemoteStatusInput, statusID string, seq int, at time.Time) (content.Revision, error) {
 	san := s.d.Sanitizer
+	sanitize := san.SanitizeHTML
+	if in.Article != nil {
+		// remoteArticle sanitizes the bodies of an article with the allowlist of articles.
+		sanitize = func(html string) string { return html }
+		in.SpoilerText = ""
+	}
 	rev := content.Revision{
 		ID: s.d.IDs.NewID(), StatusID: statusID, Seq: seq,
 		SpoilerText: strings.TrimSpace(in.SpoilerText), Sensitive: in.Sensitive, Language: UndeterminedLanguage, RevisedAt: at,
@@ -370,12 +390,17 @@ func (s *Service) remoteRevision(ctx context.Context, tx uow.Tx, in RemoteStatus
 		if len(rev.Bodies) == 0 {
 			rev.Language = lang
 		}
-		rev.Bodies = append(rev.Bodies, content.Body{Language: lang, ContentHTML: sanitizeOptional(san.SanitizeHTML, b.HTML)})
+		rev.Bodies = append(rev.Bodies, content.Body{Language: lang, ContentHTML: sanitizeOptional(sanitize, b.HTML)})
 	}
 	if len(rev.Bodies) == 0 {
 		rev.Bodies = []content.Body{{Language: UndeterminedLanguage}}
 	}
 	slices.SortFunc(rev.Bodies, func(a, b content.Body) int { return strings.Compare(a.Language, b.Language) })
+	if in.Article != nil {
+		if err := s.remoteArticle(ctx, tx, in, &rev); err != nil {
+			return content.Revision{}, err
+		}
+	}
 
 	rev.MentionedAccountIDs = sortedSet(in.MentionedAccountIDs)
 	var tags []content.Tag

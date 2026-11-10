@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -130,6 +131,21 @@ type DraftInput struct {
 	// Media are the files to attach, in order: uploads of the author, processed or not.
 	Media []MediaInput
 	Poll  *content.DraftPoll
+	// Article makes the draft that of an article, whose Text is the body in Markdown; nil for a
+	// post. A draft of an article has no SpoilerText, Media, Poll, reply, or quote.
+	Article *DraftArticleInput
+}
+
+// DraftArticleInput is what makes a draft that of an article (ADR-0160 §2): what CreateArticle
+// takes besides the body, which a draft keeps while it is incomplete (an empty title) and checks
+// when it is published.
+type DraftArticleInput struct {
+	Title   string
+	Summary string
+	// Cover is the cover image, an upload of the author, processed or not; nil for none.
+	Cover *MediaInput
+	// Tags are the hashtags the editor gives the article.
+	Tags []string
 }
 
 // DraftView is a draft with its content and schedules.
@@ -289,7 +305,12 @@ func (s *DraftService) Schedule(ctx context.Context, accountID, id string, publi
 	if err != nil {
 		return DraftView{}, err
 	}
-	if err := s.d.Statuses.Check(ctx, createInput(d, c, "")); err != nil {
+	if c.Article != nil {
+		err = s.d.Statuses.CheckArticle(ctx, createArticleInput(d, c, ""))
+	} else {
+		err = s.d.Statuses.Check(ctx, createInput(d, c, ""))
+	}
+	if err != nil {
 		return DraftView{}, err
 	}
 	sch := content.DraftSchedule{ID: s.d.IDs.NewID(), DraftID: id, PublishAt: publishAt, CreatedAt: now}
@@ -392,7 +413,7 @@ func (s *DraftService) Publish(ctx context.Context, accountID, id, clientID stri
 // effect (errScheduleSuperseded otherwise). The post's Idempotency-Key comes from the draft, so a
 // second run returns the post of the first.
 func (s *DraftService) publish(ctx context.Context, d content.Draft, c content.DraftContent, scheduleID, clientID string) (Post, error) {
-	return s.d.Statuses.create(ctx, createInput(d, c, clientID), func(ctx context.Context, tx uow.Tx) error {
+	before := func(ctx context.Context, tx uow.Tx) error {
 		if scheduleID != "" {
 			ok, err := s.d.Drafts.DeleteScheduledDraft(ctx, tx, scheduleID)
 			if err != nil {
@@ -410,7 +431,11 @@ func (s *DraftService) publish(ctx context.Context, d content.Draft, c content.D
 			return fmt.Errorf("draft %s: %w", d.ID, ErrNotFound)
 		}
 		return nil
-	})
+	}
+	if c.Article != nil {
+		return s.d.Statuses.createArticle(ctx, createArticleInput(d, c, clientID), before)
+	}
+	return s.d.Statuses.create(ctx, createInput(d, c, clientID), before)
 }
 
 type publishScheduledDraftPayload struct {
@@ -509,7 +534,7 @@ func DraftFailureReasonOf(err error) (content.DraftFailureReason, bool) {
 	case errors.As(err, &rejected):
 		return content.DraftFailureRejected, true
 	case errors.Is(err, ErrAccountUnavailable), errors.Is(err, ErrRemoteAccount), errors.Is(err, ErrPostingRestricted),
-		errors.Is(err, ErrInteractionRestricted):
+		errors.Is(err, ErrInteractionRestricted), errors.Is(err, ErrArticlesNotPermitted):
 		return content.DraftFailureRestricted, true
 	case errors.Is(err, ErrReplyTargetNotFound), errors.Is(err, ErrReplyNotAllowed):
 		return content.DraftFailureReplyUnavailable, true
@@ -521,7 +546,10 @@ func DraftFailureReasonOf(err error) (content.DraftFailureReason, bool) {
 		errors.Is(err, ErrInvalidLanguage), errors.Is(err, ErrTooManyMedia), errors.Is(err, ErrInvalidMediaDescription),
 		errors.Is(err, ErrMissingMediaDescription), errors.Is(err, ErrPollWithMedia), errors.Is(err, ErrLocalVisibilityUnavailable),
 		errors.Is(err, content.ErrInvalidPoll), errors.Is(err, content.ErrInvalidVisibility),
-		errors.Is(err, content.ErrInvalidInteractionPolicy), errors.Is(err, content.ErrInvalidIdempotencyKey):
+		errors.Is(err, content.ErrInvalidInteractionPolicy), errors.Is(err, content.ErrInvalidIdempotencyKey),
+		errors.Is(err, ErrArticleDirect), errors.Is(err, ErrInvalidArticleTitle), errors.Is(err, ErrInvalidArticleSummary),
+		errors.Is(err, ErrArticleTooLong), errors.Is(err, ErrTooManyArticleImages), errors.Is(err, ErrTooManyHashtags),
+		errors.Is(err, ErrInvalidHashtag):
 		return content.DraftFailureInvalid, true
 	}
 	return "", false
@@ -595,7 +623,9 @@ func (s *DraftService) view(ctx context.Context, d content.Draft) (DraftView, er
 }
 
 // content checks in and returns it as the content of the draft draftID of accountID, saved at now:
-// the attachments must be uploads of the author, processed or not.
+// the attachments, and the cover of an article, must be uploads of the author, processed or not.
+// The images that the body of an article names are its uploads among them: the others are left
+// out, and become links when the article is published.
 func (s *DraftService) content(ctx context.Context, accountID, draftID string, in DraftInput, now time.Time) (content.DraftContent, error) {
 	if err := in.InteractionPolicy.Validate(); err != nil {
 		return content.DraftContent{}, err
@@ -610,6 +640,12 @@ func (s *DraftService) content(ctx context.Context, accountID, draftID string, i
 	for i, m := range in.Media {
 		c.Attachments = append(c.Attachments, content.DraftAttachment{Position: i, MediaID: m.MediaID, Description: m.Description})
 	}
+	if a := in.Article; a != nil {
+		c.Article = &content.DraftArticle{Title: a.Title, Summary: a.Summary, Tags: a.Tags, Images: s.d.Statuses.articleMediaIDs(in.Text)}
+		if a.Cover != nil {
+			c.Article.Cover = &content.ArticleCover{MediaID: a.Cover.MediaID, Description: a.Cover.Description}
+		}
+	}
 	if err := c.Validate(); err != nil {
 		return content.DraftContent{}, err
 	}
@@ -617,6 +653,25 @@ func (s *DraftService) content(ctx context.Context, accountID, draftID string, i
 		if err := s.ownUpload(ctx, accountID, a.MediaID); err != nil {
 			return content.DraftContent{}, err
 		}
+	}
+	if a := c.Article; a != nil {
+		if a.Cover != nil {
+			if err := s.ownUpload(ctx, accountID, a.Cover.MediaID); err != nil {
+				return content.DraftContent{}, err
+			}
+		}
+		own := a.Images[:0]
+		for _, id := range a.Images {
+			err := s.ownUpload(ctx, accountID, id)
+			switch {
+			case err == nil:
+				own = append(own, id)
+			case !errors.Is(err, ErrMediaNotFound):
+				return content.DraftContent{}, err
+			}
+		}
+		slices.Sort(own)
+		a.Images = own
 	}
 	return c, nil
 }
@@ -660,6 +715,25 @@ func createInput(d content.Draft, c content.DraftContent, clientID string) Creat
 	}
 	if p := c.Poll; p != nil {
 		in.Poll = &content.PollInput{Options: p.Options, Duration: p.Duration, Multiple: p.Multiple, HideTotals: p.HideTotals}
+	}
+	return in
+}
+
+// createArticleInput returns the new article that publishing the content c of the draft d of an
+// article creates.
+func createArticleInput(d content.Draft, c content.DraftContent, clientID string) CreateArticleInput {
+	a := c.Article
+	in := CreateArticleInput{
+		ArticleInput: ArticleInput{
+			Title: a.Title, Summary: a.Summary, Text: c.Text, Tags: a.Tags, Language: c.Language, Sensitive: c.Sensitive,
+		},
+		AuthorAccountID: d.AccountID, Visibility: c.Visibility, ClientID: clientID, IdempotencyKey: content.DraftIdempotencyKey(d.ID),
+	}
+	if cv := a.Cover; cv != nil {
+		in.Cover = &MediaInput{MediaID: cv.MediaID, Description: cv.Description}
+	}
+	if len(c.InteractionPolicy) > 0 {
+		in.InteractionPolicy = InteractionPolicyChange(c.InteractionPolicy)
 	}
 	return in
 }

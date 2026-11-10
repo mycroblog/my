@@ -5,12 +5,14 @@ package clientapi
 import (
 	"context"
 	"encoding/base64"
+	"net/http"
 	"strings"
 	"time"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/kernel"
+	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/graph"
 )
 
@@ -103,6 +105,38 @@ func (s *Server) edgePage(ctx context.Context, viewer *Viewer, edges []graph.Edg
 	return page, nil
 }
 
+// ProblemTypeFollowsHidden is the problem of reading the follows or followers list of an
+// account whose follows_visibility keeps them from the viewer (FR-311).
+const ProblemTypeFollowsHidden = "/api/v1/problems/follows-hidden"
+
+// followsReadable reports whether the viewer (nil for an anonymous request) may read the follows
+// and followers lists of a: the owner always, an approved follower when the lists are shown to
+// followers, and everyone when they are public.
+func (s *Server) followsReadable(ctx context.Context, viewer *Viewer, a appaccount.Actor) (bool, error) {
+	vis := account.FollowsPublic
+	if a.Profile != nil {
+		vis = a.Profile.FollowsVisibility.Normalize()
+	}
+	if vis == account.FollowsPublic {
+		return true, nil
+	}
+	if viewer == nil {
+		return vis.FollowsReadable(false, false), nil
+	}
+	if viewer.AccountID == a.Account.ID {
+		return true, nil
+	}
+	approved := false
+	if vis == account.FollowsFollowers {
+		rel, err := s.o.Graph.Relationship(ctx, viewer.AccountID, a.Account.ID)
+		if err != nil {
+			return false, err
+		}
+		approved = rel.Following == graph.StateActive
+	}
+	return vis.FollowsReadable(false, approved), nil
+}
+
 // followList serves the followers or following list of the account with id.
 func (s *Server) followList(ctx context.Context, id string, cursor *Cursor, limit *Limit, followers bool) (*AccountPageJSONResponse, *problem, error) {
 	v := viewerOf(ctx)
@@ -110,12 +144,20 @@ func (s *Server) followList(ctx context.Context, id string, cursor *Cursor, limi
 	if q.problem != nil {
 		return nil, q.problem, nil
 	}
-	_, ok, err := s.visibleAccount(ctx, v, id)
+	a, ok, err := s.visibleAccount(ctx, v, id)
 	if err != nil {
 		return nil, nil, err
 	}
 	if !ok {
 		p := s.notFoundResponse(ctx)
+		return nil, &p, nil
+	}
+	readable, err := s.followsReadable(ctx, v, a)
+	if err != nil {
+		return nil, nil, err
+	}
+	if !readable {
+		p := s.problem(ctx, http.StatusForbidden, ProblemTypeFollowsHidden, s.Localizer(ctx).ServerErrorsFollowsHidden(), "")
 		return nil, &p, nil
 	}
 	list := s.o.Graph.Following

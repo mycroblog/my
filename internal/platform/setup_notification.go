@@ -64,6 +64,7 @@ func (a *App) setUpNotification(cfg *config.Config, repo notification.Repository
 		UnitOfWork: a.UnitOfWork, Posts: subscribedPosts{a}, Projectors: deps, FanOutSize: a.fanOutSize,
 	})
 	a.voiceNotifier = notification.NewVoiceNotifier(deps)
+	a.gatheringNotifier = notification.NewGatheringNotifier(deps)
 	moderators := a.setUpModeratorNotifications(cfg, repo, moderatorStaff{a}, pusher)
 	a.setUpClosureNotifications(repo, moderators, pusher)
 	a.setUpAnnouncementNotifications(repo, pusher)

@@ -41,3 +41,5 @@ properties:
       - $ref: ./StatusMediaInput.yaml
   poll:
     $ref: ./DraftPoll.yaml
+  article:
+    $ref: ./DraftArticleInput.yaml

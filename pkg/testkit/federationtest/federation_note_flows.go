@@ -21,12 +21,14 @@ import (
 const contractAccountDomain = "accounts.example"
 
 // fedParts stands in for the content module's Reader.Parts: the mentioned accounts that exist,
-// and the hashtags and processed media that a test registers per tag ID and revision ID.
+// and the hashtags, processed media, and article covers that a test registers per tag ID and
+// revision ID.
 type fedParts struct {
 	mu       sync.Mutex
 	accounts *fedAccounts
 	tags     map[string]content.Tag
 	media    map[string][]appcontent.MediaView
+	covers   map[string]appcontent.MediaView
 }
 
 var _ appfederation.NoteParts = (*fedParts)(nil)
@@ -35,6 +37,9 @@ func (p *fedParts) Parts(ctx context.Context, rev appcontent.Revision) (appconte
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	out := appcontent.RevisionParts{Attachments: p.media[rev.ID]}
+	if c, ok := p.covers[rev.ID]; ok {
+		out.Cover = &c
+	}
 	for _, id := range rev.MentionedAccountIDs {
 		if a, err := p.accounts.FindByID(ctx, id); err == nil {
 			out.Mentions = append(out.Mentions, a)

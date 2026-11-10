@@ -99,6 +99,14 @@ const (
 	// SettingIncomeVisibility decides how much of the instance's income the public API and the
 	// about page show (FR-917, ADR-0067 §17), apart from SettingFinanceVisibility.
 	SettingIncomeVisibility SettingKey = "income_visibility"
+	// SettingFundingMeterVisibility, SettingFundingMeterTargetAmount,
+	// SettingFundingMeterTargetCurrency, and SettingFundingMeterRail are the funding meter
+	// (FR-905, ADR-0067 §22): what it publishes, the monthly target it measures this month's net
+	// income against (both empty: the month's costs), and whether the right rail shows it.
+	SettingFundingMeterVisibility     SettingKey = "funding_meter_visibility"
+	SettingFundingMeterTargetAmount   SettingKey = "funding_meter_target_amount"
+	SettingFundingMeterTargetCurrency SettingKey = "funding_meter_target_currency"
+	SettingFundingMeterRail           SettingKey = "funding_meter_rail"
 	// SettingFederationMode is the direction the instance federates in (FR-413, ADR-0006).
 	SettingFederationMode SettingKey = "federation_mode"
 	// SettingFederationScope is which domains the instance federates with: every domain that no
@@ -482,6 +490,12 @@ const (
 	// KindProviderVisibilities is comma-separated provider=visibility|visibility pairs, sorted by
 	// provider, or "" for none. A provider with no visibility after the "=" may receive nothing.
 	KindProviderVisibilities Kind = "provider_visibilities"
+	// KindDecimal is a decimal number that is not negative, in major units of a currency
+	// ("1650", "12.34"), with at most MaxDecimalIntegerDigits digits before the point and
+	// MaxDecimalFractionDigits after it, or "" for none.
+	KindDecimal Kind = "decimal"
+	// KindCurrency is an ISO 4217 alphabetic code, upper case ("JPY"), or "" for none.
+	KindCurrency Kind = "currency"
 )
 
 // The defaults and bounds of the translation settings (ADR-0148 §9, §11).
@@ -697,6 +711,23 @@ var definitions = []Definition{
 		Key: SettingIncomeVisibility, Kind: KindEnum, Default: string(IncomePrivate),
 		Choices: []string{string(IncomePrivate), string(IncomeTotals), string(IncomePlans)},
 		Doc:     "How much of the instance's income GET /instance/income_totals and the about page show: private (nothing), totals (the net income of each currency by period), or plans (also the number of members of each supporter plan now); the balance against the costs is shown only while finance_visibility is not private as well, and individual payments, subscribers, the amounts of each plan, and the fees are never shown (FR-917, ADR-0067 §17).",
+	},
+	{
+		Key: SettingFundingMeterVisibility, Kind: KindEnum, Default: string(FundingMeterOff),
+		Choices: []string{string(FundingMeterOff), string(FundingMeterPercent), string(FundingMeterAmounts)},
+		Doc:     "What the funding meter of GET /instance and the about page publishes about this month's net income against the monthly target: off (nothing), percent (the percentage alone, only while finance_visibility and income_visibility are both private), or amounts (also the income and the target, only while both are not private); a change of either visibility that makes the value invalid turns it off (FR-905, ADR-0067 §22).",
+	},
+	{
+		Key: SettingFundingMeterTargetAmount, Kind: KindDecimal, Default: "",
+		Doc: "The monthly target of the funding meter, greater than zero, in major units of funding_meter_target_currency, or of the currency of the month's costs while that is empty; empty measures against the month's costs, which needs them in one currency (FR-905, ADR-0067 §22).",
+	},
+	{
+		Key: SettingFundingMeterTargetCurrency, Kind: KindCurrency, Default: "",
+		Doc: "The ISO 4217 currency of funding_meter_target_amount; empty uses the currency of the month's costs (FR-905, ADR-0067 §22).",
+	},
+	{
+		Key: SettingFundingMeterRail, Kind: KindBool, Default: "false",
+		Doc: "Whether the web client shows the funding meter in its right rail as well as on the about page, while funding_meter_visibility is not off (FR-905, ADR-0067 §22).",
 	},
 	{
 		Key: SettingFederationMode, Kind: KindEnum, Default: string(FederationBoth),
@@ -1061,6 +1092,18 @@ func (d Definition) Parse(raw string) (string, error) {
 			return "", invalid("is not an https: or mailto: URI")
 		}
 		return raw, nil
+	case KindDecimal:
+		v, ok := canonicalDecimal(raw)
+		if !ok {
+			return "", invalid("is not a decimal number that is not negative")
+		}
+		return v, nil
+	case KindCurrency:
+		code := strings.ToUpper(raw)
+		if code != "" && !wellFormedCurrency(code) {
+			return "", invalid("is not an ISO 4217 currency code")
+		}
+		return code, nil
 	}
 	return "", invalid("has an unknown kind " + string(d.Kind))
 }

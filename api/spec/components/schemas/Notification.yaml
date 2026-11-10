@@ -74,6 +74,15 @@ properties:
       The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
       it is open and the user sees it; omitted otherwise, and without `read:voice`.
     $ref: ./VoiceRoom.yaml
+  event_id:
+    description: The event that an `event_*` notification is about.
+    allOf:
+      - $ref: ./Id.yaml
+  event:
+    description: |
+      The event that an `event_*` notification is about, as the user sees it now; omitted when
+      the user no longer sees it, for the other types, and without `read:events`.
+    $ref: ./Event.yaml
   error_group:
     description: What an `admin_error_group` tells of; omitted for the other types.
     $ref: ./NotificationErrorGroup.yaml

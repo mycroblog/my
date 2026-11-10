@@ -646,6 +646,34 @@ export interface paths {
         patch: operations["updateNotificationPolicy"];
         trace?: never;
     };
+    "/preferences/event_reminders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the authenticated user's reminders of events
+         * @description How long before the start of an event that the user answered going or maybe an
+         *     `event_reminder` reminds the user: one day and one hour before until the user chooses.
+         */
+        get: operations["getEventReminders"];
+        /**
+         * Change the authenticated user's reminders of events
+         * @description Replaces the reminders with `minutes_before`, or restores the defaults with `defaults`. The
+         *     reminders of the upcoming events that the user answered going or maybe follow the change. A
+         *     422 problem when `minutes_before` has more than 3 reminders, one shorter than 5 minutes or
+         *     longer than 7 days, or the same one twice; nothing is changed then.
+         */
+        put: operations["updateEventReminders"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/preferences/supporter_listing": {
         parameters: {
             query?: never;
@@ -1834,6 +1862,9 @@ export interface paths {
          * @description The accounts that actively follow the account, newest follow first. Followers that
          *     block the viewer, are deactivated, or are deleted are left out, so a page may hold
          *     fewer than `limit` accounts before the last.
+         *
+         *     When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+         *     `/api/v1/problems/follows-hidden` (403); the owner always reads them.
          */
         get: operations["listAccountFollowers"];
         put?: never;
@@ -1855,6 +1886,9 @@ export interface paths {
          * List the accounts that an account follows
          * @description The accounts that the account actively follows, newest follow first, leaving out the
          *     same accounts as `listAccountFollowers`.
+         *
+         *     When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+         *     `/api/v1/problems/follows-hidden` (403); the owner always reads them.
          */
         get: operations["listAccountFollowing"];
         put?: never;
@@ -3015,7 +3049,9 @@ export interface paths {
         /**
          * Publish a draft now
          * @description Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
-         *     and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+         *     and deletes the draft with its schedule; the draft of an article (`article`) is published with
+         *     those of `createArticle`, and the status has its `content`. A draft that cannot be published
+         *     stays as it was.
          */
         post: operations["publishDraft"];
         delete?: never;
@@ -3061,6 +3097,41 @@ export interface paths {
          *     the response is a 429 with `Retry-After`.
          */
         get: operations["searchStatuses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/statuses/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Look up or resolve a status by its URL
+         * @description Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+         *     else fetches it from its server, as a reply button of another server asks to (the page that
+         *     `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+         *     followed to the post's id. The post's parent is fetched too, one level. Posts of this
+         *     instance are found by their id only.
+         *
+         *     The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+         *     404, the same as a URL that leads to no post, or to an account.
+         *
+         *     Only signed-in users can look a status up (anonymous requests get the 401 of
+         *     `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+         *     `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+         *     `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+         *     other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+         *     found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+         *     fetched.
+         */
+        get: operations["lookupStatus"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5181,6 +5252,35 @@ export interface paths {
          *     `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
          */
         patch: operations["updateEvent"];
+        trace?: never;
+    };
+    "/events/{id}/calendar.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get an event as an iCalendar file
+         * @description The event as an iCalendar (RFC 5545) file of one `VEVENT` with `METHOD:PUBLISH`, to add to
+         *     the user's own calendar. `UID` is `<event id>@<host>`, so that importing the file again
+         *     updates the same entry; `DTSTART` and `DTEND` are in UTC, the same instants in every time
+         *     zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
+         *     `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
+         *     user sees: a hidden place never appears in the file. A 404 for an event that the user does
+         *     not see.
+         */
+        get: operations["getEventCalendar"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/events/{id}/cancel": {
@@ -8188,7 +8288,13 @@ export interface paths {
          *     The changes take effect on the next request. An unknown key, or a value its key
          *     rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
          *     current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-         *     through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+         *     through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+         *     publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+         *     while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+         *     while neither is, judged after the whole change, so another value is a 422; a change of
+         *     either visibility that leaves the stored value invalid turns it `off` with a revision of its
+         *     own. `funding_meter_target_amount` is above zero, with no more digits than
+         *     `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
          *     permission.
          */
         patch: operations["updateInstanceSettings"];
@@ -9757,8 +9863,9 @@ export interface components {
             keys?: string[];
         };
         /**
-         * @description A draft of a post, saved on the server so that the user goes on writing it on another device,
-         *     and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+         * @description A draft of a post or of an article (`article`), saved on the server so that the user goes on
+         *     writing it on another device, and publishes it at once or at a chosen time. Only the user reads
+         *     it; it is never federated.
          */
         Draft: {
             id: components["schemas"]["Id"];
@@ -9784,6 +9891,8 @@ export interface components {
             /** @description The media to attach, in order. */
             media: components["schemas"]["StatusMediaItem"][];
             poll?: components["schemas"]["DraftPoll"];
+            /** @description What makes the draft that of an article; left out for the draft of a post. */
+            article?: components["schemas"]["DraftArticle"];
             /**
              * Format: date-time
              * @description When the draft is scheduled to be published; left out while it is not scheduled.
@@ -9791,6 +9900,41 @@ export interface components {
             scheduled_at?: string;
             /** @description How the newest schedule that is over ended; left out when none ended. */
             last_schedule?: components["schemas"]["DraftScheduleOutcome"];
+        };
+        /**
+         * @description What makes a draft that of an article: the draft's `text` is the body in Markdown. The title
+         *     and the summary may be empty while the user writes; publishing the draft checks them as
+         *     `createArticle` does.
+         */
+        DraftArticle: {
+            /** @description The title, as plain text; empty while there is none. */
+            title: string;
+            /** @description The summary, as plain text; empty makes one from the body when the draft is published. */
+            summary: string;
+            /** @description The cover image; omitted when there is none. */
+            cover?: components["schemas"]["StatusMediaItem"];
+            /** @description The hashtags, as the user gave them. */
+            tags: string[];
+            /**
+             * @description The IDs of the user's own uploads that the body shows as images (`![alt](media:ID)`),
+             *     each once, ordered by ID; the server finds them in the body at each save, and keeps the
+             *     uploads while the draft names them.
+             */
+            images: components["schemas"]["Id"][];
+        };
+        /**
+         * @description Makes the draft that of an article, whose `text` is the body in Markdown. A draft of an article
+         *     has no `spoiler_text`, `media`, `poll`, `in_reply_to_id`, or `quoted_status_id`, and is never
+         *     `direct` (422). It keeps an empty title; publishing it checks it as `createArticle` does.
+         */
+        DraftArticleInput: {
+            /** @description The title, as plain text; omitted or empty while there is none. */
+            title?: string;
+            summary?: components["schemas"]["ArticleSummary"];
+            /** @description The cover image, one of the user's own uploads, processed or not. */
+            cover?: components["schemas"]["StatusMediaItem"];
+            /** @description The hashtags, with or without `#`; checked when the draft is published. */
+            tags?: string[];
         };
         /**
          * @description Why a scheduled post was not published at its time; the draft stays, to fix and schedule
@@ -9851,6 +9995,7 @@ export interface components {
              */
             media?: components["schemas"]["StatusMediaInput"];
             poll?: components["schemas"]["DraftPoll"];
+            article?: components["schemas"]["DraftArticleInput"];
         };
         /** @description How the newest schedule of a draft that is over ended. */
         DraftScheduleOutcome: {
@@ -13220,6 +13365,7 @@ export interface components {
              *     leaves it as it is.
              */
             feed_follows_indexable: boolean;
+            follows_visibility: components["schemas"]["FollowsVisibility"];
             source: components["schemas"]["AccountSource"];
             posting: components["schemas"]["PostingLimits"];
             /**
@@ -13966,6 +14112,29 @@ export interface components {
          * @enum {string}
          */
         EventPlaceKind: "voice" | "physical" | "url";
+        /** @description The reminders of events of the authenticated user. */
+        EventReminders: {
+            /**
+             * @description How many minutes before the start of an event each reminder is, from the earliest; empty
+             *     for no reminders.
+             */
+            minutes_before: number[];
+            /** @description Whether these are the defaults (one day and one hour before), as the user has not chosen. */
+            defaults: boolean;
+        };
+        /** @description A change of the reminders of events of the authenticated user. */
+        EventRemindersUpdate: {
+            /**
+             * @description The reminders, in minutes before the start: at most 3, each from 5 minutes to 7 days
+             *     (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
+             */
+            minutes_before?: number[];
+            /**
+             * @description Restores the defaults (one day and one hour before) instead.
+             * @default false
+             */
+            defaults: boolean;
+        };
         /** @description An answer to an event. */
         EventRSVP: {
             answer: components["schemas"]["EventAnswer"];
@@ -14150,6 +14319,15 @@ export interface components {
              */
             notify?: boolean;
         };
+        /**
+         * @description Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+         *     `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+         *     of it is approved; `private`, nobody. The owner always reads both, and the counts
+         *     (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+         *     number of follows and followers alone unless the lists are `public`.
+         * @enum {string}
+         */
+        FollowsVisibility: "public" | "followers" | "private";
         /** @description What a moderator sends with a report forwarded to the target's server. */
         ForwardReportRequest: {
             /**
@@ -14158,6 +14336,51 @@ export interface components {
              *     sent by a forward after filing.
              */
             comment?: string;
+        };
+        /**
+         * @description How far this month's net income goes toward the instance's monthly target (the instance
+         *     setting `funding_meter_visibility`): the income and the target are prorated as the totals
+         *     under the basis `amortized` are, and the month is the calendar month that holds today in UTC.
+         *     Only the income in the target's currency counts; no amount is converted. The target is the
+         *     one the operators set, or this month's costs while they are in one currency. `percent` alone
+         *     is published while the costs and the income are both private, so that no public amount turns
+         *     it into a private one; `income` and `target` are added only while both are public.
+         */
+        FundingMeter: {
+            /**
+             * @description `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+             * @enum {string}
+             */
+            visibility: "percent" | "amounts";
+            /** @description The month, such as `2026-11`. */
+            label: string;
+            starts_on: components["schemas"]["CalendarDate"];
+            ends_on: components["schemas"]["CalendarDate"];
+            /**
+             * Format: int64
+             * @description The net income over the target in whole percent, rounded down to 1%, so that 100 is
+             *     reached only when `covered` is true. It goes past 100, and is 0 while the net income is
+             *     not positive.
+             */
+            percent: number;
+            /** @description Whether the net income reaches the target, that is, this month is covered. */
+            covered: boolean;
+            /**
+             * @description Whether the target is this month's costs and an imported usage charge of a billing month
+             *     that its provider has not closed is among them: the percentage may still change.
+             */
+            estimated: boolean;
+            /**
+             * @description Whether the web client shows the meter in its right rail as well as on the about page (the
+             *     instance setting `funding_meter_rail`).
+             */
+            rail: boolean;
+            /** @description This month's net income in the target's currency; only with `amounts`. */
+            income?: components["schemas"]["Money"];
+            /** @description The monthly target; only with `amounts`. */
+            target?: components["schemas"]["Money"];
+            /** @description Whether the target is this month's costs; only with `amounts`. */
+            target_is_costs?: boolean;
         };
         /**
          * Format: uuid
@@ -14427,6 +14650,11 @@ export interface components {
             finance_visibility: components["schemas"]["FinanceVisibility"];
             income_visibility: components["schemas"]["IncomeVisibility"];
             /**
+             * @description The funding meter of this month, which the about page shows; absent while the instance
+             *     setting `funding_meter_visibility` is `off` or the month has no target.
+             */
+            funding_meter?: components["schemas"]["FundingMeter"];
+            /**
              * @description Whether the instance is a one-person server: the home of its operator alone, with nobody else
              *     to join. While it is true, `registrations.mode` is `closed` and both `timelines` are `off`,
              *     whatever the instance settings store. Clients also hide the suggestions of accounts, invites,
@@ -14692,7 +14920,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -14703,10 +14931,12 @@ export interface components {
          *     a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
          *     `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
          *     provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-         *     comma-separated `provider=visibility|visibility` pairs, or empty for none.
+         *     comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+         *     decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+         *     empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
          * @enum {string}
          */
-        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri" | "accounts" | "client_limits" | "provider_list" | "provider_visibilities";
+        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri" | "accounts" | "client_limits" | "provider_list" | "provider_visibilities" | "decimal" | "currency";
         /**
          * @description The key of an instance text: the name (one line), the short and full descriptions,
          *     the terms of service and the privacy policy (Markdown), the alternative texts of the
@@ -15415,6 +15645,13 @@ export interface components {
              *     it is open and the user sees it; omitted otherwise, and without `read:voice`.
              */
             voice_room?: components["schemas"]["VoiceRoom"];
+            /** @description The event that an `event_*` notification is about. */
+            event_id?: components["schemas"]["Id"];
+            /**
+             * @description The event that an `event_*` notification is about, as the user sees it now; omitted when
+             *     the user no longer sees it, for the other types, and without `read:events`.
+             */
+            event?: components["schemas"]["Event"];
             /** @description What an `admin_error_group` tells of; omitted for the other types. */
             error_group?: components["schemas"]["NotificationErrorGroup"];
             /** @description The announcement that an `announcement` tells of, as the user sees it; omitted for the other types. */
@@ -15432,7 +15669,8 @@ export interface components {
          *     and off together. The ordinary notifications are one row per type (`mention`, `follow`,
          *     `follow_request`, `follow_accepted`, `boost`, `favourite`, `reaction`, `quote`,
          *     `poll_closed`, `account_moved`, `status`), except `voice`, which is `voice_room_started` and
-         *     `voice_room_invited`, and `interaction_request`, which is `reply_request`, `boost_request`,
+         *     `voice_room_invited`, `event`, which is the `event_*` types (the email of an `event_reminder`
+         *     is sent at once, not after the notification stays unread), and `interaction_request`, which is `reply_request`, `boost_request`,
          *     `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
          *     `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
          *     `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
@@ -15448,7 +15686,7 @@ export interface components {
          *     no `email` channel.
          * @enum {string}
          */
-        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "interaction_request" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement" | "auto_delete_limit" | "scheduled_status_failed";
+        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "interaction_request" | "poll_closed" | "account_moved" | "voice" | "event" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement" | "auto_delete_limit" | "scheduled_status_failed";
         /** @description How far the authenticated user has read the notifications, across all clients. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
@@ -15692,9 +15930,21 @@ export interface components {
          *     `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
          *     draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
          *     sends nothing.
+         *     The `event_*` types tell of an event of the server (`event_id`, and `event` while the user
+         *     sees it). `event_invited` tells that `account` invited the user, once per invitation;
+         *     `event_schedule_confirmed` that the organizers fixed the date of an event whose date poll the
+         *     user answered or to which the user was invited, once per date; `event_changed` that the date,
+         *     the places, or the voice chat room of an event that the user answered going or maybe to, or was
+         *     invited to, changed, once per change (a change of the title or the description sends
+         *     nothing); `event_cancelled` that such an event was cancelled; `event_reminder` that an event
+         *     that the user answered going or maybe to starts soon, at each time before the start that the
+         *     user chose (`getEventReminders`), once per date and time, and never for a date that changed
+         *     since; `event_started` that it starts now, once per date; and `event_room_unavailable` tells
+         *     the organizer that the voice chat room of the event cannot open. Their `account` is the
+         *     organizer, except for `event_invited`. Each is sent only while the user sees the event.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "scheduled_status_failed" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "scheduled_status_failed" | "event_invited" | "event_schedule_confirmed" | "event_changed" | "event_cancelled" | "event_reminder" | "event_started" | "event_room_unavailable" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
         /**
          * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -16361,6 +16611,9 @@ export interface components {
          *       allowed. Remove one first.
          *     - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
          *       follow request was accepted) can be added to a list.
+         *     - `/api/v1/problems/follows-hidden` (403): the account's `follows_visibility` keeps its
+         *       follows and followers lists from the viewer (`/accounts/{id}/following`,
+         *       `/accounts/{id}/followers`). Its counts stay on the account.
          *     - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
          *       hashtags allowed (100). Unfollow one first.
          *     - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
@@ -17153,7 +17406,7 @@ export interface components {
          *     cover.
          */
         StatusArticle: {
-            /** @description The title, as plain text. */
+            /** @description The title, as plain text; empty only for an article from another server that has none. */
             title: string;
             /** @description The summary, as plain text; the server makes one from the body when the author writes none. */
             summary: string;
@@ -17200,7 +17453,8 @@ export interface components {
             /**
              * @description The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
              *     remote status is what the server's sanitizer kept of the received document. For an
-             *     article, its rendered body, or empty in lists (see above).
+             *     article, its rendered body, or empty in lists (see above); the images in the body of an
+             *     article from another server load through the server's media proxy.
              */
             content: string;
             article?: components["schemas"]["StatusArticle"];
@@ -17765,6 +18019,7 @@ export interface components {
              *     owner's choice, which a later change of `indexable` leaves as it is.
              */
             feed_enabled?: boolean;
+            follows_visibility?: components["schemas"]["FollowsVisibility"];
         };
         /** @description The settings of a custom emoji to change; absent ones stay. */
         UpdateCustomEmojiRequest: {
@@ -19913,6 +20168,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationPolicy"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getEventReminders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The reminders. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventReminders"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateEventReminders: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventRemindersUpdate"];
+            };
+        };
+        responses: {
+            /** @description The reminders after the change. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventReminders"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -22595,6 +22898,31 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    lookupStatus: {
+        parameters: {
+            query: {
+                /** @description The `https` URL of the post. */
+                uri: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The status. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     getStatus: {
         parameters: {
             query?: never;
@@ -24872,6 +25200,33 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getEventCalendar: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The iCalendar file. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    /** @description Names the file to save the event as, `<event id>.ics`. */
+                    "Content-Disposition"?: string;
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/calendar": string;
                 };
             };
             default: components["responses"]["Problem"];

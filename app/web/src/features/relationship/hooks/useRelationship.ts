@@ -112,12 +112,17 @@ export type UseRelationshipOptions = {
    * for a menu, which closes and leaves the result no place of its own (web-client/16-look-states-and-wording.md G24).
    */
   result?: "in-place" | "toast";
+  /**
+   * Whether to read the relationship again each time the caller mounts, however fresh the cached one is: the row of a
+   * notification that changed it (a follow request) must not show the relationship cached before the notification came.
+   */
+  fresh?: boolean;
 };
 
 /** Returns the viewer's relationship with `account` and the way to change it. */
 export function useRelationship(
   account: Account,
-  { enabled = true, result = "in-place" }: UseRelationshipOptions = {},
+  { enabled = true, result = "in-place", fresh = false }: UseRelationshipOptions = {},
 ): RelationshipState {
   const api = useApi();
   const t = useT();
@@ -128,7 +133,11 @@ export function useRelationship(
   const viewer = useViewer();
   const { followsRemote } = useFederation();
   const isOther = viewer.status === "signed-in" && viewer.account.id !== account.id;
-  const query = useQuery({ ...relationshipQueryOptions(api, account.id), enabled: isOther && enabled });
+  const query = useQuery({
+    ...relationshipQueryOptions(api, account.id),
+    enabled: isOther && enabled,
+    ...(fresh && { refetchOnMount: "always" as const }),
+  });
   const mutation = useMutation({
     mutationFn: (action: RelationshipAction) => changeRelationship(api, account.id, action),
     onSuccess: async (relationship, action) => {

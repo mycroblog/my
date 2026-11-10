@@ -183,6 +183,8 @@ and `api.POST("/events")` in TypeScript. They need the scopes `read:events` and 
   that the organizers show only to the approved attendees never reaches the client before that.
 - An answer of `going` to a full event is a 409 problem `/api/v1/problems/event-full`; `maybe` and `declined` are never
   refused. Answers end when the event starts.
+- `GET /events/{id}/calendar.ics` (`GetEventCalendarWithResponse`) returns the event as an iCalendar file to add to the
+  user's own calendar: its times are in UTC, and it names only the places the user sees.
 
 ## Drafts and scheduled posts
 

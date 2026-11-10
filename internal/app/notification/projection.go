@@ -698,13 +698,19 @@ type relationBatch interface {
 // inserts the notifications and enqueues their messages with one statement each. Without the
 // batch reads of Accounts and Relationships it notifies them one by one.
 func (p *projector) notifyAll(ctx context.Context, tx uow.Tx, n notification.Notification, recipients []string) error {
+	return p.notifyAllWith(ctx, tx, n, recipients, nil)
+}
+
+// notifyAllWith is notifyAll with the payloads of the Web Push messages and of the emails
+// completed by complete (nil completes nothing), as notifyWith completes those of one.
+func (p *projector) notifyAllWith(ctx context.Context, tx uow.Tx, n notification.Notification, recipients []string, complete func(*pushJob)) error {
 	accounts, okA := p.d.Accounts.(notifiableBatch)
 	relations, okR := p.d.Relationships.(relationBatch)
 	if !okA || !okR {
 		for _, id := range recipients {
 			one := n
 			one.RecipientAccountID = id
-			if err := p.notify(ctx, tx, one); err != nil {
+			if err := p.notifyWith(ctx, tx, one, complete); err != nil {
 				return err
 			}
 		}
@@ -825,10 +831,10 @@ func (p *projector) notifyAll(ctx context.Context, tx uow.Tx, n notification.Not
 	if err := p.filter(ctx, tx, held); err != nil {
 		return err
 	}
-	if err := p.d.Push.enqueueAll(ctx, tx, created, nil); err != nil {
+	if err := p.d.Push.enqueueAll(ctx, tx, created, complete); err != nil {
 		return err
 	}
-	return p.d.Email.enqueueAll(ctx, tx, created, choices, nil)
+	return p.d.Email.enqueueAll(ctx, tx, created, choices, complete)
 }
 
 // notifyEach notifies each of ns, notifications without a source that differ only by their ID,

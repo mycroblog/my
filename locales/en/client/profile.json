@@ -131,6 +131,10 @@
     "defaultMessage": "No followers yet",
     "description": "Shown instead of the list of followers when there are none."
   },
+  "profile.followers.hidden": {
+    "defaultMessage": "{name} does not show their followers",
+    "description": "Shown instead of the list of followers when the account's owner keeps the list from the viewer. {name} is the account's display name."
+  },
   "profile.followers.title": {
     "defaultMessage": "Followers of {name}",
     "description": "Heading and document title of the list of an account's followers. {name} is the account's display name."
@@ -142,6 +146,10 @@
   "profile.following.empty": {
     "defaultMessage": "Not following anyone yet",
     "description": "Shown instead of the list of followed accounts when there are none."
+  },
+  "profile.following.hidden": {
+    "defaultMessage": "{name} does not show whom they follow",
+    "description": "Shown instead of the list of followed accounts when the account's owner keeps the list from the viewer. {name} is the account's display name."
   },
   "profile.following.title": {
     "defaultMessage": "Accounts {name} follows",
@@ -162,6 +170,10 @@
   "profile.list.back": {
     "defaultMessage": "Back to the profile of {name}",
     "description": "Link from a follow list to the account's profile. {name} is the account's display name."
+  },
+  "profile.list.hidden.description": {
+    "defaultMessage": "The profile still shows how many there are.",
+    "description": "Under the message that a follow list is hidden: its count stays on the profile."
   },
   "profile.list.load_more": {
     "defaultMessage": "Show more",
