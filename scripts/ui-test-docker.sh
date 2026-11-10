@@ -23,13 +23,21 @@ if [[ -d src/__screenshots__ ]]; then chown -R "$HOST_UID:$HOST_GID" src/__scree
 exit "$status"
 '
 
-# Docker creates missing mount points as root, and an empty root-owned node_modules makes the host's
-# `bun install` fail, so they are created here as the calling user.
-mkdir -p "$root/app/node_modules" "$root/app/ui/node_modules" "$root/app/web/node_modules"
+# Every workspace of app/package.json gets a container-only node_modules: the container's install would otherwise
+# write root-owned packages into the host's tree, which the host's tools then cannot write to. Docker creates missing
+# mount points as root, and an empty root-owned node_modules makes the host's `bun install` fail, so they are
+# created here as the calling user.
+modules=(app/node_modules app/ui/node_modules app/web/node_modules app/mail/node_modules app/docs/node_modules
+	pkg/mykit/ts/node_modules pkg/mybot/ts/node_modules)
+volumes=()
+for dir in "${modules[@]}"; do
+	mkdir -p "$root/$dir"
+	volumes+=(-v "/work/$dir")
+done
 
 exec docker run --rm --ipc=host \
 	-v "$root:/work" -w /work \
-	-v /work/app/node_modules -v /work/app/ui/node_modules -v /work/app/web/node_modules \
+	"${volumes[@]}" \
 	-v my-ui-test-bun-cache:/root/.bun/install/cache \
 	-e BUN_VERSION="$bun_version" -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" -e CI \
 	"$image" bash -euo pipefail -c "$script" ui-test-docker "$@"
