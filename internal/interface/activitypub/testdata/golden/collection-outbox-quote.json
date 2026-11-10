@@ -3,19 +3,35 @@
     "https://www.w3.org/ns/activitystreams",
     "https://w3id.org/security/v1",
     {
+      "AnnounceAuthorization": "gts:AnnounceAuthorization",
+      "AnnounceRequest": "gts:AnnounceRequest",
       "Emoji": "toot:Emoji",
       "Hashtag": "as:Hashtag",
       "PropertyValue": "schema:PropertyValue",
       "QuoteAuthorization": "https://w3id.org/fep/044f#QuoteAuthorization",
       "QuoteRequest": "https://w3id.org/fep/044f#QuoteRequest",
+      "ReplyAuthorization": "gts:ReplyAuthorization",
+      "ReplyRequest": "gts:ReplyRequest",
       "_misskey_quote": "https://misskey-hub.net/ns#_misskey_quote",
+      "announceAuthorization": {
+        "@id": "gts:announceAuthorization",
+        "@type": "@id"
+      },
       "automaticApproval": {
         "@id": "gts:automaticApproval",
         "@type": "@id"
       },
       "blurhash": "toot:blurhash",
+      "canAnnounce": {
+        "@id": "gts:canAnnounce",
+        "@type": "@id"
+      },
       "canQuote": {
         "@id": "gts:canQuote",
+        "@type": "@id"
+      },
+      "canReply": {
+        "@id": "gts:canReply",
         "@type": "@id"
       },
       "conversation": "ostatus:conversation",
@@ -66,6 +82,10 @@
       },
       "quoteUri": "http://fedibird.com/ns#quoteUri",
       "quoteUrl": "as:quoteUrl",
+      "replyAuthorization": {
+        "@id": "gts:replyAuthorization",
+        "@type": "@id"
+      },
       "schema": "http://schema.org#",
       "sensitive": "as:sensitive",
       "suspended": "toot:suspended",
@@ -145,6 +165,16 @@
         "quoteUri": "https://remote.example/users/bob/statuses/1",
         "quoteAuthorization": "https://remote.example/users/bob/quote_authorizations/1",
         "interactionPolicy": {
+          "canReply": {
+            "automaticApproval": [
+              "https://www.w3.org/ns/activitystreams#Public"
+            ]
+          },
+          "canAnnounce": {
+            "automaticApproval": [
+              "https://www.w3.org/ns/activitystreams#Public"
+            ]
+          },
           "canQuote": {
             "automaticApproval": [
               "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e6f/followers",

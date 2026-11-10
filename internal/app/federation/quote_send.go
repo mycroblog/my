@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"slices"
 	"strings"
 	"time"
 
@@ -86,8 +85,8 @@ func (h *QuoteHandlers) Register(p *InboxProcessor) {
 //     to the quoted author's inbox.
 //   - content.quote_changed that approves a local status's quote by a remote
 //     QuoteAuthorization: the Update of the status, whose Note names it.
-//   - content.interaction_policy_changed of the quote rules: the Update of the status, whose
-//     interactionPolicy says them.
+//   - content.interaction_policy_changed of the rules of any kind: the Update of the status, whose
+//     interactionPolicy says them (ADR-0155 §9).
 //   - content.quote_authorization_revoked of a remote quote: the Delete of the
 //     QuoteAuthorization to the quoting author's inbox.
 func (h *QuoteHandlers) RegisterProjectors(r *uow.Projectors) {
@@ -108,8 +107,8 @@ func (h *QuoteHandlers) RegisterProjectors(r *uow.Projectors) {
 	})
 	r.Register(appcontent.EventInteractionPolicyChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.InteractionPolicyChanged)
-		// The Note carries canQuote alone.
-		if !ok || !ev.Status.IsLocal || !slices.Contains(ev.Kinds, appcontent.InteractionQuote) {
+		// The Note carries the rules of every kind (canReply, canAnnounce, canQuote).
+		if !ok || !ev.Status.IsLocal || len(ev.Kinds) == 0 {
 			return nil
 		}
 		return h.recordUpdate(ctx, tx, ev.Status)

@@ -140,9 +140,10 @@ func (n notes) inConversation(ctx context.Context, note federation.NoteDocument,
 
 // withQuotes adds to the Note of the local status st its quote, unless the author took it away or
 // the quoted status is local-visibility (ADR-0018 §15), and its interactionPolicy (ADR-0069 §3,
-// ADR-0155 §9): the quote rules of a public or unlisted status, the author alone for the others,
-// which remote servers see as followers-only. mentioned are the accounts the Note mentions. Without
-// quotes it returns note as it is.
+// ADR-0155 §9): canReply, canAnnounce, and canQuote with the rules of each kind, except that the
+// author alone may boost or quote a followers-only or direct status, and may reply to, boost, or
+// quote a local-visibility one, which remote servers see as followers-only. mentioned are the
+// accounts the Note mentions. Without quotes it returns note as it is.
 func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st appcontent.Status, author appaccount.Actor, vis appcontent.Visibility, mentioned []appaccount.Actor) (federation.NoteDocument, error) {
 	if n.quotes == nil {
 		return note, nil
@@ -166,20 +167,32 @@ func (n notes) withQuotes(ctx context.Context, note federation.NoteDocument, st 
 		note = note.WithQuote(federation.IRI(q.QuotedURI), federation.IRI(auth), page)
 	}
 	actor := federation.IRI(author.Account.URI)
-	can := federation.ApprovalPolicy{AutomaticApproval: []federation.IRI{actor}}
-	if vis == appcontent.VisibilityPublic || vis == appcontent.VisibilityUnlisted {
-		policy, err := n.quotes.FindInteractionPolicy(ctx, st.ID)
+	alone := federation.ApprovalPolicy{AutomaticApproval: []federation.IRI{actor}}
+	policy := federation.InteractionPolicy{CanReply: alone, CanAnnounce: alone, CanQuote: alone}
+	if vis != appcontent.VisibilityLocal {
+		rules, err := n.quotes.FindInteractionPolicy(ctx, st.ID)
 		if err != nil {
 			return federation.NoteDocument{}, err
 		}
-		set := appcontent.SettingsOf(policy).Quote
-		can.AutomaticApproval = approvalIRIs(set.Automatic, actor, mentioned)
-		if set.Manual != "" {
-			can.ManualApproval = approvalIRIs(set.Manual, actor, mentioned)
+		settings := appcontent.SettingsOf(rules)
+		policy.CanReply = approvalPolicy(settings.Reply, actor, mentioned)
+		if vis == appcontent.VisibilityPublic || vis == appcontent.VisibilityUnlisted {
+			policy.CanAnnounce = approvalPolicy(settings.Announce, actor, mentioned)
+			policy.CanQuote = approvalPolicy(settings.Quote, actor, mentioned)
 		}
 	}
-	note.InteractionPolicy = &federation.InteractionPolicy{CanQuote: can}
+	note.InteractionPolicy = &policy
 	return note, nil
+}
+
+// approvalPolicy returns the can* of the setting set of a status by actor that mentions
+// mentioned: its automatic audience, and its manual one when it has one.
+func approvalPolicy(set appcontent.InteractionSetting, actor federation.IRI, mentioned []appaccount.Actor) federation.ApprovalPolicy {
+	can := federation.ApprovalPolicy{AutomaticApproval: approvalIRIs(set.Automatic, actor, mentioned)}
+	if set.Manual != "" {
+		can.ManualApproval = approvalIRIs(set.Manual, actor, mentioned)
+	}
+	return can
 }
 
 // approvalIRIs returns the IRIs of the audience a of a status by actor that mentions mentioned
