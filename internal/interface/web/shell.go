@@ -53,8 +53,8 @@ type shellData struct {
 	// Config is a struct, not a string: html/template encodes it as JSON in the data block and
 	// escapes what could end the script element.
 	Config runtimeConfig
-	// Preview holds the link preview meta tags of the landing page, a profile, or a post page,
-	// nil for the generic shell.
+	// Preview holds the link preview meta tags: of the landing page, a profile, or a post page, or
+	// the site-wide ones of the generic shell, which have no URL.
 	Preview *previewMeta
 }
 
@@ -80,7 +80,9 @@ const shellSource = `<!doctype html>
 <meta property="og:type" content="{{.Type}}">
 <meta property="og:site_name" content="{{.SiteName}}">
 <meta property="og:title" content="{{.Title}}">
+{{- if .URL}}
 <meta property="og:url" content="{{.URL}}">
+{{- end}}
 {{- if .Description}}
 <meta property="og:description" content="{{.Description}}">
 {{- end}}
@@ -106,7 +108,9 @@ const shellSource = `<!doctype html>
 {{- if .Creator}}
 <meta name="fediverse:creator" content="{{.Creator}}">
 {{- end}}
+{{- if .URL}}
 <link rel="canonical" href="{{.URL}}">
+{{- end}}
 {{- if .ActivityPubID}}
 <link rel="alternate" type="application/activity+json" href="{{.ActivityPubID}}">
 {{- end}}

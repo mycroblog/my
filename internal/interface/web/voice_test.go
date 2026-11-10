@@ -36,8 +36,9 @@ func TestVoiceRoomPages(t *testing.T) {
 		if rec.Code != status || rec.Body.String() != generic.Body.String() || rec.Header().Get("X-Robots-Tag") != "noindex, noarchive" {
 			t.Errorf("GET %s = %d, want %d with the generic shell", path, rec.Code, status)
 		}
-		if strings.Contains(rec.Body.String(), "og:title") {
-			t.Errorf("GET %s carries a link preview:\n%s", path, rec.Body)
+		// The generic shell has only the site-wide preview, which has no URL of its own.
+		if strings.Contains(rec.Body.String(), "og:url") {
+			t.Errorf("GET %s carries a link preview of its own:\n%s", path, rec.Body)
 		}
 	}
 	// Unknown rooms, and paths that name none (the voice chat off reports none either).

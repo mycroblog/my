@@ -125,7 +125,7 @@ func TestProfilePreview(t *testing.T) {
 			"og:title":          "Alice (@alice@example.org)",
 			"og:url":            "https://social.example/@alice",
 			"og:description":    "Hello, #go world & friends",
-			"og:locale":         "ja",
+			"og:locale":         "ja_JP",
 			"og:image":          "https://social.example/media/av/full.png",
 			"og:image:width":    "400",
 			"og:image:height":   "400",
@@ -203,7 +203,7 @@ func TestPostPreview(t *testing.T) {
 		"og:type":                "article",
 		"og:title":               "Alice (@alice@example.org)",
 		"og:url":                 "https://social.example/@alice/status/" + statusID,
-		"og:locale":              "en",
+		"og:locale":              "en_US",
 		"og:image":               "https://social.example/media/im/full.jpg",
 		"og:image:width":         "1200",
 		"og:image:height":        "630",
@@ -238,7 +238,7 @@ func TestPostPreview(t *testing.T) {
 	// Without an attached image, the header image is the preview; the post's language sets
 	// <html lang dir>.
 	if got["og:image"] != a.Header.URL || got["og:image:alt"] != "Header image of Alice" || got["twitter:card"] != "summary_large_image" ||
-		got["og:locale"] != "ar" || !strings.Contains(body, `<html lang="ar" dir="rtl">`) {
+		got["og:locale"] != "ar_EG" || !strings.Contains(body, `<html lang="ar" dir="rtl">`) {
 		t.Errorf("unlisted post meta = %v\n%s", got, body)
 	}
 }
@@ -262,7 +262,7 @@ func TestPreviewImageOrder(t *testing.T) {
 		{"avatar", nil, nil, avatar, def, avatar.URL, "Avatar of Alice", "summary"},
 		{"instance", nil, nil, nil, def, def.URL, "Our mascot", "summary_large_image"},
 		{"instance without alt text", nil, nil, nil, &web.Image{URL: def.URL, Width: 1200, Height: 600}, def.URL, "Image of Example Social", "summary_large_image"},
-		{"built-in", nil, nil, nil, nil, builtIn, "A speech bubble with three dots on a blue gradient", "summary_large_image"},
+		{"built-in", nil, nil, nil, nil, builtIn, "The mycroblog logo", "summary_large_image"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -296,8 +296,8 @@ func TestPostsAndProfilesWithoutImagesGetTheBuiltInImage(t *testing.T) {
 		statuses: map[string]appcontent.StatusPreview{statusID: s},
 	}, web.Options{})
 	for path, alt := range map[string]string{
-		"/@alice":                    "青いグラデーションの上に、点が 3 つ並んだ吹き出し",
-		"/@alice/status/" + statusID: "A speech bubble with three dots on a blue gradient",
+		"/@alice":                    "mycroblog のロゴ",
+		"/@alice/status/" + statusID: "The mycroblog logo",
 	} {
 		got := metas(t, get(mux, path, nil).Body.String())
 		if got["og:image"] != "https://social.example"+web.PathDefaultImage || got["og:image:alt"] != alt ||

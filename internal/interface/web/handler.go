@@ -93,9 +93,10 @@ type Options struct {
 	VoiceRooms VoiceRooms
 	// Messages formats the texts of link previews; nil loads the embedded catalogs.
 	Messages *i18n.Bundle
-	// DefaultImage returns the instance's preview image for profiles and posts without images,
-	// for a preview in language lang (ADR-0028), or nil for the built-in image at
-	// PathDefaultImage. An image without alt text gets a generic one naming the instance.
+	// DefaultImage returns the instance's preview image for the pages without an image of their
+	// own: its preview_image, else its thumbnail (ADR-0028 §2), or nil for the logo's preview and
+	// then the built-in image at PathDefaultImage. An image without alt text gets a generic one
+	// naming the instance.
 	// It is called per request, so that a change of the setting applies without a restart; nil
 	// means the built-in image.
 	DefaultImage func(ctx context.Context) (*Image, error)
@@ -173,7 +174,17 @@ type localizedDocuments struct {
 	theme           themeState
 	brand           string
 	policy          instance.CrawlerPolicy
+	site            siteMeta
 	shell, manifest document
+}
+
+// siteMeta is what the generic shell's site-wide preview reads besides the name (ADR-0028 §2): the
+// instance's short description and its image.
+type siteMeta struct {
+	summary string
+	// image is imageVersion of the instance image, which the cache compares.
+	image string
+	img   *Image
 }
 
 // document is a response rendered once.
@@ -281,7 +292,8 @@ func New(o Options) (*Handler, error) {
 	version = append(append(version, tags.Stylesheet...), tags.Preload...)
 	h.previewVersion = etag([]byte(strings.Join(version, "\x00")))
 	// Render once now, so that a template or encoding error fails the start.
-	if _, err := h.render(i18n.SourceLocale, o.Host, defaultTheme(), brandState{}, instance.DenyAll); err != nil {
+	builtIn := h.builtInImage(h.o.Messages.Localizer(i18n.SourceLocale).ServerPreviewBuiltinImageAlt())
+	if _, err := h.render(i18n.SourceLocale, o.Host, defaultTheme(), brandState{}, instance.DenyAll, siteMeta{image: imageVersion(builtIn), img: builtIn}); err != nil {
 		return nil, err
 	}
 	return h, nil
@@ -341,23 +353,48 @@ func (h *Handler) documents(ctx context.Context) (*localizedDocuments, error) {
 		return nil, err
 	}
 	policy := settings.CrawlerPolicy().NoIndex()
+	site, err := h.siteMeta(ctx, locale)
+	if err != nil {
+		return nil, err
+	}
 	if d, ok := h.localized.Load(locale); ok {
-		if d := d.(*localizedDocuments); d.name == name && d.theme == theme && d.brand == brand.Version && d.policy == policy {
+		if d := d.(*localizedDocuments); d.name == name && d.theme == theme && d.brand == brand.Version && d.policy == policy &&
+			d.site.summary == site.summary && d.site.image == site.image {
 			return d, nil
 		}
 	}
-	return h.render(locale, name, theme, brand, policy)
+	return h.render(locale, name, theme, brand, policy, site)
+}
+
+// siteMeta reads the instance's short description and image for the generic shell's site-wide
+// preview in the default locale.
+func (h *Handler) siteMeta(ctx context.Context, locale string) (siteMeta, error) {
+	summary := ""
+	if h.o.InstanceDescription != nil {
+		summary = description(strings.TrimSpace(h.o.InstanceDescription(ctx)))
+	}
+	img, err := h.instanceImage(ctx, locale)
+	if err != nil {
+		return siteMeta{}, err
+	}
+	return siteMeta{summary: summary, image: imageVersion(img), img: img}, nil
 }
 
 // render renders the documents of a default locale that show the instance name, the theme, the
-// brand images, and the crawler policy, and caches them in place of those of an earlier name,
-// theme, brand, or policy.
-func (h *Handler) render(locale, name string, theme themeState, brand brandState, policy instance.CrawlerPolicy) (*localizedDocuments, error) {
+// brand images, the crawler policy, and the site-wide preview, and caches them in place of those
+// of an earlier name, theme, brand, policy, description, or image. The generic shell's preview has
+// no URL: one copy serves every path, and the 404 of a hidden page stays the same as any other
+// generic shell (ADR-0028 §1, §2).
+func (h *Handler) render(locale, name string, theme themeState, brand brandState, policy instance.CrawlerPolicy, site siteMeta) (*localizedDocuments, error) {
 	crawlers := directivesOf(policy)
 	shell, err := renderShell(shellData{
 		Lang: locale, Dir: i18n.Direction(locale), Title: name, Theme: theme, Brand: brand.Icon, Crawlers: crawlers,
 		HasIcon: h.hasIcon, HasAppleTouchIcon: h.hasAppleTouchIcon, HasThemeScript: h.hasThemeScript, ViteClient: viteClient(h.o.DevViteOrigin), Entry: h.tags,
 		Config: h.runtimeConfig(locale, name, brand),
+		Preview: &previewMeta{
+			Type: ogTypeWebsite, SiteName: name, Title: name, Description: site.summary,
+			Locale: ogLocale(locale), Image: site.img, Card: card(site.img),
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -370,7 +407,7 @@ func (h *Handler) render(locale, name string, theme themeState, brand brandState
 	if err != nil {
 		return nil, err
 	}
-	d := &localizedDocuments{name: name, theme: theme, brand: brand.Version, policy: policy, shell: shell, manifest: manifest}
+	d := &localizedDocuments{name: name, theme: theme, brand: brand.Version, policy: policy, site: site, shell: shell, manifest: manifest}
 	h.localized.Store(locale, d)
 	return d, nil
 }

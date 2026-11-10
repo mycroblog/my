@@ -976,10 +976,11 @@ describe("the server's contact and thumbnail", () => {
         current = { ...current, ...body.values };
         return HttpResponse.json(instanceSettingsFixture(current));
       }),
-      http.put(`${apiBase}/admin/instance_texts/thumbnail_alt`, async ({ request }) => {
+      http.put(`${apiBase}/admin/instance_texts/:key`, async ({ request, params }) => {
         const { body } = (await request.json()) as Schemas["SetInstanceTextRequest"];
-        alts.push(body);
-        return HttpResponse.json({ key: "thumbnail_alt", body, revised_at: "2026-10-17T00:00:00Z" } satisfies Text);
+        const key = params.key as "thumbnail_alt" | "preview_image_alt";
+        alts.push(`${key}: ${body}`);
+        return HttpResponse.json({ key, body, revised_at: "2026-10-17T00:00:00Z" } satisfies Text);
       }),
       http.post(`${apiBase}/media`, async ({ request }) => {
         purposes.push(/name="purpose"\r\n\r\n([a-z]+)/u.exec(await request.text())?.[1] ?? "");
@@ -1013,7 +1014,7 @@ describe("the server's contact and thumbnail", () => {
     expect(contact.patches).toEqual([
       { values: { contact_account: "Admin", contact_email: "admin@my.example", thumbnail: uploadedId } },
     ]);
-    expect(contact.alts).toEqual(["A beach at dawn"]);
+    expect(contact.alts).toEqual(["thumbnail_alt: A beach at dawn"]);
 
     // Saving again without a change sends nothing.
     await user.click(screen.getByRole("button", { name: "Save" }));
@@ -1030,5 +1031,40 @@ describe("the server's contact and thumbnail", () => {
 
     expect(await screen.findByText("Saved. The audit log records the change.")).toBeInTheDocument();
     expect(contact.patches).toEqual([{ values: { thumbnail: "" } }]);
+  });
+
+  test("saves the image of link previews with its description, apart from the thumbnail", async () => {
+    const contact = contactServer({});
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const section = await screen.findByRole("region", { name: "Link previews" });
+    expect(section).toHaveTextContent("Without one, the thumbnail is used, then the logo, then the mycroblog logo.");
+    expect(within(section).queryByRole("button", { name: "Remove the image" })).not.toBeInTheDocument();
+    // eslint-disable-next-line testing-library/no-node-access -- FileTrigger's input is hidden and has no role.
+    const input = section.querySelector<HTMLInputElement>('input[type="file"]');
+    if (input === null) throw new Error("no file input");
+    await user.upload(input, nodeUploadFile("png", "card.png", "image/png"));
+    expect(await within(section).findByRole("button", { name: "Remove the image" })).toBeInTheDocument();
+    await user.type(within(section).getByRole("textbox", { name: "Description of the image" }), "Our logo on blue");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Saved. The audit log records the change.")).toBeInTheDocument();
+    expect(contact.patches).toEqual([{ values: { preview_image: uploadedId } }]);
+    expect(contact.alts).toEqual(["preview_image_alt: Our logo on blue"]);
+  });
+
+  test("shows the saved image of link previews, whoever uploaded it, and removes it", async () => {
+    const contact = contactServer({ preview_image: "0199f0e0-0000-7000-8000-0000000000aa" });
+    const { user } = await renderApp({ path: "/admin/settings" });
+    const section = await screen.findByRole("region", { name: "Link previews" });
+    // The image comes from the setting's own image, not from the uploads of the person who opens the page.
+    // eslint-disable-next-line testing-library/no-node-access -- the preview's img is decorative (alt="") and has no role.
+    expect(section.querySelector("img")?.getAttribute("src")).toBe(
+      "https://my.example/media/0199f0e0-0000-7000-8000-0000000000aa/r/large.jpg",
+    );
+    await user.click(within(section).getByRole("button", { name: "Remove the image" }));
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Saved. The audit log records the change.")).toBeInTheDocument();
+    expect(contact.patches).toEqual([{ values: { preview_image: "" } }]);
   });
 });

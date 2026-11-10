@@ -4309,9 +4309,9 @@ func (l *Localizer) ServerPreviewAvatarAlt(name string) string {
 	return l.format("server:preview.avatar_alt", map[string]any{"name": name})
 }
 
-// ServerPreviewBuiltinImageAlt formats "server:preview.builtin_image_alt". Alt text of the built-in preview image in a link preview (og:image:alt), for profiles and posts without images on an instance without its own preview image. The image is a white speech bubble with three dots on a blue gradient.
+// ServerPreviewBuiltinImageAlt formats "server:preview.builtin_image_alt". Alt text of the built-in preview image in a link preview (og:image:alt), for the pages without an image of their own on an instance with no preview image, thumbnail, or logo. The image is mycroblog's colourful wordmark "my" on white.
 //
-//	en: A speech bubble with three dots on a blue gradient
+//	en: The mycroblog logo
 func (l *Localizer) ServerPreviewBuiltinImageAlt() string {
 	return l.format("server:preview.builtin_image_alt", nil)
 }

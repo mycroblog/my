@@ -388,17 +388,16 @@ func (h *Handler) renderPreview(ctx context.Context, lang string, meta previewMe
 	return d, nil
 }
 
-// ogLocale formats a BCP 47 tag as og:locale (language_TERRITORY): "ja" -> "ja",
-// "en-US" -> "en_US". Script and other subtags are dropped.
+// ogLocale formats a BCP 47 tag as og:locale, the Open Graph protocol's language_TERRITORY
+// (ADR-0028 §2): the tag's own region, or the likely one of a tag without ("ja" -> "ja_JP",
+// "en-US" -> "en_US", "zh-Hant" -> "zh_TW"). Script and other subtags are dropped; a tag without
+// a known region keeps its language alone.
 func ogLocale(tag string) string {
-	parts := strings.Split(i18n.Canonicalize(tag), "-")
-	out := parts[0]
-	for _, p := range parts[1:] {
-		if len(p) == 2 {
-			return out + "_" + p
-		}
+	lang, _, _ := strings.Cut(i18n.Canonicalize(tag), "-")
+	if r := i18n.Region(tag); r != "" {
+		return lang + "_" + r
 	}
-	return out
+	return lang
 }
 
 func profileURL(host, username string) string { return "https://" + host + "/@" + username }

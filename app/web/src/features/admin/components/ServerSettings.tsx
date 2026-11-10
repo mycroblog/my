@@ -2,11 +2,11 @@
 // The server settings screen below its heading (manage_settings, FR-705): its pages, one per topic, each a child route
 // with one form and one save under a LocalNav of the pages (web-client/14-admin.md, how a screen splits):
 // - general (/admin/settings): the instance's name, its descriptions, how to reach its operators and its thumbnail
-//   (#663);
+//   (#663), and the image of link previews (preview_image, #2757);
 // - branding: its own icon and logos (BrandSettings, ADR-0059), three file forms of one primary action each;
 // - registration, content, automatic deletion, federation, discovery and voice: its policies by topic
 //   (PolicySettings), voice only while the server offers voice chat.
-// The name, the descriptions and the thumbnail's alt text hold one value each, written in any language and shown as it
+// The name, the descriptions and the images' alt texts hold one value each, written in any language and shown as it
 // is in every language; the labels are the app's. The name stands in for the domain where the instance is named to
 // people; the domain stays in handles and links. The browser keeps a form from being sent while a field is invalid
 // (React Aria's native validation: the error is under its field and linked to it, and focus moves to the first
@@ -32,9 +32,9 @@ import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { RequirePermission, Section } from "../../moderation";
 import { acceptedImageTypes } from "../../settings";
 import { useVoiceAvailable } from "../../voice";
-import { thumbnailAltLimit } from "../api/settings";
+import { imageAltLimit } from "../api/settings";
 import type { PolicyPage } from "../hooks/useServerPolicies";
-import { type DescriptionField, descriptionLimits, useServerGeneral } from "../hooks/useServerGeneral";
+import { type DescriptionField, descriptionLimits, type ImageField, useServerGeneral } from "../hooks/useServerGeneral";
 import { BrandSettings } from "./BrandSettings";
 import {
   AutoDeleteServerSettings,
@@ -121,12 +121,91 @@ function DescriptionInput({ field, label }: { field: DescriptionField; label: st
   );
 }
 
-/** The general page: the name, the descriptions, the contact and the thumbnail in one form with one save. */
+/**
+ * One image setting of the general page under its heading (h3): the chosen image, the buttons that choose and remove
+ * it, why an upload failed, and its alt text.
+ */
+function ImageSettingField({
+  field,
+  alt,
+  title,
+  description,
+}: {
+  field: ImageField;
+  alt: { value: string; onChange: (value: string) => void };
+  title: string;
+  description: string;
+}) {
+  const t = useT();
+  const headingId = useId();
+  const uploadErrorId = useId();
+  return (
+    <Stack as="section" gap="3" aria-labelledby={headingId} aria-busy={field.isUploading}>
+      <Heading level={3} id={headingId}>
+        {title}
+      </Heading>
+      <Hint>{description}</Hint>
+      {field.url !== undefined && (
+        // A preview of the image chosen in the form; the alt text below describes it.
+        <PreviewImage src={field.url} alt="" />
+      )}
+      <Cluster gap="2">
+        <FileTrigger
+          acceptedFileTypes={acceptedImageTypes}
+          onSelect={(files) => {
+            const file = files?.[0];
+            if (file !== undefined) field.choose(file);
+          }}
+        >
+          <Button
+            size="sm"
+            isPending={field.isUploading}
+            aria-describedby={field.error === undefined ? headingId : `${headingId} ${uploadErrorId}`}
+          >
+            {t("client:admin.settings.contact.thumbnail.choose")}
+          </Button>
+        </FileTrigger>
+        {field.url !== undefined && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onPress={field.remove}
+            isDisabled={field.isUploading}
+            aria-describedby={headingId}
+          >
+            {t("client:admin.settings.contact.thumbnail.remove")}
+          </Button>
+        )}
+      </Cluster>
+      {field.error !== undefined && (
+        <InlineError alert id={uploadErrorId}>
+          {field.error}
+        </InlineError>
+      )}
+      <TextArea
+        label={t("client:admin.settings.contact.thumbnail.alt")}
+        value={alt.value}
+        onChange={alt.onChange}
+        rows={2}
+        characterLimit={imageAltLimit}
+        formatRemaining={(remaining) =>
+          remaining < 0
+            ? t("client:admin.settings.characters_over", { count: -remaining })
+            : t("client:admin.settings.characters_left", { count: remaining })
+        }
+        errorMessage={t("client:admin.settings.name.too_long", { max: String(imageAltLimit) })}
+      />
+    </Stack>
+  );
+}
+
+/**
+ * The general page: the name, the descriptions, the contact and the thumbnail, and the image of link previews in one
+ * form with one save.
+ */
 function GeneralSettings() {
   const t = useT();
   const form = useServerGeneral();
-  const thumbnailHeadingId = useId();
-  const uploadErrorId = useId();
   return (
     <Stack as="form" gap="8" onSubmit={form.submit}>
       <Section surface="card" title={t("client:admin.settings.name.title")}>
@@ -162,64 +241,21 @@ function GeneralSettings() {
           autoComplete="off"
           errorMessage={t("client:admin.settings.contact.email.invalid")}
         />
-        <Stack as="section" gap="3" aria-labelledby={thumbnailHeadingId} aria-busy={form.thumbnail.isUploading}>
-          <Heading level={3} id={thumbnailHeadingId}>
-            {t("client:admin.settings.contact.thumbnail")}
-          </Heading>
-          <Hint>{t("client:admin.settings.contact.thumbnail.description")}</Hint>
-          {form.thumbnail.url !== undefined && (
-            // A preview of the image chosen in the form; the alt text below describes it.
-            <PreviewImage src={form.thumbnail.url} alt="" />
-          )}
-          <Cluster gap="2">
-            <FileTrigger
-              acceptedFileTypes={acceptedImageTypes}
-              onSelect={(files) => {
-                const file = files?.[0];
-                if (file !== undefined) form.thumbnail.choose(file);
-              }}
-            >
-              <Button
-                size="sm"
-                isPending={form.thumbnail.isUploading}
-                aria-describedby={
-                  form.thumbnail.error === undefined ? thumbnailHeadingId : `${thumbnailHeadingId} ${uploadErrorId}`
-                }
-              >
-                {t("client:admin.settings.contact.thumbnail.choose")}
-              </Button>
-            </FileTrigger>
-            {form.thumbnail.url !== undefined && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onPress={form.thumbnail.remove}
-                isDisabled={form.thumbnail.isUploading}
-                aria-describedby={thumbnailHeadingId}
-              >
-                {t("client:admin.settings.contact.thumbnail.remove")}
-              </Button>
-            )}
-          </Cluster>
-          {form.thumbnail.error !== undefined && (
-            <InlineError alert id={uploadErrorId}>
-              {form.thumbnail.error}
-            </InlineError>
-          )}
-          <TextArea
-            label={t("client:admin.settings.contact.thumbnail.alt")}
-            value={form.alt.value}
-            onChange={form.alt.onChange}
-            rows={2}
-            characterLimit={thumbnailAltLimit}
-            formatRemaining={(remaining) =>
-              remaining < 0
-                ? t("client:admin.settings.characters_over", { count: -remaining })
-                : t("client:admin.settings.characters_left", { count: remaining })
-            }
-            errorMessage={t("client:admin.settings.name.too_long", { max: String(thumbnailAltLimit) })}
-          />
-        </Stack>
+        <ImageSettingField
+          field={form.thumbnail}
+          alt={form.alt}
+          title={t("client:admin.settings.contact.thumbnail")}
+          description={t("client:admin.settings.contact.thumbnail.description")}
+        />
+      </Section>
+      <Section surface="card" title={t("client:admin.settings.preview.title")}>
+        <Hint size="inherit">{t("client:admin.settings.preview.description")}</Hint>
+        <ImageSettingField
+          field={form.previewImage}
+          alt={form.previewAlt}
+          title={t("client:admin.settings.preview.image")}
+          description={t("client:admin.settings.preview.image.description")}
+        />
       </Section>
       <FormActionBar
         sticky
