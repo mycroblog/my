@@ -83,6 +83,10 @@
     "defaultMessage": "[{amount} {currency} ȧȧ ḿǿǿƞŧħ]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "payments.fake.price_once": {
+    "defaultMessage": "[{amount} {currency}, ǿǿƞƈḗḗ]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "payments.fake.price_year": {
     "defaultMessage": "[{amount} {currency} ȧȧ ẏḗḗȧȧř]",
     "description": "Generated from en by tools/i18n; do not edit."

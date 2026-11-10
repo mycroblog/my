@@ -83,6 +83,10 @@
     "defaultMessage": "{amount} {currency} a month",
     "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
   },
+  "payments.fake.price_once": {
+    "defaultMessage": "{amount} {currency}, once",
+    "description": "Price of a tip on the fake provider's checkout page, paid once. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
   "payments.fake.price_year": {
     "defaultMessage": "{amount} {currency} a year",
     "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."

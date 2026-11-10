@@ -207,6 +207,8 @@ type (
 	SubscriptionRef string
 	// CheckoutRef is a hosted checkout.
 	CheckoutRef string
+	// PaymentRef is a payment (MoneyMovement.Payment).
+	PaymentRef string
 )
 
 // PlanSpec is a plan as the provider should have it.
@@ -405,7 +407,12 @@ type MoneyMovement struct {
 	// Subscription is the subscription that the movement belongs to; zero for a fee that belongs
 	// to none.
 	Subscription SubscriptionRef
-	OccurredAt   time.Time
+	// Payment is the provider's payment of the movement (Stripe: the PaymentIntent; PAY.JP: the
+	// charge of API v1, the PaymentFlow of v2), which a refund, a chargeback, and a reversal take
+	// from their payment; zero for a fee and when the provider names none. It leads this module
+	// to a tip (ADR-0162 §9).
+	Payment    PaymentRef
+	OccurredAt time.Time
 	// OccurredOn is OccurredAt as a date in the provider's Location.
 	OccurredOn Date
 	// Covers is the billing period that a payment pays for; zero for the other kinds.
@@ -451,6 +458,9 @@ type Notice struct {
 type Change struct {
 	Subscriptions []SubscriptionRef
 	Checkout      CheckoutRef
+	// OneTimeCheckout is a checkout of one payment (OneTimePayments), re-read with
+	// GetOneTimeCheckout; it is never in Checkout.
+	OneTimeCheckout CheckoutRef
 	// Money are the final movements of the notice.
 	Money []MoneyMovement
 }

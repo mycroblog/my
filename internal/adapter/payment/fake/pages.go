@@ -115,6 +115,8 @@ func (pp PageProvider) Pages(env supporters.PageEnv) http.Handler {
 	mux.HandleFunc("GET "+base+pageCheckout+"{token}", h.checkoutPage)
 	mux.Handle("POST "+base+pageCheckout+"{token}", cop.Handler(http.HandlerFunc(h.checkout)))
 	mux.HandleFunc("GET "+base+pagePortal+"{token}", h.portalPage)
+	mux.HandleFunc("GET "+base+pageTip+"{token}", h.tipPage)
+	mux.Handle("POST "+base+pageTip+"{token}", cop.Handler(http.HandlerFunc(h.tip)))
 	return mux
 }
 

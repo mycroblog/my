@@ -31,6 +31,9 @@ type PaymentScenario struct {
 	Subscriptions []supporters.SubscriptionSnapshot
 	// Checkouts are hosted checkouts, open, completed, or expired.
 	Checkouts []supporters.CheckoutResult
+	// OneTimeCheckouts are hosted checkouts of one payment (supporters.OneTimePayments), open,
+	// paid, or expired; a provider that does not take one-time payments ignores them.
+	OneTimeCheckouts []supporters.OneTimeResult
 	// Money are the account's money movements, oldest first.
 	Money []PaymentScenarioMoney
 	// Changes are the account's events that ListChanges returns, oldest first.
@@ -49,11 +52,14 @@ type PaymentScenarioMoney struct {
 	Kind         supporters.MoneyKind
 	ParentID     string
 	Subscription supporters.SubscriptionRef
-	OccurredAt   time.Time
-	Covers       supporters.DateRange
-	GrossMinor   int64
-	FeeMinor     int64
-	Currency     string
+	// Payment is the provider's payment of the movement, which its refunds, chargebacks, and
+	// reversals share.
+	Payment    supporters.PaymentRef
+	OccurredAt time.Time
+	Covers     supporters.DateRange
+	GrossMinor int64
+	FeeMinor   int64
+	Currency   string
 	// Pending reports a movement whose amounts are not final yet: the port does not return it.
 	Pending bool
 }
@@ -96,7 +102,7 @@ func PaymentMovements(s PaymentScenario) []supporters.MoneyMovement {
 	out := make([]supporters.MoneyMovement, len(s.Money))
 	for i, m := range s.Money {
 		out[i] = supporters.MoneyMovement{
-			ID: m.ID, Kind: m.Kind, ParentID: m.ParentID, Subscription: m.Subscription,
+			ID: m.ID, Kind: m.Kind, ParentID: m.ParentID, Subscription: m.Subscription, Payment: m.Payment,
 			OccurredAt: m.OccurredAt, OccurredOn: supporters.DateOf(m.OccurredAt.In(s.Location)), Covers: m.Covers,
 			Gross: PaymentDecimal(m.GrossMinor, m.Currency), Fee: PaymentDecimal(m.FeeMinor, m.Currency),
 			Net: PaymentDecimal(m.GrossMinor-m.FeeMinor, m.Currency), Currency: m.Currency, Final: !m.Pending,
@@ -184,7 +190,9 @@ type PaymentProviderFactory func(t *testing.T, s PaymentScenario) PaymentUnderTe
 // provider without TimedSignature); the snapshots of every state;
 // money movements with their signs, Net = Gross - Fee, parents, periods, and dates in the
 // provider's time zone, final ones only; pages without gaps or repeats; the window of the
-// changes; and the kinds of failure.
+// changes; and the kinds of failure. A provider that takes one-time payments
+// (supporters.OneTimePayments, ADR-0162 §9) also passes their limits, checkouts, payment, expiry,
+// refunds, chargebacks, and reversals (paymentOneTime).
 func PaymentProviderContract(t *testing.T, newProvider PaymentProviderFactory) {
 	t.Helper()
 	cases := []struct {
@@ -201,6 +209,7 @@ func PaymentProviderContract(t *testing.T, newProvider PaymentProviderFactory) {
 		{"ReportsMoney", paymentMoney},
 		{"PagesWithoutGaps", paymentPages},
 		{"ClassifiesFailures", paymentFailures},
+		{"TakesOneTimePayments", paymentOneTime},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newProvider) })

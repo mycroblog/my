@@ -83,6 +83,10 @@
     "defaultMessage": "月額 {amount} {currency}",
     "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
   },
+  "payments.fake.price_once": {
+    "defaultMessage": "{amount} {currency}（1 回だけ）",
+    "description": "Price of a tip on the fake provider's checkout page, paid once. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
+  },
   "payments.fake.price_year": {
     "defaultMessage": "年額 {amount} {currency}",
     "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."

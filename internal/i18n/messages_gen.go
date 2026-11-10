@@ -4559,6 +4559,22 @@ func (l *Localizer) ServerPaymentsFakePriceMonth(args ServerPaymentsFakePriceMon
 	return l.format("server:payments.fake.price_month", map[string]any{"amount": args.Amount, "currency": args.Currency})
 }
 
+// ServerPaymentsFakePriceOnceArgs holds the arguments of ServerPaymentsFakePriceOnce, passed by name.
+//
+//exhaustruct:enforce
+type ServerPaymentsFakePriceOnceArgs struct {
+	_        struct{} // forces keyed fields
+	Amount   string
+	Currency string
+}
+
+// ServerPaymentsFakePriceOnce formats "server:payments.fake.price_once". Price of a tip on the fake provider's checkout page, paid once. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code.
+//
+//	en: {amount} {currency}, once
+func (l *Localizer) ServerPaymentsFakePriceOnce(args ServerPaymentsFakePriceOnceArgs) string {
+	return l.format("server:payments.fake.price_once", map[string]any{"amount": args.Amount, "currency": args.Currency})
+}
+
 // ServerPaymentsFakePriceYearArgs holds the arguments of ServerPaymentsFakePriceYear, passed by name.
 //
 //exhaustruct:enforce
