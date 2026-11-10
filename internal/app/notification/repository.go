@@ -53,6 +53,9 @@ type Repository interface {
 	// InsertDismissal inserts a dismissal and reports false, writing nothing, when the
 	// notification is already dismissed.
 	InsertDismissal(ctx context.Context, tx uow.Tx, d notification.Dismissal) (bool, error)
+	// DismissByDedupeKey dismisses the notification of the recipient with dedupeKey at at, if
+	// there is one that is not dismissed.
+	DismissByDedupeKey(ctx context.Context, tx uow.Tx, recipientAccountID, dedupeKey string, at time.Time) error
 	// AdvanceReadMarker sets the account's marker to m.LastReadID unless it is already there or
 	// past it, and reports whether it moved.
 	AdvanceReadMarker(ctx context.Context, tx uow.Tx, m notification.ReadMarker) (bool, error)

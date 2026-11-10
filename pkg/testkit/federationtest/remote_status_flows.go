@@ -128,6 +128,9 @@ type remoteStatusEnv struct {
 	statuses      *appfederation.StatusHandlers
 	// votes records the votes in local polls once an environment with interactions sets them.
 	votes *lateVotes
+	// approvals withdraws the remote requests of interactions that a Delete takes back, through
+	// the Interactions of an environment that has them.
+	approvals *lateApprovals
 	// projectors are the projectors of the harness's UnitOfWork.
 	projectors *uow.Projectors
 }
@@ -136,6 +139,47 @@ type remoteStatusEnv struct {
 // the interactions service sets after the status handlers exist; without it, no status has a
 // poll to vote in.
 type lateVotes struct{ target appfederation.RemotePollVotes }
+
+// lateApprovals is the InteractionApprovals of an environment that sets target later; without it,
+// nothing is requested and nothing is withdrawn.
+type lateApprovals struct {
+	target appfederation.InteractionApprovals
+}
+
+func (a *lateApprovals) ReceiveInteractionRequest(ctx context.Context, in appcontent.RemoteInteractionRequest) (appcontent.RequestAnswer, error) {
+	if a.target == nil {
+		return appcontent.RequestAnswer{}, appcontent.ErrNotFound
+	}
+	return a.target.ReceiveInteractionRequest(ctx, in)
+}
+
+func (a *lateApprovals) ReceiveInteractionAnswer(ctx context.Context, id string, accepted bool, uri string) (appcontent.InteractionState, bool, error) {
+	if a.target == nil {
+		return appcontent.InteractionState{}, false, appcontent.ErrNotFound
+	}
+	return a.target.ReceiveInteractionAnswer(ctx, id, accepted, uri)
+}
+
+func (a *lateApprovals) AcceptRemoteInteraction(ctx context.Context, kind appcontent.InteractionKind, interacting, target, uri string) (bool, error) {
+	if a.target == nil {
+		return false, nil
+	}
+	return a.target.AcceptRemoteInteraction(ctx, kind, interacting, target, uri)
+}
+
+func (a *lateApprovals) FindRequest(ctx context.Context, id string) (appcontent.InteractionRequest, appcontent.InteractionState, error) {
+	if a.target == nil {
+		return appcontent.InteractionRequest{}, appcontent.InteractionState{}, appcontent.ErrNotFound
+	}
+	return a.target.FindRequest(ctx, id)
+}
+
+func (a *lateApprovals) WithdrawRemoteInteraction(ctx context.Context, kind appcontent.InteractionKind, uri, accountID string) (bool, error) {
+	if a.target == nil {
+		return false, nil
+	}
+	return a.target.WithdrawRemoteInteraction(ctx, kind, uri, accountID)
+}
 
 func (v *lateVotes) RecordRemotePollVote(ctx context.Context, in appcontent.RemotePollVoteInput) (bool, error) {
 	if v.target == nil {
@@ -167,7 +211,7 @@ func newRemoteStatusEnv(t *testing.T, newHarness RemoteStatusFactory) *remoteSta
 	appgraph.RegisterProjectors(captured.Projectors, h.Graph)
 	appcontent.RegisterProjectors(captured.Projectors, h.Statuses)
 	if h.Quotes != nil {
-		appcontent.RegisterApprovalProjectors(captured.Projectors, h.Quotes)
+		appcontent.RegisterApprovalProjectors(captured.Projectors, h.Quotes, ae.IDs, ae.Clock)
 	}
 	apptimeline.RegisterProjectors(captured.Projectors, h.Timeline, nil)
 	appnotification.RegisterProjectors(captured.Projectors, appnotification.ProjectorDeps{
@@ -189,10 +233,10 @@ func newRemoteStatusEnv(t *testing.T, newHarness RemoteStatusFactory) *remoteSta
 	e.processor = appfederation.NewInboxProcessor(appfederation.InboxProcessorDeps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Inbox, Actors: e.actors, Fetcher: e.fetcher, Clock: ae.Clock,
 	})
-	e.votes = &lateVotes{}
+	e.votes, e.approvals = &lateVotes{}, &lateApprovals{}
 	e.statuses = appfederation.NewStatusHandlers(appfederation.StatusHandlersDeps{
 		UnitOfWork: h.UnitOfWork, Statuses: e.content, Accounts: e.remote, Actors: e.actors, Fetcher: e.fetcher,
-		Followers: e.graph, Votes: e.votes, Clock: ae.Clock, Host: testkit.ContractHost,
+		Followers: e.graph, Votes: e.votes, Interactions: e.approvals, Clock: ae.Clock, Host: testkit.ContractHost,
 	})
 	e.statuses.Register(e.processor)
 	return e

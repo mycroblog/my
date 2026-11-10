@@ -33,6 +33,7 @@ type InteractionApprovals interface {
 	ReceiveInteractionAnswer(ctx context.Context, requestID string, accepted bool, authorizationURI string) (appcontent.InteractionState, bool, error)
 	AcceptRemoteInteraction(ctx context.Context, kind appcontent.InteractionKind, interactingURI, targetURI, uri string) (bool, error)
 	FindRequest(ctx context.Context, id string) (appcontent.InteractionRequest, appcontent.InteractionState, error)
+	WithdrawRemoteInteraction(ctx context.Context, kind appcontent.InteractionKind, interactingURI, accountID string) (bool, error)
 }
 
 // requestTypes are the activities that ask for the approval of each kind.
@@ -83,7 +84,7 @@ func (h *QuoteHandlers) interactionRequest(kind appcontent.InteractionKind) Inbo
 				return err
 			}
 			return h.answerTx(ctx, tx, answerOf{
-				accepted: accepted, authorization: federation.IRI(ans.AuthorizationURI), target: ans.Target,
+				kind: kind, accepted: accepted, authorization: federation.IRI(ans.AuthorizationURI), target: ans.Target,
 				requester: requester, inbox: inbox, object: request,
 			})
 		})
@@ -113,6 +114,7 @@ func (h *QuoteHandlers) receiveRequest(ctx context.Context, in *InboxActivity, k
 // target, to requester's inbox: object is the request that it answers, or the interaction that
 // came without one, and interactionTarget the target then.
 type answerOf struct {
+	kind              appcontent.InteractionKind
 	accepted          bool
 	authorization     federation.IRI
 	target            appcontent.Status
@@ -121,28 +123,32 @@ type answerOf struct {
 	interactionTarget federation.IRI
 }
 
-// answerTx records in tx the Accept or Reject a by the author of its target and stores its
-// document for its one inbox.
+// answerTx records in tx the Accept or Reject a by the author of its target, of the outbound kind
+// of a's interaction, and stores its document for its one inbox. The Accept of a reply without a
+// request to a public or unlisted status is addressed to the public and goes to the author's
+// followers too, so that third servers learn of the approval (ADR-0155 §6).
 func (h *QuoteHandlers) answerTx(ctx context.Context, tx uow.Tx, a answerOf) error {
 	typ, result := federation.ActivityReject, federation.IRI("")
 	if a.accepted {
 		typ, result = federation.ActivityAccept, a.authorization
 	}
 	out, err := h.rec.insert(ctx, tx, federation.OutboundActivity{
-		Type: typ, ActorAccountID: a.target.AuthorAccountID, ObjectKind: federation.OutboundQuote, ObjectID: a.target.ID, CreatedAt: h.d.Clock.Now(),
+		Type: typ, ActorAccountID: a.target.AuthorAccountID, ObjectKind: federation.ApprovalKindOf(string(a.kind)), ObjectID: a.target.ID,
+		CreatedAt: h.d.Clock.Now(),
 	})
 	if err != nil {
 		return err
 	}
 	actor := federation.IRI(appaccount.ActorURI(h.d.Recorder.Host, a.target.AuthorAccountID))
 	aud := federation.Audience{To: []federation.IRI{a.requester}}
-	if a.interactionTarget != "" && a.accepted {
-		// An approval of a reply without a request is for third servers too (ADR-0155 §6).
-		aud.Cc = []federation.IRI{federation.PublicIRI}
+	followers := a.interactionTarget != "" && a.accepted &&
+		(a.target.Visibility == appcontent.VisibilityPublic || a.target.Visibility == appcontent.VisibilityUnlisted)
+	if followers {
+		aud.Cc = []federation.IRI{federation.PublicIRI, federation.FollowersOf(actor)}
 	}
 	doc := federation.NewActivityDocument(out.ActivityURI, typ, actor, out.CreatedAt, aud, a.object)
 	doc.Result, doc.Target = result, a.interactionTarget
-	return h.store(ctx, tx, out, doc, a.inbox)
+	return h.storeTo(ctx, tx, out, doc, fanOutPayload{Inbox: string(a.inbox), Followers: followers})
 }
 
 // recordDeferredAnswer records the Accept or Reject of the answer ev to a remote account's
@@ -166,7 +172,7 @@ func (h *QuoteHandlers) recordDeferredAnswer(ctx context.Context, tx uow.Tx, ev 
 		return err
 	}
 	a := answerOf{
-		accepted: ev.State.State == appcontent.InteractionRequestAccepted, authorization: federation.IRI(ev.State.AuthorizationURI),
+		kind: r.Kind, accepted: ev.State.State == appcontent.InteractionRequestAccepted, authorization: federation.IRI(ev.State.AuthorizationURI),
 		target: target, requester: requester, inbox: inbox, object: federation.IRI(r.InteractingURI),
 	}
 	if r.ActivityURI != "" {
@@ -217,13 +223,47 @@ func (h *QuoteHandlers) recordAnnounceRequest(ctx context.Context, tx uow.Tx, r 
 	announce := announceDocument(boost, appcontent.Status{URI: target.URI}, actor, vis, []federation.IRI{author}).Embedded()
 	act, err := h.rec.insert(ctx, tx, federation.OutboundActivity{
 		ActivityURI: federation.IRI(appcontent.InteractionRequestURI(h.d.Recorder.Host, r.ID)), Type: federation.ActivityAnnounceRequest,
-		ActorAccountID: r.InteractingAccountID, ObjectKind: federation.OutboundQuote, ObjectID: r.ID, CreatedAt: h.d.Clock.Now(),
+		ActorAccountID: r.InteractingAccountID, ObjectKind: federation.OutboundAnnounce, ObjectID: r.ID, CreatedAt: h.d.Clock.Now(),
 	})
 	if err != nil {
 		return err
 	}
 	doc := federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, federation.Audience{To: []federation.IRI{author}}, federation.IRI(target.URI))
 	doc.Instrument = announce
+	return h.store(ctx, tx, act, doc, inbox)
+}
+
+// recordWithdrawal records the withdrawal of the local account's pending request r, which the
+// author of the remote status answered not yet (ADR-0155 §7), to the inbox that its request went
+// to: the Delete of the reply, a Tombstone, or the Undo of the Announce that its AnnounceRequest
+// embedded. Nobody else was told of the interaction, so nobody else is told of its end.
+func (h *QuoteHandlers) recordWithdrawal(ctx context.Context, tx uow.Tx, r appcontent.InteractionRequest) error {
+	if r.Kind == appcontent.InteractionQuote || r.TargetAccountID == "" {
+		return nil
+	}
+	inbox, author, ok, err := h.remoteInbox(ctx, tx, r.TargetAccountID)
+	if err != nil || !ok {
+		return err
+	}
+	actor := federation.IRI(appaccount.ActorURI(h.d.Recorder.Host, r.InteractingAccountID))
+	typ, kind := federation.ActivityDelete, federation.OutboundReply
+	var object any = federation.TombstoneOf(federation.IRI(r.InteractingURI))
+	if r.Kind == appcontent.InteractionAnnounce {
+		vis := r.Visibility
+		if !vis.Valid() {
+			vis = appcontent.VisibilityPublic
+		}
+		boost := appcontent.Boost{URI: r.InteractingURI, BoosterAccountID: r.InteractingAccountID, Visibility: vis, BoostedAt: r.CreatedAt}
+		typ, kind = federation.ActivityUndo, federation.OutboundAnnounce
+		object = announceDocument(boost, appcontent.Status{URI: r.TargetURI}, actor, vis, []federation.IRI{author}).Embedded()
+	}
+	act, err := h.rec.insert(ctx, tx, federation.OutboundActivity{
+		Type: typ, ActorAccountID: r.InteractingAccountID, ObjectKind: kind, ObjectID: r.ID, CreatedAt: h.d.Clock.Now(),
+	})
+	if err != nil {
+		return err
+	}
+	doc := federation.NewActivityDocument(act.ActivityURI, act.Type, actor, act.CreatedAt, federation.Audience{To: []federation.IRI{author}}, object)
 	return h.store(ctx, tx, act, doc, inbox)
 }
 

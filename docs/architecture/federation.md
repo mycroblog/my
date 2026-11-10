@@ -225,14 +225,16 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 
 - **受信: ローカルの投稿へのリモートの交流**（§6）
   - `ReplyRequest` / `AnnounceRequest` / `QuoteRequest` は上の表のとおり、その場で答えるか、`pending` で作者を待ちます。
-  - 依頼の無い返信（Mastodon など）: 自動の許可に当てはまれば、そのままスレッドに入ります。`as:Public` 以外の理由（フォロワー・個別の Actor など）で認めたときは、承認を記録して、`object` に返信、`target` に親、`result` に `ReplyAuthorization` を付けた `Accept` を返信の作者へ送ります（宛先に `as:Public` を入れますが、配送は返信の作者の inbox だけです）。承認の許可だけに当てはまれば `pending` で作者を待ち、どれにも当てはまらなければ `Reject` を送ります。待つ返信と断った返信は保留です（上の表の `Create`）。
+  - 依頼の無い返信（Mastodon など）: 自動の許可に当てはまれば、そのままスレッドに入ります。`as:Public` 以外の理由（フォロワー・個別の Actor など）で認めたときは、承認を記録して、`object` に返信、`target` に親、`result` に `ReplyAuthorization` を付けた `Accept` を、返信の作者と、対象の投稿が `public` / `unlisted` なら `as:Public` と作者のフォロワーへ送ります（返信の作者の inbox の後、§7.2 の展開でフォロワーへ。`fanOutPayload.Followers`）。承認の許可だけに当てはまれば `pending` で作者を待ち、どれにも当てはまらなければ `Reject` を送ります。待つ返信と断った返信は保留です（上の表の `Create`）。
   - 依頼の無いブースト: 自動の許可なら記録し、承認の許可だけなら記録せずに `pending` で作者を待ち（`Announce` の公開範囲を依頼に残す）、どれにも当てはまらなければ記録せずに `Reject` を送ります。
   - 作者の答え: クライアント API の `acceptInteractionRequest` / `rejectInteractionRequest`（`content.AnswerInteractionRequest`）。承認は承認の IRI を作り、返信は保留から外し（`content.status_released`）、依頼の無かったブーストは記録し、引用は承認します。答えは、依頼を埋め込んだ（依頼の無い交流は交流と `target` の）`Accept` / `Reject` として交流した人の inbox へ送ります（`content.interaction_answered` の `Deferred`）。
   - 引用の承認の取り消しは引用だけです（ADR-0069 §3）。返信とブーストの承認は取り消しません。
+  - 取り下げ: 承認を待つ依頼の返信の `Delete`（保存していない返信なら依頼の `instrument` の IRI）と、承認を待つブーストの `Announce` の `Undo` は、その依頼を `withdrawn` にし（答えのイベント）、作者への依頼の通知を消します（既読にせず、通知の消去として記録）。答えは送りません。もう一度届いても何も変わりません。
 - **送信: リモートの投稿へのローカルの交流**（§7）
   - リモートの投稿の許可を判定し、自動の許可に `as:Public` があるか宣言が無ければ、これまでどおり `Create` / `Announce` を配送します。
   - 承認の許可に当てはまるか、`as:Public` 以外の理由で自動の許可に当てはまるときは、依頼（`outbound`）を `pending` で記録します。返信は保留の投稿として作り、作者本人にだけ見せ（`content.StatusFacts.Unpublished`。ほかの人・リモートの取得・タイムライン・検索の結果には出ず、Webhook・メンションの通知・購読の通知・`Create` は承認まで送らない）、その `Note` を埋め込んだ `ReplyRequest`（`id` は `/ap/interaction_requests/{依頼の id}`、`object` は相手の投稿、`instrument` は返信）を相手の投稿の作者の inbox だけへ送ります。ブーストは記録せず、ブーストの IRI を予約した `Announce` を埋め込んだ `AnnounceRequest` を同じく送ります。
   - 答えは上の表の `Accept` / `Reject` で受けます。承認された返信の `Note` は `replyAuthorization`、ブーストの `Announce` は `announceAuthorization` を持ちます。
+  - 取り下げ: 答えの前に返信を削除するか、ブーストを取り消すと、依頼を `withdrawn` にし、依頼を送った inbox だけへ返信の `Delete`（`Tombstone`）か `Announce` の `Undo` を送ります。返信の `Create` は送っていないので、その投稿の `Delete` はほかへ配送しません。
   - 引用は ADR-0069 §3 の手順のままで（`QuoteRequest`）、記録は同じ依頼の表です。
 - **第三者の交流**（リモートの投稿へのリモートの人の交流）: 対象の投稿の返信の許可が誰にもすぐには認めず、返信がその作者自身・対象がメンションした人・対象が返信した相手のどれでもないときは、依頼（`remote`）を `pending` で記録して保留にし、`replyAuthorization` が §7 の検証（`ReplyAuthorization`、上の表と同じ規則）を通れば承認して外します。ブーストは、`announceAuthorization` が検証を通ったときだけ記録します。
 - 連合の向き（§14）は `QuoteRequest` と同じで、`ReplyRequest` / `AnnounceRequest` は `publish` が通るときだけ受け、取り込みが通らないモードでは判定せずに `Reject` を返します。
@@ -440,7 +442,8 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 | `moderation.report_forwarded`（モデレーターの後からの転送。§11） | `Flag`（主体はインスタンス Actor。`content` はモデレーターの文） | 通報されたアカウントの inbox |
 | `content.quote_recorded`（ローカルの投稿の、引用の許可を宣言したリモートの投稿の `fep_044f` の引用。ADR-0069 §3） | `QuoteRequest`（`id` は `{引用元の IRI}/quote_request`、`object` は引用先、`instrument` は引用元。本文は projector が組み立てて保存する） | 引用先の作者の inbox |
 | `content.interaction_requested`（ローカルの人の、承認の要るリモートの投稿への返信・ブーストの依頼。ADR-0155 §7） | 返信は `ReplyRequest`（`object_type = status`。`instrument` に返信の `Note` を埋め込み、本文は展開が組み立てる）、ブーストは `AnnounceRequest`（`instrument` に予約した `Announce` を埋め込み、本文は projector が組み立てて保存する）。`id` はどちらも `/ap/interaction_requests/{依頼の id}` | 相手の投稿の作者の inbox |
-| `content.interaction_answered`（リモートの人のローカルの投稿への交流への、作者の答えと、依頼の無い交流への答え。`Deferred`） | `Accept`（`result` に承認）/ `Reject`。依頼があれば依頼を埋め込み、無ければ `object` に交流、`target` に対象の投稿。本文は projector が組み立てて保存する | 交流した人の inbox |
+| `content.interaction_answered`（リモートの人のローカルの投稿への交流への、作者の答えと、依頼の無い交流への答え。`Deferred`） | `Accept`（`result` に承認）/ `Reject`（`object_type` は交流の種類の `reply` / `announce` / `quote`）。依頼があれば依頼を埋め込み、無ければ `object` に交流、`target` に対象の投稿。本文は projector が組み立てて保存する | 交流した人の inbox。依頼の無い返信の `Accept` は、`public` / `unlisted` の投稿なら加えて作者のフォロワー |
+| `content.interaction_answered`（ローカルの人の、承認を待つ返信・ブーストの取り下げ。`withdrawn`） | 返信の `Delete`（`Tombstone`。`object_type = reply`）/ `Announce` の `Undo`（`object_type = announce`） | 依頼を送った inbox |
 | `content.quote_changed`（ローカルの投稿の引用が、リモートの `QuoteAuthorization` で承認されたとき）、`content.interaction_policy_changed`（返信・ブースト・引用のどれかの許可が変わったとき） | 現在の版の `Update`（`quoteAuthorization` と `interactionPolicy` が新しくなる。版が増えないので `updated` は版の時刻のまま） | 元の `Create` の `deliveries` の inbox（`public` / `unlisted` は加えてその時点のフォロワー） |
 | `content.quote_authorization_revoked`（引用元の作者がリモートのとき） | `Delete`（`object` は `QuoteAuthorization` の IRI。`to` は引用元の作者、`cc` は自分の followers。本文は projector が組み立てて保存する） | 引用元の作者の inbox + 引用先の作者のリモートフォロワーの inbox |
 

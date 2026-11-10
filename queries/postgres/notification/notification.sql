@@ -52,6 +52,14 @@ FROM notifications WHERE id = $1;
 INSERT INTO notification_dismissals (notification_id, dismissed_at) VALUES ($1, $2)
 ON CONFLICT (notification_id) DO NOTHING;
 
+-- DismissNotificationByDedupeKey dismisses the notification of a recipient with a dedupe key, if
+-- there is one that is not dismissed yet (a request of an interaction that was withdrawn).
+-- name: DismissNotificationByDedupeKey :execrows
+INSERT INTO notification_dismissals (notification_id, dismissed_at)
+SELECT n.id, sqlc.arg(dismissed_at) FROM notifications n
+WHERE n.recipient_account_id = sqlc.arg(recipient_account_id) AND n.dedupe_key = sqlc.arg(dedupe_key)
+ON CONFLICT (notification_id) DO NOTHING;
+
 -- ListNotifications pages the notifications of a recipient that are not dismissed, whose
 -- source no exclusion in force at now hides, whose status is not deleted, and whose announcement,
 -- if any, is among shown_announcements (the announcements the users see now), newest first; an empty before starts at the

@@ -90,6 +90,7 @@ func RemoteInteractionFlows(t *testing.T, newHarness RemoteInteractionFactory) {
 		{"AnswersReplyAndAnnounceRequests", remoteAnswersReplyAndAnnounceRequests},
 		{"HoldsRepliesWithoutRequests", remoteHoldsRepliesWithoutRequests},
 		{"RequestsLocalRepliesAndBoosts", remoteRequestsLocalRepliesAndBoosts},
+		{"WithdrawsRequests", remoteWithdrawsRequests},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newRemoteInteractionEnv(t, newHarness)) })
@@ -148,6 +149,7 @@ func newRemoteInteractionEnv(t *testing.T, newHarness RemoteInteractionFactory) 
 		Interactions: e.interactions, Statuses: rs.statuses,
 	})
 	rs.votes.target = e.interactions
+	rs.approvals.target = e.interactions
 	outbox := queue.AfterCommit(rs.projectors, e.jobs, nil)
 	appfederation.RegisterOutboundProjectors(rs.projectors, appfederation.RecorderDeps{
 		Repository: ih.Federation, Outbox: outbox, IDs: rs.IDs, Host: testkit.ContractHost,

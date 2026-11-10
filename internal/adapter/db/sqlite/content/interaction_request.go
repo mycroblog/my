@@ -136,6 +136,19 @@ func (r *StatusRepository) ListPendingInteractionRequestsTo(ctx context.Context,
 	return interactionRequestsFrom(rows), nil
 }
 
+// ListPendingInteractionRequestsBy implements content.ApprovalRepository.
+func (r *StatusRepository) ListPendingInteractionRequestsBy(ctx context.Context, tx uow.Tx, kind content.InteractionKind, interactingURI string) ([]content.InteractionRequest, error) {
+	q, err := r.readIn(tx)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := q.ListPendingInteractionRequestsBy(ctx, contentgen.ListPendingInteractionRequestsByParams{Kind: string(kind), InteractingUri: interactingURI})
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list pending interaction requests of an interaction")
+	}
+	return interactionRequestsFrom(rows), nil
+}
+
 // ListOwnInteractions implements content.ApprovalRepository.
 func (r *StatusRepository) ListOwnInteractions(ctx context.Context, accountID string, uris []string) ([]appcontent.OwnInteraction, error) {
 	if len(uris) == 0 {

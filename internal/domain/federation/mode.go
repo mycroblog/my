@@ -117,7 +117,7 @@ func Refuses(mode Mode, flow Flow) bool {
 //     Reject of another Follow of the instance actor: follow_in.
 func OutboundFlows(a OutboundActivity, retracting bool) []Flow {
 	switch a.ObjectKind {
-	case OutboundStatus, OutboundBoost, OutboundFavourite, OutboundPollVote, OutboundQuote:
+	case OutboundStatus, OutboundBoost, OutboundFavourite, OutboundPollVote, OutboundReply, OutboundAnnounce, OutboundQuote:
 		if a.Type == ActivityDelete || a.Type == ActivityUndo {
 			return []Flow{FlowRetract}
 		}

@@ -33,14 +33,18 @@ const (
 	// leave it, and the Accept or Reject of a Follow of the instance actor. Its object is the
 	// relay, or the remote actor whose Follow of the instance actor is rejected.
 	OutboundRelay OutboundObjectKind = "relay"
-	// OutboundQuote is an activity of the approval of an interaction (FEP-044f, ADR-0069 §3,
-	// ADR-0155 §6, §7): the QuoteRequest of a local status's quote of a remote one and the
-	// AnnounceRequest of a local boost of a remote status, the Accept or Reject of a remote
-	// account's request or interaction, and the Delete of a revoked QuoteAuthorization. Its
-	// document is stored when it is recorded, and it goes to one inbox (the payload's), and the
-	// Delete and the Accept of a reply without a request to the actor's followers too. The
+	// OutboundReply, OutboundAnnounce, and OutboundQuote are the activities of the approval of
+	// a reply, a boost, and a quote (FEP-044f, ADR-0069 §3, ADR-0155 §6, §7): the QuoteRequest of
+	// a local status's quote of a remote one and the AnnounceRequest of a local boost of a remote
+	// status, and their withdrawal (the Undo of the Announce, the Delete of a reply that waited);
+	// the Accept or Reject of a remote account's request or interaction; and the Delete of a
+	// revoked QuoteAuthorization. Their document is stored when they are recorded, and they go to
+	// one inbox (the payload's); the Delete of a QuoteAuthorization and the Accept of a reply
+	// without a request (the payload's Followers) go to the actor's followers too. The
 	// ReplyRequest of a local reply is of the status (OutboundStatus), whose Note it embeds.
-	OutboundQuote OutboundObjectKind = "quote"
+	OutboundReply    OutboundObjectKind = "reply"
+	OutboundAnnounce OutboundObjectKind = "announce"
+	OutboundQuote    OutboundObjectKind = "quote"
 	// OutboundRefusal is the Reject of a remote Follow of a local actor that the federation mode
 	// refuses (inbound, ADR-0006), recorded without a follow. Its object is the remote actor; its
 	// document is stored when it is recorded, and it goes to one inbox (the payload's).
@@ -54,10 +58,27 @@ const (
 func (k OutboundObjectKind) Valid() bool {
 	switch k {
 	case OutboundStatus, OutboundBoost, OutboundFavourite, OutboundFollow, OutboundBlock, OutboundAccount, OutboundReport, OutboundPollVote, OutboundRelay,
-		OutboundQuote, OutboundRefusal, OutboundMove:
+		OutboundReply, OutboundAnnounce, OutboundQuote, OutboundRefusal, OutboundMove:
 		return true
 	}
 	return false
+}
+
+// Approval reports whether k is the kind of the activities of the approval of an interaction.
+func (k OutboundObjectKind) Approval() bool {
+	return k == OutboundReply || k == OutboundAnnounce || k == OutboundQuote
+}
+
+// ApprovalKindOf returns the outbound object kind of the approvals of the interaction kind
+// (reply, announce, or quote).
+func ApprovalKindOf(kind string) OutboundObjectKind {
+	switch kind {
+	case "reply":
+		return OutboundReply
+	case "announce":
+		return OutboundAnnounce
+	}
+	return OutboundQuote
 }
 
 // OutboundActivity is an activity a local actor sends about one of its objects, recorded in the

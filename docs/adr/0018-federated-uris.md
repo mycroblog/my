@@ -25,6 +25,7 @@ AP の `id` には UUIDv7 だけを使い、`/ap/` 名前空間に置く。人�
 | その他のアクティビティ（Follow / Like / Announce / Block / Undo / Update / Delete / Accept / Reject / Flag） | `https://{host}/ap/activities/{uuid}` | `https://social.example.org/ap/activities/0192f3c1-…` |
 | カスタム絵文字（ADR-0051） | `https://{host}/ap/emojis/{uuid}` | — |
 | 引用の承認（ADR-0069 §1） | `https://{host}/ap/quote_authorizations/{uuid}` | — |
+| 交流の依頼（`ReplyRequest` / `AnnounceRequest`。ADR-0155） | `https://{host}/ap/interaction_requests/{uuid}` | — |
 | 会話（`context`。ADR-0154） | `https://{host}/ap/contexts/{uuid}`（`{uuid}` は会話の ID） | `https://social.example.org/ap/contexts/0192f3b0-2c3d-7e4f-8a00-112233445566` |
 | プロフィール（HTML、`url`） | `https://{host}/@{username}` | `https://social.example.org/@alice` |
 | 投稿（HTML、`url`） | `https://{host}/@{username}/status/{uuid}`（§8） | `https://social.example.org/@alice/status/0192f3b0-2c3d-7e4f-8a00-112233445566` |

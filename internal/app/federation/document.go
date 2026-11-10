@@ -399,7 +399,7 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 		return moveDocument(act, s.actor, s.movedTo)
 	}
 	if act.ObjectKind == federation.OutboundFavourite || act.ObjectKind == federation.OutboundPollVote ||
-		act.ObjectKind == federation.OutboundRelay || act.ObjectKind == federation.OutboundQuote || act.ObjectKind == federation.OutboundRefusal ||
+		act.ObjectKind == federation.OutboundRelay || act.ObjectKind.Approval() || act.ObjectKind == federation.OutboundRefusal ||
 		(act.ObjectKind == federation.OutboundStatus && act.Type == federation.ActivityDelete) {
 		return nil, nil
 	}

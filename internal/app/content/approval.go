@@ -31,17 +31,19 @@ type (
 
 // Directions, answers, and states of interaction requests.
 const (
-	DirectionInbound           = content.DirectionInbound
-	DirectionOutbound          = content.DirectionOutbound
-	DirectionLocal             = content.DirectionLocal
-	DirectionRemote            = content.DirectionRemote
-	InteractionEventAccepted   = content.InteractionEventAccepted
-	InteractionEventRejected   = content.InteractionEventRejected
-	InteractionEventRevoked    = content.InteractionEventRevoked
-	InteractionRequestPending  = content.InteractionRequestPending
-	InteractionRequestAccepted = content.InteractionRequestAccepted
-	InteractionRequestRejected = content.InteractionRequestRejected
-	InteractionRequestRevoked  = content.InteractionRequestRevoked
+	DirectionInbound            = content.DirectionInbound
+	DirectionOutbound           = content.DirectionOutbound
+	DirectionLocal              = content.DirectionLocal
+	DirectionRemote             = content.DirectionRemote
+	InteractionEventAccepted    = content.InteractionEventAccepted
+	InteractionEventRejected    = content.InteractionEventRejected
+	InteractionEventRevoked     = content.InteractionEventRevoked
+	InteractionEventWithdrawn   = content.InteractionEventWithdrawn
+	InteractionRequestPending   = content.InteractionRequestPending
+	InteractionRequestAccepted  = content.InteractionRequestAccepted
+	InteractionRequestRejected  = content.InteractionRequestRejected
+	InteractionRequestRevoked   = content.InteractionRequestRevoked
+	InteractionRequestWithdrawn = content.InteractionRequestWithdrawn
 )
 
 // InteractionAuthorizationURI returns the ActivityPub id of an authorization of kind of host.
@@ -92,6 +94,9 @@ type ApprovalRepository interface {
 	// ListPendingInteractionRequestsTo returns the pending requests of the interactions with the
 	// status targetURI, oldest first.
 	ListPendingInteractionRequestsTo(ctx context.Context, targetURI string) ([]content.InteractionRequest, error)
+	// ListPendingInteractionRequestsBy returns the pending requests of kind of the interaction
+	// interactingURI, oldest first, in tx or outside any transaction when tx is nil.
+	ListPendingInteractionRequestsBy(ctx context.Context, tx uow.Tx, kind content.InteractionKind, interactingURI string) ([]content.InteractionRequest, error)
 	// ListOwnInteractions returns the requests of the replies of accountID whose URI is among
 	// uris, and of its boosts of the statuses among uris, with their states, with one query.
 	ListOwnInteractions(ctx context.Context, accountID string, uris []string) ([]OwnInteraction, error)
@@ -136,7 +141,8 @@ type ApprovalRepository interface {
 //     answered at once or pending. This module projects its state; the notification module
 //     notifies the local author of a pending request; the federation module sends the
 //     ReplyRequest or AnnounceRequest of a local account's interaction with a remote status.
-//   - EventInteractionAnswered: a request was answered. This module projects the new state; the
+//   - EventInteractionAnswered: a request was answered, or withdrawn by the account that
+//     interacts. This module projects the new state; the
 //     notification module notifies the local account whose interaction it answers; the
 //     federation module delivers the Accept or Reject of a remote account's interaction that
 //     the handler of its request did not answer (Deferred).
@@ -196,13 +202,55 @@ func (e StatusReleased) Published() bool { return e.Status.IsLocal }
 // RegisterApprovalProjectors registers the synchronous projector of interaction_request_states:
 // the state of each request, derived from its answers by content.InteractionStateOf.
 // RebuildInteractionStates applies the same rule.
-func RegisterApprovalProjectors(r *uow.Projectors, repo ApprovalRepository) {
+//
+// A deleted reply withdraws its pending request (InteractionEventWithdrawn), whoever deletes it, in
+// the transaction of the deletion; ids and clock make the answer.
+func RegisterApprovalProjectors(r *uow.Projectors, repo QuoteRepository, ids kernel.IDGenerator, clock kernel.Clock) {
 	r.Register(EventInteractionRequested, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return repo.UpsertInteractionState(ctx, tx, e.(InteractionRequested).State)
 	})
 	r.Register(EventInteractionAnswered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return repo.UpsertInteractionState(ctx, tx, e.(InteractionAnswered).State)
 	})
+	p := approvals{repo: repo, ids: ids, clock: clock}
+	r.Register(EventStatusDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		return p.withdrawReply(ctx, tx, e.(StatusDeleted).Status)
+	})
+	r.Register(EventStatusesDeleted, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		for _, d := range e.(StatusesDeleted).Deletions {
+			if err := p.withdrawReply(ctx, tx, d.Status); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+// withdrawReply withdraws in tx the pending request of the reply st, which is deleted; a status
+// that is no reply, or whose request is answered, withdraws nothing.
+func (p approvals) withdrawReply(ctx context.Context, tx uow.Tx, st content.Status) error {
+	if st.InReplyToURI == "" {
+		return nil
+	}
+	r, err := p.repo.FindInteractionRequestFor(ctx, tx, content.InteractionReply, st.URI, st.InReplyToURI)
+	if errors.Is(err, ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	return p.withdraw(ctx, tx, r)
+}
+
+// withdraw records in tx that the interacting account withdrew the request r, unless it is not
+// pending (InteractionAnswered with InteractionEventWithdrawn).
+func (p approvals) withdraw(ctx context.Context, tx uow.Tx, r content.InteractionRequest) error {
+	var target *StatusRef
+	if r.TargetAccountID != "" {
+		target = &StatusRef{URI: r.TargetURI, AuthorAccountID: r.TargetAccountID, IsLocal: r.Direction == content.DirectionInbound || r.Direction == content.DirectionLocal}
+	}
+	_, _, err := p.answer(ctx, tx, r, answer{kind: content.InteractionEventWithdrawn}, target)
+	return err
 }
 
 // requestRebuildPage is how many requests RebuildInteractionStates reads at a time.
