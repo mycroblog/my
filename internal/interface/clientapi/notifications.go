@@ -19,6 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/domain/notification"
+	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
 // Notifications runs the use cases of the viewer's own notifications (FR-205).
@@ -117,7 +118,9 @@ func (s *Server) ListNotifications(ctx context.Context, req ListNotificationsReq
 
 // newNotifications presents accountID's notifications ns, in order, as the Notification schema.
 // The posts that they are about are read together through the content module, which applies the
-// visibility policy: a post that the user may not see is left out of its notification. The source
+// visibility policy: a post that the user may not see is left out of its notification. A
+// notification whose post a hide filter of the notifications matches is left out, so the result
+// may be shorter than ns. The source
 // accounts are read once each; a source account that no longer exists is left out. A moderation
 // notice carries its action as the user sees it (moderation.go), and a report_resolved the
 // user's report, which tells only that it is resolved. The account of an
@@ -244,9 +247,21 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 	if err != nil {
 		return nil, err
 	}
+	// The keyword filters of the notifications: a hide filter leaves the notification of a status
+	// out, a warn filter marks its status (ADR-0157 §7).
+	filter, err := s.statusFilter(ctx, localContentViewer(viewer), timeline.FilterContextNotifications)
+	if err != nil {
+		return nil, err
+	}
 	statuses := make(map[string]Status, len(views))
+	hidden := map[string]bool{}
 	for _, v := range views {
-		statuses[v.Status.ID] = s.newStatus(v, parts)
+		st := s.newStatus(v, parts)
+		if applyJudgement(&st, filter.Judge(v, ""), false) {
+			statuses[v.Status.ID] = st
+		} else {
+			hidden[v.Status.ID] = true
+		}
 	}
 	accounts := make(map[string]Account, len(found))
 	for id, a := range sources {
@@ -256,6 +271,9 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 	}
 	out := make([]Notification, 0, len(ns))
 	for i, n := range ns {
+		if hidden[n.StatusID] {
+			continue
+		}
 		item := Notification{Id: n.ID, Type: NotificationType(n.Type), CreatedAt: n.CreatedAt}
 		if st, ok := statuses[n.StatusID]; ok {
 			item.Status = &st

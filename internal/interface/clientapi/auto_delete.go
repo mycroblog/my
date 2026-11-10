@@ -168,7 +168,7 @@ func (s *Server) PreviewAutoDeletePolicy(ctx context.Context, req PreviewAutoDel
 	for _, st := range preview.Examples {
 		items = append(items, statusItem{StatusID: st.ID})
 	}
-	examples, err := s.statuses(ctx, contentViewer(ctx), items)
+	examples, err := s.statuses(ctx, contentViewer(ctx), noFilter, items)
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: the auto delete examples of %s: %w", v.AccountID, err)
 	}

@@ -79,6 +79,8 @@ tags:
     description: The home, local, hashtag, list, and account timelines.
   - name: lists
     description: The authenticated user's lists of the accounts the user follows, which only the user sees.
+  - name: filters
+    description: The authenticated user's keyword filters, which fold or leave out the posts that match them.
   - name: conversations
     description: The authenticated user's direct messages by conversation, with what the user read and hid.
   - name: reports
@@ -372,6 +374,10 @@ paths:
     $ref: ./paths/tags_{hashtag}_follow.yaml
   /followed_tags:
     $ref: ./paths/followed_tags.yaml
+  /filters:
+    $ref: ./paths/filters.yaml
+  /filters/{id}:
+    $ref: ./paths/filters_{id}.yaml
   /timelines/home:
     $ref: ./paths/timelines_home.yaml
   /timelines/local:
@@ -839,6 +845,7 @@ components:
             "read:bookmarks": Read the user's bookmarks.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
             "read:direct": Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
+            "read:filters": Read the user's keyword filters.
             "read:finance": Read the totals of the instance's costs and income, as far as the user's roles allow.
             "read:follows": Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
             "read:mutes": Read the accounts and domains the user mutes.
@@ -852,6 +859,7 @@ components:
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
             "write:favourites": Favourite posts and react to them with emoji, and take both back.
+            "write:filters": Create, change, and delete the user's keyword filters.
             "write:follows": Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
             "write:media": Upload media, read their state while they process, and change their descriptions.
             "write:mutes": Mute and unmute accounts and domains.
@@ -928,6 +936,8 @@ components:
       $ref: ./components/parameters/ListAccountId.yaml
     ListId:
       $ref: ./components/parameters/ListId.yaml
+    KeywordFilterId:
+      $ref: ./components/parameters/KeywordFilterId.yaml
     HashtagName:
       $ref: ./components/parameters/HashtagName.yaml
     OAuthAppId:
@@ -1073,6 +1083,10 @@ components:
       $ref: ./components/responses/Hashtag.yaml
     FollowedHashtagCollection:
       $ref: ./components/responses/FollowedHashtagCollection.yaml
+    KeywordFilter:
+      $ref: ./components/responses/KeywordFilter.yaml
+    KeywordFilterCollection:
+      $ref: ./components/responses/KeywordFilterCollection.yaml
   schemas:
     AdminBrandImage:
       $ref: ./components/schemas/AdminBrandImage.yaml
@@ -1836,6 +1850,22 @@ components:
       $ref: ./components/schemas/FollowedHashtag.yaml
     FollowedHashtagCollection:
       $ref: ./components/schemas/FollowedHashtagCollection.yaml
+    KeywordFilter:
+      $ref: ./components/schemas/KeywordFilter.yaml
+    KeywordFilterAction:
+      $ref: ./components/schemas/KeywordFilterAction.yaml
+    KeywordFilterCollection:
+      $ref: ./components/schemas/KeywordFilterCollection.yaml
+    KeywordFilterContext:
+      $ref: ./components/schemas/KeywordFilterContext.yaml
+    KeywordFilterKeyword:
+      $ref: ./components/schemas/KeywordFilterKeyword.yaml
+    KeywordFilterRequest:
+      $ref: ./components/schemas/KeywordFilterRequest.yaml
+    FilterResult:
+      $ref: ./components/schemas/FilterResult.yaml
+    MatchedKeywordFilter:
+      $ref: ./components/schemas/MatchedKeywordFilter.yaml
     ListRequest:
       $ref: ./components/schemas/ListRequest.yaml
     MediaAnimatedVariants:

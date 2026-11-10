@@ -155,7 +155,7 @@ func (s *Server) presentConversations(ctx context.Context, v *Viewer, viewer app
 			}
 		}
 	}
-	statuses, err := s.statuses(ctx, viewer, entryItems(entries))
+	statuses, err := s.statuses(ctx, viewer, noFilter, entryItems(entries))
 	if err != nil {
 		return nil, err
 	}

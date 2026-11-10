@@ -631,6 +631,14 @@
     "defaultMessage": "フォローできるハッシュタグの数が上限に達しています。先にどれかのフォローを解除してください。",
     "description": "API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags."
   },
+  "errors.keyword_filters.too_many": {
+    "defaultMessage": "作れるキーワードフィルタの数の上限に達しています。先にどれかのフィルタを削除してください。",
+    "description": "API error title for HTTP 422 when the user creates another keyword filter beyond the limit of filters."
+  },
+  "errors.keyword_filters.too_many_words": {
+    "defaultMessage": "1 つのキーワードフィルタの語は 100 まで、すべてのフィルタの語は合わせて 1,000 までです。先にいくつかの語を削除してください。",
+    "description": "API error title for HTTP 422 when the words of a keyword filter, or of all the user's filters, would pass their limit."
+  },
   "errors.list_members.not_followed": {
     "defaultMessage": "リストに追加できるのはフォロー中のアカウントだけです。",
     "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."

@@ -10,6 +10,7 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
 // streamKindTimeline is the my.stream.kind of the streams of the local and federated timelines.
@@ -137,7 +138,7 @@ func (ts *timelineStream) handle(ctx context.Context, e stream.Event) error {
 	if err != nil || !ok {
 		return err
 	}
-	statuses, err := ts.s.statuses(ctx, viewer, entryItems([]apptimeline.Entry{entry}))
+	statuses, err := ts.s.statuses(ctx, viewer, timeline.FilterContextPublic, entryItems([]apptimeline.Entry{entry}))
 	if err != nil {
 		return err
 	}

@@ -16,6 +16,7 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/timeline"
 	"github.com/mycroblog/my/internal/i18n"
 )
 
@@ -302,6 +303,7 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		RepliesCount:     int(v.Counters.RepliesCount), BoostsCount: int(v.Counters.BoostsCount),
 		FavouritesCount: int(v.Counters.FavouritesCount),
 		Reactions:       newStatusReactions(v.Reactions, v.Relation != nil),
+		Filtered:        []FilterResult{},
 	}
 	// A local status's page is derived from its author's current username (ADR-0018) and served
 	// by the web client's origin.
@@ -603,6 +605,13 @@ func (s *Server) GetStatus(ctx context.Context, req GetStatusRequestObject) (Get
 	if err != nil {
 		return nil, err
 	}
+	// The status the viewer opened is folded even for a hide filter of threads: a link that
+	// shows nothing reads as a broken one (ADR-0157 §6).
+	f, err := s.statusFilter(ctx, contentViewer(ctx), timeline.FilterContextThread)
+	if err != nil {
+		return nil, err
+	}
+	applyJudgement(&body, f.Judge(view, ""), true)
 	return GetStatus200JSONResponse{
 		Body:    body,
 		Headers: GetStatus200ResponseHeaders{CacheControl: statusCache(ctx)},
@@ -683,12 +692,21 @@ func (s *Server) GetStatusContext(ctx context.Context, req GetStatusContextReque
 	if err != nil {
 		return nil, err
 	}
+	// The statuses around the one opened leave out those that a hide filter of threads matches.
+	f, err := s.statusFilter(ctx, contentViewer(ctx), timeline.FilterContextThread)
+	if err != nil {
+		return nil, err
+	}
 	out := StatusContext{Ancestors: make([]Status, 0, len(thread.Ancestors)), Descendants: make([]Status, 0, len(thread.Descendants))}
 	for _, v := range thread.Ancestors {
-		out.Ancestors = append(out.Ancestors, s.newStatus(v, parts))
+		if st := s.newStatus(v, parts); applyJudgement(&st, f.Judge(v, ""), false) {
+			out.Ancestors = append(out.Ancestors, st)
+		}
 	}
 	for _, v := range thread.Descendants {
-		out.Descendants = append(out.Descendants, s.newStatus(v, parts))
+		if st := s.newStatus(v, parts); applyJudgement(&st, f.Judge(v, ""), false) {
+			out.Descendants = append(out.Descendants, st)
+		}
 	}
 	return GetStatusContext200JSONResponse{
 		Body: out, Headers: GetStatusContext200ResponseHeaders{CacheControl: statusCache(ctx)},

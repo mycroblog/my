@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A keyword filter of the user, which only the user sees. The server matches the posts it
+  returns against the filters of their contexts, so every client gets the same result; the
+  user's own posts and boosts are never matched.
+type: object
+required: [id, title, action, contexts, keywords, expired, created_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  title:
+    description: The name of the filter, 1 to 50 characters, which a folded post shows.
+    type: string
+  action:
+    $ref: ./KeywordFilterAction.yaml
+  contexts:
+    description: Where the filter applies, at least one.
+    type: array
+    minItems: 1
+    items:
+      $ref: ./KeywordFilterContext.yaml
+  keywords:
+    description: The words of the filter, in the order given; a post matches the filter when it matches any of them.
+    type: array
+    minItems: 1
+    items:
+      $ref: ./KeywordFilterKeyword.yaml
+  expires_at:
+    description: |
+      When the filter stops applying; omitted for a filter that never does. An expired filter
+      stays for 30 days, applying nowhere, and applies again when its expiry moves later.
+    type: string
+    format: date-time
+  expired:
+    description: Whether the filter has expired and applies nowhere.
+    type: boolean
+  created_at:
+    description: When the user created the filter.
+    type: string
+    format: date-time

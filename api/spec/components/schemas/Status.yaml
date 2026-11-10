@@ -28,6 +28,7 @@ required:
   - boosts_count
   - favourites_count
   - reactions
+  - filtered
 properties:
   id:
     $ref: ./Id.yaml
@@ -95,6 +96,19 @@ properties:
     type: array
     items:
       $ref: ./StatusTag.yaml
+  filtered:
+    description: |
+      The user's keyword filters with the action `warn` that the post matched where it is shown,
+      with the words each matched; empty when none did, and always for an anonymous request.
+      Clients fold a post with any behind the titles of its filters, with a way to show it. A
+      post that matches a filter with the action `hide` is left out instead, except the post
+      that `GET /api/v1/statuses/{id}` shows, which is folded. In a
+      timeline, a boost carries the filters that the boosted post matched. A quoted post carries
+      its own: a quote that matches folds only the quote, even for `hide`. The user's own posts
+      and boosts, and what they quote, never match.
+    type: array
+    items:
+      $ref: ./FilterResult.yaml
   followed_tags:
     description: |
       On the home timeline and its stream, the names (without `#`) of the hashtags that the

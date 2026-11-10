@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listKeywordFilters
+  summary: List the user's keyword filters
+  description: Every keyword filter of the user (at most 100), oldest first, the expired ones too. Nobody else sees them.
+  tags: [filters]
+  security:
+    - oauth2: ["read:filters"]
+  responses:
+    "200":
+      $ref: ../components/responses/KeywordFilterCollection.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: createKeywordFilter
+  summary: Create a keyword filter
+  description: |
+    Creates a keyword filter, which applies at once to every post the contexts show, old ones
+    too. A field that is not one is a 422 naming it. A user has at most 100 filters; one more is
+    a 422 `/api/v1/problems/too-many-keyword-filters`. Words beyond 100 in the filter or 1,000
+    in all the user's filters are a 422 `/api/v1/problems/too-many-filter-keywords`.
+  tags: [filters]
+  security:
+    - oauth2: ["write:filters"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/KeywordFilterRequest.yaml
+  responses:
+    "201":
+      $ref: ../components/responses/KeywordFilter.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getKeywordFilter
+  summary: Get a keyword filter
+  description: A keyword filter of the user. Another user's filter is a 404, as if it did not exist.
+  tags: [filters]
+  security:
+    - oauth2: ["read:filters"]
+  parameters:
+    - $ref: ../components/parameters/KeywordFilterId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/KeywordFilter.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+patch:
+  operationId: updateKeywordFilter
+  summary: Change a keyword filter
+  description: |
+    Replaces the title, action, contexts, words, and expiry of the filter, checked as in
+    `createKeywordFilter`; an `expires_at` left out makes the filter apply always. Another
+    user's filter is a 404.
+  tags: [filters]
+  security:
+    - oauth2: ["write:filters"]
+  parameters:
+    - $ref: ../components/parameters/KeywordFilterId.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/KeywordFilterRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/KeywordFilter.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: deleteKeywordFilter
+  summary: Delete a keyword filter
+  description: Deletes the filter with its words. Another user's filter is a 404.
+  tags: [filters]
+  security:
+    - oauth2: ["write:filters"]
+  parameters:
+    - $ref: ../components/parameters/KeywordFilterId.yaml
+  responses:
+    "204":
+      description: The filter is deleted.
+    default:
+      $ref: ../components/responses/Problem.yaml

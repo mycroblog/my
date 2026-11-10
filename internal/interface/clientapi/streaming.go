@@ -18,6 +18,7 @@ import (
 	"github.com/mycroblog/my/internal/app/stream"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
 // Defaults of the streaming endpoint.
@@ -326,7 +327,7 @@ func (st *streamState) homeEntry(ctx context.Context, id string) error {
 	if err != nil || !ok {
 		return err
 	}
-	statuses, err := st.s.statuses(ctx, viewer, entryItems([]apptimeline.Entry{entry}))
+	statuses, err := st.s.statuses(ctx, viewer, timeline.FilterContextHome, entryItems([]apptimeline.Entry{entry}))
 	if err != nil {
 		return err
 	}
@@ -395,11 +396,16 @@ func (st *streamState) notifications(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		for i, item := range items {
+		// A notification that a keyword filter hides has no item, and the next page starts
+		// after it all the same.
+		for _, item := range items {
 			if err := st.event("notification", item); err != nil {
 				return err
 			}
-			st.lastNotification = ns[i].ID
+			st.lastNotification = item.Id
+		}
+		if len(ns) > 0 {
+			st.lastNotification = ns[len(ns)-1].ID
 		}
 		if len(ns) < appnotification.MaxPageLimit {
 			return nil

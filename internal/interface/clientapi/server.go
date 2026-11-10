@@ -160,6 +160,11 @@ type Options struct {
 	// FollowedTags keeps the hashtags that the viewer follows; nil answers their operations with
 	// 404, and lists none.
 	FollowedTags FollowedTags
+	// KeywordFilters keeps the viewer's keyword filters; nil answers their operations with 404.
+	KeywordFilters KeywordFilters
+	// StatusFilters judges the statuses that the timelines, threads, notifications, and streams
+	// show against their viewers' keyword filters; nil judges none.
+	StatusFilters StatusFilters
 	// Conversations reads and keeps the viewer's direct messages by conversation and tells the
 	// streams how a conversation shows; nil answers their operations with 404 and streams no
 	// conversation events.
