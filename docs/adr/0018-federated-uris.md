@@ -120,7 +120,7 @@ AP の `id` には UUIDv7 だけを使い、`/ap/` 名前空間に置く。人�
   | `media` | メディア付きの投稿 | 予約 |
   | `favorite` | お気に入り | 予約 |
   | `with_replies` | 返信を含む投稿 | 予約 |
-  | `tagged` | ハッシュタグで絞った投稿（`tagged/{tag}`） | 予約 |
+  | `tagged` | ハッシュタグで絞った投稿（`tagged/{tag}`） | 実装済み |
   | `featured` | ピン留めした投稿 | 予約 |
 
 - 一覧の置き場所: Web クライアントの経路のファイル（`app/web/src/routes/@{$acct}_.*.tsx`）が実体で、

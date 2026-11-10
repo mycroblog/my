@@ -137,7 +137,7 @@ export function ProfileView({ acct, tab, onTabChange, renderHeading }: ProfileVi
       {/* The open voice chat room where the account hosts or speaks, for a user who sees it (ADR-0100 §8). */}
       <ProfileVoiceRoom accountId={account.id} name={profile.name} />
       {/* The hashtags the account features, in its order (ADR-0006 §17). */}
-      <FeaturedTags accountId={account.id} />
+      <FeaturedTags accountId={account.id} acct={account.acct} />
       <ProfileTabs
         accountId={account.id}
         name={profile.name}

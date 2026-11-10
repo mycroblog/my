@@ -13,6 +13,11 @@ export function tagPath(tag: string): string {
   return `/tags/${encodeURIComponent(tag)}`;
 }
 
+/** The page of the posts of the account whose `acct` is given that carry a hashtag (without its `#`). */
+export function taggedPath(acct: string, tag: string): string {
+  return `/@${acct}/tagged/${encodeURIComponent(tag)}`;
+}
+
 /** The pages of the accounts that follow an account, and that an account follows. */
 export function followListPath(acct: string, list: "followers" | "following"): string {
   return `/@${acct}/${list}`;

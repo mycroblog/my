@@ -5,27 +5,30 @@ import { useQuery } from "@tanstack/react-query";
 import { useIntl } from "react-intl";
 import { useApi } from "../../../lib/auth/SessionProvider";
 import { useT } from "../../../lib/i18n";
-import { tagPath } from "../../../lib/paths";
+import { taggedPath } from "../../../lib/paths";
 import { accountFeaturedTagsQueryOptions } from "../api/tags";
 
 /** A featured hashtag as the profile shows it. */
 export type FeaturedTagView = {
   name: string;
-  /** The hashtag's page. */
+  /** The page of the account's posts with the hashtag. */
   href: string;
   /** How many of the account's posts carry it, and when it was last used, in words. */
   stats: string;
 };
 
-/** The hashtags the account `accountId` features, in its order; empty while they load or when they fail. */
-export function useAccountFeaturedTags(accountId: string): FeaturedTagView[] {
+/**
+ * The hashtags the account `accountId`, whose handle is `acct`, features, in its order; empty while they load or when
+ * they fail.
+ */
+export function useAccountFeaturedTags(accountId: string, acct: string): FeaturedTagView[] {
   const api = useApi();
   const t = useT();
   const intl = useIntl();
   const { data } = useQuery(accountFeaturedTagsQueryOptions(api, accountId));
   return (data?.items ?? []).map((tag) => ({
     name: tag.name,
-    href: tagPath(tag.name),
+    href: taggedPath(acct, tag.name),
     stats:
       tag.last_status_at === undefined
         ? t("client:tag.featured.count", { count: tag.statuses_count })

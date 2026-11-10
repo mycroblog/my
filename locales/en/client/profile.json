@@ -271,6 +271,14 @@
     "defaultMessage": "Posts of {name}",
     "description": "Accessible name of the tab list that switches between the posts of a profile. {name} is the account's display name."
   },
+  "profile.tagged.all": {
+    "defaultMessage": "All posts with #{tag}",
+    "description": "Link from the page with an account's posts that carry a hashtag to the page with every post that carries it. {tag} is the hashtag without the #."
+  },
+  "profile.tagged.title": {
+    "defaultMessage": "Posts of {name} with #{tag}",
+    "description": "Heading and document title of the page with an account's posts that carry one hashtag. {name} is the account's display name; {tag} is the hashtag without the #."
+  },
   "profile.tag.bot": {
     "defaultMessage": "Bot",
     "description": "Label on a profile: the account is automated."

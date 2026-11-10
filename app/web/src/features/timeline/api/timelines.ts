@@ -48,7 +48,9 @@ export type Timeline =
   /** The posts of the members of the viewer's list `id` (GET /timelines/list/{id}, ADR-0013 §13), newest first. */
   | { kind: "list"; id: string }
   /** The posts of the account `id` on its profile. */
-  | { kind: "account"; id: string; filter: AccountTimelineFilter };
+  | { kind: "account"; id: string; filter: AccountTimelineFilter }
+  /** The posts of the account `id` that carry the hashtag `tag` (without its `#`), newest first, without boosts. */
+  | { kind: "tagged"; id: string; tag: string };
 
 /** The query of GET /accounts/{id}/statuses for a filter (without the cursor). */
 function accountTimelineQuery(filter: AccountTimelineFilter) {
@@ -88,6 +90,14 @@ function timelineQueryKey(timeline: Timeline) {
         { params: { path: { id: timeline.id }, query: accountTimelineQuery(timeline.filter) } },
         "pages",
       ] as const;
+    case "tagged":
+      // Under the account's path, so that what marks the account's posts stale marks these too.
+      return [
+        "get",
+        "/accounts/{id}/statuses",
+        { params: { path: { id: timeline.id }, query: { tagged: timeline.tag } } },
+        "pages",
+      ] as const;
   }
 }
 
@@ -121,6 +131,11 @@ async function fetchTimelinePage(
       case "account":
         return api.fetch.GET("/accounts/{id}/statuses", {
           params: { path: { id: timeline.id }, query: { ...accountTimelineQuery(timeline.filter), ...query } },
+          signal,
+        });
+      case "tagged":
+        return api.fetch.GET("/accounts/{id}/statuses", {
+          params: { path: { id: timeline.id }, query: { tagged: timeline.tag, ...query } },
           signal,
         });
     }

@@ -78,6 +78,10 @@ profile. A hashtag you have not used yet can be featured too. Other servers that
 On a profile of another server, the counts are of the posts this server has received, so they may be lower than on
 that server.
 
+A featured hashtag opens that person's posts with the hashtag, newest first, that you may see on their profile
+("Posts of Alice with #cats"); boosts are not listed. "All posts with #cats" opens the page of the hashtag with
+everyone's posts.
+
 An empty home timeline says "Your home timeline is empty". Follow someone, or "Browse the local timeline"; on a server
 without a local timeline, "Find people to follow" opens the search.
 

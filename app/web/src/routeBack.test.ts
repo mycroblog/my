@@ -17,8 +17,6 @@ const withoutWayBack: Readonly<Record<string, string>> = {
   "/login": "the sign-in page, an item of the navigation signed out (its href carries the page to return to)",
   "/welcome": "the first-run step after signing up, which goes on to the home timeline",
   "/login_/callback": "the end of a sign-in: it goes on by itself",
-  "/@{$acct}_/tagged/$tag":
-    "the address of a featured hashtag on other servers: it goes on to the hashtag's page by itself",
 };
 
 /** What the test reads of a route. */

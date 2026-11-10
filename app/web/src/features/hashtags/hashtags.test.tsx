@@ -207,13 +207,39 @@ describe("featured hashtags", () => {
     const region = await screen.findByRole("region", { name: "Featured hashtags" });
     const items = within(region).getAllByRole("listitem");
     expect(items.map((item) => item.textContent)).toEqual(["#sourdough12 posts, last on Nov 3, 2026", "#rye0 posts"]);
-    expect(within(region).getByRole("link", { name: "#sourdough" })).toHaveAttribute("href", "/tags/sourdough");
+    expect(within(region).getByRole("link", { name: "#sourdough" })).toHaveAttribute("href", "/@bob/tagged/sourdough");
   });
 
-  test("the address another server links a featured hashtag to opens the hashtag's page", async () => {
-    await renderApp({ path: "/@bob/tagged/sourdough" });
+  test("a featured hashtag's address lists the account's posts with it, and leads to every post with it", async () => {
+    const asked: (string | null)[] = [];
+    const post = statusFixture("0192f0c4-7a8e-7000-8000-00000000e001");
+    server.use(
+      http.get(`${apiBase}/accounts/:id/statuses`, ({ params, request }) => {
+        const tagged = new URL(request.url).searchParams.get("tagged");
+        asked.push(tagged);
+        return HttpResponse.json(
+          statusPage(params["id"] === otherAccountFixture.id && tagged === "sourdough" ? [post] : []),
+        );
+      }),
+    );
+    const { user } = await renderApp({ path: "/@bob/tagged/sourdough" });
 
+    const title = "Posts of ⁨Bob⁩ with #⁨sourdough⁩";
+    const feed = await screen.findByRole("feed", { name: title });
+    expect(screen.getByRole("heading", { level: 1, name: title })).toBeInTheDocument();
+    expect(within(feed).getAllByRole("article")).toHaveLength(1);
+    expect(asked).toEqual(["sourdough"]);
+    expect(screen.getByRole("link", { name: "Back to the profile of ⁨Bob⁩" })).toHaveAttribute("href", "/@bob");
+
+    await user.click(screen.getByRole("link", { name: "All posts with #⁨sourdough⁩" }));
     expect(await screen.findByRole("heading", { level: 1, name: "#sourdough" })).toBeInTheDocument();
+  });
+
+  test("an account without posts with the hashtag says so", async () => {
+    server.use(http.get(`${apiBase}/accounts/:id/statuses`, () => HttpResponse.json(statusPage([]))));
+    await renderApp({ path: "/@bob/tagged/rye" });
+
+    expect(await screen.findByRole("heading", { name: "No posts with #rye yet" })).toBeInTheDocument();
   });
 
   test("the profile form saves the featured hashtags with the profile, in the order chosen", async () => {

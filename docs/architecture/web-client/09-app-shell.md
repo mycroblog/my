@@ -112,7 +112,7 @@
     | `media` | メディア付きの投稿 | 予約 |
     | `favorite` | お気に入り | 予約 |
     | `with_replies` | 返信を含む投稿 | 予約 |
-    | `tagged` | ハッシュタグで絞った投稿（`tagged/{tag}`） | 予約 |
+    | `tagged` | ハッシュタグで絞った投稿（`tagged/{tag}`） | 実装済み |
     | `featured` | ピン留めした投稿 | 予約 |
 
 - **リンク**: 画面の間のリンクは `@my/ui` の `Link` に `href` を渡す。React Aria の `RouterProvider` が同じオリジンの `href` をルーターの遷移に変える。`#id` の `href`（本文へ移動するリンク）は、その要素にフォーカスを移す。
