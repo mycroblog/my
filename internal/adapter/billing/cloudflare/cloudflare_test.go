@@ -41,6 +41,7 @@ type fake struct {
 }
 
 func (f *fake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.status != 0 {

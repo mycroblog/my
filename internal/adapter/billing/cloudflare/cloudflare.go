@@ -2,23 +2,26 @@
 
 // Package cloudflare is a spike (#2664) of a BillingSource over Cloudflare's billable usage API
 // (GET /accounts/{account_id}/billable-usage, Version 1, Alpha). It is not merged: it checks how
-// the API's records map onto the port of ADR-0068 §1 with a small REST client and no SDK.
+// the API's records map onto the port of ADR-0068 §1 through the official SDK
+// (github.com/cloudflare/cloudflare-go/v7), built without its DefaultClientOptions so that it reads
+// no CLOUDFLARE_* environment variable, with the dedicated client and no retries of its own.
 //
 // What it assumes and a real account must confirm is marked SPIKE.
 package cloudflare
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"math/big"
 	"net/http"
-	"net/url"
 	"slices"
 	"strings"
 	"time"
+
+	cloudflaresdk "github.com/cloudflare/cloudflare-go/v7"
+	"github.com/cloudflare/cloudflare-go/v7/billing"
+	"github.com/cloudflare/cloudflare-go/v7/option"
 
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/domain/finance"
@@ -43,7 +46,10 @@ type Options struct {
 }
 
 // Source reads the usage charges of a Cloudflare pay-as-you-go account.
-type Source struct{ o Options }
+type Source struct {
+	o     Options
+	usage *billing.UsageService
+}
 
 // New returns a Source.
 func New(o Options) (*Source, error) {
@@ -56,7 +62,13 @@ func New(o Options) (*Source, error) {
 	if o.Now == nil {
 		o.Now = time.Now
 	}
-	return &Source{o: o}, nil
+	usage := billing.NewUsageService(
+		option.WithBaseURL(o.BaseURL),
+		option.WithHTTPClient(o.Client),
+		option.WithAPIToken(o.Token),
+		option.WithMaxRetries(0), // the job retries throttling and unavailability (ADR-0068 §9)
+	)
+	return &Source{o: o, usage: usage}, nil
 }
 
 // Name implements appfinance.BillingSource.
@@ -67,37 +79,6 @@ func (s *Source) Location() *time.Location { return time.UTC }
 
 // Method implements appfinance.BillingSource.
 func (s *Source) Method() string { return "billable_usage" }
-
-type envelope[T any] struct {
-	Success bool `json:"success"`
-	Errors  []struct {
-		Code    int    `json:"code"`
-		Message string `json:"message"`
-	} `json:"errors"`
-	Result T `json:"result"`
-}
-
-type usageInfo struct {
-	Covered       bool `json:"covered"`
-	Subscriptions []struct {
-		ID     string    `json:"id"`
-		Anchor time.Time `json:"billing_cycle_anchor_timestamp"`
-		Start  time.Time `json:"start_timestamp"`
-		End    time.Time `json:"end_timestamp"`
-	} `json:"subscriptions"`
-}
-
-type usageRecord struct {
-	ServiceName       string      `json:"ServiceName"`
-	ServiceFamilyName string      `json:"ServiceFamilyName"`
-	ChargeDescription string      `json:"ChargeDescription"`
-	SubscriptionID    string      `json:"SubscriptionId"`
-	ZoneID            string      `json:"ZoneId"`
-	ChargePeriodStart time.Time   `json:"ChargePeriodStart"`
-	ChargePeriodEnd   time.Time   `json:"ChargePeriodEnd"`
-	ContractedCost    json.Number `json:"ContractedCost"`
-	BillingCurrency   string      `json:"BillingCurrency"`
-}
 
 // Fetch implements appfinance.BillingSource. Cloudflare does not bill API requests: Requests
 // counts them for the record only, and the import gives the source no cap.
@@ -110,9 +91,13 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 		return snap, nil
 	}
 	today := finance.DateOf(s.o.Now().UTC())
-	var info usageInfo
-	if err := s.get(ctx, &snap, req.MaxRequests, "billable-usage/info", nil, &info); err != nil {
-		return appfinance.Snapshot{Requests: snap.Requests}, err
+	if snap.Requests >= req.MaxRequests {
+		return snap, appfinance.ErrRequestCap
+	}
+	snap.Requests++
+	info, err := s.usage.GetAccountUsageInfoV1(ctx, billing.UsageGetAccountUsageInfoV1Params{AccountID: cloudflaresdk.F(s.o.AccountID)})
+	if err != nil {
+		return appfinance.Snapshot{Requests: snap.Requests}, classify(ctx, err)
 	}
 	if !info.Covered {
 		// SPIKE: what "covered" means is not documented; an Enterprise contract account is the
@@ -134,7 +119,7 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 	closedThrough := map[finance.YearMonth]bool{}
 	seen := map[string]bool{}
 	for _, sub := range info.Subscriptions {
-		for _, c := range cycles(finance.DateOf(sub.Anchor.UTC()), from, until) {
+		for _, c := range cycles(finance.DateOf(sub.BillingCycleAnchorTimestamp.UTC()), from, until) {
 			// A month is closed once every cycle over its last day ended finalGrace days ago.
 			for _, m := range req.Months {
 				if c.Contains(m.Range().End) {
@@ -146,12 +131,19 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 			if today.Before(to) {
 				to = today
 			}
-			q := url.Values{"from": {c.Start.String()}, "to": {to.String()}}
-			var records []usageRecord
-			if err := s.get(ctx, &snap, req.MaxRequests, "billable-usage", q, &records); err != nil {
-				return appfinance.Snapshot{Requests: snap.Requests}, err
+			if snap.Requests >= req.MaxRequests {
+				return appfinance.Snapshot{Requests: snap.Requests}, appfinance.ErrRequestCap
 			}
-			for _, r := range records {
+			snap.Requests++
+			records, err := s.usage.GetAccountUsageV1(ctx, billing.UsageGetAccountUsageV1Params{
+				AccountID: cloudflaresdk.F(s.o.AccountID),
+				From:      cloudflaresdk.F(c.Start.Time()),
+				To:        cloudflaresdk.F(to.Time()),
+			})
+			if err != nil {
+				return appfinance.Snapshot{Requests: snap.Requests}, classify(ctx, err)
+			}
+			for _, r := range *records {
 				day := finance.DateOf(r.ChargePeriodStart.UTC())
 				// SPIKE: the records are assumed to be one per metric and day, as the dashboard's
 				// daily chart and the Version 2 endpoint are. A record over more days cannot be
@@ -160,6 +152,8 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 					return appfinance.Snapshot{Requests: snap.Requests}, fmt.Errorf("%w: a record covers %d days", appfinance.ErrInvalidBillingResponse, days)
 				}
 				id := strings.Join([]string{r.SubscriptionID, r.ServiceName, r.ChargeDescription, r.ZoneID, day.String()}, "|")
+				// The SDK decodes the cost into a float64; the raw JSON keeps the decimal unrounded.
+				cost := r.JSON.ContractedCost.Raw()
 				if seen[id] {
 					continue // the cycles of two subscriptions overlap
 				}
@@ -168,9 +162,9 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 				if !slices.Contains(req.Months, m) {
 					continue
 				}
-				amount, ok := new(big.Rat).SetString(r.ContractedCost.String())
+				amount, ok := new(big.Rat).SetString(cost)
 				if !ok || r.BillingCurrency == "" {
-					return appfinance.Snapshot{Requests: snap.Requests}, fmt.Errorf("%w: cost %q %q", appfinance.ErrInvalidBillingResponse, r.ContractedCost, r.BillingCurrency)
+					return appfinance.Snapshot{Requests: snap.Requests}, fmt.Errorf("%w: cost %q %q", appfinance.ErrInvalidBillingResponse, cost, r.BillingCurrency)
 				}
 				if currency != "" && currency != r.BillingCurrency {
 					return appfinance.Snapshot{Requests: snap.Requests}, fmt.Errorf("%w: currencies %s and %s", appfinance.ErrInvalidBillingResponse, currency, r.BillingCurrency)
@@ -231,58 +225,32 @@ func cycles(anchor, from, until finance.Date) []finance.DateRange {
 	return out
 }
 
-// get calls one endpoint of the account, counting it against max, and decodes its result.
-func (s *Source) get(ctx context.Context, snap *appfinance.Snapshot, max int, path string, q url.Values, out any) error {
-	if snap.Requests >= max {
-		return appfinance.ErrRequestCap
+// classify maps an error of the SDK onto the failure kinds of ADR-0068 §9.
+func classify(ctx context.Context, err error) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
-	u := s.o.BaseURL + "/accounts/" + url.PathEscape(s.o.AccountID) + "/" + path
-	if len(q) > 0 {
-		u += "?" + q.Encode()
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+s.o.Token)
-	snap.Requests++
-	res, err := s.o.Client.Do(req)
-	if err != nil {
-		if ctx.Err() != nil {
-			return ctx.Err()
+	var apiErr *cloudflaresdk.Error
+	if !errors.As(err, &apiErr) {
+		// A network failure, or a body the SDK could not decode.
+		if strings.Contains(err.Error(), "unmarshal") {
+			return fmt.Errorf("%w: %v", appfinance.ErrInvalidBillingResponse, err)
 		}
 		return fmt.Errorf("%w: %v", appfinance.ErrBillingUnavailable, err)
 	}
-	defer res.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(res.Body, 32<<20))
-	if err != nil {
+	switch code := apiErr.StatusCode; {
+	case code == http.StatusUnauthorized || code == http.StatusForbidden:
+		return fmt.Errorf("%w: %v", appfinance.ErrBillingPermission, err)
+	case code == http.StatusNotFound:
+		return fmt.Errorf("%w: %v", appfinance.ErrBillingNotFound, err)
+	case code == http.StatusTooManyRequests:
+		return fmt.Errorf("%w: %v", appfinance.ErrBillingThrottled, err)
+	case code >= 500:
 		return fmt.Errorf("%w: %v", appfinance.ErrBillingUnavailable, err)
-	}
-	switch {
-	case res.StatusCode == http.StatusUnauthorized || res.StatusCode == http.StatusForbidden:
-		return fmt.Errorf("%w: %s: %s", appfinance.ErrBillingPermission, res.Status, snippet(body))
-	case res.StatusCode == http.StatusNotFound:
-		return fmt.Errorf("%w: %s: %s", appfinance.ErrBillingNotFound, res.Status, snippet(body))
-	case res.StatusCode == http.StatusTooManyRequests:
-		return fmt.Errorf("%w: %s", appfinance.ErrBillingThrottled, res.Status)
-	case res.StatusCode >= 500:
-		return fmt.Errorf("%w: %s", appfinance.ErrBillingUnavailable, res.Status)
-	case res.StatusCode != http.StatusOK:
-		return fmt.Errorf("%w: %s: %s", appfinance.ErrInvalidBillingResponse, res.Status, snippet(body))
-	}
-	env := envelope[json.RawMessage]{}
-	if err := json.Unmarshal(body, &env); err != nil || !env.Success {
-		return fmt.Errorf("%w: %s", appfinance.ErrInvalidBillingResponse, snippet(body))
-	}
-	dec := json.NewDecoder(strings.NewReader(string(env.Result)))
-	dec.UseNumber()
-	if err := dec.Decode(out); err != nil {
+	default:
 		return fmt.Errorf("%w: %v", appfinance.ErrInvalidBillingResponse, err)
 	}
-	return nil
 }
-
-func snippet(b []byte) string { return string(b[:min(len(b), 200)]) }
 
 // decimal formats r in decimal without rounding: the costs are decimals, so r has a finite
 // expansion.
