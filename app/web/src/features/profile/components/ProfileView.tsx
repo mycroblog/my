@@ -24,6 +24,7 @@ import {
 import { type ComponentProps, type ReactNode, useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type AccountTimelineFilter, accountTimelineFilters, TimelineFeed, useRemoteFetch } from "../../timeline";
+import { ProfileEvents } from "../../events";
 import { FeaturedTags } from "../../hashtags";
 import { ProfileVoiceRoom } from "../../voice";
 import { usePinnedStatuses } from "../hooks/usePinnedStatuses";
@@ -136,6 +137,8 @@ export function ProfileView({ acct, tab, onTabChange, renderHeading }: ProfileVi
       {relation !== null && <AccountNote accountId={account.id} name={profile.name} note={relation.note ?? ""} />}
       {/* The open voice chat room where the account hosts or speaks, for a user who sees it (ADR-0100 §8). */}
       <ProfileVoiceRoom accountId={account.id} name={profile.name} />
+      {/* The upcoming events that a local account organizes and the user sees (ADR-0161 §9). */}
+      <ProfileEvents accountId={account.id} acct={account.acct} />
       {/* The hashtags the account features, in its order (ADR-0006 §17). */}
       <FeaturedTags accountId={account.id} acct={account.acct} />
       <ProfileTabs

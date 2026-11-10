@@ -32,6 +32,7 @@ const widthSpecs = [
   "articles",
   "bookmarks",
   "emoji-picker",
+  "events",
   "federated",
   "intent",
   "lists",

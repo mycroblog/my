@@ -178,6 +178,7 @@ export {
   BoostIcon,
   CloseIcon,
   EmojiIcon,
+  EventIcon,
   CallConnectedIcon,
   CallConnectingIcon,
   CallReconnectingIcon,

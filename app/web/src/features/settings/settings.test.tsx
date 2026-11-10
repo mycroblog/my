@@ -504,6 +504,7 @@ describe("navigation", () => {
       "/direct-messages",
       "/settings",
       "/bookmarks",
+      "/events",
       "/announcements",
       "/lists",
     ]);

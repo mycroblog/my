@@ -1,7 +1,7 @@
 ---
 start: "/@marco"
 persona: "yuki"
-paths: ["app/web/src/features/profile/**", "app/web/src/features/relationship/**", "app/web/src/features/report/**", "app/web/src/features/lists/components/AddToListDialog.tsx", "app/web/src/features/hashtags/components/FeaturedTags.tsx", "app/web/src/routes/@{$acct}.tsx"]
+paths: ["app/web/src/features/profile/**", "app/web/src/features/relationship/**", "app/web/src/features/report/**", "app/web/src/features/lists/components/AddToListDialog.tsx", "app/web/src/features/hashtags/components/FeaturedTags.tsx", "app/web/src/features/events/components/EventList.tsx", "app/web/src/routes/@{$acct}.tsx"]
 starts: {"フォローをやめる": "/@sam", "フォロー中の人をリストに入れる": "/@sam"}
 unavailable: {"一人のサーバーの最初のページからログインの画面へ進む": "The demo server is not a one-person server.", "一人のサーバーの最初のページから紹介・規約・ポリシーのどれかへ移る": "The demo server is not a one-person server."}
 ---
@@ -55,10 +55,11 @@ unavailable: {"一人のサーバーの最初のページからログインの�
    「あなただけが見られます。」の説明、書いたメモ（`dir="auto"`、改行を保つ）か「⁦Bob⁩ へのメモはありません。」、「メモを書く」か「メモを編集」のボタン。
    メモの有無で区画を出し入れしない（消したときにボタンのフォーカスを失わないため）。
 4. この人がいる音声チャットのルーム（あるときだけ）。
-5. 注目のハッシュタグ（`h2`。持ち主が選んだものがあるときだけ。[ADR-0006](../../../adr/0006-federation-protocol-scope.md) §17）: 持ち主の順に 10 個まで。
+5. この人が主催するこれからのイベント（`h2`「イベント」。ログインしていて、このサーバーのアカウントで、見られるものがあるときだけ。ADR-0161 §9）: 開始の近い順に 3 件まで、イベントの一覧と同じカード（[events.md](events.md)）。
+6. 注目のハッシュタグ（`h2`。持ち主が選んだものがあるときだけ。[ADR-0006](../../../adr/0006-federation-protocol-scope.md) §17）: 持ち主の順に 10 個まで。
    各ハッシュタグは `#` 付きの名前（その人のそのタグの付いた投稿のページ（[profile-tagged.md](profile-tagged.md)）へのリンク）と、その人の公開・未収載の投稿のうちそのタグの付いた数と最後に使った日。
    ほかのサーバーのアカウントの数は、このサーバーが受け取った投稿から数えるので、相手のサーバーのプロフィールより小さいことがある。
-6. **投稿**: タブ（投稿・返信を含む・ブーストなし・記事）。投稿のタブは固定した投稿から始める。記事のタブは、その人の記事だけを新しい順に記事のカード（題・要約・カバー）で並べる（ADR-0160 §11）。
+7. **投稿**: タブ（投稿・返信を含む・ブーストなし・記事）。投稿のタブは固定した投稿から始める。記事のタブは、その人の記事だけを新しい順に記事のカード（題・要約・カバー）で並べる（ADR-0160 §11）。
    ほかのサーバーのアカウントの記事は、このサーバーが受け取ったものだけである。
 
 ### 4. 主な操作と保存の仕方

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The layout around every page (ADR-0025). Mobile first (web-client/README.md D1): one column with the
 // navigation as a bottom tab bar; from md a side rail and the page; from xl a third column with the server's
-// announcements, the open voice chat rooms (on a room's page, its raised hands and about the room instead), the
+// announcements, the open voice chat rooms (on a room's page, its raised hands and about the room instead), the events coming up, the
 // viewer's latest notifications on timeline pages, the funding meter while the server shows it there, and about the server; the admin and moderation screens have a frame of their own (AdminLayout). Its look is @my/ui's AppShell; this file decides what goes in it.
 // Signed out, the navigation is a bar along the top and the pages are one column at every width, with no third
 // column: they end with a footer that links to the server's information and documents instead.
@@ -13,6 +13,7 @@ import { AnnouncementsPanel } from "../../features/announcements";
 import { ClosedScreen, ClosureBanner } from "../../features/closure";
 import { ComposeEntry, ComposeProvider } from "../../features/compose";
 import { FundingMeterPanel } from "../../features/costs";
+import { EventRail } from "../../features/events";
 import { NotificationsPanel } from "../../features/notifications";
 import { useViewer } from "../../features/session";
 import { useUserDisplaySettings } from "../../features/settings";
@@ -73,6 +74,8 @@ export function AppLayout() {
   // The voice chat pages list the rooms themselves, so the third column does not repeat them; a room's page has its
   // own blocks there instead.
   const onVoicePage = pathname === "/voice" || pathname.startsWith("/voice/");
+  // The list of events has them all, so the third column does not repeat them there.
+  const onEventsPage = pathname === "/events" || pathname === "/events/";
   // The list page of the announcements has them all, so the third column does not repeat them.
   const onAnnouncementsPage = pathname === "/announcements" || pathname === "/announcements/";
   const voiceRoomId = voiceRoomPagePattern.exec(pathname)?.[1];
@@ -137,6 +140,11 @@ export function AppLayout() {
                 {!onVoicePage && (
                   <ErrorBoundary fallback={null} onError={reportBoundaryError}>
                     <VoiceRail />
+                  </ErrorBoundary>
+                )}
+                {!onEventsPage && (
+                  <ErrorBoundary fallback={null} onError={reportBoundaryError}>
+                    <EventRail />
                   </ErrorBoundary>
                 )}
                 {voiceRoomId !== undefined && (

@@ -1,0 +1,726 @@
+{
+  "events.title": {
+    "defaultMessage": "Events",
+    "description": "Heading and document title of the list of the upcoming events, and its item in the main navigation."
+  },
+  "events.new": {
+    "defaultMessage": "New event",
+    "description": "Button on the list of events that opens the editor of a new event."
+  },
+  "events.loading": {
+    "defaultMessage": "Loading events…",
+    "description": "Read by assistive technology while events or their people load."
+  },
+  "events.retry": {
+    "defaultMessage": "Try again",
+    "description": "Button that loads an event, a list of events, or its people again after a failure."
+  },
+  "events.list.label": {
+    "defaultMessage": "Upcoming events",
+    "description": "Accessible name of the list of the upcoming events on the list page."
+  },
+  "events.list.empty": {
+    "defaultMessage": "No events coming up",
+    "description": "Heading of the empty list of the upcoming events."
+  },
+  "events.list.empty.description": {
+    "defaultMessage": "Events you can see show here, the nearest first. Create one to gather people on this server.",
+    "description": "Text of the empty list of the upcoming events."
+  },
+  "events.list.failed": {
+    "defaultMessage": "Couldn't load the events",
+    "description": "Heading of the error of the list of events."
+  },
+  "events.list.more": {
+    "defaultMessage": "Show more events",
+    "description": "Button that loads the next page of the list of events."
+  },
+  "events.list.more_failed": {
+    "defaultMessage": "Couldn't load more events",
+    "description": "Heading of the error of loading the next page of events."
+  },
+  "events.rail.title": {
+    "defaultMessage": "Coming up",
+    "description": "Heading of the panel of the upcoming events in the third column of wide screens."
+  },
+  "events.rail.all": {
+    "defaultMessage": "See all events",
+    "description": "Link from the panel of the upcoming events, and from a missing event's page, to the list of events."
+  },
+  "events.profile.title": {
+    "defaultMessage": "Events",
+    "description": "Heading of the region of a profile that lists the upcoming events the account organizes."
+  },
+  "events.organized_by": {
+    "defaultMessage": "Organized by {name}",
+    "description": "Line of an event that names its organizer. {name} is the organizer's display name, a link to the profile."
+  },
+  "events.going_count": {
+    "defaultMessage": "{count, plural, =0 {Nobody going yet} one {# going} other {# going}}",
+    "description": "How many attendees answered going to an event without a capacity."
+  },
+  "events.going_of_capacity": {
+    "defaultMessage": "{count, plural, one {# of {capacity} going} other {# of {capacity} going}}",
+    "description": "How many attendees answered going to an event with a capacity. {count} is the number going, {capacity} the most who may go, formatted."
+  },
+  "events.time.unscheduled": {
+    "defaultMessage": "Date not set yet: the organizers are choosing among candidate dates",
+    "description": "When an event is, while its date poll has no confirmed date yet."
+  },
+  "events.time.event_zone": {
+    "defaultMessage": "{time} ({zone})",
+    "description": "The times of an event in its own time zone, under the times in the viewer's time zone when the two zones differ. {time} is the formatted weekday and times, {zone} the place the time zone is named after (Tokyo)."
+  },
+  "events.state.cancelled": {
+    "defaultMessage": "Cancelled",
+    "description": "Badge of a cancelled event."
+  },
+  "events.state.ended": {
+    "defaultMessage": "Ended",
+    "description": "Badge of an event whose end has passed."
+  },
+  "events.state.unscheduled": {
+    "defaultMessage": "Date to be decided",
+    "description": "Badge of an event whose date poll has no confirmed date yet."
+  },
+  "events.state.invited": {
+    "defaultMessage": "Invited",
+    "description": "Badge of an event to which the user was invited and has not answered."
+  },
+  "events.answer.going.badge": {
+    "defaultMessage": "Going",
+    "description": "Badge of the user's or an attendee's answer going."
+  },
+  "events.answer.maybe.badge": {
+    "defaultMessage": "Maybe",
+    "description": "Badge of the user's or an attendee's answer maybe."
+  },
+  "events.answer.declined.badge": {
+    "defaultMessage": "Not going",
+    "description": "Badge of an answer not going."
+  },
+  "events.answer.title": {
+    "defaultMessage": "Your answer",
+    "description": "Heading of the region of an event's page where the user answers, and the name of the choices."
+  },
+  "events.answer.going": {
+    "defaultMessage": "Going",
+    "description": "Choice of the user's answer to an event."
+  },
+  "events.answer.maybe": {
+    "defaultMessage": "Maybe",
+    "description": "Choice of the user's answer to an event."
+  },
+  "events.answer.declined": {
+    "defaultMessage": "Not going",
+    "description": "Choice of the user's answer to an event."
+  },
+  "events.answer.public": {
+    "defaultMessage": "Answering going or maybe puts your name on the list of attendees, which everyone who sees the event reads. Your answer is saved at once.",
+    "description": "Description of the choices of the user's answer, before and after answering."
+  },
+  "events.answer.closed": {
+    "defaultMessage": "This event no longer takes answers.",
+    "description": "Description of the choices of the user's answer once the event has started."
+  },
+  "events.answer.unscheduled": {
+    "defaultMessage": "You can answer once the organizers set the date.",
+    "description": "Description of the choices of the user's answer while the event has no date yet."
+  },
+  "events.answer.full": {
+    "defaultMessage": "The event is full: nobody else can answer going, but you can answer maybe.",
+    "description": "Note under the answer of an event whose attendees going reached its capacity."
+  },
+  "events.answer.failed": {
+    "defaultMessage": "Couldn't save your answer: {reason}",
+    "description": "Error of saving the user's answer. {reason} is why."
+  },
+  "events.calendar": {
+    "defaultMessage": "Add to calendar (.ics)",
+    "description": "Button that saves the event as an iCalendar file to import into the user's calendar."
+  },
+  "events.calendar.failed": {
+    "defaultMessage": "Couldn't save the calendar file: {reason}",
+    "description": "Error of saving the event's iCalendar file. {reason} is why."
+  },
+  "events.edit": {
+    "defaultMessage": "Edit event",
+    "description": "Button on an event's page, for its organizers, that opens its editor."
+  },
+  "events.cancel": {
+    "defaultMessage": "Cancel event",
+    "description": "Button on an event's page, for its organizer, that cancels it after a confirmation."
+  },
+  "events.cancel.title": {
+    "defaultMessage": "Cancel this event?",
+    "description": "Title of the dialog that confirms the cancellation of an event."
+  },
+  "events.cancel.description": {
+    "defaultMessage": "The attendees and the invited people are notified. A cancelled event stays readable, but takes no more answers or changes, and it cannot be undone.",
+    "description": "Description of the dialog that confirms the cancellation of an event."
+  },
+  "events.cancel.note": {
+    "defaultMessage": "Reason (optional)",
+    "description": "Label of the field of the reason of a cancellation."
+  },
+  "events.cancel.note.description": {
+    "defaultMessage": "Shown with the event to everyone who sees it, up to 500 characters.",
+    "description": "Description of the field of the reason of a cancellation."
+  },
+  "events.cancel.confirm": {
+    "defaultMessage": "Cancel event",
+    "description": "Button of the dialog that cancels the event."
+  },
+  "events.cancel.back": {
+    "defaultMessage": "Keep event",
+    "description": "Button of the dialog that closes it without cancelling the event."
+  },
+  "events.cancel.done": {
+    "defaultMessage": "The event was cancelled.",
+    "description": "Announced once the organizer cancelled the event."
+  },
+  "events.cancelled.organizer": {
+    "defaultMessage": "The organizer cancelled this event.",
+    "description": "Note on the page of an event that its organizer cancelled."
+  },
+  "events.cancelled.moderator": {
+    "defaultMessage": "The moderators of this server cancelled this event.",
+    "description": "Note on the page of an event that a moderator cancelled."
+  },
+  "events.cancelled.organizer_suspended": {
+    "defaultMessage": "This event was cancelled because the organizer's account was suspended.",
+    "description": "Note on the page of an event cancelled by the suspension of its organizer."
+  },
+  "events.cancelled.organizer_deleted": {
+    "defaultMessage": "This event was cancelled because the organizer's account was deleted.",
+    "description": "Note on the page of an event cancelled by the deletion of its organizer."
+  },
+  "events.cancelled.note": {
+    "defaultMessage": "Reason: {note}",
+    "description": "The reason given for a cancellation. {note} is the organizer's or the moderator's text."
+  },
+  "events.page.title": {
+    "defaultMessage": "Event",
+    "description": "Heading of an event's page while it loads, fails, or is not shown."
+  },
+  "events.page.failed": {
+    "defaultMessage": "Couldn't load the event",
+    "description": "Heading of the error of an event's page."
+  },
+  "events.page.not_found": {
+    "defaultMessage": "Event not found",
+    "description": "Heading of the page of an event that does not exist or that the user does not see."
+  },
+  "events.page.not_found.body": {
+    "defaultMessage": "The event does not exist, or it is not shown to you.",
+    "description": "Text of the page of an event that is not found."
+  },
+  "events.page.local_only": {
+    "defaultMessage": "Only people with an account on this server can see and join its events.",
+    "description": "Note on an event's page for a visitor who is not signed in."
+  },
+  "events.page.sign_in": {
+    "defaultMessage": "Sign in",
+    "description": "Link on an event's page that signs in a visitor and comes back."
+  },
+  "events.place.title": {
+    "defaultMessage": "Where",
+    "description": "Heading of the places of an event."
+  },
+  "events.place.physical": {
+    "defaultMessage": "In person",
+    "description": "Label of the place of an event where people meet in person."
+  },
+  "events.place.url": {
+    "defaultMessage": "Online",
+    "description": "Label of the link of an event to a stream or a meeting of another service."
+  },
+  "events.place.voice": {
+    "defaultMessage": "Voice chat",
+    "description": "Label of the voice chat room of an event."
+  },
+  "events.place.voice.description": {
+    "defaultMessage": "A voice chat room on this server opens when the event starts.",
+    "description": "Text of the voice chat place of an event."
+  },
+  "events.place.map": {
+    "defaultMessage": "Map",
+    "description": "Link of an in-person place to the map that the organizer gave."
+  },
+  "events.place.leaves_site": {
+    "defaultMessage": "Opens {host}, a site outside this server",
+    "description": "Note under a link of an event that leaves the site. {host} is the host name of the link."
+  },
+  "events.place.hidden.physical": {
+    "defaultMessage": "The place to meet in person is shown to the attendees the organizers approve.",
+    "description": "Note for a place in person that the user does not see."
+  },
+  "events.place.hidden.url": {
+    "defaultMessage": "The online link is shown to the attendees the organizers approve.",
+    "description": "Note for a link place that the user does not see."
+  },
+  "events.place.hidden.voice": {
+    "defaultMessage": "The voice chat room is shown to the people who see the event.",
+    "description": "Note for a voice chat place that the user does not see."
+  },
+  "events.description.title": {
+    "defaultMessage": "About",
+    "description": "Heading of an event's description."
+  },
+  "events.attendees.title": {
+    "defaultMessage": "Attendees",
+    "description": "Heading and accessible name of the list of the attendees who answered going or maybe."
+  },
+  "events.attendees.empty": {
+    "defaultMessage": "Nobody has answered yet.",
+    "description": "Text of the empty list of attendees."
+  },
+  "events.attendees.failed": {
+    "defaultMessage": "Couldn't load the attendees",
+    "description": "Heading of the error of the list of attendees."
+  },
+  "events.attendees.more": {
+    "defaultMessage": "Show more attendees",
+    "description": "Button that loads the next page of attendees."
+  },
+  "events.attendees.approved": {
+    "defaultMessage": "Approved",
+    "description": "Badge of an attendee whom the organizers approved."
+  },
+  "events.attendees.approve": {
+    "defaultMessage": "Approve",
+    "description": "Button of an attendee's row, for the organizers, that approves the attendee."
+  },
+  "events.attendees.approve_of": {
+    "defaultMessage": "Approve: {name}",
+    "description": "Accessible name of the button that approves an attendee. {name} is the attendee's display name."
+  },
+  "events.attendees.revoke": {
+    "defaultMessage": "Revoke approval",
+    "description": "Button of an approved attendee's row, for the organizers, that revokes the approval."
+  },
+  "events.attendees.revoke_of": {
+    "defaultMessage": "Revoke approval: {name}",
+    "description": "Accessible name of the button that revokes an approval. {name} is the attendee's display name."
+  },
+  "events.attendees.approved_notice": {
+    "defaultMessage": "Approved {name}.",
+    "description": "Announced once an attendee is approved. {name} is the attendee's display name."
+  },
+  "events.attendees.revoked_notice": {
+    "defaultMessage": "Revoked the approval of {name}.",
+    "description": "Announced once an approval is revoked. {name} is the attendee's display name."
+  },
+  "events.attendees.approval_failed": {
+    "defaultMessage": "Couldn't change the approval: {reason}",
+    "description": "Error of approving an attendee or revoking an approval. {reason} is why."
+  },
+  "events.invitations.title": {
+    "defaultMessage": "Invitations",
+    "description": "Heading of the invitations of an event, for its organizers."
+  },
+  "events.invitations.description": {
+    "defaultMessage": "Invited people see the event whatever its visibility.",
+    "description": "Description of the invitations of an event."
+  },
+  "events.invitations.search": {
+    "defaultMessage": "Find people on this server",
+    "description": "Label of the search field of the people to invite."
+  },
+  "events.invitations.results": {
+    "defaultMessage": "People found",
+    "description": "Accessible name of the list of the people that the search found."
+  },
+  "events.invitations.invite": {
+    "defaultMessage": "Invite",
+    "description": "Button of a found person that invites them."
+  },
+  "events.invitations.invite_of": {
+    "defaultMessage": "Invite: {name}",
+    "description": "Accessible name of the button that invites a person. {name} is the person's display name."
+  },
+  "events.invitations.already": {
+    "defaultMessage": "Invited",
+    "description": "Mark of a found person who is invited already or organizes the event."
+  },
+  "events.invitations.invited": {
+    "defaultMessage": "Invited {name}.",
+    "description": "Announced once a person is invited. {name} is the display name."
+  },
+  "events.invitations.failed": {
+    "defaultMessage": "Couldn't invite: {reason}",
+    "description": "Error of an invitation. {reason} is why."
+  },
+  "events.invitations.list": {
+    "defaultMessage": "Invited people",
+    "description": "Accessible name of the list of the invitations."
+  },
+  "events.invitations.list_failed": {
+    "defaultMessage": "Couldn't load the invitations",
+    "description": "Heading of the error of the list of invitations."
+  },
+  "events.invitations.empty": {
+    "defaultMessage": "Nobody is invited yet.",
+    "description": "Text of the empty list of invitations."
+  },
+  "events.invitations.more": {
+    "defaultMessage": "Show more invitations",
+    "description": "Button that loads the next page of invitations."
+  },
+  "events.invitations.revoke": {
+    "defaultMessage": "Revoke",
+    "description": "Button of an invitation that revokes it."
+  },
+  "events.invitations.revoke_of": {
+    "defaultMessage": "Revoke: {name}",
+    "description": "Accessible name of the button that revokes an invitation. {name} is the invited person's display name."
+  },
+  "events.invitations.revoked": {
+    "defaultMessage": "Revoked the invitation of {name}.",
+    "description": "Announced once an invitation is revoked. {name} is the display name."
+  },
+  "events.coorganizers.title": {
+    "defaultMessage": "Co-organizers",
+    "description": "Heading of the co-organizers of an event, and the accessible name of their list."
+  },
+  "events.coorganizers.description": {
+    "defaultMessage": "Co-organizers change the event, invite people, and approve attendees. Up to {max}.",
+    "description": "Description of the co-organizers, for the organizer. {max} is the most co-organizers."
+  },
+  "events.coorganizers.search": {
+    "defaultMessage": "Find a co-organizer on this server",
+    "description": "Label of the search field of the co-organizers."
+  },
+  "events.coorganizers.results": {
+    "defaultMessage": "People found",
+    "description": "Accessible name of the list of the people that the search of co-organizers found."
+  },
+  "events.coorganizers.assign": {
+    "defaultMessage": "Add",
+    "description": "Button of a found person that names them a co-organizer."
+  },
+  "events.coorganizers.assign_of": {
+    "defaultMessage": "Add: {name}",
+    "description": "Accessible name of the button that names a co-organizer. {name} is the display name."
+  },
+  "events.coorganizers.already": {
+    "defaultMessage": "Organizes",
+    "description": "Mark of a found person who organizes or co-organizes the event already."
+  },
+  "events.coorganizers.remove": {
+    "defaultMessage": "Remove",
+    "description": "Button of a co-organizer that removes them."
+  },
+  "events.coorganizers.remove_of": {
+    "defaultMessage": "Remove: {name}",
+    "description": "Accessible name of the button that removes a co-organizer. {name} is the display name."
+  },
+  "events.coorganizers.assigned": {
+    "defaultMessage": "{name} co-organizes the event now.",
+    "description": "Announced once a co-organizer is named. {name} is the display name."
+  },
+  "events.coorganizers.removed": {
+    "defaultMessage": "{name} no longer co-organizes the event.",
+    "description": "Announced once a co-organizer is removed. {name} is the display name."
+  },
+  "events.coorganizers.full": {
+    "defaultMessage": "The event has {max} co-organizers, the most it can have.",
+    "description": "Note instead of the search when the event has the most co-organizers."
+  },
+  "events.coorganizers.failed": {
+    "defaultMessage": "Couldn't change the co-organizers: {reason}",
+    "description": "Error of naming or removing a co-organizer. {reason} is why."
+  },
+  "events.search.loading": {
+    "defaultMessage": "Searching…",
+    "description": "Read while the search of people runs."
+  },
+  "events.search.empty": {
+    "defaultMessage": "Nobody on this server matches.",
+    "description": "Text when the search of people found nobody."
+  },
+  "events.search.failed": {
+    "defaultMessage": "Couldn't search: {reason}",
+    "description": "Error of the search of people. {reason} is why."
+  },
+  "events.visibility.public": {
+    "defaultMessage": "Everyone on this server",
+    "description": "Choice of who sees an event."
+  },
+  "events.visibility.followers": {
+    "defaultMessage": "Followers of the organizer",
+    "description": "Choice of who sees an event."
+  },
+  "events.visibility.following": {
+    "defaultMessage": "People the organizer follows",
+    "description": "Choice of who sees an event."
+  },
+  "events.visibility.mutuals": {
+    "defaultMessage": "Mutual follows of the organizer",
+    "description": "Choice of who sees an event."
+  },
+  "events.visibility.invited": {
+    "defaultMessage": "Only invited people",
+    "description": "Choice of who sees an event."
+  },
+  "events.form.new_title": {
+    "defaultMessage": "New event",
+    "description": "Heading and document title of the editor of a new event."
+  },
+  "events.form.edit_title": {
+    "defaultMessage": "Edit event",
+    "description": "Heading and document title of the editor of an event."
+  },
+  "events.form.about": {
+    "defaultMessage": "About the event",
+    "description": "Legend of the title and the description in the editor of an event."
+  },
+  "events.form.title": {
+    "defaultMessage": "Title",
+    "description": "Label of the title of an event."
+  },
+  "events.form.title.invalid": {
+    "defaultMessage": "Enter a title of up to {max} characters on one line.",
+    "description": "Error of the title of an event. {max} is the longest title."
+  },
+  "events.form.description": {
+    "defaultMessage": "Description",
+    "description": "Label of the description of an event."
+  },
+  "events.form.description.description": {
+    "defaultMessage": "Plain text. Links become clickable.",
+    "description": "Description of the field of an event's description."
+  },
+  "events.form.characters_left": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "Counter of a text field of the editor of an event."
+  },
+  "events.form.characters_over": {
+    "defaultMessage": "{count, plural, one {# character over} other {# characters over}}",
+    "description": "Counter and error of a text field over its limit."
+  },
+  "events.form.when": {
+    "defaultMessage": "When",
+    "description": "Legend of the date and the time zone in the editor of an event."
+  },
+  "events.form.unscheduled": {
+    "defaultMessage": "The organizers are choosing the date among candidates. Entering a start and an end here sets the date and ends that choice.",
+    "description": "Note in the editor of an event whose date poll has no date yet."
+  },
+  "events.form.time_zone": {
+    "defaultMessage": "Time zone of the event",
+    "description": "Label of the time zone of an event."
+  },
+  "events.form.time_zone.description": {
+    "defaultMessage": "Where the event takes place. People in other time zones see its times in both theirs and this one.",
+    "description": "Description of the time zone of an event."
+  },
+  "events.form.starts_at": {
+    "defaultMessage": "Starts",
+    "description": "Label of the start of an event."
+  },
+  "events.form.ends_at": {
+    "defaultMessage": "Ends",
+    "description": "Label of the end of an event."
+  },
+  "events.form.zone_note": {
+    "defaultMessage": "In the time zone of {zone}",
+    "description": "Description of the start and end fields. {zone} is the place the event's time zone is named after."
+  },
+  "events.form.starts_at.required": {
+    "defaultMessage": "Enter the start.",
+    "description": "Error of a missing start."
+  },
+  "events.form.starts_at.past": {
+    "defaultMessage": "The start has to be in the future.",
+    "description": "Error of a start in the past."
+  },
+  "events.form.ends_at.required": {
+    "defaultMessage": "Enter the end.",
+    "description": "Error of a missing end."
+  },
+  "events.form.ends_at.before_start": {
+    "defaultMessage": "The end has to be after the start.",
+    "description": "Error of an end before the start."
+  },
+  "events.form.ends_at.too_long": {
+    "defaultMessage": "An event lasts 7 days at most.",
+    "description": "Error of an event longer than 7 days."
+  },
+  "events.form.places": {
+    "defaultMessage": "Places",
+    "description": "Legend of the places in the editor of an event."
+  },
+  "events.form.places.description": {
+    "defaultMessage": "Up to one place of each kind. Links leave this server and are never fetched by it.",
+    "description": "Description of the places of an event."
+  },
+  "events.form.physical": {
+    "defaultMessage": "Meet in person",
+    "description": "Checkbox that adds a place to meet in person."
+  },
+  "events.form.physical.name": {
+    "defaultMessage": "Name of the place",
+    "description": "Label of the name of a place in person."
+  },
+  "events.form.physical.address": {
+    "defaultMessage": "Address",
+    "description": "Label of the address of a place in person."
+  },
+  "events.form.physical.map": {
+    "defaultMessage": "Map link (optional)",
+    "description": "Label of the map link of a place in person."
+  },
+  "events.form.link": {
+    "defaultMessage": "Online link",
+    "description": "Checkbox that adds a link to a stream or a meeting of another service."
+  },
+  "events.form.link.name": {
+    "defaultMessage": "Name of the link",
+    "description": "Label of the name of a link place."
+  },
+  "events.form.link.url": {
+    "defaultMessage": "URL",
+    "description": "Label of the URL of a link place."
+  },
+  "events.form.url.description": {
+    "defaultMessage": "An http or https address.",
+    "description": "Description of a URL field of the editor."
+  },
+  "events.form.url.invalid": {
+    "defaultMessage": "Enter an http or https address of up to 2,000 characters.",
+    "description": "Error of a URL field."
+  },
+  "events.form.place_name.invalid": {
+    "defaultMessage": "Enter a name of up to {max} characters on one line.",
+    "description": "Error of the name of a place. {max} is the longest name."
+  },
+  "events.form.voice_kept": {
+    "defaultMessage": "The voice chat room of the event stays as it is.",
+    "description": "Note in the editor of an event that has a voice chat place, which this editor does not change."
+  },
+  "events.form.disclosure": {
+    "defaultMessage": "Who sees the place and the link",
+    "description": "Label of who sees the in-person place and the online link."
+  },
+  "events.form.disclosure.approved": {
+    "defaultMessage": "Only the attendees you approve",
+    "description": "Choice of who sees the places."
+  },
+  "events.form.disclosure.viewers": {
+    "defaultMessage": "Everyone who sees the event",
+    "description": "Choice of who sees the places."
+  },
+  "events.form.audience": {
+    "defaultMessage": "Who can come",
+    "description": "Legend of the visibility and the capacity in the editor of an event."
+  },
+  "events.form.visibility": {
+    "defaultMessage": "Who sees the event",
+    "description": "Label of the visibility of an event."
+  },
+  "events.form.visibility.organizer_only": {
+    "defaultMessage": "Only the organizer changes who sees the event.",
+    "description": "Description of the visibility, for a co-organizer who cannot change it."
+  },
+  "events.form.capacity": {
+    "defaultMessage": "Capacity (optional)",
+    "description": "Label of the capacity of an event."
+  },
+  "events.form.capacity.description": {
+    "defaultMessage": "How many people can answer going, up to 10,000. Leave it empty for no limit.",
+    "description": "Description of the capacity of an event."
+  },
+  "events.form.capacity.invalid": {
+    "defaultMessage": "Enter a whole number from 0 to {max}.",
+    "description": "Error of the capacity. {max} is the largest capacity."
+  },
+  "events.form.submit_new": {
+    "defaultMessage": "Create event",
+    "description": "Submit button of the editor of a new event."
+  },
+  "events.form.submit_edit": {
+    "defaultMessage": "Save",
+    "description": "Submit button of the editor of an event."
+  },
+  "events.form.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Link of the editor back to where it came from, without saving."
+  },
+  "events.form.created": {
+    "defaultMessage": "Created the event.",
+    "description": "Announced once a new event is created."
+  },
+  "events.form.saved": {
+    "defaultMessage": "Saved the event.",
+    "description": "Announced once the changes of an event are saved."
+  },
+  "events.form.create_failed": {
+    "defaultMessage": "Couldn't create the event: {reason}",
+    "description": "Error of creating an event. {reason} is why."
+  },
+  "events.form.save_failed": {
+    "defaultMessage": "Couldn't save the event: {reason}",
+    "description": "Error of saving an event. {reason} is why."
+  },
+  "events.form.not_editable": {
+    "defaultMessage": "Only the organizers of an event that is not cancelled can change it.",
+    "description": "Text of the editor of an event that the user cannot change."
+  },
+  "events.form.back_to_event": {
+    "defaultMessage": "Back to the event",
+    "description": "Link from the editor to the event's page."
+  },
+  "events.error.not_found": {
+    "defaultMessage": "The event is not there any more.",
+    "description": "Reason of a failed write to an event that is gone or hidden."
+  },
+  "events.error.full": {
+    "defaultMessage": "The event is full.",
+    "description": "Reason of a refused answer going."
+  },
+  "events.error.closed": {
+    "defaultMessage": "The event has started or was cancelled.",
+    "description": "Reason of a write refused because the event started or was cancelled."
+  },
+  "events.error.unscheduled": {
+    "defaultMessage": "The event has no date yet.",
+    "description": "Reason of a write refused because the event has no date yet."
+  },
+  "events.error.not_eligible": {
+    "defaultMessage": "You can't create events on this server.",
+    "description": "Reason of a refused creation of an event."
+  },
+  "events.error.voice_unavailable": {
+    "defaultMessage": "Voice chat is not available to you on this server.",
+    "description": "Reason of a refused voice chat place."
+  },
+  "events.error.already_invited": {
+    "defaultMessage": "That person was invited already.",
+    "description": "Reason of a refused invitation."
+  },
+  "events.error.invalid_invitee": {
+    "defaultMessage": "That person can't be invited.",
+    "description": "Reason of a refused invitation."
+  },
+  "events.error.invalid_coorganizer": {
+    "defaultMessage": "That person can't co-organize the event.",
+    "description": "Reason of a refused co-organizer."
+  },
+  "events.error.too_many_coorganizers": {
+    "defaultMessage": "An event has {max} co-organizers at most.",
+    "description": "Reason of a refused co-organizer. {max} is the most co-organizers."
+  },
+  "events.error.not_organizer": {
+    "defaultMessage": "Only the organizers can do this.",
+    "description": "Reason of a write refused to someone who does not organize the event."
+  },
+  "events.error.organizer_only": {
+    "defaultMessage": "Only the organizer can do this.",
+    "description": "Reason of a write refused to a co-organizer."
+  },
+  "events.error.rate_limited": {
+    "defaultMessage": "Too many changes for now. Try again later.",
+    "description": "Reason of a write refused by a rate limit."
+  }
+}

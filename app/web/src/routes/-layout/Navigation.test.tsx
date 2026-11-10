@@ -240,6 +240,7 @@ describe("the timelines' items", () => {
       "/profile",
       "/bookmarks",
       "/settings",
+      "/events",
       "/announcements",
       "/lists",
     ]);
@@ -300,6 +301,7 @@ describe("the user's arrangement", () => {
       "/bookmarks",
       "/settings",
       "/direct-messages",
+      "/events",
       "/announcements",
       "/lists",
     ]);
@@ -314,6 +316,7 @@ describe("the user's arrangement", () => {
       "Bookmarks",
       "Settings",
       "Direct messages",
+      "Events",
       "Announcements",
       "Lists",
       "my example",
@@ -344,6 +347,7 @@ describe("the user's arrangement", () => {
       "Bookmarks",
       "Settings",
       "Direct messages",
+      "Events",
       "Announcements",
       "Lists",
       "my example",
@@ -385,6 +389,7 @@ describe("the tab bar's Menu", () => {
       "Profile",
       "Bookmarks",
       "Settings",
+      "Events",
       "Announcements",
       "Lists",
       "my example",
@@ -510,6 +515,7 @@ describe("the sidebar's server and viewer", () => {
       "/profile",
       "/bookmarks",
       "/settings",
+      "/events",
       "/announcements",
       "/lists",
     ]);

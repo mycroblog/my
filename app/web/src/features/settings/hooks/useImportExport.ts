@@ -19,7 +19,7 @@ import {
   previewDataImportMutation,
   startDataImportMutation,
 } from "../api/importExport";
-import { saveFile } from "./saveFile";
+import { saveFile } from "../../../lib/saveFile";
 
 /** How often an import in progress is checked, in ms. */
 const progressPollInterval = 5000;
