@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-22
 - Deciders: @rosylilly
-- Issue: #875, #1469
+- Issue: #875, #1469, #2664
 
 ## Decision（決定）
 
@@ -166,6 +166,28 @@ type CostLine struct {
 - `no_billing_gcp` を付けない build は、予算の方法のために Pub/Sub のクライアントを含む。`no_pubsub` は `stream = pubsub` を外すだけなので、Pub/Sub のクライアントを外すには両方を付ける。
 - 代表の組み合わせ: self-hosted の組に両方、AWS の組に `no_billing_gcp`、Google Cloud の組に `no_billing_aws`。
 
+### 11. Cloudflare adapter（`internal/adapter/billing/cloudflare`、提案）
+
+この節は、SDK を使うこと（決定者が決めた）を除いて**提案**で、決定者の判断を待つ。根拠は spike #2664 の[調査報告](https://github.com/mycroblog/my/issues/2664#issuecomment-6755532016)。
+
+- **対象**: pay-as-you-go のアカウントの従量課金だけ。Cloudflare の billable usage は Enterprise の契約アカウントを対象にしない。定額のサブスクリプション（Pro・Business のプランなど）・税・クレジット・返金は API が返さないので、運営者は手入力の費用（ADR-0067）か plugin（ADR-0146 §11）で足す。設定の説明に書く。
+- **API**: `GET /accounts/{account_id}/billable-usage/info`（請求周期の基準日 `billing_cycle_anchor_timestamp` と `covered`）と `GET /accounts/{account_id}/billable-usage`（Version 1、Alpha）。`billable-usage` の範囲は周期の基準日を含まないと何も返さないので、取り直す月と重なる周期ごとに 1 回呼ぶ。2 か月で最大 4 要求（`info` 1 回と周期 3 つ）。
+  Version 2（`/billable/usage`）は Restricted で、GET の応答に費用の列がないので使わない。
+- **期間**: Cloudflare の請求周期は最初の購入日を基準日とする周期で、暦月ではない。日付は UTC。adapter は日ごとの記録を、その日（UTC）の暦月に `ServiceName` ごとに合計して返す（`Location()` は UTC）。日付を事業者のタイムゾーンのまま持つので、ADR-0067 §5 の切り直しに当たらない（同 §5 の「日ごとの値」）。1 日を超える記録は月に置けないので `invalid_response` にする。
+- **写し方**: `Service` は `ServiceName`、`ChargeType` は常に `usage`（`ChargeCategory` は常に `Usage`）、金額は `ContractedCost`（pay-as-you-go では `BilledCost` と同じ額）、通貨は `BillingCurrency`。月の中で通貨が混ざれば `invalid_response`。区分は既知の製品名の表で決める: Workers・Durable Objects・Queues・Workers AI → `compute`、R2・Workers KV・Images・Stream → `storage`、D1・Hyperdrive → `database`、Argo・Load Balancing・Spectrum → `network`、ほかは `other`。
+- **見込みと確定**: 応答に確定の印はない。暦月 M は、M の末日を含む周期（サブスクリプションごと）がすべて終わり、その終わりから 2 日たった取り込みで `Final` にする。ただし M+1 月の末日を過ぎれば `Final` にする（基準日が月末に近いと、§2 の取り直しの期限を過ぎるため）。2 日は Google Cloud の「翌月 5 日」と同じ暫定値で、`internal/adapter/billing/cloudflare` の定数に持つ。`Covered` は確定の月は暦月の全体、見込みの月は月の初日から記録のある最後の日まで。
+- **費用の上限**: API の課金は文書になく、`finance` の上限（§4 の `RequestCaps`）を持たせない。`Snapshot.Requests` には記録のために要求数を入れる。レート制限（ユーザーごとに 1,200 要求 / 5 分）から遠い。
+- **SDK**（決定者が決めた）: 公式の `github.com/cloudflare/cloudflare-go/v7`（Apache-2.0）を使う。実行ファイルは約 16 MB 増えるが、手書きの client が Alpha の API の変化に遅れる危険を負わない。
+  - `cloudflare.NewClient` と `DefaultClientOptions` を使わず、`billing.NewUsageService` に option を渡して組み立てる。`DefaultClientOptions` は `CLOUDFLARE_API_TOKEN`・`CLOUDFLARE_BASE_URL` などの環境変数を読むため。
+  - `option.WithHTTPClient` に `internal/platform` のリダイレクトを追わない専用の `*http.Client` を渡す（AGENTS.md の Design rules）。`option.WithMaxRetries(0)` で SDK の再試行を止め、§9 のジョブの再試行に任せる。
+  - 金額は SDK の `float64` の列ではなく、応答の JSON の文字列（`JSON.ContractedCost.Raw()`）から 10 進で読み、丸めずに合計する（§1）。
+- **設定と認証**（§8 に足す）: `billing_sources` に `cloudflare`。`billing_cloudflare_account_id` と、秘密の設定 `billing_cloudflare_api_token`（`MY_BILLING_CLOUDFLARE_API_TOKEN`、`_FILE` でファイルからも読む。ADR-0010、ADR-0019 §6）。トークンはアカウントの Billing Read だけを持つものを勧める。
+  Cloudflare には AWS・Google Cloud のような認証の連鎖も実行環境に紐づく資格もないので、§8 の「秘密の設定を足さない」の例外にする。
+- **失敗の種類**（§9 に足す）: 401・403 → `permission`、`info` の `covered: false` → `not_enabled`、404 → `not_found`、429 → `throttled`、5xx・ネットワーク → `unavailable`、封筒の `success: false`・要る列の欠け・1 日を超える記録・通貨の混在 → `invalid_response`。失敗は SDK の `*cloudflare.Error` の `StatusCode` で分ける。
+- **データモデル**（§5 に足す）: `billing_import_runs.source` と `imported_cost_revisions.source` の enum に `cloudflare`。
+- **build tag**（§10 に足す）: `no_billing_cloudflare` は `internal/adapter/billing/cloudflare` と `cloudflare-go` を外し、`billing_sources` の `cloudflare` を拒む。Cloudflare はどの実行環境とも組み合わせて使うので、代表の組み合わせには付けない。
+- **契約テスト**: `BillingSourceContract` の名前の一覧に `cloudflare` を足し、`usage` の行だけを返す事業者のための変種（`BillingTotalsSourceContract` と同じく、筋書きのクレジット・税の行を求めない）を足す。fake は `billable-usage` の HTTP を `httptest` で返す。
+
 ### この決定を覆す条件
 
 - #882 で Cost Explorer の応答が 1 日 1 ページに収まらず、月の費用が $1 を超えると分かったら、AWS を Data Exports に変える。
@@ -189,6 +211,8 @@ FR-904 は、AWS と Google Cloud の利用料金を定期的に取り込んで�
 
 要求は当初、`billing_import_runs` の `requests` の合計だけで数えていた。記録の前の試行が数に入らないので、同じ事業者の試行が同時に走る（定期のジョブと手動の取り込み、再試行とリースの切れた二重の実行、複数のレプリカ）と、どれも同じ残りを読んで呼ぶので、合わせて日の上限を超えて課金されうる数え方だった。許していたずれ（1 回につき 4 要求、$0.04 まで）は 1 つの試行が止まった場合だけのものだった。#1552 が実装した予約の規則を決定者が採用し、#1469 で数え方を置き換えた（§4）。上限の値、`request_cap` の扱い、Google Cloud の上限は変えていない。
 
+Cloudflare（§11）は spike #2664 の[調査報告](https://github.com/mycroblog/my/issues/2664#issuecomment-6755532016)（2026-11-10 に公式の API リファレンスと Billing の文書で確認。実アカウントでは呼んでいない）による。Cloudflare の従量課金は Version 1（Alpha）の billable usage が返し、pay-as-you-go のアカウントだけが対象で、期間は最初の購入日を基準日とする UTC の周期である。公式の Go SDK は `billing` だけを使っても実行ファイルが約 16 MB 増えるが、決定者は、手書きの client が Alpha の API の変化に遅れる危険より小さいとして SDK を選んだ。
+
 ## 採らなかった案
 
 - AWS を Data Exports で読む: API の費用が $0 で、`bill/InvoiceId` で確定が分かり明細が残る。バケットと export の用意を運営者に求め、サーバーは `service/s3` と CSV か Parquet の読み込みを持つことになる。料金・サービスプリンシパル名・最初の配信までの時間は **要検証**。
@@ -199,6 +223,11 @@ FR-904 は、AWS と Google Cloud の利用料金を定期的に取り込んで�
 - キーごとに 1 行の現在値（ADR-0020 規約 5）: 表が 1 つで単純。見込みから確定、修正の履歴が消え、ADR-0067 §5 に反する。
 - 取り込みごとに全行を保存: 事業者の値をそのまま再現できる。行が日数倍に増え、変化のない行がほとんどになる。
 - 管理画面で設定し、鍵を `Sealer` で暗号化して DB に持つ: 再デプロイなしに有効にできる。実行ロールを使えず長期の鍵を DB に置くことになり、ほかのクラウドの adapter とも設定の場所が違う。
+- Cloudflare を標準ライブラリだけの REST client で読む（§11）: 依存が増えず、実行ファイルが約 16 MB 小さい（spike の commit ed0b2e6）。Alpha の API の改名や形の変化に手で追いつくことになる。
+- Cloudflare の billable usage の Version 2（`/billable/usage`、§11）: FOCUS 1.3 に沿い、1 日 1 指標 1 行と文書にある。Restricted で、GET の応答に費用の列がなく、費用を返す `POST` は文書にない。
+- Cloudflare の請求の履歴（`/accounts/{id}/billing/history`、§11）: 定額の料金も含む。サービスと請求期間の列がなく、項目が請求書の単位か明細の単位かも文書にない。
+- Cloudflare の周期の額を暦月に日割りで分ける（§11）: 日ごとの記録がなくても使える。$25 / 30 日のような割り算は丸めずに 10 進で返せない（§1）。
+- Cloudflare のトークンを `CLOUDFLARE_API_TOKEN` から読む（§11）: 設定が要らない。wrangler・OpenTofu の provider と同じ名前なので、同じ環境の広い権限のトークンを取り込みが黙って使う。
 - 要求を記録の後に数える: 表が増えない。同時の試行のずれに上限がない。
 - 事業者ごとのロックを呼び出しの間ずっと持つ: 上限は超えない。呼び出しの間トランザクションかロックを持つ接続を開いたままにするので ADR-0003 と両立しない。
 
@@ -224,3 +253,4 @@ FR-904 は、AWS と Google Cloud の利用料金を定期的に取り込んで�
 - Cloud Run から AWS への web identity、ECS Fargate から Google Cloud への Workload Identity Federation の組み立て（#882 の A-4・G-4）。
 - Google Cloud の請求書の発行日と締めの後の行の追加の頻度（暫定値の「翌月 5 日」と「15 日」）、export のテーブルのパーティションの列と 1 回のスキャン量、税の行の `project.id`（#882 の G-2・G-3）。
 - Billing export の設定を API で行えるか。
+- Cloudflare（§11、実アカウントで確かめる）: `billable-usage` の記録が 1 日 1 指標か（C-1）、Billing Read だけのトークンで読めるかと、従量課金のない Free・Enterprise のアカウントの応答（C-2）、`ServiceName` の値と区分の表（C-3）、終わった周期の値がいつ止まり請求書と一致するか（暫定値の 2 日、C-4）、周期が毎月同じ日か 30 日ごとかと複数のサブスクリプション（C-5）、USD 以外の通貨（C-6）。
