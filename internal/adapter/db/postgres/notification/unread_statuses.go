@@ -15,7 +15,7 @@ import (
 func (r *Repository) UnreadNotificationStatuses(ctx context.Context, recipientAccountID, after string, hidden appnotification.Hidden, now time.Time, limit int) ([]string, error) {
 	ids, err := r.db.reader().ListUnreadNotificationStatusIDs(ctx, notificationgen.ListUnreadNotificationStatusIDsParams{
 		RecipientAccountID: recipientAccountID, After: postgres.ToNullString(after), HiddenTypes: typeNames(hidden.Types),
-		ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now, Lim: int32(limit),
+		ShownAnnouncements: idList(hidden.ShownAnnouncements), Now: now, Lim: postgres.BatchLimit(limit),
 	})
 	return ids, postgres.Wrap(err, "list the statuses of unread notifications")
 }

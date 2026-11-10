@@ -11,7 +11,6 @@ import (
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	apptimeline "github.com/mycroblog/my/internal/app/timeline"
-	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
 
@@ -49,9 +48,9 @@ func filterWords(t *testing.T, words ...string) []timeline.FilterWord {
 }
 
 func statusView(id, author string, html ...string) appcontent.StatusView {
-	v := appcontent.StatusView{Status: content.Status{ID: id, AuthorAccountID: author}}
+	v := appcontent.StatusView{Status: appcontent.Status{ID: id, AuthorAccountID: author}}
 	for _, h := range html {
-		v.Revision.Bodies = append(v.Revision.Bodies, content.Body{Language: "en", ContentHTML: h})
+		v.Revision.Bodies = append(v.Revision.Bodies, appcontent.Body{Language: "en", ContentHTML: h})
 	}
 	return v
 }
@@ -73,7 +72,7 @@ func TestStatusFilterJudge(t *testing.T) {
 	withCW := statusView(testID(10), authorID, "<p>nothing here</p>")
 	withCW.Revision.SpoilerText = "ｓｐｏｉｌｅｒ ahead" // full-width Latin, matched through NFKC
 	poll := statusView(testID(11), authorID, "<p>vote</p>")
-	poll.Poll = &appcontent.PollView{Poll: content.Poll{Options: []content.PollOption{{Title: "yes"}, {Title: "ﾈﾀﾊﾞﾚ"}}}} // half-width katakana
+	poll.Poll = &appcontent.PollView{Poll: appcontent.Poll{Options: []appcontent.PollOption{{Title: "yes"}, {Title: "ﾈﾀﾊﾞﾚ"}}}} // half-width katakana
 	alt := statusView(testID(12), authorID, "<p>a picture</p>")
 	alt.Attachments = []appcontent.MediaView{{Description: "a big sale banner"}}
 	link := statusView(testID(13), authorID, `<p><a href="https://sale.example/">a link</a></p>`)

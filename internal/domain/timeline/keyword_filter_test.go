@@ -3,6 +3,7 @@
 package timeline_test
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -67,7 +68,7 @@ func TestNewFilterWord(t *testing.T) {
 		t.Errorf("a word of %d graphemes: %v", timeline.MaxKeywordFilterWordGraphemes, err)
 	}
 	for _, bad := range []string{"", "   ", "a\x00b", long + "a", "\xff"} {
-		if _, err := timeline.NewFilterWord(bad, false, identity, runes); err != timeline.ErrInvalidFilterWord {
+		if _, err := timeline.NewFilterWord(bad, false, identity, runes); !errors.Is(err, timeline.ErrInvalidFilterWord) {
 			t.Errorf("NewFilterWord(%q) = %v, want ErrInvalidFilterWord", bad, err)
 		}
 	}

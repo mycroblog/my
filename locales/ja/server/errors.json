@@ -636,7 +636,7 @@
     "description": "API error title for HTTP 422 when the user creates another keyword filter beyond the limit of filters."
   },
   "errors.keyword_filters.too_many_words": {
-    "defaultMessage": "1 つのキーワードフィルタの語は 100 まで、すべてのフィルタの語は合わせて 1,000 までです。先にいくつかの語を削除してください。",
+    "defaultMessage": "1 つのキーワードフィルタの語は 100 まで、すべてのフィルタの語は合わせて 1000 までです。先にいくつかの語を削除してください。",
     "description": "API error title for HTTP 422 when the words of a keyword filter, or of all the user's filters, would pass their limit."
   },
   "errors.list_members.not_followed": {

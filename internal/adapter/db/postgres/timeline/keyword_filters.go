@@ -188,7 +188,7 @@ func (r *Repository) KeywordFiltersExpiredBefore(ctx context.Context, tx uow.Tx,
 		return nil, err
 	}
 	ids, err := q.ListKeywordFiltersExpiredBefore(ctx, timelinegen.ListKeywordFiltersExpiredBeforeParams{
-		Before: before, Lim: int32(limit),
+		Before: before, Lim: postgres.BatchLimit(limit),
 	})
 	return ids, postgres.Wrap(err, "list expired keyword filters")
 }
