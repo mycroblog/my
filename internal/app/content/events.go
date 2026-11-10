@@ -26,6 +26,9 @@ const (
 type StatusCreated struct {
 	Status   content.Status
 	Revision content.Revision
+	// ConversationID is the conversation that the status belongs to (ADR-0154 §2), after the
+	// merges that storing it caused, whose ConversationMerged events come before this one.
+	ConversationID string
 }
 
 // EventType implements uow.Event.
