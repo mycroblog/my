@@ -34,11 +34,17 @@ func noSleep(context.Context, time.Duration) error { return nil }
 // newOnFake returns a provider on a fake PAY.JP whose clock is now.
 func newOnFake(t *testing.T, mode supporters.Mode, now time.Time) (*Provider, *fakeAPI) {
 	t.Helper()
+	return newOnFakeClock(t, mode, func() time.Time { return now })
+}
+
+// newOnFakeClock returns a provider on a fake PAY.JP whose clock is now.
+func newOnFakeClock(t *testing.T, mode supporters.Mode, now func() time.Time) (*Provider, *fakeAPI) {
+	t.Helper()
 	secret, public := keysOf(mode)
-	f := newFakeAPI(t, secret, mode == supporters.ModeLive, func() time.Time { return now })
+	f := newFakeAPI(t, secret, mode == supporters.ModeLive, now)
 	p, err := New(Options{
-		SecretKey: secret, PublicKey: public, WebhookToken: testToken, URL: f.srv.URL,
-		RequestsPerSecond: 1e6, Now: func() time.Time { return now }, Sleep: noSleep,
+		SecretKey: secret, PublicKey: public, WebhookToken: testToken, URL: f.srv.URL, V2URL: f.srv.URL + "/v2",
+		RequestsPerSecond: 1e6, Now: now, Sleep: noSleep,
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	if err != nil {
@@ -110,7 +116,9 @@ func onScenario(t *testing.T, s supporterstest.PaymentScenario) supporterstest.P
 		Gone: func(ref supporters.SubscriptionRef) supporters.SubscriptionSnapshot {
 			return supporters.SubscriptionSnapshot{Ref: ref, Status: supporters.StatusCanceled}
 		},
-		Notices:         []supporters.NoticeKind{supporters.NoticeSubscription, supporters.NoticeMoney, supporters.NoticeIgnored},
+		Notices: []supporters.NoticeKind{
+			supporters.NoticeSubscription, supporters.NoticeCheckout, supporters.NoticeMoney, supporters.NoticeIgnored,
+		},
 		NoChangesWindow: true,
 	}
 	for i, snap := range s.Subscriptions {
@@ -169,6 +177,19 @@ func onScenario(t *testing.T, s supporterstest.PaymentScenario) supporterstest.P
 		exp.Checkouts = append(exp.Checkouts, want)
 	}
 	exp.Money = moneyOnFake(t, f, s)
+	for _, c := range s.OneTimeCheckouts {
+		sess := checkoutSession{ID: string(c.Ref), Status: sessionOpen, ExpiresAt: s.Now.Add(time.Hour), Metadata: metadata{metaTipID: c.LocalID}}
+		switch c.Status {
+		case supporters.OneTimePaid:
+			sess.Status, sess.PaymentFlowID = sessionComplete, string(c.Payment)
+			if _, ok := f.v2.flows[string(c.Payment)]; !ok {
+				f.addFlow(paymentFlow{ID: string(c.Payment), Amount: c.AmountMinor, AmountReceived: c.AmountMinor, Currency: currency, Status: flowSucceeded})
+			}
+		case supporters.OneTimeExpired:
+			sess.Status, sess.ExpiresAt = sessionExpired, s.Now.Add(-time.Hour)
+		}
+		f.addSession(sess)
+	}
 	for _, n := range s.Changes {
 		f.addEvent(n.EventID, n.Type, n.OccurredAt.Unix(), n.ObjectID, "subscription", map[string]any{"id": n.ObjectID, "object": "subscription"})
 	}
@@ -177,7 +198,7 @@ func onScenario(t *testing.T, s supporterstest.PaymentScenario) supporterstest.P
 	}
 	return supporterstest.PaymentUnderTest{
 		SignedPages: true,
-		Provider:    p, Deliver: deliver(s.Now), CheckoutHosts: []string{testHost}, PortalHosts: []string{testHost}, Expected: exp,
+		Provider:    p, Deliver: deliver(s.Now), CheckoutHosts: []string{testHost, fakeCheckoutHost}, PortalHosts: []string{testHost}, Expected: exp,
 		DeclineChanges: func(sub supporters.SubscriptionRef, declined bool) {
 			f.mu.Lock()
 			defer f.mu.Unlock()
@@ -209,6 +230,7 @@ func moneyOnFake(t *testing.T, f *fakeAPI, s supporterstest.PaymentScenario) []s
 	rates := map[string]string{}
 	charges := map[string]string{} // scenario ID → charge ID
 	gross := map[string]int64{}
+	disputes := map[supporters.PaymentRef]string{} // payment → its latest dispute
 	for i, m := range s.Money {
 		id := m.Object
 		if id == "" {
@@ -218,6 +240,10 @@ func moneyOnFake(t *testing.T, f *fakeAPI, s supporterstest.PaymentScenario) []s
 			continue
 		}
 		at := m.OccurredAt
+		if m.Payment != "" {
+			out[i] = moneyOnFakeV2(f, m, id, disputes)
+			continue
+		}
 		switch m.Kind {
 		case supporters.MoneyPayment:
 			if _, ok := f.subs[string(m.Subscription)]; !ok {
@@ -257,6 +283,49 @@ func moneyOnFake(t *testing.T, f *fakeAPI, s supporterstest.PaymentScenario) []s
 	return out
 }
 
+// moneyOnFakeV2 puts a movement of a one-time payment on the API v2 of f as a payment
+// transaction of object, with its PaymentFlow, refund, or dispute, and returns what the adapter
+// reports of it: the movement named by its object, whose parent is the PaymentFlow. The movement's
+// fee of a refund and a chargeback is the fee they return. A pending movement is not put.
+func moneyOnFakeV2(f *fakeAPI, m supporterstest.PaymentScenarioMoney, object string, disputes map[supporters.PaymentRef]string) supporters.MoneyMovement {
+	if m.Pending {
+		return supporters.MoneyMovement{}
+	}
+	flow := string(m.Payment)
+	txn := paymentTransaction{ID: "pt_" + m.ID, ResourceID: object, Amount: m.GrossMinor, Fee: m.FeeMinor, CreatedAt: m.OccurredAt}
+	id := object
+	switch m.Kind {
+	case supporters.MoneyPayment:
+		f.addFlow(paymentFlow{ID: flow, Amount: m.GrossMinor, AmountReceived: m.GrossMinor, Currency: currency, Status: flowSucceeded})
+		txn.ID, txn.ResourceID, txn.Type, id = object, flow, txnPayment, flow
+	case supporters.MoneyRefund:
+		f.addRefund(paymentRefund{ID: object, PaymentFlowID: flow, Amount: -m.GrossMinor, Status: "succeeded"})
+		txn.Type = txnRefund
+	case supporters.MoneyChargeback:
+		f.addDispute(paymentDispute{ID: object, PaymentFlowID: flow, Amount: -m.GrossMinor, Status: "needs_response", CreatedAt: m.OccurredAt, UpdatedAt: m.OccurredAt})
+		disputes[m.Payment] = object
+		txn.Type = txnChargeback
+	case supporters.MoneyChargebackReversal:
+		d := disputes[m.Payment]
+		f.mu.Lock()
+		f.v2.disputes[d].Status, f.v2.disputes[d].UpdatedAt = disputeCanceled, m.OccurredAt
+		f.mu.Unlock()
+		txn.ID, txn.ResourceID, txn.Type, id = object, d, txnChargebackCancel, d+cancelSuffix
+	default:
+		return supporters.MoneyMovement{}
+	}
+	f.addTxn(txn)
+	sign := signOf(txn.Type)
+	want := newMovement(id, m.Kind, m.OccurredAt, sign*abs(m.GrossMinor), sign*abs(m.FeeMinor))
+	want.Payment = m.Payment
+	if m.Kind.HasParent() {
+		f.mu.Lock()
+		want.ParentID, want.ParentGross = flow, yen(f.v2.flows[flow].received())
+		f.mu.Unlock()
+	}
+	return want
+}
+
 func capturedAt(m supporterstest.PaymentScenarioMoney) int64 {
 	if m.Pending {
 		return 0
@@ -284,10 +353,19 @@ func deliver(now time.Time) supporterstest.PaymentDeliver {
 				token = testToken
 			}
 		}
-		body, _ := json.Marshal(map[string]any{
+		ev := map[string]any{
 			"id": n.EventID, "object": "event", "livemode": live, "type": typ, "created": now.Unix(),
 			"data": map[string]any{"id": n.ObjectID, "object": object},
-		})
+		}
+		if n.Kind == supporters.NoticeCheckout {
+			// A checkout's event is of API v2, the one-time checkouts.
+			ev = map[string]any{
+				"id": n.EventID, "object": "event", "livemode": live, "type": "checkout.session.completed",
+				"created_at": now.UTC().Format(time.RFC3339), "pending_webhooks": 1,
+				"data": map[string]any{"id": n.ObjectID, "object": "checkout.session", "mode": "payment", "status": "complete"},
+			}
+		}
+		body, _ := json.Marshal(ev)
 		h := http.Header{}
 		h.Set(TokenHeader, token)
 		h.Set("Content-Type", "application/json; charset=utf-8")

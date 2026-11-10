@@ -1,22 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Package payjp is the supporters.PaymentProvider of PAY.JP on its API v1 (ADR-0074): plans
-// with IDs of our own, the subscriptions and their commands, the webhook verifier of the
-// account's fixed token, the lists of the reconciliation over the Events API, and the charges,
-// refunds, chargebacks, and statements as money movements. PAY.JP API v2 has no subscriptions.
+// Package payjp is the supporters.PaymentProvider of PAY.JP (ADR-0074): on API v1, plans with
+// IDs of our own, the subscriptions and their commands, the webhook verifier of the account's
+// fixed token, the lists of the reconciliation over the Events API, and the charges, refunds,
+// chargebacks, and statements as money movements. PAY.JP API v2 has no subscriptions.
 //
 // API v1 has no hosted checkout and no customer portal; the adapter's own pages stand in for
 // them (supporters.PageServer, ADR-0074 §11), and StartCheckout and PortalURL return their URLs.
 //
-// The adapter calls https://api.pay.jp/v1 with net/http (ADR-0074 §10): Basic authentication with
-// the secret key, form bodies, and JSON responses. It reaches only the endpoint of the key that
-// the operator configured, so its HTTP client is not the SSRF-guarded kernel.HTTPClient
-// (ADR-0074 §7, H1). It keeps its requests within RequestsPerSecond and backs off on a 429.
+// The one-time payments (supporters.OneTimePayments, the tips of ADR-0162 §11) are on API v2,
+// with the same secret key: a hosted Checkout Session of one payment, its PaymentFlow, the
+// account's payment transactions as money movements, and its disputes. One webhook endpoint takes
+// the events of both versions, which ParseWebhook tells apart by their shape.
+//
+// The adapter calls https://api.pay.jp/v1 and https://api.pay.jp/v2 with net/http (ADR-0074
+// §10): Basic authentication with the secret key, form bodies on v1 and JSON bodies on v2, and
+// JSON responses. It reaches only the endpoint of the key that the operator configured, so its
+// HTTP client is not the SSRF-guarded kernel.HTTPClient (ADR-0074 §7, H1). Both versions share
+// one limit of RequestsPerSecond and back off on a 429.
 // API v1 documents no idempotency keys, so every command reads the subscription first and
-// writes only what is not in the asked state yet.
+// writes only what is not in the asked state yet; the creations on v2 carry an Idempotency-Key.
 package payjp
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -38,6 +45,9 @@ const Name = "payjp"
 
 // BaseURL is PAY.JP's API v1.
 const BaseURL = "https://api.pay.jp/v1"
+
+// BaseURLV2 is PAY.JP's API v2, of the one-time payments.
+const BaseURLV2 = "https://api.pay.jp/v2"
 
 // TokenHeader is the header of the account's webhook token (ADR-0074 §12).
 const TokenHeader = "X-Payjp-Webhook-Token" //nolint:gosec // G101: a header name, not a credential
@@ -91,6 +101,8 @@ type Options struct {
 	HTTPClient *http.Client
 	// URL replaces BaseURL; for tests only.
 	URL string
+	// V2URL replaces BaseURLV2; for tests only.
+	V2URL string
 	// RequestsPerSecond bounds the request rate; 0 is LiveRequestsPerSecond or
 	// TestRequestsPerSecond by the mode.
 	RequestsPerSecond float64
@@ -145,6 +157,7 @@ type Provider struct {
 	o       Options
 	mode    supporters.Mode
 	base    string
+	v2base  string
 	limiter *limiter
 	log     *slog.Logger
 	// stateKey signs the state of the pages (ADR-0074 §11).
@@ -185,8 +198,12 @@ func New(o Options) (*Provider, error) {
 	if base == "" {
 		base = BaseURL
 	}
+	v2base := strings.TrimRight(o.V2URL, "/")
+	if v2base == "" {
+		v2base = BaseURLV2
+	}
 	return &Provider{
-		o: o, mode: mode, base: base, log: o.Logger.With(slog.String("provider", Name)),
+		o: o, mode: mode, base: base, v2base: v2base, log: o.Logger.With(slog.String("provider", Name)),
 		limiter:  newLimiter(time.Duration(float64(time.Second)/rate), o.Now, o.Sleep),
 		stateKey: deriveKey(o.SecretKey, "my/payjp/pages"),
 	}, nil
@@ -239,16 +256,57 @@ func (p *Provider) del(ctx context.Context, op, path string, form url.Values) er
 	return p.call(ctx, op, http.MethodDelete, path, form, nil)
 }
 
-// call sends one request within the rate limit, retrying it on a 429 with a backoff, and
-// classifies its error (supporters.ErrorKindOf). The message keeps PAY.JP's status, type, and
-// code, never the body.
+// call sends one request of API v1.
 func (p *Provider) call(ctx context.Context, op, method, path string, form url.Values, out any) error {
+	r := request{method: method, url: p.base + path}
+	if form != nil {
+		r.body, r.contentType = []byte(form.Encode()), "application/x-www-form-urlencoded"
+	}
+	return p.do(ctx, op, r, out)
+}
+
+// getV2 reads path of API v2 with query into out.
+func (p *Provider) getV2(ctx context.Context, op, path string, query url.Values, out any) error {
+	if len(query) > 0 {
+		path += "?" + query.Encode()
+	}
+	return p.do(ctx, op, request{method: http.MethodGet, url: p.v2base + path}, out)
+}
+
+// postV2 writes body as JSON to path of API v2 with the Idempotency-Key key ("" sends none), and
+// reads the response into out. PAY.JP keeps a key for at least 24 hours and answers the same key
+// with the first response; the same key with other parameters is a 409, an invalid request.
+func (p *Provider) postV2(ctx context.Context, op, path string, body any, key string, out any) error {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return fmt.Errorf("payjp: %s: %w: %w", op, supporters.ErrPaymentInvalidRequest, err)
+	}
+	return p.do(ctx, op, request{
+		method: http.MethodPost, url: p.v2base + path, body: b, contentType: "application/json", idempotencyKey: key,
+	}, out)
+}
+
+// request is one request of either version.
+type request struct {
+	method string
+	// url is the whole URL: the version's base and the path.
+	url         string
+	body        []byte
+	contentType string
+	// idempotencyKey is the Idempotency-Key of API v2; "" sends none.
+	idempotencyKey string
+}
+
+// do sends one request within the rate limit, which both versions share, retrying it on a 429
+// with a backoff, and classifies its error (supporters.ErrorKindOf). The message keeps PAY.JP's
+// status, type, and code, never the body.
+func (p *Provider) do(ctx context.Context, op string, r request, out any) error {
 	backoff := firstBackoff
 	for attempt := 0; ; attempt++ {
 		if err := p.limiter.wait(ctx); err != nil {
 			return fmt.Errorf("payjp: %s: %w: %w", op, supporters.ErrPaymentUnavailable, err)
 		}
-		status, err := p.send(ctx, method, path, form, out)
+		status, err := p.send(ctx, r, out)
 		if err == nil {
 			return nil
 		}
@@ -262,19 +320,22 @@ func (p *Provider) call(ctx context.Context, op, method, path string, form url.V
 }
 
 // send sends one request and returns its status with the classified error of a failure.
-func (p *Provider) send(ctx context.Context, method, path string, form url.Values, out any) (int, error) {
+func (p *Provider) send(ctx context.Context, r request, out any) (int, error) {
 	var body io.Reader
-	if form != nil {
-		body = strings.NewReader(form.Encode())
+	if r.body != nil {
+		body = bytes.NewReader(r.body)
 	}
-	req, err := http.NewRequestWithContext(ctx, method, p.base+path, body)
+	req, err := http.NewRequestWithContext(ctx, r.method, r.url, body)
 	if err != nil {
 		return 0, fmt.Errorf("%w: %w", supporters.ErrPaymentInvalidRequest, err)
 	}
 	req.SetBasicAuth(p.o.SecretKey, "")
 	req.Header.Set("Accept", "application/json")
-	if form != nil {
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if r.contentType != "" {
+		req.Header.Set("Content-Type", r.contentType)
+	}
+	if r.idempotencyKey != "" {
+		req.Header.Set("Idempotency-Key", r.idempotencyKey)
 	}
 	resp, err := p.o.HTTPClient.Do(req)
 	if err != nil {
@@ -291,7 +352,17 @@ func (p *Provider) send(ctx context.Context, method, path string, form url.Value
 	if resp.StatusCode >= 300 {
 		var e apiError
 		_ = json.Unmarshal(data, &e)
-		return resp.StatusCode, fmt.Errorf("%w: HTTP %d %s %s", kindOfStatus(resp.StatusCode), resp.StatusCode, e.Error.Type, e.Error.Code)
+		typ, code := e.Error.Type, e.Error.Code
+		if typ == "" && code == "" {
+			// API v2 answers with problem details (RFC 9457).
+			var e2 struct {
+				Type  string `json:"type"`
+				Title string `json:"title"`
+			}
+			_ = json.Unmarshal(data, &e2)
+			typ, code = e2.Type, e2.Title
+		}
+		return resp.StatusCode, fmt.Errorf("%w: HTTP %d %s %s", kindOfStatus(resp.StatusCode), resp.StatusCode, typ, code)
 	}
 	if out == nil {
 		return resp.StatusCode, nil
