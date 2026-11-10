@@ -1,0 +1,74 @@
+{
+  "notification_policy.action.accept": {
+    "defaultMessage": "受け入れる",
+    "description": "Name of the action of the notification policy that lets notifications through, as an option of each condition and as a term in the explanation of the actions."
+  },
+  "notification_policy.action.accept.description": {
+    "defaultMessage": "通知は一覧に入り、上で選んだ方法で届きます。",
+    "description": "What the action 'Accept' of the notification policy does. 'Above' is the table of the notification settings, which chooses how notifications reach the user."
+  },
+  "notification_policy.action.drop": {
+    "defaultMessage": "破棄する",
+    "description": "Name of the action of the notification policy that makes no notification, as an option of each condition and as a term in the explanation of the actions."
+  },
+  "notification_policy.action.drop.description": {
+    "defaultMessage": "通知は作られません。相手の行動そのものは起きます。フォローされたら、フォローされたままです。",
+    "description": "What the action 'Drop' of the notification policy does."
+  },
+  "notification_policy.action.filter": {
+    "defaultMessage": "保留する",
+    "description": "Name of the action of the notification policy that holds notifications in a request of their sender, as an option of each condition and as a term in the explanation of the actions."
+  },
+  "notification_policy.action.filter.description": {
+    "defaultMessage": "通知は一覧と未読の数に入らず、プッシュ通知・メール・音でも届きません。通知の画面の先頭のリクエストで、受け入れるか閉じるまで待ちます。",
+    "description": "What the action 'Hold' of the notification policy does."
+  },
+  "notification_policy.condition.limited_account": {
+    "defaultMessage": "モデレーターが制限したアカウント",
+    "description": "Label of a condition of the notification policy: the moderators of the server limited the sender's account or its server."
+  },
+  "notification_policy.condition.limited_account.description": {
+    "defaultMessage": "このサーバーのモデレーターが、アカウントかそのサーバーごと制限したアカウントです。フォローしている人にも当てはまります。",
+    "description": "Explanation of the condition 'Accounts limited by the moderators' of the notification policy."
+  },
+  "notification_policy.condition.new_account": {
+    "defaultMessage": "新しいアカウント",
+    "description": "Label of a condition of the notification policy: the sender's account is new."
+  },
+  "notification_policy.condition.new_account.description": {
+    "defaultMessage": "作られてから 30 日たっていないアカウントです。",
+    "description": "Explanation of the condition 'New accounts' of the notification policy."
+  },
+  "notification_policy.condition.not_follower": {
+    "defaultMessage": "あなたをフォローしていない人",
+    "description": "Label of a condition of the notification policy: the sender does not follow the user."
+  },
+  "notification_policy.condition.not_follower.description": {
+    "defaultMessage": "あなたが承認していないフォローリクエストの相手も含みます。",
+    "description": "Explanation of the condition 'People who don't follow you' of the notification policy."
+  },
+  "notification_policy.condition.not_following": {
+    "defaultMessage": "あなたがフォローしていない人",
+    "description": "Label of a condition of the notification policy: the sender is not followed by the user."
+  },
+  "notification_policy.condition.not_following.description": {
+    "defaultMessage": "承認待ちのフォローリクエストは、フォローしていることになりません。",
+    "description": "Explanation of the condition 'People you don't follow' of the notification policy."
+  },
+  "notification_policy.condition.unsolicited_private_mention": {
+    "defaultMessage": "求めていない非公開のメンション",
+    "description": "Label of a condition of the notification policy: a direct (private) post that mentions the user without the user having started the conversation."
+  },
+  "notification_policy.condition.unsolicited_private_mention.description": {
+    "defaultMessage": "あなたが相手をメンションしたダイレクトの投稿への返信ではない、あなたをメンションしたダイレクトの投稿です。",
+    "description": "Explanation of the condition 'Unrequested private mentions' of the notification policy."
+  },
+  "notification_policy.description": {
+    "defaultMessage": "条件に当てはまる人からの通知をどうするかを選びます。複数の条件に当てはまる通知は、そのうち最も厳しい選択になります。フォローしている人と、リクエストを受け入れた人は、最後の条件のほかには当てはまりません。モデレーターとこのサーバーからの通知は、保留も破棄もされません。変えた後に届く通知に効きます。",
+    "description": "Description of the notification policy section. 'The last one' is the condition 'Accounts limited by the moderators', which comes last."
+  },
+  "notification_policy.title": {
+    "defaultMessage": "通知のポリシー",
+    "description": "Heading of the section of the notification settings where the user chooses, for each condition on who sent a notification, whether such notifications are accepted, held as requests, or dropped."
+  }
+}

@@ -249,6 +249,14 @@ async function signedInServer(
   const on: Cell = { enabled: true, fixed: false };
   const off: Cell = { enabled: false, fixed: false };
   const fixed: Cell = { enabled: true, fixed: true };
+  // The notification policy (ADR-0158): every condition accepts until a change.
+  let notificationPolicy: Record<string, string> = {
+    not_following: "accept",
+    not_follower: "accept",
+    new_account: "accept",
+    unsolicited_private_mention: "accept",
+    limited_account: "accept",
+  };
   let notificationRows = [
     ...["mention", "follow", "follow_request", "follow_accepted", "boost", "favourite", "reaction", "quote"].map(
       (group) => row(group, "ordinary", [group], on, off),
@@ -359,6 +367,14 @@ async function signedInServer(
           ),
         );
         return json(route, { rows: notificationRows });
+      }
+      case "GET /preferences/notification_policy":
+        return json(route, notificationPolicy);
+      case "PATCH /preferences/notification_policy": {
+        const change = request.postDataJSON() as Record<string, string>;
+        changes.push(change);
+        notificationPolicy = { ...notificationPolicy, ...change };
+        return json(route, notificationPolicy);
       }
       case "GET /blocks":
         return json(route, { items: [bob] });
@@ -1416,5 +1432,32 @@ test.describe("time zone of the device", () => {
     await expect(select).toContainText("+09:00");
     await expect(select).toBeFocused();
     await expect(useDevice).toHaveCount(0);
+  });
+});
+
+test.describe("notification policy", () => {
+  test("explains each action, and saves the action chosen with the keyboard for a condition", async ({
+    page,
+    makeAxeBuilder,
+  }) => {
+    const changes = await signedInServer(page, projectLocale());
+    await page.goto("/settings/notifications");
+    const section = page
+      .getByRole("main")
+      .getByRole("region", { name: message("notification_policy.title"), exact: true });
+    await expect(section).toContainText(message("notification_policy.action.filter.description"));
+    const group = section.getByRole("radiogroup", {
+      name: message("notification_policy.condition.new_account"),
+      exact: true,
+    });
+    await expect(group.getByRole("radio", { name: message("notification_policy.action.accept") })).toBeChecked();
+
+    // The APG radio group: the arrow keys move and choose (Down in either writing direction), which saves at once.
+    await group.getByRole("radio", { name: message("notification_policy.action.accept") }).focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(group.getByRole("radio", { name: message("notification_policy.action.filter") })).toBeChecked();
+    await expect.poll(() => changes).toContainEqual({ new_account: "filter" });
+    await expectNoAxeViolations(makeAxeBuilder);
+    await expectNoHorizontalScroll(page);
   });
 });

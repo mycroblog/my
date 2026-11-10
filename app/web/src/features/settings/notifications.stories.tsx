@@ -3,7 +3,7 @@
 // ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import { expect } from "storybook/test";
+import { expect, within } from "storybook/test";
 import type { Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
 import {
@@ -21,6 +21,7 @@ import {
   applyNotificationSettingChanges,
   instanceNotificationRows,
   moderatorNotificationRows,
+  notificationPolicyFixture,
   ordinaryNotificationRows,
 } from "./test/handlers";
 
@@ -86,6 +87,33 @@ export const Empty: Story = answering(
     })),
   ),
 );
+
+/**
+ * A notification policy that holds the notifications of new accounts and of people the viewer does not follow, and
+ * drops those of limited accounts; choosing an action saves it beside its group.
+ */
+export const NotificationPolicy: Story = {
+  ...answering(
+    http.get(`${apiBase}/preferences/notification_policy`, ({ request }) =>
+      withViewer(request, () =>
+        HttpResponse.json({
+          ...notificationPolicyFixture,
+          not_following: "filter",
+          new_account: "filter",
+          limited_account: "drop",
+        } satisfies Schemas["NotificationPolicy"]),
+      ),
+    ),
+  ),
+  play: async (context) => {
+    const { canvas, userEvent } = context;
+    await settled(context);
+    const group = canvas.getByRole("radiogroup", { name: "People who don't follow you" });
+    const hold = within(group).getByRole("radio", { name: "Hold" });
+    await userEvent.click(hold);
+    await expect(hold).toBeChecked();
+  },
+};
 
 /** The notification settings have not arrived yet. */
 export const Loading: Story = loadingOn("get", "/preferences/notifications");

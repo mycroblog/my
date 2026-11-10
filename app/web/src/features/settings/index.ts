@@ -21,6 +21,7 @@ export { DataExportsSection, OwnAccount } from "./components/OwnAccount";
 export { PreferencesForm } from "./components/PreferencesForm";
 // The notification settings: in the app, Web Push on this device, email, and the sound of this device (FR-210, ADR-0086).
 export { notificationSettingsQueryOptions } from "./api/notificationSettings";
+export { notificationPolicyQueryOptions } from "./api/notificationPolicy";
 export { instanceQueryOptions } from "./api/me";
 export { NotificationSettings } from "./components/NotificationSettings";
 // The prompt to turn on Web Push at the top of the notifications page (ADR-0086).

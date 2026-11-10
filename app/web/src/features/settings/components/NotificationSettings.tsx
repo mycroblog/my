@@ -34,12 +34,13 @@ import {
   useNotificationSettings,
   useNotificationSoundTest,
 } from "../hooks/useNotificationSettings";
+import { NotificationPolicySettings } from "./NotificationPolicySettings";
 
 /**
  * The notification settings (FR-210, ADR-0086 §8) in the sections of their screen requirements
  * (web-client/screens/settings-notifications.md): Web Push on this device and the notification sound above a table
- * per section of the notification types × the channels (in the app, Web Push, email, sound). Every control saves its
- * value as soon as it changes.
+ * per section of the notification types × the channels (in the app, Web Push, email, sound), and the notification
+ * policy (NotificationPolicySettings). Every control saves its value as soon as it changes.
  */
 export function NotificationSettings() {
   const t = useT();
@@ -55,6 +56,7 @@ export function NotificationSettings() {
       {view.sections.map((section) => (
         <NotificationTable key={section.section} section={section} channels={view.channels} describedBy={tableHintId} />
       ))}
+      <NotificationPolicySettings />
     </Stack>
   );
 }

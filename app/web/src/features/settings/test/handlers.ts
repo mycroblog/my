@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The default MSW handlers of the settings feature (web-client/README.md §7): the user's own profile, its badges, and
 // preferences, the automatic deletion of old posts and its estimate, passkeys, the user's own OAuth apps, two-factor authentication, the lists of blocks, mutes, muted domains, and follow requests, the archives of the user's
-// data, the CSV exports and imports, deleting the account, and the user's own invites. Unblocking and unmuting are the account
+// data, the CSV exports and imports, deleting the account, the user's own invites, and the notification policy. Unblocking and unmuting are the account
 // actions of the profile feature's handlers.
 import { http, HttpResponse } from "msw";
 import {
@@ -16,6 +16,15 @@ import { apiBase, problem, withViewer } from "../../../test/msw/http";
 
 /** The VAPID public key of an instance that sends Web Push (Instance.push_server_key): the example key of RFC 8291. */
 export const pushServerKey = "BP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8";
+
+/** The notification policy at its defaults: every condition accepts (ADR-0158 §2). */
+export const notificationPolicyFixture: Schemas["NotificationPolicy"] = {
+  not_following: "accept",
+  not_follower: "accept",
+  new_account: "accept",
+  unsolicited_private_mention: "accept",
+  limited_account: "accept",
+};
 
 /** Where the viewer's two-factor authentication stands by default: off. */
 export const twoFactorOffFixture: Schemas["TwoFactor"] = { enabled: false };
@@ -355,6 +364,15 @@ export const handlers = [
     return withViewer(request, () =>
       HttpResponse.json(applyNotificationSettingChanges(notificationSettingsFixture, changes)),
     );
+  }),
+  // operationIds getNotificationPolicy, updateNotificationPolicy: every condition accepts; a change answers the policy
+  // with it.
+  http.get(`${apiBase}/preferences/notification_policy`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(notificationPolicyFixture)),
+  ),
+  http.patch(`${apiBase}/preferences/notification_policy`, async ({ request }) => {
+    const changes = (await request.clone().json()) as Schemas["NotificationPolicyUpdate"];
+    return withViewer(request, () => HttpResponse.json({ ...notificationPolicyFixture, ...changes }));
   }),
   // operationIds getPushSubscription, putPushSubscription, deletePushSubscription: the grant has no subscription by default.
   http.get(`${apiBase}/push/subscription`, ({ request }) =>
