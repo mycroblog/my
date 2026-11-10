@@ -79,9 +79,12 @@ type RemoteActorsDeps struct {
 	Jobs      queue.JobQueue
 	Outbox    queue.Outbox
 	Followers Followers
-	Clock     kernel.Clock
-	IDs       kernel.IDGenerator
-	Logger    *slog.Logger
+	// Featured clears what a remote account features when its stored document stops declaring
+	// the collection; the fetches of the collections it declares need only the Outbox.
+	Featured RemoteFeaturedClearers
+	Clock    kernel.Clock
+	IDs      kernel.IDGenerator
+	Logger   *slog.Logger
 	// Review asks the hook inbound.actor about a changed profile before it is stored (ADR-0147
 	// §2); its zero value asks nothing.
 	Review ActorReview
@@ -253,7 +256,7 @@ func (r *RemoteActors) storeAfter(ctx context.Context, actor *federation.Actor, 
 		if err := r.applyActorVerdict(ctx, tx, v, stored.ID); err != nil {
 			return err
 		}
-		if err := enqueueFetchFeaturedAllTx(ctx, tx, r.d.Outbox, stored.ID, actor); err != nil {
+		if err := r.d.Featured.syncFeaturedTx(ctx, tx, r.d.Outbox, stored.ID, actor); err != nil {
 			return err
 		}
 		return r.seeInstance(ctx, tx, in.Domain)

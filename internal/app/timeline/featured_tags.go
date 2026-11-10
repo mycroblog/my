@@ -125,6 +125,19 @@ func (s *Service) ReplaceRemoteFeaturedTags(ctx context.Context, accountID strin
 	return s.replaceFeaturedTags(ctx, accountID, hashtags, false)
 }
 
+// ClearRemoteFeaturedTagsTx removes in tx the featured hashtags of the remote account accountID,
+// whose actor document no longer declares a featuredTags collection of its origin (ADR-0006 §17).
+// The federation module calls it in the transaction that stores the document; the caller has
+// checked that the account is remote. Clearing an account that features none changes nothing,
+// and it sends nothing.
+func (s *Service) ClearRemoteFeaturedTagsTx(ctx context.Context, tx uow.Tx, accountID string) error {
+	current, err := s.d.Repository.FeaturedTagsTx(ctx, tx, accountID)
+	if err != nil || len(current) == 0 {
+		return err
+	}
+	return s.d.Repository.ReplaceFeaturedTags(ctx, tx, accountID, nil)
+}
+
 // appendHashtag appends h to hashtags unless one of them has its normalized name.
 func appendHashtag(hashtags []appcontent.Hashtag, h appcontent.Hashtag) []appcontent.Hashtag {
 	if slices.ContainsFunc(hashtags, func(o appcontent.Hashtag) bool { return o.NameNormalized == h.NameNormalized }) {

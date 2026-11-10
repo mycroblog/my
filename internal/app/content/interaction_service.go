@@ -392,6 +392,15 @@ func (s *Interactions) ReplaceRemotePins(ctx context.Context, accountID string, 
 	})
 }
 
+// ClearRemotePinsTx removes in tx the pins of the remote account accountID, whose actor document
+// no longer declares a featured collection of its origin (ADR-0006 §17). The federation module
+// calls it in the transaction that stores the document; the caller has checked that the account
+// is remote. Clearing an account that pins nothing changes nothing.
+func (s *Interactions) ClearRemotePinsTx(ctx context.Context, tx uow.Tx, accountID string) error {
+	_, err := s.d.Interactions.DeletePinsOf(ctx, tx, accountID)
+	return err
+}
+
 // visibleStatus returns statusID when accountID is a local, active account that may see it
 // (content.CanView in ContextStatus). A status that is missing, deleted, or hidden from the
 // account fails with ErrNotFound.

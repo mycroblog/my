@@ -73,7 +73,8 @@ func (a *App) setUpRemoteActors(cfg *config.Config, repo federationRepository) {
 	a.RemoteActors = federation.NewRemoteActors(federation.RemoteActorsDeps{
 		UnitOfWork: a.UnitOfWork, Accounts: a.Accounts, Instances: repo, Fetcher: fetcher, HTTP: a.HTTPClient,
 		Jobs: a.Jobs, Outbox: outbox, Followers: a.Graph, Clock: a.Clock, IDs: a.IDs, Logger: a.Logger,
-		Review: federation.ActorReview{Gate: a.Hooks, Reports: a.Moderation},
+		Featured: federation.RemoteFeaturedClearers{Pins: a.Interactions, FeaturedTags: a.Timeline},
+		Review:   federation.ActorReview{Gate: a.Hooks, Reports: a.Moderation},
 	})
 	a.RemoteActors.RegisterJobs(a.Handlers, a.Scheduler)
 	a.Hooks.RegisterOverrideEffect(apphook.InboundActor, federation.RefetchDroppedProfile(outbox))
