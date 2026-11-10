@@ -99,7 +99,7 @@ func autoDeleteRepoPolicies(t *testing.T, r *autoDeleteRepo) {
 	now := r.se.Clock.Now()
 	first := r.save(t, content.AutoDeletePolicy{
 		AccountID: ids[0], Enabled: true, MinAgeDays: 30, KeepPinned: true, KeepBookmarked: true, KeepFavourited: true,
-		KeepMedia: true, KeepPolls: true, KeepMinBoosts: 5, KeepMinFavourites: 7,
+		KeepMedia: true, KeepPolls: true, KeepArticles: true, KeepMinBoosts: 5, KeepMinFavourites: 7,
 		KeepVisibilities: []content.Visibility{content.VisibilityDirect, content.VisibilityPrivate, content.VisibilityPublic}, UpdatedAt: now,
 	})
 	if got, err := r.repo.FindAutoDeletePolicy(ctx, ids[0]); err != nil || !reflect.DeepEqual(got, first) {
@@ -153,6 +153,12 @@ func autoDeleteRepoStatuses(t *testing.T, r *autoDeleteRepo) {
 	})
 	withPoll := r.status(t, author, content.VisibilityPublic, true, func(rev *content.Revision) {
 		rev.Poll = &content.Poll{ID: r.id(), Options: []content.PollOption{{Position: 0, Title: "yes"}, {Position: 1, Title: "no"}}}
+	})
+	article := r.status(t, author, content.VisibilityPublic, true, func(rev *content.Revision) {
+		rev.Article = &content.ArticleRevision{Title: "An article", SummaryOrigin: content.SummaryByAuthor}
+	})
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.se.H.Statuses.InsertArticle(ctx, tx, content.Article{StatusID: article.ID, AuthorAccountID: author})
 	})
 	boosted, liked := public(), public()
 	deleted := public()
@@ -211,7 +217,7 @@ func autoDeleteRepoStatuses(t *testing.T, r *autoDeleteRepo) {
 		}
 		return out
 	}
-	everything := []content.Status{plain, private, pinned, bookmarked, favourited, byOther, withMedia, withPoll, boosted, liked}
+	everything := []content.Status{plain, private, pinned, bookmarked, favourited, byOther, withMedia, withPoll, article, boosted, liked}
 	if got := list(content.AutoDeletePolicy{}, 100); !slices.Equal(ids(got), ids(everything)) {
 		t.Errorf("ListStatusesToAutoDelete(no exceptions) = %v, want the old local live posts of the author oldest first %v", ids(got), ids(everything))
 	} else if !reflect.DeepEqual(got[0], plain) {
@@ -231,6 +237,7 @@ func autoDeleteRepoStatuses(t *testing.T, r *autoDeleteRepo) {
 		{"favourited", content.AutoDeletePolicy{KeepFavourited: true}, favourited},
 		{"media", content.AutoDeletePolicy{KeepMedia: true}, withMedia},
 		{"polls", content.AutoDeletePolicy{KeepPolls: true}, withPoll},
+		{"articles", content.AutoDeletePolicy{KeepArticles: true}, article},
 		{"boosts", content.AutoDeletePolicy{KeepMinBoosts: 3}, boosted},
 		{"favourites", content.AutoDeletePolicy{KeepMinFavourites: 3}, liked},
 	} {

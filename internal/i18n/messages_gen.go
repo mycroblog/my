@@ -2506,6 +2506,55 @@ func (l *Localizer) ServerErrorsStatusAlreadyDeleted() string {
 	return l.format("server:errors.status.already_deleted", nil)
 }
 
+// ServerErrorsStatusArticleDirect formats "server:errors.status.article_direct". Detail of the HTTP 422 API error when a new article has the visibility direct, which articles never have.
+//
+//	en: An article cannot be a direct post.
+func (l *Localizer) ServerErrorsStatusArticleDirect() string {
+	return l.format("server:errors.status.article_direct", nil)
+}
+
+// ServerErrorsStatusArticleEditedAsPost formats "server:errors.status.article_edited_as_post". Detail of the HTTP 422 API error when the user edits an article as a short post.
+//
+//	en: An article is edited as an article.
+func (l *Localizer) ServerErrorsStatusArticleEditedAsPost() string {
+	return l.format("server:errors.status.article_edited_as_post", nil)
+}
+
+// ServerErrorsStatusArticleSummaryInvalid formats "server:errors.status.article_summary_invalid". Detail of the HTTP 422 API error when the summary of an article is too long. {max} is the maximum number of characters.
+//
+//	en: {max, plural, one {The summary of an article must be at most # character.} other {The summary of an article must be at most # characters.}}
+func (l *Localizer) ServerErrorsStatusArticleSummaryInvalid(max int) string {
+	return l.format("server:errors.status.article_summary_invalid", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTitleInvalid formats "server:errors.status.article_title_invalid". Detail of the HTTP 422 API error when the title of an article is blank or too long. {max} is the maximum number of characters.
+//
+//	en: {max, plural, one {The title of an article must be 1 character.} other {The title of an article must be 1 to # characters.}}
+func (l *Localizer) ServerErrorsStatusArticleTitleInvalid(max int) string {
+	return l.format("server:errors.status.article_title_invalid", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTooLong formats "server:errors.status.article_too_long". Detail of the HTTP 422 API error when the body of an article renders to more HTML than the instance allows. {max} is the maximum number of bytes.
+//
+//	en: {max, plural, one {The body of an article must make at most # byte of HTML.} other {The body of an article must make at most # bytes of HTML.}}
+func (l *Localizer) ServerErrorsStatusArticleTooLong(max int) string {
+	return l.format("server:errors.status.article_too_long", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTooManyImages formats "server:errors.status.article_too_many_images". Detail of the HTTP 422 API error when the body of an article shows more of the user's images than the instance allows. {max} is the maximum number of images.
+//
+//	en: {max, plural, one {The body of an article can show at most # image.} other {The body of an article can show at most # images.}}
+func (l *Localizer) ServerErrorsStatusArticleTooManyImages(max int) string {
+	return l.format("server:errors.status.article_too_many_images", map[string]any{"max": max})
+}
+
+// ServerErrorsStatusArticleTooManyTags formats "server:errors.status.article_too_many_tags". Detail of the HTTP 422 API error when an article is given more hashtags than allowed. {max} is the maximum number of hashtags.
+//
+//	en: {max, plural, one {An article can have at most # hashtag.} other {An article can have at most # hashtags.}}
+func (l *Localizer) ServerErrorsStatusArticleTooManyTags(max int) string {
+	return l.format("server:errors.status.article_too_many_tags", map[string]any{"max": max})
+}
+
 // ServerErrorsStatusBoostNotAllowed formats "server:errors.status.boost_not_allowed". Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them.
 //
 //	en: The author of this post does not let you boost it.
@@ -2532,6 +2581,13 @@ func (l *Localizer) ServerErrorsStatusEditRejectedDetail() string {
 //	en: The post has no text.
 func (l *Localizer) ServerErrorsStatusEmptyText() string {
 	return l.format("server:errors.status.empty_text", nil)
+}
+
+// ServerErrorsStatusInvalidHashtag formats "server:errors.status.invalid_hashtag". Detail of the HTTP 422 API error when a hashtag given to an article has characters that a hashtag cannot have.
+//
+//	en: A hashtag of the article is not a hashtag.
+func (l *Localizer) ServerErrorsStatusInvalidHashtag() string {
+	return l.format("server:errors.status.invalid_hashtag", nil)
 }
 
 // ServerErrorsStatusInvalidLanguage formats "server:errors.status.invalid_language". Detail of the HTTP 422 API error when a post's language is not a well-formed BCP 47 tag such as en or ja.
@@ -2588,6 +2644,13 @@ func (l *Localizer) ServerErrorsStatusMediaNotReady() string {
 //	en: This server requires a description (alt text) for every image. Add one to each image before posting.
 func (l *Localizer) ServerErrorsStatusMissingMediaDescription() string {
 	return l.format("server:errors.status.missing_media_description", nil)
+}
+
+// ServerErrorsStatusNotArticle formats "server:errors.status.not_article". Detail of the HTTP 422 API error when the user edits a post as an article.
+//
+//	en: This post is not an article.
+func (l *Localizer) ServerErrorsStatusNotArticle() string {
+	return l.format("server:errors.status.not_article", nil)
 }
 
 // ServerErrorsStatusNotAuthor formats "server:errors.status.not_author". Detail of the HTTP 403 API error when a user tries to edit or delete another account's post.

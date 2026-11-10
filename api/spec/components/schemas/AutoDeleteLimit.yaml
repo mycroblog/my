@@ -34,6 +34,9 @@ properties:
   allow_polls:
     description: Whether the posts with a poll may be kept (`keep_polls`).
     type: boolean
+  allow_articles:
+    description: Whether articles may be kept (`keep_articles`); always given.
+    type: boolean
   allow_visibilities:
     description: Whether posts may be kept by their visibility (`keep_visibilities`).
     type: boolean

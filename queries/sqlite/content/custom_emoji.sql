@@ -107,7 +107,9 @@ WHERE custom_emojis.id = sqlc.arg(id) AND custom_emojis.domain <> ''
 DELETE FROM remote_media
 WHERE remote_media.media_id = sqlc.arg(media_id)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = sqlc.arg(media_id))
-  AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = sqlc.arg(media_id));
+  AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = sqlc.arg(media_id))
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = sqlc.arg(media_id))
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = sqlc.arg(media_id));
 
 -- name: DeleteRemoteMediaFile :exec
 DELETE FROM media_files WHERE media_files.id = sqlc.arg(id) AND media_files.origin = 'remote';

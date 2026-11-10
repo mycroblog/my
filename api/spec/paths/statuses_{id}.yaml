@@ -4,7 +4,9 @@ parameters:
 get:
   operationId: getStatus
   summary: Get a status
-  description: A status that the viewer may not see is a 404, the same as a missing one.
+  description: |
+    A status that the viewer may not see is a 404, the same as a missing one. An article comes
+    with its body in `content`.
   tags: [statuses]
   security:
     - {}
@@ -28,7 +30,8 @@ put:
     Replaces the text, content warning, sensitivity, language, and media of a status; the
     previous content stays in the edit history. The visibility and reply target never
     change. Attached media must be the user's own uploads that finished processing (422
-    otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+    otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+    article is edited with `editArticle` (422 here).
     When the server's automated review refuses the edit, the answer is a 422
     `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
     status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`

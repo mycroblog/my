@@ -15,3 +15,5 @@ properties:
     type: boolean
   drafts:
     $ref: ./InstanceDraftLimits.yaml
+  articles:
+    $ref: ./InstanceArticleLimits.yaml

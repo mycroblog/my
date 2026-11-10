@@ -112,6 +112,9 @@ func (r *StatusRepository) FindCurrentRevisions(ctx context.Context, statusIDs [
 	for _, rm := range remotes {
 		byRevision[rm.RevisionID].remote = &rm
 	}
+	if err := readRevisionArticles(ctx, q, revs, byRevision); err != nil {
+		return nil, err
+	}
 	for _, row := range rows {
 		out[row.StatusID] = byRevision[row.ID].revision()
 	}

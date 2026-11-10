@@ -351,6 +351,34 @@
     "defaultMessage": "この Idempotency-Key で作成された投稿は削除されています。",
     "description": "Detail of the HTTP 409 API error when a client retries posting with an Idempotency-Key whose post was deleted. Idempotency-Key is a header name (not translated)."
   },
+  "errors.status.article_direct": {
+    "defaultMessage": "記事をダイレクトにはできません。",
+    "description": "Detail of the HTTP 422 API error when a new article has the visibility direct, which articles never have."
+  },
+  "errors.status.article_edited_as_post": {
+    "defaultMessage": "記事は記事として編集してください。",
+    "description": "Detail of the HTTP 422 API error when the user edits an article as a short post."
+  },
+  "errors.status.article_summary_invalid": {
+    "defaultMessage": "{max, plural, other {記事の要約は # 文字以内にしてください。}}",
+    "description": "Detail of the HTTP 422 API error when the summary of an article is too long. {max} is the maximum number of characters."
+  },
+  "errors.status.article_title_invalid": {
+    "defaultMessage": "{max, plural, other {記事の題は 1 文字以上 # 文字以内にしてください。}}",
+    "description": "Detail of the HTTP 422 API error when the title of an article is blank or too long. {max} is the maximum number of characters."
+  },
+  "errors.status.article_too_long": {
+    "defaultMessage": "{max, plural, other {記事の本文は HTML にして # バイト以内にしてください。}}",
+    "description": "Detail of the HTTP 422 API error when the body of an article renders to more HTML than the instance allows. {max} is the maximum number of bytes."
+  },
+  "errors.status.article_too_many_images": {
+    "defaultMessage": "{max, plural, other {記事の本文に載せられる画像は # 枚までです。}}",
+    "description": "Detail of the HTTP 422 API error when the body of an article shows more of the user's images than the instance allows. {max} is the maximum number of images."
+  },
+  "errors.status.article_too_many_tags": {
+    "defaultMessage": "{max, plural, other {記事に付けられるハッシュタグは # 個までです。}}",
+    "description": "Detail of the HTTP 422 API error when an article is given more hashtags than allowed. {max} is the maximum number of hashtags."
+  },
   "errors.status.boost_not_allowed": {
     "defaultMessage": "この投稿の作者は、あなたがブーストすることを認めていません。",
     "description": "Detail of the HTTP 422 API error when the author of a post chose who may boost it and the user is not among them."
@@ -358,6 +386,10 @@
   "errors.status.empty_text": {
     "defaultMessage": "投稿の本文がありません。",
     "description": "Detail of the HTTP 422 API error when a post's text is empty or only spaces."
+  },
+  "errors.status.invalid_hashtag": {
+    "defaultMessage": "記事のハッシュタグに、ハッシュタグとして使えないものがあります。",
+    "description": "Detail of the HTTP 422 API error when a hashtag given to an article has characters that a hashtag cannot have."
   },
   "errors.status.invalid_language": {
     "defaultMessage": "言語が正しい言語タグではありません。",
@@ -386,6 +418,10 @@
   "errors.status.missing_media_description": {
     "defaultMessage": "このサーバーでは、すべての画像に説明 (代替テキスト) が必要です。投稿する前に、それぞれの画像に説明を付けてください。",
     "description": "Detail of the HTTP 422 API error when an attached image has no alternative text while the server requires one for every image (the instance setting require_media_description)."
+  },
+  "errors.status.not_article": {
+    "defaultMessage": "この投稿は記事ではありません。",
+    "description": "Detail of the HTTP 422 API error when the user edits a post as an article."
   },
   "errors.status.not_author": {
     "defaultMessage": "この投稿を変更できるのは投稿者だけです。",

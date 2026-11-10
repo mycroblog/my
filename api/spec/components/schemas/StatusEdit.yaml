@@ -4,8 +4,12 @@ type: object
 required: [content, spoiler_text, sensitive, created_at, media_attachments, emojis]
 properties:
   content:
-    description: The text of the revision as sanitized HTML.
+    description: The text of the revision as sanitized HTML; for an article, its body.
     type: string
+  article:
+    description: The title and summary of the revision of an article; omitted for a post.
+    allOf:
+      - $ref: ./StatusEditArticle.yaml
   spoiler_text:
     description: The content warning of the revision; empty when there is none.
     type: string

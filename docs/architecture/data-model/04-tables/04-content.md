@@ -144,7 +144,7 @@
 | `status_auto_delete_limit_notices`【イベント】 | `id`, `account_id`, `max_age_days`（`int`、1〜3650。通知した上限）, `noticed_at`, `enforce_from`（`noticed_at` + 猶予） | インデックス `(account_id, id DESC)` |
 | `status_auto_delete_limits`【投影】 | `account_id`, `notice_id`, `max_age_days`, `enforce_from` | PK `(account_id)`。今上限に縛られているアカウントだけが行を持つ |
 
-- 行がなければ組み込みの既定の設定（無効、30 日、ピン留め・自分のブックマーク・自分のお気に入り・`direct` を残す）です。保存は設定全体の置き換えで、残す公開範囲の行も入れ替えます。
+- 行がなければ組み込みの既定の設定（無効、30 日、ピン留め・自分のブックマーク・自分のお気に入り・記事・`direct` を残す）です。`keep_articles` は既定 真の列で、列を足す前に保存した設定も記事を残します。保存は設定全体の置き換えで、残す公開範囲の行も入れ替えます。
 - 新しいローカルのアカウントは、作られたトランザクションで、サーバーの既定（インスタンス設定 `auto_delete_default_*`）を自分の行として受け取ります（ADR-0151 §2）。`content` が `account.local_account_created` を同期で購読し、設定をトランザクションの中で読みます。インスタンスの Actor は行を持ちません。既定から来たことを記録する列は持たず、既定を後で変えても既存の行は変わりません。
 - 1 時間ごとのジョブ `content.auto_delete_statuses` が、有効な設定をアカウントの順に 20 件ずつ読み（続きはカーソル（アカウントの ID）を持った次のジョブ）、アカウントごとに、公開から `min_age_days` 日を過ぎた削除されていないローカルの投稿を古い順に消します。
   例外は、ピン留め、本人のブックマーク・お気に入り、現在版の添付・投票、記事（`keep_articles`）、残す公開範囲、`status_counters` のブースト数・お気に入り数が閾値以上の投稿です。例外の判定は投稿を読む SQL の中で行うので、残る投稿は消す対象として読みません。
@@ -195,8 +195,8 @@
 | --- | --- | --- | --- |
 | `status_articles` | リソース（部分型） | `status_id`（PK）, `author_account_id` | インデックス `(author_account_id, status_id)`（プロフィールの記事の一覧、記事だけのフィード） |
 | `status_revision_articles` | イベント（版の子） | `revision_id`（PK）, `title`（1〜200 文字。リモートは空も可）, `summary`（0〜500 文字、プレーンテキスト）, `summary_origin`（`enum(author, body)`） | 記事のすべての版が 1 行を持つ |
-| `status_revision_article_covers` | イベント（版の子） | `revision_id`（PK）, `media_id`, `description`（`text`、NULL 可） | インデックス `(media_id)` |
-| `status_revision_article_images` | イベント（版の子） | `revision_id`, `position`（`int`、0 始まり）, `media_id`, `description`（`text`、NULL 可） | PK `(revision_id, position)`。インデックス `(media_id)`。本文の中の画像で、インスタンス設定 `max_article_images` 件まで |
+| `status_revision_article_covers` | イベント（版の子） | `revision_id`（PK）, `media_id`, `description`（`text`、空なら代替テキストなし） | インデックス `(media_id)` |
+| `status_revision_article_images` | イベント（版の子） | `revision_id`, `position`（`int`、0 始まり）, `media_id`, `description`（`text`、空なら代替テキストなし） | PK `(revision_id, position)`。インデックス `(media_id)`。本文の中の画像で、同じファイルは最初の 1 回だけを記録し、インスタンス設定 `max_article_images` 件まで |
 | `draft_articles` | 現在値 | `draft_id`（PK）, `title`, `summary`, `cover_media_id`（NULL 可）, `cover_description`（`text`、NULL 可） | 記事の下書き。本文の Markdown は `draft_contents.source_text` |
 | `draft_article_tags` | 現在値 | `draft_id`, `position`, `name` | PK `(draft_id, position)`。エディタで付けたハッシュタグ（10 件まで） |
 | `draft_article_images` | 現在値 | `draft_id`, `media_id` | PK `(draft_id, media_id)`。インデックス `(media_id)`（未添付の掃除）。保存のたびに本文の参照から作り直す |
@@ -204,7 +204,8 @@
 - 投稿か記事かは作るときに決まり、編集で変わりません。記事の版は CW（`spoiler_text` は空）・添付・投票を持たず、本文の HTML は `status_revision_bodies`、Markdown の原文は `status_revision_sources`（`text_markdown`）に置きます。
 - ローカルの記事は `internal/app/content` が書いたときに 1 回だけ描画します（記事の描画のポートを `internal/adapter/markdown` が実装し、記事用の許可リストを通す）。
   - 描画した HTML の UTF-8 のバイト数はインスタンス設定 `max_article_bytes`（既定かつ上限 100,000）以下で、題・要約は数えません。公開範囲に `direct` は選べず、記事は返信・引用になりません。
-  - 本文の画像は、書いた本人のアップロードで最新の `media_processing_results` が `ready` のものだけを `<img>` にして `status_revision_article_images` に記録し、それ以外の画像は代替テキストのリンクにします。
+  - 本文の画像は、行き先が `media:` とアップロードの ID（`![代替テキスト](media:ID)`）で、書いた本人のアップロードで最新の `media_processing_results` が `ready` の静止画のものだけを `<img>`（`large` の版の公開 URL）にして `status_revision_article_images` に記録し、それ以外の画像は代替テキストのリンクにします。
+  - カバーと本文の画像は添付と同じに数えます: メディアの掃除（未添付のアップロードの削除、消去されるアカウントのファイル）は `status_revision_article_covers`・`status_revision_article_images` の参照も添付として扱い、フック `media.check` の判定も添付と同じに当てます。インスタンス設定 `require_media_description` はカバーと本文の画像にも代替テキストを求めます。
   - 本文のメンションはリンクにするだけで、`status_revision_mentions` に記録しません（通知しない）。ハッシュタグはエディタで付けたものだけを `status_revision_tags` に記録し、本文の `#name` からは取りません。
   - 要約が空なら、本文のテキストの先頭から 200 文字を文か語の切れ目で切ったものを `summary_origin = body` で置きます。
 - 権限: インスタンス設定 `article_authoring`（`enum(everyone, permission)`、既定 `everyone`）が `permission` なら、作成に権限 `create_articles` が要ります。編集と削除は限りません。

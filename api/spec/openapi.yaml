@@ -342,6 +342,12 @@ paths:
     $ref: ./paths/bookmarks.yaml
   /statuses:
     $ref: ./paths/statuses.yaml
+  /articles:
+    $ref: ./paths/articles.yaml
+  /articles/preview:
+    $ref: ./paths/articles_preview.yaml
+  /articles/{id}:
+    $ref: ./paths/articles_{id}.yaml
   /drafts:
     $ref: ./paths/drafts.yaml
   /drafts/{id}:
@@ -2165,6 +2171,32 @@ components:
       $ref: ./components/schemas/SignupBlockImportSkipped.yaml
     SpoilerText:
       $ref: ./components/schemas/SpoilerText.yaml
+    ArticleCoverInput:
+      $ref: ./components/schemas/ArticleCoverInput.yaml
+    ArticlePreview:
+      $ref: ./components/schemas/ArticlePreview.yaml
+    ArticlePreviewRequest:
+      $ref: ./components/schemas/ArticlePreviewRequest.yaml
+    ArticleSource:
+      $ref: ./components/schemas/ArticleSource.yaml
+    ArticleSummary:
+      $ref: ./components/schemas/ArticleSummary.yaml
+    ArticleTagsInput:
+      $ref: ./components/schemas/ArticleTagsInput.yaml
+    ArticleText:
+      $ref: ./components/schemas/ArticleText.yaml
+    ArticleTitle:
+      $ref: ./components/schemas/ArticleTitle.yaml
+    CreateArticleRequest:
+      $ref: ./components/schemas/CreateArticleRequest.yaml
+    EditArticleRequest:
+      $ref: ./components/schemas/EditArticleRequest.yaml
+    InstanceArticleLimits:
+      $ref: ./components/schemas/InstanceArticleLimits.yaml
+    StatusArticle:
+      $ref: ./components/schemas/StatusArticle.yaml
+    StatusEditArticle:
+      $ref: ./components/schemas/StatusEditArticle.yaml
     Status:
       $ref: ./components/schemas/Status.yaml
     StatusContext:

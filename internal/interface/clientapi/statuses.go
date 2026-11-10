@@ -50,7 +50,7 @@ type StatusReader interface {
 	History(ctx context.Context, viewer appcontent.Viewer, statusID string) ([]appcontent.RevisionView, error)
 	Visible(ctx context.Context, viewer appcontent.Viewer, statusID string) (content.Status, error)
 	Live(ctx context.Context, statusID string) error
-	Source(ctx context.Context, viewer appcontent.Viewer, statusID string) (content.Revision, error)
+	Source(ctx context.Context, viewer appcontent.Viewer, statusID string) (appcontent.StatusView, error)
 	Bookmarks(ctx context.Context, viewer appcontent.Viewer, before string, limit int) (appcontent.BookmarkPage, error)
 	Reactions(ctx context.Context, viewer appcontent.Viewer, statusID, emoji, before string, limit int) (appcontent.ReactedPage, error)
 	ReactionEmoji(ctx context.Context, e appcontent.ReactionEmoji) (appcontent.EmojiView, error)
@@ -202,7 +202,7 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, appcontent.ErrPollNotEditable):
 		return unprocessable(l.ServerErrorsStatusPollNotEditable())
 	}
-	return problem{}, false
+	return s.articleProblem(ctx, err)
 }
 
 // authorProblem returns the problem of an edit or deletion that failed with err. Another
@@ -328,8 +328,16 @@ func (s *Server) newStatus(v appcontent.StatusView, parts accountParts) Status {
 		n := r.OmittedAttachments
 		out.OmittedMediaCount = &n
 	}
-	if len(rev.Bodies) > 0 {
+	if len(rev.Bodies) > 0 && rev.Article == nil {
+		// The body of an article is given only where one article is asked for (withArticleBody).
 		out.Content = rev.Bodies[0].ContentHTML
+	}
+	if a := rev.Article; a != nil {
+		out.Article = &StatusArticle{Title: a.Title, Summary: a.Summary}
+		if v.Cover != nil {
+			cover := newMediaAttachments([]appcontent.MediaView{*v.Cover})[0]
+			out.Article.Cover = &cover
+		}
 	}
 	if out.Language == "" {
 		out.Language = appcontent.UndeterminedLanguage
@@ -618,6 +626,7 @@ func (s *Server) GetStatus(ctx context.Context, req GetStatusRequestObject) (Get
 	if err != nil {
 		return nil, err
 	}
+	withArticleBody(&body, view)
 	// The status the viewer opened is folded even for a hide filter of threads: a link that
 	// shows nothing reads as a broken one (ADR-0157 §6).
 	f, err := s.statusFilter(ctx, contentViewer(ctx), timeline.FilterContextThread)
@@ -753,6 +762,9 @@ func (s *Server) GetStatusHistory(ctx context.Context, req GetStatusHistoryReque
 		if len(r.Revision.Bodies) > 0 {
 			e.Content = r.Revision.Bodies[0].ContentHTML
 		}
+		if a := r.Revision.Article; a != nil {
+			e.Article = &StatusEditArticle{Title: a.Title, Summary: a.Summary}
+		}
 		out.Items = append(out.Items, e)
 	}
 	return GetStatusHistory200JSONResponse{
@@ -766,14 +778,15 @@ func (s *Server) GetStatusSource(ctx context.Context, req GetStatusSourceRequest
 	if err != nil {
 		return nil, err
 	}
-	rev, err := s.o.StatusReader.Source(ctx, localContentViewer(v), req.Id)
+	view, err := s.o.StatusReader.Source(ctx, localContentViewer(v), req.Id)
 	if err != nil {
 		if p, ok := s.statusProblem(ctx, err); ok {
 			return GetStatusSourcedefaultApplicationProblemPlusJSONResponse(p), nil
 		}
 		return nil, err
 	}
-	out := StatusSource{Id: req.Id, Text: rev.Source.Text, SpoilerText: rev.SpoilerText, Language: rev.Language}
+	rev := view.Revision
+	out := StatusSource{Id: req.Id, Text: rev.Source.Text, SpoilerText: rev.SpoilerText, Language: rev.Language, Article: newArticleSource(view)}
 	if out.Language == "" {
 		out.Language = appcontent.UndeterminedLanguage
 	}

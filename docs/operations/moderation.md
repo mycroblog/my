@@ -50,7 +50,7 @@ The navigation shows "Moderation" and "Administration" only to people whose role
   so to delegate those, create a role with that permission and grant it ([granting and revoking roles](admin-cli.md#granting-and-revoking-roles)).
 - The admin API paths stay `/api/v1/admin/...` whatever the group, and the scopes are the same pair `admin:read` / `admin:write`. The groups are separated by tags in the API reference (`admin-moderation`, `admin-server`).
   A service outside the server can call the operations of one permission with a permission scope instead ([letting another service use the admin API](#letting-another-service-use-the-admin-api)).
-- There is a third group of permissions, "user features" (`view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`), which lives outside the staff screens. Someone who has only these permissions sees neither "Moderation" nor "Administration",
+- There is a third group of permissions, "user features" (`view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`, `create_articles`), which lives outside the staff screens. Someone who has only these permissions sees neither "Moderation" nor "Administration",
   and for someone with `view_finance` the navigation shows "Finances" (`/finance`) after Settings.
   Its API is in the user namespace (`GET /api/v1/finance/cost_totals` and `GET /api/v1/finance/income_totals`, scope `read:finance`) and needs no `admin:*` scope. What it shows is set by `finance_viewer_*` in the [instance settings](instance-settings.md).
 

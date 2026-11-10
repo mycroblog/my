@@ -78,14 +78,14 @@ func (r *Reader) Review(ctx context.Context, statusID string) (ReviewedStatus, e
 	if err != nil {
 		return ReviewedStatus{}, err
 	}
-	out.Attachments, out.Mentions, out.Tags = parts.Attachments, parts.Mentions, parts.Tags
+	out.Attachments, out.Cover, out.Mentions, out.Tags = parts.Attachments, parts.Cover, parts.Mentions, parts.Tags
 	if r.d.LinkCards != nil {
 		if out.Card, err = r.d.LinkCards.View(ctx, st, rev); err != nil {
 			return ReviewedStatus{}, err
 		}
 	}
 	// The image of a card is shown as sensitive as the attachments are (ADR-0062 §7).
-	if (len(out.Attachments) > 0 || out.Card != nil && out.Card.Image != nil) && !out.Revision.Sensitive {
+	if (len(out.Attachments) > 0 || out.Cover != nil || out.Card != nil && out.Card.Image != nil) && !out.Revision.Sensitive {
 		if out.Revision.Sensitive, err = r.forcedSensitive(ctx, st); err != nil {
 			return ReviewedStatus{}, err
 		}

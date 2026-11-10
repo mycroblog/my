@@ -132,6 +132,10 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		MaxScheduledPostsPerDay: settings.MaxScheduledPostsPerDay(), ScheduledPostMinLeadMinutes: settings.ScheduledPostMinLeadMinutes(),
 		ScheduledPostMaxLeadDays: settings.ScheduledPostMaxLeadDays(),
 	}
+	// The limits of articles and who may write them (ADR-0160 §3, §5).
+	out.Limits.Articles = &InstanceArticleLimits{MaxBytes: settings.MaxArticleBytes(), MaxImages: settings.MaxArticleImages()}
+	authoring := InstanceArticleAuthoring(settings.ArticleAuthoring())
+	out.ArticleAuthoring = &authoring
 	out.Timelines = InstanceTimelines{Local: InstanceAudience(settings.LocalTimelineVisibility()), Federated: InstanceAudience(settings.FederatedTimelineVisibility())}
 	// The direction the instance federates in, by which clients offer the operations on remote
 	// accounts and posts (FR-413, ADR-0006).
@@ -154,7 +158,7 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		out.AutoDeleteLimit = &AutoDeleteLimit{
 			MaxAgeDays: l.MaxAgeDays, AllowPinned: l.AllowPinned, KeptPins: l.KeptPins,
 			AllowBookmarked: l.AllowBookmarked, AllowFavourited: l.AllowFavourited, AllowMedia: l.AllowMedia,
-			AllowPolls: l.AllowPolls, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
+			AllowPolls: l.AllowPolls, AllowArticles: &l.AllowArticles, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds,
 		}
 	}
 	// How much of the costs GET /instance/cost_totals publishes (FR-903, ADR-0067 §8).

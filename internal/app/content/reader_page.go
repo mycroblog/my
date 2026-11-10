@@ -195,6 +195,9 @@ func (r *Reader) page(ctx context.Context, viewer Viewer, ids []string) (*Reader
 			for _, at := range rev.Attachments {
 				mediaIDs = append(mediaIDs, at.MediaID)
 			}
+			if a := rev.Article; a != nil && a.Cover != nil {
+				mediaIDs = append(mediaIDs, a.Cover.MediaID)
+			}
 		}
 		if p.d.Media, err = r.d.Media.page(ctx, mediaIDs); err != nil {
 			return nil, err

@@ -72,7 +72,14 @@ export const permissionCategories: readonly {
   },
   {
     category: "member",
-    permissions: ["view_finance", "create_custom_emojis", "start_voice_rooms", "create_invites", "keep_posts_longer"],
+    permissions: [
+      "view_finance",
+      "create_custom_emojis",
+      "start_voice_rooms",
+      "create_invites",
+      "keep_posts_longer",
+      "create_articles",
+    ],
   },
 ];
 
@@ -102,6 +109,7 @@ export const allPermissions: readonly Permission[] = [
   "manage_login_providers",
   "create_invites",
   "keep_posts_longer",
+  "create_articles",
 ];
 
 /** The reason of an `invalid-role` problem and the permissions it names, or undefined for another error. */

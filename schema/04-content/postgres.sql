@@ -85,8 +85,45 @@ CREATE TABLE status_revision_bodies (
 CREATE TABLE status_revision_sources (
   revision_id uuid NOT NULL PRIMARY KEY,
   source_text text NOT NULL,
-  source_format text NOT NULL CHECK (source_format IN ('text_plain'))
+  source_format text NOT NULL CHECK (source_format IN ('text_plain', 'text_markdown'))
 );
+
+-- Resource (subtype of a status): a status that is an article, a long post written in Markdown
+-- (ADR-0160 §1). Every revision of an article has a status_revision_articles row.
+CREATE TABLE status_articles (
+  status_id uuid NOT NULL PRIMARY KEY,
+  author_account_id uuid NOT NULL
+);
+-- The articles of a profile, newest first.
+CREATE INDEX status_articles_author_account_id_status_id ON status_articles (author_account_id, status_id);
+
+-- Event (child of a revision): the title and summary of an article's revision. summary_origin body
+-- is a summary made from the body because the author left it empty (ADR-0160 §6).
+CREATE TABLE status_revision_articles (
+  revision_id uuid NOT NULL PRIMARY KEY,
+  title text NOT NULL,
+  summary text NOT NULL,
+  summary_origin text NOT NULL CHECK (summary_origin IN ('author', 'body'))
+);
+
+-- Event (child of a revision): the cover image of an article's revision.
+CREATE TABLE status_revision_article_covers (
+  revision_id uuid NOT NULL PRIMARY KEY,
+  media_id uuid NOT NULL,
+  description text NOT NULL
+);
+CREATE INDEX status_revision_article_covers_media_id ON status_revision_article_covers (media_id);
+
+-- Event (child of a revision): the images in the body of an article's revision, in order of
+-- their first use.
+CREATE TABLE status_revision_article_images (
+  revision_id uuid NOT NULL,
+  position integer NOT NULL CHECK (position >= 0),
+  media_id uuid NOT NULL,
+  description text NOT NULL,
+  PRIMARY KEY (revision_id, position)
+);
+CREATE INDEX status_revision_article_images_media_id ON status_revision_article_images (media_id);
 
 -- Event (child of a revision): the attached media, with per-revision alt text (FR-105).
 CREATE TABLE status_revision_attachments (
@@ -383,7 +420,8 @@ CREATE TABLE status_auto_delete_policies (
   keep_polls boolean NOT NULL,
   keep_min_boosts integer NOT NULL CHECK (keep_min_boosts BETWEEN 0 AND 1000000),
   keep_min_favourites integer NOT NULL CHECK (keep_min_favourites BETWEEN 0 AND 1000000),
-  updated_at timestamptz NOT NULL
+  updated_at timestamptz NOT NULL,
+  keep_articles boolean NOT NULL DEFAULT true
 );
 -- The hourly job walks the enabled policies in account order.
 CREATE INDEX status_auto_delete_policies_enabled ON status_auto_delete_policies (account_id) WHERE enabled;

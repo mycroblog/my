@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: The new content of an article.
+type: object
+required: [title, text]
+properties:
+  title:
+    $ref: ./ArticleTitle.yaml
+  summary:
+    $ref: ./ArticleSummary.yaml
+  cover:
+    $ref: ./ArticleCoverInput.yaml
+  text:
+    $ref: ./ArticleText.yaml
+  tags:
+    $ref: ./ArticleTagsInput.yaml
+  language:
+    $ref: ./StatusLanguageInput.yaml
+  sensitive:
+    description: Whether the body and the cover are folded behind the title and the summary.
+    type: boolean

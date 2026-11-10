@@ -209,6 +209,7 @@ const (
 	SettingAutoDeleteDefaultKeepFavourited    SettingKey = "auto_delete_default_keep_favourited"
 	SettingAutoDeleteDefaultKeepMedia         SettingKey = "auto_delete_default_keep_media"
 	SettingAutoDeleteDefaultKeepPolls         SettingKey = "auto_delete_default_keep_polls"
+	SettingAutoDeleteDefaultKeepArticles      SettingKey = "auto_delete_default_keep_articles"
 	SettingAutoDeleteDefaultKeepPublic        SettingKey = "auto_delete_default_keep_public"
 	SettingAutoDeleteDefaultKeepLocal         SettingKey = "auto_delete_default_keep_local"
 	SettingAutoDeleteDefaultKeepUnlisted      SettingKey = "auto_delete_default_keep_unlisted"
@@ -228,6 +229,7 @@ const (
 	SettingAutoDeleteMaxAllowFavourited   SettingKey = "auto_delete_max_allow_favourited"
 	SettingAutoDeleteMaxAllowMedia        SettingKey = "auto_delete_max_allow_media"
 	SettingAutoDeleteMaxAllowPolls        SettingKey = "auto_delete_max_allow_polls"
+	SettingAutoDeleteMaxAllowArticles     SettingKey = "auto_delete_max_allow_articles"
 	SettingAutoDeleteMaxAllowVisibilities SettingKey = "auto_delete_max_allow_visibilities"
 	SettingAutoDeleteMaxAllowThresholds   SettingKey = "auto_delete_max_allow_thresholds"
 	SettingAutoDeleteGraceDays            SettingKey = "auto_delete_grace_days"
@@ -835,6 +837,7 @@ var definitions = []Definition{
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepFavourited, "true", "the posts the author favourited"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepMedia, "false", "the posts with media attachments"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPolls, "false", "the posts with a poll"),
+	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepArticles, "true", "the articles"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepPublic, "false", "the public posts"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepLocal, "false", "the local-only posts"),
 	autoDeleteDefaultKeep(SettingAutoDeleteDefaultKeepUnlisted, "false", "the unlisted posts"),
@@ -861,6 +864,7 @@ var definitions = []Definition{
 	autoDeleteMaxAllow(SettingAutoDeleteMaxAllowFavourited, "false", "the author's favourites keep posts"),
 	autoDeleteMaxAllow(SettingAutoDeleteMaxAllowMedia, "false", "media keeps posts"),
 	autoDeleteMaxAllow(SettingAutoDeleteMaxAllowPolls, "false", "polls keep posts"),
+	autoDeleteMaxAllow(SettingAutoDeleteMaxAllowArticles, "true", "articles are kept"),
 	autoDeleteMaxAllow(SettingAutoDeleteMaxAllowVisibilities, "false", "the kept visibilities keep posts"),
 	autoDeleteMaxAllow(SettingAutoDeleteMaxAllowThresholds, "false", "the thresholds of boosts and favourites keep posts"),
 	{
@@ -890,6 +894,19 @@ var definitions = []Definition{
 	{
 		Key: SettingScheduledPostMaxLeadDays, Kind: KindInt, Default: "366", Min: 1, Max: 3660,
 		Doc: "How many days ahead, at most, a post may be scheduled (ADR-0156 §7).",
+	},
+	{
+		Key: SettingArticleAuthoring, Kind: KindEnum, Default: string(ArticleAuthoringEveryone),
+		Choices: []string{string(ArticleAuthoringEveryone), string(ArticleAuthoringPermission)},
+		Doc:     "Who may write new articles: every local user, or only the holders of create_articles. Limiting it keeps the articles already written, and their authors may still edit them (ADR-0160 §3).",
+	},
+	{
+		Key: SettingMaxArticleBytes, Kind: KindInt, Default: strconv.Itoa(MaxMaxArticleBytes), Min: 1000, Max: MaxMaxArticleBytes,
+		Doc: "The most UTF-8 bytes of the HTML that the body of an article renders to (ADR-0160 §5).",
+	},
+	{
+		Key: SettingMaxArticleImages, Kind: KindInt, Default: strconv.Itoa(DefaultMaxArticleImages), Min: 0, Max: MaxMaxArticleImages,
+		Doc: "The most images of the author's own uploads in the body of an article, besides its cover (ADR-0160 §5).",
 	},
 }
 
@@ -1565,6 +1582,7 @@ type AutoDeleteDefault struct {
 	Enabled                                                          bool
 	MinAgeDays                                                       int
 	KeepPinned, KeepBookmarked, KeepFavourited, KeepMedia, KeepPolls bool
+	KeepArticles                                                     bool
 	KeepVisibilities                                                 []string
 	KeepMinBoosts, KeepMinFavourites                                 int
 }
@@ -1576,7 +1594,7 @@ func (s Settings) AutoDeleteDefault() AutoDeleteDefault {
 		MinAgeDays: s.intValue(SettingAutoDeleteDefaultMinAgeDays),
 		KeepPinned: s.boolValue(SettingAutoDeleteDefaultKeepPinned), KeepBookmarked: s.boolValue(SettingAutoDeleteDefaultKeepBookmarked),
 		KeepFavourited: s.boolValue(SettingAutoDeleteDefaultKeepFavourited), KeepMedia: s.boolValue(SettingAutoDeleteDefaultKeepMedia),
-		KeepPolls:     s.boolValue(SettingAutoDeleteDefaultKeepPolls),
+		KeepPolls: s.boolValue(SettingAutoDeleteDefaultKeepPolls), KeepArticles: s.boolValue(SettingAutoDeleteDefaultKeepArticles),
 		KeepMinBoosts: s.intValue(SettingAutoDeleteDefaultKeepMinBoosts), KeepMinFavourites: s.intValue(SettingAutoDeleteDefaultKeepMinFavourites),
 	}
 	for i, key := range []SettingKey{
@@ -1597,6 +1615,7 @@ type AutoDeleteLimit struct {
 	AllowPinned                                              bool
 	KeptPins                                                 int
 	AllowBookmarked, AllowFavourited, AllowMedia, AllowPolls bool
+	AllowArticles                                            bool
 	AllowVisibilities, AllowThresholds                       bool
 	GraceDays                                                int
 }
@@ -1608,6 +1627,7 @@ func (s Settings) AutoDeleteLimit() AutoDeleteLimit {
 		AllowPinned: s.boolValue(SettingAutoDeleteMaxAllowPinned), KeptPins: s.intValue(SettingAutoDeleteMaxKeptPins),
 		AllowBookmarked: s.boolValue(SettingAutoDeleteMaxAllowBookmarked), AllowFavourited: s.boolValue(SettingAutoDeleteMaxAllowFavourited),
 		AllowMedia: s.boolValue(SettingAutoDeleteMaxAllowMedia), AllowPolls: s.boolValue(SettingAutoDeleteMaxAllowPolls),
+		AllowArticles:     s.boolValue(SettingAutoDeleteMaxAllowArticles),
 		AllowVisibilities: s.boolValue(SettingAutoDeleteMaxAllowVisibilities), AllowThresholds: s.boolValue(SettingAutoDeleteMaxAllowThresholds),
 		GraceDays: s.intValue(SettingAutoDeleteGraceDays),
 	}

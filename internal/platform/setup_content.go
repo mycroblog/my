@@ -7,12 +7,14 @@ import (
 	"errors"
 	"time"
 
+	"github.com/mycroblog/my/internal/adapter/markdown"
 	"github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/timeline"
 	"github.com/mycroblog/my/internal/domain/hook"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -60,7 +62,15 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 			Reports: hookReports{a.Moderation}, InstanceActor: a.emojiImageOwner,
 		},
 		MediaReview: a.mediaReview(),
-		Clock:       a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
+		// Articles (ADR-0160): their Markdown, the author's images, which read a.Media, built by
+		// setMedia, and the instance settings of who writes them and how long they are.
+		ArticleRenderer: markdown.NewArticleRenderer(),
+		ArticleImage: func(ctx context.Context, accountID, mediaID string) (content.ArticleImageSource, bool, error) {
+			return a.Media.ArticleImage(ctx, accountID, mediaID)
+		},
+		ArticleLimits:    a.articleLimits,
+		MayWriteArticles: a.mayWriteArticles,
+		Clock:            a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
 	})
 	a.Hooks.RegisterOverrideEffect(hook.MediaCheck, a.Content.UndoMediaReview)
 	// After RegisterProjectors, which creates the counters that these projectors update.
@@ -124,6 +134,28 @@ func (a *App) moved(ctx context.Context, accountID string) (bool, error) {
 		return false, nil
 	}
 	return err == nil, err
+}
+
+// articleLimits returns the instance settings that bound an article (ADR-0160 §5).
+func (a *App) articleLimits(ctx context.Context) (content.ArticleLimits, error) {
+	s, err := a.Instance.Settings(ctx)
+	if err != nil {
+		return content.ArticleLimits{}, err
+	}
+	return content.ArticleLimits{MaxBytes: s.MaxArticleBytes(), MaxImages: s.MaxArticleImages()}, nil
+}
+
+// mayWriteArticles reports whether a local user may write new articles (ADR-0160 §3): everyone
+// while article_authoring is everyone, the holders of create_articles otherwise.
+func (a *App) mayWriteArticles(ctx context.Context, userID string) (bool, error) {
+	s, err := a.Instance.Settings(ctx)
+	if err != nil {
+		return false, err
+	}
+	if s.ArticleAuthoring() == instance.ArticleAuthoringEveryone {
+		return true, nil
+	}
+	return a.Identity.HasPermission(ctx, userID, domainidentity.PermCreateArticles)
 }
 
 // defaultInteractionPolicy returns who may reply to, boost, and quote the new statuses of a user

@@ -97,7 +97,7 @@ func (s autoDeleteServer) AutoDeleteDefault(ctx context.Context, tx uow.Tx) (dom
 	p := domaincontent.AutoDeletePolicy{
 		Enabled: d.Enabled, MinAgeDays: d.MinAgeDays,
 		KeepPinned: d.KeepPinned, KeepBookmarked: d.KeepBookmarked, KeepFavourited: d.KeepFavourited,
-		KeepMedia: d.KeepMedia, KeepPolls: d.KeepPolls,
+		KeepMedia: d.KeepMedia, KeepPolls: d.KeepPolls, KeepArticles: d.KeepArticles,
 		KeepMinBoosts: d.KeepMinBoosts, KeepMinFavourites: d.KeepMinFavourites,
 	}
 	for _, v := range d.KeepVisibilities {
@@ -150,6 +150,6 @@ func (s autoDeleteServer) AutoDeleteLimit(ctx context.Context, tx uow.Tx) (domai
 	return domaincontent.AutoDeleteLimit{
 		MaxAgeDays: l.MaxAgeDays, AllowPinned: l.AllowPinned, KeptPins: l.KeptPins,
 		AllowBookmarked: l.AllowBookmarked, AllowFavourited: l.AllowFavourited, AllowMedia: l.AllowMedia, AllowPolls: l.AllowPolls,
-		AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds, GraceDays: l.GraceDays,
+		AllowArticles: l.AllowArticles, AllowVisibilities: l.AllowVisibilities, AllowThresholds: l.AllowThresholds, GraceDays: l.GraceDays,
 	}, nil
 }

@@ -4117,6 +4117,131 @@ paths:
           $ref: '#/components/responses/StatusRejectedProblem'
         default:
           $ref: '#/components/responses/Problem'
+  /articles:
+    post:
+      operationId: createArticle
+      summary: Post an article
+      description: |
+        Posts an article as the authenticated user (201): a long post with a title, a summary, and
+        a cover, whose body is Markdown. The server renders the body once, now, and the article is
+        a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+        deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+        `getStatus` does.
+
+        The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+        Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+        second level of heading (the title is the first). An image whose destination is
+        `media:` followed by the ID of one of the user's own uploads that finished processing
+        (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+        so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+        nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+
+        A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+        than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+        posting. An article is never `direct` (422). While the instance lets only some users write
+        articles (`Instance.article_authoring` is `permission`), a user without the permission
+        `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+        with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+        does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+        server's automated review refuses the article, nothing is posted and the answer is a 422
+        `/api/v1/problems/status-rejected`, as for a post.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateArticleRequest'
+      responses:
+        '201':
+          description: The posted article.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        '422':
+          $ref: '#/components/responses/StatusRejectedProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+  /articles/preview:
+    post:
+      operationId: previewArticle
+      summary: Preview the body of an article
+      description: |
+        Renders the Markdown body of an article of the authenticated user as `createArticle` would
+        store it, without storing anything: the same HTML that the published article has, the
+        summary it would get, and the size and images of the body with their limits. A body over
+        the limits still renders, so that the editor can say by how much.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:statuses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArticlePreviewRequest'
+      responses:
+        '200':
+          description: The rendered body.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticlePreview'
+        default:
+          $ref: '#/components/responses/Problem'
+  /articles/{id}:
+    parameters:
+      - $ref: '#/components/parameters/StatusId'
+    put:
+      operationId: editArticle
+      summary: Edit the authenticated user's article
+      description: |
+        Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+        article, checked and rendered as `createArticle` does; the previous revision stays in the
+        edit history. The visibility never changes, and who may reply to, boost, and quote it
+        changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+        with `editStatus`), and so is a body over the limits. When the server's automated review
+        refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+        to appeal, and the article stays as it was. Another account's status is a 403 when the user
+        may see it and a 404 otherwise.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:statuses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EditArticleRequest'
+      responses:
+        '200':
+          description: The edited article, with its body in `content`.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        default:
+          $ref: '#/components/responses/Problem'
   /drafts:
     get:
       operationId: listDrafts
@@ -4365,7 +4490,9 @@ paths:
     get:
       operationId: getStatus
       summary: Get a status
-      description: A status that the viewer may not see is a 404, the same as a missing one.
+      description: |
+        A status that the viewer may not see is a 404, the same as a missing one. An article comes
+        with its body in `content`.
       tags:
         - statuses
       security:
@@ -4391,7 +4518,8 @@ paths:
         Replaces the text, content warning, sensitivity, language, and media of a status; the
         previous content stays in the edit history. The visibility and reply target never
         change. Attached media must be the user's own uploads that finished processing (422
-        otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+        otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+        article is edited with `editArticle` (422 here).
         When the server's automated review refuses the edit, the answer is a 422
         `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
         status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -18953,6 +19081,9 @@ components:
         allow_polls:
           description: Whether the posts with a poll may be kept (`keep_polls`).
           type: boolean
+        allow_articles:
+          description: Whether articles may be kept (`keep_articles`); always given.
+          type: boolean
         allow_visibilities:
           description: Whether posts may be kept by their visibility (`keep_visibilities`).
           type: boolean
@@ -18999,6 +19130,11 @@ components:
           type: boolean
         keep_polls:
           description: Keep the posts with a poll.
+          type: boolean
+        keep_articles:
+          description: |
+            Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+            (on for a user who never saved a policy).
           type: boolean
         keep_visibilities:
           description: Keep the posts with these visibilities, from the widest audience to the narrowest; empty keeps none for their visibility.
@@ -21704,6 +21840,14 @@ components:
             Whether the voice chat rooms are on: the voice operations (`/voice/...`) answer 404 while
             they are off, and clients then show no entry to them.
           type: boolean
+        article_authoring:
+          description: |
+            Who may write new articles (`createArticle`): `everyone` (every local user who is not
+            limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+          type: string
+          enum:
+            - everyone
+            - permission
         voice_room_starters:
           description: |
             Who may open voice chat rooms: `everyone` (every local user who is not limited) or
@@ -21996,6 +22140,8 @@ components:
           type: boolean
         drafts:
           $ref: '#/components/schemas/InstanceDraftLimits'
+        articles:
+          $ref: '#/components/schemas/InstanceArticleLimits'
     InstanceRegistrations:
       description: How people sign up on the instance.
       type: object
@@ -22228,6 +22374,11 @@ components:
         - max_scheduled_posts_per_day
         - scheduled_post_min_lead_minutes
         - scheduled_post_max_lead_days
+        - article_authoring
+        - max_article_bytes
+        - max_article_images
+        - auto_delete_default_keep_articles
+        - auto_delete_max_allow_articles
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -24372,8 +24523,10 @@ components:
         `permitted`, a member permission (only the built-in admin role by default).
         `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
         deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
-        permission (only the built-in admin role by default). The others guard no client API
-        operation yet.
+        permission (only the built-in admin role by default). `create_articles`: writing new
+        articles with `createArticle` while the instance setting `article_authoring` is
+        `permission`, a member permission (only the built-in admin role by default). The others
+        guard no client API operation yet.
       type: string
       enum:
         - manage_reports
@@ -24400,6 +24553,7 @@ components:
         - manage_login_providers
         - create_invites
         - keep_posts_longer
+        - create_articles
     PickerCustomEmoji:
       description: |
         A local custom emoji that the picker offers. Picking it inserts
@@ -25777,6 +25931,216 @@ components:
     SpoilerText:
       description: The content warning; omitted or empty for none. It counts toward `max_post_characters`.
       type: string
+    ArticleCoverInput:
+      description: |
+        The cover image of an article: one of the user's own uploads that finished processing (422
+        otherwise), with its alternative text; omitted for none.
+      allOf:
+        - $ref: '#/components/schemas/StatusMediaItem'
+    ArticlePreview:
+      description: The body of an article as publishing it would store it.
+      type: object
+      required:
+        - content
+        - summary
+        - summary_from_body
+        - bytes
+        - max_bytes
+        - images
+        - max_images
+      properties:
+        content:
+          description: The body as sanitized HTML, the same as the published article's `content`.
+          type: string
+        summary:
+          description: The summary the article would get.
+          type: string
+        summary_from_body:
+          description: Whether `summary` is made from the body, because the one sent was blank.
+          type: boolean
+        bytes:
+          description: The UTF-8 bytes of `content`; over `max_bytes`, publishing is a 422.
+          type: integer
+          minimum: 0
+        max_bytes:
+          description: The most bytes of `content` (`Instance.limits.articles.max_bytes`).
+          type: integer
+          minimum: 1
+        images:
+          description: The number of the user's own uploads that the body shows as images; over `max_images`, publishing is a 422.
+          type: integer
+          minimum: 0
+        max_images:
+          description: The most images of the body (`Instance.limits.articles.max_images`).
+          type: integer
+          minimum: 0
+    ArticlePreviewRequest:
+      description: The body of an article to preview.
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          description: The body in Markdown, as `createArticle` takes it.
+          type: string
+        summary:
+          $ref: '#/components/schemas/ArticleSummary'
+    ArticleSource:
+      description: What the author wrote of an article besides its Markdown body, for editing it.
+      type: object
+      required:
+        - title
+        - summary
+        - tags
+      properties:
+        title:
+          description: The title.
+          type: string
+        summary:
+          description: The summary the author wrote; empty when the server made it from the body.
+          type: string
+        cover:
+          description: The cover image; omitted when there is none.
+          allOf:
+            - $ref: '#/components/schemas/StatusMediaItem'
+        tags:
+          description: The hashtags, without `#`.
+          type: array
+          items:
+            type: string
+    ArticleSummary:
+      description: |
+        The summary of an article, as plain text. Omitted or blank, the server makes one from the
+        start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+        summary, never a content warning.
+      type: string
+      maxLength: 500
+    ArticleTagsInput:
+      description: |
+        The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+        article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+      type: array
+      maxItems: 10
+      items:
+        type: string
+        minLength: 1
+        maxLength: 257
+    ArticleText:
+      description: |
+        The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+        `Instance.limits.articles.max_bytes` bytes.
+      type: string
+      minLength: 1
+    ArticleTitle:
+      description: The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+      type: string
+      minLength: 1
+      maxLength: 200
+    CreateArticleRequest:
+      description: A new article.
+      type: object
+      required:
+        - title
+        - text
+        - visibility
+      properties:
+        title:
+          $ref: '#/components/schemas/ArticleTitle'
+        summary:
+          $ref: '#/components/schemas/ArticleSummary'
+        cover:
+          $ref: '#/components/schemas/ArticleCoverInput'
+        text:
+          $ref: '#/components/schemas/ArticleText'
+        tags:
+          $ref: '#/components/schemas/ArticleTagsInput'
+        language:
+          $ref: '#/components/schemas/StatusLanguageInput'
+        visibility:
+          description: The visibility; an article is never `direct` (422).
+          allOf:
+            - $ref: '#/components/schemas/Visibility'
+        sensitive:
+          description: Whether the body and the cover are folded behind the title and the summary.
+          type: boolean
+        interaction_policy:
+          description: |
+            Who may reply to, boost, and quote the new article; the kinds left out take the user's
+            `default_interaction_policy`.
+          allOf:
+            - $ref: '#/components/schemas/InteractionPolicyChange'
+    EditArticleRequest:
+      description: The new content of an article.
+      type: object
+      required:
+        - title
+        - text
+      properties:
+        title:
+          $ref: '#/components/schemas/ArticleTitle'
+        summary:
+          $ref: '#/components/schemas/ArticleSummary'
+        cover:
+          $ref: '#/components/schemas/ArticleCoverInput'
+        text:
+          $ref: '#/components/schemas/ArticleText'
+        tags:
+          $ref: '#/components/schemas/ArticleTagsInput'
+        language:
+          $ref: '#/components/schemas/StatusLanguageInput'
+        sensitive:
+          description: Whether the body and the cover are folded behind the title and the summary.
+          type: boolean
+    InstanceArticleLimits:
+      description: |
+        The limits of the body of an article (the instance settings `max_article_bytes` and
+        `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+      type: object
+      required:
+        - max_bytes
+        - max_images
+      properties:
+        max_bytes:
+          description: The most UTF-8 bytes of the HTML that the body renders to.
+          type: integer
+          minimum: 1
+        max_images:
+          description: The most images of the user's own uploads in the body, besides the cover.
+          type: integer
+          minimum: 0
+    StatusArticle:
+      description: |
+        What makes a status an article: its title, summary, and cover. The summary is never a content
+        warning; a `sensitive` article shows the title and the summary and folds the body and the
+        cover.
+      type: object
+      required:
+        - title
+        - summary
+      properties:
+        title:
+          description: The title, as plain text.
+          type: string
+        summary:
+          description: The summary, as plain text; the server makes one from the body when the author writes none.
+          type: string
+        cover:
+          description: The cover image; omitted when there is none or it cannot be shown.
+          allOf:
+            - $ref: '#/components/schemas/MediaAttachment'
+    StatusEditArticle:
+      description: The title and summary of one revision of an article.
+      type: object
+      required:
+        - title
+        - summary
+      properties:
+        title:
+          description: The title of the revision.
+          type: string
+        summary:
+          description: The summary of the revision.
+          type: string
     Status:
       description: |
         A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
@@ -25788,6 +26152,11 @@ components:
         `visibility` and `language` are those of the boosted status, its `content`,
         `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
         empty, its `card` and `quote` are omitted, and its counts are zero.
+
+        An article (`article` is given) is read as its title, summary, and cover everywhere, and
+        its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+        and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+        carry no body. An article has no content warning, media attachments, or poll.
       type: object
       required:
         - id
@@ -25826,8 +26195,11 @@ components:
         content:
           description: |
             The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-            remote status is what the server's sanitizer kept of the received document.
+            remote status is what the server's sanitizer kept of the received document. For an
+            article, its rendered body, or empty in lists (see above).
           type: string
+        article:
+          $ref: '#/components/schemas/StatusArticle'
         spoiler_text:
           description: The content warning; empty when there is none.
           type: string
@@ -26003,8 +26375,12 @@ components:
         - emojis
       properties:
         content:
-          description: The text of the revision as sanitized HTML.
+          description: The text of the revision as sanitized HTML; for an article, its body.
           type: string
+        article:
+          description: The title and summary of the revision of an article; omitted for a post.
+          allOf:
+            - $ref: '#/components/schemas/StatusEditArticle'
         spoiler_text:
           description: The content warning of the revision; empty when there is none.
           type: string
@@ -26165,7 +26541,7 @@ components:
         id:
           $ref: '#/components/schemas/Id'
         text:
-          description: The plain text.
+          description: The plain text; for an article, its Markdown body.
           type: string
         spoiler_text:
           description: The content warning; empty when there is none.
@@ -26173,6 +26549,10 @@ components:
         language:
           description: The BCP 47 language tag; `und` when it is unknown.
           type: string
+        article:
+          description: The rest of what the author wrote of an article; omitted for a post.
+          allOf:
+            - $ref: '#/components/schemas/ArticleSource'
     StatusTranslation:
       description: A post in another language. It belongs to the version of the post that was current when it was asked for.
       type: object

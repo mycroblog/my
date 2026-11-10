@@ -72,7 +72,7 @@ const getStatusAutoDeletePolicy = `-- name: GetStatusAutoDeletePolicy :one
 
 
 SELECT account_id, enabled, min_age_days, keep_pinned, keep_bookmarked, keep_favourited, keep_media,
-  keep_polls, keep_min_boosts, keep_min_favourites, updated_at
+  keep_polls, keep_min_boosts, keep_min_favourites, updated_at, keep_articles
 FROM status_auto_delete_policies WHERE account_id = ?
 `
 
@@ -93,6 +93,7 @@ func (q *Queries) GetStatusAutoDeletePolicy(ctx context.Context, accountID strin
 		&i.KeepMinBoosts,
 		&i.KeepMinFavourites,
 		&i.UpdatedAt,
+		&i.KeepArticles,
 	)
 	return i, err
 }
@@ -137,7 +138,7 @@ func (q *Queries) InsertStatusAutoDeleteLimitNotice(ctx context.Context, arg Ins
 
 const listEnabledStatusAutoDeletePolicies = `-- name: ListEnabledStatusAutoDeletePolicies :many
 SELECT account_id, enabled, min_age_days, keep_pinned, keep_bookmarked, keep_favourited, keep_media,
-  keep_polls, keep_min_boosts, keep_min_favourites, updated_at
+  keep_polls, keep_min_boosts, keep_min_favourites, updated_at, keep_articles
 FROM status_auto_delete_policies
 WHERE enabled = 1 AND account_id > CAST(?1 AS TEXT)
 ORDER BY account_id
@@ -172,6 +173,7 @@ func (q *Queries) ListEnabledStatusAutoDeletePolicies(ctx context.Context, arg L
 			&i.KeepMinBoosts,
 			&i.KeepMinFavourites,
 			&i.UpdatedAt,
+			&i.KeepArticles,
 		); err != nil {
 			return nil, err
 		}
@@ -279,14 +281,15 @@ WHERE s.author_account_id = ?1 AND s.id < CAST(?2 AS TEXT)
     WHERE h.status_id = s.id))
   AND (CAST(?10 AS INTEGER) = 0 OR NOT EXISTS (
     SELECT 1 FROM status_heads h JOIN polls q ON q.revision_id = h.revision_id WHERE h.status_id = s.id))
-  AND (CAST(?11 AS INTEGER) = 0 OR NOT EXISTS (
-    SELECT 1 FROM status_counters c WHERE c.status_id = s.id
-      AND c.boosts_count >= CAST(?11 AS INTEGER)))
+  AND (CAST(?11 AS INTEGER) = 0 OR NOT EXISTS (SELECT 1 FROM status_articles a WHERE a.status_id = s.id))
   AND (CAST(?12 AS INTEGER) = 0 OR NOT EXISTS (
     SELECT 1 FROM status_counters c WHERE c.status_id = s.id
-      AND c.favourites_count >= CAST(?12 AS INTEGER)))
+      AND c.boosts_count >= CAST(?12 AS INTEGER)))
+  AND (CAST(?13 AS INTEGER) = 0 OR NOT EXISTS (
+    SELECT 1 FROM status_counters c WHERE c.status_id = s.id
+      AND c.favourites_count >= CAST(?13 AS INTEGER)))
 ORDER BY s.id
-LIMIT ?13
+LIMIT ?14
 `
 
 type ListStatusesToAutoDeleteParams struct {
@@ -300,6 +303,7 @@ type ListStatusesToAutoDeleteParams struct {
 	KeepFavourited    int64
 	KeepMedia         int64
 	KeepPolls         int64
+	KeepArticles      int64
 	KeepMinBoosts     int64
 	KeepMinFavourites int64
 	BatchLimit        int64
@@ -308,7 +312,7 @@ type ListStatusesToAutoDeleteParams struct {
 // ListStatusesToAutoDelete returns, oldest first, up to @batch_limit local statuses of
 // @account_id below @id_before that are not deleted, were published before @published_before,
 // and that none of the policy's exceptions keeps: a visibility in @kept_visibilities (a JSON
-// array), a pin (one of the author's newest @max_kept_pins pins when it is positive), the author's bookmark or favourite, media or a poll in the current revision, or
+// array), a pin (one of the author's newest @max_kept_pins pins when it is positive), the author's bookmark or favourite, media or a poll in the current revision, being an article, or
 // at least @keep_min_boosts boosts or @keep_min_favourites favourites (0 for no threshold).
 func (q *Queries) ListStatusesToAutoDelete(ctx context.Context, arg ListStatusesToAutoDeleteParams) ([]Status, error) {
 	rows, err := q.db.QueryContext(ctx, listStatusesToAutoDelete,
@@ -322,6 +326,7 @@ func (q *Queries) ListStatusesToAutoDelete(ctx context.Context, arg ListStatuses
 		arg.KeepFavourited,
 		arg.KeepMedia,
 		arg.KeepPolls,
+		arg.KeepArticles,
 		arg.KeepMinBoosts,
 		arg.KeepMinFavourites,
 		arg.BatchLimit,
@@ -382,14 +387,14 @@ func (q *Queries) UpsertStatusAutoDeleteLimit(ctx context.Context, arg UpsertSta
 const upsertStatusAutoDeletePolicy = `-- name: UpsertStatusAutoDeletePolicy :exec
 INSERT INTO status_auto_delete_policies (
   account_id, enabled, min_age_days, keep_pinned, keep_bookmarked, keep_favourited, keep_media,
-  keep_polls, keep_min_boosts, keep_min_favourites, updated_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  keep_polls, keep_min_boosts, keep_min_favourites, updated_at, keep_articles
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (account_id) DO UPDATE SET
   enabled = excluded.enabled, min_age_days = excluded.min_age_days, keep_pinned = excluded.keep_pinned,
   keep_bookmarked = excluded.keep_bookmarked, keep_favourited = excluded.keep_favourited,
   keep_media = excluded.keep_media, keep_polls = excluded.keep_polls,
   keep_min_boosts = excluded.keep_min_boosts, keep_min_favourites = excluded.keep_min_favourites,
-  updated_at = excluded.updated_at
+  updated_at = excluded.updated_at, keep_articles = excluded.keep_articles
 `
 
 type UpsertStatusAutoDeletePolicyParams struct {
@@ -404,6 +409,7 @@ type UpsertStatusAutoDeletePolicyParams struct {
 	KeepMinBoosts     int64
 	KeepMinFavourites int64
 	UpdatedAt         int64
+	KeepArticles      int64
 }
 
 func (q *Queries) UpsertStatusAutoDeletePolicy(ctx context.Context, arg UpsertStatusAutoDeletePolicyParams) error {
@@ -419,6 +425,7 @@ func (q *Queries) UpsertStatusAutoDeletePolicy(ctx context.Context, arg UpsertSt
 		arg.KeepMinBoosts,
 		arg.KeepMinFavourites,
 		arg.UpdatedAt,
+		arg.KeepArticles,
 	)
 	return err
 }

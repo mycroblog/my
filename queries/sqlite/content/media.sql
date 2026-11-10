@@ -32,6 +32,8 @@ ON CONFLICT (media_id) DO UPDATE SET focus_x = excluded.focus_x, focus_y = exclu
 DELETE FROM media_files
 WHERE media_files.id = sqlc.arg(id)
   AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = sqlc.arg(id))
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = sqlc.arg(id))
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = sqlc.arg(id))
   AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = sqlc.arg(id))
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = sqlc.arg(id));
 
@@ -71,6 +73,8 @@ SELECT media_id, focus_x, focus_y FROM media_focus WHERE media_id = ?;
 SELECT m.id FROM media_files m
 WHERE m.origin = 'upload' AND m.id > sqlc.arg(after_id) AND m.id < sqlc.arg(before_id)
   AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = m.id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = m.id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id)
 ORDER BY m.id
@@ -81,6 +85,8 @@ LIMIT sqlc.arg(row_limit);
 -- emoji of the instance outlives the administrator who uploaded its image.
 -- name: ListOwnerUploads :many
 SELECT m.id, CAST(EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = m.id)
+  OR EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = m.id)
+  OR EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = m.id)
   OR EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
   OR EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id) AS BOOLEAN) AS attached
 FROM media_files m
@@ -99,7 +105,9 @@ DELETE FROM media_descriptions WHERE media_id = ?;
 SELECT media_id, description FROM media_descriptions WHERE media_id = ?;
 
 -- name: IsMediaAttached :one
-SELECT EXISTS (SELECT 1 FROM status_revision_attachments WHERE media_id = ?);
+SELECT CAST(EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = sqlc.arg(media_id))
+  OR EXISTS (SELECT 1 FROM status_revision_article_covers c WHERE c.media_id = sqlc.arg(media_id))
+  OR EXISTS (SELECT 1 FROM status_revision_article_images i WHERE i.media_id = sqlc.arg(media_id)) AS BOOLEAN) AS attached;
 
 -- ListReadyMediaVariants returns the variants of the current (newest) processing result of each
 -- listed media file, with the file, for the files whose current result is ready. The list

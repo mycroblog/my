@@ -2650,6 +2650,24 @@ func (e IncomeVisibility) Valid() bool {
 	}
 }
 
+// Defines values for InstanceArticleAuthoring.
+const (
+	InstanceArticleAuthoringEveryone   InstanceArticleAuthoring = "everyone"
+	InstanceArticleAuthoringPermission InstanceArticleAuthoring = "permission"
+)
+
+// Valid indicates whether the value is a known member of the InstanceArticleAuthoring enum.
+func (e InstanceArticleAuthoring) Valid() bool {
+	switch e {
+	case InstanceArticleAuthoringEveryone:
+		return true
+	case InstanceArticleAuthoringPermission:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceVoiceRoomStarters.
 const (
 	InstanceVoiceRoomStartersEveryone  InstanceVoiceRoomStarters = "everyone"
@@ -2780,9 +2798,11 @@ func (e InstanceRegistrationsMode) Valid() bool {
 const (
 	InstanceSettingKeyAiUsage                            InstanceSettingKey = "ai_usage"
 	InstanceSettingKeyAppealWindowDays                   InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyArticleAuthoring                   InstanceSettingKey = "article_authoring"
 	InstanceSettingKeyAuditLogRetentionDays              InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                    InstanceSettingKey = "authorized_fetch"
 	InstanceSettingKeyAutoDeleteDefaultEnabled           InstanceSettingKey = "auto_delete_default_enabled"
+	InstanceSettingKeyAutoDeleteDefaultKeepArticles      InstanceSettingKey = "auto_delete_default_keep_articles"
 	InstanceSettingKeyAutoDeleteDefaultKeepBookmarked    InstanceSettingKey = "auto_delete_default_keep_bookmarked"
 	InstanceSettingKeyAutoDeleteDefaultKeepDirect        InstanceSettingKey = "auto_delete_default_keep_direct"
 	InstanceSettingKeyAutoDeleteDefaultKeepFavourited    InstanceSettingKey = "auto_delete_default_keep_favourited"
@@ -2798,6 +2818,7 @@ const (
 	InstanceSettingKeyAutoDeleteDefaultMinAgeDays        InstanceSettingKey = "auto_delete_default_min_age_days"
 	InstanceSettingKeyAutoDeleteGraceDays                InstanceSettingKey = "auto_delete_grace_days"
 	InstanceSettingKeyAutoDeleteMaxAgeDays               InstanceSettingKey = "auto_delete_max_age_days"
+	InstanceSettingKeyAutoDeleteMaxAllowArticles         InstanceSettingKey = "auto_delete_max_allow_articles"
 	InstanceSettingKeyAutoDeleteMaxAllowBookmarked       InstanceSettingKey = "auto_delete_max_allow_bookmarked"
 	InstanceSettingKeyAutoDeleteMaxAllowFavourited       InstanceSettingKey = "auto_delete_max_allow_favourited"
 	InstanceSettingKeyAutoDeleteMaxAllowMedia            InstanceSettingKey = "auto_delete_max_allow_media"
@@ -2844,6 +2865,8 @@ const (
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt           InstanceSettingKey = "link_cards_ignore_robots_txt"
 	InstanceSettingKeyLocalTimelineVisibility            InstanceSettingKey = "local_timeline_visibility"
 	InstanceSettingKeyLoginProvidersOnly                 InstanceSettingKey = "login_providers_only"
+	InstanceSettingKeyMaxArticleBytes                    InstanceSettingKey = "max_article_bytes"
+	InstanceSettingKeyMaxArticleImages                   InstanceSettingKey = "max_article_images"
 	InstanceSettingKeyMaxDrafts                          InstanceSettingKey = "max_drafts"
 	InstanceSettingKeyMaxScheduledPosts                  InstanceSettingKey = "max_scheduled_posts"
 	InstanceSettingKeyMaxScheduledPostsPerDay            InstanceSettingKey = "max_scheduled_posts_per_day"
@@ -2895,11 +2918,15 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyAppealWindowDays:
 		return true
+	case InstanceSettingKeyArticleAuthoring:
+		return true
 	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
 		return true
 	case InstanceSettingKeyAutoDeleteDefaultEnabled:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepArticles:
 		return true
 	case InstanceSettingKeyAutoDeleteDefaultKeepBookmarked:
 		return true
@@ -2930,6 +2957,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyAutoDeleteGraceDays:
 		return true
 	case InstanceSettingKeyAutoDeleteMaxAgeDays:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowArticles:
 		return true
 	case InstanceSettingKeyAutoDeleteMaxAllowBookmarked:
 		return true
@@ -3022,6 +3051,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyLocalTimelineVisibility:
 		return true
 	case InstanceSettingKeyLoginProvidersOnly:
+		return true
+	case InstanceSettingKeyMaxArticleBytes:
+		return true
+	case InstanceSettingKeyMaxArticleImages:
 		return true
 	case InstanceSettingKeyMaxDrafts:
 		return true
@@ -4059,6 +4092,7 @@ func (e PaymentStatusWarnings) Valid() bool {
 
 // Defines values for Permission.
 const (
+	PermissionCreateArticles       Permission = "create_articles"
 	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
 	PermissionCreateInvites        Permission = "create_invites"
 	PermissionKeepPostsLonger      Permission = "keep_posts_longer"
@@ -4088,6 +4122,8 @@ const (
 // Valid indicates whether the value is a known member of the Permission enum.
 func (e Permission) Valid() bool {
 	switch e {
+	case PermissionCreateArticles:
+		return true
 	case PermissionCreateCustomEmojis:
 		return true
 	case PermissionCreateInvites:
@@ -7425,6 +7461,11 @@ type AdminReportStatus struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	Status Status `json:"status"`
 }
 
@@ -8265,6 +8306,76 @@ type AppealModerationActionRequest struct {
 	Text string `json:"text"`
 }
 
+// ArticleCoverInput The cover image of an article: one of the user's own uploads that finished processing (422
+// otherwise), with its alternative text; omitted for none.
+type ArticleCoverInput = StatusMediaItem
+
+// ArticlePreview The body of an article as publishing it would store it.
+type ArticlePreview struct {
+	// Bytes The UTF-8 bytes of `content`; over `max_bytes`, publishing is a 422.
+	Bytes int `json:"bytes"`
+
+	// Content The body as sanitized HTML, the same as the published article's `content`.
+	Content string `json:"content"`
+
+	// Images The number of the user's own uploads that the body shows as images; over `max_images`, publishing is a 422.
+	Images int `json:"images"`
+
+	// MaxBytes The most bytes of `content` (`Instance.limits.articles.max_bytes`).
+	MaxBytes int `json:"max_bytes"`
+
+	// MaxImages The most images of the body (`Instance.limits.articles.max_images`).
+	MaxImages int `json:"max_images"`
+
+	// Summary The summary the article would get.
+	Summary string `json:"summary"`
+
+	// SummaryFromBody Whether `summary` is made from the body, because the one sent was blank.
+	SummaryFromBody bool `json:"summary_from_body"`
+}
+
+// ArticlePreviewRequest The body of an article to preview.
+type ArticlePreviewRequest struct {
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Text The body in Markdown, as `createArticle` takes it.
+	Text string `json:"text"`
+}
+
+// ArticleSource What the author wrote of an article besides its Markdown body, for editing it.
+type ArticleSource struct {
+	// Cover The cover image; omitted when there is none.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Summary The summary the author wrote; empty when the server made it from the body.
+	Summary string `json:"summary"`
+
+	// Tags The hashtags, without `#`.
+	Tags []string `json:"tags"`
+
+	// Title The title.
+	Title string `json:"title"`
+}
+
+// ArticleSummary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+// summary, never a content warning.
+type ArticleSummary = string
+
+// ArticleTagsInput The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+type ArticleTagsInput = []string
+
+// ArticleText The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+// `Instance.limits.articles.max_bytes` bytes.
+type ArticleText = string
+
+// ArticleTitle The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+type ArticleTitle = string
+
 // AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
 // work. The name and the website are what the app says about itself; `registration`,
 // `client_id` and `registered_by` are what the server knows.
@@ -8321,6 +8432,9 @@ type AuthorizedAppList struct {
 // at most `max_age_days` days after its publication, and keeps posts only by the exceptions that
 // the operator allows.
 type AutoDeleteLimit struct {
+	// AllowArticles Whether articles may be kept (`keep_articles`); always given.
+	AllowArticles *bool `json:"allow_articles,omitempty"`
+
 	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
 	AllowBookmarked bool `json:"allow_bookmarked"`
 
@@ -8356,6 +8470,10 @@ type AutoDeleteLimit struct {
 type AutoDeletePolicy struct {
 	// Enabled Whether old posts are deleted.
 	Enabled bool `json:"enabled"`
+
+	// KeepArticles Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+	// (on for a user who never saved a policy).
+	KeepArticles *bool `json:"keep_articles,omitempty"`
 
 	// KeepBookmarked Keep the posts that the user bookmarked.
 	KeepBookmarked bool `json:"keep_bookmarked"`
@@ -8401,6 +8519,9 @@ type AutoDeletePreview struct {
 // AutoDeleteServerLimit The server maximum as it applies to the authenticated user, and the policy that the automatic
 // deletion uses under it.
 type AutoDeleteServerLimit struct {
+	// AllowArticles Whether articles may be kept (`keep_articles`); always given.
+	AllowArticles *bool `json:"allow_articles,omitempty"`
+
 	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
 	AllowBookmarked bool `json:"allow_bookmarked"`
 
@@ -8449,6 +8570,10 @@ type AutoDeleteServerLimit struct {
 type AutoDeleteSettings struct {
 	// Enabled Whether old posts are deleted.
 	Enabled bool `json:"enabled"`
+
+	// KeepArticles Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+	// (on for a user who never saved a policy).
+	KeepArticles *bool `json:"keep_articles,omitempty"`
 
 	// KeepBookmarked Keep the posts that the user bookmarked.
 	KeepBookmarked bool `json:"keep_bookmarked"`
@@ -9149,6 +9274,42 @@ type CreateAccountActionRequest struct {
 	// StatusIds The posts of the account that `delete_statuses` or `mark_statuses_sensitive` acts
 	// on; required for them and taken by no other kind.
 	StatusIds *[]Id `json:"status_ids,omitempty"`
+}
+
+// CreateArticleRequest A new article.
+type CreateArticleRequest struct {
+	// Cover The cover image of an article: one of the user's own uploads that finished processing (422
+	// otherwise), with its alternative text; omitted for none.
+	Cover *ArticleCoverInput `json:"cover,omitempty"`
+
+	// InteractionPolicy Who may reply to, boost, and quote the new article; the kinds left out take the user's
+	// `default_interaction_policy`.
+	InteractionPolicy *InteractionPolicyChange `json:"interaction_policy,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Sensitive Whether the body and the cover are folded behind the title and the summary.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+	// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+	Tags *ArticleTagsInput `json:"tags,omitempty"`
+
+	// Text The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+	// `Instance.limits.articles.max_bytes` bytes.
+	Text ArticleText `json:"text"`
+
+	// Title The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+	Title ArticleTitle `json:"title"`
+
+	// Visibility The visibility; an article is never `direct` (422).
+	Visibility Visibility `json:"visibility"`
 }
 
 // CreateCustomEmojiRequest A new local custom emoji.
@@ -10262,6 +10423,35 @@ type DraftScheduleRequest struct {
 	PublishAt time.Time `json:"publish_at"`
 }
 
+// EditArticleRequest The new content of an article.
+type EditArticleRequest struct {
+	// Cover The cover image of an article: one of the user's own uploads that finished processing (422
+	// otherwise), with its alternative text; omitted for none.
+	Cover *ArticleCoverInput `json:"cover,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Sensitive Whether the body and the cover are folded behind the title and the summary.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+	// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+	Tags *ArticleTagsInput `json:"tags,omitempty"`
+
+	// Text The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+	// `Instance.limits.articles.max_bytes` bytes.
+	Text ArticleText `json:"text"`
+
+	// Title The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+	Title ArticleTitle `json:"title"`
+}
+
 // EditStatusRequest The new content of a status.
 type EditStatusRequest struct {
 	// Language A BCP 47 language tag; omitted means the user's default post language.
@@ -11000,6 +11190,10 @@ type Instance struct {
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
+	// ArticleAuthoring Who may write new articles (`createArticle`): `everyone` (every local user who is not
+	// limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+	ArticleAuthoring *InstanceArticleAuthoring `json:"article_authoring,omitempty"`
+
 	// AutoDeleteLimit The server maximum of the automatic deletion of old posts, which the about page shows so
 	// that people know it before they sign up; absent when the server sets none.
 	AutoDeleteLimit *AutoDeleteLimit `json:"auto_delete_limit,omitempty"`
@@ -11199,10 +11393,24 @@ type Instance struct {
 	VoiceRoomStarters InstanceVoiceRoomStarters `json:"voice_room_starters"`
 }
 
+// InstanceArticleAuthoring Who may write new articles (`createArticle`): `everyone` (every local user who is not
+// limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+type InstanceArticleAuthoring string
+
 // InstanceVoiceRoomStarters Who may open voice chat rooms: `everyone` (every local user who is not limited) or
 // `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
 // voice chat is off.
 type InstanceVoiceRoomStarters string
+
+// InstanceArticleLimits The limits of the body of an article (the instance settings `max_article_bytes` and
+// `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+type InstanceArticleLimits struct {
+	// MaxBytes The most UTF-8 bytes of the HTML that the body renders to.
+	MaxBytes int `json:"max_bytes"`
+
+	// MaxImages The most images of the user's own uploads in the body, besides the cover.
+	MaxImages int `json:"max_images"`
+}
 
 // InstanceAudience Who may read something public about the instance, the value of the instance settings
 // `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
@@ -11419,6 +11627,10 @@ type InstanceFullTextSearch struct {
 
 // InstanceLimits Limits that clients check before sending a request.
 type InstanceLimits struct {
+	// Articles The limits of the body of an article (the instance settings `max_article_bytes` and
+	// `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+	Articles *InstanceArticleLimits `json:"articles,omitempty"`
+
 	// Drafts The limits of drafts and scheduled posts (the instance settings of the same names). A save or a
 	// schedule past one is a 422 that names it; lowering a limit deletes no draft and cancels no
 	// schedule.
@@ -13470,8 +13682,10 @@ type PaymentStatusWarnings string
 // `permitted`, a member permission (only the built-in admin role by default).
 // `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
 // deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
-// permission (only the built-in admin role by default). The others guard no client API
-// operation yet.
+// permission (only the built-in admin role by default). `create_articles`: writing new
+// articles with `createArticle` while the instance setting `article_authoring` is
+// `permission`, a member permission (only the built-in admin role by default). The others
+// guard no client API operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts
@@ -14470,6 +14684,11 @@ type SpoilerText = string
 // `visibility` and `language` are those of the boosted status, its `content`,
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
+//
+// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+// carry no body. An article has no content warning, media attachments, or poll.
 type Status struct {
 	// Account An account, as clients show it.
 	Account Account `json:"account"`
@@ -14478,6 +14697,11 @@ type Status struct {
 	// given; given only to the author of the reply, and omitted for a reply that needs no
 	// approval or has it. A `pending` reply is shown to its author alone.
 	Approval *InteractionApprovalState `json:"approval,omitempty"`
+
+	// Article What makes a status an article: its title, summary, and cover. The summary is never a content
+	// warning; a `sensitive` article shows the title and the summary and folds the body and the
+	// cover.
+	Article *StatusArticle `json:"article,omitempty"`
 
 	// Bookmarked Whether the authenticated user bookmarked the status.
 	Bookmarked *bool `json:"bookmarked,omitempty"`
@@ -14491,6 +14715,11 @@ type Status struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	Boost *Status `json:"boost,omitempty"`
 
 	// BoostApproval The approval of the authenticated user's boost of the status by its author, while it is
@@ -14518,7 +14747,8 @@ type Status struct {
 	Card *LinkCard `json:"card,omitempty"`
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-	// remote status is what the server's sanitizer kept of the received document.
+	// remote status is what the server's sanitizer kept of the received document. For an
+	// article, its rendered body, or empty in lists (see above).
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -14636,6 +14866,20 @@ type Status struct {
 	Visibility Visibility `json:"visibility"`
 }
 
+// StatusArticle What makes a status an article: its title, summary, and cover. The summary is never a content
+// warning; a `sensitive` article shows the title and the summary and folds the body and the
+// cover.
+type StatusArticle struct {
+	// Cover The cover image; omitted when there is none or it cannot be shown.
+	Cover *MediaAttachment `json:"cover,omitempty"`
+
+	// Summary The summary, as plain text; the server makes one from the body when the author writes none.
+	Summary string `json:"summary"`
+
+	// Title The title, as plain text.
+	Title string `json:"title"`
+}
+
 // StatusContext The thread around a status.
 type StatusContext struct {
 	// Ancestors The statuses the status replies to, oldest first.
@@ -14647,7 +14891,10 @@ type StatusContext struct {
 
 // StatusEdit One revision of a status.
 type StatusEdit struct {
-	// Content The text of the revision as sanitized HTML.
+	// Article The title and summary of the revision of an article; omitted for a post.
+	Article *StatusEditArticle `json:"article,omitempty"`
+
+	// Content The text of the revision as sanitized HTML; for an article, its body.
 	Content string `json:"content"`
 
 	// CreatedAt When the revision was made; the first one is when the status was posted.
@@ -14664,6 +14911,15 @@ type StatusEdit struct {
 
 	// SpoilerText The content warning of the revision; empty when there is none.
 	SpoilerText string `json:"spoiler_text"`
+}
+
+// StatusEditArticle The title and summary of one revision of an article.
+type StatusEditArticle struct {
+	// Summary The summary of the revision.
+	Summary string `json:"summary"`
+
+	// Title The title of the revision.
+	Title string `json:"title"`
 }
 
 // StatusHistory The revisions of a status.
@@ -14729,6 +14985,11 @@ type StatusQuote struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	QuotedStatus *Status `json:"quoted_status,omitempty"`
 
 	// State The state of a quote as the viewer sees it, with the values of Mastodon's
@@ -14826,6 +15087,9 @@ type StatusRejectedProblem struct {
 
 // StatusSource What the author typed, for editing a status.
 type StatusSource struct {
+	// Article The rest of what the author wrote of an article; omitted for a post.
+	Article *ArticleSource `json:"article,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -14837,7 +15101,7 @@ type StatusSource struct {
 	// SpoilerText The content warning; empty when there is none.
 	SpoilerText string `json:"spoiler_text"`
 
-	// Text The plain text.
+	// Text The plain text; for an article, its Markdown body.
 	Text string `json:"text"`
 }
 
@@ -16327,6 +16591,11 @@ type AccountProfile = Account
 // `visibility` and `language` are those of the boosted status, its `content`,
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
+//
+// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+// carry no body. An article has no content warning, media attachments, or poll.
 type StatusAfterAction = Status
 
 // RemoveAccountAliasParams defines parameters for RemoveAccountAlias.
@@ -16835,6 +17104,14 @@ type ListAnnouncementHistoryParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// CreateArticleParams defines parameters for CreateArticle.
+type CreateArticleParams struct {
+	// IdempotencyKey A key the client chooses per new status; a retry with the same key returns the status
+	// posted with it instead of posting again. A key longer than 256 characters, or one
+	// that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListBlocksParams defines parameters for ListBlocks.
@@ -17432,6 +17709,15 @@ type CreateWebhookJSONRequestBody = CreateWebhookRequest
 
 // UpdateWebhookJSONRequestBody defines body for UpdateWebhook for application/json ContentType.
 type UpdateWebhookJSONRequestBody = UpdateWebhookRequest
+
+// CreateArticleJSONRequestBody defines body for CreateArticle for application/json ContentType.
+type CreateArticleJSONRequestBody = CreateArticleRequest
+
+// PreviewArticleJSONRequestBody defines body for PreviewArticle for application/json ContentType.
+type PreviewArticleJSONRequestBody = ArticlePreviewRequest
+
+// EditArticleJSONRequestBody defines body for EditArticle for application/json ContentType.
+type EditArticleJSONRequestBody = EditArticleRequest
 
 // CreateCustomEmojiRequestJSONRequestBody defines body for CreateCustomEmojiRequest for application/json ContentType.
 type CreateCustomEmojiRequestJSONRequestBody = NewCustomEmojiRequest
@@ -18281,6 +18567,15 @@ type ServerInterface interface {
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(w http.ResponseWriter, r *http.Request, id AnnouncementId)
+	// CreateArticle Post an article
+	// (POST /articles)
+	CreateArticle(w http.ResponseWriter, r *http.Request, params CreateArticleParams)
+	// PreviewArticle Preview the body of an article
+	// (POST /articles/preview)
+	PreviewArticle(w http.ResponseWriter, r *http.Request)
+	// EditArticle Edit the authenticated user's article
+	// (PUT /articles/{id})
+	EditArticle(w http.ResponseWriter, r *http.Request, id StatusId)
 	// ListAuthorizedApps List the apps the authenticated user authorized
 	// (GET /authorized_apps)
 	ListAuthorizedApps(w http.ResponseWriter, r *http.Request)
@@ -25539,6 +25834,87 @@ func (siw *ServerInterfaceWrapper) MarkAnnouncementRead(w http.ResponseWriter, r
 	handler.ServeHTTP(w, r)
 }
 
+// CreateArticle operation middleware
+func (siw *ServerInterfaceWrapper) CreateArticle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CreateArticleParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CreateArticle(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PreviewArticle operation middleware
+func (siw *ServerInterfaceWrapper) PreviewArticle(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PreviewArticle(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// EditArticle operation middleware
+func (siw *ServerInterfaceWrapper) EditArticle(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id StatusId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.EditArticle(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListAuthorizedApps operation middleware
 func (siw *ServerInterfaceWrapper) ListAuthorizedApps(w http.ResponseWriter, r *http.Request) {
 
@@ -31403,6 +31779,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/push/subscription", wrapper.PutPushSubscription)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/bookmarks", wrapper.ListBookmarks)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/statuses", wrapper.CreateStatus)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/articles", wrapper.CreateArticle)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/articles/preview", wrapper.PreviewArticle)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/articles/{id}", wrapper.EditArticle)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/drafts", wrapper.ListDrafts)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/drafts", wrapper.CreateDraft)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/drafts/{id}", wrapper.DeleteDraft)
@@ -45756,6 +46135,216 @@ func (response MarkAnnouncementReaddefaultApplicationProblemPlusJSONResponse) Vi
 	return err
 }
 
+type CreateArticleRequestObject struct {
+	Params CreateArticleParams
+	Body   *CreateArticleJSONRequestBody
+}
+
+type CreateArticleResponseObject interface {
+	VisitCreateArticleResponse(w http.ResponseWriter) error
+}
+
+type CreateArticle201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type CreateArticle201JSONResponse struct {
+	Body    Status
+	Headers CreateArticle201ResponseHeaders
+}
+
+func (response CreateArticle201JSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateArticle422ApplicationProblemPlusJSONResponse struct {
+	StatusRejectedProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateArticle422ApplicationProblemPlusJSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateArticledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response CreateArticledefaultApplicationProblemPlusJSONResponse) VisitCreateArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewArticleRequestObject struct {
+	Body *PreviewArticleJSONRequestBody
+}
+
+type PreviewArticleResponseObject interface {
+	VisitPreviewArticleResponse(w http.ResponseWriter) error
+}
+
+type PreviewArticle200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type PreviewArticle200JSONResponse struct {
+	Body    ArticlePreview
+	Headers PreviewArticle200ResponseHeaders
+}
+
+func (response PreviewArticle200JSONResponse) VisitPreviewArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PreviewArticledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response PreviewArticledefaultApplicationProblemPlusJSONResponse) VisitPreviewArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditArticleRequestObject struct {
+	Id   StatusId `json:"id"`
+	Body *EditArticleJSONRequestBody
+}
+
+type EditArticleResponseObject interface {
+	VisitEditArticleResponse(w http.ResponseWriter) error
+}
+
+type EditArticle200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type EditArticle200JSONResponse struct {
+	Body    Status
+	Headers EditArticle200ResponseHeaders
+}
+
+func (response EditArticle200JSONResponse) VisitEditArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type EditArticledefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response EditArticledefaultApplicationProblemPlusJSONResponse) VisitEditArticleResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListAuthorizedAppsRequestObject struct {
 }
 
@@ -58264,6 +58853,15 @@ type StrictServerInterface interface {
 	// MarkAnnouncementRead Mark an announcement read
 	// (POST /announcements/{id}/read)
 	MarkAnnouncementRead(ctx context.Context, request MarkAnnouncementReadRequestObject) (MarkAnnouncementReadResponseObject, error)
+	// CreateArticle Post an article
+	// (POST /articles)
+	CreateArticle(ctx context.Context, request CreateArticleRequestObject) (CreateArticleResponseObject, error)
+	// PreviewArticle Preview the body of an article
+	// (POST /articles/preview)
+	PreviewArticle(ctx context.Context, request PreviewArticleRequestObject) (PreviewArticleResponseObject, error)
+	// EditArticle Edit the authenticated user's article
+	// (PUT /articles/{id})
+	EditArticle(ctx context.Context, request EditArticleRequestObject) (EditArticleResponseObject, error)
 	// ListAuthorizedApps List the apps the authenticated user authorized
 	// (GET /authorized_apps)
 	ListAuthorizedApps(ctx context.Context, request ListAuthorizedAppsRequestObject) (ListAuthorizedAppsResponseObject, error)
@@ -65206,6 +65804,103 @@ func (sh *strictHandler) MarkAnnouncementRead(w http.ResponseWriter, r *http.Req
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(MarkAnnouncementReadResponseObject); ok {
 		if err := validResponse.VisitMarkAnnouncementReadResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CreateArticle operation middleware
+func (sh *strictHandler) CreateArticle(w http.ResponseWriter, r *http.Request, params CreateArticleParams) {
+	var request CreateArticleRequestObject
+
+	request.Params = params
+
+	var body CreateArticleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CreateArticle(ctx, request.(CreateArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CreateArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CreateArticleResponseObject); ok {
+		if err := validResponse.VisitCreateArticleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PreviewArticle operation middleware
+func (sh *strictHandler) PreviewArticle(w http.ResponseWriter, r *http.Request) {
+	var request PreviewArticleRequestObject
+
+	var body PreviewArticleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PreviewArticle(ctx, request.(PreviewArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PreviewArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PreviewArticleResponseObject); ok {
+		if err := validResponse.VisitPreviewArticleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// EditArticle operation middleware
+func (sh *strictHandler) EditArticle(w http.ResponseWriter, r *http.Request, id StatusId) {
+	var request EditArticleRequestObject
+
+	request.Id = id
+
+	var body EditArticleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.EditArticle(ctx, request.(EditArticleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "EditArticle")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(EditArticleResponseObject); ok {
+		if err := validResponse.VisitEditArticleResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

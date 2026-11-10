@@ -91,7 +91,7 @@ func TestGetAutoDeletePolicy(t *testing.T) {
 	}
 	want := clientapi.AutoDeleteSettings{
 		MinAgeDays: content.DefaultAutoDeleteAgeDays, KeepPinned: true, KeepBookmarked: true, KeepFavourited: true,
-		KeepVisibilities: []clientapi.Visibility{clientapi.VisibilityDirect},
+		KeepArticles: new(true), KeepVisibilities: []clientapi.Visibility{clientapi.VisibilityDirect},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("policy = %+v, want the default %+v", got, want)
@@ -118,8 +118,9 @@ func TestUpdateAutoDeletePolicy(t *testing.T) {
 	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
 		t.Fatal(err)
 	}
+	// keep_articles left out keeps the saved value, on for a user who never saved a policy.
 	want := clientapi.AutoDeleteSettings{
-		Enabled: true, MinAgeDays: 14, KeepPinned: true, KeepMedia: true,
+		Enabled: true, MinAgeDays: 14, KeepPinned: true, KeepMedia: true, KeepArticles: new(true),
 		KeepVisibilities: []clientapi.Visibility{clientapi.VisibilityPrivate, clientapi.VisibilityDirect}, KeepMinBoosts: 5,
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -157,8 +158,8 @@ func TestAutoDeletePolicyServerLimit(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := &clientapi.AutoDeleteServerLimit{
-		MaxAgeDays: 30, AllowPinned: true, KeptPins: 3, Bound: true, EnforceFrom: &f.enforce,
-		Effective: clientapi.AutoDeletePolicy{Enabled: true, MinAgeDays: 30, KeepPinned: true, KeepVisibilities: []clientapi.Visibility{}},
+		MaxAgeDays: 30, AllowPinned: true, KeptPins: 3, AllowArticles: new(false), Bound: true, EnforceFrom: &f.enforce,
+		Effective: clientapi.AutoDeletePolicy{Enabled: true, MinAgeDays: 30, KeepPinned: true, KeepArticles: new(false), KeepVisibilities: []clientapi.Visibility{}},
 	}
 	if got.Enabled || !reflect.DeepEqual(got.ServerLimit, want) {
 		t.Errorf("server_limit = %+v, want %+v", got.ServerLimit, want)
@@ -200,7 +201,7 @@ func TestPreviewAutoDeletePolicy(t *testing.T) {
 	e := newAuthEnv(t, func(o *clientapi.Options) { o.AutoDelete, o.TimelineReader = f, views })
 	body := `{
 		"enabled": false, "min_age_days": 14, "keep_pinned": true, "keep_bookmarked": false, "keep_favourited": true,
-		"keep_media": true, "keep_polls": true, "keep_visibilities": ["direct", "private"],
+		"keep_media": true, "keep_polls": true, "keep_articles": false, "keep_visibilities": ["direct", "private"],
 		"keep_min_boosts": 5, "keep_min_favourites": 3
 	}`
 	res := e.sendJSON(t, http.MethodPost, "/preferences/auto_delete/preview", "read-accounts", body)

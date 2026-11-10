@@ -30,6 +30,7 @@ func TestPermissionCategory(t *testing.T) {
 		PermManageLoginProviders: CategoryServer,
 		PermCreateInvites:        CategoryMember,
 		PermKeepPostsLonger:      CategoryMember,
+		PermCreateArticles:       CategoryMember,
 	}
 	for _, p := range AllPermissions() {
 		w, ok := want[p]

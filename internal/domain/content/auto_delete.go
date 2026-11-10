@@ -44,13 +44,14 @@ type AutoDeletePolicy struct {
 	// MinAgeDays is how many days after its publication a post is deleted.
 	MinAgeDays int
 	// The exceptions: a post the author pinned, bookmarked, or favourited, one whose current
-	// revision has media attachments or a poll, and one posted with a visibility in
-	// KeepVisibilities (a set, in the order of Visibilities).
+	// revision has media attachments or a poll, an article (ADR-0160 §5), and one posted with a
+	// visibility in KeepVisibilities (a set, in the order of Visibilities).
 	KeepPinned       bool
 	KeepBookmarked   bool
 	KeepFavourited   bool
 	KeepMedia        bool
 	KeepPolls        bool
+	KeepArticles     bool
 	KeepVisibilities []Visibility
 	// KeepMinBoosts and KeepMinFavourites keep a post boosted or favourited at least that many
 	// times; zero sets no threshold.
@@ -64,11 +65,12 @@ type AutoDeletePolicy struct {
 }
 
 // DefaultAutoDeletePolicy is the policy of an account that has never saved one: disabled, with
-// the exceptions that keep what the author marked (pins, bookmarks, favourites) and direct posts.
+// the exceptions that keep what the author marked (pins, bookmarks, favourites), articles, and
+// direct posts.
 func DefaultAutoDeletePolicy(accountID string) AutoDeletePolicy {
 	return AutoDeletePolicy{
 		AccountID: accountID, MinAgeDays: DefaultAutoDeleteAgeDays,
-		KeepPinned: true, KeepBookmarked: true, KeepFavourited: true,
+		KeepPinned: true, KeepBookmarked: true, KeepFavourited: true, KeepArticles: true,
 		KeepVisibilities: []Visibility{VisibilityDirect},
 	}
 }

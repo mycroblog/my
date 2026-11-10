@@ -2818,6 +2818,101 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/articles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post an article
+         * @description Posts an article as the authenticated user (201): a long post with a title, a summary, and
+         *     a cover, whose body is Markdown. The server renders the body once, now, and the article is
+         *     a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+         *     deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+         *     `getStatus` does.
+         *
+         *     The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+         *     Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+         *     second level of heading (the title is the first). An image whose destination is
+         *     `media:` followed by the ID of one of the user's own uploads that finished processing
+         *     (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+         *     so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+         *     nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+         *
+         *     A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+         *     than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+         *     posting. An article is never `direct` (422). While the instance lets only some users write
+         *     articles (`Instance.article_authoring` is `permission`), a user without the permission
+         *     `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+         *     with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+         *     does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+         *     server's automated review refuses the article, nothing is posted and the answer is a 422
+         *     `/api/v1/problems/status-rejected`, as for a post.
+         */
+        post: operations["createArticle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/articles/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview the body of an article
+         * @description Renders the Markdown body of an article of the authenticated user as `createArticle` would
+         *     store it, without storing anything: the same HTML that the published article has, the
+         *     summary it would get, and the size and images of the body with their limits. A body over
+         *     the limits still renders, so that the editor can say by how much.
+         */
+        post: operations["previewArticle"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/articles/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the status. */
+                id: components["parameters"]["StatusId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Edit the authenticated user's article
+         * @description Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+         *     article, checked and rendered as `createArticle` does; the previous revision stays in the
+         *     edit history. The visibility never changes, and who may reply to, boost, and quote it
+         *     changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+         *     with `editStatus`), and so is a body over the limits. When the server's automated review
+         *     refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+         *     to appeal, and the article stays as it was. Another account's status is a 403 when the user
+         *     may see it and a 404 otherwise.
+         */
+        put: operations["editArticle"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/drafts": {
         parameters: {
             query?: never;
@@ -2986,7 +3081,8 @@ export interface paths {
         };
         /**
          * Get a status
-         * @description A status that the viewer may not see is a 404, the same as a missing one.
+         * @description A status that the viewer may not see is a 404, the same as a missing one. An article comes
+         *     with its body in `content`.
          */
         get: operations["getStatus"];
         /**
@@ -2994,7 +3090,8 @@ export interface paths {
          * @description Replaces the text, content warning, sensitivity, language, and media of a status; the
          *     previous content stays in the edit history. The visibility and reply target never
          *     change. Attached media must be the user's own uploads that finished processing (422
-         *     otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+         *     otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+         *     article is edited with `editArticle` (422 here).
          *     When the server's automated review refuses the edit, the answer is a 422
          *     `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
          *     status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -12163,6 +12260,8 @@ export interface components {
             allow_media: boolean;
             /** @description Whether the posts with a poll may be kept (`keep_polls`). */
             allow_polls: boolean;
+            /** @description Whether articles may be kept (`keep_articles`); always given. */
+            allow_articles?: boolean;
             /** @description Whether posts may be kept by their visibility (`keep_visibilities`). */
             allow_visibilities: boolean;
             /** @description Whether posts may be kept by their boosts and favourites (`keep_min_boosts`, `keep_min_favourites`). */
@@ -12188,6 +12287,11 @@ export interface components {
             keep_media: boolean;
             /** @description Keep the posts with a poll. */
             keep_polls: boolean;
+            /**
+             * @description Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+             *     (on for a user who never saved a policy).
+             */
+            keep_articles?: boolean;
             /** @description Keep the posts with these visibilities, from the widest audience to the narrowest; empty keeps none for their visibility. */
             keep_visibilities: components["schemas"]["Visibility"][];
             /** @description Keep the posts boosted at least this many times; 0 keeps none for their boosts. */
@@ -13808,6 +13912,12 @@ export interface components {
              */
             voice_enabled: boolean;
             /**
+             * @description Who may write new articles (`createArticle`): `everyone` (every local user who is not
+             *     limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+             * @enum {string}
+             */
+            article_authoring?: "everyone" | "permission";
+            /**
              * @description Who may open voice chat rooms: `everyone` (every local user who is not limited) or
              *     `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
              *     voice chat is off.
@@ -14018,6 +14128,7 @@ export interface components {
              */
             require_media_description: boolean;
             drafts?: components["schemas"]["InstanceDraftLimits"];
+            articles?: components["schemas"]["InstanceArticleLimits"];
         };
         /** @description How people sign up on the instance. */
         InstanceRegistrations: {
@@ -14106,7 +14217,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -15485,11 +15596,13 @@ export interface components {
          *     `permitted`, a member permission (only the built-in admin role by default).
          *     `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
          *     deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
-         *     permission (only the built-in admin role by default). The others guard no client API
-         *     operation yet.
+         *     permission (only the built-in admin role by default). `create_articles`: writing new
+         *     articles with `createArticle` while the instance setting `article_authoring` is
+         *     `permission`, a member permission (only the built-in admin role by default). The others
+         *     guard no client API operation yet.
          * @enum {string}
          */
-        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors" | "manage_login_providers" | "create_invites" | "keep_posts_longer";
+        Permission: "manage_reports" | "manage_accounts" | "manage_domains" | "manage_rules" | "manage_settings" | "manage_roles" | "manage_invites" | "view_audit" | "manage_jobs" | "manage_login_recovery" | "manage_custom_emojis" | "manage_webhooks" | "manage_announcements" | "manage_finance" | "view_finance" | "manage_supporters" | "create_custom_emojis" | "manage_oauth_apps" | "manage_service_closure" | "start_voice_rooms" | "manage_errors" | "manage_login_providers" | "create_invites" | "keep_posts_longer" | "create_articles";
         /**
          * @description A local custom emoji that the picker offers. Picking it inserts
          *     `:shortcode:` into the text.
@@ -16448,6 +16561,122 @@ export interface components {
         /** @description The content warning; omitted or empty for none. It counts toward `max_post_characters`. */
         SpoilerText: string;
         /**
+         * @description The cover image of an article: one of the user's own uploads that finished processing (422
+         *     otherwise), with its alternative text; omitted for none.
+         */
+        ArticleCoverInput: components["schemas"]["StatusMediaItem"];
+        /** @description The body of an article as publishing it would store it. */
+        ArticlePreview: {
+            /** @description The body as sanitized HTML, the same as the published article's `content`. */
+            content: string;
+            /** @description The summary the article would get. */
+            summary: string;
+            /** @description Whether `summary` is made from the body, because the one sent was blank. */
+            summary_from_body: boolean;
+            /** @description The UTF-8 bytes of `content`; over `max_bytes`, publishing is a 422. */
+            bytes: number;
+            /** @description The most bytes of `content` (`Instance.limits.articles.max_bytes`). */
+            max_bytes: number;
+            /** @description The number of the user's own uploads that the body shows as images; over `max_images`, publishing is a 422. */
+            images: number;
+            /** @description The most images of the body (`Instance.limits.articles.max_images`). */
+            max_images: number;
+        };
+        /** @description The body of an article to preview. */
+        ArticlePreviewRequest: {
+            /** @description The body in Markdown, as `createArticle` takes it. */
+            text: string;
+            summary?: components["schemas"]["ArticleSummary"];
+        };
+        /** @description What the author wrote of an article besides its Markdown body, for editing it. */
+        ArticleSource: {
+            /** @description The title. */
+            title: string;
+            /** @description The summary the author wrote; empty when the server made it from the body. */
+            summary: string;
+            /** @description The cover image; omitted when there is none. */
+            cover?: components["schemas"]["StatusMediaItem"];
+            /** @description The hashtags, without `#`. */
+            tags: string[];
+        };
+        /**
+         * @description The summary of an article, as plain text. Omitted or blank, the server makes one from the
+         *     start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+         *     summary, never a content warning.
+         */
+        ArticleSummary: string;
+        /**
+         * @description The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+         *     article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+         */
+        ArticleTagsInput: string[];
+        /**
+         * @description The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+         *     `Instance.limits.articles.max_bytes` bytes.
+         */
+        ArticleText: string;
+        /** @description The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422. */
+        ArticleTitle: string;
+        /** @description A new article. */
+        CreateArticleRequest: {
+            title: components["schemas"]["ArticleTitle"];
+            summary?: components["schemas"]["ArticleSummary"];
+            cover?: components["schemas"]["ArticleCoverInput"];
+            text: components["schemas"]["ArticleText"];
+            tags?: components["schemas"]["ArticleTagsInput"];
+            language?: components["schemas"]["StatusLanguageInput"];
+            /** @description The visibility; an article is never `direct` (422). */
+            visibility: components["schemas"]["Visibility"];
+            /** @description Whether the body and the cover are folded behind the title and the summary. */
+            sensitive?: boolean;
+            /**
+             * @description Who may reply to, boost, and quote the new article; the kinds left out take the user's
+             *     `default_interaction_policy`.
+             */
+            interaction_policy?: components["schemas"]["InteractionPolicyChange"];
+        };
+        /** @description The new content of an article. */
+        EditArticleRequest: {
+            title: components["schemas"]["ArticleTitle"];
+            summary?: components["schemas"]["ArticleSummary"];
+            cover?: components["schemas"]["ArticleCoverInput"];
+            text: components["schemas"]["ArticleText"];
+            tags?: components["schemas"]["ArticleTagsInput"];
+            language?: components["schemas"]["StatusLanguageInput"];
+            /** @description Whether the body and the cover are folded behind the title and the summary. */
+            sensitive?: boolean;
+        };
+        /**
+         * @description The limits of the body of an article (the instance settings `max_article_bytes` and
+         *     `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+         */
+        InstanceArticleLimits: {
+            /** @description The most UTF-8 bytes of the HTML that the body renders to. */
+            max_bytes: number;
+            /** @description The most images of the user's own uploads in the body, besides the cover. */
+            max_images: number;
+        };
+        /**
+         * @description What makes a status an article: its title, summary, and cover. The summary is never a content
+         *     warning; a `sensitive` article shows the title and the summary and folds the body and the
+         *     cover.
+         */
+        StatusArticle: {
+            /** @description The title, as plain text. */
+            title: string;
+            /** @description The summary, as plain text; the server makes one from the body when the author writes none. */
+            summary: string;
+            /** @description The cover image; omitted when there is none or it cannot be shown. */
+            cover?: components["schemas"]["MediaAttachment"];
+        };
+        /** @description The title and summary of one revision of an article. */
+        StatusEditArticle: {
+            /** @description The title of the revision. */
+            title: string;
+            /** @description The summary of the revision. */
+            summary: string;
+        };
+        /**
          * @description A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
          *     `muted` describe the authenticated user's relation to it and are omitted for anonymous
          *     requests; `pinned` is only given to the author.
@@ -16457,6 +16686,11 @@ export interface components {
          *     `visibility` and `language` are those of the boosted status, its `content`,
          *     `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
          *     empty, its `card` and `quote` are omitted, and its counts are zero.
+         *
+         *     An article (`article` is given) is read as its title, summary, and cover everywhere, and
+         *     its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+         *     and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+         *     carry no body. An article has no content warning, media attachments, or poll.
          */
         Status: {
             id: components["schemas"]["Id"];
@@ -16474,9 +16708,11 @@ export interface components {
             account: components["schemas"]["Account"];
             /**
              * @description The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-             *     remote status is what the server's sanitizer kept of the received document.
+             *     remote status is what the server's sanitizer kept of the received document. For an
+             *     article, its rendered body, or empty in lists (see above).
              */
             content: string;
+            article?: components["schemas"]["StatusArticle"];
             /** @description The content warning; empty when there is none. */
             spoiler_text: string;
             /** @description Whether the media are sensitive. */
@@ -16592,8 +16828,10 @@ export interface components {
         };
         /** @description One revision of a status. */
         StatusEdit: {
-            /** @description The text of the revision as sanitized HTML. */
+            /** @description The text of the revision as sanitized HTML; for an article, its body. */
             content: string;
+            /** @description The title and summary of the revision of an article; omitted for a post. */
+            article?: components["schemas"]["StatusEditArticle"];
             /** @description The content warning of the revision; empty when there is none. */
             spoiler_text: string;
             /** @description Whether the media of the revision are sensitive. */
@@ -16680,12 +16918,14 @@ export interface components {
         /** @description What the author typed, for editing a status. */
         StatusSource: {
             id: components["schemas"]["Id"];
-            /** @description The plain text. */
+            /** @description The plain text; for an article, its Markdown body. */
             text: string;
             /** @description The content warning; empty when there is none. */
             spoiler_text: string;
             /** @description The BCP 47 language tag; `und` when it is unknown. */
             language: string;
+            /** @description The rest of what the author wrote of an article; omitted for a post. */
+            article?: components["schemas"]["ArticleSource"];
         };
         /** @description A post in another language. It belongs to the version of the post that was current when it was asked for. */
         StatusTranslation: {
@@ -21576,6 +21816,95 @@ export interface operations {
                 };
             };
             422: components["responses"]["StatusRejectedProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    createArticle: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description A key the client chooses per new status; a retry with the same key returns the status
+                 *     posted with it instead of posting again. A key longer than 256 characters, or one
+                 *     that is not UTF-8 without U+0000, is a 422.
+                 */
+                "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateArticleRequest"];
+            };
+        };
+        responses: {
+            /** @description The posted article. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+            422: components["responses"]["StatusRejectedProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    previewArticle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ArticlePreviewRequest"];
+            };
+        };
+        responses: {
+            /** @description The rendered body. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ArticlePreview"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    editArticle: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the status. */
+                id: components["parameters"]["StatusId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditArticleRequest"];
+            };
+        };
+        responses: {
+            /** @description The edited article, with its body in `content`. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

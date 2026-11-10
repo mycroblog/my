@@ -63,6 +63,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `auto_delete_default_min_age_days` | integer 1-3650 (days) | `30` | How many days after its publication the policy of a new account deletes a post |
 | `auto_delete_default_keep_pinned`, `auto_delete_default_keep_bookmarked`, `auto_delete_default_keep_favourited` | `true` / `false` | `true` | Whether the policy of a new account keeps the posts its author pinned, bookmarked, or favourited |
 | `auto_delete_default_keep_media`, `auto_delete_default_keep_polls` | `true` / `false` | `false` | Whether the policy of a new account keeps the posts with media or a poll |
+| `auto_delete_default_keep_articles` | `true` / `false` | `true` | Whether the policy of a new account keeps [articles](#articles) |
 | `auto_delete_default_keep_public`, `auto_delete_default_keep_local`, `auto_delete_default_keep_unlisted`, `auto_delete_default_keep_private` | `true` / `false` | `false` | Whether the policy of a new account keeps the posts of that visibility |
 | `auto_delete_default_keep_direct` | `true` / `false` | `true` | Whether the policy of a new account keeps direct posts |
 | `auto_delete_default_keep_min_boosts`, `auto_delete_default_keep_min_favourites` | integer 0-1000000 | `0` | The policy of a new account keeps a post boosted or favourited at least this many times. `0` sets no threshold |
@@ -70,6 +71,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `auto_delete_max_allow_pinned` | `true` / `false` | `true` | Whether pinned posts may still be kept under the maximum |
 | `auto_delete_max_kept_pins` | integer 1-5 | `5` | How many pins keep posts under the maximum, the most recently pinned first. `5`, the most pins of an account, keeps every pinned post |
 | `auto_delete_max_allow_bookmarked`, `auto_delete_max_allow_favourited`, `auto_delete_max_allow_media`, `auto_delete_max_allow_polls` | `true` / `false` | `false` | Whether the posts that the author bookmarked or favourited, or with media or a poll, may still be kept under the maximum |
+| `auto_delete_max_allow_articles` | `true` / `false` | `true` | Whether articles may still be kept under the maximum |
 | `auto_delete_max_allow_visibilities` | `true` / `false` | `false` | Whether posts may still be kept by their visibility under the maximum |
 | `auto_delete_max_allow_thresholds` | `true` / `false` | `false` | Whether posts may still be kept by their boosts and favourites under the maximum |
 | `auto_delete_grace_days` | integer 0-365 (days) | `30` | How many days an account that the maximum newly applies to keeps its own settings after it is told. A change does not move the dates of the accounts already told |
@@ -117,6 +119,9 @@ default locale, who can see the timelines, the instance name, description, terms
 | `max_scheduled_posts_per_day` | integer 1-10000 | `25` | How many scheduled posts of one user may wait for one UTC day |
 | `scheduled_post_min_lead_minutes` | integer 1-1440 (minutes) | `5` | How many minutes ahead, at least, a post may be scheduled |
 | `scheduled_post_max_lead_days` | integer 1-3660 (days) | `366` | How many days ahead, at most, a post may be scheduled |
+| `article_authoring` | `everyone` / `permission` | `everyone` | Who may write new [articles](#articles): every local user, or only the users whose roles have the permission `create_articles` |
+| `max_article_bytes` | integer 1000-100000 (bytes) | `100000` | The most bytes of the HTML that the body of an article makes |
+| `max_article_images` | integer 0-100 | `20` | The most images of the author's own uploads in the body of an article, besides its cover |
 
 - Values are normalized before they are stored (`TRUE` becomes `true`, `0750` becomes `750`, `ja_jp` becomes `ja-JP`, media IDs are lowercased).
   An invalid value is rejected and nothing is written.
@@ -144,15 +149,15 @@ whole username, or for the people who follow it.
 
 Users can have their own posts deleted automatically some days after they publish them (Settings, "Delete old posts").
 Each user's policy is their own: whether it is on, after how many days, and which posts it keeps (pinned, bookmarked, and
-favourited posts, posts with media or a poll, posts of chosen visibilities, and posts with at least some boosts or
-favourites). Deleting a post this way is the same as its author deleting it: the servers it went to receive a `Delete`.
+favourited posts, posts with media or a poll, articles, posts of chosen visibilities, and posts with at least some boosts
+or favourites). Deleting a post this way is the same as its author deleting it: the servers it went to receive a `Delete`.
 Only the posts of local accounts are deleted this way, never boosts.
 
 The `auto_delete_default_*` keys are the policy that each new local account starts with, whichever way it is created
 (the sign-up form, an external login provider, an invite, or `my admin`). The account receives it when it is created and
 then owns it: changing the keys later changes neither the accounts that exist nor those that received an earlier value.
 The settings screen shows the values as the user's own. With the keys unset, a new account starts with the automatic
-deletion off, after 30 days, keeping pinned, bookmarked, and favourited posts and direct posts. The default is not shown
+deletion off, after 30 days, keeping pinned, bookmarked, and favourited posts, articles, and direct posts. The default is not shown
 to people outside the instance. When a maximum is set, a new account receives the default cut to the maximum, as
 described below, so it starts within it.
 
@@ -207,6 +212,29 @@ schedule past a limit is refused with a message that names it.
 - A post is stamped with the time it is published, and the automatic deletion of old posts counts from then.
 - The media files a draft attaches are kept while the draft is; deleting the draft makes them unattached, and they go
   with the cleanup of unattached uploads.
+
+### Articles
+
+An article is a long post with a title, a summary, and a cover image, whose body its author writes in Markdown. Articles
+are posts in every other way: they have a visibility, can be edited with their history kept, boosted, favourited, quoted,
+replied to, reported, and deleted, and moderation acts on them as on posts. The server renders the body once, when it is
+written: raw HTML in it is not rendered, and only the images of the author's own uploads show as images; any other image
+becomes a link, so that readers never load images from other sites. Timelines, notifications, and search show the title,
+the summary, and the cover; the body shows where the article is opened.
+
+- By default every local user may write articles. With `article_authoring` set to `permission`, only the users whose
+  roles have the permission `create_articles` may write new ones; the articles already written stay, and their authors
+  may still edit them. A moderation action that bars an account from posting bars it from writing and editing articles
+  too. A [supporter plan](supporters.md) may give `create_articles` as a benefit.
+- `max_article_bytes` bounds the HTML of a body, not the Markdown: the servers that receive articles count the HTML, and
+  100,000 bytes, the most it may be, is what they keep in full. A body in Japanese of about 30,000 characters fits.
+  `max_article_images` bounds the images in a body. The editor shows both before the article is published.
+- An article is never a direct post, and has no poll, no attachments other than its images, and no content warning: a
+  sensitive article shows its title and summary and folds the body and the cover.
+- The automatic deletion of old posts keeps articles unless the user turns that off (`auto_delete_default_keep_articles`
+  for new accounts, `auto_delete_max_allow_articles` under a maximum).
+- `GET /api/v1/instance` returns the limits in `limits.articles` and the authoring setting in `article_authoring`. Set
+  them with `my instance set`, for example `my instance set article_authoring permission`.
 
 ### Texts (one key, one value)
 

@@ -97,6 +97,8 @@ const deleteUnattachedMediaFile = `-- name: DeleteUnattachedMediaFile :execrows
 DELETE FROM media_files
 WHERE media_files.id = $1
   AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = $1)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = $1)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = $1)
   AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = $1)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = $1)
 `
@@ -323,14 +325,16 @@ func (q *Queries) InsertUploadedMedia(ctx context.Context, arg InsertUploadedMed
 }
 
 const isMediaAttached = `-- name: IsMediaAttached :one
-SELECT EXISTS (SELECT 1 FROM status_revision_attachments WHERE media_id = $1)
+SELECT CAST(EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = $1)
+  OR EXISTS (SELECT 1 FROM status_revision_article_covers c WHERE c.media_id = $1)
+  OR EXISTS (SELECT 1 FROM status_revision_article_images i WHERE i.media_id = $1) AS BOOLEAN) AS attached
 `
 
 func (q *Queries) IsMediaAttached(ctx context.Context, mediaID string) (bool, error) {
 	row := q.db.QueryRow(ctx, isMediaAttached, mediaID)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
+	var attached bool
+	err := row.Scan(&attached)
+	return attached, err
 }
 
 const listDueMediaBlobDeletions = `-- name: ListDueMediaBlobDeletions :many
@@ -438,6 +442,8 @@ func (q *Queries) ListMediaVariantsOf(ctx context.Context, mediaID string) ([]Me
 
 const listOwnerUploads = `-- name: ListOwnerUploads :many
 SELECT m.id, CAST(EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = m.id)
+  OR EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = m.id)
+  OR EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = m.id)
   OR EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
   OR EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id) AS BOOLEAN) AS attached
 FROM media_files m
@@ -623,6 +629,8 @@ const listUnattachedUploads = `-- name: ListUnattachedUploads :many
 SELECT m.id FROM media_files m
 WHERE m.origin = 'upload' AND m.id > COALESCE($1::uuid, '00000000-0000-0000-0000-000000000000') AND m.id < $2
   AND NOT EXISTS (SELECT 1 FROM status_revision_attachments a WHERE a.media_id = m.id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_covers ac WHERE ac.media_id = m.id)
+  AND NOT EXISTS (SELECT 1 FROM status_revision_article_images ai WHERE ai.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM draft_attachments da WHERE da.media_id = m.id)
   AND NOT EXISTS (SELECT 1 FROM custom_emoji_images c WHERE c.media_id = m.id)
 ORDER BY m.id

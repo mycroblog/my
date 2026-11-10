@@ -29,6 +29,11 @@ properties:
   keep_polls:
     description: Keep the posts with a poll.
     type: boolean
+  keep_articles:
+    description: |
+      Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+      (on for a user who never saved a policy).
+    type: boolean
   keep_visibilities:
     description: Keep the posts with these visibilities, from the widest audience to the narrowest; empty keeps none for their visibility.
     type: array

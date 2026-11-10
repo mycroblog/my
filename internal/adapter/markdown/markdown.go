@@ -3,7 +3,8 @@
 // Package markdown implements instance.DocumentRenderer: it renders the Markdown of the
 // instance's documents (the terms of service and the privacy policy) with goldmark (CommonMark,
 // with the GitHub Flavored Markdown tables, strikethrough, and autolinks) and sanitizes the
-// result with the document allowlist of internal/adapter/htmlsanitizer.
+// result with the document allowlist of internal/adapter/htmlsanitizer. ArticleRenderer, with a
+// configuration of its own, renders articles (article.go).
 //
 // Raw HTML in the source is never rendered (goldmark escapes it unless told otherwise, and the
 // sanitizer drops what is left). A line break inside a paragraph is a line break (<br>), as

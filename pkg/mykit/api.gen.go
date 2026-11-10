@@ -2648,6 +2648,24 @@ func (e IncomeVisibility) Valid() bool {
 	}
 }
 
+// Defines values for InstanceArticleAuthoring.
+const (
+	InstanceArticleAuthoringEveryone   InstanceArticleAuthoring = "everyone"
+	InstanceArticleAuthoringPermission InstanceArticleAuthoring = "permission"
+)
+
+// Valid indicates whether the value is a known member of the InstanceArticleAuthoring enum.
+func (e InstanceArticleAuthoring) Valid() bool {
+	switch e {
+	case InstanceArticleAuthoringEveryone:
+		return true
+	case InstanceArticleAuthoringPermission:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceVoiceRoomStarters.
 const (
 	InstanceVoiceRoomStartersEveryone  InstanceVoiceRoomStarters = "everyone"
@@ -2778,9 +2796,11 @@ func (e InstanceRegistrationsMode) Valid() bool {
 const (
 	InstanceSettingKeyAiUsage                            InstanceSettingKey = "ai_usage"
 	InstanceSettingKeyAppealWindowDays                   InstanceSettingKey = "appeal_window_days"
+	InstanceSettingKeyArticleAuthoring                   InstanceSettingKey = "article_authoring"
 	InstanceSettingKeyAuditLogRetentionDays              InstanceSettingKey = "audit_log_retention_days"
 	InstanceSettingKeyAuthorizedFetch                    InstanceSettingKey = "authorized_fetch"
 	InstanceSettingKeyAutoDeleteDefaultEnabled           InstanceSettingKey = "auto_delete_default_enabled"
+	InstanceSettingKeyAutoDeleteDefaultKeepArticles      InstanceSettingKey = "auto_delete_default_keep_articles"
 	InstanceSettingKeyAutoDeleteDefaultKeepBookmarked    InstanceSettingKey = "auto_delete_default_keep_bookmarked"
 	InstanceSettingKeyAutoDeleteDefaultKeepDirect        InstanceSettingKey = "auto_delete_default_keep_direct"
 	InstanceSettingKeyAutoDeleteDefaultKeepFavourited    InstanceSettingKey = "auto_delete_default_keep_favourited"
@@ -2796,6 +2816,7 @@ const (
 	InstanceSettingKeyAutoDeleteDefaultMinAgeDays        InstanceSettingKey = "auto_delete_default_min_age_days"
 	InstanceSettingKeyAutoDeleteGraceDays                InstanceSettingKey = "auto_delete_grace_days"
 	InstanceSettingKeyAutoDeleteMaxAgeDays               InstanceSettingKey = "auto_delete_max_age_days"
+	InstanceSettingKeyAutoDeleteMaxAllowArticles         InstanceSettingKey = "auto_delete_max_allow_articles"
 	InstanceSettingKeyAutoDeleteMaxAllowBookmarked       InstanceSettingKey = "auto_delete_max_allow_bookmarked"
 	InstanceSettingKeyAutoDeleteMaxAllowFavourited       InstanceSettingKey = "auto_delete_max_allow_favourited"
 	InstanceSettingKeyAutoDeleteMaxAllowMedia            InstanceSettingKey = "auto_delete_max_allow_media"
@@ -2842,6 +2863,8 @@ const (
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt           InstanceSettingKey = "link_cards_ignore_robots_txt"
 	InstanceSettingKeyLocalTimelineVisibility            InstanceSettingKey = "local_timeline_visibility"
 	InstanceSettingKeyLoginProvidersOnly                 InstanceSettingKey = "login_providers_only"
+	InstanceSettingKeyMaxArticleBytes                    InstanceSettingKey = "max_article_bytes"
+	InstanceSettingKeyMaxArticleImages                   InstanceSettingKey = "max_article_images"
 	InstanceSettingKeyMaxDrafts                          InstanceSettingKey = "max_drafts"
 	InstanceSettingKeyMaxScheduledPosts                  InstanceSettingKey = "max_scheduled_posts"
 	InstanceSettingKeyMaxScheduledPostsPerDay            InstanceSettingKey = "max_scheduled_posts_per_day"
@@ -2893,11 +2916,15 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyAppealWindowDays:
 		return true
+	case InstanceSettingKeyArticleAuthoring:
+		return true
 	case InstanceSettingKeyAuditLogRetentionDays:
 		return true
 	case InstanceSettingKeyAuthorizedFetch:
 		return true
 	case InstanceSettingKeyAutoDeleteDefaultEnabled:
+		return true
+	case InstanceSettingKeyAutoDeleteDefaultKeepArticles:
 		return true
 	case InstanceSettingKeyAutoDeleteDefaultKeepBookmarked:
 		return true
@@ -2928,6 +2955,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyAutoDeleteGraceDays:
 		return true
 	case InstanceSettingKeyAutoDeleteMaxAgeDays:
+		return true
+	case InstanceSettingKeyAutoDeleteMaxAllowArticles:
 		return true
 	case InstanceSettingKeyAutoDeleteMaxAllowBookmarked:
 		return true
@@ -3020,6 +3049,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyLocalTimelineVisibility:
 		return true
 	case InstanceSettingKeyLoginProvidersOnly:
+		return true
+	case InstanceSettingKeyMaxArticleBytes:
+		return true
+	case InstanceSettingKeyMaxArticleImages:
 		return true
 	case InstanceSettingKeyMaxDrafts:
 		return true
@@ -4057,6 +4090,7 @@ func (e PaymentStatusWarnings) Valid() bool {
 
 // Defines values for Permission.
 const (
+	PermissionCreateArticles       Permission = "create_articles"
 	PermissionCreateCustomEmojis   Permission = "create_custom_emojis"
 	PermissionCreateInvites        Permission = "create_invites"
 	PermissionKeepPostsLonger      Permission = "keep_posts_longer"
@@ -4086,6 +4120,8 @@ const (
 // Valid indicates whether the value is a known member of the Permission enum.
 func (e Permission) Valid() bool {
 	switch e {
+	case PermissionCreateArticles:
+		return true
 	case PermissionCreateCustomEmojis:
 		return true
 	case PermissionCreateInvites:
@@ -7423,6 +7459,11 @@ type AdminReportStatus struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	Status Status `json:"status"`
 }
 
@@ -8263,6 +8304,76 @@ type AppealModerationActionRequest struct {
 	Text string `json:"text"`
 }
 
+// ArticleCoverInput The cover image of an article: one of the user's own uploads that finished processing (422
+// otherwise), with its alternative text; omitted for none.
+type ArticleCoverInput = StatusMediaItem
+
+// ArticlePreview The body of an article as publishing it would store it.
+type ArticlePreview struct {
+	// Bytes The UTF-8 bytes of `content`; over `max_bytes`, publishing is a 422.
+	Bytes int `json:"bytes"`
+
+	// Content The body as sanitized HTML, the same as the published article's `content`.
+	Content string `json:"content"`
+
+	// Images The number of the user's own uploads that the body shows as images; over `max_images`, publishing is a 422.
+	Images int `json:"images"`
+
+	// MaxBytes The most bytes of `content` (`Instance.limits.articles.max_bytes`).
+	MaxBytes int `json:"max_bytes"`
+
+	// MaxImages The most images of the body (`Instance.limits.articles.max_images`).
+	MaxImages int `json:"max_images"`
+
+	// Summary The summary the article would get.
+	Summary string `json:"summary"`
+
+	// SummaryFromBody Whether `summary` is made from the body, because the one sent was blank.
+	SummaryFromBody bool `json:"summary_from_body"`
+}
+
+// ArticlePreviewRequest The body of an article to preview.
+type ArticlePreviewRequest struct {
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Text The body in Markdown, as `createArticle` takes it.
+	Text string `json:"text"`
+}
+
+// ArticleSource What the author wrote of an article besides its Markdown body, for editing it.
+type ArticleSource struct {
+	// Cover The cover image; omitted when there is none.
+	Cover *StatusMediaItem `json:"cover,omitempty"`
+
+	// Summary The summary the author wrote; empty when the server made it from the body.
+	Summary string `json:"summary"`
+
+	// Tags The hashtags, without `#`.
+	Tags []string `json:"tags"`
+
+	// Title The title.
+	Title string `json:"title"`
+}
+
+// ArticleSummary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+// summary, never a content warning.
+type ArticleSummary = string
+
+// ArticleTagsInput The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+type ArticleTagsInput = []string
+
+// ArticleText The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+// `Instance.limits.articles.max_bytes` bytes.
+type ArticleText = string
+
+// ArticleTitle The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+type ArticleTitle = string
+
 // AuthorizedApp An app the authenticated user authorized: the user's grants of one OAuth client that still
 // work. The name and the website are what the app says about itself; `registration`,
 // `client_id` and `registered_by` are what the server knows.
@@ -8319,6 +8430,9 @@ type AuthorizedAppList struct {
 // at most `max_age_days` days after its publication, and keeps posts only by the exceptions that
 // the operator allows.
 type AutoDeleteLimit struct {
+	// AllowArticles Whether articles may be kept (`keep_articles`); always given.
+	AllowArticles *bool `json:"allow_articles,omitempty"`
+
 	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
 	AllowBookmarked bool `json:"allow_bookmarked"`
 
@@ -8354,6 +8468,10 @@ type AutoDeleteLimit struct {
 type AutoDeletePolicy struct {
 	// Enabled Whether old posts are deleted.
 	Enabled bool `json:"enabled"`
+
+	// KeepArticles Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+	// (on for a user who never saved a policy).
+	KeepArticles *bool `json:"keep_articles,omitempty"`
 
 	// KeepBookmarked Keep the posts that the user bookmarked.
 	KeepBookmarked bool `json:"keep_bookmarked"`
@@ -8399,6 +8517,9 @@ type AutoDeletePreview struct {
 // AutoDeleteServerLimit The server maximum as it applies to the authenticated user, and the policy that the automatic
 // deletion uses under it.
 type AutoDeleteServerLimit struct {
+	// AllowArticles Whether articles may be kept (`keep_articles`); always given.
+	AllowArticles *bool `json:"allow_articles,omitempty"`
+
 	// AllowBookmarked Whether the posts that the user bookmarked may be kept (`keep_bookmarked`).
 	AllowBookmarked bool `json:"allow_bookmarked"`
 
@@ -8447,6 +8568,10 @@ type AutoDeleteServerLimit struct {
 type AutoDeleteSettings struct {
 	// Enabled Whether old posts are deleted.
 	Enabled bool `json:"enabled"`
+
+	// KeepArticles Keep the articles. Always given in an answer; omitted in a request, the saved value stays
+	// (on for a user who never saved a policy).
+	KeepArticles *bool `json:"keep_articles,omitempty"`
 
 	// KeepBookmarked Keep the posts that the user bookmarked.
 	KeepBookmarked bool `json:"keep_bookmarked"`
@@ -9148,6 +9273,42 @@ type CreateAccountActionRequest struct {
 	// StatusIds The posts of the account that `delete_statuses` or `mark_statuses_sensitive` acts
 	// on; required for them and taken by no other kind.
 	StatusIds *[]Id `json:"status_ids,omitempty"`
+}
+
+// CreateArticleRequest A new article.
+type CreateArticleRequest struct {
+	// Cover The cover image of an article: one of the user's own uploads that finished processing (422
+	// otherwise), with its alternative text; omitted for none.
+	Cover *ArticleCoverInput `json:"cover,omitempty"`
+
+	// InteractionPolicy Who may reply to, boost, and quote the new article; the kinds left out take the user's
+	// `default_interaction_policy`.
+	InteractionPolicy *InteractionPolicyChange `json:"interaction_policy,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Sensitive Whether the body and the cover are folded behind the title and the summary.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+	// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+	Tags *ArticleTagsInput `json:"tags,omitempty"`
+
+	// Text The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+	// `Instance.limits.articles.max_bytes` bytes.
+	Text ArticleText `json:"text"`
+
+	// Title The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+	Title ArticleTitle `json:"title"`
+
+	// Visibility The visibility; an article is never `direct` (422).
+	Visibility Visibility `json:"visibility"`
 }
 
 // CreateCustomEmojiRequest A new local custom emoji.
@@ -10263,6 +10424,35 @@ type DraftScheduleRequest struct {
 	PublishAt time.Time `json:"publish_at"`
 }
 
+// EditArticleRequest The new content of an article.
+type EditArticleRequest struct {
+	// Cover The cover image of an article: one of the user's own uploads that finished processing (422
+	// otherwise), with its alternative text; omitted for none.
+	Cover *ArticleCoverInput `json:"cover,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Sensitive Whether the body and the cover are folded behind the title and the summary.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// Summary The summary of an article, as plain text. Omitted or blank, the server makes one from the
+	// start of the body (about 200 characters, cut at the end of a sentence or word). It is a
+	// summary, never a content warning.
+	Summary *ArticleSummary `json:"summary,omitempty"`
+
+	// Tags The hashtags of an article, with or without `#`; the hashtag timelines and search show the
+	// article under them. A name that is no hashtag is a 422. The `#name` in the body are text.
+	Tags *ArticleTagsInput `json:"tags,omitempty"`
+
+	// Text The body of an article in Markdown, as `createArticle` describes it. Its HTML may be at most
+	// `Instance.limits.articles.max_bytes` bytes.
+	Text ArticleText `json:"text"`
+
+	// Title The title of an article, as plain text; surrounding spaces are dropped, and a blank title is a 422.
+	Title ArticleTitle `json:"title"`
+}
+
 // EditStatusRequest The new content of a status.
 type EditStatusRequest struct {
 	// Language A BCP 47 language tag; omitted means the user's default post language.
@@ -11001,6 +11191,10 @@ type Instance struct {
 	// instance allows (`ai_opt_out`), never the reverse.
 	AiUsage AIUsage `json:"ai_usage"`
 
+	// ArticleAuthoring Who may write new articles (`createArticle`): `everyone` (every local user who is not
+	// limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+	ArticleAuthoring *InstanceArticleAuthoring `json:"article_authoring,omitempty"`
+
 	// AutoDeleteLimit The server maximum of the automatic deletion of old posts, which the about page shows so
 	// that people know it before they sign up; absent when the server sets none.
 	AutoDeleteLimit *AutoDeleteLimit `json:"auto_delete_limit,omitempty"`
@@ -11200,10 +11394,24 @@ type Instance struct {
 	VoiceRoomStarters InstanceVoiceRoomStarters `json:"voice_room_starters"`
 }
 
+// InstanceArticleAuthoring Who may write new articles (`createArticle`): `everyone` (every local user who is not
+// limited) or `permission` (only the users whose roles have `create_articles`). Always given.
+type InstanceArticleAuthoring string
+
 // InstanceVoiceRoomStarters Who may open voice chat rooms: `everyone` (every local user who is not limited) or
 // `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
 // voice chat is off.
 type InstanceVoiceRoomStarters string
+
+// InstanceArticleLimits The limits of the body of an article (the instance settings `max_article_bytes` and
+// `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+type InstanceArticleLimits struct {
+	// MaxBytes The most UTF-8 bytes of the HTML that the body renders to.
+	MaxBytes int `json:"max_bytes"`
+
+	// MaxImages The most images of the user's own uploads in the body, besides the cover.
+	MaxImages int `json:"max_images"`
+}
 
 // InstanceAudience Who may read something public about the instance, the value of the instance settings
 // `local_timeline_visibility`, `federated_timeline_visibility`, `domain_actions_visibility`,
@@ -11420,6 +11628,10 @@ type InstanceFullTextSearch struct {
 
 // InstanceLimits Limits that clients check before sending a request.
 type InstanceLimits struct {
+	// Articles The limits of the body of an article (the instance settings `max_article_bytes` and
+	// `max_article_images`). An article over one is a 422; `previewArticle` reports both.
+	Articles *InstanceArticleLimits `json:"articles,omitempty"`
+
 	// Drafts The limits of drafts and scheduled posts (the instance settings of the same names). A save or a
 	// schedule past one is a 422 that names it; lowering a limit deletes no draft and cancels no
 	// schedule.
@@ -13472,8 +13684,10 @@ type PaymentStatusWarnings string
 // `permitted`, a member permission (only the built-in admin role by default).
 // `keep_posts_longer`: keeping one's own posts past the server maximum of the automatic
 // deletion and turning it off on `/preferences/auto_delete` while the maximum is on, a member
-// permission (only the built-in admin role by default). The others guard no client API
-// operation yet.
+// permission (only the built-in admin role by default). `create_articles`: writing new
+// articles with `createArticle` while the instance setting `article_authoring` is
+// `permission`, a member permission (only the built-in admin role by default). The others
+// guard no client API operation yet.
 type Permission string
 
 // PickerCustomEmoji A local custom emoji that the picker offers. Picking it inserts
@@ -14475,6 +14689,11 @@ type SpoilerText = string
 // `visibility` and `language` are those of the boosted status, its `content`,
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
+//
+// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+// carry no body. An article has no content warning, media attachments, or poll.
 type Status struct {
 	// Account An account, as clients show it.
 	Account Account `json:"account"`
@@ -14483,6 +14702,11 @@ type Status struct {
 	// given; given only to the author of the reply, and omitted for a reply that needs no
 	// approval or has it. A `pending` reply is shown to its author alone.
 	Approval *InteractionApprovalState `json:"approval,omitempty"`
+
+	// Article What makes a status an article: its title, summary, and cover. The summary is never a content
+	// warning; a `sensitive` article shows the title and the summary and folds the body and the
+	// cover.
+	Article *StatusArticle `json:"article,omitempty"`
 
 	// Bookmarked Whether the authenticated user bookmarked the status.
 	Bookmarked *bool `json:"bookmarked,omitempty"`
@@ -14496,6 +14720,11 @@ type Status struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	Boost *Status `json:"boost,omitempty"`
 
 	// BoostApproval The approval of the authenticated user's boost of the status by its author, while it is
@@ -14523,7 +14752,8 @@ type Status struct {
 	Card *LinkCard `json:"card,omitempty"`
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
-	// remote status is what the server's sanitizer kept of the received document.
+	// remote status is what the server's sanitizer kept of the received document. For an
+	// article, its rendered body, or empty in lists (see above).
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -14641,6 +14871,20 @@ type Status struct {
 	Visibility Visibility `json:"visibility"`
 }
 
+// StatusArticle What makes a status an article: its title, summary, and cover. The summary is never a content
+// warning; a `sensitive` article shows the title and the summary and folds the body and the
+// cover.
+type StatusArticle struct {
+	// Cover The cover image; omitted when there is none or it cannot be shown.
+	Cover *MediaAttachment `json:"cover,omitempty"`
+
+	// Summary The summary, as plain text; the server makes one from the body when the author writes none.
+	Summary string `json:"summary"`
+
+	// Title The title, as plain text.
+	Title string `json:"title"`
+}
+
 // StatusContext The thread around a status.
 type StatusContext struct {
 	// Ancestors The statuses the status replies to, oldest first.
@@ -14652,7 +14896,10 @@ type StatusContext struct {
 
 // StatusEdit One revision of a status.
 type StatusEdit struct {
-	// Content The text of the revision as sanitized HTML.
+	// Article The title and summary of the revision of an article; omitted for a post.
+	Article *StatusEditArticle `json:"article,omitempty"`
+
+	// Content The text of the revision as sanitized HTML; for an article, its body.
 	Content string `json:"content"`
 
 	// CreatedAt When the revision was made; the first one is when the status was posted.
@@ -14669,6 +14916,15 @@ type StatusEdit struct {
 
 	// SpoilerText The content warning of the revision; empty when there is none.
 	SpoilerText string `json:"spoiler_text"`
+}
+
+// StatusEditArticle The title and summary of one revision of an article.
+type StatusEditArticle struct {
+	// Summary The summary of the revision.
+	Summary string `json:"summary"`
+
+	// Title The title of the revision.
+	Title string `json:"title"`
 }
 
 // StatusHistory The revisions of a status.
@@ -14734,6 +14990,11 @@ type StatusQuote struct {
 	// `visibility` and `language` are those of the boosted status, its `content`,
 	// `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 	// empty, its `card` and `quote` are omitted, and its counts are zero.
+	//
+	// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+	// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+	// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+	// carry no body. An article has no content warning, media attachments, or poll.
 	QuotedStatus *Status `json:"quoted_status,omitempty"`
 
 	// State The state of a quote as the viewer sees it, with the values of Mastodon's
@@ -14832,6 +15093,9 @@ type StatusRejectedProblem struct {
 
 // StatusSource What the author typed, for editing a status.
 type StatusSource struct {
+	// Article The rest of what the author wrote of an article; omitted for a post.
+	Article *ArticleSource `json:"article,omitempty"`
+
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -14843,7 +15107,7 @@ type StatusSource struct {
 	// SpoilerText The content warning; empty when there is none.
 	SpoilerText string `json:"spoiler_text"`
 
-	// Text The plain text.
+	// Text The plain text; for an article, its Markdown body.
 	Text string `json:"text"`
 }
 
@@ -16336,6 +16600,11 @@ type AccountProfile = Account
 // `visibility` and `language` are those of the boosted status, its `content`,
 // `spoiler_text`, `media_attachments`, `mentions`, `tags`, `emojis`, and `reactions` are
 // empty, its `card` and `quote` are omitted, and its counts are zero.
+//
+// An article (`article` is given) is read as its title, summary, and cover everywhere, and
+// its `content` is empty except where one article is asked for: `getStatus`, `createArticle`,
+// and `editArticle`. Timelines, notifications, streaming, search, threads, and every other list
+// carry no body. An article has no content warning, media attachments, or poll.
 type StatusAfterAction = Status
 
 // RemoveAccountAliasParams defines parameters for RemoveAccountAlias.
@@ -16844,6 +17113,14 @@ type ListAnnouncementHistoryParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// CreateArticleParams defines parameters for CreateArticle.
+type CreateArticleParams struct {
+	// IdempotencyKey A key the client chooses per new status; a retry with the same key returns the status
+	// posted with it instead of posting again. A key longer than 256 characters, or one
+	// that is not UTF-8 without U+0000, is a 422.
+	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
 // ListBlocksParams defines parameters for ListBlocks.
@@ -17441,6 +17718,15 @@ type CreateWebhookJSONRequestBody = CreateWebhookRequest
 
 // UpdateWebhookJSONRequestBody defines body for UpdateWebhook for application/json ContentType.
 type UpdateWebhookJSONRequestBody = UpdateWebhookRequest
+
+// CreateArticleJSONRequestBody defines body for CreateArticle for application/json ContentType.
+type CreateArticleJSONRequestBody = CreateArticleRequest
+
+// PreviewArticleJSONRequestBody defines body for PreviewArticle for application/json ContentType.
+type PreviewArticleJSONRequestBody = ArticlePreviewRequest
+
+// EditArticleJSONRequestBody defines body for EditArticle for application/json ContentType.
+type EditArticleJSONRequestBody = EditArticleRequest
 
 // CreateCustomEmojiRequestJSONRequestBody defines body for CreateCustomEmojiRequest for application/json ContentType.
 type CreateCustomEmojiRequestJSONRequestBody = NewCustomEmojiRequest
@@ -22979,6 +23265,124 @@ type ClientInterface interface {
 	// Corresponds with POST /announcements/{id}/read (the `MarkAnnouncementRead` operationId).
 	MarkAnnouncementRead(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// CreateArticleWithBody Post an article
+	//
+	// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+	// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+	// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+	// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+	// `getStatus` does.
+	//
+	// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+	// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+	// second level of heading (the title is the first). An image whose destination is
+	// `media:` followed by the ID of one of the user's own uploads that finished processing
+	// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+	// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+	// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+	//
+	// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+	// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+	// posting. An article is never `direct` (422). While the instance lets only some users write
+	// articles (`Instance.article_authoring` is `permission`), a user without the permission
+	// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+	// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+	// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+	// server's automated review refuses the article, nothing is posted and the answer is a 422
+	// `/api/v1/problems/status-rejected`, as for a post.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /articles (the `CreateArticle` operationId).
+	CreateArticleWithBody(ctx context.Context, params *CreateArticleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateArticle Post an article
+	//
+	// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+	// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+	// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+	// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+	// `getStatus` does.
+	//
+	// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+	// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+	// second level of heading (the title is the first). An image whose destination is
+	// `media:` followed by the ID of one of the user's own uploads that finished processing
+	// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+	// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+	// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+	//
+	// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+	// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+	// posting. An article is never `direct` (422). While the instance lets only some users write
+	// articles (`Instance.article_authoring` is `permission`), a user without the permission
+	// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+	// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+	// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+	// server's automated review refuses the article, nothing is posted and the answer is a 422
+	// `/api/v1/problems/status-rejected`, as for a post.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /articles (the `CreateArticle` operationId).
+	CreateArticle(ctx context.Context, params *CreateArticleParams, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PreviewArticleWithBody Preview the body of an article
+	//
+	// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+	// store it, without storing anything: the same HTML that the published article has, the
+	// summary it would get, and the size and images of the body with their limits. A body over
+	// the limits still renders, so that the editor can say by how much.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+	PreviewArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PreviewArticle Preview the body of an article
+	//
+	// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+	// store it, without storing anything: the same HTML that the published article has, the
+	// summary it would get, and the size and images of the body with their limits. A body over
+	// the limits still renders, so that the editor can say by how much.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+	PreviewArticle(ctx context.Context, body PreviewArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EditArticleWithBody Edit the authenticated user's article
+	//
+	// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+	// article, checked and rendered as `createArticle` does; the previous revision stays in the
+	// edit history. The visibility never changes, and who may reply to, boost, and quote it
+	// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+	// with `editStatus`), and so is a body over the limits. When the server's automated review
+	// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+	// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+	// may see it and a 404 otherwise.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+	EditArticleWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// EditArticle Edit the authenticated user's article
+	//
+	// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+	// article, checked and rendered as `createArticle` does; the previous revision stays in the
+	// edit history. The visibility never changes, and who may reply to, boost, and quote it
+	// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+	// with `editStatus`), and so is a body over the limits. When the server's automated review
+	// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+	// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+	// may see it and a 404 otherwise.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+	EditArticle(ctx context.Context, id StatusId, body EditArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListAuthorizedApps List the apps the authenticated user authorized
 	//
 	// One entry per client for which the user holds a grant that still works, most recently used
@@ -24962,7 +25366,8 @@ type ClientInterface interface {
 
 	// GetStatus Get a status
 	//
-	// A status that the viewer may not see is a 404, the same as a missing one.
+	// A status that the viewer may not see is a 404, the same as a missing one. An article comes
+	// with its body in `content`.
 	//
 	// Corresponds with GET /statuses/{id} (the `GetStatus` operationId).
 	GetStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -24972,7 +25377,8 @@ type ClientInterface interface {
 	// Replaces the text, content warning, sensitivity, language, and media of a status; the
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
-	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+	// article is edited with `editArticle` (422 here).
 	// When the server's automated review refuses the edit, the answer is a 422
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -24988,7 +25394,8 @@ type ClientInterface interface {
 	// Replaces the text, content warning, sensitivity, language, and media of a status; the
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
-	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+	// article is edited with `editArticle` (422 here).
 	// When the server's automated review refuses the edit, the answer is a 422
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -32697,6 +33104,184 @@ func (c *Client) MarkAnnouncementRead(ctx context.Context, id AnnouncementId, re
 	return c.Client.Do(req)
 }
 
+// CreateArticleWithBody Post an article
+//
+// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+// `getStatus` does.
+//
+// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+// second level of heading (the title is the first). An image whose destination is
+// `media:` followed by the ID of one of the user's own uploads that finished processing
+// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+//
+// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+// posting. An article is never `direct` (422). While the instance lets only some users write
+// articles (`Instance.article_authoring` is `permission`), a user without the permission
+// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+// server's automated review refuses the article, nothing is posted and the answer is a 422
+// `/api/v1/problems/status-rejected`, as for a post.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /articles (the `CreateArticle` operationId).
+func (c *Client) CreateArticleWithBody(ctx context.Context, params *CreateArticleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateArticleRequestWithBody(c.Server, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateArticle Post an article
+//
+// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+// `getStatus` does.
+//
+// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+// second level of heading (the title is the first). An image whose destination is
+// `media:` followed by the ID of one of the user's own uploads that finished processing
+// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+//
+// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+// posting. An article is never `direct` (422). While the instance lets only some users write
+// articles (`Instance.article_authoring` is `permission`), a user without the permission
+// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+// server's automated review refuses the article, nothing is posted and the answer is a 422
+// `/api/v1/problems/status-rejected`, as for a post.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /articles (the `CreateArticle` operationId).
+func (c *Client) CreateArticle(ctx context.Context, params *CreateArticleParams, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateArticleRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PreviewArticleWithBody Preview the body of an article
+//
+// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+// store it, without storing anything: the same HTML that the published article has, the
+// summary it would get, and the size and images of the body with their limits. A body over
+// the limits still renders, so that the editor can say by how much.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+func (c *Client) PreviewArticleWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPreviewArticleRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PreviewArticle Preview the body of an article
+//
+// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+// store it, without storing anything: the same HTML that the published article has, the
+// summary it would get, and the size and images of the body with their limits. A body over
+// the limits still renders, so that the editor can say by how much.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+func (c *Client) PreviewArticle(ctx context.Context, body PreviewArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPreviewArticleRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EditArticleWithBody Edit the authenticated user's article
+//
+// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+// article, checked and rendered as `createArticle` does; the previous revision stays in the
+// edit history. The visibility never changes, and who may reply to, boost, and quote it
+// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+// with `editStatus`), and so is a body over the limits. When the server's automated review
+// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+// may see it and a 404 otherwise.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+func (c *Client) EditArticleWithBody(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEditArticleRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// EditArticle Edit the authenticated user's article
+//
+// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+// article, checked and rendered as `createArticle` does; the previous revision stays in the
+// edit history. The visibility never changes, and who may reply to, boost, and quote it
+// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+// with `editStatus`), and so is a body over the limits. When the server's automated review
+// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+// may see it and a 404 otherwise.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+func (c *Client) EditArticle(ctx context.Context, id StatusId, body EditArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewEditArticleRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListAuthorizedApps List the apps the authenticated user authorized
 //
 // One entry per client for which the user holds a grant that still works, most recently used
@@ -36300,7 +36885,8 @@ func (c *Client) DeleteStatus(ctx context.Context, id StatusId, reqEditors ...Re
 
 // GetStatus Get a status
 //
-// A status that the viewer may not see is a 404, the same as a missing one.
+// A status that the viewer may not see is a 404, the same as a missing one. An article comes
+// with its body in `content`.
 //
 // Corresponds with GET /statuses/{id} (the `GetStatus` operationId).
 func (c *Client) GetStatus(ctx context.Context, id StatusId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -36320,7 +36906,8 @@ func (c *Client) GetStatus(ctx context.Context, id StatusId, reqEditors ...Reque
 // Replaces the text, content warning, sensitivity, language, and media of a status; the
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
-// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+// article is edited with `editArticle` (422 here).
 // When the server's automated review refuses the edit, the answer is a 422
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -36346,7 +36933,8 @@ func (c *Client) EditStatusWithBody(ctx context.Context, id StatusId, contentTyp
 // Replaces the text, content warning, sensitivity, language, and media of a status; the
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
-// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+// article is edited with `editArticle` (422 here).
 // When the server's automated review refuses the edit, the answer is a 422
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -48270,6 +48858,148 @@ func NewMarkAnnouncementReadRequest(server string, id AnnouncementId) (*http.Req
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewCreateArticleRequest calls the generic CreateArticle builder with application/json body
+func NewCreateArticleRequest(server string, params *CreateArticleParams, body CreateArticleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateArticleRequestWithBody(server, params, "application/json", bodyReader)
+}
+
+// NewCreateArticleRequestWithBody constructs an http.Request for the CreateArticle method, with any body, and a specified content type
+func NewCreateArticleRequestWithBody(server string, params *CreateArticleParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/articles")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.IdempotencyKey != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "Idempotency-Key", *params.IdempotencyKey, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("Idempotency-Key", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewPreviewArticleRequest calls the generic PreviewArticle builder with application/json body
+func NewPreviewArticleRequest(server string, body PreviewArticleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewPreviewArticleRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewPreviewArticleRequestWithBody constructs an http.Request for the PreviewArticle method, with any body, and a specified content type
+func NewPreviewArticleRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/articles/preview")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewEditArticleRequest calls the generic EditArticle builder with application/json body
+func NewEditArticleRequest(server string, id StatusId, body EditArticleJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewEditArticleRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewEditArticleRequestWithBody constructs an http.Request for the EditArticle method, with any body, and a specified content type
+func NewEditArticleRequestWithBody(server string, id StatusId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/articles/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -60934,6 +61664,124 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /announcements/{id}/read (the `MarkAnnouncementRead` operationId).
 	MarkAnnouncementReadWithResponse(ctx context.Context, id AnnouncementId, reqEditors ...RequestEditorFn) (*MarkAnnouncementReadResponse, error)
 
+	// CreateArticleWithBodyWithResponse Post an article
+	//
+	// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+	// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+	// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+	// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+	// `getStatus` does.
+	//
+	// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+	// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+	// second level of heading (the title is the first). An image whose destination is
+	// `media:` followed by the ID of one of the user's own uploads that finished processing
+	// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+	// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+	// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+	//
+	// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+	// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+	// posting. An article is never `direct` (422). While the instance lets only some users write
+	// articles (`Instance.article_authoring` is `permission`), a user without the permission
+	// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+	// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+	// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+	// server's automated review refuses the article, nothing is posted and the answer is a 422
+	// `/api/v1/problems/status-rejected`, as for a post.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /articles (the `CreateArticle` operationId).
+	CreateArticleWithBodyWithResponse(ctx context.Context, params *CreateArticleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error)
+
+	// CreateArticleWithResponse Post an article
+	//
+	// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+	// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+	// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+	// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+	// `getStatus` does.
+	//
+	// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+	// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+	// second level of heading (the title is the first). An image whose destination is
+	// `media:` followed by the ID of one of the user's own uploads that finished processing
+	// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+	// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+	// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+	//
+	// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+	// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+	// posting. An article is never `direct` (422). While the instance lets only some users write
+	// articles (`Instance.article_authoring` is `permission`), a user without the permission
+	// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+	// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+	// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+	// server's automated review refuses the article, nothing is posted and the answer is a 422
+	// `/api/v1/problems/status-rejected`, as for a post.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /articles (the `CreateArticle` operationId).
+	CreateArticleWithResponse(ctx context.Context, params *CreateArticleParams, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error)
+
+	// PreviewArticleWithBodyWithResponse Preview the body of an article
+	//
+	// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+	// store it, without storing anything: the same HTML that the published article has, the
+	// summary it would get, and the size and images of the body with their limits. A body over
+	// the limits still renders, so that the editor can say by how much.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+	PreviewArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PreviewArticleResponse, error)
+
+	// PreviewArticleWithResponse Preview the body of an article
+	//
+	// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+	// store it, without storing anything: the same HTML that the published article has, the
+	// summary it would get, and the size and images of the body with their limits. A body over
+	// the limits still renders, so that the editor can say by how much.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+	PreviewArticleWithResponse(ctx context.Context, body PreviewArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*PreviewArticleResponse, error)
+
+	// EditArticleWithBodyWithResponse Edit the authenticated user's article
+	//
+	// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+	// article, checked and rendered as `createArticle` does; the previous revision stays in the
+	// edit history. The visibility never changes, and who may reply to, boost, and quote it
+	// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+	// with `editStatus`), and so is a body over the limits. When the server's automated review
+	// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+	// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+	// may see it and a 404 otherwise.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+	EditArticleWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EditArticleResponse, error)
+
+	// EditArticleWithResponse Edit the authenticated user's article
+	//
+	// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+	// article, checked and rendered as `createArticle` does; the previous revision stays in the
+	// edit history. The visibility never changes, and who may reply to, boost, and quote it
+	// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+	// with `editStatus`), and so is a body over the limits. When the server's automated review
+	// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+	// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+	// may see it and a 404 otherwise.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+	EditArticleWithResponse(ctx context.Context, id StatusId, body EditArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*EditArticleResponse, error)
+
 	// ListAuthorizedAppsWithResponse List the apps the authenticated user authorized
 	//
 	// One entry per client for which the user holds a grant that still works, most recently used
@@ -63099,7 +63947,8 @@ type ClientWithResponsesInterface interface {
 
 	// GetStatusWithResponse Get a status
 	//
-	// A status that the viewer may not see is a 404, the same as a missing one.
+	// A status that the viewer may not see is a 404, the same as a missing one. An article comes
+	// with its body in `content`.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -63111,7 +63960,8 @@ type ClientWithResponsesInterface interface {
 	// Replaces the text, content warning, sensitivity, language, and media of a status; the
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
-	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+	// article is edited with `editArticle` (422 here).
 	// When the server's automated review refuses the edit, the answer is a 422
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -63127,7 +63977,8 @@ type ClientWithResponsesInterface interface {
 	// Replaces the text, content warning, sensitivity, language, and media of a status; the
 	// previous content stays in the edit history. The visibility and reply target never
 	// change. Attached media must be the user's own uploads that finished processing (422
-	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+	// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+	// article is edited with `editArticle` (422 here).
 	// When the server's automated review refuses the edit, the answer is a 422
 	// `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 	// status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -79045,6 +79896,216 @@ func (r MarkAnnouncementReadResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r MarkAnnouncementReadResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CreateArticleResponse201Headers the declared response headers of an HTTP 201 response for CreateArticle
+type CreateArticleResponse201Headers struct {
+	CacheControl *string
+}
+
+// CreateArticleResponse422Headers the declared response headers of an HTTP 422 response for CreateArticle
+type CreateArticleResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// CreateArticleResponseDefaultHeaders the declared response headers of an HTTP default response for CreateArticle
+type CreateArticleResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Status
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *StatusRejectedProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateArticleResponse201Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *CreateArticleResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateArticleResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateArticleResponse) GetJSON201() *Status {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r CreateArticleResponse) GetApplicationproblemJSON422() *StatusRejectedProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateArticleResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateArticleResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateArticleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// PreviewArticleResponse200Headers the declared response headers of an HTTP 200 response for PreviewArticle
+type PreviewArticleResponse200Headers struct {
+	CacheControl *string
+}
+
+// PreviewArticleResponseDefaultHeaders the declared response headers of an HTTP default response for PreviewArticle
+type PreviewArticleResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type PreviewArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ArticlePreview
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *PreviewArticleResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *PreviewArticleResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r PreviewArticleResponse) GetJSON200() *ArticlePreview {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r PreviewArticleResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r PreviewArticleResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r PreviewArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PreviewArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PreviewArticleResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// EditArticleResponse200Headers the declared response headers of an HTTP 200 response for EditArticle
+type EditArticleResponse200Headers struct {
+	CacheControl *string
+}
+
+// EditArticleResponseDefaultHeaders the declared response headers of an HTTP default response for EditArticle
+type EditArticleResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type EditArticleResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Status
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *EditArticleResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *EditArticleResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r EditArticleResponse) GetJSON200() *Status {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r EditArticleResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r EditArticleResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r EditArticleResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r EditArticleResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r EditArticleResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -97625,6 +98686,160 @@ func (c *ClientWithResponses) MarkAnnouncementReadWithResponse(ctx context.Conte
 	return ParseMarkAnnouncementReadResponse(rsp)
 }
 
+// CreateArticleWithBodyWithResponse Post an article
+//
+// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+// `getStatus` does.
+//
+// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+// second level of heading (the title is the first). An image whose destination is
+// `media:` followed by the ID of one of the user's own uploads that finished processing
+// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+//
+// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+// posting. An article is never `direct` (422). While the instance lets only some users write
+// articles (`Instance.article_authoring` is `permission`), a user without the permission
+// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+// server's automated review refuses the article, nothing is posted and the answer is a 422
+// `/api/v1/problems/status-rejected`, as for a post.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /articles (the `CreateArticle` operationId).
+func (c *ClientWithResponses) CreateArticleWithBodyWithResponse(ctx context.Context, params *CreateArticleParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error) {
+	rsp, err := c.CreateArticleWithBody(ctx, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateArticleResponse(rsp)
+}
+
+// CreateArticleWithResponse Post an article
+//
+// Posts an article as the authenticated user (201): a long post with a title, a summary, and
+// a cover, whose body is Markdown. The server renders the body once, now, and the article is
+// a `Status` with `article` from then on: its visibility, edits, interactions, reports, and
+// deletion (`deleteStatus`) are those of a post. The answer carries the body in `content`, as
+// `getStatus` does.
+//
+// The body is CommonMark with the tables, strikethrough, and autolinks of GitHub Flavored
+// Markdown; raw HTML is not rendered, a line break in a paragraph is kept, and `#` is the
+// second level of heading (the title is the first). An image whose destination is
+// `media:` followed by the ID of one of the user's own uploads that finished processing
+// (`![alt text](media:ID)`) shows that image; any other image is a link with its alt text,
+// so that readers never load an image from elsewhere. Mentions link to the accounts but notify
+// nobody, and `#name` in the body stays text: the hashtags are those of `tags`.
+//
+// A body whose HTML is over `Instance.limits.articles.max_bytes` bytes, or with more images
+// than `Instance.limits.articles.max_images`, is a 422; `previewArticle` tells both before
+// posting. An article is never `direct` (422). While the instance lets only some users write
+// articles (`Instance.article_authoring` is `permission`), a user without the permission
+// `create_articles` gets a 403; that user may still edit their earlier articles. Retrying
+// with the same `Idempotency-Key` returns the article posted with it, as `createStatus`
+// does. A user whose account moved gets a 403 `/api/v1/problems/account-moved`. When the
+// server's automated review refuses the article, nothing is posted and the answer is a 422
+// `/api/v1/problems/status-rejected`, as for a post.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /articles (the `CreateArticle` operationId).
+func (c *ClientWithResponses) CreateArticleWithResponse(ctx context.Context, params *CreateArticleParams, body CreateArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateArticleResponse, error) {
+	rsp, err := c.CreateArticle(ctx, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateArticleResponse(rsp)
+}
+
+// PreviewArticleWithBodyWithResponse Preview the body of an article
+//
+// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+// store it, without storing anything: the same HTML that the published article has, the
+// summary it would get, and the size and images of the body with their limits. A body over
+// the limits still renders, so that the editor can say by how much.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+func (c *ClientWithResponses) PreviewArticleWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PreviewArticleResponse, error) {
+	rsp, err := c.PreviewArticleWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePreviewArticleResponse(rsp)
+}
+
+// PreviewArticleWithResponse Preview the body of an article
+//
+// Renders the Markdown body of an article of the authenticated user as `createArticle` would
+// store it, without storing anything: the same HTML that the published article has, the
+// summary it would get, and the size and images of the body with their limits. A body over
+// the limits still renders, so that the editor can say by how much.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /articles/preview (the `PreviewArticle` operationId).
+func (c *ClientWithResponses) PreviewArticleWithResponse(ctx context.Context, body PreviewArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*PreviewArticleResponse, error) {
+	rsp, err := c.PreviewArticle(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePreviewArticleResponse(rsp)
+}
+
+// EditArticleWithBodyWithResponse Edit the authenticated user's article
+//
+// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+// article, checked and rendered as `createArticle` does; the previous revision stays in the
+// edit history. The visibility never changes, and who may reply to, boost, and quote it
+// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+// with `editStatus`), and so is a body over the limits. When the server's automated review
+// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+// may see it and a 404 otherwise.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+func (c *ClientWithResponses) EditArticleWithBodyWithResponse(ctx context.Context, id StatusId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*EditArticleResponse, error) {
+	rsp, err := c.EditArticleWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEditArticleResponse(rsp)
+}
+
+// EditArticleWithResponse Edit the authenticated user's article
+//
+// Replaces the title, summary, cover, body, hashtags, language, and sensitivity of an
+// article, checked and rendered as `createArticle` does; the previous revision stays in the
+// edit history. The visibility never changes, and who may reply to, boost, and quote it
+// changes with `setStatusInteractionPolicy`. A status that is a post is a 422 (it is edited
+// with `editStatus`), and so is a body over the limits. When the server's automated review
+// refuses the edit, the answer is a 422 `/api/v1/problems/status-rejected` with no decision
+// to appeal, and the article stays as it was. Another account's status is a 403 when the user
+// may see it and a 404 otherwise.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /articles/{id} (the `EditArticle` operationId).
+func (c *ClientWithResponses) EditArticleWithResponse(ctx context.Context, id StatusId, body EditArticleJSONRequestBody, reqEditors ...RequestEditorFn) (*EditArticleResponse, error) {
+	rsp, err := c.EditArticle(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseEditArticleResponse(rsp)
+}
+
 // ListAuthorizedAppsWithResponse List the apps the authenticated user authorized
 //
 // One entry per client for which the user holds a grant that still works, most recently used
@@ -100762,7 +101977,8 @@ func (c *ClientWithResponses) DeleteStatusWithResponse(ctx context.Context, id S
 
 // GetStatusWithResponse Get a status
 //
-// A status that the viewer may not see is a 404, the same as a missing one.
+// A status that the viewer may not see is a 404, the same as a missing one. An article comes
+// with its body in `content`.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -100780,7 +101996,8 @@ func (c *ClientWithResponses) GetStatusWithResponse(ctx context.Context, id Stat
 // Replaces the text, content warning, sensitivity, language, and media of a status; the
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
-// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+// article is edited with `editArticle` (422 here).
 // When the server's automated review refuses the edit, the answer is a 422
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -100802,7 +102019,8 @@ func (c *ClientWithResponses) EditStatusWithBodyWithResponse(ctx context.Context
 // Replaces the text, content warning, sensitivity, language, and media of a status; the
 // previous content stays in the edit history. The visibility and reply target never
 // change. Attached media must be the user's own uploads that finished processing (422
-// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll.
+// otherwise). A status with a poll cannot be edited (422): its votes belong to its poll. An
+// article is edited with `editArticle` (422 here).
 // When the server's automated review refuses the edit, the answer is a 422
 // `/api/v1/problems/status-rejected` with fixed text and no decision to appeal, and the
 // status stays as it was. Another account's status is a 403 when the user may see it and a 404 otherwise. A `direct`
@@ -120201,6 +121419,261 @@ func ParseMarkAnnouncementReadResponse(rsp *http.Response) (*MarkAnnouncementRea
 		response.Headers200 = &headers
 	case true:
 		var headers MarkAnnouncementReadResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCreateArticleResponse parses an HTTP response from a CreateArticleWithResponse call
+func ParseCreateArticleResponse(rsp *http.Response) (*CreateArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Status
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StatusRejectedProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers CreateArticleResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case rsp.StatusCode == 422:
+		var headers CreateArticleResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers CreateArticleResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParsePreviewArticleResponse parses an HTTP response from a PreviewArticleWithResponse call
+func ParsePreviewArticleResponse(rsp *http.Response) (*PreviewArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PreviewArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ArticlePreview
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers PreviewArticleResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers PreviewArticleResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseEditArticleResponse parses an HTTP response from a EditArticleWithResponse call
+func ParseEditArticleResponse(rsp *http.Response) (*EditArticleResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &EditArticleResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Status
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers EditArticleResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers EditArticleResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

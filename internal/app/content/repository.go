@@ -39,6 +39,8 @@ type Repository interface {
 	// InsertLocalStatus inserts the local subtype of a status. An Idempotency-Key that the
 	// author already used fails with ErrIdempotencyKeyUsed.
 	InsertLocalStatus(ctx context.Context, tx uow.Tx, ls content.LocalStatus) error
+	// InsertArticle inserts the article subtype of a status (ADR-0160 §2).
+	InsertArticle(ctx context.Context, tx uow.Tx, a content.Article) error
 	// InsertRevision inserts a revision with its bodies, source, attachments, mentions, tags, and
 	// emoji. On PostgreSQL, a Seq that a concurrent revision took fails with an error for which
 	// errors.Is(err, uow.ErrRetryable) holds, so that a new attempt reads the new head.

@@ -142,6 +142,9 @@ type Options struct {
 	Statuses     Statuses
 	StatusReader StatusReader
 	Interactions Interactions
+	// Articles writes the viewer's articles and previews their bodies (the articles operations);
+	// nil answers them 404.
+	Articles Articles
 	// Drafts runs the viewer's drafts and scheduled posts (the drafts operations); nil answers
 	// them 404.
 	Drafts Drafts

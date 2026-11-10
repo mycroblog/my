@@ -45,9 +45,19 @@ type HookAppeals interface {
 // statusRejected returns the answer to a post that local.status refused: fixed text that holds
 // nothing of the plugin's answer, and the decision with its deadline. ok is false for another error.
 func (s *Server) statusRejected(ctx context.Context, err error) (CreateStatusResponseObject, bool, error) {
+	r, ok, err := s.rejectedProblem(ctx, err)
+	if !ok || err != nil {
+		return nil, ok, err
+	}
+	return CreateStatus422ApplicationProblemPlusJSONResponse{r}, true, nil
+}
+
+// rejectedProblem is the 422 status-rejected problem of a new post or article that the decision
+// hook local.status refused, when err is a *appcontent.RejectedByReviewError.
+func (s *Server) rejectedProblem(ctx context.Context, err error) (StatusRejectedProblemApplicationProblemPlusJSONResponse, bool, error) {
 	var rejected *appcontent.RejectedByReviewError
 	if !errors.As(err, &rejected) {
-		return nil, false, nil
+		return StatusRejectedProblemApplicationProblemPlusJSONResponse{}, false, nil
 	}
 	l := s.Localizer(ctx)
 	body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeStatusRejected,
@@ -60,15 +70,15 @@ func (s *Server) statusRejected(ctx context.Context, err error) (CreateStatusRes
 		if s.o.HookAppeals != nil {
 			deadline, err := s.o.HookAppeals.AppealDeadline(ctx, rejected.DecidedAt)
 			if err != nil {
-				return nil, true, fmt.Errorf("clientapi: the appeal deadline of decision %s: %w", rejected.DecisionID, err)
+				return StatusRejectedProblemApplicationProblemPlusJSONResponse{}, true, fmt.Errorf("clientapi: the appeal deadline of decision %s: %w", rejected.DecisionID, err)
 			}
 			deadline = deadline.UTC()
 			out.AppealDeadline = &deadline
 		}
 	}
-	return CreateStatus422ApplicationProblemPlusJSONResponse{StatusRejectedProblemApplicationProblemPlusJSONResponse{
+	return StatusRejectedProblemApplicationProblemPlusJSONResponse{
 		Body: out, Headers: StatusRejectedProblemResponseHeaders{CacheControl: headers.CacheControl, ContentLanguage: headers.ContentLanguage},
-	}}, true, nil
+	}, true, nil
 }
 
 func hookAppealState(r hook.AppealRecord) HookAppealState {

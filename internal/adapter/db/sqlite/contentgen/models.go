@@ -377,6 +377,7 @@ type StatusAutoDeletePolicy struct {
 	KeepMinBoosts     int64
 	KeepMinFavourites int64
 	UpdatedAt         int64
+	KeepArticles      int64
 }
 
 type StatusCounter struct {
@@ -455,6 +456,26 @@ type StatusRevision struct {
 	Sensitive   int64
 	Language    string
 	RevisedAt   int64
+}
+
+type StatusRevisionArticle struct {
+	RevisionID    string
+	Title         string
+	Summary       string
+	SummaryOrigin string
+}
+
+type StatusRevisionArticleCover struct {
+	RevisionID  string
+	MediaID     string
+	Description string
+}
+
+type StatusRevisionArticleImage struct {
+	RevisionID  string
+	Position    int64
+	MediaID     string
+	Description string
 }
 
 type StatusRevisionAttachment struct {

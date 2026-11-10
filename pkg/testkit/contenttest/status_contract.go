@@ -50,6 +50,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"ReportsMissingRows", statusReportsMissing},
 		{"RevisesStatuses", statusRevises},
 		{"ReadsTheCurrentRevisionsOfManyStatuses", statusReadsCurrentRevisions},
+		{"StoresArticles", statusStoresArticles},
 		{"DeletesStatuses", statusDeletes},
 		{"DeletesManyStatuses", statusDeletesMany},
 		{"LinksReplies", statusLinksReplies},
@@ -1364,6 +1365,62 @@ func statusReadsCurrentRevisions(t *testing.T, e *StatusEnv) {
 	if got, err := e.H.Statuses.FindCurrentRevisions(t.Context(), nil); err != nil || len(got) != 0 {
 		t.Errorf("FindCurrentRevisions(nil) = %+v, %v; want none", got, err)
 	}
+}
+
+// statusStoresArticles stores an article (ADR-0160 §2): the article subtype of its status, and
+// revisions with their title, summary, cover, body images, and Markdown source, which the reads of
+// one revision and of many read back alike; a revision without a cover has none.
+func statusStoresArticles(t *testing.T, e *StatusEnv) {
+	ctx := t.Context()
+	author := e.IDs.NewID()
+	st := e.NewStatus(author, content.VisibilityPublic)
+	rev := e.FirstRevision(st)
+	rev.Source = &content.Source{Text: "# A\n\n![x](media:1)", Format: content.SourceTextMarkdown}
+	cover, img1, img2 := e.IDs.NewID(), e.IDs.NewID(), e.IDs.NewID()
+	rev.Article = &content.ArticleRevision{
+		Title: "A title", Summary: "Made from the body…", SummaryOrigin: content.SummaryFromBody,
+		Cover:  &content.ArticleCover{MediaID: cover, Description: "the cover"},
+		Images: []content.ArticleImage{{Position: 0, MediaID: img1, Description: "first"}, {Position: 1, MediaID: img2}},
+	}
+	err := e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if err := e.H.Statuses.InsertStatus(ctx, tx, st); err != nil {
+			return err
+		}
+		if err := e.H.Statuses.InsertArticle(ctx, tx, content.Article{StatusID: st.ID, AuthorAccountID: author}); err != nil {
+			return err
+		}
+		if err := e.H.Statuses.InsertRevision(ctx, tx, rev); err != nil {
+			return err
+		}
+		return tx.Emit(ctx, appcontent.StatusCreated{Status: st, Revision: rev})
+	})
+	if err != nil {
+		t.Fatalf("create the article = %v", err)
+	}
+	got, err := e.H.Statuses.FindCurrentRevision(ctx, st.ID)
+	if err != nil || !reflect.DeepEqual(got.Article, rev.Article) || !reflect.DeepEqual(got.Source, rev.Source) {
+		t.Errorf("FindCurrentRevision = %+v, %v; want the article %+v and its source", got.Article, err, rev.Article)
+	}
+	plain := e.NewStatus(author, content.VisibilityPublic)
+	if err := e.Create(t, plain, nil, e.FirstRevision(plain)); err != nil {
+		t.Fatalf("create = %v", err)
+	}
+	if got, err := e.H.Statuses.FindCurrentRevision(ctx, plain.ID); err != nil || got.Article != nil {
+		t.Errorf("FindCurrentRevision(a post) = %+v, %v; want no article", got.Article, err)
+	}
+	next := e.FirstRevision(st)
+	next.ID, next.Seq = e.IDs.NewID(), 2
+	next.Article = &content.ArticleRevision{Title: "Edited", Summary: "By the author", SummaryOrigin: content.SummaryByAuthor}
+	if err := e.InsertRevision(t, next); err != nil {
+		t.Fatalf("revise = %v", err)
+	}
+	if got, err := e.H.Statuses.FindCurrentRevision(ctx, st.ID); err != nil || !reflect.DeepEqual(got.Article, next.Article) {
+		t.Errorf("FindCurrentRevision after the edit = %+v, %v; want %+v", got.Article, err, next.Article)
+	}
+	if first, err := e.H.Statuses.FindRevision(ctx, rev.ID); err != nil || !reflect.DeepEqual(first.Article, rev.Article) {
+		t.Errorf("FindRevision(the first) = %+v, %v; want %+v", first.Article, err, rev.Article)
+	}
+	sameCurrentRevisions(t, e, st.ID, plain.ID)
 }
 
 // statusStoresConversations checks the conversations of statuses (ADR-0154): a conversation is

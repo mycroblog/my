@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+description: A new article.
+type: object
+required: [title, text, visibility]
+properties:
+  title:
+    $ref: ./ArticleTitle.yaml
+  summary:
+    $ref: ./ArticleSummary.yaml
+  cover:
+    $ref: ./ArticleCoverInput.yaml
+  text:
+    $ref: ./ArticleText.yaml
+  tags:
+    $ref: ./ArticleTagsInput.yaml
+  language:
+    $ref: ./StatusLanguageInput.yaml
+  visibility:
+    description: The visibility; an article is never `direct` (422).
+    allOf:
+      - $ref: ./Visibility.yaml
+  sensitive:
+    description: Whether the body and the cover are folded behind the title and the summary.
+    type: boolean
+  interaction_policy:
+    description: |
+      Who may reply to, boost, and quote the new article; the kinds left out take the user's
+      `default_interaction_policy`.
+    allOf:
+      - $ref: ./InteractionPolicyChange.yaml

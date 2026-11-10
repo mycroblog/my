@@ -539,6 +539,34 @@
     "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ƈřḗḗȧȧŧḗḗḓ ẇīŧħ ŧħīş Īḓḗḗḿƥǿǿŧḗḗƞƈẏ-Ķḗḗẏ ħȧȧş ƀḗḗḗḗƞ ḓḗḗŀḗḗŧḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.status.article_direct": {
+    "defaultMessage": "[Ȧƞ ȧȧřŧīƈŀḗḗ ƈȧȧƞƞǿǿŧ ƀḗḗ ȧȧ ḓīřḗḗƈŧ ƥǿǿşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.article_edited_as_post": {
+    "defaultMessage": "[Ȧƞ ȧȧřŧīƈŀḗḗ īş ḗḗḓīŧḗḗḓ ȧȧş ȧȧƞ ȧȧřŧīƈŀḗḗ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.article_summary_invalid": {
+    "defaultMessage": "[{max,plural,one{Ŧħḗḗ şŭŭḿḿȧȧřẏ ǿǿƒ ȧȧƞ ȧȧřŧīƈŀḗḗ ḿŭŭşŧ ƀḗḗ ȧȧŧ ḿǿǿşŧ # ƈħȧȧřȧȧƈŧḗḗř.} other{Ŧħḗḗ şŭŭḿḿȧȧřẏ ǿǿƒ ȧȧƞ ȧȧřŧīƈŀḗḗ ḿŭŭşŧ ƀḗḗ ȧȧŧ ḿǿǿşŧ # ƈħȧȧřȧȧƈŧḗḗřş.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.article_title_invalid": {
+    "defaultMessage": "[{max,plural,one{Ŧħḗḗ ŧīŧŀḗḗ ǿǿƒ ȧȧƞ ȧȧřŧīƈŀḗḗ ḿŭŭşŧ ƀḗḗ 1 ƈħȧȧřȧȧƈŧḗḗř.} other{Ŧħḗḗ ŧīŧŀḗḗ ǿǿƒ ȧȧƞ ȧȧřŧīƈŀḗḗ ḿŭŭşŧ ƀḗḗ 1 ŧǿǿ # ƈħȧȧřȧȧƈŧḗḗřş.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.article_too_long": {
+    "defaultMessage": "[{max,plural,one{Ŧħḗḗ ƀǿǿḓẏ ǿǿƒ ȧȧƞ ȧȧřŧīƈŀḗḗ ḿŭŭşŧ ḿȧȧķḗḗ ȧȧŧ ḿǿǿşŧ # ƀẏŧḗḗ ǿǿƒ ĦŦḾĿ.} other{Ŧħḗḗ ƀǿǿḓẏ ǿǿƒ ȧȧƞ ȧȧřŧīƈŀḗḗ ḿŭŭşŧ ḿȧȧķḗḗ ȧȧŧ ḿǿǿşŧ # ƀẏŧḗḗş ǿǿƒ ĦŦḾĿ.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.article_too_many_images": {
+    "defaultMessage": "[{max,plural,one{Ŧħḗḗ ƀǿǿḓẏ ǿǿƒ ȧȧƞ ȧȧřŧīƈŀḗḗ ƈȧȧƞ şħǿǿẇ ȧȧŧ ḿǿǿşŧ # īḿȧȧɠḗḗ.} other{Ŧħḗḗ ƀǿǿḓẏ ǿǿƒ ȧȧƞ ȧȧřŧīƈŀḗḗ ƈȧȧƞ şħǿǿẇ ȧȧŧ ḿǿǿşŧ # īḿȧȧɠḗḗş.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.article_too_many_tags": {
+    "defaultMessage": "[{max,plural,one{Ȧƞ ȧȧřŧīƈŀḗḗ ƈȧȧƞ ħȧȧṽḗḗ ȧȧŧ ḿǿǿşŧ # ħȧȧşħŧȧȧɠ.} other{Ȧƞ ȧȧřŧīƈŀḗḗ ƈȧȧƞ ħȧȧṽḗḗ ȧȧŧ ḿǿǿşŧ # ħȧȧşħŧȧȧɠş.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.status.boost_not_allowed": {
     "defaultMessage": "[Ŧħḗḗ ȧȧŭŭŧħǿǿř ǿǿƒ ŧħīş ƥǿǿşŧ ḓǿǿḗḗş ƞǿǿŧ ŀḗḗŧ ẏǿǿŭŭ ƀǿǿǿǿşŧ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -553,6 +581,10 @@
   },
   "errors.status.empty_text": {
     "defaultMessage": "[Ŧħḗḗ ƥǿǿşŧ ħȧȧş ƞǿǿ ŧḗḗẋŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.invalid_hashtag": {
+    "defaultMessage": "[Ȧ ħȧȧşħŧȧȧɠ ǿǿƒ ŧħḗḗ ȧȧřŧīƈŀḗḗ īş ƞǿǿŧ ȧȧ ħȧȧşħŧȧȧɠ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.invalid_language": {
@@ -585,6 +617,10 @@
   },
   "errors.status.missing_media_description": {
     "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř řḗḗɋŭŭīřḗḗş ȧȧ ḓḗḗşƈřīƥŧīǿǿƞ (ȧȧŀŧ ŧḗḗẋŧ) ƒǿǿř ḗḗṽḗḗřẏ īḿȧȧɠḗḗ. Ȧḓḓ ǿǿƞḗḗ ŧǿǿ ḗḗȧȧƈħ īḿȧȧɠḗḗ ƀḗḗƒǿǿřḗḗ ƥǿǿşŧīƞɠ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.status.not_article": {
+    "defaultMessage": "[Ŧħīş ƥǿǿşŧ īş ƞǿǿŧ ȧȧƞ ȧȧřŧīƈŀḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.not_author": {

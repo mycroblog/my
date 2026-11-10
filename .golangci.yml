@@ -443,7 +443,8 @@ linters:
             - golang.org/x/text/language
         # bluemonday is the remote HTML sanitizer (ADR-0019 §2); it stays inside the adapter of
         # kernel.HTMLSanitizer so that every caller goes through the port and its policy version,
-        # and holds the allowlist of the instance's documents (htmlsanitizer.SanitizeDocument).
+        # and holds the allowlists of the instance's documents (htmlsanitizer.SanitizeDocument)
+        # and of articles (htmlsanitizer.SanitizeArticle).
         bluemonday:
           list-mode: lax
           files:
@@ -452,8 +453,9 @@ linters:
           deny:
             - pkg: github.com/microcosm-cc/bluemonday
               desc: sanitize HTML through kernel.HTMLSanitizer (internal/adapter/htmlsanitizer)
-        # goldmark renders the instance's documents (#489); it stays inside the adapter of
-        # instance.DocumentRenderer, which sanitizes what it renders with the document allowlist.
+        # goldmark renders the instance's documents (#489) and articles (ADR-0160 §4); it stays inside
+        # the adapter of instance.DocumentRenderer and content.ArticleRenderer, which sanitize what
+        # they render with their allowlists.
         goldmark:
           list-mode: lax
           files:
@@ -461,7 +463,7 @@ linters:
             - "!**/internal/adapter/markdown/**"
           deny:
             - pkg: github.com/yuin/goldmark
-              desc: render Markdown through instance.DocumentRenderer (internal/adapter/markdown)
+              desc: render Markdown through instance.DocumentRenderer or content.ArticleRenderer (internal/adapter/markdown)
         # The HTTP signature libraries (ADR-0006) stay inside the adapter of federation.Signer and
         # federation.Verifier, so that every signature goes through the policy of ADR-0006.
         httpsig:
