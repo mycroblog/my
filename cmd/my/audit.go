@@ -118,7 +118,8 @@ report_assigned, report_unassigned, report_resolved, report_reopened,
 report_note_added (report); registration_approved, registration_rejected
 (user); setting_changed, text_changed (setting); rule_added, rule_revised,
 rule_moved, rule_retired (rule); link_card_domain_fetch_stopped,
-link_card_domain_images_stopped, link_card_domain_rule_removed (link_card_domain); role_granted, role_revoked, role_created,
+link_card_domain_images_stopped, link_card_domain_rule_removed (link_card_domain);
+domain_allow_added, domain_allow_removed (domain_allow); role_granted, role_revoked, role_created,
 role_updated, role_deleted (role); appeal_upheld, appeal_overturned (appeal);
 signup_block_added, signup_block_lifted (signup_block);
 hook_decision_applied, hook_decision_overridden, hook_appeal_upheld (hook_decision);
