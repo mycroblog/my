@@ -69,7 +69,9 @@ export default defineConfig({
       },
       // Starlight's own lastUpdated reads the git history of the copied files, which says nothing about the documents.
       lastUpdated: false,
-      // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides.
+      // The groups and order of docs/README.md (src/sidebar.ts), with the client API reference after the guides. A page
+      // lists only the entries of its own section; every other section is one link to its first document
+      // (src/section-sidebar.ts, added by the reference's plugin after its own middleware).
       sidebar: docsSidebar({ Developers: [apiReferenceSidebar] }),
       // The Markdown form of each page in its head (src/route-middleware.ts), the landing page's hero buttons, which
       // name documents by their repository path (src/routeData.ts), and what the head tells search engines: noindex,

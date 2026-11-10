@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import { createFileRoute, type ErrorComponentProps } from "@tanstack/react-router";
-import { SupporterProgram, supporterProgramQueryOptions } from "../features/admin";
+import { SupporterProgram, supporterProgramQueryOptions, supporterTipsQueryOptions } from "../features/admin";
 import { requireSignIn } from "../lib/auth/requireSignIn";
 import { useT } from "../lib/i18n";
 import { AdminError, loadWithPermission } from "./-admin/adminRoute";
@@ -8,7 +8,8 @@ import { PageHeading } from "./-layout/PageHeading";
 
 /**
  * The supporter program (ADR-0072), the first page of the supporters screen: enabling it and who may read the
- * supporter list in one form, and the state of the payment provider, for manage_supporters. Its plans and their
+ * supporter list in one form, the tips in another (ADR-0162 §17), and the state of the payment provider, for
+ * manage_supporters. Its plans and their
  * subscriptions are the screen's other pages (LocalNav).
  */
 export const Route = createFileRoute("/admin/supporters")({
@@ -16,7 +17,10 @@ export const Route = createFileRoute("/admin/supporters")({
   beforeLoad: requireSignIn,
   loader: ({ context }) =>
     loadWithPermission(context, "manage_supporters", () =>
-      context.queryClient.query({ ...supporterProgramQueryOptions(context.api), staleTime: Infinity }),
+      Promise.all([
+        context.queryClient.query({ ...supporterProgramQueryOptions(context.api), staleTime: Infinity }),
+        context.queryClient.query({ ...supporterTipsQueryOptions(context.api), staleTime: Infinity }),
+      ]),
     ),
   component: SupportersPage,
   errorComponent: SupportersError,

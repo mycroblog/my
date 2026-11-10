@@ -8,7 +8,14 @@ import type { ReactNode } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { categoryLabels, costCategories } from "../../costs";
 import { RequirePermission } from "../../moderation";
-import { type CostItem, costMemoLimit, costNameLimit, type CostSchedule, type IncomeKind } from "../api/finance";
+import {
+  type CostItem,
+  costMemoLimit,
+  costNameLimit,
+  type CostSchedule,
+  type IncomeKind,
+  type IncomeSource,
+} from "../api/finance";
 import type { LabelDraft, PriceDraft } from "../hooks/useFinance";
 
 /** The pages of the costs screen, in the order of its navigation. */
@@ -54,6 +61,13 @@ export const incomeKindLabels: Readonly<Record<IncomeKind, ClientMessageKey>> = 
   chargeback: "client:admin.finance.movements.kind.chargeback",
   chargeback_reversal: "client:admin.finance.movements.kind.chargeback_reversal",
   fee: "client:admin.finance.movements.kind.fee",
+};
+
+/** Where a money movement comes from: a subscription, a tip (ADR-0162 §16), or neither. */
+export const incomeSourceLabels: Readonly<Record<IncomeSource, ClientMessageKey>> = {
+  subscription: "client:admin.finance.movements.source.subscription",
+  one_time: "client:admin.finance.movements.source.one_time",
+  unknown: "client:admin.finance.movements.source.unknown",
 };
 
 /** How often an item is paid, in words: "Once", "Every 3 months". */

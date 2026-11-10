@@ -921,6 +921,7 @@ async function moderatorServer(page: Page) {
     }
     if (key === "GET /admin/supporter_program") return json(route, supporterProgram);
     if (key === "GET /admin/payment_status") return json(route, paymentStatus);
+    if (key === "GET /admin/supporter_tips") return json(route, supporterTips);
     if (key === "GET /admin/supporter_plans") return json(route, { items: [supporterPlan] });
     if (key === "GET /admin/supporter_subscriptions") return json(route, { items: [supporterSubscription] });
     if (key === `GET /admin/supporter_subscriptions/${supporterSubscription.id}`)
@@ -1080,6 +1081,16 @@ const supporterProgram: Schemas["AdminSupporterProgram"] = {
   live_subscriptions: 1,
   can_enable: true,
   warnings: [],
+};
+
+/** The tips, disabled, on a provider that takes one-time payments in yen. */
+const supporterTips: Schemas["AdminSupporterTips"] = {
+  enabled: false,
+  accepting: false,
+  one_time_payments: true,
+  amounts: [],
+  limits: [{ minimum: { amount: "100", currency: "JPY" }, maximum: { amount: "100000", currency: "JPY" } }],
+  server_limit_reached: false,
 };
 
 const paymentStatus: Schemas["PaymentStatus"] = {

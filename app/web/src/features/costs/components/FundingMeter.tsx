@@ -5,6 +5,7 @@
 // covered it says so instead of a larger number. A target that holds estimated costs is marked as an estimate.
 import { AsidePanel, Hint, Link, ProgressMeter, Stack, Text } from "@my/ui";
 import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { useIntl } from "react-intl";
 import type { components } from "@mycroblog/mykit";
 import { useApi } from "../../../lib/auth/SessionProvider";
@@ -79,15 +80,17 @@ export function PublishedFundingMeter() {
 
 /**
  * The funding meter in the third column of wide screens, while the instance shows it there (`rail`), with a link to
- * the information page, whose section of the running costs holds it too. Nothing otherwise.
+ * the information page, whose section of the running costs holds it too, and `tip`, the way to the tips that the
+ * layout puts under the meter (the supporters feature's). Nothing otherwise.
  */
-export function FundingMeterPanel() {
+export function FundingMeterPanel({ tip }: { tip?: ReactNode }) {
   const t = useT();
   const meter = useFundingMeter();
   if (meter === undefined || !meter.rail) return null;
   return (
     <AsidePanel heading={t("client:funding.panel.title")}>
       <FundingMeter meter={meter} />
+      {tip}
       <Text as="p" size="sm">
         <Link href={aboutPath} variant="standalone">
           {t("client:funding.panel.more")}

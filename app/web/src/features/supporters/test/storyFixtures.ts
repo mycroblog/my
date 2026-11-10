@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The data of the supporters screen stories (supporterList.stories.tsx, supporter.stories.tsx): a server with the
-// program on and three plans, and a list of members with long and right-to-left names.
+// program on and three plans, and a list of members with long and right-to-left names; and a server that takes tips
+// (tip.stories.tsx) of three amounts.
 import { http, HttpResponse } from "msw";
 import {
   accountFixture,
@@ -10,7 +11,7 @@ import {
   type Schemas,
 } from "../../../test/fixtures";
 import { apiBase } from "../../../test/msw/http";
-import { supporterPlanFixture } from "./handlers";
+import { supporterPlanFixture, tipAmounts } from "./handlers";
 
 export const coffeeId = "0192f0c4-7a8e-7000-8000-0000000000c1";
 export const loafId = "0192f0c4-7a8e-7000-8000-0000000000c2";
@@ -46,6 +47,19 @@ export function programOn(list: Schemas["InstanceAudience"] = "everyone") {
     }),
   );
 }
+
+/** GET /instance with the program on and the tips taken, with the commerce disclosures. */
+export const tipsOn = http.get(`${apiBase}/instance`, () =>
+  HttpResponse.json({
+    ...instanceFixture,
+    supporters_enabled: true,
+    tips_enabled: true,
+    commerce_disclosure_url: "https://my.example/about/commerce",
+  }),
+);
+
+/** GET /instance/tip_amounts with three amounts in yen. */
+export const offeringTips = http.get(`${apiBase}/instance/tip_amounts`, () => HttpResponse.json(tipAmounts));
 
 /** GET /instance/supporter_plans with the three plans. */
 export const offeringPlans = http.get(`${apiBase}/instance/supporter_plans`, () => HttpResponse.json({ items: plans }));

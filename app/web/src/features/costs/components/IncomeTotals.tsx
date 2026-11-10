@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The totals of the instance's income as the administrators' costs screen, the public costs page and the finances
 // page show them (ADR-0067 §15〜§17, FR-916, FR-917): the table of the periods, newest first, with the net income of
-// each currency, the gross and the fees on the costs screen only, and the balance against the costs where the answer
-// carries it; the members of each supporter plan now where they are shown; and the rules that date and place the
-// payments. Nothing here names a payment or a subscriber. Plan names are the operators' words, shown with dir="auto".
+// each currency, the gross, the fees and the net of each source (the subscriptions, the tips, and neither) on the
+// costs screen only, and the balance against the costs where the answer carries it; the members of each supporter plan
+// now where they are shown, with a row of the tips without a number while the server takes them (ADR-0162 §16); and
+// the rules that date and place the payments. Nothing here names a payment, a subscriber or a tip. Plan names are the operators' words, shown with dir="auto".
 import {
   Cluster,
   Heading,
@@ -24,7 +25,7 @@ import { useId } from "react";
 import { useIntl } from "react-intl";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import type { CostBasis, CostGranularity, Money } from "../api/costs";
-import type { IncomePeriodTotal, IncomePlanCount, IncomeTotals } from "../api/income";
+import type { IncomePeriodTotal, IncomePlanCount, IncomeSource, IncomeTotals } from "../api/income";
 import { useFormatTotals, usePeriodName } from "../hooks/useCostFormat";
 
 const granularityLabels: Readonly<Record<CostGranularity, ClientMessageKey>> = {
@@ -38,15 +39,34 @@ const basisLabels: Readonly<Record<CostBasis, ClientMessageKey>> = {
   cash: "client:costs.basis.cash",
 };
 
-/** A period of the income totals, with the gross and the fees on the administrators' screen. */
-type ShownIncomePeriod = IncomePeriodTotal & { gross?: readonly Money[]; fee?: readonly Money[] };
+/** The net of one source of the income over a period: the subscriptions, the tips, or neither (ADR-0162 §16). */
+type SourceNet = { source: IncomeSource; net: readonly Money[] };
+
+/** A period of the income totals, with the gross, the fees and the net of each source on the administrators' screen. */
+type ShownIncomePeriod = IncomePeriodTotal & {
+  gross?: readonly Money[];
+  fee?: readonly Money[];
+  net_by_source?: readonly SourceNet[];
+};
+
+/** The sources of the income, in the order the administrators' screen lists them. */
+const incomeSources = ["subscription", "one_time", "unknown"] as const satisfies readonly IncomeSource[];
+
+const sourceLabels: Readonly<Record<IncomeSource, ClientMessageKey>> = {
+  subscription: "client:income.source.subscription",
+  one_time: "client:income.source.one_time",
+  unknown: "client:income.source.unknown",
+};
 
 /** The income totals of any of the screens: the administrators' periods also have the gross and the fees. */
 type ShownIncomeTotals = Omit<IncomeTotals, "periods"> & { periods: readonly ShownIncomePeriod[] };
 
 export type IncomeTotalsViewProps = {
   totals: ShownIncomeTotals;
-  /** Shows the gross and the provider's fees of each period: the costs screen only (ADR-0067 §16). */
+  /**
+   * Shows the gross, the provider's fees and the net of each source (the subscriptions, the tips, and neither) of
+   * each period: the costs screen only (ADR-0067 §16, ADR-0162 §16).
+   */
   detailed?: boolean;
   /** The level of the headings of the members of each plan and of the rules: 3 below an h2, 4 below an h3. */
   headingLevel?: 3 | 4;
@@ -99,6 +119,7 @@ export function IncomeTotalsView({ totals, detailed = false, headingLevel = 3, t
               </>
             )}
             <TableColumnHeader>{t("client:income.totals.net")}</TableColumnHeader>
+            {detailed && <TableColumnHeader>{t("client:income.totals.by_source")}</TableColumnHeader>}
             {balance && <TableColumnHeader>{t("client:income.totals.balance")}</TableColumnHeader>}
           </TableHead>
           <TableBody>
@@ -118,6 +139,11 @@ export function IncomeTotalsView({ totals, detailed = false, headingLevel = 3, t
                 <TableCell numeric wrap="anywhere">
                   {formatTotals(period.net)}
                 </TableCell>
+                {detailed && (
+                  <TableCell wrap="anywhere">
+                    <SourceNets sources={period.net_by_source ?? []} />
+                  </TableCell>
+                )}
                 {balance && (
                   <TableCell numeric wrap="anywhere">
                     {formatBalance(period.balance ?? [])}
@@ -128,14 +154,44 @@ export function IncomeTotalsView({ totals, detailed = false, headingLevel = 3, t
           </TableBody>
         </Table>
       )}
-      {totals.plans !== undefined && <PlanMembers plans={totals.plans} headingLevel={headingLevel} />}
+      {totals.plans !== undefined && (
+        <PlanMembers plans={totals.plans} tips={totals.tips === true} headingLevel={headingLevel} />
+      )}
       <IncomeRules totals={totals} balance={balance} headingLevel={headingLevel} />
     </Stack>
   );
 }
 
-/** The members of each supporter plan now (ADR-0067 §17): never per period, never the plans' amounts. */
-function PlanMembers({ plans, headingLevel }: { plans: readonly IncomePlanCount[]; headingLevel: 3 | 4 }) {
+/** The net of each source that a period has, one line each in the order of `incomeSources`; "none" without any. */
+function SourceNets({ sources }: { sources: readonly SourceNet[] }) {
+  const t = useT();
+  const formatTotals = useFormatTotals();
+  const shown = incomeSources.flatMap((source) => sources.filter((s) => s.source === source));
+  if (shown.length === 0) return t("client:costs.totals.none");
+  return (
+    <Stack as="ul" gap="1">
+      {shown.map((s) => (
+        <li key={s.source}>
+          {t("client:income.source.net", { source: t(sourceLabels[s.source]), net: formatTotals(s.net) })}
+        </li>
+      ))}
+    </Stack>
+  );
+}
+
+/**
+ * The members of each supporter plan now (ADR-0067 §17): never per period, never the plans' amounts. While the server
+ * takes tips, a last row says that the totals include them, with neither their number nor their amount (ADR-0162 §16).
+ */
+function PlanMembers({
+  plans,
+  tips,
+  headingLevel,
+}: {
+  plans: readonly IncomePlanCount[];
+  tips: boolean;
+  headingLevel: 3 | 4;
+}) {
   const t = useT();
   const headingId = useId();
   return (
@@ -144,7 +200,7 @@ function PlanMembers({ plans, headingLevel }: { plans: readonly IncomePlanCount[
         {t("client:income.plans.title")}
       </Heading>
       <Hint size="inherit">{t("client:income.plans.description")}</Hint>
-      {plans.length === 0 ? (
+      {plans.length === 0 && !tips ? (
         <Hint size="inherit">{t("client:income.plans.empty")}</Hint>
       ) : (
         <Stack as="ul" gap="1">
@@ -157,6 +213,12 @@ function PlanMembers({ plans, headingLevel }: { plans: readonly IncomePlanCount[
               <Text numeric>{t("client:income.plans.members", { count: plan.members })}</Text>
             </Cluster>
           ))}
+          {tips && (
+            <Cluster as="li" gap="2" rowGap="0">
+              <Text wrap="anywhere">{t("client:income.plans.tips")}</Text>
+              <Text tone="muted">{t("client:income.plans.tips.note")}</Text>
+            </Cluster>
+          )}
         </Stack>
       )}
     </Stack>
@@ -193,6 +255,7 @@ function IncomeRules({
             ? t("client:income.rules.amortized", { days: intl.formatNumber(totals.rules.amortize_after_days) })
             : t("client:income.rules.cash")}
         </li>
+        {totals.tips === true && <li>{t("client:income.rules.tips")}</li>}
         {balance && <li>{t("client:income.rules.balance")}</li>}
       </Stack>
     </Stack>

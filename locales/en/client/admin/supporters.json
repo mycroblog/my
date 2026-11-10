@@ -658,5 +658,113 @@
   "admin.supporters.subscription.no_period": {
     "defaultMessage": "None",
     "description": "Shown for the end of the period of a subscription that has no paid period yet."
+  },
+  "admin.supporters.tips.title": {
+    "defaultMessage": "Tips",
+    "description": "Heading of the section of the tips on the first page of the supporters screen. A tip is a one-time payment to the server's operation with nothing in return; never word it as a donation."
+  },
+  "admin.supporters.tips.description": {
+    "defaultMessage": "A tip is a one-time payment of a user of this server to its operation, with nothing in return. Users with a verified email address choose one of your amounts and pay it on the payment provider's page. Tips need no plan.",
+    "description": "What the tips are, at the top of their section. Never word them as donations, and never suggest a deduction."
+  },
+  "admin.supporters.tips.accepting": {
+    "defaultMessage": "Users can tip now",
+    "description": "Term of the tips' section: whether users may tip now."
+  },
+  "admin.supporters.tips.accepting.yes": {
+    "defaultMessage": "Yes",
+    "description": "Users may tip now."
+  },
+  "admin.supporters.tips.accepting.no": {
+    "defaultMessage": "No",
+    "description": "Users may not tip now."
+  },
+  "admin.supporters.tips.changed_at": {
+    "defaultMessage": "Last changed",
+    "description": "Term of the tips' section: when the tips were last enabled, changed, or disabled."
+  },
+  "admin.supporters.tips.never": {
+    "defaultMessage": "Never",
+    "description": "The tips were never enabled."
+  },
+  "admin.supporters.tips.warning.no_one_time": {
+    "defaultMessage": "The payment provider takes no one-time payments, so the tips cannot be enabled.",
+    "description": "Warning of the tips' section: the configured payment provider cannot take tips."
+  },
+  "admin.supporters.tips.warning.not_accepting": {
+    "defaultMessage": "The tips are enabled, but users cannot tip while the supporter program is disabled.",
+    "description": "Warning of the tips' section: the tips are enabled but the supporter program is off."
+  },
+  "admin.supporters.tips.warning.server_limit": {
+    "defaultMessage": "In the last hour, the starts of tips reached the limit of the whole server. This may be card testing, someone trying stolen cards with small payments: check the payments in the provider's dashboard.",
+    "description": "Warning of the tips' section: the server-wide rate limit of the starts of tips was reached in the last hour."
+  },
+  "admin.supporters.tips.note.disputes": {
+    "defaultMessage": "Each chargeback costs the payment provider's dispute fee whatever the tip's amount: with Stripe in Japan, ¥1,500 a dispute at the time of writing. A small tip can cost several times what it brought.",
+    "description": "Note of the tips' section: the dispute fee of each chargeback."
+  },
+  "admin.supporters.tips.note.refunds": {
+    "defaultMessage": "Refunds and chargebacks of tips are subtracted from the income. Refund a tip in the provider's dashboard; this server has no refund operation.",
+    "description": "Note of the tips' section: refunds and chargebacks subtract from the income."
+  },
+  "admin.supporters.tips.note.breakdown": {
+    "defaultMessage": "The public totals of the income include the tips but never show their amount or how many there were: on a small server, a breakdown would tell who paid. Only the payments and refunds page of the costs screen shows each tip and who paid it.",
+    "description": "Note of the tips' section: why the public totals do not break the tips out."
+  },
+  "admin.supporters.tips.note.provider": {
+    "defaultMessage": "Whether your payment provider accepts tips for running a service is for you to check, under its review and terms. Word your commerce disclosure as a tip for running the service, with nothing in return.",
+    "description": "Note of the tips' section: the operator checks the provider's terms. Never word the tips as donations."
+  },
+  "admin.supporters.tips.guide": {
+    "defaultMessage": "Read about tips in the operator documentation",
+    "description": "Link from the tips' section to the operator documentation of the tips, which opens in a new tab."
+  },
+  "admin.supporters.tips.switch": {
+    "defaultMessage": "Take tips",
+    "description": "Label of the checkbox of the tips' form that enables or disables them."
+  },
+  "admin.supporters.tips.switch.description": {
+    "defaultMessage": "A checkout already open stays payable until it ends after you disable the tips.",
+    "description": "Description of the checkbox that enables or disables the tips."
+  },
+  "admin.supporters.tips.currency": {
+    "defaultMessage": "Currency",
+    "description": "Label of the choice of the currency of the amounts of the tips."
+  },
+  "admin.supporters.tips.amounts": {
+    "defaultMessage": "Amounts",
+    "description": "Label of the field of the amounts that users choose from when they tip."
+  },
+  "admin.supporters.tips.amounts.description": {
+    "defaultMessage": "1 to {max} amounts, separated by commas, such as 500, 1000, 3000.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6."
+  },
+  "admin.supporters.tips.amounts.range": {
+    "defaultMessage": "1 to {max} amounts, separated by commas, such as 500, 1000, 3000, each from {minimum} to {maximum}.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6; minimum and maximum are formatted amounts, such as ¥100 and ¥100,000."
+  },
+  "admin.supporters.tips.amounts.invalid": {
+    "defaultMessage": "Write each amount as a number, such as 500 or 5.00.",
+    "description": "Error of the field of the amounts of the tips: one is not a number."
+  },
+  "admin.supporters.tips.amounts.count": {
+    "defaultMessage": "Write 1 to {max} different amounts.",
+    "description": "Error of the field of the amounts of the tips: none or too many. max is a number, such as 6."
+  },
+  "admin.supporters.tips.save": {
+    "defaultMessage": "Save the tips",
+    "description": "Button that saves the tips' form."
+  },
+  "admin.supporters.tips.saved": {
+    "defaultMessage": "Saved. The audit log records each change.",
+    "description": "Shown beside the save button of the tips' form after it is saved."
+  },
+  "admin.supporters.tips.unchanged": {
+    "defaultMessage": "Nothing has changed.",
+    "description": "Shown beside the save button of the tips' form when it is saved without a change."
+  },
+  "admin.supporters.tips.failed": {
+    "defaultMessage": "Could not save: {reason}",
+    "description": "Shown beside the save button of the tips' form when it could not be saved, with the server's reason."
   }
 }

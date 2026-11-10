@@ -8,6 +8,8 @@
 // In the sidebar, the group of the reference lists its overview and one link per tag of the spec, to the tag's page;
 // only the tag of the current page lists its operations (src/api-sidebar.ts, a route middleware that runs after the
 // plugin's), so a page's sidebar does not grow with every operation of the API, on every page and in every locale.
+// The group belongs to the section Developers: it is listed with that section's documents on a page of the section
+// and not at all on any other (src/section-sidebar.ts, which runs after that middleware).
 import { createRequire } from "node:module";
 import { dirname } from "node:path";
 import type { StarlightPlugin, StarlightUserConfig } from "@astrojs/starlight/types";
@@ -45,6 +47,8 @@ export const apiReferencePlugin: StarlightPlugin = {
       // After the plugin's middleware, which fills the group of the reference, both in the "post" bucket: Starlight
       // runs the middlewares of one bucket in the order they are added.
       options.addRouteMiddleware({ entrypoint: "./src/api-sidebar.ts", order: "post" });
+      // Then the one that cuts every section but the current one to a link, which needs the reference's group in place.
+      options.addRouteMiddleware({ entrypoint: "./src/section-sidebar.ts", order: "post" });
       // The plugin renders the descriptions of the spec with satteri, and its pages use Starlight's tabs, which do too,
       // while the pages are prerendered. Bundled into the prerender chunks, satteri cannot find its native binding from
       // dist/ under Bun's isolated installs, so it stays an external import, resolved from this package's dependency.

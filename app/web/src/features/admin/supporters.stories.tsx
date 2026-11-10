@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { apiBase, withViewer } from "../../test/msw/http";
 import { inLocale, narrow } from "../../test/stories";
-import { paymentStatusFixture, supporterProgramFixture } from "./test/handlers";
+import { paymentStatusFixture, supporterProgramFixture, supporterTipsFixture } from "./test/handlers";
 import { enabled, live, supporterHandlers } from "./test/supporterStories";
 import {
   adminAnswering,
@@ -53,6 +53,28 @@ export const Warnings: Story = adminAnswering(
       return status;
     })(),
   ),
+);
+
+/** Tips enabled with three amounts in yen, after the starts reached the server's limit in the last hour. */
+export const Tips: Story = adminAnswering(
+  http.get(`${apiBase}/admin/supporter_tips`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json(
+        supporterTipsFixture({
+          enabled: true,
+          accepting: true,
+          amounts: [
+            { amount: "300", currency: "JPY" },
+            { amount: "500", currency: "JPY" },
+            { amount: "1000", currency: "JPY" },
+          ],
+          server_limit_reached: true,
+          changed_at: "2026-10-20T00:00:00Z",
+        }),
+      ),
+    ),
+  ),
+  ...supporterHandlers(enabled, live),
 );
 
 /** A disabled program on a server without a payment provider: the checkbox stays off and says why. */

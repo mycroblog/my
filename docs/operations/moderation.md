@@ -453,6 +453,7 @@ In the web client, use "Refetch posts" on the account's Review page (`/moderatio
 When a user asks whether a post, a follow, or an accept reached another server, list the deliveries to that server with the admin API.
 It shows each delivery of an activity to an inbox of the server, newest first, with every attempt and what the server answered, the deliveries that succeeded included.
 It needs the `manage_domains` permission.
+In the web client, the **Deliveries** section of the remote server screen (`/moderation/instances/{domain}`) shows the same list, with its filters by **Activity ID** and **Local account**, and **Show masked fields** on each masked delivery; the screen says which of them are recorded in the audit log before they run.
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" \

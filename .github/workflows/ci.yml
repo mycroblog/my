@@ -617,7 +617,7 @@ jobs:
           - name: api:live-calls
             run: scripts/task.sh api:live-calls
           # The check of the site context (site:check): copy the published documents in and build the site as the
-          # deploy combines it, checking what it tells search engines, and run tsc, Oxlint, and knip on app/docs, which
+          # deploy combines it, checking what it tells search engines, and run its unit tests, tsc, Oxlint, and knip on app/docs, which
           # selects no client context (its bun fmt is web:fmt-check above), and the check of its translations.
           - name: docs:site-index-check
             if: needs.changes.outputs.site == 'true'
@@ -625,6 +625,9 @@ jobs:
           - name: docs:site-typecheck
             if: needs.changes.outputs.site == 'true'
             run: scripts/task.sh docs:site-typecheck
+          - name: docs:site-test
+            if: needs.changes.outputs.site == 'true'
+            run: scripts/task.sh docs:site-test
           - name: docs:site-lint
             if: needs.changes.outputs.site == 'true'
             run: scripts/task.sh docs:site-lint

@@ -8,6 +8,7 @@
     "dev": "bun run import && ASTRO_TELEMETRY_DISABLED=1 astro dev",
     "build": "bun run import && ASTRO_TELEMETRY_DISABLED=1 astro build",
     "typecheck": "tsc -p tsconfig.typecheck.json",
+    "test": "bun test",
     "translations": "bun scripts/translations.ts"
   },
   "dependencies": {

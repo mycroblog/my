@@ -17,6 +17,7 @@ type Schemas = components["schemas"];
 export type IncomeTotals = Schemas["IncomeTotals"];
 export type IncomePeriodTotal = Schemas["IncomePeriodTotal"];
 export type IncomePlanCount = Schemas["IncomePlanCount"];
+export type IncomeSource = Schemas["IncomeSource"];
 
 /**
  * The public income totals of the shown periods up to `today` (GET /instance/income_totals): a 404 when the instance

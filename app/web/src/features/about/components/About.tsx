@@ -23,7 +23,7 @@ import { aboutCrawlerPath, profilePath, signInPath } from "../../../lib/paths";
 import { useStatusPageUrl } from "../../../lib/statusPage";
 import { DocumentLink, DocumentsSection } from "../../documents";
 import { FundingMeter } from "../../costs";
-import { AboutSupportersSection } from "../../supporters";
+import { AboutSupportersSection, AboutTipsSection } from "../../supporters";
 import type { Instance, PublicDomainAction } from "../api/about";
 import { type ModeratedDomains, useAbout, useModeratedDomains } from "../hooks/useAbout";
 
@@ -33,7 +33,7 @@ import { type ModeratedDomains, useAbout, useModeratedDomains } from "../hooks/u
  * followed by its terms of service and privacy policy, the most days it keeps posts, how to reach the operators, the remote domains it moderates as
  * far as the instance lists them, what it states to search engines and AI crawlers (its details folded), what running
  * it costs and what its supporters bring in as far as the instance publishes them (with this month's funding meter), its supporter plans and the
- * supporter list, its commerce disclosures, its status page, where to get its source code, and the license notices of
+ * supporter list, the tips it takes for running it, its commerce disclosures, its status page, where to get its source code, and the license notices of
  * what the web app bundles. The information layout builds the table of contents from the sections' headings.
  * Everyone may read it, signed in or not.
  */
@@ -72,6 +72,7 @@ export function About() {
           <Costs finance={about.finance} income={about.income} meter={about.fundingMeter} />
         )}
       <AboutSupportersSection />
+      <AboutTipsSection />
       {about.commerceDisclosureUrl !== undefined && <CommerceDisclosure url={about.commerceDisclosureUrl} />}
       {statusPageUrl !== undefined && <StatusPage url={statusPageUrl} />}
       {about.sourceUrl !== undefined && <SourceCode url={about.sourceUrl} />}

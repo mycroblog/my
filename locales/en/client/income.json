@@ -78,5 +78,37 @@
   "income.rules.balance": {
     "defaultMessage": "The balance is the income less the costs of each currency, both counted the same way. Currencies are never converted.",
     "description": "Rule of the income totals: what the balance is."
+  },
+  "income.totals.by_source": {
+    "defaultMessage": "By source",
+    "description": "Column header of the administrators' income totals: the income after fees of the subscriptions, of the tips, and of the other money of the provider's account."
+  },
+  "income.source.subscription": {
+    "defaultMessage": "Subscriptions",
+    "description": "Source of the income: the subscriptions to the supporter plans."
+  },
+  "income.source.one_time": {
+    "defaultMessage": "Tips",
+    "description": "Source of the income: the tips, one-time payments to the server's operation with nothing in return."
+  },
+  "income.source.unknown": {
+    "defaultMessage": "Other",
+    "description": "Source of the income: money of the payment provider's account that is neither a subscription nor a tip, such as a payment taken outside this server or a fee of no subscription."
+  },
+  "income.source.net": {
+    "defaultMessage": "{source}: {net}",
+    "description": "A line of the income of one source in a period. source is the source, such as Tips; net is the formatted income after fees of each currency."
+  },
+  "income.plans.tips": {
+    "defaultMessage": "Tips",
+    "description": "The last row of the members of each plan while the server takes tips: the totals include them."
+  },
+  "income.plans.tips.note": {
+    "defaultMessage": "Included in the totals, without their number",
+    "description": "Beside the row of the tips in the members of each plan: their number and amount are never shown."
+  },
+  "income.rules.tips": {
+    "defaultMessage": "A tip counts in full on the date it is paid. Its refund or chargeback is taken off in the period it happens.",
+    "description": "Rule of the income totals while the server takes tips."
   }
 }

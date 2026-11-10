@@ -19,6 +19,11 @@
       "use": "event",
       "avoid": ["\\b[Gg]atherings?\\b"],
       "note": "A gathering of the local users with a date and places. The code calls it a gathering; users read event."
+    },
+    {
+      "use": "tip",
+      "avoid": ["\\b[Dd]onat(?:e|es|ed|ing|ions?)\\b", "\\b[Tt]ax[ -]deductible\\b"],
+      "note": "A one-time payment to the operation of the server with nothing in return: never a donation or a deduction, and not \"support\", which is the supporter plans'."
     }
   ],
   "ja": [
@@ -26,6 +31,11 @@
       "use": "モバイル",
       "avoid": ["電話"],
       "note": "A narrow screen where the bottom tab bar is the navigation (\"phone\" in en)."
+    },
+    {
+      "use": "チップ",
+      "avoid": ["寄付", "カンパ", "投げ銭", "控除"],
+      "note": "A tip, a one-time payment to the operation of the server with nothing in return: never a donation or a deduction."
     },
     {
       "use": "ログイン",

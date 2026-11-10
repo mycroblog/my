@@ -27,6 +27,27 @@ export function supporterProgramFixture(
   };
 }
 
+/**
+ * The tips as the admin API answers them: disabled, never changed, on a provider that takes one-time payments in yen
+ * (¥100 to ¥100,000) and dollars (US$1 to US$1,000), with `overrides`.
+ */
+export function supporterTipsFixture(
+  overrides: Partial<Schemas["AdminSupporterTips"]> = {},
+): Schemas["AdminSupporterTips"] {
+  return {
+    enabled: false,
+    accepting: false,
+    one_time_payments: true,
+    amounts: [],
+    limits: [
+      { minimum: { amount: "100", currency: "JPY" }, maximum: { amount: "100000", currency: "JPY" } },
+      { minimum: { amount: "1.00", currency: "USD" }, maximum: { amount: "1000.00", currency: "USD" } },
+    ],
+    server_limit_reached: false,
+    ...overrides,
+  };
+}
+
 /** The state of the payment provider as the admin API answers it: Stripe in test mode, never reconciled, with `overrides`. */
 export function paymentStatusFixture(overrides: Partial<Schemas["PaymentStatus"]> = {}): Schemas["PaymentStatus"] {
   return {
@@ -1069,6 +1090,24 @@ export const handlers = [
     const { enabled } = (await request.clone().json()) as Schemas["AdminSupporterProgramRequest"];
     return withViewer(request, () =>
       HttpResponse.json(supporterProgramFixture({ enabled, ...(enabled ? { provider: "stripe" } : {}) })),
+    );
+  }),
+  // operationIds getSupporterTips, setSupporterTips: the tips disabled; a change is answered as sent, accepting
+  // while enabled.
+  http.get(`${apiBase}/admin/supporter_tips`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json(supporterTipsFixture())),
+  ),
+  http.put(`${apiBase}/admin/supporter_tips`, async ({ request }) => {
+    const { enabled, amounts } = (await request.clone().json()) as Schemas["AdminSupporterTipsRequest"];
+    return withViewer(request, () =>
+      HttpResponse.json(
+        supporterTipsFixture({
+          enabled,
+          accepting: enabled,
+          amounts: enabled ? (amounts ?? []) : [],
+          changed_at: "2026-10-22T00:00:00Z",
+        }),
+      ),
     );
   }),
   http.get(`${apiBase}/admin/supporter_plans`, ({ request }) =>
