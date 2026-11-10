@@ -111,7 +111,7 @@ async function post(page: Page, text: string, notice = "compose.posted"): Promis
   const posted = page.getByRole("region", { name: message("shell.toast.region") }).getByText(message(notice));
   await page.mouse.move(0, 0);
   await expect(posted).toHaveCount(0, { timeout: 15_000 });
-  await form.getByRole("button", { name: message("compose.submit") }).click();
+  await form.getByRole("button", { name: message("compose.submit"), exact: true }).click();
   await expect(posted).toBeVisible({ timeout: latency * 10 });
 }
 

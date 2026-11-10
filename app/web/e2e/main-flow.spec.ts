@@ -272,7 +272,7 @@ test.describe("the main flow", () => {
       for (const progress of ["compose.media.uploading", "compose.media.processing"])
         await expect(attachments.getByText(message(progress))).toHaveCount(0);
       await expectQuality(page);
-      await form.getByRole("button", { name: message("compose.submit") }).click();
+      await form.getByRole("button", { name: message("compose.submit"), exact: true }).click();
       await expectToast(page, message("compose.posted.first"));
     });
 
@@ -355,7 +355,7 @@ test.describe("the main flow", () => {
       await choices.getByText(message("compose.visibility.private"), { exact: true }).click();
       await expect(choices.getByRole("radio", { name: literal(message("compose.visibility.private")) })).toBeChecked();
       await page.getByRole("button", { name: message("compose.visibility.done") }).click();
-      await form.getByRole("button", { name: message("compose.submit") }).click();
+      await form.getByRole("button", { name: message("compose.submit"), exact: true }).click();
       await expectToast(page, message("compose.posted"));
 
       await navigate(bobPage, "home");

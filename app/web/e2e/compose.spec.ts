@@ -332,8 +332,8 @@ test.describe("the new-post form", () => {
     await expect(form.locator("[data-highlight]")).toHaveCount(3);
 
     // Every child of the form, in order: the label's text, the text area, the completion's status (empty, as no word
-    // is being typed), the emoji button, the count's status, then the tools with their descriptions' text. A layer
-    // exposed to assistive technology would add a child.
+    // is being typed), the emoji button, the count's status, then the tools with their descriptions' text, and the
+    // schedule, submit and save-draft buttons. A layer exposed to assistive technology would add a child.
     await expect(form).toMatchAriaSnapshot(`
       - form:
         - /children: equal
@@ -350,7 +350,9 @@ test.describe("the new-post form", () => {
         - ${ariaNode(`button ${JSON.stringify(message("compose.warning.toggle"))} [pressed=false]`)}
         - ${ariaNode(`button ${JSON.stringify(policyButtonName())}`)}
         - ${ariaNode(`button /${endingWith(message("compose.language.label"))}/`)}
+        - ${ariaNode(`button ${JSON.stringify(message("drafts.schedule.label"))}`)}
         - ${ariaNode(`button ${JSON.stringify(message("compose.submit"))}`)}
+        - ${ariaNode(`button ${JSON.stringify(message("drafts.save"))}`)}
         - status
         - alert
     `);
@@ -418,7 +420,9 @@ test.describe("the new-post form", () => {
     expect(new Set(heights).size).toBe(1);
 
     await page.setViewportSize({ width: 320, height: 568 });
-    await expect(form.getByRole("button", { name: message("compose.submit") })).toBeInViewport({ ratio: 1 });
+    await expect(form.getByRole("button", { name: message("compose.submit"), exact: true })).toBeInViewport({
+      ratio: 1,
+    });
     await expectNoHorizontalScroll(page);
   });
 
@@ -459,12 +463,12 @@ test.describe("the new-post form", () => {
     const text = form.getByRole("textbox", { name: message("compose.text.label") });
 
     await text.fill("Hello from the E2E");
-    await form.getByRole("button", { name: message("compose.submit") }).click();
+    await form.getByRole("button", { name: message("compose.submit"), exact: true }).click();
 
     await expect(form.getByText(message("compose.failed", { reason: "Service Unavailable" }))).toBeVisible();
     await expect(text).toHaveValue("Hello from the E2E");
 
-    await form.getByRole("button", { name: message("compose.submit") }).click();
+    await form.getByRole("button", { name: message("compose.submit"), exact: true }).click();
 
     await expect(
       page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("compose.posted")),
@@ -498,9 +502,9 @@ test.describe("the new-post form", () => {
 
     await poll.getByRole("button", { name: formatted("compose.poll.option.remove", { number: "3" }) }).click();
     // The first post fails (serveApi), the second goes through.
-    await form.getByRole("button", { name: message("compose.submit") }).click();
+    await form.getByRole("button", { name: message("compose.submit"), exact: true }).click();
     await expect(form.getByText(message("compose.failed", { reason: "Service Unavailable" }))).toBeVisible();
-    await form.getByRole("button", { name: message("compose.submit") }).click();
+    await form.getByRole("button", { name: message("compose.submit"), exact: true }).click();
     await expect(
       page.getByRole("region", { name: message("shell.toast.region") }).getByText(message("compose.posted")),
     ).toBeVisible();
@@ -520,7 +524,7 @@ test.describe("the new-post form", () => {
     await page.goto("/");
     const form = await openForm(page, hasTouch);
     const text = form.getByRole("textbox", { name: message("compose.text.label") });
-    await expect(form.getByRole("button", { name: message("compose.submit") })).toHaveAttribute(
+    await expect(form.getByRole("button", { name: message("compose.submit"), exact: true })).toHaveAttribute(
       "aria-keyshortcuts",
       "Control+Enter Meta+Enter",
     );
