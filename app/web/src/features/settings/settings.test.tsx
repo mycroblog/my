@@ -1363,7 +1363,7 @@ describe("the settings page", () => {
     const menu = await screen.findByRole("navigation", { name: "Settings pages" });
     expectMenuGroups(menu, {
       "Profile and community": ["/settings/profile", "/settings/badges"],
-      "Display and notifications": ["/settings/preferences", "/settings/notifications"],
+      "Display and notifications": ["/settings/preferences", "/settings/notifications", "/settings/filters"],
       Relationships: [
         "/settings/follow-requests",
         "/settings/interaction-requests",

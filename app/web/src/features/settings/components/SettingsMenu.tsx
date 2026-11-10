@@ -14,6 +14,7 @@ import {
   DisplayIcon,
   DomainMuteIcon,
   ExternalLink,
+  FilterIcon,
   FollowRequestIcon,
   WaitingIcon,
   ImportExportIcon,
@@ -82,6 +83,7 @@ const groups: readonly { id: string; heading: ClientMessageKey; pages: readonly 
     pages: [
       { href: "/settings/preferences", label: "client:settings.preferences.title", icon: DisplayIcon },
       { href: "/settings/notifications", label: "client:settings.notifications.title", icon: NotificationsIcon },
+      { href: "/settings/filters", label: "client:filters.title", icon: FilterIcon },
       { href: "/settings/voice", label: "client:voice.history.title", icon: VoiceIcon, voice: true },
     ],
   },
