@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getNotificationPolicy
+  summary: Get the authenticated user's notification policy
+  description: |
+    What happens to the notifications of other accounts, by condition on their source: listed,
+    filtered into the request of their source, or dropped.
+  tags: [preferences]
+  security:
+    - oauth2: ["read:accounts"]
+  responses:
+    "200":
+      description: The policy.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/NotificationPolicy.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+patch:
+  operationId: updateNotificationPolicy
+  summary: Change the authenticated user's notification policy
+  description: |
+    Changes the actions of the conditions in the body and keeps the others. The notifications
+    already created stay where they went.
+  tags: [preferences]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/NotificationPolicyUpdate.yaml
+  responses:
+    "200":
+      description: The policy after the change.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/NotificationPolicy.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

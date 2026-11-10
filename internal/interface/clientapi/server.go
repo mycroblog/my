@@ -131,6 +131,9 @@ type Options struct {
 	// NotificationPreferences reads and changes the viewer's notification settings; nil answers
 	// their operations 404.
 	NotificationPreferences NotificationPreferences
+	// NotificationPolicies reads and changes the viewer's notification policy and runs the
+	// requests of the filtered notifications; nil answers their operations 404.
+	NotificationPolicies NotificationPolicies
 	// Push runs the Web Push subscription use cases and gives Instance.push_server_key; nil
 	// sends no Web Push.
 	Push WebPush

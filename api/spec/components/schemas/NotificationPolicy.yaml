@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+description: |
+  What the authenticated user's notification policy does with the notifications of other
+  accounts, by condition on their source. A notification that meets several conditions takes
+  the strictest action (`drop` before `filter` before `accept`); one that meets none is
+  accepted. Every condition accepts until the user chooses. The policy applies to `follow`,
+  `follow_request`, `mention`, `boost`, `favourite`, `reaction`, `quote`, and
+  `voice_room_invited`; the notifications the user asked for, those of the moderators, and the
+  notices of the server (moderation, reports, appeals, the service closure, the supporters, the
+  announcements) are never filtered or dropped. A source whose request the user accepted meets
+  no condition, and a source the user follows meets none but `limited_account`. A change
+  applies to the notifications created after it.
+type: object
+required: [not_following, not_follower, new_account, unsolicited_private_mention, limited_account]
+properties:
+  not_following:
+    description: Sources that the user does not follow (a follow request waiting for approval does not count).
+    $ref: ./NotificationPolicyAction.yaml
+  not_follower:
+    description: Sources that do not follow the user.
+    $ref: ./NotificationPolicyAction.yaml
+  new_account:
+    description: Sources whose account was created less than 30 days ago.
+    $ref: ./NotificationPolicyAction.yaml
+  unsolicited_private_mention:
+    description: |
+      Mentions in a direct post that does not answer a direct post of the user that mentioned
+      the source in the same conversation.
+    $ref: ./NotificationPolicyAction.yaml
+  limited_account:
+    description: Sources that a moderator limited, by themselves or by their domain.
+    $ref: ./NotificationPolicyAction.yaml

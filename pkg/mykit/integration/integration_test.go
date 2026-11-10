@@ -509,3 +509,60 @@ func TestThreadMutes(t *testing.T) {
 		t.Errorf("alice's notifications after the unmute = %v, want the mention of %s", got, second.Id)
 	}
 }
+
+// TestNotificationRequests filters the mentions of an account that alice does not follow into its request, and
+// accepts the request, which lists them.
+func TestNotificationRequests(t *testing.T) {
+	t.Parallel()
+	srv := platformtest.Start(t, platformtest.Options{})
+	alice := signIn(t, srv, srv.User(t, "alice"), mykit.Config{})
+	bob := signIn(t, srv, srv.User(t, "bob"), mykit.Config{})
+	ctx := t.Context()
+
+	filter := mykit.NotificationPolicyActionFilter
+	policy, err := alice.UpdateNotificationPolicyWithResponse(ctx, mykit.NotificationPolicyUpdate{NotFollowing: &filter})
+	if err != nil {
+		t.Fatalf("update the notification policy: %v", err)
+	}
+	if policy.JSON200 == nil || policy.JSON200.NotFollowing != filter || policy.JSON200.NotFollower != mykit.NotificationPolicyActionAccept {
+		t.Fatalf("update the notification policy = %d %s, want not_following filtered and the rest accepted", policy.StatusCode(), policy.Body)
+	}
+	mention := post(t, bob, "hi @alice")
+
+	listed := func() []string {
+		t.Helper()
+		resp, err := alice.ListNotificationsWithResponse(ctx, &mykit.ListNotificationsParams{})
+		if err != nil || resp.JSON200 == nil {
+			t.Fatalf("list the notifications = %v %v", resp, err)
+		}
+		var out []string
+		for _, n := range resp.JSON200.Items {
+			if n.Status != nil {
+				out = append(out, n.Status.Id)
+			}
+		}
+		return out
+	}
+	if got := listed(); len(got) != 0 {
+		t.Fatalf("notifications about posts = %v, want none before the acceptance", got)
+	}
+	summary, err := alice.GetNotificationRequestSummaryWithResponse(ctx)
+	if err != nil || summary.JSON200 == nil || summary.JSON200.AccountsCount != 1 || summary.JSON200.NotificationsCount != 1 {
+		t.Fatalf("the request summary = %v %v, want one request of one notification", summary, err)
+	}
+	requests, err := alice.ListNotificationRequestsWithResponse(ctx, &mykit.ListNotificationRequestsParams{})
+	if err != nil || requests.JSON200 == nil || len(requests.JSON200.Items) != 1 {
+		t.Fatalf("list the requests = %v %v, want bob's", requests, err)
+	}
+	req := requests.JSON200.Items[0]
+	if req.Account.Username != "bob" || req.LastNotification == nil || req.LastNotification.Status == nil || req.LastNotification.Status.Id != mention.Id {
+		t.Fatalf("request = %+v, want bob's with the mention", req)
+	}
+	accepted, err := alice.AcceptNotificationRequestWithResponse(ctx, req.Id)
+	if err != nil || accepted.StatusCode() != http.StatusNoContent {
+		t.Fatalf("accept the request = %v %v, want 204", accepted, err)
+	}
+	if got := listed(); !slices.Equal(got, []string{mention.Id}) {
+		t.Errorf("notifications about posts after the acceptance = %v, want the mention", got)
+	}
+}

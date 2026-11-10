@@ -68,7 +68,7 @@ tags:
       within the caps of the instance settings, listing them, and revoking them. The operations
       need a `read:accounts` or `write:accounts` scope.
   - name: notifications
-    description: The authenticated user's notifications, their read marker, and dismissals.
+    description: The authenticated user's notifications, their read marker, dismissals, and the requests of the notifications that the notification policy filtered.
   - name: push
     description: The Web Push subscription of the access token's grant.
   - name: statuses
@@ -180,6 +180,8 @@ paths:
     $ref: ./paths/preferences_badges_{role_id}.yaml
   /preferences/notifications:
     $ref: ./paths/preferences_notifications.yaml
+  /preferences/notification_policy:
+    $ref: ./paths/preferences_notification_policy.yaml
   /preferences/supporter_listing:
     $ref: ./paths/preferences_supporter_listing.yaml
   /accounts/deactivation:
@@ -320,6 +322,18 @@ paths:
     $ref: ./paths/notifications_marker.yaml
   /notifications/{id}/dismiss:
     $ref: ./paths/notifications_{id}_dismiss.yaml
+  /notifications/requests:
+    $ref: ./paths/notifications_requests.yaml
+  /notifications/requests/summary:
+    $ref: ./paths/notifications_requests_summary.yaml
+  /notifications/requests/{id}:
+    $ref: ./paths/notifications_requests_{id}.yaml
+  /notifications/requests/{id}/notifications:
+    $ref: ./paths/notifications_requests_{id}_notifications.yaml
+  /notifications/requests/{id}/accept:
+    $ref: ./paths/notifications_requests_{id}_accept.yaml
+  /notifications/requests/{id}/dismiss:
+    $ref: ./paths/notifications_requests_{id}_dismiss.yaml
   /push/subscription:
     $ref: ./paths/push_subscription.yaml
   /bookmarks:
@@ -846,7 +860,7 @@ components:
             write: Change everything the user can change.
             follow: Read and change follows, blocks, and mutes.
             push: Receive Web Push notifications.
-            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings, aliases, and automatic deletion policy.
+            "read:accounts": Read accounts and their followers and follows, and the user's own account with its roles and permissions, preferences (including whether emails still reach the address), notification settings and policy, aliases, and automatic deletion policy.
             "read:blocks": Read the accounts the user blocks.
             "read:bookmarks": Read the user's bookmarks.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
@@ -855,12 +869,12 @@ components:
             "read:finance": Read the totals of the instance's costs and income, as far as the user's roles allow.
             "read:follows": Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
             "read:mutes": Read the accounts and domains the user mutes.
-            "read:notifications": Read the user's notifications.
+            "read:notifications": Read the user's notifications and the notification requests.
             "read:reports": Read the reports the user filed and whether they are resolved.
             "read:statuses": Read posts and timelines.
             "read:supporters": Read the user's own supporter subscription.
             "read:voice": Read the voice chat rooms the user sees.
-            "write:accounts": Change the user's profile, featured hashtags, preferences, notification settings, badges, and supporter listing.
+            "write:accounts": Change the user's profile, featured hashtags, preferences, notification settings and policy, badges, and supporter listing.
             "write:blocks": Block and unblock accounts.
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
@@ -869,7 +883,7 @@ components:
             "write:follows": Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
             "write:media": Upload media, read their state while they process, and change their descriptions.
             "write:mutes": Mute and unmute accounts, domains, and threads.
-            "write:notifications": Mark notifications read and dismiss them.
+            "write:notifications": Mark notifications read and dismiss them, and accept and dismiss the notification requests.
             "write:reports": Report accounts and posts to the moderators.
             "write:statuses": Post, edit, delete, boost, and pin posts, vote in polls, and set who may quote a post.
             "write:supporters": Subscribe to the supporter plans, and change, cancel, and resume the subscription (first-party clients only).
@@ -1930,6 +1944,18 @@ components:
       $ref: ./components/schemas/NotificationMarkerUpdate.yaml
     NotificationPage:
       $ref: ./components/schemas/NotificationPage.yaml
+    NotificationPolicy:
+      $ref: ./components/schemas/NotificationPolicy.yaml
+    NotificationPolicyAction:
+      $ref: ./components/schemas/NotificationPolicyAction.yaml
+    NotificationPolicyUpdate:
+      $ref: ./components/schemas/NotificationPolicyUpdate.yaml
+    NotificationRequest:
+      $ref: ./components/schemas/NotificationRequest.yaml
+    NotificationRequestPage:
+      $ref: ./components/schemas/NotificationRequestPage.yaml
+    NotificationRequestSummary:
+      $ref: ./components/schemas/NotificationRequestSummary.yaml
     NotificationSettingCell:
       $ref: ./components/schemas/NotificationSettingCell.yaml
     NotificationSettingRow:

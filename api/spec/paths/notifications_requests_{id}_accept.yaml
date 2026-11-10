@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: acceptNotificationRequest
+  summary: Accept a notification request
+  description: |
+    Moves the notifications of the request into the list, unread when they are newer than the
+    read marker, without delivering them, and accepts the later notifications of the source
+    whatever the policy says. A 404 when the source has no request.
+  tags: [notifications]
+  security:
+    - oauth2: ["write:notifications"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
+  responses:
+    "204":
+      description: The request is accepted.
+    default:
+      $ref: ../components/responses/Problem.yaml

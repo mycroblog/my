@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: dismissNotificationRequest
+  summary: Dismiss a notification request
+  description: |
+    Removes the notifications of the request, which are never listed. The source is not
+    accepted: a later notification that the policy filters opens a new request. A 404 when the
+    source has no request.
+  tags: [notifications]
+  security:
+    - oauth2: ["write:notifications"]
+  parameters:
+    - $ref: ../components/parameters/AccountId.yaml
+  responses:
+    "204":
+      description: The request is dismissed.
+    default:
+      $ref: ../components/responses/Problem.yaml
