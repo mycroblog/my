@@ -128,6 +128,9 @@ custom_emoji_updated, custom_emoji_enabled, custom_emoji_disabled,
 custom_emoji_deleted (custom_emoji); webhook_created, webhook_updated, webhook_deleted,
 webhook_enabled, webhook_disabled, webhook_secret_rotated (webhook);
 announcement_created, announcement_updated, announcement_published,
-announcement_withdrawn (announcement); invite_created, invite_revoked (invite).
+announcement_withdrawn (announcement); invite_created, invite_revoked (invite);
+domain_list_subscription_created, domain_list_subscription_updated,
+domain_list_subscription_deleted, domain_list_draft_accepted,
+domain_list_draft_rejected, domain_list_fetch_queued (domain_list_subscription).
 `)
 }

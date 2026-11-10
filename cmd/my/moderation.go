@@ -29,7 +29,7 @@ func runAdminDomain(args []string, stdin io.Reader, stdout, stderr io.Writer) in
 		adminDomainUsage(stderr)
 		return 2
 	}
-	sub, code := dispatch("admin domain", args, []string{"list", "issue", "lift", "export", "import", "allow"}, stderr, adminDomainUsage)
+	sub, code := dispatch("admin domain", args, []string{"list", "issue", "lift", "export", "import", "allow", "subscription"}, stderr, adminDomainUsage)
 	if code >= 0 {
 		return code
 	}
@@ -38,6 +38,9 @@ func runAdminDomain(args []string, stdin io.Reader, stdout, stderr io.Writer) in
 	}
 	if sub == "export" || sub == "import" {
 		return runAdminDomainCSV(sub, args[1:], stdin, stdout, stderr)
+	}
+	if sub == "subscription" {
+		return runAdminDomainSubscription(args[1:], stdout, stderr)
 	}
 	var (
 		domain, kind, comment, note, before string
@@ -160,6 +163,8 @@ func adminDomainUsage(w io.Writer) {
   my admin domain import [-apply] [-only <domains>] [-private-note <text>]
                          [-config <file>] <file | ->
   my admin domain allow list|add|remove ...
+  my admin domain subscription list|add|update|remove|fetch|fetches|drafts|accept|reject ...
+                         (my admin domain subscription -help)
 
 Moderation actions on remote domains and their subdomains, in effect at
 once for federation and the timelines:
