@@ -22,14 +22,14 @@ import (
 var now = time.Date(2026, time.November, 20, 3, 0, 0, 0, time.UTC)
 
 // record is shaped like the 200 example of "Get Account Billable Usage (Version 1, Alpha)".
-func record(day, service, cost string) string {
+func record(day, family, cost string) string {
 	start, _ := time.Parse(time.DateOnly, day)
 	return fmt.Sprintf(`{"BilledCost":%[3]s,"BillingAccountId":"023e105f4ecef8ad9ca31a8372d0c353","BillingCurrency":"USD",
 "BillingPeriodStart":"2026-10-10T00:00:00Z","ChargeCategory":"Usage","ChargeClass":null,
-"ChargeDescription":"%[2]s usage","ChargePeriodStart":"%[1]s","ChargePeriodEnd":"%[4]s",
+"ChargeDescription":"%[2]s metric usage","ChargePeriodStart":"%[1]s","ChargePeriodEnd":"%[4]s",
 "ConsumedQuantity":1,"ConsumedUnit":"Count","ContractedCost":%[3]s,"EffectiveCost":%[3]s,"ListCost":%[3]s,
-"ServiceName":"%[2]s","SubscriptionId":"3F3CD4CQ6N7FXO7IK6NVFJBOYA"}`,
-		start.Format(time.RFC3339), service, cost, start.AddDate(0, 0, 1).Format(time.RFC3339))
+"ServiceName":"%[2]s metric (first units included)","ServiceFamilyName":"%[2]s","SubscriptionId":"3F3CD4CQ6N7FXO7IK6NVFJBOYA"}`,
+		start.Format(time.RFC3339), family, cost, start.AddDate(0, 0, 1).Format(time.RFC3339))
 }
 
 type fake struct {
@@ -46,19 +46,23 @@ func (f *fake) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer f.mu.Unlock()
 	if f.status != 0 {
 		w.WriteHeader(f.status)
-		fmt.Fprint(w, `{"success":false,"errors":[{"code":10000,"message":"Authentication error"}],"result":null}`)
+		code := 10000
+		if f.status == http.StatusBadRequest {
+			code = 9106
+		}
+		fmt.Fprintf(w, `{"success":false,"errors":[{"code":%d,"message":"Authentication failed"}],"result":null}`, code)
 		return
 	}
 	switch r.URL.Path {
 	case "/accounts/acc/billable-usage/info":
 		fmt.Fprintf(w, `{"success":true,"errors":[],"messages":[],"result":{"covered":%v,"subscriptions":[
-{"id":"3F3CD4CQ6N7FXO7IK6NVFJBOYA","billing_cycle_anchor_timestamp":"2025-01-10T00:00:00Z","start_timestamp":"2025-01-10T00:00:00Z"}]}}`, f.covered)
+{"id":"3F3CD4CQ6N7FXO7IK6NVFJBOYA","billing_cycle_anchor_timestamp":"2025-02-10T00:00:00Z","start_timestamp":"2025-01-10T09:55:13Z"}]}}`, f.covered)
 	case "/accounts/acc/billable-usage":
 		from, to := r.URL.Query().Get("from"), r.URL.Query().Get("to")
 		f.queries = append(f.queries, from+".."+to)
 		var out []string
 		for day, recs := range f.days {
-			if day >= from && day <= to {
+			if day >= from && day < to { // to is exclusive, as on a real account
 				out = append(out, recs...)
 			}
 		}
@@ -97,18 +101,18 @@ func months(t *testing.T, ss ...string) []finance.YearMonth {
 
 func TestFetchBucketsDaysIntoCalendarMonths(t *testing.T) {
 	f := &fake{covered: true, days: map[string][]string{
-		"2026-09-30": {record("2026-09-30", "R2 Storage", "9.99")}, // not asked for
-		"2026-10-10": {record("2026-10-10", "Workers Standard", "0.75")},
-		"2026-10-31": {record("2026-10-31", "Workers Standard", "0.000005"), record("2026-10-31", "R2 Storage", "0.015")},
-		"2026-11-09": {record("2026-11-09", "Workers Standard", "0.25")},
-		"2026-11-19": {record("2026-11-19", "R2 Storage", "0.36")},
+		"2026-09-30": {record("2026-09-30", "R2", "9.99")}, // not asked for
+		"2026-10-10": {record("2026-10-10", "Workers", "0.75")},
+		"2026-10-31": {record("2026-10-31", "Workers", "0.000005"), record("2026-10-31", "R2", "0.015")},
+		"2026-11-09": {record("2026-11-09", "Workers", "0.25")},
+		"2026-11-19": {record("2026-11-19", "R2", "0.36")},
 	}}
 	snap, err := newSource(t, f).Fetch(t.Context(), appfinance.FetchRequest{Months: months(t, "2026-10", "2026-11"), MaxRequests: 10})
 	if err != nil {
 		t.Fatal(err)
 	}
-	// One info request and one per cycle: 09-10..10-09, 10-10..11-09, 11-10..11-20.
-	if snap.Requests != 4 || len(f.queries) != 3 {
+	// One info request and one per cycle, to exclusive: 09-10..10-10, 10-10..11-10, 11-10..11-21.
+	if want := "[2026-09-10..2026-10-10 2026-10-10..2026-11-10 2026-11-10..2026-11-21]"; snap.Requests != 4 || fmt.Sprint(f.queries) != want {
 		t.Errorf("Requests = %d, queries %v", snap.Requests, f.queries)
 	}
 	got := map[string]string{}
@@ -116,10 +120,10 @@ func TestFetchBucketsDaysIntoCalendarMonths(t *testing.T) {
 		got[fmt.Sprintf("%s|%s|%s|%s", l.Month, l.Service, l.Category, l.Covered)] = fmt.Sprintf("%s %s final=%v", l.Amount, l.Currency, l.Final)
 	}
 	want := map[string]string{
-		"2026-10|R2 Storage|storage|2026-10-01/2026-10-31":       "0.015 USD final=true",
-		"2026-10|Workers Standard|compute|2026-10-01/2026-10-31": "0.750005 USD final=true",
-		"2026-11|R2 Storage|storage|2026-11-01/2026-11-19":       "0.36 USD final=false",
-		"2026-11|Workers Standard|compute|2026-11-01/2026-11-19": "0.25 USD final=false",
+		"2026-10|R2|storage|2026-10-01/2026-10-31":      "0.015 USD final=true",
+		"2026-10|Workers|compute|2026-10-01/2026-10-31": "0.750005 USD final=true",
+		"2026-11|R2|storage|2026-11-01/2026-11-19":      "0.36 USD final=false",
+		"2026-11|Workers|compute|2026-11-01/2026-11-19": "0.25 USD final=false",
 	}
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Errorf("lines\n got %v\nwant %v", got, want)
@@ -129,6 +133,7 @@ func TestFetchBucketsDaysIntoCalendarMonths(t *testing.T) {
 func TestFetchClassifiesFailures(t *testing.T) {
 	for status, want := range map[int]appfinance.ImportErrorKind{
 		http.StatusForbidden:          appfinance.ImportErrorPermission,
+		http.StatusBadRequest:         appfinance.ImportErrorPermission, // code 9106, an invalid token
 		http.StatusTooManyRequests:    appfinance.ImportErrorThrottled,
 		http.StatusServiceUnavailable: appfinance.ImportErrorUnavailable,
 	} {

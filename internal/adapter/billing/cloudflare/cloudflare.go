@@ -22,6 +22,7 @@ import (
 	cloudflaresdk "github.com/cloudflare/cloudflare-go/v7"
 	"github.com/cloudflare/cloudflare-go/v7/billing"
 	"github.com/cloudflare/cloudflare-go/v7/option"
+	"github.com/cloudflare/cloudflare-go/v7/shared"
 
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/domain/finance"
@@ -119,7 +120,7 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 	closedThrough := map[finance.YearMonth]bool{}
 	seen := map[string]bool{}
 	for _, sub := range info.Subscriptions {
-		for _, c := range cycles(finance.DateOf(sub.BillingCycleAnchorTimestamp.UTC()), from, until) {
+		for _, c := range cycles(finance.DateOf(sub.StartTimestamp.UTC()), finance.DateOf(sub.BillingCycleAnchorTimestamp.UTC()), from, until) {
 			// A month is closed once every cycle over its last day ended finalGrace days ago.
 			for _, m := range req.Months {
 				if c.Contains(m.Range().End) {
@@ -127,9 +128,10 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 					closedThrough[m] = (closed || !ok) && !today.Before(c.End.AddDays(1+finalGrace))
 				}
 			}
-			to := c.End
-			if today.Before(to) {
-				to = today
+			// to is exclusive: the next cycle's first day, or tomorrow for the current cycle.
+			to := c.End.AddDays(1)
+			if today.Before(c.End) {
+				to = today.AddDays(1)
 			}
 			if snap.Requests >= req.MaxRequests {
 				return appfinance.Snapshot{Requests: snap.Requests}, appfinance.ErrRequestCap
@@ -145,9 +147,8 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 			}
 			for _, r := range *records {
 				day := finance.DateOf(r.ChargePeriodStart.UTC())
-				// SPIKE: the records are assumed to be one per metric and day, as the dashboard's
-				// daily chart and the Version 2 endpoint are. A record over more days cannot be
-				// placed in a calendar month without splitting its amount.
+				// A real account returns one record per metric and day, 24 hours each. A record
+				// over more days cannot be placed in a calendar month without splitting its amount.
 				if days := finance.DateOf(r.ChargePeriodEnd.UTC()).Sub(day); days > 1 {
 					return appfinance.Snapshot{Requests: snap.Requests}, fmt.Errorf("%w: a record covers %d days", appfinance.ErrInvalidBillingResponse, days)
 				}
@@ -170,7 +171,13 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 					return appfinance.Snapshot{Requests: snap.Requests}, fmt.Errorf("%w: currencies %s and %s", appfinance.ErrInvalidBillingResponse, currency, r.BillingCurrency)
 				}
 				currency = r.BillingCurrency
-				k := key{m, r.ServiceName}
+				// ServiceFamilyName is the product (R2, D1, Workers); ServiceName is the metric,
+				// such as "R2 Data Storage (First 10GB-Month included)".
+				product := r.ServiceFamilyName
+				if product == "" {
+					product = r.ServiceName
+				}
+				k := key{m, product}
 				if sums[k] == nil {
 					sums[k] = new(big.Rat)
 				}
@@ -202,10 +209,11 @@ func (s *Source) Fetch(ctx context.Context, req appfinance.FetchRequest) (appfin
 	return snap, nil
 }
 
-// cycles returns the monthly billing cycles of an anchor date that overlap [from, until]: each
-// starts on the anchor's day of the month, or the month's last day when the month is shorter.
-// SPIKE: the billing docs say both "every 30 days" and "on the 10th going forward".
-func cycles(anchor, from, until finance.Date) []finance.DateRange {
+// cycles returns the monthly billing cycles of a subscription that overlap [from, until]. The
+// first starts on the subscription's start; each later one on the day of the month of the anchor
+// (billing_cycle_anchor_timestamp, the first renewal), or the month's last day when the month is
+// shorter. A real account renews on the same day of every month.
+func cycles(first, anchor, from, until finance.Date) []finance.DateRange {
 	_, _, day := anchor.Date()
 	start := func(m finance.YearMonth) finance.Date {
 		r := m.Range()
@@ -217,8 +225,11 @@ func cycles(anchor, from, until finance.Date) []finance.DateRange {
 	var out []finance.DateRange
 	for m := finance.YearMonthOf(from).AddMonths(-1); !start(m).After(until); m = m.AddMonths(1) {
 		c := finance.DateRange{Start: start(m), End: start(m.AddMonths(1)).AddDays(-1)}
-		if c.Start.Before(anchor) || c.End.Before(from) {
+		if c.End.Before(first) || c.End.Before(from) {
 			continue
+		}
+		if c.Start.Before(first) {
+			c.Start = first
 		}
 		out = append(out, c)
 	}
@@ -238,8 +249,10 @@ func classify(ctx context.Context, err error) error {
 		}
 		return fmt.Errorf("%w: %v", appfinance.ErrBillingUnavailable, err)
 	}
+	invalidToken := slices.ContainsFunc(apiErr.Errors, func(e shared.ErrorData) bool { return e.Code == 9106 })
 	switch code := apiErr.StatusCode; {
-	case code == http.StatusUnauthorized || code == http.StatusForbidden:
+	// An invalid token is a 400 with code 9106; an unknown account ID is a 403 with code 10000.
+	case invalidToken || code == http.StatusUnauthorized || code == http.StatusForbidden:
 		return fmt.Errorf("%w: %v", appfinance.ErrBillingPermission, err)
 	case code == http.StatusNotFound:
 		return fmt.Errorf("%w: %v", appfinance.ErrBillingNotFound, err)
@@ -265,7 +278,8 @@ func decimal(r *big.Rat) string {
 }
 
 // categories maps the ServiceName values seen in the documentation onto ADR-0067 categories.
-// SPIKE: the full list of ServiceName values is not published.
+// They are ServiceFamilyName values; R2, D1, and Workers are seen on a real account, the rest
+// are product names that the full list (not published) may spell differently.
 var categories = map[string]finance.Category{
 	"Workers Standard": finance.CategoryCompute,
 	"Workers":          finance.CategoryCompute,
