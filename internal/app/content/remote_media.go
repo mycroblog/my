@@ -102,7 +102,8 @@ type AccountDomains interface {
 }
 
 // MediaFetchPolicy is the port through which the media proxy reads the domain restrictions on
-// fetching media (the media_fetch restriction of a reject_media domain action, data-model §5.2).
+// fetching media (the media_fetch restriction of a reject_media domain action, and the federation
+// restriction of a suspension or of a domain the allowlist cuts off, data-model §5.2).
 // *moderation.FederationPolicy implements it.
 type MediaFetchPolicy interface {
 	// RejectsMedia reports whether the media of domain, or of a parent domain, are not fetched.
@@ -507,8 +508,8 @@ func (p *MediaProxy) keepSmall(ctx context.Context, m content.RemoteMedia, key s
 	}
 }
 
-// rejects returns the first of domains whose media are rejected (the media_fetch restriction of
-// a reject_media domain action), or "" when none is; "" domains are skipped. seen, when not nil,
+// rejects returns the first of domains whose media are rejected (MediaFetchPolicy), or "" when
+// none is; "" domains are skipped. seen, when not nil,
 // keeps the answers by domain across calls, so that a page of media asks once per domain.
 func (p *MediaProxy) rejects(ctx context.Context, seen map[string]bool, domains ...string) (string, error) {
 	return rejectsAny(ctx, p.d.Policy.RejectsMedia, seen, domains...)
