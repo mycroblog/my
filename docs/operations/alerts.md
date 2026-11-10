@@ -68,8 +68,9 @@ With `metrics_exporter = none`, build the alerts from what Cloud Run and Cloud L
 - **Jobs and requests**: the server writes one log line per HTTP request (`msg` = `http request`) and per job run (`msg` = `job`), with the
   same labels as the metrics. Make log-based metrics from them, for example a counter of `jsonPayload.msg="job" AND jsonPayload."my.outcome"="dead"`
   for failed jobs, or a distribution of `jsonPayload.duration_seconds` filtered on `jsonPayload."my.surface"="client_api"` for the latency.
-- **Queue backlog**: with `queue = cloudtasks` the jobs are in the database, so the job screen and the log lines of the job runs show the backlog;
-  the queue depth metric of Cloud Tasks counts the signals waiting to be delivered.
+- **Queue backlog and storage**: every 15 minutes the job `metrics.snapshot` writes one line (`msg` = `metrics snapshot`) with the instance-wide
+  values, such as `my.queue.oldest_ready_age`, `my.queue.dead`, `my.db.size`, and `my.media.stored_bytes`. Make log-based metrics from its fields;
+  a gap in these lines means the tick or the queue stopped. The queue depth metric of Cloud Tasks counts the signals waiting to be delivered.
 - **Database**: the disk utilization and connection metrics of Cloud SQL, or the usage alerts of your database provider.
 - **Cost**: a Cloud Billing budget with alert thresholds ([Cost and budget](#cost-and-budget)).
 

@@ -108,8 +108,8 @@ type App struct {
 	// ErrorReporter receives the error reports of every module and hands them to its sinks:
 	// those the modules add and the exporter that cfg.ErrorsExporter selects (ADR-0103).
 	ErrorReporter *ErrorReporter
-	// MetricsSnapshot reports the instance-wide gauges (ADR-0055 §4); nil when Meter records
-	// nothing.
+	// MetricsSnapshot computes the instance-wide gauges and exports them through Meter or, when Meter
+	// writes no gauges on request (metrics_exporter = none among them), as a log line (ADR-0055 §4).
 	MetricsSnapshot *metrics.Service
 	// HumanVerifier checks the CAPTCHA token of the sign-in and registration forms, and
 	// HumanCheckWidget is what those pages render for it; both are nil when captcha is none

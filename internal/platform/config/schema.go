@@ -1437,7 +1437,7 @@ var schema = []field{
 		doc: "Where the service metrics go: the request, federation, delivery, job, and stream metrics, named after the OpenTelemetry semantic conventions or with the prefix `my.`. Labels never carry a remote domain, an account, a URL, or a client IP.",
 		def: "none",
 		choices: []choice{
-			{value: "none", doc: "No metrics; measuring costs next to nothing. On Cloud Run the platform's metrics and log-based metrics stand in for them."},
+			{value: "none", doc: "No metrics exporter; measuring costs next to nothing. The job `metrics.snapshot` still writes the instance-wide gauges every 15 minutes as one `metrics snapshot` log line. On Cloud Run the platform's metrics and log-based metrics made from the log lines stand in for them."},
 			{value: "prometheus", doc: "The Prometheus text format at `GET /metrics` on `metrics_listen`, a listener of its own, for a Prometheus-compatible server (and KEDA) to scrape; for self-hosted instances. The build tag `no_otel` leaves it out."},
 			{value: "otlp", doc: "OTLP over HTTP (protobuf) to an OpenTelemetry Collector, configured by the standard environment variables `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`), `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_METRIC_EXPORT_INTERVAL` (default 60 seconds). The build tag `no_otel` leaves it out."},
 			{value: "emf", doc: "CloudWatch Embedded Metric Format lines, which CloudWatch Logs turns into metrics; for AWS (ECS). The log line that ends each request and job carries its duration metrics, and the other measurements are written on standard output, one line per label set, at the end of each request and job. Requests in progress and open streams are not written."},

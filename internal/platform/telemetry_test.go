@@ -200,6 +200,47 @@ func TestEMFMetricsSnapshot(t *testing.T) {
 	}
 }
 
+// TestMetricsSnapshotWithoutExporter runs the snapshot job under metrics_exporter = none, the
+// default and what Cloud Run's log-based metrics read (ADR-0055 §4): the job is scheduled and
+// writes the instance-wide gauges as its log line.
+func TestMetricsSnapshotWithoutExporter(t *testing.T) {
+	t.Parallel()
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
+	var logs syncBuffer
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.NewJSONHandler(&logs, nil))})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	if !slices.ContainsFunc(app.Scheduler.Schedules(), func(s queue.Schedule) bool { return s.Name == metrics.JobSnapshot }) {
+		t.Errorf("no schedule of %s under metrics_exporter = none", metrics.JobSnapshot)
+	}
+	h, _, ok := app.Handlers.Lookup(metrics.JobSnapshot)
+	if !ok {
+		t.Fatalf("no handler of %s under metrics_exporter = none", metrics.JobSnapshot)
+	}
+	if res := h(t.Context(), queue.Job{Type: metrics.JobSnapshot}); !res.IsDone() {
+		t.Fatalf("%s = %+v", metrics.JobSnapshot, res)
+	}
+	var found bool
+	for line := range strings.Lines(logs.String()) {
+		var m map[string]any
+		if err := json.Unmarshal([]byte(line), &m); err != nil {
+			t.Fatalf("line %q: %v", line, err)
+		}
+		if m["msg"] != "metrics snapshot" {
+			continue
+		}
+		found = true
+		if m["my.instance.users"] != 0.0 || m["my.queue.dead"] != 0.0 {
+			t.Errorf("snapshot line = %v", m)
+		}
+	}
+	if !found {
+		t.Errorf("no metrics snapshot line:\n%s", logs.String())
+	}
+}
+
 // TestAccessLogMetricLabels checks that the access log carries the labels of
 // http.server.request.duration under the same names and values (ADR-0055 §5), with no metrics
 // exporter, as on Cloud Run where log-based metrics count the lines.

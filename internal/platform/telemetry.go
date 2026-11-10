@@ -242,19 +242,19 @@ func (a *App) registerBusinessMetrics(r *uow.Projectors) {
 	})
 }
 
-// registerMetricsSnapshot reports the instance-wide gauges from the snapshot that the processes
-// share in the key-value store, and registers its periodic job (ADR-0055 §4), unless the Meter
-// records nothing.
+// registerMetricsSnapshot registers the periodic job of the snapshot that the processes share in
+// the key-value store, and reports the instance-wide gauges from it (ADR-0055 §4). With a Meter
+// that records nothing (metrics_exporter = none) the job still runs and writes its log line, from
+// which the platforms without a scrape make log-based metrics; only the gauges are left out.
 func (a *App) registerMetricsSnapshot() {
-	if kernel.IsNop(a.Meter) {
-		return
-	}
 	backlog, _ := a.source.(queue.BacklogReader)
 	a.MetricsSnapshot = metrics.NewService(metrics.Deps{
 		KV: a.KV, Clock: a.Clock, Logger: a.Logger, Backlog: backlog, Totals: a.instanceTotals,
 		KnownJobType: func(t string) bool { _, _, ok := a.Handlers.Lookup(t); return ok },
 	})
-	a.MetricsSnapshot.RegisterGauges(a.Meter)
+	if !kernel.IsNop(a.Meter) {
+		a.MetricsSnapshot.RegisterGauges(a.Meter)
+	}
 	a.MetricsSnapshot.RegisterJobs(a.Handlers, a.Scheduler, a.Meter)
 }
 
