@@ -14,6 +14,8 @@ export {
 } from "./api/status";
 export { CompactStatus } from "./components/QuotedStatus";
 export { StatusCard } from "./components/StatusCard";
+// What a post that the viewer's keyword filters fold says in its place (ADR-0157 §2).
+export { useFilteredLabel } from "./hooks/useFilteredLabel";
 export { ReportCommentText } from "./components/ReportCommentText";
 export { StatusHistory } from "./components/StatusHistory";
 export { StatusThread } from "./components/StatusThread";

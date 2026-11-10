@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // What the quote of a post shows (FR-114, ADR-0069 §5): the quoted post, the post behind the notice of the
-// reader's mute, or only the notice of why it is not shown. It returns no JSX (web-client/README.md A4).
+// reader's mute or of the reader's keyword filters, or only the notice of why it is not shown. It returns no JSX (web-client/README.md A4).
 import { useT } from "../../../lib/i18n";
 import type { Status, StatusQuote } from "../api/status";
+import { useFilteredLabel } from "./useFilteredLabel";
 
 export type QuoteView =
   /** The quoted post, behind `notice` when it is set. */
@@ -13,10 +14,12 @@ export type QuoteView =
 export function useQuoteView(quote: StatusQuote): QuoteView {
   const t = useT();
   const status = quote.quoted_status;
+  // A quoted post that the viewer's keyword filters fold is behind what it matched, as a muted author's is (ADR-0157 §3).
+  const filtered = useFilteredLabel(status?.filtered ?? []);
   switch (quote.state) {
     case "accepted":
     case "legacy":
-      if (status !== undefined) return { kind: "post", status, notice: null };
+      if (status !== undefined) return { kind: "post", status, notice: filtered };
       break;
     case "muted_account":
       if (status !== undefined) return { kind: "post", status, notice: t("client:status.quote.muted_account") };

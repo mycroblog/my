@@ -24,7 +24,7 @@ import {
 import { type TimeView, useTimeView } from "../../../lib/time";
 import { announcementPath } from "../../announcements";
 import { useViewer } from "../../session";
-import { statusPath } from "../../status";
+import { statusPath, useFilteredLabel } from "../../status";
 import type {
   DraftFailureReason,
   ModerationAction,
@@ -127,7 +127,14 @@ export type NotificationView = {
    * a link and cannot hold the post's own links), or only the author's content warning, which the post's
    * page asks to open; null for the types that are not about a post, and when the user may not see it.
    */
-  post: { href: string; text: string; lang: string | undefined; contentWarning: string | null } | null;
+  post: {
+    href: string;
+    text: string;
+    lang: string | undefined;
+    contentWarning: string | null;
+    /** What the post matched of the viewer's keyword filters that fold ("Filtered: Spoilers"), or null for none. */
+    filtered: string | null;
+  } | null;
   /** The account to offer a follow back to: the follower of a follow notification, else null. */
   followBack: NotificationAccount | null;
   /**
@@ -422,15 +429,17 @@ function actorOf(account: NotificationAccount): NotificationActor {
   };
 }
 
-function postOf(status: NotificationStatus): NonNullable<NotificationView["post"]> {
+function postOf(status: NotificationStatus, filtered: string | null): NonNullable<NotificationView["post"]> {
   const contentWarning = status.spoiler_text === "" ? null : status.spoiler_text;
   return {
     href: statusPath(status),
-    // Behind a content warning, the text stays on the post's page. Status.content is the server-sanitized
-    // HTML of the post (api/openapi.yaml), parsed by @my/ui under the app's Trusted Types.
-    text: contentWarning === null ? sanitizedHtmlText(serverSanitizedHtml(status.content)) : "",
+    // Behind a content warning or a keyword filter that folds it (ADR-0157 §7), the text stays on the post's page.
+    // Status.content is the server-sanitized HTML of the post (api/openapi.yaml), parsed by @my/ui under the app's
+    // Trusted Types.
+    text: contentWarning === null && filtered === null ? sanitizedHtmlText(serverSanitizedHtml(status.content)) : "",
     lang: status.language === "und" ? undefined : status.language,
     contentWarning,
+    filtered,
   };
 }
 
@@ -608,6 +617,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
   const viewer = useViewer();
   const time = useTimeView(notification.created_at);
   const { account, status } = notification;
+  const filtered = useFilteredLabel(status?.filtered ?? []);
   const severed = notification.type === "relationships_severed" ? severanceOf(notification) : null;
   const requested = emojiRequestOf(notification);
   // The same account can favourite a post again after taking it back: it counts once.
@@ -645,7 +655,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
     subject: target === undefined ? null : actorOf(target),
     others,
     time,
-    post: status === undefined ? null : postOf(status),
+    post: status === undefined ? null : postOf(status, filtered),
     followBack: notification.type === "follow" && account !== undefined ? account : null,
     severance: severed?.severance ?? null,
     notice: action === undefined ? null : noticeOf(action, formatDate),

@@ -4,6 +4,7 @@ import {
   Button,
   ContentWarning,
   EmojiText,
+  FilteredPost,
   Hint,
   LanguageIcon,
   LinkCard,
@@ -20,7 +21,7 @@ import {
   Stack,
   Text,
 } from "@my/ui";
-import { type Ref, useEffect, useId, useRef } from "react";
+import { type Ref, useEffect, useId, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useIntl } from "react-intl";
 import { useBoundaryErrorReport } from "../../../lib/errorReporting";
@@ -30,6 +31,7 @@ import { useMediaViewerLabels } from "../hooks/useMediaViewerLabels";
 import { useAudioPlayerLabels } from "../hooks/useAudioPlayerLabels";
 import { useLinkCardSize } from "../hooks/useLinkCardSize";
 import { translatedView, useStatusTranslation } from "../hooks/useStatusTranslation";
+import { useFilteredLabel } from "../hooks/useFilteredLabel";
 import { useStatusView } from "../hooks/useStatusView";
 import { StatusActions } from "./StatusActions";
 import { QuotedStatus } from "./QuotedStatus";
@@ -67,9 +69,37 @@ export type StatusCardProps = {
 
 /**
  * One status: the hook's view of it placed into the slots of PostCard, with the action bar. Its names link
- * to the profiles and its time to the post's page (FR-113).
+ * to the profiles and its time to the post's page (FR-113). A post that the viewer's keyword filters fold (its
+ * `filtered`; a boost's row carries the boosted post's) shows only what it matched and the button that shows it
+ * (ADR-0157 §2); once shown, the card takes its place and focus moves to the card's article. The card folds again
+ * when it is mounted again.
  */
-export function StatusCard({
+export function StatusCard({ ref, ...props }: StatusCardProps) {
+  const t = useT();
+  const label = useFilteredLabel(props.status.filtered);
+  // `revealed` once the button showed the post, which moves focus to its article.
+  const [shown, setShown] = useState<"folded" | "revealed">("folded");
+  const articleId = useId();
+  useEffect(() => {
+    // Focus is moved in the DOM once the card has replaced the folded line (the button that had it is gone).
+    if (shown === "revealed") document.getElementById(articleId)?.focus();
+  }, [shown, articleId]);
+  if (label !== null && shown === "folded") {
+    return (
+      <FilteredPost
+        ref={ref}
+        label={label}
+        showLabel={t("client:filters.folded.show")}
+        onShow={() => {
+          setShown("revealed");
+        }}
+      />
+    );
+  }
+  return <StatusCardContent {...props} {...(ref !== undefined && { ref })} {...(label !== null && { articleId })} />;
+}
+
+function StatusCardContent({
   status,
   variant = "compact",
   thread,
@@ -78,7 +108,8 @@ export function StatusCard({
   ref,
   pinned = false,
   report,
-}: StatusCardProps) {
+  articleId,
+}: StatusCardProps & { articleId?: string }) {
   const t = useT();
   const intl = useIntl();
   const view = useStatusView(status);
@@ -233,6 +264,8 @@ export function StatusCard({
   return (
     <PostCard
       ref={ref}
+      // The article of a post shown from its fold takes focus then; outside a feed only by script (a feed's are tabbable).
+      {...(articleId !== undefined && { id: articleId, tabIndex: -1 })}
       {...(thread !== undefined && { lineAbove: thread.lineAbove, lineBelow: thread.lineBelow })}
       {...(variant === "focused" && {
         label: t("client:status.focused.label"),

@@ -712,6 +712,35 @@ describe("the notifications page", () => {
     ).toEqual([]);
   });
 
+  test("shows only what a mention matched of the viewer's keyword filters, not its text", async () => {
+    server.use(resumableSession());
+    markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+    const items: Notification[] = [
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000d1",
+        type: "mention",
+        created_at: "2026-10-16T09:00:00Z",
+        account: otherAccountFixture,
+        status: {
+          ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000b4"),
+          content: "<p>the ending</p>",
+          filtered: [{ filter: { id: "f1", title: "Spoilers" }, keyword_matches: ["ending"] }],
+        },
+      },
+    ];
+    server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
+
+    await renderApp({ path: "/notifications" });
+
+    const feed = await screen.findByRole("feed", { name: "Notifications" });
+    const [mention] = within(feed).getAllByRole("article");
+    expect(within(mention as HTMLElement).getByRole("link", { name: "Filtered: ⁨Spoilers⁩" })).toHaveAttribute(
+      "href",
+      "/@bob/status/0192f0c4-7a8e-7000-8000-0000000000b4",
+    );
+    expect(within(feed).queryByText("the ending", { exact: false })).not.toBeInTheDocument();
+  });
+
   test("says which emoji an account reacted with", async () => {
     server.use(resumableSession());
     markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
