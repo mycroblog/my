@@ -45,11 +45,19 @@ includes:
   web: ./tasks/web.yml
 
 tasks:
+  # The site context runs after the others: its build rewrites app/docs/dist, which the Go commands of go:check walk
+  # (`./...` descends into app/), and a file that vanishes during the walk fails them.
   check:
-    desc: Run every offline check, the contexts and the checks inside each in parallel (CHECKS="go web" for some)
+    desc: Run every offline check, the contexts and the checks inside each in parallel (CHECKS="go web" for some); the site context last, since its build rewrites app/docs/dist under the Go walk
+    vars:
+      PARALLEL:
+        sh: for c in {{.CHECKS}}; do [ "$c" = site ] || printf '%s ' "$c"; done
     deps:
-      - for: { var: CHECKS }
+      - for: { var: PARALLEL }
         task: "{{.ITEM}}:check"
+    cmds:
+      - task: site:check
+        if: case " {{.CHECKS}} " in *" site "*) true;; *) false;; esac
 
   check:changed:
     desc: Run the checks of the contexts changed since BASE (default origin/main) and of their dependents
