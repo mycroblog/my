@@ -142,6 +142,8 @@ async function signedInServer(page: Page) {
       ? route.fulfill(json({ items: [] }))
       : route.fulfill(json({ items: [post(1), post(2), { ...post(3), boost: post(30), content: "" }] })),
   );
+  // Bob features no hashtags on his profile.
+  await page.route(`**/api/v1/accounts/${bob.id}/featured_tags`, (route) => route.fulfill(json({ items: [] })));
   await page.route(`**/api/v1/accounts/${bob.id}/followers*`, (route) =>
     route.fulfill(json({ items: [alice, layla, { ...bob, id: "0192f0c4-7a8e-7000-8000-000000000003" }] })),
   );

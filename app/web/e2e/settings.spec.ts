@@ -376,6 +376,11 @@ async function signedInServer(
         notificationPolicy = { ...notificationPolicy, ...change };
         return json(route, notificationPolicy);
       }
+      case "GET /featured_tags":
+        // The profile form lists the hashtags the user features with the other fields.
+        return json(route, {
+          items: [{ name: "bread", url: "https://my.example/tags/bread", statuses_count: 3 }],
+        });
       case "GET /blocks":
         return json(route, { items: [bob] });
       case "GET /mutes":
