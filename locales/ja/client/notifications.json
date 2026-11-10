@@ -304,8 +304,8 @@
     "description": "Notification sentence. {name} is the display name of the account that reacted to the user's post with an emoji; {emoji} is the emoji, or the :shortcode: of a custom emoji."
   },
   "notifications.type.relationships_severed": {
-    "defaultMessage": "モデレーターによる凍結で、いくつかのフォロー関係が解除されました",
-    "description": "Notification sentence when the details of the suspension are no longer available: the moderators of this server suspended a server or an account, which ended follows between it and the user."
+    "defaultMessage": "凍結か、このサーバーが連合するサーバーの変更で、いくつかのフォロー関係が解除されました",
+    "description": "Notification sentence when the details are no longer available: the moderators of this server suspended a server or an account, or cut servers off with the federation allowlist, which ended follows between them and the user."
   },
   "notifications.type.report_resolved": {
     "defaultMessage": "あなたの通報への対応が完了しました",

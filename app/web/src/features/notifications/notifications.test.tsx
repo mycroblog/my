@@ -870,7 +870,9 @@ describe("the notifications page", () => {
     });
     expect(within(account).getByRole("link", { name: "Bob" })).toHaveAttribute("href", "/@bob");
     expect(
-      within(feed).getByRole("article", { name: /A suspension by the moderators ended some of your follows/ }),
+      within(feed).getByRole("article", {
+        name: /A suspension or a change in the servers this server federates with ended some of your follows/,
+      }),
     ).toBeInTheDocument();
     expect(
       within(feed).getByRole("article", {
