@@ -409,13 +409,14 @@ function TextAutocomplete<T extends TextAutocompleteSuggestion>({
       return;
     const lookup: TextAutocompleteWord = { trigger: wordTrigger, start: wordStart, end: wordEnd, query: wordQuery };
     const controller = new AbortController();
-    let slowTimer: ReturnType<typeof setTimeout> | undefined;
+    // A property, not a reassigned variable, which React Compiler rejects in a function that runs after render.
+    const slow: { timer: ReturnType<typeof setTimeout> | undefined } = { timer: undefined };
     const timer = setTimeout(() => {
-      slowTimer = setTimeout(() => {
+      slow.timer = setTimeout(() => {
         setSlowKey(key);
       }, suggestionLoadingDelay);
       const settle = (next: Results<T>) => {
-        clearTimeout(slowTimer);
+        clearTimeout(slow.timer);
         if (controller.signal.aborted) return;
         setResults(next);
         setSlowKey(null);
@@ -433,7 +434,7 @@ function TextAutocomplete<T extends TextAutocompleteSuggestion>({
     }, delay);
     return () => {
       clearTimeout(timer);
-      clearTimeout(slowTimer);
+      clearTimeout(slow.timer);
       controller.abort();
     };
   }, [key, wordTrigger, wordStart, wordEnd, wordQuery, delay]);
