@@ -80,8 +80,9 @@ type Repository interface {
 	// with one query; a status without one is left out.
 	StatusConversations(ctx context.Context, statusIDs []string) (map[string]content.Conversation, error)
 	// ListLiveConversationStatuses returns up to limit statuses of a conversation that are neither
-	// deleted nor held (held_replies), in ID order after the ID after ("" for the first page).
-	ListLiveConversationStatuses(ctx context.Context, conversationID, after string, limit int) ([]content.Status, error)
+	// deleted nor held (a reply request of theirs is not accepted), in ID order after the ID after
+	// ("" for the first page); the held replies of viewerAccountID are among them ("" for none).
+	ListLiveConversationStatuses(ctx context.Context, conversationID, viewerAccountID, after string, limit int) ([]content.Status, error)
 
 	// Projections, written only by this module's projectors and rebuild.
 
@@ -100,12 +101,16 @@ type Repository interface {
 	// FindLiveStatusByURI returns the status with uri unless it is deleted.
 	FindLiveStatusByURI(ctx context.Context, tx uow.Tx, uri string) (content.Status, error)
 	// ListLiveRepliesTo returns the statuses that reply to uri and are neither deleted nor held
-	// (held_replies), ordered by ID.
+	// (a reply request of theirs is not accepted, ADR-0155 §6), ordered by ID.
 	ListLiveRepliesTo(ctx context.Context, tx uow.Tx, uri string) ([]content.Status, error)
-	// InsertHeldReply records that a reply is held out of the thread of its parent (ADR-0155 §6);
-	// recording it again does nothing. IsHeldReply reports whether a status is held.
-	InsertHeldReply(ctx context.Context, tx uow.Tx, h content.HeldReply) error
+	// IsHeldReply reports whether a status is a reply held out of the thread of its parent.
 	IsHeldReply(ctx context.Context, tx uow.Tx, statusID string) (bool, error)
+	// HeldRepliesAmong returns, of the statuses ids, those that are replies held out of the
+	// thread of their parent: they have a reply request that is not accepted. One query; it
+	// reads in tx, or outside any transaction when tx is nil.
+	HeldRepliesAmong(ctx context.Context, tx uow.Tx, ids []string) (map[string]bool, error)
+	// ListHeldReplyIDs returns every held reply, ordered by ID.
+	ListHeldReplyIDs(ctx context.Context, tx uow.Tx) ([]string, error)
 	UpsertReplyLink(ctx context.Context, tx uow.Tx, l content.ReplyLink) error
 	// ReplyLink returns the link from a reply to its parent.
 	ReplyLink(ctx context.Context, tx uow.Tx, statusID string) (content.ReplyLink, error)

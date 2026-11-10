@@ -18,7 +18,7 @@ import (
 //   - status_heads points at the revision with the highest Seq;
 //   - status_mention_index holds the mentions of that revision;
 //   - status_reply_links links a reply to its parent once both are known, unless the reply is
-//     held (held_replies);
+//     held (a reply request of its is not accepted, ADR-0155 §6) until StatusReleased;
 //   - status_counters counts the replies, not held, whose visibility CountsAsReply (the boosts and
 //     favourites are counted by RegisterInteractionProjectors);
 //   - account_post_counters counts each account's statuses and their latest PublishedAt;
@@ -34,6 +34,13 @@ func RegisterProjectors(r *uow.Projectors, repo Repository) {
 			return err
 		}
 		return projectCreated(ctx, tx, repo, ev.Status, ev.Revision, ev.HeldReply)
+	})
+	r.Register(EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev := e.(StatusReleased)
+		if err := repo.LockStatusKeys(ctx, tx, statusLockKeys(ev.Status, false)); err != nil {
+			return err
+		}
+		return linkReply(ctx, tx, repo, ev.Status)
 	})
 	r.Register(EventStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		rev := e.(StatusRevised).Revision
@@ -139,22 +146,9 @@ func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 	if err := repo.InsertCounters(ctx, tx, counters); err != nil {
 		return err
 	}
-	if s.InReplyToURI != "" && !held {
-		parent, err := repo.FindLiveStatusByURI(ctx, tx, s.InReplyToURI)
-		switch {
-		case errors.Is(err, ErrNotFound):
-			// The parent is unknown or deleted; a parent that arrives later links this reply.
-		case err != nil:
+	if !held {
+		if err := linkReply(ctx, tx, repo, s); err != nil {
 			return err
-		default:
-			if err := repo.UpsertReplyLink(ctx, tx, linkTo(s, parent)); err != nil {
-				return err
-			}
-			if s.Visibility.CountsAsReply() {
-				if err := repo.AddReplies(ctx, tx, parent.ID, 1); err != nil {
-					return err
-				}
-			}
 		}
 	}
 	if err := repo.AddPost(ctx, tx, s.AuthorAccountID, s.PublishedAt); err != nil {
@@ -162,6 +156,33 @@ func projectCreated(ctx context.Context, tx uow.Tx, repo Repository, s content.S
 	}
 	if s.CountsAsLocalPost() {
 		return repo.AddLocalPosts(ctx, tx, s.AuthorAccountID, 1)
+	}
+	return nil
+}
+
+// linkReply links the reply s to its parent and counts it among the parent's replies, when the
+// parent is known and live; a parent that arrives later links it.
+func linkReply(ctx context.Context, tx uow.Tx, repo Repository, s content.Status) error {
+	if s.InReplyToURI == "" {
+		return nil
+	}
+	parent, err := repo.FindLiveStatusByURI(ctx, tx, s.InReplyToURI)
+	switch {
+	case errors.Is(err, ErrNotFound):
+		return nil
+	case err != nil:
+		return err
+	}
+	if _, err := repo.ReplyLink(ctx, tx, s.ID); err == nil {
+		return nil // linked already
+	} else if !errors.Is(err, ErrNotFound) {
+		return err
+	}
+	if err := repo.UpsertReplyLink(ctx, tx, linkTo(s, parent)); err != nil {
+		return err
+	}
+	if s.Visibility.CountsAsReply() {
+		return repo.AddReplies(ctx, tx, parent.ID, 1)
 	}
 	return nil
 }

@@ -36,7 +36,7 @@ func (r *StatusRepository) FindQuoteStates(ctx context.Context, statusIDs []stri
 		return nil, postgres.Wrap(err, "list quote states")
 	}
 	for _, row := range rows {
-		out[row.StatusID] = quoteStateFrom(row)
+		out[row.StatusID] = quoteStateOf(quoteStateRow(row))
 	}
 	return out, nil
 }

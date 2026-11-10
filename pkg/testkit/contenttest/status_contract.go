@@ -765,9 +765,10 @@ func statusDeletes(t *testing.T, e *StatusEnv) {
 	}
 }
 
-// statusKeepsHeldReplies stores a held reply (held_replies) as the content module does, in the
-// transaction of its status: it is neither linked, nor counted, nor listed among the replies, and
-// a rebuild leaves it out the same way.
+// statusKeepsHeldReplies stores a held reply as the content module does, with its reply request in
+// the transaction of its status: it is neither linked, nor counted, nor listed among the replies
+// but to its author, and a rebuild leaves it out the same way; the approval of the request
+// releases it (StatusReleased), and a rebuild keeps it in.
 func statusKeepsHeldReplies(t *testing.T, e *StatusEnv) {
 	ctx := t.Context()
 	parent := e.NewStatus(e.IDs.NewID(), content.VisibilityPublic)
@@ -778,7 +779,14 @@ func statusKeepsHeldReplies(t *testing.T, e *StatusEnv) {
 	held := e.NewStatus(e.IDs.NewID(), content.VisibilityPublic)
 	held.InReplyToURI = parent.URI
 	rev := e.FirstRevision(held)
-	h := content.HeldReply{StatusID: held.ID, Reason: content.HeldReplyRefused, HeldAt: e.Clock.Now()}
+	approvals, ok := e.H.Statuses.(appcontent.ApprovalRepository)
+	if !ok {
+		t.Skip("the repository keeps no approvals")
+	}
+	req := content.InteractionRequest{
+		ID: e.IDs.NewID(), Kind: content.InteractionReply, Direction: content.DirectionInbound, TargetURI: parent.URI,
+		TargetAccountID: parent.AuthorAccountID, InteractingURI: held.URI, InteractingAccountID: held.AuthorAccountID, CreatedAt: e.Clock.Now(),
+	}
 	err := e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := e.H.Statuses.InsertStatus(ctx, tx, held); err != nil {
 			return err
@@ -786,47 +794,68 @@ func statusKeepsHeldReplies(t *testing.T, e *StatusEnv) {
 		if err := e.H.Statuses.InsertRevision(ctx, tx, rev); err != nil {
 			return err
 		}
-		if err := e.H.Statuses.InsertHeldReply(ctx, tx, h); err != nil {
+		if _, err := approvals.InsertInteractionRequest(ctx, tx, req); err != nil {
 			return err
 		}
 		// Recording it again does nothing.
-		if err := e.H.Statuses.InsertHeldReply(ctx, tx, h); err != nil {
-			return err
+		if again, err := approvals.InsertInteractionRequest(ctx, tx, req); err != nil || again {
+			return fmt.Errorf("InsertInteractionRequest again = %t, %w; want false", again, err)
 		}
 		return tx.Emit(ctx, appcontent.StatusCreated{Status: held, Revision: rev, HeldReply: true})
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-		for _, tc := range []struct {
-			id   string
-			want bool
-		}{{held.ID, true}, {admitted.ID, false}, {e.IDs.NewID(), false}} {
-			if got, err := e.H.Statuses.IsHeldReply(ctx, tx, tc.id); err != nil || got != tc.want {
-				t.Errorf("IsHeldReply(%s) = %t, %v; want %t", tc.id, got, err, tc.want)
+	isHeld := func(want map[string]bool) {
+		t.Helper()
+		err := e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			for _, id := range []string{held.ID, admitted.ID, e.IDs.NewID()} {
+				if got, err := e.H.Statuses.IsHeldReply(ctx, tx, id); err != nil || got != want[id] {
+					t.Errorf("IsHeldReply(%s) = %t, %v; want %t", id, got, err, want[id])
+				}
 			}
+			got, err := e.H.Statuses.ListHeldReplyIDs(ctx, tx)
+			if err != nil || len(got) != len(want) {
+				t.Errorf("ListHeldReplyIDs = %v, %v; want %v", got, err, want)
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
 		}
-		return nil
+	}
+	isHeld(map[string]bool{held.ID: true})
+	check := func(when string, replies ...string) {
+		t.Helper()
+		if links, err := e.H.Statuses.ListReplyLinks(ctx); err != nil || len(links) != len(replies) {
+			t.Errorf("%s: ListReplyLinks = %+v, %v; want %v", when, links, err, replies)
+		}
+		if c := e.counters(t, parent.ID); c.RepliesCount != int64(len(replies)) {
+			t.Errorf("%s: replies count = %d, want %d", when, c.RepliesCount, len(replies))
+		}
+		if got, err := e.H.Statuses.ListReplies(ctx, parent.URI); err != nil || len(got) != len(replies) || got[0].ID != admitted.ID {
+			t.Errorf("%s: ListReplies = %+v, %v; want %v", when, got, err, replies)
+		}
+	}
+	check("incrementally", admitted.ID)
+	statusConvergesToRebuild(t, e)
+	check("after a rebuild", admitted.ID)
+
+	// The approval releases it into the thread.
+	err = e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		ev := content.InteractionEvent{ID: e.IDs.NewID(), RequestID: req.ID, Kind: content.InteractionEventAccepted, OccurredAt: e.Clock.Now()}
+		if err := approvals.InsertInteractionEvent(ctx, tx, ev); err != nil {
+			return err
+		}
+		return tx.Emit(ctx, appcontent.StatusReleased{Status: held, Revision: rev})
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	check := func(when string) {
-		t.Helper()
-		if links, err := e.H.Statuses.ListReplyLinks(ctx); err != nil || len(links) != 1 || links[0].StatusID != admitted.ID {
-			t.Errorf("%s: ListReplyLinks = %+v, %v; want the admitted reply alone", when, links, err)
-		}
-		if c := e.counters(t, parent.ID); c.RepliesCount != 1 {
-			t.Errorf("%s: replies count = %d, want 1", when, c.RepliesCount)
-		}
-		if got, err := e.H.Statuses.ListReplies(ctx, parent.URI); err != nil || len(got) != 1 || got[0].ID != admitted.ID {
-			t.Errorf("%s: ListReplies = %+v, %v; want the admitted reply alone", when, got, err)
-		}
-	}
-	check("incrementally")
+	isHeld(map[string]bool{})
+	check("released", admitted.ID, held.ID)
 	statusConvergesToRebuild(t, e)
-	check("after a rebuild")
+	check("released, after a rebuild", admitted.ID, held.ID)
 }
 
 func statusLinksReplies(t *testing.T, e *StatusEnv) {
@@ -1434,11 +1463,11 @@ func statusStoresConversations(t *testing.T, e *StatusEnv) {
 	}
 
 	e.MustRemove(t, sts[1])
-	list, err := repo.ListLiveConversationStatuses(ctx, local.ID, "", 10)
+	list, err := repo.ListLiveConversationStatuses(ctx, local.ID, "", "", 10)
 	if err != nil || len(list) != 2 || list[0] != sts[0] || list[1] != sts[2] {
 		t.Errorf("ListLiveConversationStatuses = %+v, %v; want the live statuses in ID order", list, err)
 	}
-	if list, err := repo.ListLiveConversationStatuses(ctx, local.ID, sts[0].ID, 1); err != nil || len(list) != 1 || list[0] != sts[2] {
+	if list, err := repo.ListLiveConversationStatuses(ctx, local.ID, "", sts[0].ID, 1); err != nil || len(list) != 1 || list[0] != sts[2] {
 		t.Errorf("ListLiveConversationStatuses after %s = %+v, %v; want %s", sts[0].ID, list, err, sts[2].ID)
 	}
 	if ok, err := repo.LocalStatusInConversationOf(ctx, sts[2].ID); err != nil || !ok {

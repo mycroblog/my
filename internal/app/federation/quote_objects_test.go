@@ -53,12 +53,12 @@ func TestObjectsQuoteAuthorization(t *testing.T) {
 	revokedAt := objNow
 	const quoting = "https://remote.example/notes/1"
 	auths := map[string]appcontent.QuoteAuthorization{
-		"0192f3b0-0000-7000-8000-0000000000b1": {ID: "0192f3b0-0000-7000-8000-0000000000b1", QuotingURI: quoting, QuotedStatusID: quoted.ID, CreatedAt: objNow.Add(-time.Minute)},
-		"0192f3b0-0000-7000-8000-0000000000b2": {ID: "0192f3b0-0000-7000-8000-0000000000b2", QuotingURI: quoting, QuotedStatusID: quoted.ID, RevokedAt: &revokedAt},
-		"0192f3b0-0000-7000-8000-0000000000b3": {ID: "0192f3b0-0000-7000-8000-0000000000b3", QuotingURI: quoting, QuotedStatusID: gone.ID},
-		"0192f3b0-0000-7000-8000-0000000000b4": {ID: "0192f3b0-0000-7000-8000-0000000000b4", QuotingURI: quoting, QuotedStatusID: localOnly.ID},
-		"0192f3b0-0000-7000-8000-0000000000b5": {ID: "0192f3b0-0000-7000-8000-0000000000b5", QuotingURI: quoting, QuotedStatusID: localOnly.ID, RevokedAt: &revokedAt},
-		"0192f3b0-0000-7000-8000-0000000000b6": {ID: "0192f3b0-0000-7000-8000-0000000000b6", QuotingURI: quoting, QuotedStatusID: localGone.ID},
+		"0192f3b0-0000-7000-8000-0000000000b1": {ID: "0192f3b0-0000-7000-8000-0000000000b1", Kind: appcontent.InteractionQuote, InteractingURI: quoting, TargetStatusID: quoted.ID, CreatedAt: objNow.Add(-time.Minute)},
+		"0192f3b0-0000-7000-8000-0000000000b2": {ID: "0192f3b0-0000-7000-8000-0000000000b2", Kind: appcontent.InteractionQuote, InteractingURI: quoting, TargetStatusID: quoted.ID, RevokedAt: &revokedAt},
+		"0192f3b0-0000-7000-8000-0000000000b3": {ID: "0192f3b0-0000-7000-8000-0000000000b3", Kind: appcontent.InteractionQuote, InteractingURI: quoting, TargetStatusID: gone.ID},
+		"0192f3b0-0000-7000-8000-0000000000b4": {ID: "0192f3b0-0000-7000-8000-0000000000b4", Kind: appcontent.InteractionQuote, InteractingURI: quoting, TargetStatusID: localOnly.ID},
+		"0192f3b0-0000-7000-8000-0000000000b5": {ID: "0192f3b0-0000-7000-8000-0000000000b5", Kind: appcontent.InteractionQuote, InteractingURI: quoting, TargetStatusID: localOnly.ID, RevokedAt: &revokedAt},
+		"0192f3b0-0000-7000-8000-0000000000b6": {ID: "0192f3b0-0000-7000-8000-0000000000b6", Kind: appcontent.InteractionQuote, InteractingURI: quoting, TargetStatusID: localGone.ID},
 	}
 	o := appfederation.NewObjects(appfederation.ObjectsDeps{
 		Statuses: w, Accounts: w, Graph: w, Timeline: w, Reader: w, Domains: w, Host: objHost, Quotes: fakeObjectQuotes{auths: auths},

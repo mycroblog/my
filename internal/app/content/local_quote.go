@@ -117,13 +117,10 @@ func (s *Service) recordLocalQuote(ctx context.Context, tx uow.Tx, st content.St
 	}
 	uri := ""
 	if q.quoted.AuthorAccountID != st.AuthorAccountID {
-		a := content.QuoteAuthorization{
-			ID: s.d.IDs.NewID(), QuotingURI: st.URI, QuotingAccountID: st.AuthorAccountID, QuotedStatusID: q.quoted.ID, CreatedAt: s.d.Clock.Now(),
-		}
-		if _, err := s.d.Quotes.InsertQuoteAuthorization(ctx, tx, a); err != nil {
+		var err error
+		if uri, err = s.approvals().authorize(ctx, tx, content.InteractionQuote, st.URI, st.AuthorAccountID, q.quoted); err != nil {
 			return err
 		}
-		uri = content.QuoteAuthorizationURI(s.d.Host, a.ID)
 	}
 	_, err := s.changeQuote(ctx, tx, st, content.QuoteEventAccepted, uri)
 	return err

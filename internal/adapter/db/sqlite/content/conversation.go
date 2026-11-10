@@ -148,9 +148,9 @@ func (r *StatusRepository) FindConversationMerge(ctx context.Context, id string)
 }
 
 // ListLiveConversationStatuses implements content.Repository.
-func (r *StatusRepository) ListLiveConversationStatuses(ctx context.Context, conversationID, after string, limit int) ([]content.Status, error) {
+func (r *StatusRepository) ListLiveConversationStatuses(ctx context.Context, conversationID, viewerAccountID, after string, limit int) ([]content.Status, error) {
 	rows, err := r.db.reader().ListLiveConversationStatuses(ctx, contentgen.ListLiveConversationStatusesParams{
-		ConversationID: conversationID, After: after, Lim: int64(limit),
+		ConversationID: conversationID, ViewerAccountID: viewerAccountID, After: after, Lim: int64(limit),
 	})
 	if err != nil {
 		return nil, sqlite.Wrap(err, "list conversation statuses")

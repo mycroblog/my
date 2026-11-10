@@ -62,9 +62,22 @@ func (d interactionReaders) standing(ctx context.Context, accountID string, st c
 // the author, whether st replies to a status of the account, and the account's actor IRI. An open
 // status costs one query.
 func (d interactionReaders) mayInteract(ctx context.Context, kind content.InteractionKind, accountID string, isLocal bool, in *interactor, st content.Status) (content.InteractionDecision, error) {
+	v, err := d.verdict(ctx, kind, accountID, isLocal, in, st)
+	return v.decision, err
+}
+
+// interactionVerdict is what mayInteract decides, with whether the interaction needs the
+// approval of the author of the status (content.NeedsAuthorization).
+type interactionVerdict struct {
+	decision           content.InteractionDecision
+	needsAuthorization bool
+}
+
+// verdict is mayInteract with whether the interaction needs the author's approval.
+func (d interactionReaders) verdict(ctx context.Context, kind content.InteractionKind, accountID string, isLocal bool, in *interactor, st content.Status) (interactionVerdict, error) {
 	policy, err := interactionPolicyOf(ctx, d.policies, st.ID)
 	if err != nil {
-		return content.InteractionDenied, err
+		return interactionVerdict{}, err
 	}
 	f := content.InteractionFacts{
 		Kind: kind, ActorAccountID: accountID, ActorIsLocal: isLocal, ActorVisible: true, Status: st, Policy: policy,
@@ -72,13 +85,13 @@ func (d interactionReaders) mayInteract(ctx context.Context, kind content.Intera
 	if in != nil {
 		f.Follows, f.FollowedBy, f.Mentioned = in.follows, in.followedBy, in.mentioned
 	}
-	if decision := content.MayInteract(f); decision == content.InteractionAllowed {
-		return decision, nil
+	if decision := content.MayInteract(f); decision == content.InteractionAllowed && !content.NeedsAuthorization(f, decision) {
+		return interactionVerdict{decision: decision}, nil
 	}
 	if in == nil {
 		got, err := d.standing(ctx, accountID, st)
 		if err != nil {
-			return content.InteractionDenied, err
+			return interactionVerdict{}, err
 		}
 		f.Follows, f.FollowedBy, f.Mentioned = got.follows, got.followedBy, got.mentioned
 	}
@@ -87,7 +100,7 @@ func (d interactionReaders) mayInteract(ctx context.Context, kind content.Intera
 		switch {
 		case errors.Is(err, ErrNotFound):
 		case err != nil:
-			return content.InteractionDenied, err
+			return interactionVerdict{}, err
 		default:
 			f.RepliedTo = parent.AuthorAccountID == accountID
 		}
@@ -98,23 +111,31 @@ func (d interactionReaders) mayInteract(ctx context.Context, kind content.Intera
 		case err == nil:
 			f.ActorURI = a.Account.URI
 		case !errors.Is(err, appaccount.ErrNotFound):
-			return content.InteractionDenied, err
+			return interactionVerdict{}, err
 		}
 	}
-	return content.MayInteract(f), nil
+	decision := content.MayInteract(f)
+	return interactionVerdict{decision: decision, needsAuthorization: content.NeedsAuthorization(f, decision)}, nil
 }
 
-// localMayInteract fails with refused unless the local account accountID, which may see st and
-// stands with its author as in (nil to read it), may interact with st by kind at once. An
-// interaction that waits for the author's approval is refused too: this server does not hold one
-// yet.
-func (d interactionReaders) localMayInteract(ctx context.Context, kind content.InteractionKind, accountID string, in *interactor, st content.Status, refused error) error {
-	decision, err := d.mayInteract(ctx, kind, accountID, true, in, st)
+// localVerdict fails with refused unless the local account accountID, which may see st and
+// stands with its author as in (nil to read it), may interact with st by kind, at once or once
+// the author approves it, and returns the verdict.
+func (d interactionReaders) localVerdict(ctx context.Context, kind content.InteractionKind, accountID string, in *interactor, st content.Status, refused error) (interactionVerdict, error) {
+	v, err := d.verdict(ctx, kind, accountID, true, in, st)
 	if err != nil {
-		return err
+		return interactionVerdict{}, err
 	}
-	if decision != content.InteractionAllowed {
-		return fmt.Errorf("status %s: %w", st.ID, refused)
+	if v.decision == content.InteractionDenied {
+		return interactionVerdict{}, fmt.Errorf("status %s: %w", st.ID, refused)
 	}
-	return nil
+	return v, nil
+}
+
+// requested reports whether a local account's interaction with st that v decides goes through a
+// request (ADR-0155 §7): one that waits for the author's approval, and one with a remote status
+// that its server must approve for third servers to show it. This server trusts itself with
+// the rest of the interactions with local statuses.
+func (v interactionVerdict) requested(st content.Status) bool {
+	return v.decision == content.InteractionPending || (v.needsAuthorization && !st.IsLocal)
 }

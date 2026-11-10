@@ -233,14 +233,14 @@ func remoteRevokesAndDetachesQuotes(t *testing.T, e *remoteStatusEnv) {
 	}
 
 	// The projection is rebuilt to the same states.
-	before, err := e.h.Quotes.ListQuoteStates(t.Context())
+	before, err := e.h.Quotes.ListInteractionStates(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := appcontent.RebuildQuoteStates(t.Context(), e.h.UnitOfWork, e.h.Quotes); err != nil {
+	if err := appcontent.RebuildInteractionStates(t.Context(), e.h.UnitOfWork, e.h.Quotes); err != nil {
 		t.Fatal(err)
 	}
-	after, err := e.h.Quotes.ListQuoteStates(t.Context())
+	after, err := e.h.Quotes.ListInteractionStates(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}

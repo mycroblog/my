@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/content"
 )
@@ -43,6 +42,7 @@ const (
 // quote them; the status repositories implement it.
 type QuoteRepository interface {
 	InteractionPolicyRepository
+	ApprovalRepository
 
 	// InsertQuote records the status that a status quotes. It reports false, writing nothing,
 	// when the status has a quote.
@@ -59,47 +59,28 @@ type QuoteRepository interface {
 	// ListQuotesAfter returns up to limit quotes whose status ID is above after ("" for the
 	// first page), ordered by status ID.
 	ListQuotesAfter(ctx context.Context, tx uow.Tx, after string, limit int) ([]content.Quote, error)
-	// InsertQuoteEvent records a change of the approval of a quote.
-	InsertQuoteEvent(ctx context.Context, tx uow.Tx, e content.QuoteEvent) error
-	// ListQuoteEvents returns the events of the quote of a status in the order they occurred.
-	ListQuoteEvents(ctx context.Context, tx uow.Tx, statusID string) ([]content.QuoteEvent, error)
 	// ListQuotesOf returns up to limit quotes of the status uri whose status ID is below before
 	// ("" for the newest), newest first.
 	ListQuotesOf(ctx context.Context, uri, before string, limit int) ([]content.Quote, error)
 
-	// InsertQuoteAuthorization records this server's approval of a quote. It reports false,
-	// writing nothing, when the quoting status has one for the quoted status.
-	InsertQuoteAuthorization(ctx context.Context, tx uow.Tx, a content.QuoteAuthorization) (bool, error)
-	// FindQuoteAuthorization returns an approval with its revocation, ErrNotFound when there is
-	// none; FindQuoteAuthorizationFor finds it by the quoting URI and the quoted status.
-	FindQuoteAuthorization(ctx context.Context, id string) (content.QuoteAuthorization, error)
-	FindQuoteAuthorizationFor(ctx context.Context, quotingURI, quotedStatusID string) (content.QuoteAuthorization, error)
-	// InsertQuoteAuthorizationRevocation records the revocation of an approval, and reports
-	// false, writing nothing, when it is revoked already.
-	InsertQuoteAuthorizationRevocation(ctx context.Context, tx uow.Tx, authorizationID string, at time.Time) (bool, error)
-
-	// Projection, written only by this module's projectors and rebuild.
-
-	UpsertQuoteState(ctx context.Context, tx uow.Tx, s content.QuoteState) error
-	// FindQuoteState returns the state of the quote of a status, ErrNotFound when it has none.
+	// FindQuoteState returns the state of the quote of a status, ErrNotFound when it quotes
+	// nothing; FindQuoteStateTx reads it in tx. The state is derived from the quote's form, its
+	// detachment, and the state of its request (content.QuoteStateFrom).
 	FindQuoteState(ctx context.Context, statusID string) (content.QuoteState, error)
-	// FindQuoteStateTx reads as FindQuoteState does, in tx.
 	FindQuoteStateTx(ctx context.Context, tx uow.Tx, statusID string) (content.QuoteState, error)
-	// ListQuoteStatesByAuthorization returns the states whose QuoteAuthorization is uri,
-	// ordered by status ID.
+	// ListQuoteStatesByAuthorization returns the states of the quotes that the QuoteAuthorization
+	// uri approves, ordered by status ID.
 	ListQuoteStatesByAuthorization(ctx context.Context, uri string) ([]content.QuoteState, error)
-	// ListQuoteStates returns every state ordered by status ID, for verifying the projection.
-	ListQuoteStates(ctx context.Context) ([]content.QuoteState, error)
-	DeleteAllQuoteStates(ctx context.Context, tx uow.Tx) error
 }
 
 // Event types of the quotes (data-model §4.4):
-//   - EventQuoteRecorded: the quote of a status was recorded with the status. This module
-//     projects its initial state; the notification module notifies the local author of the
-//     quoted status of a legacy quote, and the federation module sends the QuoteRequest of a
-//     local status's quote of a remote one.
-//   - EventQuoteChanged: the approval of a quote changed. This module projects the new state;
-//     the notification module notifies the local author of the quoted status of an approval.
+//   - EventQuoteRecorded: the quote of a status was recorded with the status, and an FEP-044f
+//     quote with its request (InteractionRequested). The notification module notifies the local
+//     author of the quoted status of a legacy quote, and the federation module sends the
+//     QuoteRequest of a local status's quote of a remote one.
+//   - EventQuoteChanged: the approval of a quote changed: an answer to its request
+//     (InteractionAnswered), or its detachment. The notification module notifies the local
+//     author of the quoted status of an approval.
 const (
 	EventQuoteRecorded = "content.quote_recorded"
 	EventQuoteChanged  = "content.quote_changed"
@@ -130,62 +111,6 @@ type QuoteChanged struct {
 // EventType implements uow.Event.
 func (QuoteChanged) EventType() string { return EventQuoteChanged }
 
-// RegisterQuoteProjectors registers the synchronous projector of status_quote_states: the state
-// of each quote, derived from its form and events by content.QuoteStateOf. RebuildQuoteStates
-// applies the same rule.
-func RegisterQuoteProjectors(r *uow.Projectors, repo QuoteRepository) {
-	r.Register(EventQuoteRecorded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		return repo.UpsertQuoteState(ctx, tx, content.InitialQuoteState(e.(QuoteRecorded).Quote))
-	})
-	r.Register(EventQuoteChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		ev := e.(QuoteChanged)
-		cur, err := repo.FindQuoteStateTx(ctx, tx, ev.Quote.StatusID)
-		switch {
-		case errors.Is(err, ErrNotFound):
-			cur = content.InitialQuoteState(ev.Quote)
-		case err != nil:
-			return err
-		}
-		return repo.UpsertQuoteState(ctx, tx, cur.Apply(ev.Quote, ev.Event))
-	})
-}
-
-// quoteRebuildPage is how many quotes RebuildQuoteStates reads at a time.
-const quoteRebuildPage = 500
-
-// RebuildQuoteStates empties status_quote_states and derives it again from the quotes and their
-// events (data-model §9).
-func RebuildQuoteStates(ctx context.Context, u uow.UnitOfWork, repo QuoteRepository) error {
-	err := u.Tx(ctx, func(tx uow.Tx) error {
-		if err := repo.DeleteAllQuoteStates(ctx, tx); err != nil {
-			return err
-		}
-		for after := ""; ; {
-			quotes, err := repo.ListQuotesAfter(ctx, tx, after, quoteRebuildPage)
-			if err != nil {
-				return err
-			}
-			for _, q := range quotes {
-				events, err := repo.ListQuoteEvents(ctx, tx, q.StatusID)
-				if err != nil {
-					return err
-				}
-				if err := repo.UpsertQuoteState(ctx, tx, content.QuoteStateOf(q, events)); err != nil {
-					return err
-				}
-			}
-			if len(quotes) < quoteRebuildPage {
-				return nil
-			}
-			after = quotes[len(quotes)-1].StatusID
-		}
-	})
-	if err != nil {
-		return fmt.Errorf("rebuild status_quote_states: %w", err)
-	}
-	return nil
-}
-
 // RemoteQuoteInput is the quote of a remote post (ADR-0069 §2).
 type RemoteQuoteInput struct {
 	// URI is the URI of the quoted post.
@@ -210,23 +135,49 @@ func (s *Service) recordQuote(ctx context.Context, tx uow.Tx, st content.Status,
 	if err != nil {
 		return err
 	}
+	if q.Form == content.QuoteFormFEP044f {
+		if _, _, err := quoteRequest(ctx, tx, s.approvals(), st, q, quoted); err != nil {
+			return err
+		}
+	}
 	return tx.Emit(ctx, QuoteRecorded{Quote: q, Status: RefOf(st), Quoted: quoted, RecordedAt: s.d.Clock.Now()})
+}
+
+// quoteRequest returns the request of the FEP-044f quote q of st, recorded in tx when it has
+// none, with its state.
+func quoteRequest(ctx context.Context, tx uow.Tx, p approvals, st content.Status, q content.Quote, quoted *StatusRef) (content.InteractionRequest, content.InteractionState, error) {
+	r := content.InteractionRequest{
+		Kind: content.InteractionQuote, TargetURI: q.QuotedURI, InteractingURI: st.URI, InteractingAccountID: st.AuthorAccountID,
+		Direction: content.DirectionOf(false, st.IsLocal),
+	}
+	if quoted != nil {
+		r.TargetAccountID, r.Direction = quoted.AuthorAccountID, content.DirectionOf(quoted.IsLocal, st.IsLocal)
+	}
+	req, state, _, err := p.request(ctx, tx, r, answer{}, quoted)
+	return req, state, err
+}
+
+// approvals returns the writer of the records of approvals.
+func (s *Service) approvals() approvals {
+	return approvals{repo: s.d.Quotes, ids: s.d.IDs, clock: s.d.Clock, host: s.d.Host}
 }
 
 // changeQuote records in tx an event of kind (with the QuoteAuthorization authorizationURI) of
 // the quote of st, unless it changes nothing: the state stays the same. It reports whether the
 // state changed. A status that quotes nothing fails with ErrNotFound.
 func (s *Service) changeQuote(ctx context.Context, tx uow.Tx, st content.Status, kind content.QuoteEventKind, authorizationURI string) (bool, error) {
-	return changeQuote(ctx, tx, s.d.Quotes, s.d.Repository, s.d.IDs, s.d.Clock, st, kind, authorizationURI)
+	return changeQuote(ctx, tx, s.approvals(), s.d.Repository, st, kind, authorizationURI, false)
 }
 
-// changeQuote is Service.changeQuote on repo, reading the quoted status from statuses.
-func changeQuote(ctx context.Context, tx uow.Tx, repo QuoteRepository, statuses Repository, ids kernel.IDGenerator, clock kernel.Clock, st content.Status, kind content.QuoteEventKind, authorizationURI string) (bool, error) {
-	q, err := repo.FindQuoteTx(ctx, tx, st.ID)
+// changeQuote is Service.changeQuote with p, reading the quoted status from statuses. The
+// detachment of a quote is recorded as such (status_quote_detachments); its other events are
+// the answers to its request (interaction_request_events), deferred as InteractionAnswered says.
+func changeQuote(ctx context.Context, tx uow.Tx, p approvals, statuses Repository, st content.Status, kind content.QuoteEventKind, authorizationURI string, deferred bool) (bool, error) {
+	q, err := p.repo.FindQuoteTx(ctx, tx, st.ID)
 	if err != nil {
 		return false, err
 	}
-	cur, err := repo.FindQuoteStateTx(ctx, tx, st.ID)
+	cur, err := p.repo.FindQuoteStateTx(ctx, tx, st.ID)
 	switch {
 	case errors.Is(err, ErrNotFound):
 		cur = content.InitialQuoteState(q)
@@ -234,17 +185,28 @@ func changeQuote(ctx context.Context, tx uow.Tx, repo QuoteRepository, statuses 
 		return false, err
 	}
 	e := content.QuoteEvent{
-		ID: ids.NewID(), StatusID: st.ID, Kind: kind, AuthorizationURI: authorizationURI, OccurredAt: clock.Now(),
+		ID: p.ids.NewID(), StatusID: st.ID, Kind: kind, AuthorizationURI: authorizationURI, OccurredAt: p.clock.Now(),
 	}
 	if cur.Apply(q, e) == cur {
 		return false, nil
 	}
-	if err := repo.InsertQuoteEvent(ctx, tx, e); err != nil {
-		return false, err
-	}
 	quoted, err := quotedRef(ctx, tx, statuses, q)
 	if err != nil {
 		return false, err
+	}
+	if kind == content.QuoteEventDetached {
+		if err := p.repo.InsertQuoteDetachment(ctx, tx, st.ID, e.OccurredAt); err != nil {
+			return false, err
+		}
+	} else {
+		req, _, err := quoteRequest(ctx, tx, p, st, q, quoted)
+		if err != nil {
+			return false, err
+		}
+		a := answer{kind: content.InteractionEventKind(kind), authorization: authorizationURI, deferred: deferred}
+		if _, _, err := p.answer(ctx, tx, req, a, quoted); err != nil {
+			return false, err
+		}
 	}
 	return true, tx.Emit(ctx, QuoteChanged{Quote: q, Event: e, Status: RefOf(st), Quoted: quoted})
 }

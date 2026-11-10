@@ -49,7 +49,7 @@ func (o *Objects) QuoteAuthorization(ctx context.Context, id string) (Object, er
 	}
 	uri := federation.IRI(appcontent.QuoteAuthorizationURI(o.d.Host, auth.ID))
 	out := Object{Public: true}
-	quoted, _, deleted, err := o.d.Statuses.ObjectStatus(ctx, auth.QuotedStatusID)
+	quoted, _, deleted, err := o.d.Statuses.ObjectStatus(ctx, auth.TargetStatusID)
 	switch {
 	case errors.Is(err, appcontent.ErrNotFound):
 		deleted = true
@@ -64,6 +64,6 @@ func (o *Objects) QuoteAuthorization(ctx context.Context, id string) (Object, er
 		return out, err
 	}
 	author := federation.IRI(appaccount.ActorURI(o.d.Host, quoted.AuthorAccountID))
-	out.Document, err = json.Marshal(federation.NewQuoteAuthorizationDocument(uri, author, federation.IRI(auth.QuotingURI), federation.IRI(quoted.URI)))
+	out.Document, err = json.Marshal(federation.NewQuoteAuthorizationDocument(uri, author, federation.IRI(auth.InteractingURI), federation.IRI(quoted.URI)))
 	return out, err
 }

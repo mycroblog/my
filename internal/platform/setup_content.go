@@ -21,7 +21,7 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 	interactions content.InteractionRepository, medias content.MediaRepository,
 ) {
 	content.RegisterProjectors(a.Projectors, statuses)
-	content.RegisterQuoteProjectors(a.Projectors, quotes)
+	content.RegisterApprovalProjectors(a.Projectors, quotes)
 	a.Content = content.NewService(content.Deps{
 		UnitOfWork: a.UnitOfWork, Repository: statuses, Accounts: a.Accounts, Relationships: a.Graph,
 		Restrictions:             a.AccountPolicy.Content(),

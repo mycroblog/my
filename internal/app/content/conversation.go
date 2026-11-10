@@ -299,11 +299,11 @@ type ConversationPage struct {
 }
 
 // ConversationStatuses returns up to limit statuses of a conversation that are neither deleted nor
-// held out of their thread (held_replies), in ID
+// held out of their thread (a reply request of theirs is not accepted), in ID
 // order after the cursor after ("" for the first page), with their current revisions, with a
 // number of queries that does not grow with limit. The caller decides who may see each.
 func (s *Service) ConversationStatuses(ctx context.Context, conversationID, after string, limit int) (ConversationPage, error) {
-	sts, err := s.d.Repository.ListLiveConversationStatuses(ctx, conversationID, after, limit+1)
+	sts, err := s.d.Repository.ListLiveConversationStatuses(ctx, conversationID, "", after, limit+1)
 	if err != nil {
 		return ConversationPage{}, err
 	}

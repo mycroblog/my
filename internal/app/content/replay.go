@@ -22,8 +22,8 @@ func (s *Service) IsDeleted(ctx context.Context, tx uow.Tx, statusID string) (bo
 // revision for each status that is not deleted, ordered by status ID (a direct one with its
 // current conversation), then a Boosted for each live boost, ordered by boost ID. Deleted statuses and retracted boosts emit nothing, so a
 // projection that applies these events to empty tables ends where incremental updating did.
-// StatusCreated.HeldReply is not replayed: the projections rebuilt from these events (the
-// timelines) do not read it.
+// StatusCreated.HeldReply says the replies held out of their thread, as when they were created:
+// the timelines leave the unpublished ones out (StatusCreated.Unpublished).
 func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interactions InteractionRepository, emit func(uow.Event) error) error {
 	posts, err := statuses.ListCurrentPosts(ctx, tx)
 	if err != nil {
@@ -44,10 +44,18 @@ func ReplayEvents(ctx context.Context, tx uow.Tx, statuses Repository, interacti
 			return err
 		}
 	}
+	heldIDs, err := statuses.ListHeldReplyIDs(ctx, tx)
+	if err != nil {
+		return err
+	}
+	held := make(map[string]bool, len(heldIDs))
+	for _, id := range heldIDs {
+		held[id] = true
+	}
 	live := make(map[string]content.Status, len(posts))
 	for _, p := range posts {
 		live[p.Status.ID] = p.Status
-		if err := emit(StatusCreated{Status: p.Status, Revision: p.Revision, ConversationID: convs[p.Status.ID].ID}); err != nil {
+		if err := emit(StatusCreated{Status: p.Status, Revision: p.Revision, ConversationID: convs[p.Status.ID].ID, HeldReply: held[p.Status.ID]}); err != nil {
 			return err
 		}
 	}

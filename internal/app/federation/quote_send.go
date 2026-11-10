@@ -161,7 +161,7 @@ func (h *QuoteHandlers) recordQuoteRequest(ctx context.Context, tx uow.Tx, st ap
 // recordRevocation records the Delete of a revoked QuoteAuthorization to the quoting author's
 // inbox and the quoted author's followers (ADR-0069 §3); a local quoting author gets none.
 func (h *QuoteHandlers) recordRevocation(ctx context.Context, tx uow.Tx, ev appcontent.QuoteAuthorizationRevoked) error {
-	inbox, quoter, ok, err := h.remoteInbox(ctx, tx, ev.Authorization.QuotingAccountID)
+	inbox, quoter, ok, err := h.remoteInbox(ctx, tx, ev.Authorization.InteractingAccountID)
 	if err != nil || !ok {
 		return err
 	}

@@ -281,7 +281,7 @@ func (r *Reader) Thread(ctx context.Context, viewer Viewer, statusID string) (Th
 	if !ok {
 		return Thread{}, nil
 	}
-	candidates, err := r.d.Statuses.ListLiveConversationStatuses(ctx, conv.ID, "", MaxThreadStatuses)
+	candidates, err := r.d.Statuses.ListLiveConversationStatuses(ctx, conv.ID, viewer.AccountID, "", MaxThreadStatuses)
 	if err != nil {
 		return Thread{}, err
 	}

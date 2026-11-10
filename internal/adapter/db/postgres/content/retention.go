@@ -101,9 +101,9 @@ func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusI
 		q.PurgeStatusRevisionMentions, q.PurgeStatusRevisionTags, q.PurgeStatusRevisionEmojis,
 		q.PurgeRemoteStatusRevisions, q.PurgePollTallyObservationCounts, q.PurgePollTallyObservations,
 		q.PurgePollVotes, q.PurgePollTallies, q.PurgePollOptions, q.PurgePolls, q.PurgeStatusRevisions,
-		q.PurgeRemoteBoostRetractions, q.PurgeRemoteBoosts, q.PurgeRelayedStatuses, q.PurgeStatusQuoteStates,
-		q.PurgeStatusQuoteEvents, q.PurgeStatusQuotes, q.PurgeStatusInteractionPolicies, q.PurgeHeldReplies,
-		q.PurgeQuoteAuthorizationRevocations, q.PurgeQuoteAuthorizations, q.PurgeStatusConversations, q.PurgeStatuses,
+		q.PurgeRemoteBoostRetractions, q.PurgeRemoteBoosts, q.PurgeRelayedStatuses, q.PurgeInteractionRequestEvents,
+		q.PurgeInteractionRequestStates, q.PurgeInteractionRequests, q.PurgeStatusQuoteDetachments, q.PurgeStatusQuotes,
+		q.PurgeStatusInteractionPolicies, q.PurgeInteractionAuthorizationRevocations, q.PurgeInteractionAuthorizations, q.PurgeStatusConversations, q.PurgeStatuses,
 	}
 	for _, step := range steps {
 		if err := step(ctx, ids); err != nil {
