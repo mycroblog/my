@@ -5,8 +5,7 @@
 !.vscode/extensions.json
 
 # Secrets
-.env
-.env.*
+.env*
 # The KEK of the Compose deployment.
 /deploy/docker/secrets/
 
