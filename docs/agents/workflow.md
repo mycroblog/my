@@ -159,7 +159,8 @@ of `main` and of the PRs queued ahead of it) and the queue merges the group when
 ```sh
 git fetch origin && git merge origin/main
 scripts/agentkit.sh regen              # runs the generators whose sources changed: api:generate, go:sqlc, i18n:gen,
-                                       # web:tokens-gen, go:config-docs, go:cli-docs
+                                       # web:tokens-gen, go:config-docs, go:cli-docs, and
+                                       # tofu-workers-check.sh --write (job_types.go)
 scripts/task.sh web:fmt                # when a TypeScript or JavaScript file conflicted
 scripts/agentkit.sh check
 ```
