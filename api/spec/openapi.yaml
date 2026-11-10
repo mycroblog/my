@@ -1893,6 +1893,8 @@ components:
       $ref: ./components/schemas/EventReminders.yaml
     EventRemindersUpdate:
       $ref: ./components/schemas/EventRemindersUpdate.yaml
+    EventRoomUnavailableReason:
+      $ref: ./components/schemas/EventRoomUnavailableReason.yaml
     EventRSVP:
       $ref: ./components/schemas/EventRSVP.yaml
     EventState:

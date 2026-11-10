@@ -104,6 +104,9 @@ type Deps struct {
 	// events notify nobody.
 	Outbox   queue.Outbox
 	Notifier Notifier
+	// Rooms opens and ends the voice chat rooms of the events (ADR-0161 §10); nil opens none, as
+	// the voice chat off does.
+	Rooms Rooms
 	// Retention reads what JobPurgeRecords keeps, and Store keeps its cursor; with Retention nil
 	// the purge erases nothing (ADR-0161 §14).
 	Retention Retention
@@ -166,6 +169,9 @@ type View struct {
 	Places []gathering.Place
 	// HiddenPlaces are the kinds of the places that the viewer does not see, in their order.
 	HiddenPlaces []gathering.PlaceKind
+	// Room is the voice chat room of the current date, nil unless the viewer sees a voice place
+	// of a scheduled event.
+	Room *RoomState
 }
 
 // Organizes reports whether the viewer is the organizer or a co-organizer.
@@ -261,7 +267,31 @@ func (s *Service) present(ctx context.Context, viewer gathering.Viewer, recs []R
 		}
 		out = append(out, v)
 	}
-	return out, nil
+	return s.withRooms(ctx, out)
+}
+
+// withRooms adds to views the rooms of the current dates of those whose voice place the viewer
+// sees.
+func (s *Service) withRooms(ctx context.Context, views []View) ([]View, error) {
+	var recs []Record
+	for _, v := range views {
+		if slices.ContainsFunc(v.Places, func(p gathering.Place) bool { return p.Kind == gathering.PlaceVoice }) {
+			recs = append(recs, v.Record)
+		}
+	}
+	if len(recs) == 0 {
+		return views, nil
+	}
+	states, err := s.roomStates(ctx, recs)
+	if err != nil {
+		return nil, err
+	}
+	for i := range views {
+		if st, ok := states[views[i].ID]; ok {
+			views[i].Room = &st
+		}
+	}
+	return views, nil
 }
 
 // Get returns the event id as accountID sees it; ErrNotFound for an unknown event and for one

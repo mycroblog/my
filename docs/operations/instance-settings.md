@@ -256,6 +256,17 @@ and visitors who are not signed in see none of them.
 
 - Who may create one is `event_creators`. An organizer must also be able to open voice chat rooms (`voice_room_starters`
   and the configuration `voice`) to hold an event in one.
+- The voice chat room of an event opens at its start, hosted by the organizer, and waits up to 30 minutes for the first
+  participant. It takes the event's title, and the event's visibility (every local user, followers, the people the
+  organizer follows, mutual follows, or the invited). The co-organizers, those who answered going or maybe, and the
+  invited who have not answered are invited to the room, so they keep seeing it when a co-host takes it over.
+  The room makes no start post, and the start notification of the event is its only notification.
+- A room that cannot open (the voice chat is off, the organizer may no longer open rooms or is hosting another, or
+  as many rooms are open as the configuration `voice_max_open_rooms` allows) leaves the event as it is: the organizer
+  is notified, and the event page says that the room could not open. The server checks this when the date is set or
+  changed and one day before the start too, and notifies the organizer of what would keep the room shut. The organizer
+  is also notified when nobody came to the room. Cancelling the event, or removing its voice chat room, ends the room
+  and keeps the event.
 - The organizer chooses who sees the event: every local user, the organizer's followers, the people the organizer
   follows, mutual follows, or only the invited. The invited and those who answered it or its candidate dates always see it, and a block between
   a user and the organizer or a co-organizer hides it from that user.

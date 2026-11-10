@@ -188,7 +188,18 @@ func (s *Server) newEvents(ctx context.Context, views []appgathering.View) ([]Ev
 			}
 		}
 		for _, p := range v.Places {
-			e.Places = append(e.Places, newEventPlace(p))
+			place := newEventPlace(p)
+			if p.Kind == gathering.PlaceVoice && v.Room != nil {
+				// The room of the current date, once it opened or failed to (ADR-0161 §10).
+				if v.Room.RoomID != "" {
+					place.RoomId = &v.Room.RoomID
+				}
+				if v.Room.Unavailable != "" {
+					r := EventRoomUnavailableReason(v.Room.Unavailable)
+					place.RoomUnavailable = &r
+				}
+			}
+			e.Places = append(e.Places, place)
 		}
 		for _, k := range v.HiddenPlaces {
 			e.HiddenPlaces = append(e.HiddenPlaces, EventPlaceKind(k))

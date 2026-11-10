@@ -22,3 +22,18 @@ properties:
     description: Who may speak without asking in the room; `manual` when omitted.
     allOf:
       - $ref: ./VoiceRoomSpeakers.yaml
+  room_id:
+    description: |
+      For a `voice` place, the voice chat room that the start of the event's current date
+      opened (`GET /voice/rooms/{id}`), which may have ended since; omitted before the room opens.
+      Ignored in a request.
+    readOnly: true
+    allOf:
+      - $ref: ./Id.yaml
+  room_unavailable:
+    description: |
+      For a `voice` place, why the room of the event's current date could not open at the
+      start; omitted otherwise. Ignored in a request.
+    readOnly: true
+    allOf:
+      - $ref: ./EventRoomUnavailableReason.yaml

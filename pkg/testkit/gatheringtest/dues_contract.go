@@ -125,7 +125,8 @@ func keepsDues(t *testing.T, e *dueEnv) {
 	if _, err := e.svc.Update(t.Context(), alice, v.ID, appgathering.Patch{Schedule: &later}); err != nil {
 		t.Fatalf("Update: %v", err)
 	}
-	wantDue(t, "rescheduled", e.due(t, v.ID), later.StartsAt.Add(-3*time.Hour))
+	// The voice place of the settings checks its room one day before the new date.
+	wantDue(t, "rescheduled", e.due(t, v.ID), later.StartsAt.Add(-gathering.RoomCheckBefore))
 	if _, err := e.svc.Cancel(t.Context(), alice, v.ID, ""); err != nil {
 		t.Fatalf("Cancel: %v", err)
 	}

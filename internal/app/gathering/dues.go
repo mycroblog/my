@@ -15,9 +15,10 @@ import (
 
 // The due times of the events and the reminders of the accounts (ADR-0161 §12, §13):
 // gathering_dues holds, for each event with something ahead, the next time that gathering.tick
-// handles it, a reminder or the start. The commands derive it again in their transactions: the
-// creation and a new date from scratch, an answer and a change of the reminders of an attendee
-// keeping a time that is already due, and the cancellation by deleting it.
+// handles it, a reminder, the check of its voice chat room, or the start. The commands derive it
+// again in their transactions: the creation and a new date from scratch, an answer, a change of
+// the reminders of an attendee, and a revision that adds or removes the voice place keeping a time
+// that is already due, and the cancellation by deleting it.
 
 // Due is the next due time of an event (gathering_dues).
 type Due struct {
@@ -84,7 +85,7 @@ func duesOf(ctx context.Context, tx uow.Tx, repo DueRepository, rec Record) ([]g
 	if defaults {
 		minutes = append(minutes, gathering.DefaultReminders...)
 	}
-	return gathering.Dues(rec.Confirmation.Schedule.StartsAt, minutes), nil
+	return gathering.Dues(rec.Confirmation.Schedule.StartsAt, minutes, rec.HasVoice()), nil
 }
 
 // refreshDue derives the due time of the event id again inside tx, as of now. Unless fresh, a due
@@ -123,7 +124,8 @@ func refreshDue(ctx context.Context, tx uow.Tx, repo Repository, id string, now 
 
 // RegisterDueProjectors registers the projectors that keep gathering_dues: the creation, a new
 // date, and the confirmation of a date poll derive the due time from scratch, an answer derives it again with the attendee's
-// reminders, and the cancellation deletes it. They run after RegisterProjectors, whose
+// reminders, a revision that adds or removes the voice place derives it again with the check of
+// its room, and the cancellation deletes it. They run after RegisterProjectors, whose
 // projections they read.
 func RegisterDueProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
@@ -137,6 +139,16 @@ func RegisterDueProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventAnswered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		a := e.(Answered).RSVP
 		return refreshDue(ctx, tx, repo, a.GatheringID, a.AnsweredAt, false)
+	})
+	r.Register(EventRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		// A voice place added or removed adds or removes the check of its room.
+		ev := e.(Revised)
+		_, had := ev.Previous.Settings.Place(gathering.PlaceVoice)
+		_, has := ev.Revision.Settings.Place(gathering.PlaceVoice)
+		if had == has {
+			return nil
+		}
+		return refreshDue(ctx, tx, repo, ev.Revision.GatheringID, ev.Revision.RevisedAt, false)
 	})
 	r.Register(EventCancelled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return repo.DeleteDue(ctx, tx, e.(Cancelled).Cancellation.GatheringID)

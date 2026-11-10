@@ -14413,6 +14413,17 @@ export interface components {
             url?: string;
             /** @description Who may speak without asking in the room; `manual` when omitted. */
             speakers?: components["schemas"]["VoiceRoomSpeakers"];
+            /**
+             * @description For a `voice` place, the voice chat room that the start of the event's current date
+             *     opened (`GET /voice/rooms/{id}`), which may have ended since; omitted before the room opens.
+             *     Ignored in a request.
+             */
+            readonly room_id?: components["schemas"]["Id"];
+            /**
+             * @description For a `voice` place, why the room of the event's current date could not open at the
+             *     start; omitted otherwise. Ignored in a request.
+             */
+            readonly room_unavailable?: components["schemas"]["EventRoomUnavailableReason"];
         };
         /**
          * @description Who sees the `physical` and `url` places of an event: `approved` only the attendees whom the
@@ -14451,6 +14462,14 @@ export interface components {
              */
             defaults: boolean;
         };
+        /**
+         * @description Why the voice chat room of an event could not open at its start: `disabled` the voice chat is
+         *     off on this server, `not_eligible` the organizer may not host voice chat rooms, `too_many_rooms`
+         *     as many rooms were open as the server allows, and `hosting_elsewhere` the organizer was hosting
+         *     another room. The event itself goes on.
+         * @enum {string}
+         */
+        EventRoomUnavailableReason: "disabled" | "not_eligible" | "too_many_rooms" | "hosting_elsewhere";
         /** @description An answer to an event. */
         EventRSVP: {
             answer: components["schemas"]["EventAnswer"];

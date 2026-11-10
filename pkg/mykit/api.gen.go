@@ -2429,6 +2429,30 @@ func (e EventPlaceKind) Valid() bool {
 	}
 }
 
+// Defines values for EventRoomUnavailableReason.
+const (
+	EventRoomUnavailableReasonDisabled         EventRoomUnavailableReason = "disabled"
+	EventRoomUnavailableReasonHostingElsewhere EventRoomUnavailableReason = "hosting_elsewhere"
+	EventRoomUnavailableReasonNotEligible      EventRoomUnavailableReason = "not_eligible"
+	EventRoomUnavailableReasonTooManyRooms     EventRoomUnavailableReason = "too_many_rooms"
+)
+
+// Valid indicates whether the value is a known member of the EventRoomUnavailableReason enum.
+func (e EventRoomUnavailableReason) Valid() bool {
+	switch e {
+	case EventRoomUnavailableReasonDisabled:
+		return true
+	case EventRoomUnavailableReasonHostingElsewhere:
+		return true
+	case EventRoomUnavailableReasonNotEligible:
+		return true
+	case EventRoomUnavailableReasonTooManyRooms:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EventState.
 const (
 	EventStateCancelled   EventState = "cancelled"
@@ -11382,6 +11406,15 @@ type EventPlace struct {
 	// Name Up to 100 characters on one line.
 	Name *string `json:"name,omitempty"`
 
+	// RoomId For a `voice` place, the voice chat room that the start of the event's current date
+	// opened (`GET /voice/rooms/{id}`), which may have ended since; omitted before the room opens.
+	// Ignored in a request.
+	RoomId *Id `json:"room_id,omitempty"`
+
+	// RoomUnavailable For a `voice` place, why the room of the event's current date could not open at the
+	// start; omitted otherwise. Ignored in a request.
+	RoomUnavailable *EventRoomUnavailableReason `json:"room_unavailable,omitempty"`
+
 	// Speakers Who may speak without asking in the room; `manual` when omitted.
 	Speakers *VoiceRoomSpeakers `json:"speakers,omitempty"`
 	Url      *string            `json:"url,omitempty"`
@@ -11422,6 +11455,12 @@ type EventRemindersUpdate struct {
 	// (10080), none twice. Empty turns the reminders off. Ignored with `defaults`.
 	MinutesBefore *[]int `json:"minutes_before,omitempty"`
 }
+
+// EventRoomUnavailableReason Why the voice chat room of an event could not open at its start: `disabled` the voice chat is
+// off on this server, `not_eligible` the organizer may not host voice chat rooms, `too_many_rooms`
+// as many rooms were open as the server allows, and `hosting_elsewhere` the organizer was hosting
+// another room. The event itself goes on.
+type EventRoomUnavailableReason string
 
 // EventState Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
 // `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the

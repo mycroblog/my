@@ -11,6 +11,8 @@ import (
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
+	appvoice "github.com/mycroblog/my/internal/app/voice"
+	"github.com/mycroblog/my/internal/domain/gathering"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/voice"
@@ -18,8 +20,9 @@ import (
 )
 
 // setUpGathering builds the events of the local users (ADR-0161): the projectors of their
-// projections, their notifications and gathering.tick, and the Service of the client API. It comes
-// after the voice chat, whose hosts it reads, and after the notifications, which it creates.
+// projections, their notifications and gathering.tick, their voice chat rooms, and the Service of
+// the client API. It comes after the voice chat, whose hosts it reads and whose rooms it opens,
+// and after the notifications, which it creates.
 func (a *App) setUpGathering(repo appgathering.Repository) {
 	appgathering.RegisterProjectors(a.Projectors, repo)
 	appgathering.RegisterDueProjectors(a.Projectors, repo)
@@ -31,7 +34,7 @@ func (a *App) setUpGathering(repo appgathering.Repository) {
 	d := appgathering.Deps{
 		Repository: repo, UnitOfWork: a.UnitOfWork, Clock: a.Clock, IDs: a.IDs, RateLimiter: a.RateLimiter,
 		Members: gatheringMembers{a}, Relations: gatheringRelations{a}, Outbox: outbox, Logger: a.Logger,
-		Retention: gatheringRetention{a}, Store: a.KV,
+		Retention: gatheringRetention{a}, Store: a.KV, Rooms: gatheringRooms{a},
 	}
 	if a.gatheringNotifier != nil {
 		d.Notifier = a.gatheringNotifier
@@ -41,6 +44,87 @@ func (a *App) setUpGathering(repo appgathering.Repository) {
 	a.Events.RegisterNotificationJobs(a.Handlers, a.Scheduler)
 	a.Events.RegisterModerationProjectors(a.Projectors)
 	a.Events.RegisterModerationJobs(a.Handlers, a.Scheduler)
+	a.Events.RegisterRoomProjectors(a.Projectors)
+	a.Events.RegisterRoomJobs(a.Handlers)
+	// The organizer of an event whose room ended unattended hears of it (ADR-0161 §10); voice
+	// does not know the events.
+	a.Projectors.Register(appvoice.EventRoomEnded, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		end := e.(appvoice.RoomEnded).Ending
+		return a.Events.RoomEnded(ctx, tx, end.RoomID, end.Reason == voice.EndUnattended)
+	})
+}
+
+// gatheringRooms opens and ends the voice chat rooms of the events through the voice module
+// (ADR-0161 §10, ADR-0100 §16).
+type gatheringRooms struct{ a *App }
+
+// roomReasonOf returns the reason of an error of the voice module that keeps a room shut, "" for
+// another error.
+func roomReasonOf(err error) gathering.RoomReason {
+	switch {
+	case errors.Is(err, appvoice.ErrDisabled):
+		return gathering.RoomDisabled
+	case errors.Is(err, appvoice.ErrNotEligible):
+		return gathering.RoomNotEligible
+	case errors.Is(err, appvoice.ErrTooManyRooms):
+		return gathering.RoomTooManyRooms
+	case errors.Is(err, appvoice.ErrHostingElsewhere):
+		return gathering.RoomHostingElsewhere
+	}
+	return ""
+}
+
+// roomVisibilities map the visibility of an event to that of its room (ADR-0161 §10).
+var roomVisibilities = map[gathering.Visibility]voice.Visibility{
+	gathering.VisibilityPublic:    voice.VisibilityLocal,
+	gathering.VisibilityFollowers: voice.VisibilityFollowers,
+	gathering.VisibilityFollowing: voice.VisibilityFollowing,
+	gathering.VisibilityMutuals:   voice.VisibilityMutuals,
+	gathering.VisibilityInvited:   voice.VisibilityInvited,
+}
+
+func (r gatheringRooms) CheckHost(ctx context.Context, accountID string) (gathering.RoomReason, error) {
+	err := r.a.VoiceRooms.CheckScheduledHost(ctx, accountID)
+	if reason := roomReasonOf(err); reason != "" || err == nil {
+		return reason, nil
+	}
+	return "", err
+}
+
+func (r gatheringRooms) Open(ctx context.Context, in appgathering.RoomOpening) (string, gathering.RoomReason, error) {
+	visibility, ok := roomVisibilities[in.Visibility]
+	if !ok {
+		visibility = voice.VisibilityInvited
+	}
+	v, err := r.a.VoiceRooms.OpenScheduled(ctx, appvoice.ScheduledInput{
+		HostAccountID: in.HostAccountID, Key: in.Key, CohostCandidates: in.CohostCandidates, Invitees: in.Invitees,
+		Settings: appvoice.SettingsInput{Name: in.Title, Visibility: visibility, Speakers: voice.Speakers(in.Speakers)},
+	})
+	if reason := roomReasonOf(err); reason != "" {
+		return "", reason, nil
+	}
+	if err != nil {
+		return "", "", err
+	}
+	return v.ID, "", nil
+}
+
+func (r gatheringRooms) End(ctx context.Context, in appgathering.RoomEnd) error {
+	end := appvoice.EndScheduledInput{Key: in.Key, Reason: voice.EndHost, ByAccountID: in.ByAccountID}
+	if in.Moderator && in.ByAccountID != "" {
+		act, err := r.a.Accounts.FindByID(ctx, in.ByAccountID)
+		if err != nil {
+			return err
+		}
+		if act.Local != nil {
+			end.Reason, end.ByUserID, end.Note = voice.EndModerator, act.Local.UserID, in.Note
+		}
+	}
+	err := r.a.VoiceRooms.EndScheduled(ctx, end)
+	if errors.Is(err, appvoice.ErrNotFound) {
+		return nil
+	}
+	return err
 }
 
 // eventsAPI returns the events of the client API, nil before setUpGathering.
