@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listRoles
+  x-permission: manage_roles
   summary: List the roles
   description: |
     The roles of the instance, highest position first, with the permissions they grant. Every instance has `admin` (position 1000, every permission, never changed)
@@ -16,6 +17,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createRole
+  x-permission: manage_roles
   summary: Create a role
   description: |
     Creates a role with a key, a position below `admin` (0 to 999), and permissions; the

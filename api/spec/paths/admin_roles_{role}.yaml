@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/RoleKey.yaml
 patch:
   operationId: updateRole
+  x-permission: manage_roles
   summary: Change a role
   description: |
     Changes the position, the permissions, the badge, or several of them of a role; the
@@ -34,6 +35,7 @@ patch:
       $ref: ../components/responses/Problem.yaml
 delete:
   operationId: deleteRole
+  x-permission: manage_roles
   summary: Delete a role
   description: |
     Deletes a role that nobody holds; the audit log records `role_deleted`. `admin` and

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/uow"
@@ -275,8 +276,9 @@ func (s *Service) RotateOAuthAppSecret(ctx context.Context, userID, id string) (
 // IssueOAuthAppTokens issues an access token and a refresh token of the client with the ID
 // that the user registered to the user's own account, without a redirect (ADR-0090 §2): a
 // usual pair with the usual lifetimes, refreshed and revoked as any other. An empty scope
-// means the client's whole scope; a scope beyond the client's, or with a first-party-only
-// scope, fails with an *OAuthError invalid_scope. A disabled client fails with
+// means the client's whole scope; a scope beyond the client's, with a first-party-only scope,
+// or with a permission scope whose permission the user's roles lack, fails with an *OAuthError
+// invalid_scope. A disabled client fails with
 // ErrOAuthAppDisabled.
 func (s *Service) IssueOAuthAppTokens(ctx context.Context, userID, id, scope string) (IssuedTokens, error) {
 	app, err := s.OAuthApp(ctx, userID, id)
@@ -296,6 +298,19 @@ func (s *Service) IssueOAuthAppTokens(ctx context.Context, userID, id, scope str
 	}
 	if !granted.Within(c.Scope) || granted.HasFirstPartyOnly() {
 		return IssuedTokens{}, oauthError(OAuthInvalidScope, "the client may not have this scope")
+	}
+	// A permission scope needs the permission on the owner's roles now; each call checks the
+	// roles again (ADR-0090 §17).
+	if granted.HasSelfIssuedOnly() {
+		perms, err := s.Permissions(ctx, userID)
+		if err != nil {
+			return IssuedTokens{}, err
+		}
+		for _, t := range granted.Tokens() {
+			if p, ok := identity.ScopePermission(t); ok && !slices.Contains(perms, p) {
+				return IssuedTokens{}, oauthError(OAuthInvalidScope, "the user's roles do not have the permission "+string(p))
+			}
+		}
 	}
 	issued := s.newTokens(c, userID, granted, "", s.d.Clock.Now())
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.InsertAccessToken(ctx, tx, issued.Token) })

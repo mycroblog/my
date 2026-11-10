@@ -6,6 +6,8 @@ import (
 	"maps"
 	"net/http"
 	"slices"
+
+	"github.com/mycroblog/my/internal/domain/identity"
 )
 
 // RequestErrorHandler and ResponseErrorHandler expose the error handlers that Register gives
@@ -39,3 +41,9 @@ func (r *RecentIDs) Add(id string)      { r.add(id) }
 
 // Guard exposes Server.guard.
 func Guard(s *Server, pattern string, h http.Handler) http.Handler { return s.guard(pattern, h) }
+
+// OperationPermission returns the operationId and the x-permission of the operation of pattern.
+func OperationPermission(pattern string) (operation string, permission identity.Permission) {
+	a := operationSecurity[pattern]
+	return a.Operation, a.Permission
+}

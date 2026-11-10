@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminCustomEmojis
+  x-permission: manage_custom_emojis
   summary: List the custom emoji
   description: |
     The custom emoji, local and remote, newest first. `local` keeps the
@@ -49,6 +50,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createCustomEmoji
+  x-permission: manage_custom_emojis
   summary: Register a local custom emoji
   description: |
     Registers a local emoji with the image of a media file that the user uploaded and that

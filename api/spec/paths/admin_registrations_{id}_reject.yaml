@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: rejectRegistration
+  x-permission: manage_accounts
   summary: Reject a registration
   description: |
     Rejects a pending registration, so that its user cannot sign in, with an optional note

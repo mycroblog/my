@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listErrorGroups
+  x-permission: manage_errors
   summary: List the error groups
   description: |
     The groups of the errors that the server and the web client reported, the

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getAdminBrands
+  x-permission: manage_settings
   summary: Read the brand images
   description: |
     The instance's own icon, logo, and dark logo, each with the background color of the icon.

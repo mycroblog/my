@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listInstanceAvailabilityEvents
+  x-permission: manage_domains
   summary: List the times a remote server was marked unavailable or available
   description: |
     Why and when the server was marked unavailable or available again, newest first. Needs

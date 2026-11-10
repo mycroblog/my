@@ -9,6 +9,7 @@ parameters:
       $ref: ../components/schemas/Id.yaml
 post:
   operationId: translateReportedStatus
+  x-permission: manage_reports
   summary: Translate a reported post into a language
   description: |
     Returns a post that the report points at in `target_language`, as `POST /statuses/{id}/translation`

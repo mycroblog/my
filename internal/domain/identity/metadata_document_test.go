@@ -56,7 +56,7 @@ func TestParseClientMetadataDocument(t *testing.T) {
 	const id = "https://app.example/client.json"
 	m, err := identity.ParseClientMetadataDocument(id, []byte(`{
 		"client_id": "https://app.example/client.json", "client_name": " Pocket ", "client_uri": "https://app.example/",
-		"logo_uri": "javascript:alert(1)", "scope": "read write:statuses admin write:supporters unknown",
+		"logo_uri": "javascript:alert(1)", "scope": "read write:statuses admin write:supporters admin:manage_invites unknown",
 		"redirect_uris": ["com.example.app:/cb", "http://127.0.0.1/cb", "com.example.app:/cb"],
 		"token_endpoint_auth_method": "none", "grant_types": ["authorization_code", "refresh_token"], "response_types": ["code"]
 	}`))

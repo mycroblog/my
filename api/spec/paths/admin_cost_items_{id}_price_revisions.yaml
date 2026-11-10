@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: reviseCostItemPrice
+  x-permission: manage_finance
   summary: Revise a cost item's price
   description: |
     Records the price of the payments on or after `effective_on`. A date before the start

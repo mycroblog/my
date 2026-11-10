@@ -89,3 +89,44 @@ func TestFirstPartyOnlyScopes(t *testing.T) {
 		t.Error("read admin:read names a first-party-only scope")
 	}
 }
+
+// TestPermissionScopes checks the permission scopes (ADR-0090 §17): one per moderation and
+// server administration permission but the unscoped ones, known to ParseScope, granted by the
+// broad admin alone, and only for self-issued tokens.
+func TestPermissionScopes(t *testing.T) {
+	for _, p := range identity.AllPermissions() {
+		scope, ok := identity.PermissionScope(p)
+		unscoped := p.Category() == identity.CategoryMember || slices.Contains([]identity.Permission{
+			identity.PermManageRoles, identity.PermManageOAuthApps, identity.PermManageLoginRecovery,
+			identity.PermManageLoginProviders, identity.PermManageServiceClosure,
+		}, p)
+		if ok == unscoped {
+			t.Errorf("PermissionScope(%s) = %q, %v; want a scope %v", p, scope, ok, !unscoped)
+			continue
+		}
+		if !ok {
+			if _, err := identity.ParseScope("admin:" + string(p)); err == nil {
+				t.Errorf("ParseScope(admin:%s) accepted a permission without a scope", p)
+			}
+			continue
+		}
+		if scope != "admin:"+string(p) || !slices.Contains(identity.KnownScopes(), scope) || !identity.SelfIssuedOnlyScope(scope) || identity.FirstPartyOnlyScope(scope) {
+			t.Errorf("scope of %s = %q: want admin:%s, known, self-issued only, not first-party only", p, scope, p)
+		}
+		if got, ok := identity.ScopePermission(scope); !ok || got != p {
+			t.Errorf("ScopePermission(%s) = %s, %v", scope, got, ok)
+		}
+		if !identity.Scope("admin").Grants(scope) || identity.Scope("admin:read admin:write read write").Grants(scope) {
+			t.Errorf("%s: want it granted by admin alone", scope)
+		}
+	}
+	for _, t2 := range []string{"admin:read", "admin:write", "admin", "read:accounts", "admin:nothing"} {
+		if identity.SelfIssuedOnlyScope(t2) {
+			t.Errorf("SelfIssuedOnlyScope(%s) = true", t2)
+		}
+	}
+	s := identity.Scope("admin:manage_invites read")
+	if !s.HasSelfIssuedOnly() || s.WithoutSelfIssuedOnly() != "read" || identity.Scope("read").HasSelfIssuedOnly() {
+		t.Errorf("HasSelfIssuedOnly / WithoutSelfIssuedOnly of %q = %v, %q", s, s.HasSelfIssuedOnly(), s.WithoutSelfIssuedOnly())
+	}
+}

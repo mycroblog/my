@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: runBillingImport
+  x-permission: manage_finance
   summary: Import a provider's usage charges now
   description: |
     Queues an import of the billing source now, besides the daily one. Its

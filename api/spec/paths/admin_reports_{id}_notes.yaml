@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: addReportNote
+  x-permission: manage_reports
   summary: Write a note on a report
   description: |
     Adds an internal note to the report. Notes are shown to the moderators only,

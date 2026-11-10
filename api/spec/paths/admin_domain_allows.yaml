@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listDomainAllows
+  x-permission: manage_domains
   summary: List the allowlist of federation
   description: |
     Every allowed domain, by domain. The list is not paginated; the allowlist holds at most
@@ -22,6 +23,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createDomainAllow
+  x-permission: manage_domains
   summary: Allow a domain to federate
   description: |
     Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While

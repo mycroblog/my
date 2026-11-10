@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getCostTotals
+  x-permission: manage_finance
   summary: Total the costs by period
   description: |
     The totals of the cost items and the imported usage charges for each week, month, or

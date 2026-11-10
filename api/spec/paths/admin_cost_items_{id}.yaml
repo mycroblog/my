@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getCostItem
+  x-permission: manage_finance
   summary: Get a cost item
   description: An unknown or deleted item is a 404. Needs the `manage_finance` permission.
   tags: [admin-server]
@@ -15,6 +16,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 patch:
   operationId: updateCostItem
+  x-permission: manage_finance
   summary: Change a cost item's label
   description: |
     Records a new name, provider, category, or memo of a cost item; an omitted property keeps
@@ -38,6 +40,7 @@ patch:
       $ref: ../components/responses/Problem.yaml
 delete:
   operationId: deleteCostItem
+  x-permission: manage_finance
   summary: Delete a cost item
   description: |
     Removes a cost item recorded by mistake from every period, past ones included. There is

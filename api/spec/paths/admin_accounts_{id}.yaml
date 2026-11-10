@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getAdminAccount
+  x-permission: manage_accounts
   summary: Get the details of an account
   description: |
     An account as the moderators see it: its state, the restrictions of its own

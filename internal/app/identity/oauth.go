@@ -495,13 +495,17 @@ func (s *Service) ValidateAuthorization(ctx context.Context, req AuthorizationRe
 		return a, oauthError(OAuthInvalidScope, "unknown scope")
 	}
 	if scope == "" {
-		scope = client.Scope
+		// The permission scopes of a client's registration are for self-issued tokens only.
+		scope = client.Scope.WithoutSelfIssuedOnly()
 	}
 	if !scope.Within(client.Scope) {
 		return a, oauthError(OAuthInvalidScope, "the client may not request this scope")
 	}
 	if scope.HasFirstPartyOnly() && !client.FirstParty() {
 		return a, oauthError(OAuthInvalidScope, "the scope is for first-party clients only")
+	}
+	if scope.HasSelfIssuedOnly() && !client.FirstParty() {
+		return a, oauthError(OAuthInvalidScope, "a permission scope is for self-issued tokens only")
 	}
 	a.Scope = scope
 	if client.OwnerUserID != "" {

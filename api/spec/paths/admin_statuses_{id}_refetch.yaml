@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: refetchStatus
+  x-permission: manage_domains
   summary: Refetch a remote post from its origin
   description: |
     Queues a fetch of the remote post from its server. The job records what the

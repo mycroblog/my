@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: importSignupBlocks
+  x-permission: manage_accounts
   summary: Block sign-ups from a list
   description: |
     Adds a block on sign-ups for each value of a list, such as a public list of

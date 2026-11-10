@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: overturnAppeal
+  x-permission: manage_accounts
   summary: Overturn an appeal, lifting its action
   description: |
     Grants the appeal and lifts its action at once, as `POST /admin/account_actions/{id}/lift`

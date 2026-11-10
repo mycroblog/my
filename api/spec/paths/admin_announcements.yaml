@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminAnnouncements
+  x-permission: manage_announcements
   summary: List the announcements
   description: |
     The announcements, drafts and withdrawn ones included, newest first, a page at a time.
@@ -32,6 +33,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createAdminAnnouncement
+  x-permission: manage_announcements
   summary: Write an announcement
   description: |
     Writes an announcement to every local user, a draft unless `publish` is set. The title is

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: disableAdminAccountTwoFactor
+  x-permission: manage_login_recovery
   summary: Remove the two-factor authentication of a local account
   description: |
     Ends the TOTP enrollment of a local account's user, who lost their authenticator app

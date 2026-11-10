@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 put:
   operationId: setCostItemEnd
+  x-permission: manage_finance
   summary: Set a cost item's end
   description: |
     Ends a cost item on `ends_on` (a cancellation of the subscription: the payments after it

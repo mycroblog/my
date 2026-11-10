@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: forwardReport
+  x-permission: manage_reports
   summary: Forward a report to the target's server
   description: |
     Sends the report to the server of its remote target as a `Flag` of the instance actor,

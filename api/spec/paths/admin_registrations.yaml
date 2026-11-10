@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listPendingRegistrations
+  x-permission: manage_accounts
   summary: List the registrations that await approval
   description: |
     The sign-ups that wait for a moderator's decision, with the reasons their

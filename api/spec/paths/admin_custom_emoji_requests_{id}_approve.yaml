@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/CustomEmojiRequestId.yaml
 post:
   operationId: approveCustomEmojiRequest
+  x-permission: manage_custom_emojis
   summary: Approve a custom emoji request
   description: |
     Approves a pending request: a `create` request makes the local emoji,

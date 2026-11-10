@@ -16,7 +16,9 @@
 //	security: [{}, {oauth2: [s, ...]}]    anonymous, or an access token with every scope s
 //
 // An operation that takes an access token names at least one scope, and every scope is one
-// that the oauth2 security scheme declares.
+// that the oauth2 security scheme declares. An admin operation (admin:read or admin:write)
+// names the permission of the user's roles that its handler checks with x-permission, which
+// lets a token of that permission's scope call it (ADR-0090 §17).
 package main
 
 import (
@@ -35,6 +37,8 @@ import (
 	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
+
+	"github.com/mycroblog/my/internal/domain/identity"
 )
 
 // schemeName is the security scheme of the client API.
@@ -50,6 +54,9 @@ type access struct {
 	firstPartyOnly bool
 	// deprecation is the operation's x-sunset, set for a deprecated operation.
 	deprecation *deprecation
+	// permission is the operation's x-permission: the permission of the user's roles that it
+	// needs.
+	permission string
 }
 
 // deprecation is the schedule of a deprecated operation: the Deprecation header carries
@@ -97,6 +104,30 @@ func parseDeprecation(raw any) (*deprecation, error) {
 		return nil, fmt.Errorf("%s.sunset is before %s.deprecated", sunsetExtension, sunsetExtension)
 	}
 	return &deprecation{deprecated: d, sunset: s}, nil
+}
+
+// permissionExtension names the permission of the user's roles that an admin operation needs:
+//
+//	x-permission: manage_invites
+const permissionExtension = "x-permission"
+
+// parsePermission reads the value of x-permission, which names a permission.
+func parsePermission(raw any) (string, error) {
+	var v string
+	switch r := raw.(type) {
+	case string:
+		v = r
+	case json.RawMessage:
+		if err := json.Unmarshal(r, &v); err != nil {
+			return "", fmt.Errorf("%s must be a string", permissionExtension)
+		}
+	default:
+		return "", fmt.Errorf("%s must be a string", permissionExtension)
+	}
+	if !slices.Contains(identity.AllPermissions(), identity.Permission(v)) {
+		return "", fmt.Errorf("%s %q is not a permission", permissionExtension, v)
+	}
+	return v, nil
 }
 
 // firstPartyOnlyExtension marks an operation that takes only the token of a first-party client.
@@ -179,6 +210,16 @@ func operations(doc *openapi3.T) (map[string]access, error) {
 			if raw, ok := op.Extensions[firstPartyOnlyExtension]; ok {
 				if a.firstPartyOnly, err = firstPartyOnly(raw); err != nil {
 					errs = append(errs, fmt.Errorf("%s %s (%s): %w", method, path, op.OperationID, err))
+					continue
+				}
+			}
+			if raw, ok := op.Extensions[permissionExtension]; ok {
+				if a.permission, err = parsePermission(raw); err != nil {
+					errs = append(errs, fmt.Errorf("%s %s (%s): %w", method, path, op.OperationID, err))
+					continue
+				}
+				if !slices.ContainsFunc(a.scopes, func(s string) bool { return s == "admin:read" || s == "admin:write" }) {
+					errs = append(errs, fmt.Errorf("%s %s (%s): %s needs the scope admin:read or admin:write", method, path, op.OperationID, permissionExtension))
 					continue
 				}
 			}
@@ -272,6 +313,9 @@ func render(ops map[string]access) ([]byte, error) {
 		}
 		if a.firstPartyOnly {
 			fields = append(fields, "FirstPartyOnly: true")
+		}
+		if a.permission != "" {
+			fields = append(fields, "Permission: "+strconv.Quote(a.permission))
 		}
 		if a.deprecation != nil {
 			fields = append(fields, fmt.Sprintf("Deprecated: %d, Sunset: %d", a.deprecation.deprecated.Unix(), a.deprecation.sunset.Unix()))

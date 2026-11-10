@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/BrandKind.yaml
 put:
   operationId: setAdminBrand
+  x-permission: manage_settings
   summary: Set a brand image
   description: |
     Replaces the icon, the logo, or the dark logo with an SVG and its PNG renditions (see
@@ -42,6 +43,7 @@ put:
       $ref: ../components/responses/Problem.yaml
 delete:
   operationId: clearAdminBrand
+  x-permission: manage_settings
   summary: Clear a brand image
   description: |
     Brings the icon, the logo, or the dark logo back to the built-in images. The change is

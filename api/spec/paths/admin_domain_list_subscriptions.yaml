@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listDomainListSubscriptions
+  x-permission: manage_domains
   summary: List the subscriptions to domain block lists
   description: The subscriptions that are not deleted, newest first, each with its last fetch. Needs the `manage_domains` permission.
   tags: [admin-moderation]
@@ -23,6 +24,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createDomainListSubscription
+  x-permission: manage_domains
   summary: Subscribe to a domain block list
   description: |
     Subscribes to the list at an https URL, which the server fetches at once and then every

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listDomainListFetches
+  x-permission: manage_domains
   summary: List the fetches of a subscription
   description: |
     The fetches of the list, newest first, failed ones included with why they failed. An

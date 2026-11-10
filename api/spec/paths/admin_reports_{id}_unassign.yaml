@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: unassignReport
+  x-permission: manage_reports
   summary: Leave a report to nobody
   description: |
     Removes the moderator who handles the report, whoever it is. An unknown ID is a 404.

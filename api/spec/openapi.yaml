@@ -835,6 +835,19 @@ components:
         `x-first-party-only: true`; whatever its scopes, the token of another client gets a 403
         `/api/v1/problems/first-party-only` from them.
 
+        A permission scope `admin:<permission>` (`admin:manage_invites`, `admin:manage_finance`, ...)
+        stands in for `admin:read` and `admin:write` on the admin operations that need that
+        permission of the user's roles, which each names with `x-permission`; every call still needs
+        the permission on the user's roles. Only a token that the user issues to themselves from an
+        OAuth app they registered (`issueOAuthAppToken`) may hold one, and only for a permission
+        their roles hold when it is issued: an authorization request of any client but the server's
+        own asks for one in vain (`invalid_scope`). Such a token reaches only the permissions its
+        scopes name: an operation without `x-permission`, or one that needs another permission,
+        answers 403 `/api/v1/problems/insufficient-scope`, and a webhook it sets up subscribes only
+        to events that its permissions show. `manage_roles`, `manage_oauth_apps`,
+        `manage_login_recovery`, `manage_login_providers`, `manage_service_closure`, and the member
+        permissions have no permission scope. `admin` grants every permission scope.
+
         The moderator notifications (`admin_report`, `admin_appeal`, `admin_sign_up`,
         `admin_error_group`, and the other types that need a role's permission) reach first-party
         clients only: another client's token, whatever the user's roles, does not get them in the
@@ -856,6 +869,20 @@ components:
             admin: Administer the instance, as far as the user's roles allow (first-party clients only).
             "admin:read": Read the instance's administration data, as far as the user's roles allow (first-party clients only).
             "admin:write": Change the instance's administration data, as far as the user's roles allow (first-party clients only).
+            "admin:manage_reports": Use the permission manage_reports of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_accounts": Use the permission manage_accounts of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_domains": Use the permission manage_domains of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_rules": Use the permission manage_rules of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_settings": Use the permission manage_settings of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_invites": Use the permission manage_invites of the user's roles (tokens the user issues to themselves only).
+            "admin:view_audit": Use the permission view_audit of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_jobs": Use the permission manage_jobs of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_custom_emojis": Use the permission manage_custom_emojis of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_webhooks": Use the permission manage_webhooks of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_announcements": Use the permission manage_announcements of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_finance": Use the permission manage_finance of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_supporters": Use the permission manage_supporters of the user's roles (tokens the user issues to themselves only).
+            "admin:manage_errors": Use the permission manage_errors of the user's roles (tokens the user issues to themselves only).
             read: Read everything the user can read.
             write: Change everything the user can change.
             follow: Read and change follows, blocks, and mutes.

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getIncomeTotals
+  x-permission: manage_finance
   summary: Total the income by period
   description: |
     The totals of the payment provider's money movements for each week, month, or year from

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getFederationScopeImpact
+  x-permission: manage_settings
   summary: Count what switching federation to the allowlist would end
   description: |
     How many follows switching the instance setting `federation_scope` to `allowlist` with the

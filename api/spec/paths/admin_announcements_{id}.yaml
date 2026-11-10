@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getAdminAnnouncement
+  x-permission: manage_announcements
   summary: Get an announcement
   description: An unknown ID is a 404. Needs the `manage_announcements` permission.
   tags: [admin-server]
@@ -15,6 +16,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 put:
   operationId: updateAdminAnnouncement
+  x-permission: manage_announcements
   summary: Revise an announcement
   description: |
     Replaces the title, the text, and the window of a draft or a published announcement,

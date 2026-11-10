@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: reopenReport
+  x-permission: manage_reports
   summary: Reopen a resolved report
   description: |
     Puts a resolved report back in the queue as `open`, keeping its assignee. Resolving it

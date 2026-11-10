@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminSupporterPlans
+  x-permission: manage_supporters
   summary: List the supporter plans
   description: Every supporter plan, retired ones too, by rank. Needs the `manage_supporters` permission.
   tags: [admin-server]
@@ -20,6 +21,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createSupporterPlan
+  x-permission: manage_supporters
   summary: Create a supporter plan
   description: |
     Creates a supporter plan on a role, which then only the plan's subscriptions grant. The prices are made at the payment provider after the answer; the

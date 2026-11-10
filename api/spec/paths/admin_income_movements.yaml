@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listIncomeMovements
+  x-permission: manage_finance
   summary: List the money movements of the income
   description: |
     The payment provider's money movements that the income records keep, newest

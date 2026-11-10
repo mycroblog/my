@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: publishAdminAnnouncement
+  x-permission: manage_announcements
   summary: Publish an announcement
   description: |
     Publishes a draft to every local user, within its window; once it starts to show, every

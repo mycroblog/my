@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: rejectDomainListDrafts
+  x-permission: manage_domains
   summary: Reject drafts of a subscription
   description: |
     Rejects the drafts: a rejected `issue` does not come back until the list changes the row
