@@ -311,6 +311,11 @@ func remoteActorRepoInboxes(t *testing.T, r *remoteActorRepo) {
 	if n, err := r.h.Accounts.CountKnownSharedInboxes(ctx); err != nil || n != 2 {
 		t.Errorf("CountKnownSharedInboxes = %d, %v; want 2", n, err)
 	}
+	among, err := r.h.Accounts.ListSharedInboxesAmong(ctx, []string{sharedB, "https://gone.example/inbox", "https://a.example/users/alice/inbox"})
+	slices.Sort(among)
+	if err != nil || !slices.Equal(among, []string{sharedB, "https://gone.example/inbox"}) {
+		t.Errorf("ListSharedInboxesAmong = %v, %v; want the shared inboxes, those of deleted actors included", among, err)
+	}
 }
 
 func remoteActorRepoHandles(t *testing.T, r *remoteActorRepo) {

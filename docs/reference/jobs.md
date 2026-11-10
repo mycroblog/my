@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 106 job types. 43 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 107 job types. 43 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -139,7 +139,8 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | `supporters.ensure_prices` | Makes the prices of a plan's current terms at the payment provider, and archives those no longer used. | A plan's terms changing | Default | Safe. The provider call is idempotent. |
 | `supporters.sync` | Reads a subscription again from the provider and applies what it finds. | Provider notices, a due deadline, a checkout | Default | Safe. It only re-reads and applies. |
 | `supporters.command` | Sends a cancellation to the provider, removes what a failed plan change left to collect, expires the payment pages of a closed pending subscription, or cancels and refunds a second subscription of one payment. | A user's or the server's cancellation, a pending subscription closing, a second subscription found, each reconciliation while one is not settled | Default | Safe. A repeat finds the page expired, the subscription ended, and the charge refunded. |
-| `supporters.sync_due` | Queues `supporters.sync` for the subscriptions whose deadline has passed. | Schedule | Default | Next run |
+| `supporters.sync_due` | Queues `supporters.sync` for the subscriptions whose deadline has passed, and `supporters.sync_tip` for the open tips whose page has ended. | Schedule | Default | Next run |
+| `supporters.sync_tip` | Reads the page of an open tip again from the provider, or makes it unpayable first when the account closed, and records its payment or its end. | Reading an open tip, a tip's page ending, an account's deletion | Default | Safe. It only re-reads and applies, and a payment is recorded once. |
 | `supporters.cancel_for_closure` | Cancels the subscriptions when a service closure is announced, and tells the subscribers. | The closure being recorded | Default | Safe |
 | `supporters.apply_payment_event` | Applies one notice from the payment provider by re-reading what it points at. | A verified webhook from the provider | Default | Safe. Duplicates and reordering come down to re-reading. |
 | `supporters.reconcile_payments` | Compares the provider's records with this server's, within a request limit, and continues in a later job when it uses them up. A provider failure is recorded and waits for the next run. | Schedule, then itself | Default, for failures of this server | Next run |

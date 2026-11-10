@@ -80,13 +80,13 @@ func (f *fakeIncome) ListIncome(_ context.Context, filter appfinance.IncomeFilte
 	covers := finance.DateRange{Start: incomeDate("2026-04-10"), End: incomeDate("2027-04-09")}
 	e := appfinance.IncomeEntry{IncomeRecord: appfinance.IncomeRecord{
 		ID: "0199f0e0-0000-7000-8000-00000000f001", Provider: "stripe", ProviderID: incomeProviderID, Kind: finance.IncomePayment,
-		SubscriptionID: incomeSubscription, OccurredAt: time.Date(2026, 4, 10, 3, 0, 0, 0, time.UTC), OccurredOn: covers.Start,
+		SubscriptionID: incomeSubscription, Source: finance.SourceSubscription, OccurredAt: time.Date(2026, 4, 10, 3, 0, 0, 0, time.UTC), OccurredOn: covers.Start,
 		Covers: &covers, Gross: finance.Money{Minor: 12000, Currency: "JPY"}, Fee: finance.Money{Minor: 432, Currency: "JPY"},
 		Net: finance.Money{Minor: 11568, Currency: "JPY"}, RecordedAt: time.Date(2026, 4, 10, 3, 5, 0, 0, time.UTC),
 	}, Subscriber: appfinance.Subscriber{AccountID: incomeAccount, Username: incomeUsername}}
 	refund := appfinance.IncomeEntry{IncomeRecord: appfinance.IncomeRecord{
 		ID: "0199f0e0-0000-7000-8000-00000000f002", Provider: "stripe", ProviderID: "txn_refund_1", Kind: finance.IncomeRefund,
-		ParentProviderID: incomeProviderID, SubscriptionID: incomeSubscription, OccurredAt: time.Date(2026, 6, 1, 3, 0, 0, 0, time.UTC),
+		ParentProviderID: incomeProviderID, SubscriptionID: incomeSubscription, Source: finance.SourceSubscription, OccurredAt: time.Date(2026, 6, 1, 3, 0, 0, 0, time.UTC),
 		OccurredOn: incomeDate("2026-06-01"), Gross: finance.Money{Minor: -12000, Currency: "JPY"}, Net: finance.Money{Minor: -12000, Currency: "JPY"},
 		Fee: finance.Money{Currency: "JPY"}, RecordedAt: time.Date(2026, 6, 1, 3, 5, 0, 0, time.UTC),
 	}}

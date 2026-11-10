@@ -7,9 +7,13 @@ description: |
   authentication), `password_reset_link_issued` (an administrator issued a link that sets
   a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
   suppression of the primary email address of the account's user), `account_moved` (a limited
-  local account moved to another local account, which does not inherit the limit). On a `domain`:
+  local account moved to another local account, which does not inherit the limit),
+  `account_deliveries_viewed` (a holder of `manage_domains` listed the deliveries of the
+  account to a remote server; the target name is the handle and the server). On a `domain`:
   `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
-  cleared the failures of the server). On a `report`: `report_assigned`,
+  cleared the failures of the server), `delivery_revealed` (a holder of `manage_domains` was
+  shown the masked sender, activity URI, and inbox of a delivery to the server, whose ID is
+  `source_event_id`). On a `report`: `report_assigned`,
   `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
   `report_forwarded` (a moderator forwarded the report to the target's server). On a
   `user` (a registration):
@@ -51,7 +55,9 @@ description: |
   `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
   `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
   the item's name. On the `supporter_program`: `supporter_program_enabled`,
-  `supporter_program_disabled`; the label is the payment provider's name. On a
+  `supporter_program_disabled`, where the label is the payment provider's name, and
+  `supporter_tips_enabled`, `supporter_tips_revised` (their amounts), and
+  `supporter_tips_disabled`, where the label is the currency and the amounts in minor units. On a
   `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
   `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
   `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
@@ -154,6 +160,9 @@ enum:
   - cost_item_deleted
   - supporter_program_enabled
   - supporter_program_disabled
+  - supporter_tips_enabled
+  - supporter_tips_revised
+  - supporter_tips_disabled
   - supporter_plan_created
   - supporter_plan_revised
   - supporter_plan_retired
@@ -182,6 +191,8 @@ enum:
   - link_card_domain_images_stopped
   - link_card_domain_rule_removed
   - instance_marked_available
+  - delivery_revealed
+  - account_deliveries_viewed
   - domain_allow_added
   - domain_allow_removed
   - domain_list_subscription_created

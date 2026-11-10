@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: The net of one source over a period, by currency.
+type: object
+required: [source, net]
+properties:
+  source:
+    $ref: ./IncomeSource.yaml
+  net:
+    type: array
+    items:
+      $ref: ./Money.yaml

@@ -205,3 +205,77 @@ func instanceHealth(row federationgen.InstanceHealth) federation.InstanceHealth 
 		FailureDays: int(row.FailureDays), LastFailureDay: row.LastFailureDay,
 	}
 }
+
+// ListDeliveriesTo implements federation.Repository.
+func (r *Repository) ListDeliveriesTo(ctx context.Context, q appfederation.DeliveryQuery) ([]appfederation.DeliveryRecord, error) {
+	n, err := postgres.ToInt32(q.Limit, "batch limit")
+	if err != nil {
+		return nil, err
+	}
+	var rows []federationgen.ListDeliveriesToDomainRow
+	switch {
+	case q.ActivityURI != "":
+		var got []federationgen.ListDeliveriesOfActivityToDomainRow
+		got, err = r.db.reader().ListDeliveriesOfActivityToDomain(ctx, federationgen.ListDeliveriesOfActivityToDomainParams{
+			ActivityUri: string(q.ActivityURI), Domain: q.Domain, ActorAccountID: postgres.ToNullString(q.ActorAccountID),
+			Before: postgres.ToNullString(q.Before), BatchLimit: n,
+		})
+		for _, row := range got {
+			rows = append(rows, federationgen.ListDeliveriesToDomainRow(row))
+		}
+	case q.ActorAccountID != "":
+		var got []federationgen.ListDeliveriesOfActorToDomainRow
+		got, err = r.db.reader().ListDeliveriesOfActorToDomain(ctx, federationgen.ListDeliveriesOfActorToDomainParams{
+			ActorAccountID: q.ActorAccountID, Domain: q.Domain, Before: postgres.ToNullString(q.Before), BatchLimit: n,
+		})
+		for _, row := range got {
+			rows = append(rows, federationgen.ListDeliveriesToDomainRow(row))
+		}
+	default:
+		rows, err = r.db.reader().ListDeliveriesToDomain(ctx, federationgen.ListDeliveriesToDomainParams{
+			Domain: q.Domain, Before: postgres.ToNullString(q.Before), BatchLimit: n,
+		})
+	}
+	if err != nil {
+		return nil, postgres.Wrap(err, "list deliveries to "+q.Domain)
+	}
+	out := make([]appfederation.DeliveryRecord, len(rows))
+	for i, row := range rows {
+		out[i] = appfederation.DeliveryRecord{
+			Delivery: federation.Delivery{
+				ID: row.ID, OutboundActivityID: row.OutboundActivityID, InboxURL: federation.IRI(row.InboxUrl),
+				Domain: row.Domain, CreatedAt: postgres.UTC(row.CreatedAt),
+			},
+			Activity: federation.OutboundActivity{
+				ID: row.OutboundActivityID, ActivityURI: federation.IRI(row.ActivityUri), Type: federation.ActivityType(row.Type),
+				ActorAccountID: row.ActorAccountID, ObjectKind: federation.OutboundObjectKind(row.ObjectType),
+				ObjectID: row.ObjectID, CreatedAt: postgres.UTC(row.ActivityCreatedAt),
+			},
+		}
+	}
+	return out, nil
+}
+
+// ListAttemptsOfDeliveries implements federation.Repository.
+func (r *Repository) ListAttemptsOfDeliveries(ctx context.Context, ids []string) (map[string][]federation.DeliveryAttempt, error) {
+	out := map[string][]federation.DeliveryAttempt{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListAttemptsOfDeliveries(ctx, ids)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list attempts of deliveries")
+	}
+	for _, row := range rows {
+		status := 0
+		if row.StatusCode != nil {
+			status = int(*row.StatusCode)
+		}
+		out[row.DeliveryID] = append(out[row.DeliveryID], federation.DeliveryAttempt{
+			ID: row.ID, DeliveryID: row.DeliveryID, Outcome: federation.DeliveryOutcome(row.Outcome),
+			Scheme: postgres.FromNullString(row.SignatureScheme), HTTPStatus: status, Error: postgres.FromNullString(row.Error),
+			AttemptedAt: postgres.UTC(row.AttemptedAt),
+		})
+	}
+	return out, nil
+}

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The smallest and largest amount that the tips may offer in a currency.
+type: object
+required: [minimum, maximum]
+properties:
+  minimum:
+    $ref: ./Money.yaml
+  maximum:
+    $ref: ./Money.yaml

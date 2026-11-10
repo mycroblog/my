@@ -21,8 +21,9 @@ type Syncer interface {
 	// subscription (LocalID) to the provider's customer and subscription. It reports whether our
 	// state changed.
 	SyncCheckout(ctx context.Context, provider string, res CheckoutResult) (bool, error)
-	// RecordMoney records final money movements of provider (finance.RecordIncome, ADR-0067)
-	// and the refunds and chargebacks that revoke a subscription (ADR-0072 §7). The parent of
+	// RecordMoney records final money movements of provider (finance.RecordIncome, ADR-0067),
+	// the refunds and chargebacks that revoke a subscription (ADR-0072 §7), and the outcomes of
+	// the tips (ADR-0162 §15). The parent of
 	// each refund, chargeback, and reversal is either recorded already or comes earlier in ms.
 	RecordMoney(ctx context.Context, provider string, ms []MoneyMovement) error
 	// KnownMoney reports which of the movement IDs of provider are recorded.
@@ -33,4 +34,10 @@ type Syncer interface {
 	// OpenCheckouts returns the checkouts of provider that our subscriptions wait for and that
 	// have not expired at now (ADR-0074 §4, stage 2).
 	OpenCheckouts(ctx context.Context, provider string, now time.Time) ([]CheckoutRef, error)
+	// SyncTip applies what GetOneTimeCheckout reported of a checkout of a tip (ADR-0162 §14). It
+	// reports whether the tip's state changed.
+	SyncTip(ctx context.Context, provider string, res OneTimeResult) (bool, error)
+	// OpenTipCheckouts returns the checkouts of provider of the open tips that have not expired at
+	// now (stage 2).
+	OpenTipCheckouts(ctx context.Context, provider string, now time.Time) ([]CheckoutRef, error)
 }

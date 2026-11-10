@@ -744,6 +744,9 @@ func (s *Service) RegisterProjectors(r *uow.Projectors) {
 		if !ev.ClosesLocalAccount() {
 			return nil
 		}
+		if err := s.expireTipOfAccount(ctx, tx, ev.Event.AccountID, "account_closed:"+ev.Event.ID); err != nil {
+			return err
+		}
 		rec, ok, err := s.liveOfAccount(ctx, tx, ev.Event.AccountID)
 		if err != nil || !ok {
 			return err
@@ -812,6 +815,23 @@ func (s *Service) HasLiveSubscription(ctx context.Context, userID string) (bool,
 	return err == nil, err
 }
 
+// expireTipOfAccount queues inside tx the expiry of the open tip of a local account's user.
+func (s *Service) expireTipOfAccount(ctx context.Context, tx uow.Tx, accountID, cause string) error {
+	if s.d.Accounts == nil {
+		return nil
+	}
+	a, err := s.d.Accounts.FindByIDTx(ctx, tx, accountID)
+	switch {
+	case errors.Is(err, account.ErrNotFound):
+		return nil
+	case err != nil:
+		return err
+	case a.Local == nil || a.Local.UserID == "":
+		return nil
+	}
+	return s.expireOpenTipOf(ctx, tx, a.Local.UserID, cause)
+}
+
 // liveOfAccount returns inside tx the live subscription of a local account's user.
 func (s *Service) liveOfAccount(ctx context.Context, tx uow.Tx, accountID string) (SubscriptionRecord, bool, error) {
 	if s.d.Accounts == nil {
@@ -840,9 +860,11 @@ func (s *Service) liveOfAccount(ctx context.Context, tx uow.Tx, accountID string
 	return rec, true, nil
 }
 
-// EraseAccountData implements account.DataEraser: it deletes the listing and the provider's
-// customers of an erased account's user (ADR-0072 §10); the subscriptions, their transitions,
-// and their reversals stay for the accounting and the reconciliation with the provider.
+// EraseAccountData implements account.DataEraser: it deletes the listing, the provider's
+// customers, and the tips with their records of an erased account's user (ADR-0072 §10,
+// ADR-0162 §18); the subscriptions, their transitions, and their reversals stay for the
+// accounting and the reconciliation with the provider. The income rows of the tips keep their
+// amounts and their source, without a user.
 func (s *Service) EraseAccountData(ctx context.Context, t account.ErasureTarget, _ string, _ int) (account.ErasureStep, error) {
 	if t.UserID == "" {
 		return account.ErasureStep{Done: true}, nil

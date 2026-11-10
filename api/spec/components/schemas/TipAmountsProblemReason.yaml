@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The rule that the amounts of the tips break: `count` (1 to 6 different amounts in one
+  currency), `currency` (a currency that the tips and the payment provider take: JPY or USD),
+  or `range` (each from ¥100 to ¥100,000 or from US$1 to US$1,000, and at least the provider's
+  smallest one-time charge).
+type: string
+enum: [count, currency, range]

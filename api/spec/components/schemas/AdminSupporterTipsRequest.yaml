@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Enables the tips with their amounts, all in one currency, or disables them (`enabled` false,
+  without amounts).
+type: object
+required: [enabled]
+properties:
+  enabled:
+    type: boolean
+  amounts:
+    type: array
+    maxItems: 6
+    items:
+      $ref: ./Money.yaml

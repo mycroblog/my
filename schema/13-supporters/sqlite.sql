@@ -320,3 +320,84 @@ CREATE TABLE payment_checkout_claims (
   PRIMARY KEY (provider, provider_checkout_id)
 ) STRICT;
 CREATE INDEX payment_checkout_claims_expires_at ON payment_checkout_claims (expires_at);
+
+-- ---------------------------------------------------------------------------------------------
+-- supporters: the tips, one-time payments to the server's operation (data-model §4.13, FR-918,
+-- ADR-0162 §12). Owned by internal/app/supporters. The amounts of the money are the income
+-- records' (income_movements); a tip's state is the rows it has: paid with a payment, expired
+-- with that outcome, open with neither.
+-- ---------------------------------------------------------------------------------------------
+
+-- Event: the tips enabled, their amounts revised, or the tips disabled (ADR-0162 §6, §17); the
+-- newest row is the current state, and no row is disabled. An enabled row has 1 to 6 amounts
+-- (supporter_tip_amounts) in currency, which the application bounds. changed_by_user_id is NULL
+-- for the CLI.
+CREATE TABLE supporter_tip_changes (
+  id TEXT NOT NULL PRIMARY KEY,
+  state TEXT NOT NULL CHECK (state IN ('enabled', 'disabled')),
+  currency TEXT NOT NULL CHECK (currency GLOB '[A-Z][A-Z][A-Z]'),
+  changed_by_user_id TEXT,
+  changed_at INTEGER NOT NULL
+) STRICT;
+
+-- Event (child): an amount that an enabled change of the tips offers, in minor units of its
+-- currency.
+CREATE TABLE supporter_tip_amounts (
+  change_id TEXT NOT NULL,
+  amount_minor INTEGER NOT NULL CHECK (amount_minor >= 1),
+  PRIMARY KEY (change_id, amount_minor)
+) STRICT;
+
+-- Resource: a tip that a local user started (ADR-0162 §13); its id is the ID that the provider
+-- keeps on the checkout and the payment (my_tip_id).
+CREATE TABLE supporter_tips (
+  id TEXT NOT NULL PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  amount_minor INTEGER NOT NULL CHECK (amount_minor >= 1),
+  currency TEXT NOT NULL CHECK (currency GLOB '[A-Z][A-Z][A-Z]'),
+  provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX supporter_tips_user_id_id ON supporter_tips (user_id, id DESC);
+
+-- Event: the hosted checkout of a tip, open until expires_at; a tip has one.
+CREATE TABLE supporter_tip_checkouts (
+  tip_id TEXT NOT NULL PRIMARY KEY,
+  provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
+  provider_checkout_id TEXT NOT NULL CHECK (length(provider_checkout_id) BETWEEN 1 AND 255),
+  expires_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX supporter_tip_checkouts_provider_checkout ON supporter_tip_checkouts (provider, provider_checkout_id);
+
+-- Event: the payment of a tip as the provider charged it; the money movements of the provider
+-- name provider_payment_id, which leads their refunds and chargebacks to the tip.
+CREATE TABLE supporter_tip_payments (
+  tip_id TEXT NOT NULL PRIMARY KEY,
+  provider TEXT NOT NULL CHECK (provider IN ('stripe', 'payjp', 'fake')),
+  provider_payment_id TEXT NOT NULL CHECK (length(provider_payment_id) BETWEEN 1 AND 255),
+  amount_minor INTEGER NOT NULL CHECK (amount_minor >= 1),
+  currency TEXT NOT NULL CHECK (currency GLOB '[A-Z][A-Z][A-Z]'),
+  paid_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX supporter_tip_payments_provider_payment ON supporter_tip_payments (provider, provider_payment_id);
+
+-- Event: what happened to a tip (ADR-0162 §15): its checkout expired unpaid, or its payment was
+-- refunded in full, charged back, or won back in the dispute. Each happens once.
+CREATE TABLE supporter_tip_outcomes (
+  id TEXT NOT NULL PRIMARY KEY,
+  tip_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('expired', 'refunded', 'charged_back', 'dispute_won')),
+  occurred_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX supporter_tip_outcomes_tip_id_kind ON supporter_tip_outcomes (tip_id, kind);
+
+-- Projection: the open tip of each user, neither paid nor expired, at most one, until expires_at
+-- (the end of its checkout, or an hour after its start until it has one). Rebuilt from the tips.
+CREATE TABLE supporter_open_tips (
+  user_id TEXT NOT NULL PRIMARY KEY,
+  tip_id TEXT NOT NULL,
+  expires_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX supporter_open_tips_tip_id ON supporter_open_tips (tip_id);
+CREATE INDEX supporter_open_tips_expires_at ON supporter_open_tips (expires_at);

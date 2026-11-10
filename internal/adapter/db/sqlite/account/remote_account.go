@@ -234,6 +234,25 @@ func (r *Repository) ListKnownSharedInboxes(ctx context.Context, after string, l
 	return out, nil
 }
 
+// ListSharedInboxesAmong implements account.Repository.
+func (r *Repository) ListSharedInboxesAmong(ctx context.Context, urls []string) ([]string, error) {
+	list, err := sqlite.JSONList(urls)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListSharedInboxesAmong(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list shared inboxes among")
+	}
+	out := make([]string, 0, len(rows))
+	for _, row := range rows {
+		if row.Valid {
+			out = append(out, row.String)
+		}
+	}
+	return out, nil
+}
+
 // CountKnownSharedInboxes implements account.Repository.
 func (r *Repository) CountKnownSharedInboxes(ctx context.Context) (int, error) {
 	n, err := r.db.reader().CountKnownSharedInboxes(ctx)

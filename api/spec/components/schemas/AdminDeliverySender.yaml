@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The local account that sent the activity.
+type: object
+required: [account_id]
+properties:
+  account_id:
+    $ref: ./Id.yaml
+  username:
+    description: The username of the account; absent for an account that is gone.
+    type: string

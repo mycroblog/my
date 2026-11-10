@@ -319,6 +319,38 @@
     "defaultMessage": "Your subscription has this plan and interval already.",
     "description": "API error title for HTTP 422 when a user changes their subscription to the plan and interval it has."
   },
+  "errors.supporters.tip_amount": {
+    "defaultMessage": "The tip must be one of the server's amounts.",
+    "description": "API error title for HTTP 422 when a user starts a tip of an amount that is not one of the operator's choices (ADR-0162 §6)."
+  },
+  "errors.supporters.tip_amount_detail": {
+    "defaultMessage": "Choose one of the amounts that the server offers.",
+    "description": "API error detail for HTTP 422 when a tip is not of one of the server's amounts."
+  },
+  "errors.supporters.tip_pending": {
+    "defaultMessage": "Another tip of yours is starting.",
+    "description": "API error title for HTTP 409 when two starts of a tip of one user run at the same time (ADR-0162 §13)."
+  },
+  "errors.supporters.tip_pending_detail": {
+    "defaultMessage": "Try again in a moment.",
+    "description": "API error detail for HTTP 409 when another start of a tip of the user runs."
+  },
+  "errors.supporters.tips_unavailable": {
+    "defaultMessage": "Tips are not available on this server.",
+    "description": "API error title for HTTP 409 when an administrator enables the tips while the supporter program is disabled or the payment provider takes no one-time payments (ADR-0162 §3)."
+  },
+  "errors.supporters.tips_unavailable_detail": {
+    "defaultMessage": "Enable the supporter program on a payment provider that takes one-time payments first.",
+    "description": "API error detail for HTTP 409 when the tips cannot be enabled."
+  },
+  "errors.supporters.tip_amounts_invalid": {
+    "defaultMessage": "The amounts of the tips cannot be saved.",
+    "description": "API error title for HTTP 422 when the amounts of the tips break a rule; the detail says which (ADR-0162 §6)."
+  },
+  "errors.supporters.tip_amounts_invalid_detail": {
+    "defaultMessage": "{reason, select, count {Choose 1 to 6 different amounts in one currency.} currency {Tips take yen or US dollars, and the payment provider must take the currency.} range {Each amount must be from 100 to 100,000 yen or from 1 to 1,000 US dollars, and at least the payment provider's smallest charge.} other {The amounts break a rule.}}",
+    "description": "API error detail for HTTP 422 when the amounts of the tips break a rule. {reason} is count, currency, or range."
+  },
   "errors.supporters.payment_failed": {
     "defaultMessage": "The payment for this change failed, so your plan has not changed.",
     "description": "API error title for HTTP 402 when the payment of a change of supporter plan failed."

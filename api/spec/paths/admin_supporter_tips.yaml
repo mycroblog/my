@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getSupporterTips
+  x-permission: manage_supporters
+  summary: Get the tips
+  description: |
+    Whether the server takes tips, one-time payments to its operation, and their amounts, with
+    what enabling them needs. Needs the `manage_supporters` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  responses:
+    "200":
+      $ref: ../components/responses/AdminSupporterTips.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+put:
+  operationId: setSupporterTips
+  x-permission: manage_supporters
+  summary: Enable or disable the tips
+  description: |
+    Enables the tips with their amounts, changes the amounts, or disables the tips. Enabling
+    them needs the supporter program enabled on the configured payment provider, which takes
+    one-time payments: a 409 `/api/v1/problems/tips-unavailable` otherwise. The amounts are 1 to
+    6 different amounts in one currency, each from ¥100 to ¥100,000 or from US$1 to US$1,000 and
+    at least the provider's smallest one-time charge: a 422 `/api/v1/problems/invalid-tip-amounts`
+    whose `reason` says which rule they break. Asking for the state the tips are in changes
+    nothing. Recorded in the audit log. Needs the `manage_supporters` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/AdminSupporterTipsRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminSupporterTips.yaml
+    "422":
+      $ref: ../components/responses/TipAmountsProblem.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -19,6 +19,9 @@ func newOnScenario(_ *testing.T, s supporterstest.PaymentScenario) supporterstes
 	for _, c := range s.Checkouts {
 		p.PutCheckout(c)
 	}
+	for _, c := range s.OneTimeCheckouts {
+		p.PutOneTimeCheckout(c)
+	}
 	for i, m := range supporterstest.PaymentMovements(s) {
 		object := s.Money[i].Object
 		if object == "" {

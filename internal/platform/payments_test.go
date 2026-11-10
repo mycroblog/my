@@ -54,6 +54,14 @@ func (s *syncedSubscriptions) OpenCheckouts(context.Context, string, time.Time) 
 	return nil, nil
 }
 
+func (s *syncedSubscriptions) SyncTip(context.Context, string, supporters.OneTimeResult) (bool, error) {
+	return false, nil
+}
+
+func (s *syncedSubscriptions) OpenTipCheckouts(context.Context, string, time.Time) ([]supporters.CheckoutRef, error) {
+	return nil, nil
+}
+
 func (s *syncedSubscriptions) count() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()

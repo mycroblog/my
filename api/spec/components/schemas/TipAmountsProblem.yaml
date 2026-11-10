@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The problem of amounts of the tips that break a rule (422,
+  `/api/v1/problems/invalid-tip-amounts`); `reason` says which.
+allOf:
+  - $ref: ./Problem.yaml
+  - type: object
+    properties:
+      reason:
+        $ref: ./TipAmountsProblemReason.yaml

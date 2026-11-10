@@ -79,6 +79,12 @@ type Repository interface {
 	FindDelivery(ctx context.Context, id string) (federation.Delivery, error)
 	// ListDeliveryAttempts returns the attempts of a delivery, oldest first.
 	ListDeliveryAttempts(ctx context.Context, deliveryID string) ([]federation.DeliveryAttempt, error)
+	// ListDeliveriesTo returns the deliveries that q selects with their activities, newest
+	// first (DeliveryQuery).
+	ListDeliveriesTo(ctx context.Context, q DeliveryQuery) ([]DeliveryRecord, error)
+	// ListAttemptsOfDeliveries returns the attempts of the deliveries ids, by delivery, oldest
+	// first; a delivery without attempts is absent.
+	ListAttemptsOfDeliveries(ctx context.Context, ids []string) (map[string][]federation.DeliveryAttempt, error)
 	FindInstanceHealth(ctx context.Context, domain string) (federation.InstanceHealth, error)
 	// ListAvailabilityEvents returns at most limit availability events of a server, newest first,
 	// starting before the event ID before ("" for the newest).

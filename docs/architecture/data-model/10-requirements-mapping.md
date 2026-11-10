@@ -75,6 +75,7 @@
 | FR-916 会計の閲覧の権限 | S | `role_permissions`（`view_finance`）, `instance_settings`（`finance_viewer_item_names`, `finance_viewer_item_memos`, `finance_viewer_income`）と FR-902 の集計（読み取りのときに計算する） |
 | FR-917 収入の記録と公開 | S | §4.12 の `income_movements` と、`instance_settings`（`income_visibility`）。集計は読み取りのときに計算する |
 | FR-918 チップ | S | §4.13 のチップの表（`supporter_tip_changes` から `supporter_open_tips`）と、§4.12 の `income_movements.source`（ADR-0162） |
+| FR-919 チップの不正への備えと計上 | S | §4.13 の `supporter_open_tips`（利用者ごとに 1 つの開いているチップ）・`supporter_tip_payments`（一意の支払い）・`supporter_tip_outcomes`、§4.12 の `income_movements.source`・`tip_id`、§8 の消去（ADR-0162） |
 | FR-923 ルームの設定 | M | §4.14 の `voice_rooms`, `voice_room_revisions`, `voice_room_revision_hashtags`, `voice_room_heads` |
 | FR-924 参加と発話 | M | `voice_room_participations`, `voice_room_participation_ends`, `voice_room_role_changes`, `voice_room_speak_grants`, `voice_room_hand_raises`, `voice_room_participants` |
 | FR-925・FR-926 ホストと共同ホスト、ホストの退出と切断 | M | `voice_room_host_changes`, `voice_room_cohost_changes`, `voice_room_host_graces`, `voice_room_endings`, `voice_room_heads` |

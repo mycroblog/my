@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getOwnSupporterTip
+  summary: Get a tip of the authenticated user
+  description: |
+    The state of a tip of the authenticated user: `open` until its payment or the end of its
+    checkout, then `paid` or `expired`. While it is `open`, reading it makes the server read the
+    checkout again from the payment provider, so the return from the checkout reads it again
+    shortly until it is `paid`. Another user's tip and an unknown one are a 404.
+  tags: [supporters]
+  security:
+    - oauth2: ["read:supporters"]
+  parameters:
+    - $ref: ../components/parameters/SupporterTipId.yaml
+  responses:
+    "200":
+      description: The tip.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/SupporterTip.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

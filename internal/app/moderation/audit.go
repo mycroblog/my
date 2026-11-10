@@ -77,6 +77,9 @@ const (
 	AuditCostItemDeleted                 = moderation.AuditCostItemDeleted
 	AuditSupporterProgramEnabled         = moderation.AuditSupporterProgramEnabled
 	AuditSupporterProgramDisabled        = moderation.AuditSupporterProgramDisabled
+	AuditSupporterTipsEnabled            = moderation.AuditSupporterTipsEnabled
+	AuditSupporterTipsRevised            = moderation.AuditSupporterTipsRevised
+	AuditSupporterTipsDisabled           = moderation.AuditSupporterTipsDisabled
 	AuditSupporterPlanCreated            = moderation.AuditSupporterPlanCreated
 	AuditSupporterPlanRevised            = moderation.AuditSupporterPlanRevised
 	AuditSupporterPlanRetired            = moderation.AuditSupporterPlanRetired
@@ -106,6 +109,8 @@ const (
 	AuditLinkCardDomainImagesStopped     = moderation.AuditLinkCardDomainImagesStopped
 	AuditLinkCardDomainRuleRemoved       = moderation.AuditLinkCardDomainRuleRemoved
 	AuditInstanceMarkedAvailable         = moderation.AuditInstanceMarkedAvailable
+	AuditDeliveryRevealed                = moderation.AuditDeliveryRevealed
+	AuditAccountDeliveriesViewed         = moderation.AuditAccountDeliveriesViewed
 
 	AuditTargetUser                  = moderation.AuditTargetUser
 	AuditTargetSetting               = moderation.AuditTargetSetting

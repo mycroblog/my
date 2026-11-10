@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The tips: whether the operator enabled them (`enabled`) with their `amounts`, and whether users
+  may tip now (`accepting`), which also needs the supporter program enabled on the configured
+  payment provider. `one_time_payments` reports whether that provider takes one-time payments,
+  and `limits` the smallest and largest amount of each currency that the tips may offer on it.
+  `server_limit_reached` reports that the starts of the last hour reached the limit of the whole
+  server, which may be card testing.
+type: object
+required: [enabled, accepting, one_time_payments, amounts, limits, server_limit_reached]
+properties:
+  enabled:
+    type: boolean
+  accepting:
+    type: boolean
+  one_time_payments:
+    type: boolean
+  amounts:
+    description: The amounts, smallest first; empty while the tips are disabled.
+    type: array
+    items:
+      $ref: ./Money.yaml
+  limits:
+    type: array
+    items:
+      $ref: ./AdminSupporterTipLimits.yaml
+  server_limit_reached:
+    type: boolean
+  changed_at:
+    description: When the tips were last enabled, changed, or disabled; omitted for never.
+    type: string
+    format: date-time

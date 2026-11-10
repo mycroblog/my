@@ -129,9 +129,9 @@ services:
     build: *my-build
     image: my:${MY_VERSION:-federation-live}
     depends_on:
-      my-schema:
+      my-upgrade:
         condition: service_completed_successfully
-    environment:
+    environment: &my-env
       MY_HOST: my.test
       MY_ROLE: all
       MY_DATABASE: postgres
@@ -148,6 +148,20 @@ services:
 
   # --- Mastodon ---------------------------------------------------------------------------------
 
+
+  # my db upgrade of the server image, after the schema and before the server: the data upgrade steps of the
+  # release, which the readiness check waits for.
+  my-upgrade:
+    build: *my-build
+    image: my:${MY_VERSION:-federation-live}
+    command: [db, upgrade]
+    environment: *my-env
+    depends_on:
+      my-schema:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - fed
   mastodon-init:
     <<: *mastodon
     command: ["bundle", "exec", "rails", "db:prepare"]

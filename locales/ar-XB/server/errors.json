@@ -859,6 +859,38 @@
     "defaultMessage": "‮⅄onɹ snqsɔɹıdʇıou ɔɐuuoʇ po ʇɥɐʇ ıu ıʇs ɔnɹɹǝuʇ sʇɐʇǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.supporters.tip_amount": {
+    "defaultMessage": "‮⊥ɥǝ ʇıd ɯnsʇ qǝ ouǝ oɟ ʇɥǝ sǝɹʌǝɹ's ɐɯonuʇs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_amount_detail": {
+    "defaultMessage": "‮Ↄɥoosǝ ouǝ oɟ ʇɥǝ ɐɯonuʇs ʇɥɐʇ ʇɥǝ sǝɹʌǝɹ oɟɟǝɹs.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_amounts_invalid": {
+    "defaultMessage": "‮⊥ɥǝ ɐɯonuʇs oɟ ʇɥǝ ʇıds ɔɐuuoʇ qǝ sɐʌǝp.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_amounts_invalid_detail": {
+    "defaultMessage": "‮{reason,select,count{Ↄɥoosǝ 1 ʇo 6 pıɟɟǝɹǝuʇ ɐɯonuʇs ıu ouǝ ɔnɹɹǝuɔʎ.} currency{⊥ıds ʇɐʞǝ ʎǝu oɹ ∩S poʅʅɐɹs, ɐup ʇɥǝ dɐʎɯǝuʇ dɹoʌıpǝɹ ɯnsʇ ʇɐʞǝ ʇɥǝ ɔnɹɹǝuɔʎ.} other{⊥ɥǝ ɐɯonuʇs qɹǝɐʞ ɐ ɹnʅǝ.} range{Ǝɐɔɥ ɐɯonuʇ ɯnsʇ qǝ ɟɹoɯ 100 ʇo 100,000 ʎǝu oɹ ɟɹoɯ 1 ʇo 1,000 ∩S poʅʅɐɹs, ɐup ɐʇ ʅǝɐsʇ ʇɥǝ dɐʎɯǝuʇ dɹoʌıpǝɹ's sɯɐʅʅǝsʇ ɔɥɐɹƃǝ.}}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_pending": {
+    "defaultMessage": "‮∀uoʇɥǝɹ ʇıd oɟ ʎonɹs ıs sʇɐɹʇıuƃ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_pending_detail": {
+    "defaultMessage": "‮⊥ɹʎ ɐƃɐıu ıu ɐ ɯoɯǝuʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tips_unavailable": {
+    "defaultMessage": "‮⊥ıds ɐɹǝ uoʇ ɐʌɐıʅɐqʅǝ ou ʇɥıs sǝɹʌǝɹ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tips_unavailable_detail": {
+    "defaultMessage": "‮Ǝuɐqʅǝ ʇɥǝ snddoɹʇǝɹ dɹoƃɹɐɯ ou ɐ dɐʎɯǝuʇ dɹoʌıpǝɹ ʇɥɐʇ ʇɐʞǝs ouǝ-ʇıɯǝ dɐʎɯǝuʇs ɟıɹsʇ.‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.supporters.unavailable": {
     "defaultMessage": "‮⊥ɥǝ snddoɹʇǝɹ dɹoƃɹɐɯ ıs uoʇ ɐʌɐıʅɐqʅǝ ou ʇɥıs sǝɹʌǝɹ.‬",
     "description": "Generated from en by tools/i18n; do not edit."

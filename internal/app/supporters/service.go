@@ -94,13 +94,21 @@ type Deps struct {
 	Outbox  queue.Outbox
 	Clock   kernel.Clock
 	IDs     kernel.IDGenerator
+	// RateLimiter applies the limits of the tips (TipUserHourLimit, TipUserDayLimit,
+	// TipServerLimit); nil applies none.
+	RateLimiter *kernel.RateLimiter
+	// Meter records TipCheckouts; nil records nothing.
+	Meter kernel.Meter
 	// Logger defaults to slog.Default().
 	Logger *slog.Logger
 }
 
 // Service runs the supporter program (ADR-0072): its enabling, the plans, the subscriptions,
-// and the Syncer that derives their states from the provider's facts.
-type Service struct{ d Deps }
+// the tips (ADR-0162), and the Syncer that derives their states from the provider's facts.
+type Service struct {
+	d            Deps
+	tipCheckouts kernel.Counter
+}
 
 var _ Syncer = (*Service)(nil)
 
@@ -109,7 +117,7 @@ func NewService(d Deps) *Service {
 	if d.Logger == nil {
 		d.Logger = slog.Default()
 	}
-	return &Service{d: d}
+	return &Service{d: d, tipCheckouts: kernel.MeterOrNop(d.Meter).Counter(TipCheckouts)}
 }
 
 func (s *Service) now() time.Time { return kernel.Normalize(s.d.Clock.Now()) }

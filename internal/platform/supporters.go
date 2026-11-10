@@ -42,6 +42,8 @@ func (a *App) setUpSupporters(ctx context.Context, cfg *config.Config, repo supp
 		// The announcement of the service closure stops new subscriptions (ADR-0088 §2).
 		Closure: a.Instance,
 		Outbox:  outbox, Clock: a.Clock, IDs: a.IDs, Logger: a.Logger,
+		// The rate limits and the metric of the tips (ADR-0162 §17).
+		RateLimiter: a.RateLimiter, Meter: a.Meter,
 	})
 	a.Supporters.RegisterProjectors(a.Projectors)
 	a.Supporters.RegisterJobs(a.Handlers, a.Scheduler)

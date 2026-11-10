@@ -314,6 +314,12 @@ const (
 	// disabled the supporter program (supporter_program_changes, ADR-0072 §2).
 	AuditSupporterProgramEnabled  AuditAction = "supporter_program_enabled"
 	AuditSupporterProgramDisabled AuditAction = "supporter_program_disabled"
+	// AuditSupporterTipsEnabled, AuditSupporterTipsRevised, AuditSupporterTipsDisabled: an
+	// administrator enabled the tips, changed their amounts, or disabled them
+	// (supporter_tip_changes, ADR-0162 §17). The target is the supporter program.
+	AuditSupporterTipsEnabled  AuditAction = "supporter_tips_enabled"
+	AuditSupporterTipsRevised  AuditAction = "supporter_tips_revised"
+	AuditSupporterTipsDisabled AuditAction = "supporter_tips_disabled"
 	// AuditSupporterPlanCreated, AuditSupporterPlanRevised, AuditSupporterPlanRetired: an
 	// administrator created a supporter plan, changed its terms, or retired it (supporter_plans,
 	// supporter_plan_revisions, supporter_plan_retirements).
@@ -382,6 +388,14 @@ const (
 	// deliveries to it resume. The event of the health is its own record, which the entry does not
 	// point at.
 	AuditInstanceMarkedAvailable AuditAction = "instance_marked_available"
+	// AuditDeliveryRevealed: a holder of manage_domains was shown the sender, the activity URI,
+	// and the personal inbox that the admin API masks on a delivery to a remote server (ADR-0058
+	// §9); the source event is the delivery, and the target its server.
+	AuditDeliveryRevealed AuditAction = "delivery_revealed"
+	// AuditAccountDeliveriesViewed: a holder of manage_domains listed the deliveries of one local
+	// account to a remote server (ADR-0058 §9); the target is the account, its label the handle
+	// and the server, and the operation has no row of its own.
+	AuditAccountDeliveriesViewed AuditAction = "account_deliveries_viewed"
 	// AuditDomainAllowAdded and AuditDomainAllowRemoved: a domain was added to the allowlist of
 	// federation, and removed from it (ADR-0159 §8). The rows are resources that a removal
 	// deletes (domain_allows), so these entries have no source event, except a removal while
@@ -487,6 +501,9 @@ var auditActions = []struct {
 	{AuditCostItemDeleted, AuditTargetCostItem},
 	{AuditSupporterProgramEnabled, AuditTargetSupporterProgram},
 	{AuditSupporterProgramDisabled, AuditTargetSupporterProgram},
+	{AuditSupporterTipsEnabled, AuditTargetSupporterProgram},
+	{AuditSupporterTipsRevised, AuditTargetSupporterProgram},
+	{AuditSupporterTipsDisabled, AuditTargetSupporterProgram},
 	{AuditSupporterPlanCreated, AuditTargetSupporterPlan},
 	{AuditSupporterPlanRevised, AuditTargetSupporterPlan},
 	{AuditSupporterPlanRetired, AuditTargetSupporterPlan},
@@ -515,6 +532,8 @@ var auditActions = []struct {
 	{AuditLinkCardDomainImagesStopped, AuditTargetLinkCardDomain},
 	{AuditLinkCardDomainRuleRemoved, AuditTargetLinkCardDomain},
 	{AuditInstanceMarkedAvailable, AuditTargetDomain},
+	{AuditDeliveryRevealed, AuditTargetDomain},
+	{AuditAccountDeliveriesViewed, AuditTargetAccount},
 	{AuditDomainAllowAdded, AuditTargetDomainAllow},
 	{AuditDomainAllowRemoved, AuditTargetDomainAllow},
 	{AuditDomainListSubscriptionCreated, AuditTargetDomainListSubscription},

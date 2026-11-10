@@ -297,6 +297,7 @@ const (
 	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
 	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
 	AdminAuditActionAccountDeletionCanceled         AdminAuditAction = "account_deletion_canceled"
+	AdminAuditActionAccountDeliveriesViewed         AdminAuditAction = "account_deliveries_viewed"
 	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
@@ -322,6 +323,7 @@ const (
 	AdminAuditActionCustomEmojiRequestSubmitted     AdminAuditAction = "custom_emoji_request_submitted"
 	AdminAuditActionCustomEmojiRequestWithdrawn     AdminAuditAction = "custom_emoji_request_withdrawn"
 	AdminAuditActionCustomEmojiUpdated              AdminAuditAction = "custom_emoji_updated"
+	AdminAuditActionDeliveryRevealed                AdminAuditAction = "delivery_revealed"
 	AdminAuditActionDomainActionIssued              AdminAuditAction = "domain_action_issued"
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainAllowAdded                AdminAuditAction = "domain_allow_added"
@@ -394,6 +396,9 @@ const (
 	AdminAuditActionSupporterProgramDisabled        AdminAuditAction = "supporter_program_disabled"
 	AdminAuditActionSupporterProgramEnabled         AdminAuditAction = "supporter_program_enabled"
 	AdminAuditActionSupporterSubscriptionEnded      AdminAuditAction = "supporter_subscription_ended"
+	AdminAuditActionSupporterTipsDisabled           AdminAuditAction = "supporter_tips_disabled"
+	AdminAuditActionSupporterTipsEnabled            AdminAuditAction = "supporter_tips_enabled"
+	AdminAuditActionSupporterTipsRevised            AdminAuditAction = "supporter_tips_revised"
 	AdminAuditActionTextChanged                     AdminAuditAction = "text_changed"
 	AdminAuditActionTwoFactorDisabled               AdminAuditAction = "two_factor_disabled"
 	AdminAuditActionVoiceRoomEnded                  AdminAuditAction = "voice_room_ended"
@@ -413,6 +418,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionAccountActionLifted:
 		return true
 	case AdminAuditActionAccountDeletionCanceled:
+		return true
+	case AdminAuditActionAccountDeliveriesViewed:
 		return true
 	case AdminAuditActionAccountMoved:
 		return true
@@ -463,6 +470,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionCustomEmojiRequestWithdrawn:
 		return true
 	case AdminAuditActionCustomEmojiUpdated:
+		return true
+	case AdminAuditActionDeliveryRevealed:
 		return true
 	case AdminAuditActionDomainActionIssued:
 		return true
@@ -607,6 +616,12 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionSupporterProgramEnabled:
 		return true
 	case AdminAuditActionSupporterSubscriptionEnded:
+		return true
+	case AdminAuditActionSupporterTipsDisabled:
+		return true
+	case AdminAuditActionSupporterTipsEnabled:
+		return true
+	case AdminAuditActionSupporterTipsRevised:
 		return true
 	case AdminAuditActionTextChanged:
 		return true
@@ -802,6 +817,75 @@ func (e AdminAvailabilityEventReason) Valid() bool {
 	case AdminAvailabilityEventReasonOperator:
 		return true
 	case AdminAvailabilityEventReasonProbeSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDeliveryAttemptOutcome.
+const (
+	AdminDeliveryAttemptOutcomePermanentFailure AdminDeliveryAttemptOutcome = "permanent_failure"
+	AdminDeliveryAttemptOutcomeRetryableFailure AdminDeliveryAttemptOutcome = "retryable_failure"
+	AdminDeliveryAttemptOutcomeSkipped          AdminDeliveryAttemptOutcome = "skipped"
+	AdminDeliveryAttemptOutcomeSucceeded        AdminDeliveryAttemptOutcome = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the AdminDeliveryAttemptOutcome enum.
+func (e AdminDeliveryAttemptOutcome) Valid() bool {
+	switch e {
+	case AdminDeliveryAttemptOutcomePermanentFailure:
+		return true
+	case AdminDeliveryAttemptOutcomeRetryableFailure:
+		return true
+	case AdminDeliveryAttemptOutcomeSkipped:
+		return true
+	case AdminDeliveryAttemptOutcomeSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDeliveryAttemptSignatureScheme.
+const (
+	AdminDeliveryAttemptSignatureSchemeCavage  AdminDeliveryAttemptSignatureScheme = "cavage"
+	AdminDeliveryAttemptSignatureSchemeRfc9421 AdminDeliveryAttemptSignatureScheme = "rfc9421"
+)
+
+// Valid indicates whether the value is a known member of the AdminDeliveryAttemptSignatureScheme enum.
+func (e AdminDeliveryAttemptSignatureScheme) Valid() bool {
+	switch e {
+	case AdminDeliveryAttemptSignatureSchemeCavage:
+		return true
+	case AdminDeliveryAttemptSignatureSchemeRfc9421:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDeliveryMask.
+const (
+	AdminDeliveryMaskApprovesFollowers AdminDeliveryMask = "approves_followers"
+	AdminDeliveryMaskDirect            AdminDeliveryMask = "direct"
+	AdminDeliveryMaskLocal             AdminDeliveryMask = "local"
+	AdminDeliveryMaskPrivate           AdminDeliveryMask = "private"
+	AdminDeliveryMaskUnknown           AdminDeliveryMask = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the AdminDeliveryMask enum.
+func (e AdminDeliveryMask) Valid() bool {
+	switch e {
+	case AdminDeliveryMaskApprovesFollowers:
+		return true
+	case AdminDeliveryMaskDirect:
+		return true
+	case AdminDeliveryMaskLocal:
+		return true
+	case AdminDeliveryMaskPrivate:
+		return true
+	case AdminDeliveryMaskUnknown:
 		return true
 	default:
 		return false
@@ -2830,6 +2914,27 @@ func (e IncomeKind) Valid() bool {
 	case IncomeKindPayment:
 		return true
 	case IncomeKindRefund:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for IncomeSource.
+const (
+	IncomeSourceOneTime      IncomeSource = "one_time"
+	IncomeSourceSubscription IncomeSource = "subscription"
+	IncomeSourceUnknown      IncomeSource = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the IncomeSource enum.
+func (e IncomeSource) Valid() bool {
+	switch e {
+	case IncomeSourceOneTime:
+		return true
+	case IncomeSourceSubscription:
+		return true
+	case IncomeSourceUnknown:
 		return true
 	default:
 		return false
@@ -5002,6 +5107,27 @@ func (e SupporterSubscriptionState) Valid() bool {
 	}
 }
 
+// Defines values for SupporterTipState.
+const (
+	SupporterTipStateExpired SupporterTipState = "expired"
+	SupporterTipStateOpen    SupporterTipState = "open"
+	SupporterTipStatePaid    SupporterTipState = "paid"
+)
+
+// Valid indicates whether the value is a known member of the SupporterTipState enum.
+func (e SupporterTipState) Valid() bool {
+	switch e {
+	case SupporterTipStateExpired:
+		return true
+	case SupporterTipStateOpen:
+		return true
+	case SupporterTipStatePaid:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ThemeErrorCode.
 const (
 	ThemeErrorCodeCssInvalid     ThemeErrorCode = "css_invalid"
@@ -5047,6 +5173,27 @@ func (e ThemeErrorScheme) Valid() bool {
 	case ThemeErrorSchemeDark:
 		return true
 	case ThemeErrorSchemeLight:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for TipAmountsProblemReason.
+const (
+	TipAmountsProblemReasonCount    TipAmountsProblemReason = "count"
+	TipAmountsProblemReasonCurrency TipAmountsProblemReason = "currency"
+	TipAmountsProblemReasonRange    TipAmountsProblemReason = "range"
+)
+
+// Valid indicates whether the value is a known member of the TipAmountsProblemReason enum.
+func (e TipAmountsProblemReason) Valid() bool {
+	switch e {
+	case TipAmountsProblemReasonCount:
+		return true
+	case TipAmountsProblemReasonCurrency:
+		return true
+	case TipAmountsProblemReasonRange:
 		return true
 	default:
 		return false
@@ -6155,9 +6302,13 @@ type AdminAppealPage struct {
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 // suppression of the primary email address of the account's user), `account_moved` (a limited
-// local account moved to another local account, which does not inherit the limit). On a `domain`:
+// local account moved to another local account, which does not inherit the limit),
+// `account_deliveries_viewed` (a holder of `manage_domains` listed the deliveries of the
+// account to a remote server; the target name is the handle and the server). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
-// cleared the failures of the server). On a `report`: `report_assigned`,
+// cleared the failures of the server), `delivery_revealed` (a holder of `manage_domains` was
+// shown the masked sender, activity URI, and inbox of a delivery to the server, whose ID is
+// `source_event_id`). On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
 // `report_forwarded` (a moderator forwarded the report to the target's server). On a
 // `user` (a registration):
@@ -6199,7 +6350,9 @@ type AdminAppealPage struct {
 // `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
 // `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 // the item's name. On the `supporter_program`: `supporter_program_enabled`,
-// `supporter_program_disabled`; the label is the payment provider's name. On a
+// `supporter_program_disabled`, where the label is the payment provider's name, and
+// `supporter_tips_enabled`, `supporter_tips_revised` (their amounts), and
+// `supporter_tips_disabled`, where the label is the currency and the amounts in minor units. On a
 // `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
 // `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
 // `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
@@ -6244,9 +6397,13 @@ type AdminAuditEntry struct {
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 	// suppression of the primary email address of the account's user), `account_moved` (a limited
-	// local account moved to another local account, which does not inherit the limit). On a `domain`:
+	// local account moved to another local account, which does not inherit the limit),
+	// `account_deliveries_viewed` (a holder of `manage_domains` listed the deliveries of the
+	// account to a remote server; the target name is the handle and the server). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
-	// cleared the failures of the server). On a `report`: `report_assigned`,
+	// cleared the failures of the server), `delivery_revealed` (a holder of `manage_domains` was
+	// shown the masked sender, activity URI, and inbox of a delivery to the server, whose ID is
+	// `source_event_id`). On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
 	// `report_forwarded` (a moderator forwarded the report to the target's server). On a
 	// `user` (a registration):
@@ -6288,7 +6445,9 @@ type AdminAuditEntry struct {
 	// `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
 	// `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
 	// the item's name. On the `supporter_program`: `supporter_program_enabled`,
-	// `supporter_program_disabled`; the label is the payment provider's name. On a
+	// `supporter_program_disabled`, where the label is the payment provider's name, and
+	// `supporter_tips_enabled`, `supporter_tips_revised` (their amounts), and
+	// `supporter_tips_disabled`, where the label is the currency and the amounts in minor units. On a
 	// `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
 	// `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
 	// `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
@@ -6574,6 +6733,119 @@ type AdminCustomEmojiRequestPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminDelivery The delivery of an activity to one inbox of a remote server, with its attempts. `sender`,
+// `activity_uri`, and a personal `inbox_url` are absent when `mask` is present.
+type AdminDelivery struct {
+	// ActivityCreatedAt When the activity was recorded.
+	ActivityCreatedAt time.Time `json:"activity_created_at"`
+
+	// ActivityType The type of the activity, such as `Create`, `Follow`, or `Accept`.
+	ActivityType string  `json:"activity_type"`
+	ActivityUri  *string `json:"activity_uri,omitempty"`
+
+	// Attempts The attempts, oldest first.
+	Attempts []AdminDeliveryAttempt `json:"attempts"`
+
+	// CreatedAt When the inbox was added to the activity.
+	CreatedAt time.Time `json:"created_at"`
+	Domain    string    `json:"domain"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id       Id      `json:"id"`
+	InboxUrl *string `json:"inbox_url,omitempty"`
+
+	// Mask Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+	// `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+	// follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+	// the post or the account is gone, so what it was is no longer known.
+	Mask *AdminDeliveryMask `json:"mask,omitempty"`
+
+	// Sender The local account that sent the activity.
+	Sender *AdminDeliverySender `json:"sender,omitempty"`
+
+	// SharedInbox Whether the inbox is a shared inbox of the server, which names no recipient.
+	SharedInbox bool `json:"shared_inbox"`
+}
+
+// AdminDeliveryAttempt One attempt of a delivery.
+type AdminDeliveryAttempt struct {
+	AttemptedAt time.Time `json:"attempted_at"`
+
+	// Error Why the attempt failed without a response, or why nothing was sent.
+	Error *string `json:"error,omitempty"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Outcome `succeeded`: the server accepted the activity. `retryable_failure`: it failed in a way
+	// that is tried again. `permanent_failure`: the server refused it, and it is not sent
+	// again. `skipped`: nothing was sent, for the reason in `error`.
+	Outcome AdminDeliveryAttemptOutcome `json:"outcome"`
+
+	// SignatureScheme The signature scheme of the request that got the response; absent without a response.
+	SignatureScheme *AdminDeliveryAttemptSignatureScheme `json:"signature_scheme,omitempty"`
+
+	// StatusCode The status code of the response; absent without a response.
+	StatusCode *int `json:"status_code,omitempty"`
+}
+
+// AdminDeliveryAttemptOutcome `succeeded`: the server accepted the activity. `retryable_failure`: it failed in a way
+// that is tried again. `permanent_failure`: the server refused it, and it is not sent
+// again. `skipped`: nothing was sent, for the reason in `error`.
+type AdminDeliveryAttemptOutcome string
+
+// AdminDeliveryAttemptSignatureScheme The signature scheme of the request that got the response; absent without a response.
+type AdminDeliveryAttemptSignatureScheme string
+
+// AdminDeliveryMask Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+// `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+// follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+// the post or the account is gone, so what it was is no longer known.
+type AdminDeliveryMask string
+
+// AdminDeliveryPage A page of the deliveries to a remote server, newest first.
+type AdminDeliveryPage struct {
+	Items []AdminDelivery `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminDeliveryReveal The fields of a delivery that the list masks.
+type AdminDeliveryReveal struct {
+	ActivityUri string `json:"activity_uri"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id       Id     `json:"id"`
+	InboxUrl string `json:"inbox_url"`
+
+	// Mask Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+	// `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+	// follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+	// the post or the account is gone, so what it was is no longer known.
+	Mask *AdminDeliveryMask `json:"mask,omitempty"`
+
+	// Sender The local account that sent the activity.
+	Sender AdminDeliverySender `json:"sender"`
+}
+
+// AdminDeliverySender The local account that sent the activity.
+type AdminDeliverySender struct {
+	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	AccountId Id `json:"account_id"`
+
+	// Username The username of the account; absent for an account that is gone.
+	Username *string `json:"username,omitempty"`
 }
 
 // AdminDomainAction A moderation action on a remote domain and its subdomains.
@@ -7016,16 +7288,19 @@ type AdminHookSummary struct {
 // AdminIncomePeriodTotal A week, month, or year of the income totals as the administrators see it: the `gross`, the
 // provider's `fee`, and the `net` (gross less fee) of each currency, sorted by currency code,
 // and the `balance`, the net less the costs of each currency under the same basis.
+// `net_by_source` is the net of each source that the period has: the subscriptions, the tips
+// (`one_time`), and the movements of neither.
 type AdminIncomePeriodTotal struct {
 	Balance []Money `json:"balance"`
 
 	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
-	EndsOn CalendarDate `json:"ends_on"`
-	Fee    []Money      `json:"fee"`
-	Gross  []Money      `json:"gross"`
-	Label  string       `json:"label"`
-	Net    []Money      `json:"net"`
+	EndsOn      CalendarDate      `json:"ends_on"`
+	Fee         []Money           `json:"fee"`
+	Gross       []Money           `json:"gross"`
+	Label       string            `json:"label"`
+	Net         []Money           `json:"net"`
+	NetBySource []IncomeSourceNet `json:"net_by_source"`
 
 	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
 	// of a payment on a card statement or an invoice.
@@ -7034,7 +7309,7 @@ type AdminIncomePeriodTotal struct {
 
 // AdminIncomeTotals The income totals as the administrators see them over the periods from the one that holds
 // `from` to the one that holds `to`, oldest first, with the number of members of each
-// supporter plan now.
+// supporter plan now, and `tips`, whether the server takes tips now.
 type AdminIncomeTotals struct {
 	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
@@ -7057,6 +7332,7 @@ type AdminIncomeTotals struct {
 	// chargebacks taking back the days before them on their own date and cancelling the later
 	// ones.
 	Rules IncomeTotalsRules `json:"rules"`
+	Tips  bool              `json:"tips"`
 }
 
 // AdminInstanceHealth Whether deliveries go to a remote server.
@@ -8366,6 +8642,44 @@ type AdminSupporterSubscriptionPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminSupporterTipLimits The smallest and largest amount that the tips may offer in a currency.
+type AdminSupporterTipLimits struct {
+	// Maximum An amount of money: a decimal string in the major unit with the digits of
+	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
+	Maximum Money `json:"maximum"`
+
+	// Minimum An amount of money: a decimal string in the major unit with the digits of
+	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
+	Minimum Money `json:"minimum"`
+}
+
+// AdminSupporterTips The tips: whether the operator enabled them (`enabled`) with their `amounts`, and whether users
+// may tip now (`accepting`), which also needs the supporter program enabled on the configured
+// payment provider. `one_time_payments` reports whether that provider takes one-time payments,
+// and `limits` the smallest and largest amount of each currency that the tips may offer on it.
+// `server_limit_reached` reports that the starts of the last hour reached the limit of the whole
+// server, which may be card testing.
+type AdminSupporterTips struct {
+	Accepting bool `json:"accepting"`
+
+	// Amounts The amounts, smallest first; empty while the tips are disabled.
+	Amounts []Money `json:"amounts"`
+
+	// ChangedAt When the tips were last enabled, changed, or disabled; omitted for never.
+	ChangedAt          *time.Time                `json:"changed_at,omitempty"`
+	Enabled            bool                      `json:"enabled"`
+	Limits             []AdminSupporterTipLimits `json:"limits"`
+	OneTimePayments    bool                      `json:"one_time_payments"`
+	ServerLimitReached bool                      `json:"server_limit_reached"`
+}
+
+// AdminSupporterTipsRequest Enables the tips with their amounts, all in one currency, or disables them (`enabled` false,
+// without amounts).
+type AdminSupporterTipsRequest struct {
+	Amounts *[]Money `json:"amounts,omitempty"`
+	Enabled bool     `json:"enabled"`
 }
 
 // AdminTheme The instance theme as its administrators edit it.
@@ -11908,8 +12222,9 @@ type IncomeKind string
 // date in the provider's reporting time zone. A payment carries the billing period it pays
 // for (`covers_starts_on` to `covers_ends_on`) when it has one; a refund, a chargeback, or a
 // reversal carries the provider ID of its payment (`parent_provider_id`). `subscription_id`
-// names the subscription while it is known, and `account_id` and `username` its subscriber's
-// local account while the account exists; a fee of no subscription has none of them.
+// names the subscription while it is known, and `tip_id` the tip of a `one_time` movement while
+// its record is kept; `account_id` and `username` are the local account of the subscriber or of
+// the user who paid the tip while the account exists. A fee of no subscription has none of them.
 type IncomeMovement struct {
 	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
 	//
@@ -11956,12 +12271,22 @@ type IncomeMovement struct {
 	ProviderId       string       `json:"provider_id"`
 	RecordedAt       time.Time    `json:"recorded_at"`
 
+	// Source Where a money movement comes from: a subscription to a supporter plan (`subscription`), a tip
+	// (`one_time`), or neither (`unknown`: a payment taken outside this server, or a fee of no
+	// subscription). A refund, a chargeback, or a reversal has the source of its payment.
+	Source IncomeSource `json:"source"`
+
 	// SubscriptionId The ID of a resource, a UUIDv7 in its canonical string form.
 	//
 	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 	SubscriptionId *Id `json:"subscription_id,omitempty"`
 
-	// Username The subscriber's username; omitted with `account_id` for an erased account.
+	// TipId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	TipId *Id `json:"tip_id,omitempty"`
+
+	// Username The username of the subscriber or of the user who paid the tip; omitted with `account_id` for an erased account.
 	Username *string `json:"username,omitempty"`
 }
 
@@ -12012,10 +12337,27 @@ type IncomeProviderRule struct {
 	TimeZone string `json:"time_zone"`
 }
 
+// IncomeSource Where a money movement comes from: a subscription to a supporter plan (`subscription`), a tip
+// (`one_time`), or neither (`unknown`: a payment taken outside this server, or a fee of no
+// subscription). A refund, a chargeback, or a reversal has the source of its payment.
+type IncomeSource string
+
+// IncomeSourceNet The net of one source over a period, by currency.
+type IncomeSourceNet struct {
+	Net []Money `json:"net"`
+
+	// Source Where a money movement comes from: a subscription to a supporter plan (`subscription`), a tip
+	// (`one_time`), or neither (`unknown`: a payment taken outside this server, or a fee of no
+	// subscription). A refund, a chargeback, or a reversal has the source of its payment.
+	Source IncomeSource `json:"source"`
+}
+
 // IncomeTotals The income totals over the periods from the one that holds `from` to the one that holds
 // `to`, oldest first. `plans`, the number of members of each supporter plan
-// now, is present only where the plans are shown. No answer carries individual payments, the
-// subscribers, the amounts of each plan, or the gross and the fees.
+// now, is present only where the plans are shown, with `tips`, whether the totals include the
+// tips because the server takes them now. No answer carries individual payments, the
+// subscribers, the amounts of each plan, the amount or the number of the tips, or the gross and
+// the fees.
 type IncomeTotals struct {
 	// Basis How the totals place a payment. `amortized` (the default) spreads each
 	// payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
@@ -12038,6 +12380,7 @@ type IncomeTotals struct {
 	// chargebacks taking back the days before them on their own date and cancelling the later
 	// ones.
 	Rules IncomeTotalsRules `json:"rules"`
+	Tips  *bool             `json:"tips,omitempty"`
 }
 
 // IncomeTotalsRules How the income totals cut the periods and place the payments, to show
@@ -12261,6 +12604,10 @@ type Instance struct {
 	// timeline that is `off`, nor one that is `signed_in` to a visitor who is not logged in. On a
 	// one-person server (`single_user`) both are `off`, whatever the settings store.
 	Timelines InstanceTimelines `json:"timelines"`
+
+	// TipsEnabled Whether the server takes tips, one-time payments to its operation with nothing in return:
+	// their amounts (`GET /instance/tip_amounts`) and the tips show only then.
+	TipsEnabled bool `json:"tips_enabled"`
 
 	// Translation What the instance offers for translating posts, and what it sends where. With `browser` false and
 	// no `providers`, nothing can be translated and clients show no action for it.
@@ -14944,6 +15291,14 @@ type PreviewDomainBlockImportRequest struct {
 //     nothing was charged; update the card and try again.
 //   - `/api/v1/problems/supporter-payment-processing` (409): the payment of a change of plan has
 //     not settled. The plan stays, and moves if the payment succeeds.
+//   - `/api/v1/problems/supporter-tip-amount` (422): the amount of the tip is not one of the
+//     amounts of `GET /instance/tip_amounts`.
+//   - `/api/v1/problems/supporter-tip-pending` (409): another start of a tip of the user's runs at
+//     the same time; try again.
+//   - `/api/v1/problems/tips-unavailable` (409): the tips need the supporter program enabled on
+//     the configured payment provider, which takes one-time payments.
+//   - `/api/v1/problems/invalid-tip-amounts` (422): the amounts of the tips break a rule;
+//     `reason` says which.
 //   - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
 //   - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
 //   - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the
@@ -16350,6 +16705,48 @@ type SupporterSubscription struct {
 // before its first payment. The role is held while `active`, `canceling`, or `past_due`.
 type SupporterSubscriptionState string
 
+// SupporterTip A tip of the authenticated user.
+type SupporterTip struct {
+	// Amount An amount of money: a decimal string in the major unit with the digits of
+	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
+	Amount    Money     `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// PaidAt When the payment was recorded; omitted unless `paid`.
+	PaidAt *time.Time `json:"paid_at,omitempty"`
+
+	// State The state of a tip: `open` until its payment or the end of its checkout, `paid` once its
+	// payment settled, and `expired` when its checkout ended unpaid.
+	State SupporterTipState `json:"state"`
+}
+
+// SupporterTipCheckout The payment provider's hosted checkout of a tip.
+type SupporterTipCheckout struct {
+	// RedirectUrl Where to go next, in the same tab, which is the checkout unless the open tip was paid already.
+	RedirectUrl string `json:"redirect_url"`
+
+	// TipId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	TipId Id `json:"tip_id"`
+}
+
+// SupporterTipRequest A tip to start, of one of the amounts of `GET /instance/tip_amounts`.
+type SupporterTipRequest struct {
+	// Amount An amount of money: a decimal string in the major unit with the digits of
+	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
+	Amount Money `json:"amount"`
+}
+
+// SupporterTipState The state of a tip: `open` until its payment or the end of its checkout, `paid` once its
+// payment settled, and `expired` when its checkout ended unpaid.
+type SupporterTipState string
+
 // TagSuggestion A hashtag that the prefix search of hashtags found.
 type TagSuggestion struct {
 	// Name The hashtag as first written on this server, without `#`.
@@ -16415,6 +16812,43 @@ type ThemeTokenValue struct {
 	Token string  `json:"token"`
 	Value *string `json:"value,omitempty"`
 }
+
+// TipAmounts The amounts that a tip may be, smallest first, all in one currency.
+type TipAmounts struct {
+	Amounts []Money `json:"amounts"`
+}
+
+// TipAmountsProblem The problem of amounts of the tips that break a rule (422,
+// `/api/v1/problems/invalid-tip-amounts`); `reason` says which.
+type TipAmountsProblem struct {
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// Reason The rule that the amounts of the tips break: `count` (1 to 6 different amounts in one
+	// currency), `currency` (a currency that the tips and the payment provider take: JPY or USD),
+	// or `range` (each from ¥100 to ¥100,000 or from US$1 to US$1,000, and at least the provider's
+	// smallest one-time charge).
+	Reason *TipAmountsProblemReason `json:"reason,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type string `json:"type"`
+}
+
+// TipAmountsProblemReason The rule that the amounts of the tips break: `count` (1 to 6 different amounts in one
+// currency), `currency` (a currency that the tips and the payment provider take: JPY or USD),
+// or `range` (each from ¥100 to ¥100,000 or from US$1 to US$1,000, and at least the provider's
+// smallest one-time charge).
+type TipAmountsProblemReason string
 
 // TotpSetup A new TOTP secret to add to an authenticator app.
 type TotpSetup struct {
@@ -17392,6 +17826,11 @@ type CustomEmojiId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type CustomEmojiRequestId = Id
 
+// DeliveryId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type DeliveryId = Id
+
 // DomainActionId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -17538,6 +17977,11 @@ type SupporterPlanId = Id
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type SupporterSubscriptionId = Id
+
+// SupporterTipId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type SupporterTipId = Id
 
 // VoiceAccountId The ID of a resource, a UUIDv7 in its canonical string form.
 //
@@ -17930,6 +18374,21 @@ type ListInstanceHealthParams struct {
 
 // ListInstanceAvailabilityEventsParams defines parameters for ListInstanceAvailabilityEvents.
 type ListInstanceAvailabilityEventsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListInstanceDeliveriesParams defines parameters for ListInstanceDeliveries.
+type ListInstanceDeliveriesParams struct {
+	// AccountId Keep only the deliveries of the activities of this local account; audited.
+	AccountId *Id `form:"account_id,omitempty" json:"account_id,omitempty"`
+
+	// ActivityUri Keep only the deliveries of the activity with this ID.
+	ActivityUri *string `form:"activity_uri,omitempty" json:"activity_uri,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -18731,6 +19190,9 @@ type UpdateSupporterPlanJSONRequestBody = AdminSupporterPlanUpdateRequest
 // SetSupporterProgramJSONRequestBody defines body for SetSupporterProgram for application/json ContentType.
 type SetSupporterProgramJSONRequestBody = AdminSupporterProgramRequest
 
+// SetSupporterTipsJSONRequestBody defines body for SetSupporterTips for application/json ContentType.
+type SetSupporterTipsJSONRequestBody = AdminSupporterTipsRequest
+
 // SetAdminThemeJSONRequestBody defines body for SetAdminTheme for application/json ContentType.
 type SetAdminThemeJSONRequestBody = SetThemeRequest
 
@@ -18904,6 +19366,9 @@ type StartSupporterCheckoutJSONRequestBody = SupporterPlanChoice
 
 // ChangeOwnSupporterSubscriptionJSONRequestBody defines body for ChangeOwnSupporterSubscription for application/json ContentType.
 type ChangeOwnSupporterSubscriptionJSONRequestBody = SupporterPlanChoice
+
+// StartSupporterTipJSONRequestBody defines body for StartSupporterTip for application/json ContentType.
+type StartSupporterTipJSONRequestBody = SupporterTipRequest
 
 // RegenerateRecoveryCodesJSONRequestBody defines body for RegenerateRecoveryCodes for application/json ContentType.
 type RegenerateRecoveryCodesJSONRequestBody = TwoFactorCodeRequest
@@ -19342,6 +19807,12 @@ type ServerInterface interface {
 	// ListInstanceAvailabilityEvents List the times a remote server was marked unavailable or available
 	// (GET /admin/instances/{domain}/availability_events)
 	ListInstanceAvailabilityEvents(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params ListInstanceAvailabilityEventsParams)
+	// ListInstanceDeliveries List the deliveries to a remote server and their attempts
+	// (GET /admin/instances/{domain}/deliveries)
+	ListInstanceDeliveries(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params ListInstanceDeliveriesParams)
+	// RevealInstanceDelivery Show the sender, the activity URI, and the inbox of a delivery
+	// (POST /admin/instances/{domain}/deliveries/{id}/reveal)
+	RevealInstanceDelivery(w http.ResponseWriter, r *http.Request, domain InstanceDomain, id DeliveryId)
 	// MarkInstanceAvailable Mark a remote server available
 	// (POST /admin/instances/{domain}/mark_available)
 	MarkInstanceAvailable(w http.ResponseWriter, r *http.Request, domain InstanceDomain)
@@ -19570,6 +20041,12 @@ type ServerInterface interface {
 	// EndSupporterSubscription End a subscription at once
 	// (POST /admin/supporter_subscriptions/{id}/end)
 	EndSupporterSubscription(w http.ResponseWriter, r *http.Request, id SupporterSubscriptionId)
+	// GetSupporterTips Get the tips
+	// (GET /admin/supporter_tips)
+	GetSupporterTips(w http.ResponseWriter, r *http.Request)
+	// SetSupporterTips Enable or disable the tips
+	// (PUT /admin/supporter_tips)
+	SetSupporterTips(w http.ResponseWriter, r *http.Request)
 	// GetAdminTheme Read the instance theme
 	// (GET /admin/theme)
 	GetAdminTheme(w http.ResponseWriter, r *http.Request)
@@ -19870,6 +20347,9 @@ type ServerInterface interface {
 	// ListInstanceSupporters List the supporters who chose to be listed
 	// (GET /instance/supporters)
 	ListInstanceSupporters(w http.ResponseWriter, r *http.Request, params ListInstanceSupportersParams)
+	// GetInstanceTipAmounts Get the amounts of the tips
+	// (GET /instance/tip_amounts)
+	GetInstanceTipAmounts(w http.ResponseWriter, r *http.Request)
 	// ListInteractionRequests List the interaction requests to the authenticated user
 	// (GET /interaction_requests)
 	ListInteractionRequests(w http.ResponseWriter, r *http.Request, params ListInteractionRequestsParams)
@@ -20185,6 +20665,12 @@ type ServerInterface interface {
 	// SyncOwnSupporterSubscription Re-read the authenticated user's subscription from the payment provider
 	// (POST /supporter/subscription/sync)
 	SyncOwnSupporterSubscription(w http.ResponseWriter, r *http.Request)
+	// StartSupporterTip Start a tip
+	// (POST /supporter/tips)
+	StartSupporterTip(w http.ResponseWriter, r *http.Request)
+	// GetOwnSupporterTip Get a tip of the authenticated user
+	// (GET /supporter/tips/{id})
+	GetOwnSupporterTip(w http.ResponseWriter, r *http.Request, id SupporterTipId)
 	// SearchTags Search hashtags by prefix
 	// (GET /tags/search)
 	SearchTags(w http.ResponseWriter, r *http.Request, params SearchTagsParams)
@@ -24471,6 +24957,122 @@ func (siw *ServerInterfaceWrapper) ListInstanceAvailabilityEvents(w http.Respons
 	handler.ServeHTTP(w, r)
 }
 
+// ListInstanceDeliveries operation middleware
+func (siw *ServerInterfaceWrapper) ListInstanceDeliveries(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "domain" -------------
+	var domain InstanceDomain
+
+	err = runtime.BindStyledParameterWithOptions("simple", "domain", r.PathValue("domain"), &domain, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domain", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListInstanceDeliveriesParams
+
+	// ------------- Optional query parameter "account_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "account_id", r.URL.Query(), &params.AccountId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "account_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "activity_uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "activity_uri", r.URL.Query(), &params.ActivityUri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "activity_uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "activity_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInstanceDeliveries(w, r, domain, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevealInstanceDelivery operation middleware
+func (siw *ServerInterfaceWrapper) RevealInstanceDelivery(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "domain" -------------
+	var domain InstanceDomain
+
+	err = runtime.BindStyledParameterWithOptions("simple", "domain", r.PathValue("domain"), &domain, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domain", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id DeliveryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevealInstanceDelivery(w, r, domain, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // MarkInstanceAvailable operation middleware
 func (siw *ServerInterfaceWrapper) MarkInstanceAvailable(w http.ResponseWriter, r *http.Request) {
 
@@ -26529,6 +27131,34 @@ func (siw *ServerInterfaceWrapper) EndSupporterSubscription(w http.ResponseWrite
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.EndSupporterSubscription(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSupporterTips operation middleware
+func (siw *ServerInterfaceWrapper) GetSupporterTips(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSupporterTips(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetSupporterTips operation middleware
+func (siw *ServerInterfaceWrapper) SetSupporterTips(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetSupporterTips(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -29535,6 +30165,20 @@ func (siw *ServerInterfaceWrapper) ListInstanceSupporters(w http.ResponseWriter,
 	handler.ServeHTTP(w, r)
 }
 
+// GetInstanceTipAmounts operation middleware
+func (siw *ServerInterfaceWrapper) GetInstanceTipAmounts(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetInstanceTipAmounts(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListInteractionRequests operation middleware
 func (siw *ServerInterfaceWrapper) ListInteractionRequests(w http.ResponseWriter, r *http.Request) {
 
@@ -32147,6 +32791,46 @@ func (siw *ServerInterfaceWrapper) SyncOwnSupporterSubscription(w http.ResponseW
 	handler.ServeHTTP(w, r)
 }
 
+// StartSupporterTip operation middleware
+func (siw *ServerInterfaceWrapper) StartSupporterTip(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.StartSupporterTip(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetOwnSupporterTip operation middleware
+func (siw *ServerInterfaceWrapper) GetOwnSupporterTip(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id SupporterTipId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetOwnSupporterTip(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SearchTags operation middleware
 func (siw *ServerInterfaceWrapper) SearchTags(w http.ResponseWriter, r *http.Request) {
 
@@ -33650,6 +34334,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/income_totals", wrapper.GetInstanceIncomeTotals)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/supporter_plans", wrapper.ListSupporterPlans)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/supporters", wrapper.ListInstanceSupporters)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/instance/tip_amounts", wrapper.GetInstanceTipAmounts)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/accounts/verify_credentials", wrapper.VerifyAccountCredentials)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/accounts/update_credentials", wrapper.UpdateAccountCredentials)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/accounts/aliases", wrapper.RemoveAccountAlias)
@@ -33849,6 +34534,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/supporter/subscription/resume", wrapper.ResumeOwnSupporterSubscription)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/supporter/subscription/cancel_scheduled_change", wrapper.CancelOwnSupporterScheduledChange)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/supporter/portal", wrapper.OpenSupporterPortal)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/supporter/tips", wrapper.StartSupporterTip)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/supporter/tips/{id}", wrapper.GetOwnSupporterTip)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/voice/rooms", wrapper.ListVoiceRooms)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/voice/rooms", wrapper.OpenVoiceRoom)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/voice/rooms/{id}", wrapper.EndVoiceRoom)
@@ -33908,6 +34595,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instances/{domain}", wrapper.GetInstanceHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instances/{domain}/availability_events", wrapper.ListInstanceAvailabilityEvents)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/instances/{domain}/mark_available", wrapper.MarkInstanceAvailable)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instances/{domain}/deliveries", wrapper.ListInstanceDeliveries)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/instances/{domain}/deliveries/{id}/reveal", wrapper.RevealInstanceDelivery)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/audit_log", wrapper.ListAuditLog)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/billing_imports", wrapper.ListBillingImports)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/billing_imports/{source}/runs", wrapper.RunBillingImport)
@@ -34084,6 +34773,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/payment_reconciliation/runs", wrapper.RunPaymentReconciliation)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_program", wrapper.GetSupporterProgram)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/supporter_program", wrapper.SetSupporterProgram)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_tips", wrapper.GetSupporterTips)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/supporter_tips", wrapper.SetSupporterTips)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/supporter_plans", wrapper.ListAdminSupporterPlans)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/supporter_plans", wrapper.CreateSupporterPlan)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/admin/supporter_plans/{id}", wrapper.UpdateSupporterPlan)
@@ -34354,6 +35045,15 @@ type AdminSupporterProgramJSONResponse struct {
 	Body AdminSupporterProgram
 
 	Headers AdminSupporterProgramResponseHeaders
+}
+
+type AdminSupporterTipsResponseHeaders struct {
+	CacheControl *string
+}
+type AdminSupporterTipsJSONResponse struct {
+	Body AdminSupporterTips
+
+	Headers AdminSupporterTipsResponseHeaders
 }
 
 type AdminThemeResponseHeaders struct {
@@ -34635,6 +35335,16 @@ type SupporterPlanProblemApplicationProblemPlusJSONResponse struct {
 	Body SupporterPlanProblem
 
 	Headers SupporterPlanProblemResponseHeaders
+}
+
+type TipAmountsProblemResponseHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+type TipAmountsProblemApplicationProblemPlusJSONResponse struct {
+	Body TipAmountsProblem
+
+	Headers TipAmountsProblemResponseHeaders
 }
 
 type WebhookProblemResponseHeaders struct {
@@ -42454,6 +43164,132 @@ func (response ListInstanceAvailabilityEventsdefaultApplicationProblemPlusJSONRe
 	return err
 }
 
+type ListInstanceDeliveriesRequestObject struct {
+	Domain InstanceDomain `json:"domain"`
+	Params ListInstanceDeliveriesParams
+}
+
+type ListInstanceDeliveriesResponseObject interface {
+	VisitListInstanceDeliveriesResponse(w http.ResponseWriter) error
+}
+
+type ListInstanceDeliveries200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListInstanceDeliveries200JSONResponse struct {
+	Body    AdminDeliveryPage
+	Headers ListInstanceDeliveries200ResponseHeaders
+}
+
+func (response ListInstanceDeliveries200JSONResponse) VisitListInstanceDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstanceDeliveriesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListInstanceDeliveriesdefaultApplicationProblemPlusJSONResponse) VisitListInstanceDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealInstanceDeliveryRequestObject struct {
+	Domain InstanceDomain `json:"domain"`
+	Id     DeliveryId     `json:"id"`
+}
+
+type RevealInstanceDeliveryResponseObject interface {
+	VisitRevealInstanceDeliveryResponse(w http.ResponseWriter) error
+}
+
+type RevealInstanceDelivery200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RevealInstanceDelivery200JSONResponse struct {
+	Body    AdminDeliveryReveal
+	Headers RevealInstanceDelivery200ResponseHeaders
+}
+
+func (response RevealInstanceDelivery200JSONResponse) VisitRevealInstanceDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealInstanceDeliverydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevealInstanceDeliverydefaultApplicationProblemPlusJSONResponse) VisitRevealInstanceDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type MarkInstanceAvailableRequestObject struct {
 	Domain InstanceDomain `json:"domain"`
 }
@@ -47011,6 +47847,137 @@ type EndSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response EndSupporterSubscriptiondefaultApplicationProblemPlusJSONResponse) VisitEndSupporterSubscriptionResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSupporterTipsRequestObject struct {
+}
+
+type GetSupporterTipsResponseObject interface {
+	VisitGetSupporterTipsResponse(w http.ResponseWriter) error
+}
+
+type GetSupporterTips200JSONResponse struct{ AdminSupporterTipsJSONResponse }
+
+func (response GetSupporterTips200JSONResponse) VisitGetSupporterTipsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetSupporterTipsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetSupporterTipsdefaultApplicationProblemPlusJSONResponse) VisitGetSupporterTipsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetSupporterTipsRequestObject struct {
+	Body *SetSupporterTipsJSONRequestBody
+}
+
+type SetSupporterTipsResponseObject interface {
+	VisitSetSupporterTipsResponse(w http.ResponseWriter) error
+}
+
+type SetSupporterTips200JSONResponse struct{ AdminSupporterTipsJSONResponse }
+
+func (response SetSupporterTips200JSONResponse) VisitSetSupporterTipsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetSupporterTips422ApplicationProblemPlusJSONResponse struct {
+	TipAmountsProblemApplicationProblemPlusJSONResponse
+}
+
+func (response SetSupporterTips422ApplicationProblemPlusJSONResponse) VisitSetSupporterTipsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SetSupporterTipsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response SetSupporterTipsdefaultApplicationProblemPlusJSONResponse) VisitSetSupporterTipsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -53125,6 +54092,67 @@ func (response ListInstanceSupportersdefaultApplicationProblemPlusJSONResponse) 
 	return err
 }
 
+type GetInstanceTipAmountsRequestObject struct {
+}
+
+type GetInstanceTipAmountsResponseObject interface {
+	VisitGetInstanceTipAmountsResponse(w http.ResponseWriter) error
+}
+
+type GetInstanceTipAmounts200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetInstanceTipAmounts200JSONResponse struct {
+	Body    TipAmounts
+	Headers GetInstanceTipAmounts200ResponseHeaders
+}
+
+func (response GetInstanceTipAmounts200JSONResponse) VisitGetInstanceTipAmountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetInstanceTipAmountsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetInstanceTipAmountsdefaultApplicationProblemPlusJSONResponse) VisitGetInstanceTipAmountsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ListInteractionRequestsRequestObject struct {
 	Params ListInteractionRequestsParams
 }
@@ -59216,6 +60244,130 @@ func (response SyncOwnSupporterSubscriptiondefaultApplicationProblemPlusJSONResp
 	return err
 }
 
+type StartSupporterTipRequestObject struct {
+	Body *StartSupporterTipJSONRequestBody
+}
+
+type StartSupporterTipResponseObject interface {
+	VisitStartSupporterTipResponse(w http.ResponseWriter) error
+}
+
+type StartSupporterTip200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type StartSupporterTip200JSONResponse struct {
+	Body    SupporterTipCheckout
+	Headers StartSupporterTip200ResponseHeaders
+}
+
+func (response StartSupporterTip200JSONResponse) VisitStartSupporterTipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type StartSupporterTipdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response StartSupporterTipdefaultApplicationProblemPlusJSONResponse) VisitStartSupporterTipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOwnSupporterTipRequestObject struct {
+	Id SupporterTipId `json:"id"`
+}
+
+type GetOwnSupporterTipResponseObject interface {
+	VisitGetOwnSupporterTipResponse(w http.ResponseWriter) error
+}
+
+type GetOwnSupporterTip200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetOwnSupporterTip200JSONResponse struct {
+	Body    SupporterTip
+	Headers GetOwnSupporterTip200ResponseHeaders
+}
+
+func (response GetOwnSupporterTip200JSONResponse) VisitGetOwnSupporterTipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetOwnSupporterTipdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetOwnSupporterTipdefaultApplicationProblemPlusJSONResponse) VisitGetOwnSupporterTipResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SearchTagsRequestObject struct {
 	Params SearchTagsParams
 }
@@ -62117,6 +63269,12 @@ type StrictServerInterface interface {
 	// ListInstanceAvailabilityEvents List the times a remote server was marked unavailable or available
 	// (GET /admin/instances/{domain}/availability_events)
 	ListInstanceAvailabilityEvents(ctx context.Context, request ListInstanceAvailabilityEventsRequestObject) (ListInstanceAvailabilityEventsResponseObject, error)
+	// ListInstanceDeliveries List the deliveries to a remote server and their attempts
+	// (GET /admin/instances/{domain}/deliveries)
+	ListInstanceDeliveries(ctx context.Context, request ListInstanceDeliveriesRequestObject) (ListInstanceDeliveriesResponseObject, error)
+	// RevealInstanceDelivery Show the sender, the activity URI, and the inbox of a delivery
+	// (POST /admin/instances/{domain}/deliveries/{id}/reveal)
+	RevealInstanceDelivery(ctx context.Context, request RevealInstanceDeliveryRequestObject) (RevealInstanceDeliveryResponseObject, error)
 	// MarkInstanceAvailable Mark a remote server available
 	// (POST /admin/instances/{domain}/mark_available)
 	MarkInstanceAvailable(ctx context.Context, request MarkInstanceAvailableRequestObject) (MarkInstanceAvailableResponseObject, error)
@@ -62345,6 +63503,12 @@ type StrictServerInterface interface {
 	// EndSupporterSubscription End a subscription at once
 	// (POST /admin/supporter_subscriptions/{id}/end)
 	EndSupporterSubscription(ctx context.Context, request EndSupporterSubscriptionRequestObject) (EndSupporterSubscriptionResponseObject, error)
+	// GetSupporterTips Get the tips
+	// (GET /admin/supporter_tips)
+	GetSupporterTips(ctx context.Context, request GetSupporterTipsRequestObject) (GetSupporterTipsResponseObject, error)
+	// SetSupporterTips Enable or disable the tips
+	// (PUT /admin/supporter_tips)
+	SetSupporterTips(ctx context.Context, request SetSupporterTipsRequestObject) (SetSupporterTipsResponseObject, error)
 	// GetAdminTheme Read the instance theme
 	// (GET /admin/theme)
 	GetAdminTheme(ctx context.Context, request GetAdminThemeRequestObject) (GetAdminThemeResponseObject, error)
@@ -62645,6 +63809,9 @@ type StrictServerInterface interface {
 	// ListInstanceSupporters List the supporters who chose to be listed
 	// (GET /instance/supporters)
 	ListInstanceSupporters(ctx context.Context, request ListInstanceSupportersRequestObject) (ListInstanceSupportersResponseObject, error)
+	// GetInstanceTipAmounts Get the amounts of the tips
+	// (GET /instance/tip_amounts)
+	GetInstanceTipAmounts(ctx context.Context, request GetInstanceTipAmountsRequestObject) (GetInstanceTipAmountsResponseObject, error)
 	// ListInteractionRequests List the interaction requests to the authenticated user
 	// (GET /interaction_requests)
 	ListInteractionRequests(ctx context.Context, request ListInteractionRequestsRequestObject) (ListInteractionRequestsResponseObject, error)
@@ -62960,6 +64127,12 @@ type StrictServerInterface interface {
 	// SyncOwnSupporterSubscription Re-read the authenticated user's subscription from the payment provider
 	// (POST /supporter/subscription/sync)
 	SyncOwnSupporterSubscription(ctx context.Context, request SyncOwnSupporterSubscriptionRequestObject) (SyncOwnSupporterSubscriptionResponseObject, error)
+	// StartSupporterTip Start a tip
+	// (POST /supporter/tips)
+	StartSupporterTip(ctx context.Context, request StartSupporterTipRequestObject) (StartSupporterTipResponseObject, error)
+	// GetOwnSupporterTip Get a tip of the authenticated user
+	// (GET /supporter/tips/{id})
+	GetOwnSupporterTip(ctx context.Context, request GetOwnSupporterTipRequestObject) (GetOwnSupporterTipResponseObject, error)
 	// SearchTags Search hashtags by prefix
 	// (GET /tags/search)
 	SearchTags(ctx context.Context, request SearchTagsRequestObject) (SearchTagsResponseObject, error)
@@ -66832,6 +68005,60 @@ func (sh *strictHandler) ListInstanceAvailabilityEvents(w http.ResponseWriter, r
 	}
 }
 
+// ListInstanceDeliveries operation middleware
+func (sh *strictHandler) ListInstanceDeliveries(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params ListInstanceDeliveriesParams) {
+	var request ListInstanceDeliveriesRequestObject
+
+	request.Domain = domain
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInstanceDeliveries(ctx, request.(ListInstanceDeliveriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInstanceDeliveries")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInstanceDeliveriesResponseObject); ok {
+		if err := validResponse.VisitListInstanceDeliveriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevealInstanceDelivery operation middleware
+func (sh *strictHandler) RevealInstanceDelivery(w http.ResponseWriter, r *http.Request, domain InstanceDomain, id DeliveryId) {
+	var request RevealInstanceDeliveryRequestObject
+
+	request.Domain = domain
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevealInstanceDelivery(ctx, request.(RevealInstanceDeliveryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevealInstanceDelivery")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevealInstanceDeliveryResponseObject); ok {
+		if err := validResponse.VisitRevealInstanceDeliveryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // MarkInstanceAvailable operation middleware
 func (sh *strictHandler) MarkInstanceAvailable(w http.ResponseWriter, r *http.Request, domain InstanceDomain) {
 	var request MarkInstanceAvailableRequestObject
@@ -68946,6 +70173,61 @@ func (sh *strictHandler) EndSupporterSubscription(w http.ResponseWriter, r *http
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(EndSupporterSubscriptionResponseObject); ok {
 		if err := validResponse.VisitEndSupporterSubscriptionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSupporterTips operation middleware
+func (sh *strictHandler) GetSupporterTips(w http.ResponseWriter, r *http.Request) {
+	var request GetSupporterTipsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSupporterTips(ctx, request.(GetSupporterTipsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSupporterTips")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSupporterTipsResponseObject); ok {
+		if err := validResponse.VisitGetSupporterTipsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetSupporterTips operation middleware
+func (sh *strictHandler) SetSupporterTips(w http.ResponseWriter, r *http.Request) {
+	var request SetSupporterTipsRequestObject
+
+	var body SetSupporterTipsJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetSupporterTips(ctx, request.(SetSupporterTipsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetSupporterTips")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetSupporterTipsResponseObject); ok {
+		if err := validResponse.VisitSetSupporterTipsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -71695,6 +72977,30 @@ func (sh *strictHandler) ListInstanceSupporters(w http.ResponseWriter, r *http.R
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListInstanceSupportersResponseObject); ok {
 		if err := validResponse.VisitListInstanceSupportersResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetInstanceTipAmounts operation middleware
+func (sh *strictHandler) GetInstanceTipAmounts(w http.ResponseWriter, r *http.Request) {
+	var request GetInstanceTipAmountsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetInstanceTipAmounts(ctx, request.(GetInstanceTipAmountsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetInstanceTipAmounts")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetInstanceTipAmountsResponseObject); ok {
+		if err := validResponse.VisitGetInstanceTipAmountsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -74574,6 +75880,63 @@ func (sh *strictHandler) SyncOwnSupporterSubscription(w http.ResponseWriter, r *
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SyncOwnSupporterSubscriptionResponseObject); ok {
 		if err := validResponse.VisitSyncOwnSupporterSubscriptionResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// StartSupporterTip operation middleware
+func (sh *strictHandler) StartSupporterTip(w http.ResponseWriter, r *http.Request) {
+	var request StartSupporterTipRequestObject
+
+	var body StartSupporterTipJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.StartSupporterTip(ctx, request.(StartSupporterTipRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StartSupporterTip")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(StartSupporterTipResponseObject); ok {
+		if err := validResponse.VisitStartSupporterTipResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetOwnSupporterTip operation middleware
+func (sh *strictHandler) GetOwnSupporterTip(w http.ResponseWriter, r *http.Request, id SupporterTipId) {
+	var request GetOwnSupporterTipRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetOwnSupporterTip(ctx, request.(GetOwnSupporterTipRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetOwnSupporterTip")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetOwnSupporterTipResponseObject); ok {
+		if err := validResponse.VisitGetOwnSupporterTipResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

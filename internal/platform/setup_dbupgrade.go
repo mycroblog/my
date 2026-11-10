@@ -7,6 +7,8 @@ import (
 	"fmt"
 
 	"github.com/mycroblog/my/internal/app/dbupgrade"
+	appfinance "github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/uow"
 )
 
 // DataUpgrades are the data upgrade steps of `my db upgrade` and the prerequisites of
@@ -26,14 +28,24 @@ type DataUpgrades struct {
 //
 // scripts/release-notes.sh reads the returned literal from this file for the release notes, at
 // each release: keep the steps in it, with literal strings, or that script fails.
-func (a *App) dataUpgrades() DataUpgrades {
-	return DataUpgrades{}
+func (a *App) dataUpgrades(income appfinance.IncomeRepository) DataUpgrades {
+	return DataUpgrades{
+		Steps: []dbupgrade.Step{
+			{
+				Key:         "finance.income_sources",
+				Description: "Gives the income movements recorded before tips their source: the subscriptions' movements and their refunds and chargebacks become subscription, the rest stays unknown.",
+				Run: func(ctx context.Context, u uow.UnitOfWork) error {
+					return appfinance.UpgradeIncomeSources(ctx, u, income)
+				},
+			},
+		},
+	}
 }
 
 // setUpDataUpgrades builds the service of `my db upgrade`, whose record the readiness check
 // also reads. A step rebuilds its projections with the service of `my projection`.
-func (a *App) setUpDataUpgrades(repo dbupgrade.Repository, override *DataUpgrades) error {
-	ups := a.dataUpgrades()
+func (a *App) setUpDataUpgrades(repo dbupgrade.Repository, income appfinance.IncomeRepository, override *DataUpgrades) error {
+	ups := a.dataUpgrades(income)
 	if override != nil {
 		ups = *override
 	}

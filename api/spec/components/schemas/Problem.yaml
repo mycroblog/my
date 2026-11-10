@@ -170,6 +170,14 @@ description: |
     nothing was charged; update the card and try again.
   - `/api/v1/problems/supporter-payment-processing` (409): the payment of a change of plan has
     not settled. The plan stays, and moves if the payment succeeds.
+  - `/api/v1/problems/supporter-tip-amount` (422): the amount of the tip is not one of the
+    amounts of `GET /instance/tip_amounts`.
+  - `/api/v1/problems/supporter-tip-pending` (409): another start of a tip of the user's runs at
+    the same time; try again.
+  - `/api/v1/problems/tips-unavailable` (409): the tips need the supporter program enabled on
+    the configured payment provider, which takes one-time payments.
+  - `/api/v1/problems/invalid-tip-amounts` (422): the amounts of the tips break a rule;
+    `reason` says which.
   - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
   - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
   - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the

@@ -1,0 +1,27 @@
+# SPDX-License-Identifier: MIT
+description: One attempt of a delivery.
+type: object
+required: [id, outcome, attempted_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  outcome:
+    description: |
+      `succeeded`: the server accepted the activity. `retryable_failure`: it failed in a way
+      that is tried again. `permanent_failure`: the server refused it, and it is not sent
+      again. `skipped`: nothing was sent, for the reason in `error`.
+    type: string
+    enum: [succeeded, retryable_failure, permanent_failure, skipped]
+  signature_scheme:
+    description: The signature scheme of the request that got the response; absent without a response.
+    type: string
+    enum: [rfc9421, cavage]
+  status_code:
+    description: The status code of the response; absent without a response.
+    type: integer
+  error:
+    description: Why the attempt failed without a response, or why nothing was sent.
+    type: string
+  attempted_at:
+    type: string
+    format: date-time

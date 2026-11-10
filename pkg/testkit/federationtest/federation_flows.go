@@ -60,7 +60,8 @@ type FederationFactory func(t *testing.T, opts uow.Options) FederationHarness
 // responses, the circuit breaker, the failure days that make a server unavailable and the
 // successes, signed requests, and probes that bring it back, and the dead job after the retry
 // schedule. It covers the admin views too: the servers with a health row by state and page, the
-// pages of availability events, and an operator's clearing of a server. The other modules are
+// pages of availability events, an operator's clearing of a server, and the deliveries to a
+// server with their attempts, masked where the activity is not public. The other modules are
 // in-memory stand-ins; the fan-out reads its recipients in batches of two, so that every source
 // of recipients spans several jobs.
 func FederationFlows(t *testing.T, newHarness FederationFactory) {
@@ -98,6 +99,7 @@ func FederationFlows(t *testing.T, newHarness FederationFactory) {
 		{"BuriesExhaustedDeliveries", fedBuriesExhaustedDeliveries},
 		{"ProbesUnavailableServers", fedProbesUnavailableServers},
 		{"ListsAndClearsServersForOperators", fedListsServersForOperators},
+		{"ShowsTheDeliveriesToAServerToOperators", fedShowsDeliveriesToOperators},
 		{"DeliversTheClosureDeletes", fedDeliversTheClosureDeletes},
 		{"CountsPendingMoves", fedCountsPendingMoves},
 	}

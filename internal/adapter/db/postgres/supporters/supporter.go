@@ -839,6 +839,9 @@ func (r *SupporterRepository) EraseUser(ctx context.Context, tx uow.Tx, userID s
 	if err := q.DeleteSupporterListing(ctx, userID); err != nil {
 		return postgres.Wrap(err, "delete supporter listing")
 	}
+	if err := eraseTips(ctx, q, userID); err != nil {
+		return err
+	}
 	return postgres.Wrap(q.DeleteSupporterCustomersOfUser(ctx, userID), "delete supporter customers")
 }
 
@@ -862,6 +865,8 @@ func (r *SupporterRepository) RebuildProjections(ctx context.Context, tx uow.Tx)
 		{"rebuild supporter live subscriptions", q.RebuildSupporterLiveSubscriptions},
 		{"delete supporter deadlines", q.DeleteAllSupporterDeadlines},
 		{"rebuild supporter deadlines", q.RebuildSupporterDeadlines},
+		{"delete supporter open tips", q.DeleteAllSupporterOpenTips},
+		{"rebuild supporter open tips", q.RebuildSupporterOpenTips},
 	} {
 		if err := step.run(ctx); err != nil {
 			return postgres.Wrap(err, step.what)

@@ -95,6 +95,9 @@ func TestMaintenanceExportOffline(t *testing.T) {
 func TestMaintenanceExportReadsTheDatabase(t *testing.T) {
 	newAdminEnv(t)
 	t.Setenv("MY_MAINTENANCE_SERVER_NAME", "")
+	if code, _, stderr := runCmd(t, dbCmd, "upgrade"); code != 0 {
+		t.Fatalf("db upgrade = %d %q", code, stderr)
+	}
 	mustInstance(t, "", "set", "name", "Example Social")
 	mustInstance(t, "", "set", "default_locale", "ja")
 	mustInstance(t, `{"tokens":[{"token":"color-accent","light":"#123456","dark":"#abcdef"}],"custom_css":"body{display:none}"}`, "theme", "set")

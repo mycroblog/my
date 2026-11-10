@@ -106,6 +106,7 @@ var jobTypes = []string{
 	"supporters.reconcile_payments",
 	"supporters.sync",
 	"supporters.sync_due",
+	"supporters.sync_tip",
 	"translation.purge_cache",
 	"voice.apply",
 	"voice.apply_media_event",

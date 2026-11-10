@@ -317,6 +317,16 @@ func (s *recordingSyncer) OpenCheckouts(context.Context, string, time.Time) ([]s
 	return slices.Clone(s.open), nil
 }
 
+// SyncTip implements supporters.Syncer; the payment harness has no tips.
+func (s *recordingSyncer) SyncTip(context.Context, string, supporters.OneTimeResult) (bool, error) {
+	return false, nil
+}
+
+// OpenTipCheckouts implements supporters.Syncer; the payment harness has no tips.
+func (s *recordingSyncer) OpenTipCheckouts(context.Context, string, time.Time) ([]supporters.CheckoutRef, error) {
+	return nil, nil
+}
+
 func (s *recordingSyncer) snapshot(local string) (supporters.SubscriptionSnapshot, int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

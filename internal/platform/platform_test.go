@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/mycroblog/my/internal/app/dbupgrade"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/platform"
@@ -109,6 +110,9 @@ func startApp(t *testing.T, cfg *config.Config, appOpts platform.AppOptions, opt
 		t.Fatalf("NewApp: %v", err)
 	}
 	t.Cleanup(func() { _ = app.Close() })
+	if appOpts.DataUpgrades == nil {
+		upgrade(t, app)
+	}
 	if setup != nil {
 		setup(app)
 	}
@@ -546,5 +550,14 @@ func TestConfigAndInstanceSettingsShareNoKey(t *testing.T) {
 		if db[k] {
 			t.Errorf("%q is both a configuration key and an instance setting or text key", k)
 		}
+	}
+}
+
+// upgrade runs the data upgrade steps on app's database, as `my db upgrade` does after the schema is applied, so that
+// the server is ready; a database without the schema has nothing to upgrade yet.
+func upgrade(t *testing.T, app *platform.App) {
+	t.Helper()
+	if _, err := app.DataUpgrades.Upgrade(t.Context(), nil); err != nil && !errors.Is(err, dbupgrade.ErrEmptyDatabase) && !errors.Is(err, dbupgrade.ErrNoRecord) {
+		t.Fatalf("my db upgrade: %v", err)
 	}
 }

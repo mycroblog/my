@@ -69,6 +69,7 @@ serve)
 	# A git worktree's .git points outside the mount, so the build stamps no VCS information.
 	go build -trimpath -buildvcs=false -tags "${GO_TAGS:-}" -ldflags "-X main.version=dev" -o "$HOME/bin/my" ./cmd/my
 	my schema apply
+	my db upgrade
 	exec my serve -dev-vite-origin "${VITE_ORIGIN:?}"
 	;;
 vite)

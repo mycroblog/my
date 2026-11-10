@@ -80,6 +80,7 @@ function instance(federated: Instance["timelines"]["federated"]): Instance {
     finance_visibility: "private",
     income_visibility: "private",
     supporters_enabled: false,
+    tips_enabled: false,
     supporter_list_visibility: "off",
     voice_enabled: false,
     voice_room_starters: "permitted",

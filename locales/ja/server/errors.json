@@ -319,6 +319,38 @@
     "defaultMessage": "いまの加入がすでにこのプランと支払いの間隔です。",
     "description": "API error title for HTTP 422 when a user changes their subscription to the plan and interval it has."
   },
+  "errors.supporters.tip_amount": {
+    "defaultMessage": "チップの金額はサーバーの候補から選んでください。",
+    "description": "API error title for HTTP 422 when a user starts a tip of an amount that is not one of the operator's choices (ADR-0162 §6)."
+  },
+  "errors.supporters.tip_amount_detail": {
+    "defaultMessage": "サーバーが示している金額のどれかを選んでください。",
+    "description": "API error detail for HTTP 422 when a tip is not of one of the server's amounts."
+  },
+  "errors.supporters.tip_pending": {
+    "defaultMessage": "ほかのチップの支払いを始めているところです。",
+    "description": "API error title for HTTP 409 when two starts of a tip of one user run at the same time (ADR-0162 §13)."
+  },
+  "errors.supporters.tip_pending_detail": {
+    "defaultMessage": "少し待ってからやり直してください。",
+    "description": "API error detail for HTTP 409 when another start of a tip of the user runs."
+  },
+  "errors.supporters.tips_unavailable": {
+    "defaultMessage": "このサーバーではチップを使えません。",
+    "description": "API error title for HTTP 409 when an administrator enables the tips while the supporter program is disabled or the payment provider takes no one-time payments (ADR-0162 §3)."
+  },
+  "errors.supporters.tips_unavailable_detail": {
+    "defaultMessage": "先に、1 回の支払いを受けられる決済の事業者で課金の機能を有効にしてください。",
+    "description": "API error detail for HTTP 409 when the tips cannot be enabled."
+  },
+  "errors.supporters.tip_amounts_invalid": {
+    "defaultMessage": "チップの金額を保存できません。",
+    "description": "API error title for HTTP 422 when the amounts of the tips break a rule; the detail says which (ADR-0162 §6)."
+  },
+  "errors.supporters.tip_amounts_invalid_detail": {
+    "defaultMessage": "{reason, select, count {1 つの通貨で、異なる金額を 1〜6 つ選んでください。} currency {チップは円か米ドルで受け、決済の事業者がその通貨を受けられる必要があります。} range {各金額は 100 円〜10 万円か 1〜1000 米ドルで、決済の事業者の最低額以上にしてください。} other {金額が決まりを満たしていません。}}",
+    "description": "API error detail for HTTP 422 when the amounts of the tips break a rule. {reason} is count, currency, or range."
+  },
   "errors.supporters.payment_failed": {
     "defaultMessage": "この変更の支払いに失敗したので、プランは変わっていません。",
     "description": "API error title for HTTP 402 when the payment of a change of supporter plan failed."

@@ -3,8 +3,10 @@ description: |
   A week, month, or year of the income totals as the administrators see it: the `gross`, the
   provider's `fee`, and the `net` (gross less fee) of each currency, sorted by currency code,
   and the `balance`, the net less the costs of each currency under the same basis.
+  `net_by_source` is the net of each source that the period has: the subscriptions, the tips
+  (`one_time`), and the movements of neither.
 type: object
-required: [label, starts_on, ends_on, gross, fee, net, balance]
+required: [label, starts_on, ends_on, gross, fee, net, balance, net_by_source]
 properties:
   label:
     type: string
@@ -28,3 +30,7 @@ properties:
     type: array
     items:
       $ref: ./Money.yaml
+  net_by_source:
+    type: array
+    items:
+      $ref: ./IncomeSourceNet.yaml

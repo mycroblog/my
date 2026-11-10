@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: revealInstanceDelivery
+  x-permission: manage_domains
+  summary: Show the sender, the activity URI, and the inbox of a delivery
+  description: |
+    The fields that the list of deliveries masks, of one delivery to the server: its local
+    sender, the URI of its activity, and its inbox. Each call is recorded in the audit log as
+    `delivery_revealed` before anything is returned, also for a delivery that is not masked;
+    it changes nothing else. The body of the activity is never returned. A delivery that is
+    unknown or went to another server is a 404. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/InstanceDomain.yaml
+    - $ref: ../components/parameters/DeliveryId.yaml
+  responses:
+    "200":
+      description: The masked fields of the delivery.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminDeliveryReveal.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

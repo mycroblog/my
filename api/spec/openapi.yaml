@@ -168,6 +168,8 @@ paths:
     $ref: ./paths/instance_supporter_plans.yaml
   /instance/supporters:
     $ref: ./paths/instance_supporters.yaml
+  /instance/tip_amounts:
+    $ref: ./paths/instance_tip_amounts.yaml
   /accounts/verify_credentials:
     $ref: ./paths/accounts_verify_credentials.yaml
   /accounts/update_credentials:
@@ -468,6 +470,10 @@ paths:
     $ref: ./paths/supporter_subscription_cancel_scheduled_change.yaml
   /supporter/portal:
     $ref: ./paths/supporter_portal.yaml
+  /supporter/tips:
+    $ref: ./paths/supporter_tips.yaml
+  /supporter/tips/{id}:
+    $ref: ./paths/supporter_tips_{id}.yaml
   /voice/rooms:
     $ref: ./paths/voice_rooms.yaml
   /voice/rooms/{id}:
@@ -560,6 +566,10 @@ paths:
     $ref: ./paths/admin_instances_{domain}_availability_events.yaml
   /admin/instances/{domain}/mark_available:
     $ref: ./paths/admin_instances_{domain}_mark_available.yaml
+  /admin/instances/{domain}/deliveries:
+    $ref: ./paths/admin_instances_{domain}_deliveries.yaml
+  /admin/instances/{domain}/deliveries/{id}/reveal:
+    $ref: ./paths/admin_instances_{domain}_deliveries_{id}_reveal.yaml
   /admin/audit_log:
     $ref: ./paths/admin_audit_log.yaml
   /admin/billing_imports:
@@ -838,6 +848,8 @@ paths:
     $ref: ./paths/admin_payment_reconciliation_runs.yaml
   /admin/supporter_program:
     $ref: ./paths/admin_supporter_program.yaml
+  /admin/supporter_tips:
+    $ref: ./paths/admin_supporter_tips.yaml
   /admin/supporter_plans:
     $ref: ./paths/admin_supporter_plans.yaml
   /admin/supporter_plans/{id}:
@@ -1013,6 +1025,8 @@ components:
       $ref: ./components/parameters/EventId.yaml
     EventVoteFilter:
       $ref: ./components/parameters/EventVoteFilter.yaml
+    DeliveryId:
+      $ref: ./components/parameters/DeliveryId.yaml
     DomainActionId:
       $ref: ./components/parameters/DomainActionId.yaml
     HookDecisionId:
@@ -1069,6 +1083,8 @@ components:
       $ref: ./components/parameters/SupporterPlanId.yaml
     SupporterSubscriptionId:
       $ref: ./components/parameters/SupporterSubscriptionId.yaml
+    SupporterTipId:
+      $ref: ./components/parameters/SupporterTipId.yaml
     VoiceAccountId:
       $ref: ./components/parameters/VoiceAccountId.yaml
     VoiceRoomId:
@@ -1138,6 +1154,8 @@ components:
       $ref: ./components/responses/AdminSupporterPlan.yaml
     AdminSupporterProgram:
       $ref: ./components/responses/AdminSupporterProgram.yaml
+    AdminSupporterTips:
+      $ref: ./components/responses/AdminSupporterTips.yaml
     AdminTheme:
       $ref: ./components/responses/AdminTheme.yaml
     AdminServiceClosure:
@@ -1180,6 +1198,8 @@ components:
       $ref: ./components/responses/StatusPage.yaml
     SupporterPlanProblem:
       $ref: ./components/responses/SupporterPlanProblem.yaml
+    TipAmountsProblem:
+      $ref: ./components/responses/TipAmountsProblem.yaml
     WebhookProblem:
       $ref: ./components/responses/WebhookProblem.yaml
     List:
@@ -1371,6 +1391,18 @@ components:
       $ref: ./components/schemas/AdminAvailabilityEvent.yaml
     AdminAvailabilityEventPage:
       $ref: ./components/schemas/AdminAvailabilityEventPage.yaml
+    AdminDelivery:
+      $ref: ./components/schemas/AdminDelivery.yaml
+    AdminDeliveryAttempt:
+      $ref: ./components/schemas/AdminDeliveryAttempt.yaml
+    AdminDeliveryMask:
+      $ref: ./components/schemas/AdminDeliveryMask.yaml
+    AdminDeliveryPage:
+      $ref: ./components/schemas/AdminDeliveryPage.yaml
+    AdminDeliveryReveal:
+      $ref: ./components/schemas/AdminDeliveryReveal.yaml
+    AdminDeliverySender:
+      $ref: ./components/schemas/AdminDeliverySender.yaml
     AdminCounts:
       $ref: ./components/schemas/AdminCounts.yaml
     AdminCustomEmoji:
@@ -1591,6 +1623,12 @@ components:
       $ref: ./components/schemas/AdminSupporterProgram.yaml
     AdminSupporterProgramRequest:
       $ref: ./components/schemas/AdminSupporterProgramRequest.yaml
+    AdminSupporterTipLimits:
+      $ref: ./components/schemas/AdminSupporterTipLimits.yaml
+    AdminSupporterTips:
+      $ref: ./components/schemas/AdminSupporterTips.yaml
+    AdminSupporterTipsRequest:
+      $ref: ./components/schemas/AdminSupporterTipsRequest.yaml
     AdminSupporterSubscription:
       $ref: ./components/schemas/AdminSupporterSubscription.yaml
     AdminSupporterSubscriptionPage:
@@ -1947,6 +1985,10 @@ components:
       $ref: ./components/schemas/ImportSignupBlocksRequest.yaml
     IncomeKind:
       $ref: ./components/schemas/IncomeKind.yaml
+    IncomeSource:
+      $ref: ./components/schemas/IncomeSource.yaml
+    IncomeSourceNet:
+      $ref: ./components/schemas/IncomeSourceNet.yaml
     IncomeMovement:
       $ref: ./components/schemas/IncomeMovement.yaml
     IncomeMovementPage:
@@ -2393,6 +2435,20 @@ components:
       $ref: ./components/schemas/SupporterPlanVisibility.yaml
     SupporterPortal:
       $ref: ./components/schemas/SupporterPortal.yaml
+    SupporterTip:
+      $ref: ./components/schemas/SupporterTip.yaml
+    SupporterTipCheckout:
+      $ref: ./components/schemas/SupporterTipCheckout.yaml
+    SupporterTipRequest:
+      $ref: ./components/schemas/SupporterTipRequest.yaml
+    SupporterTipState:
+      $ref: ./components/schemas/SupporterTipState.yaml
+    TipAmounts:
+      $ref: ./components/schemas/TipAmounts.yaml
+    TipAmountsProblem:
+      $ref: ./components/schemas/TipAmountsProblem.yaml
+    TipAmountsProblemReason:
+      $ref: ./components/schemas/TipAmountsProblemReason.yaml
     SupporterProgramWarning:
       $ref: ./components/schemas/SupporterProgramWarning.yaml
     SupporterScheduledChange:

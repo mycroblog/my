@@ -859,6 +859,38 @@
     "defaultMessage": "[Ẏǿǿŭŭř şŭŭƀşƈřīƥŧīǿǿƞ ƈȧȧƞƞǿǿŧ ḓǿǿ ŧħȧȧŧ īƞ īŧş ƈŭŭřřḗḗƞŧ şŧȧȧŧḗḗ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.supporters.tip_amount": {
+    "defaultMessage": "[Ŧħḗḗ ŧīƥ ḿŭŭşŧ ƀḗḗ ǿǿƞḗḗ ǿǿƒ ŧħḗḗ şḗḗřṽḗḗř'ş ȧȧḿǿǿŭŭƞŧş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_amount_detail": {
+    "defaultMessage": "[Ƈħǿǿǿǿşḗḗ ǿǿƞḗḗ ǿǿƒ ŧħḗḗ ȧȧḿǿǿŭŭƞŧş ŧħȧȧŧ ŧħḗḗ şḗḗřṽḗḗř ǿǿƒƒḗḗřş.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_amounts_invalid": {
+    "defaultMessage": "[Ŧħḗḗ ȧȧḿǿǿŭŭƞŧş ǿǿƒ ŧħḗḗ ŧīƥş ƈȧȧƞƞǿǿŧ ƀḗḗ şȧȧṽḗḗḓ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_amounts_invalid_detail": {
+    "defaultMessage": "[{reason,select,count{Ƈħǿǿǿǿşḗḗ 1 ŧǿǿ 6 ḓīƒƒḗḗřḗḗƞŧ ȧȧḿǿǿŭŭƞŧş īƞ ǿǿƞḗḗ ƈŭŭřřḗḗƞƈẏ.} currency{Ŧīƥş ŧȧȧķḗḗ ẏḗḗƞ ǿǿř ŬŞ ḓǿǿŀŀȧȧřş, ȧȧƞḓ ŧħḗḗ ƥȧȧẏḿḗḗƞŧ ƥřǿǿṽīḓḗḗř ḿŭŭşŧ ŧȧȧķḗḗ ŧħḗḗ ƈŭŭřřḗḗƞƈẏ.} other{Ŧħḗḗ ȧȧḿǿǿŭŭƞŧş ƀřḗḗȧȧķ ȧȧ řŭŭŀḗḗ.} range{Ḗȧȧƈħ ȧȧḿǿǿŭŭƞŧ ḿŭŭşŧ ƀḗḗ ƒřǿǿḿ 100 ŧǿǿ 100,000 ẏḗḗƞ ǿǿř ƒřǿǿḿ 1 ŧǿǿ 1,000 ŬŞ ḓǿǿŀŀȧȧřş, ȧȧƞḓ ȧȧŧ ŀḗḗȧȧşŧ ŧħḗḗ ƥȧȧẏḿḗḗƞŧ ƥřǿǿṽīḓḗḗř'ş şḿȧȧŀŀḗḗşŧ ƈħȧȧřɠḗḗ.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_pending": {
+    "defaultMessage": "[Ȧƞǿǿŧħḗḗř ŧīƥ ǿǿƒ ẏǿǿŭŭřş īş şŧȧȧřŧīƞɠ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tip_pending_detail": {
+    "defaultMessage": "[Ŧřẏ ȧȧɠȧȧīƞ īƞ ȧȧ ḿǿǿḿḗḗƞŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tips_unavailable": {
+    "defaultMessage": "[Ŧīƥş ȧȧřḗḗ ƞǿǿŧ ȧȧṽȧȧīŀȧȧƀŀḗḗ ǿǿƞ ŧħīş şḗḗřṽḗḗř.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "errors.supporters.tips_unavailable_detail": {
+    "defaultMessage": "[Ḗƞȧȧƀŀḗḗ ŧħḗḗ şŭŭƥƥǿǿřŧḗḗř ƥřǿǿɠřȧȧḿ ǿǿƞ ȧȧ ƥȧȧẏḿḗḗƞŧ ƥřǿǿṽīḓḗḗř ŧħȧȧŧ ŧȧȧķḗḗş ǿǿƞḗḗ-ŧīḿḗḗ ƥȧȧẏḿḗḗƞŧş ƒīřşŧ.]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.supporters.unavailable": {
     "defaultMessage": "[Ŧħḗḗ şŭŭƥƥǿǿřŧḗḗř ƥřǿǿɠřȧȧḿ īş ƞǿǿŧ ȧȧṽȧȧīŀȧȧƀŀḗḗ ǿǿƞ ŧħīş şḗḗřṽḗḗř.]",
     "description": "Generated from en by tools/i18n; do not edit."

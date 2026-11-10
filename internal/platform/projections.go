@@ -231,7 +231,7 @@ func (a *App) setUpProjections(store projection.Store, r projectionRepositories)
 				Name: "supporters", Module: "supporters",
 				Tables: []string{
 					"supporter_plan_heads", "supporter_plan_price_heads", "supporter_subscription_heads",
-					"supporter_live_subscriptions", "supporter_subscription_deadlines",
+					"supporter_live_subscriptions", "supporter_subscription_deadlines", "supporter_open_tips",
 				},
 				Rebuild: func(ctx context.Context, u uow.UnitOfWork) error {
 					return supporters.RebuildProjections(ctx, u, r.supporters)

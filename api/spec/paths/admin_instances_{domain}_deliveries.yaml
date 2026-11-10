@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listInstanceDeliveries
+  x-permission: manage_domains
+  summary: List the deliveries to a remote server and their attempts
+  description: |
+    What this server sent to the remote server and what it answered, newest first: each
+    delivery of an activity to an inbox of the server, with every attempt (its outcome, the
+    signature scheme, the status code, and the error), the ones that succeeded included.
+    Attempts are kept for 30 days. The body of the activity is never returned.
+
+    The type and the times of every delivery, and every attempt, are always shown. When the
+    activity is about a post whose visibility is `private`, `direct`, or `local`, or is a
+    follow, its undo, an accept, or a reject of a local account that approves its followers, the sender,
+    the activity URI, and a personal inbox are masked: `mask` says why, and `POST
+    /admin/instances/{domain}/deliveries/{id}/reveal` shows them, audited. A shared inbox is
+    never masked, and a masked inbox in an error reads `[masked]`.
+
+    A query with `account_id` is recorded in the audit log as `account_deliveries_viewed`
+    before anything is returned; an account that is not local is a 400 naming `account_id`,
+    an unknown one a 404. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/InstanceDomain.yaml
+    - name: account_id
+      in: query
+      required: false
+      description: Keep only the deliveries of the activities of this local account; audited.
+      schema:
+        $ref: ../components/schemas/Id.yaml
+    - name: activity_uri
+      in: query
+      required: false
+      description: Keep only the deliveries of the activity with this ID.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 2048
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of deliveries.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminDeliveryPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

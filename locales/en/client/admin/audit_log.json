@@ -459,6 +459,18 @@
     "defaultMessage": "Supporter program disabled",
     "description": "Kind of an audited operation: an administrator disabled the supporter program."
   },
+  "admin.audit_log.action.supporter_tips_enabled": {
+    "defaultMessage": "Tips enabled",
+    "description": "Kind of an audited operation: an administrator enabled the tips, one-time payments to the server's operation."
+  },
+  "admin.audit_log.action.supporter_tips_revised": {
+    "defaultMessage": "Tip amounts changed",
+    "description": "Kind of an audited operation: an administrator changed the amounts that the tips offer."
+  },
+  "admin.audit_log.action.supporter_tips_disabled": {
+    "defaultMessage": "Tips disabled",
+    "description": "Kind of an audited operation: an administrator disabled the tips."
+  },
   "admin.audit_log.action.supporter_plan_created": {
     "defaultMessage": "Supporter plan created",
     "description": "Kind of an audited operation: an administrator created a supporter plan."
@@ -614,6 +626,14 @@
   "admin.audit_log.action.instance_marked_available": {
     "defaultMessage": "Server marked available",
     "description": "Kind of an audited operation: an operator cleared the delivery failures of a remote server, so that deliveries to it resume."
+  },
+  "admin.audit_log.action.delivery_revealed": {
+    "defaultMessage": "Delivery details shown",
+    "description": "Kind of an audited operation: a holder of manage_domains was shown the masked sender, activity URI, and inbox of one delivery to a remote server."
+  },
+  "admin.audit_log.action.account_deliveries_viewed": {
+    "defaultMessage": "Deliveries of an account viewed",
+    "description": "Kind of an audited operation: a holder of manage_domains listed the deliveries of one local account to a remote server."
   },
   "admin.audit_log.action.link_card_domain_rule_removed": {
     "defaultMessage": "Link card rule removed",

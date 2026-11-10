@@ -207,8 +207,11 @@ type Options struct {
 	// rest of the queue dashboard (admin_jobs.go, ADR-0004).
 	Permissions    Permissions
 	InstanceHealth InstanceHealth
-	DeadJobs       queue.DeadJobs
-	Queue          QueueDashboard
+	// DeliveryLog lists the deliveries to a remote server and reveals the masked fields of one
+	// (admin_deliveries.go); nil answers them with 404.
+	DeliveryLog DeliveryLog
+	DeadJobs    queue.DeadJobs
+	Queue       QueueDashboard
 	// Moderation runs the moderators' use cases on domain actions and reports for the admin
 	// operations (admin_moderation.go); UserAccounts presents the moderator of a report by
 	// account, and nil leaves it out.
@@ -323,6 +326,8 @@ type Options struct {
 	// OwnSupporters runs the users' own subscriptions and the supporter list (supporters.go);
 	// nil answers 404 to their operations.
 	OwnSupporters OwnSupporters
+	// Tips runs the tips (tips.go); nil answers 404 to their operations and no tips.
+	Tips Tips
 	// Themes reads and replaces the instance theme for the admin operations and Instance.theme
 	// (admin_theme.go); nil answers no theme and 404 to the admin operations.
 	Themes Themes

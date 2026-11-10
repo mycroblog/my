@@ -102,6 +102,9 @@ type Provider struct {
 	listsDeleted   bool
 	// readFailure fails GetSubscription (FailSubscriptionReads).
 	readFailure error
+	// oneTimes are the one-time checkouts (onetime.go), and oneTimeKeys their idempotency keys.
+	oneTimes    map[supporters.CheckoutRef]*oneTime
+	oneTimeKeys map[string]supporters.CheckoutRef
 }
 
 type price struct {
@@ -744,7 +747,11 @@ func (p *Provider) Resolve(ctx context.Context, n supporters.Notice) (supporters
 	case supporters.NoticeSubscription:
 		ch.Subscriptions = append(ch.Subscriptions, supporters.SubscriptionRef(n.ObjectID))
 	case supporters.NoticeCheckout:
-		ch.Checkout = supporters.CheckoutRef(n.ObjectID)
+		if ref := supporters.CheckoutRef(n.ObjectID); p.isOneTime(ref) {
+			ch.OneTimeCheckout = ref
+		} else {
+			ch.Checkout = ref
+		}
 	case supporters.NoticeMoney:
 		i := slices.IndexFunc(p.money, func(b booked) bool { return b.object == n.ObjectID })
 		if i < 0 {

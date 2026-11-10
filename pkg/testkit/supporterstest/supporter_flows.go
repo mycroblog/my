@@ -96,6 +96,14 @@ func SupporterFlows(t *testing.T, newHarness SupporterFactory) {
 		{"CancelsByStaff", supporterStaffCancel},
 		{"ListsOnlyTheMembersWhoChoseTo", supporterListings},
 		{"RebuildsItsProjections", supporterRebuild},
+		{"EnablesTipsOfTheOperatorsAmounts", supporterTipSettings},
+		{"BooksATipOnceWithItsRefundsAndChargebacks", supporterTipPayment},
+		{"FindsTheTipOfAPaymentBeforeItsCheckout", supporterTipMoneyFirst},
+		{"ExpiresTheOpenTipOnAStartAgain", supporterTipAgain},
+		{"ExpiresTipsWithTheirCheckouts", supporterTipExpiry},
+		{"LimitsTheStartsOfTips", supporterTipLimits},
+		{"ErasesTheTipsOfAnAccount", supporterTipErasure},
+		{"RebuildsTheOpenTips", supporterTipRebuild},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newSupporterEnv(t, newHarness)) })

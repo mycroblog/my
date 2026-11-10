@@ -1,7 +1,7 @@
 # Account and domain actions, and handling reports
 
-How operators and moderators act on accounts and domains, decide appeals, handle reports, and read the audit log.
-Everything here except account management (admin API only) can be done through the admin API (`/api/v1/admin/...`, scopes `admin:read` / `admin:write`) and the CLI (`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`).
+How operators and moderators act on accounts and domains, decide appeals, handle reports, check what reached a remote server, and read the audit log.
+Everything here except account management and checking deliveries (admin API only) can be done through the admin API (`/api/v1/admin/...`, scopes `admin:read` / `admin:write`) and the CLI (`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`).
 The admin API requires role permissions: account management, actions and appeals need `manage_accounts`, domain actions need `manage_domains`, and reports need `manage_reports`.
 The CLI connects to the DB directly with the same configuration as the server (`-config` or environment variables) and does not record which user operated it (`issued_by_user_id` and similar fields are NULL, and the actor in the [audit log](#audit-log) is `cli`).
 
@@ -448,6 +448,37 @@ In the web client, use "Refetch posts" on the account's Review page (`/moderatio
 - It does not fetch from a domain with a `suspend`, or from a domain that is `unavailable` because deliveries failed. A failed fetch of the same URI is remembered for 1 hour, and a refetch in that time does not fetch it.
 - Your request is recorded in the audit log as `status_refetch_queued`, `account_statuses_refetch_queued` or `domain_statuses_refetch_queued`.
 
+## Checking what reached a remote server
+
+When a user asks whether a post, a follow, or an accept reached another server, list the deliveries to that server with the admin API.
+It shows each delivery of an activity to an inbox of the server, newest first, with every attempt and what the server answered, the deliveries that succeeded included.
+It needs the `manage_domains` permission.
+
+```sh
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://example.com/api/v1/admin/instances/misskey.io/deliveries"
+```
+
+- Each delivery has the activity type (`Create`, `Follow`, `Accept` and so on), when the activity was recorded and when the inbox was added, and its `attempts`, oldest first.
+  Each attempt has its `outcome` (`succeeded`, `retryable_failure`, `permanent_failure`, `skipped`), the `signature_scheme` and `status_code` of the response, the `error` of a failure without a response or why nothing was sent, and the time.
+  A `succeeded` attempt with `202` means the other server accepted the activity; whether it then shows it is up to that server.
+- Attempts are kept for 30 days, so the history goes back 30 days.
+- To narrow the list, add `activity_uri=<the activity's ID>`, or `account_id=<a local account's ID>` for the deliveries of one account.
+  A query with `account_id` is recorded in the audit log as `account_deliveries_viewed`, with the account and the server; the other queries are not recorded.
+- The body of the activity is never shown.
+
+Some deliveries are masked: their sender, activity URI, and inbox are left out, and `mask` says why.
+
+| `mask` | The activity is about |
+| --- | --- |
+| `private`, `direct`, `local` | a post with that visibility |
+| `approves_followers` | a follow, its undo, an accept, or a reject of a local account that approves its followers |
+| `unknown` | a post or an account that is gone, so what it was is no longer known |
+
+A shared inbox names no recipient and is always shown; a masked personal inbox in an attempt's error reads `[masked]`.
+The type, the times, and every attempt of a masked delivery are shown, so you can still see whether it reached the server.
+To see the masked fields of one delivery, use `POST /api/v1/admin/instances/{domain}/deliveries/{id}/reveal`; each call is recorded in the audit log as `delivery_revealed` before anything is shown.
+
 ## Reports
 
 Reports (`Flag`) received from other servers enter the report list as open (`open`).
@@ -551,9 +582,9 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 
 | Target kind | Operations |
 | --- | --- |
-| `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_canceled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts) |
+| `account` | `account_action_issued` and `account_action_lifted` (issuing and lifting an action against an account), `account_deletion_canceled` (the deletion canceled because an appeal against a `ban` was overturned), `revealed_private_data` (IP addresses and email addresses revealed), `two_factor_disabled` (two-factor authentication removed), `password_reset_link_issued` (a password-reset link issued), `email_suppression_lifted` (mail suppression lifted), `account_moved` (a restricted local account moved to a local account; restrictions are not carried to the destination, so you decide whether to apply them there), `account_statuses_refetch_queued` (refetch of a remote account's posts), `account_deliveries_viewed` (the deliveries of a local account to a server listed; the target name is the handle and the server) |
 | `status` | `status_refetch_queued` (refetch of a remote post; the target name is the post URI) |
-| `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts), `instance_marked_available` (clearing the failures of a server) |
+| `domain` | `domain_action_issued` and `domain_action_lifted` (issuing and lifting a domain action), `domain_statuses_refetch_queued` (refetch of posts of the domain's accounts), `instance_marked_available` (clearing the failures of a server), `delivery_revealed` (the masked sender, activity URI, and inbox of a delivery to the server shown) |
 | `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`, `report_forwarded` (assigning, unassigning, resolving and reopening a report, adding a note, and forwarding it) |
 | `user` | `registration_approved`, `registration_rejected` (registration review) |
 | `setting` | `setting_changed` (instance settings), `text_changed` (instance texts) |
@@ -568,7 +599,7 @@ Failed operations and operations that changed nothing are not recorded: lifting 
 | `invite` | `invite_created`, `invite_revoked` (creating and revoking an invite; the target name is the first 4 characters of the code) |
 | `billing_source` | `billing_import_queued` (a billing import was started by hand; the target name is the provider's name) |
 | `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_deleted` (registering a cost, changing its name and the like, revising its amount, changing its end date, and deleting it; the target name is the item's name) |
-| `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (enabling and disabling billing; the target name is the payment provider's name) |
+| `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (enabling and disabling billing; the target name is the payment provider's name), and `supporter_tips_enabled`, `supporter_tips_revised`, `supporter_tips_disabled` (enabling the tips, changing their amounts, and disabling them; the target name is the currency and the amounts in minor units) |
 | `supporter_plan` | `supporter_plan_created`, `supporter_plan_revised`, `supporter_plan_retired` (creating, changing and retiring a supporter plan; the target name is the plan's name) |
 | `supporter_subscription` | `supporter_subscription_ended` (an administrator ended a subscription at once; the target name is the plan's name and the user's handle) |
 | `custom_emoji_request` | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` (submitting, withdrawing, approving and rejecting a custom emoji request; the target name is the `:shortcode:`) |

@@ -376,6 +376,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/instance/tip_amounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the amounts of the tips
+         * @description The amounts that a tip, a one-time payment to the server's operation with nothing in
+         *     return, may be: the operator's choices, smallest first, in one currency. A 404 while the
+         *     server takes no tips (`Instance.tips_enabled`).
+         */
+        get: operations["getInstanceTipAmounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/verify_credentials": {
         parameters: {
             query?: never;
@@ -4552,6 +4574,62 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/supporter/tips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start a tip
+         * @description Starts a tip of one of the amounts of `GET /instance/tip_amounts` and returns the payment
+         *     provider's hosted checkout of that one payment, which the client opens in the same tab; no
+         *     card details reach this server. The checkout returns to `/settings/supporter/tip` of the web
+         *     client with `tip` (the tip's ID) and `checkout` (`success` or `canceled`) in its query.
+         *     A user has one open tip at most: starting again makes the open tip's checkout unpayable
+         *     first, and when it was paid already, `redirect_url` is the return of that tip instead of a
+         *     checkout. Only a local user with a verified primary address may tip: a 422
+         *     `/api/v1/problems/supporter-ineligible` otherwise, and a 422
+         *     `/api/v1/problems/supporter-tip-amount` for an amount that is not one of the choices. The
+         *     starts are limited per user (5 an hour, 20 a day) and for the whole server (100 an hour):
+         *     a 429 beyond them, with `Retry-After`. A 409 `/api/v1/problems/supporter-tip-pending` when
+         *     another start of the user's runs at the same time. A 404 while the server takes no tips.
+         *     From the announcement of the closure of the service on, nobody tips: a 409
+         *     `/api/v1/problems/service-closing`.
+         */
+        post: operations["startSupporterTip"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/supporter/tips/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a tip of the authenticated user
+         * @description The state of a tip of the authenticated user: `open` until its payment or the end of its
+         *     checkout, then `paid` or `expired`. While it is `open`, reading it makes the server read the
+         *     checkout again from the payment provider, so the return from the checkout reads it again
+         *     shortly until it is `paid`. Another user's tip and an unknown one are a 404.
+         */
+        get: operations["getOwnSupporterTip"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/voice/rooms": {
         parameters: {
             query?: never;
@@ -5890,6 +5968,64 @@ export interface paths {
          *     permission.
          */
         post: operations["markInstanceAvailable"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/instances/{domain}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the deliveries to a remote server and their attempts
+         * @description What this server sent to the remote server and what it answered, newest first: each
+         *     delivery of an activity to an inbox of the server, with every attempt (its outcome, the
+         *     signature scheme, the status code, and the error), the ones that succeeded included.
+         *     Attempts are kept for 30 days. The body of the activity is never returned.
+         *
+         *     The type and the times of every delivery, and every attempt, are always shown. When the
+         *     activity is about a post whose visibility is `private`, `direct`, or `local`, or is a
+         *     follow, its undo, an accept, or a reject of a local account that approves its followers, the sender,
+         *     the activity URI, and a personal inbox are masked: `mask` says why, and `POST
+         *     /admin/instances/{domain}/deliveries/{id}/reveal` shows them, audited. A shared inbox is
+         *     never masked, and a masked inbox in an error reads `[masked]`.
+         *
+         *     A query with `account_id` is recorded in the audit log as `account_deliveries_viewed`
+         *     before anything is returned; an account that is not local is a 400 naming `account_id`,
+         *     an unknown one a 404. Needs the `manage_domains` permission.
+         */
+        get: operations["listInstanceDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/instances/{domain}/deliveries/{id}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Show the sender, the activity URI, and the inbox of a delivery
+         * @description The fields that the list of deliveries masks, of one delivery to the server: its local
+         *     sender, the URI of its activity, and its inbox. Each call is recorded in the audit log as
+         *     `delivery_revealed` before anything is returned, also for a delivery that is not masked;
+         *     it changes nothing else. The body of the activity is never returned. A delivery that is
+         *     unknown or went to another server is a 404. Needs the `manage_domains` permission.
+         */
+        post: operations["revealInstanceDelivery"];
         delete?: never;
         options?: never;
         head?: never;
@@ -9612,6 +9748,37 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/supporter_tips": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get the tips
+         * @description Whether the server takes tips, one-time payments to its operation, and their amounts, with
+         *     what enabling them needs. Needs the `manage_supporters` permission.
+         */
+        get: operations["getSupporterTips"];
+        /**
+         * Enable or disable the tips
+         * @description Enables the tips with their amounts, changes the amounts, or disables the tips. Enabling
+         *     them needs the supporter program enabled on the configured payment provider, which takes
+         *     one-time payments: a 409 `/api/v1/problems/tips-unavailable` otherwise. The amounts are 1 to
+         *     6 different amounts in one currency, each from ¥100 to ¥100,000 or from US$1 to US$1,000 and
+         *     at least the provider's smallest one-time charge: a 422 `/api/v1/problems/invalid-tip-amounts`
+         *     whose `reason` says which rule they break. Asking for the state the tips are in changes
+         *     nothing. Recorded in the audit log. Needs the `manage_supporters` permission.
+         */
+        put: operations["setSupporterTips"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/supporter_plans": {
         parameters: {
             query?: never;
@@ -10866,9 +11033,13 @@ export interface components {
          *     authentication), `password_reset_link_issued` (an administrator issued a link that sets
          *     a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
          *     suppression of the primary email address of the account's user), `account_moved` (a limited
-         *     local account moved to another local account, which does not inherit the limit). On a `domain`:
+         *     local account moved to another local account, which does not inherit the limit),
+         *     `account_deliveries_viewed` (a holder of `manage_domains` listed the deliveries of the
+         *     account to a remote server; the target name is the handle and the server). On a `domain`:
          *     `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
-         *     cleared the failures of the server). On a `report`: `report_assigned`,
+         *     cleared the failures of the server), `delivery_revealed` (a holder of `manage_domains` was
+         *     shown the masked sender, activity URI, and inbox of a delivery to the server, whose ID is
+         *     `source_event_id`). On a `report`: `report_assigned`,
          *     `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
          *     `report_forwarded` (a moderator forwarded the report to the target's server). On a
          *     `user` (a registration):
@@ -10910,7 +11081,9 @@ export interface components {
          *     `cost_item_created`, `cost_item_relabeled` (its name, provider, category, or memo),
          *     `cost_item_price_revised`, `cost_item_end_changed`, and `cost_item_deleted`; the label is
          *     the item's name. On the `supporter_program`: `supporter_program_enabled`,
-         *     `supporter_program_disabled`; the label is the payment provider's name. On a
+         *     `supporter_program_disabled`, where the label is the payment provider's name, and
+         *     `supporter_tips_enabled`, `supporter_tips_revised` (their amounts), and
+         *     `supporter_tips_disabled`, where the label is the currency and the amounts in minor units. On a
          *     `supporter_plan`: `supporter_plan_created`, `supporter_plan_revised`, and
          *     `supporter_plan_retired`; the label is the plan's name. On a `supporter_subscription`:
          *     `supporter_subscription_ended`, an administrator ended it at once, without a refund; the
@@ -10941,7 +11114,7 @@ export interface components {
          *     the event; the ID and the label are the event's ID.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_cancelled";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_tips_enabled" | "supporter_tips_revised" | "supporter_tips_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "delivery_revealed" | "account_deliveries_viewed" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_cancelled";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -11019,6 +11192,82 @@ export interface components {
         /** @description A page of availability events, newest first. */
         AdminAvailabilityEventPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminAvailabilityEvent"][];
+        };
+        /**
+         * @description The delivery of an activity to one inbox of a remote server, with its attempts. `sender`,
+         *     `activity_uri`, and a personal `inbox_url` are absent when `mask` is present.
+         */
+        AdminDelivery: {
+            id: components["schemas"]["Id"];
+            domain: string;
+            /** @description The type of the activity, such as `Create`, `Follow`, or `Accept`. */
+            activity_type: string;
+            /**
+             * Format: date-time
+             * @description When the activity was recorded.
+             */
+            activity_created_at: string;
+            /**
+             * Format: date-time
+             * @description When the inbox was added to the activity.
+             */
+            created_at: string;
+            /** @description Whether the inbox is a shared inbox of the server, which names no recipient. */
+            shared_inbox: boolean;
+            mask?: components["schemas"]["AdminDeliveryMask"];
+            sender?: components["schemas"]["AdminDeliverySender"];
+            activity_uri?: string;
+            inbox_url?: string;
+            /** @description The attempts, oldest first. */
+            attempts: components["schemas"]["AdminDeliveryAttempt"][];
+        };
+        /** @description One attempt of a delivery. */
+        AdminDeliveryAttempt: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description `succeeded`: the server accepted the activity. `retryable_failure`: it failed in a way
+             *     that is tried again. `permanent_failure`: the server refused it, and it is not sent
+             *     again. `skipped`: nothing was sent, for the reason in `error`.
+             * @enum {string}
+             */
+            outcome: "succeeded" | "retryable_failure" | "permanent_failure" | "skipped";
+            /**
+             * @description The signature scheme of the request that got the response; absent without a response.
+             * @enum {string}
+             */
+            signature_scheme?: "rfc9421" | "cavage";
+            /** @description The status code of the response; absent without a response. */
+            status_code?: number;
+            /** @description Why the attempt failed without a response, or why nothing was sent. */
+            error?: string;
+            /** Format: date-time */
+            attempted_at: string;
+        };
+        /**
+         * @description Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+         *     `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+         *     follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+         *     the post or the account is gone, so what it was is no longer known.
+         * @enum {string}
+         */
+        AdminDeliveryMask: "private" | "direct" | "local" | "approves_followers" | "unknown";
+        /** @description A page of the deliveries to a remote server, newest first. */
+        AdminDeliveryPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["AdminDelivery"][];
+        };
+        /** @description The fields of a delivery that the list masks. */
+        AdminDeliveryReveal: {
+            id: components["schemas"]["Id"];
+            mask?: components["schemas"]["AdminDeliveryMask"];
+            sender: components["schemas"]["AdminDeliverySender"];
+            activity_uri: string;
+            inbox_url: string;
+        };
+        /** @description The local account that sent the activity. */
+        AdminDeliverySender: {
+            account_id: components["schemas"]["Id"];
+            /** @description The username of the account; absent for an account that is gone. */
+            username?: string;
         };
         /** @description What awaits the moderators; a count whose permission the user lacks is omitted. */
         AdminCounts: {
@@ -11160,6 +11409,8 @@ export interface components {
          * @description A week, month, or year of the income totals as the administrators see it: the `gross`, the
          *     provider's `fee`, and the `net` (gross less fee) of each currency, sorted by currency code,
          *     and the `balance`, the net less the costs of each currency under the same basis.
+         *     `net_by_source` is the net of each source that the period has: the subscriptions, the tips
+         *     (`one_time`), and the movements of neither.
          */
         AdminIncomePeriodTotal: {
             label: string;
@@ -11169,17 +11420,19 @@ export interface components {
             fee: components["schemas"]["Money"][];
             net: components["schemas"]["Money"][];
             balance: components["schemas"]["Money"][];
+            net_by_source: components["schemas"]["IncomeSourceNet"][];
         };
         /**
          * @description The income totals as the administrators see them over the periods from the one that holds
          *     `from` to the one that holds `to`, oldest first, with the number of members of each
-         *     supporter plan now.
+         *     supporter plan now, and `tips`, whether the server takes tips now.
          */
         AdminIncomeTotals: {
             granularity: components["schemas"]["CostGranularity"];
             basis: components["schemas"]["CostBasis"];
             periods: components["schemas"]["AdminIncomePeriodTotal"][];
             plans: components["schemas"]["IncomePlanCount"][];
+            tips: boolean;
             rules: components["schemas"]["IncomeTotalsRules"];
         };
         /** @description Whether deliveries go to a remote server. */
@@ -12527,6 +12780,41 @@ export interface components {
         /** @description Enables or disables the supporter program. */
         AdminSupporterProgramRequest: {
             enabled: boolean;
+        };
+        /** @description The smallest and largest amount that the tips may offer in a currency. */
+        AdminSupporterTipLimits: {
+            minimum: components["schemas"]["Money"];
+            maximum: components["schemas"]["Money"];
+        };
+        /**
+         * @description The tips: whether the operator enabled them (`enabled`) with their `amounts`, and whether users
+         *     may tip now (`accepting`), which also needs the supporter program enabled on the configured
+         *     payment provider. `one_time_payments` reports whether that provider takes one-time payments,
+         *     and `limits` the smallest and largest amount of each currency that the tips may offer on it.
+         *     `server_limit_reached` reports that the starts of the last hour reached the limit of the whole
+         *     server, which may be card testing.
+         */
+        AdminSupporterTips: {
+            enabled: boolean;
+            accepting: boolean;
+            one_time_payments: boolean;
+            /** @description The amounts, smallest first; empty while the tips are disabled. */
+            amounts: components["schemas"]["Money"][];
+            limits: components["schemas"]["AdminSupporterTipLimits"][];
+            server_limit_reached: boolean;
+            /**
+             * Format: date-time
+             * @description When the tips were last enabled, changed, or disabled; omitted for never.
+             */
+            changed_at?: string;
+        };
+        /**
+         * @description Enables the tips with their amounts, all in one currency, or disables them (`enabled` false,
+         *     without amounts).
+         */
+        AdminSupporterTipsRequest: {
+            enabled: boolean;
+            amounts?: components["schemas"]["Money"][];
         };
         /** @description A subscription as the administrators see it, without the history of its payments. */
         AdminSupporterSubscription: {
@@ -14767,23 +15055,38 @@ export interface components {
          */
         IncomeKind: "payment" | "refund" | "chargeback" | "chargeback_reversal" | "fee";
         /**
+         * @description Where a money movement comes from: a subscription to a supporter plan (`subscription`), a tip
+         *     (`one_time`), or neither (`unknown`: a payment taken outside this server, or a fee of no
+         *     subscription). A refund, a chargeback, or a reversal has the source of its payment.
+         * @enum {string}
+         */
+        IncomeSource: "subscription" | "one_time" | "unknown";
+        /** @description The net of one source over a period, by currency. */
+        IncomeSourceNet: {
+            source: components["schemas"]["IncomeSource"];
+            net: components["schemas"]["Money"][];
+        };
+        /**
          * @description A money movement of the payment provider as the income records keep it:
          *     recorded once its amounts are final, and never edited. `occurred_on` is `occurred_at` as a
          *     date in the provider's reporting time zone. A payment carries the billing period it pays
          *     for (`covers_starts_on` to `covers_ends_on`) when it has one; a refund, a chargeback, or a
          *     reversal carries the provider ID of its payment (`parent_provider_id`). `subscription_id`
-         *     names the subscription while it is known, and `account_id` and `username` its subscriber's
-         *     local account while the account exists; a fee of no subscription has none of them.
+         *     names the subscription while it is known, and `tip_id` the tip of a `one_time` movement while
+         *     its record is kept; `account_id` and `username` are the local account of the subscriber or of
+         *     the user who paid the tip while the account exists. A fee of no subscription has none of them.
          */
         IncomeMovement: {
             id: components["schemas"]["Id"];
             provider: string;
             provider_id: string;
             kind: components["schemas"]["IncomeKind"];
+            source: components["schemas"]["IncomeSource"];
             parent_provider_id?: string;
             subscription_id?: components["schemas"]["Id"];
+            tip_id?: components["schemas"]["Id"];
             account_id?: components["schemas"]["Id"];
-            /** @description The subscriber's username; omitted with `account_id` for an erased account. */
+            /** @description The username of the subscriber or of the user who paid the tip; omitted with `account_id` for an erased account. */
             username?: string;
             /** Format: date-time */
             occurred_at: string;
@@ -14836,14 +15139,17 @@ export interface components {
         /**
          * @description The income totals over the periods from the one that holds `from` to the one that holds
          *     `to`, oldest first. `plans`, the number of members of each supporter plan
-         *     now, is present only where the plans are shown. No answer carries individual payments, the
-         *     subscribers, the amounts of each plan, or the gross and the fees.
+         *     now, is present only where the plans are shown, with `tips`, whether the totals include the
+         *     tips because the server takes them now. No answer carries individual payments, the
+         *     subscribers, the amounts of each plan, the amount or the number of the tips, or the gross and
+         *     the fees.
          */
         IncomeTotals: {
             granularity: components["schemas"]["CostGranularity"];
             basis: components["schemas"]["CostBasis"];
             periods: components["schemas"]["IncomePeriodTotal"][];
             plans?: components["schemas"]["IncomePlanCount"][];
+            tips?: boolean;
             rules: components["schemas"]["IncomeTotalsRules"];
         };
         /**
@@ -14944,6 +15250,11 @@ export interface components {
              *     and the subscriptions show only then.
              */
             supporters_enabled: boolean;
+            /**
+             * @description Whether the server takes tips, one-time payments to its operation with nothing in return:
+             *     their amounts (`GET /instance/tip_amounts`) and the tips show only then.
+             */
+            tips_enabled: boolean;
             supporter_list_visibility: components["schemas"]["InstanceAudience"];
             /**
              * @description The decision hooks in use: what the server sends to an external review before it accepts it.
@@ -16999,6 +17310,14 @@ export interface components {
          *       nothing was charged; update the card and try again.
          *     - `/api/v1/problems/supporter-payment-processing` (409): the payment of a change of plan has
          *       not settled. The plan stays, and moves if the payment succeeds.
+         *     - `/api/v1/problems/supporter-tip-amount` (422): the amount of the tip is not one of the
+         *       amounts of `GET /instance/tip_amounts`.
+         *     - `/api/v1/problems/supporter-tip-pending` (409): another start of a tip of the user's runs at
+         *       the same time; try again.
+         *     - `/api/v1/problems/tips-unavailable` (409): the tips need the supporter program enabled on
+         *       the configured payment provider, which takes one-time payments.
+         *     - `/api/v1/problems/invalid-tip-amounts` (422): the amounts of the tips break a rule;
+         *       `reason` says which.
          *     - `/api/v1/problems/voice-not-eligible` (403): the user may not host voice chat rooms.
          *     - `/api/v1/problems/voice-not-host` (403): only the host of the voice chat room may do this.
          *     - `/api/v1/problems/voice-room-full` (409): the voice chat room holds as many people as the
@@ -18180,6 +18499,57 @@ export interface components {
              */
             url: string;
         };
+        /** @description A tip of the authenticated user. */
+        SupporterTip: {
+            id: components["schemas"]["Id"];
+            state: components["schemas"]["SupporterTipState"];
+            amount: components["schemas"]["Money"];
+            /** Format: date-time */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the payment was recorded; omitted unless `paid`.
+             */
+            paid_at?: string;
+        };
+        /** @description The payment provider's hosted checkout of a tip. */
+        SupporterTipCheckout: {
+            tip_id: components["schemas"]["Id"];
+            /**
+             * Format: uri
+             * @description Where to go next, in the same tab, which is the checkout unless the open tip was paid already.
+             */
+            redirect_url: string;
+        };
+        /** @description A tip to start, of one of the amounts of `GET /instance/tip_amounts`. */
+        SupporterTipRequest: {
+            amount: components["schemas"]["Money"];
+        };
+        /**
+         * @description The state of a tip: `open` until its payment or the end of its checkout, `paid` once its
+         *     payment settled, and `expired` when its checkout ended unpaid.
+         * @enum {string}
+         */
+        SupporterTipState: "open" | "paid" | "expired";
+        /** @description The amounts that a tip may be, smallest first, all in one currency. */
+        TipAmounts: {
+            amounts: components["schemas"]["Money"][];
+        };
+        /**
+         * @description The problem of amounts of the tips that break a rule (422,
+         *     `/api/v1/problems/invalid-tip-amounts`); `reason` says which.
+         */
+        TipAmountsProblem: components["schemas"]["Problem"] & {
+            reason?: components["schemas"]["TipAmountsProblemReason"];
+        };
+        /**
+         * @description The rule that the amounts of the tips break: `count` (1 to 6 different amounts in one
+         *     currency), `currency` (a currency that the tips and the payment provider take: JPY or USD),
+         *     or `range` (each from ¥100 to ¥100,000 or from US$1 to US$1,000, and at least the provider's
+         *     smallest one-time charge).
+         * @enum {string}
+         */
+        TipAmountsProblemReason: "count" | "currency" | "range";
         /**
          * @description What an administrator should look at in the supporter program. `no_provider`: no payment
          *     provider is configured. `no_email`: the server sends no email, so nobody can verify an
@@ -19302,6 +19672,16 @@ export interface components {
                 "application/json": components["schemas"]["AdminSupporterProgram"];
             };
         };
+        /** @description The tips. */
+        AdminSupporterTips: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AdminSupporterTips"];
+            };
+        };
         /** @description The current theme. */
         AdminTheme: {
             headers: {
@@ -19545,6 +19925,18 @@ export interface components {
                 "application/problem+json": components["schemas"]["SupporterPlanProblem"];
             };
         };
+        /** @description The amounts of the tips break a rule; nothing was changed. */
+        TipAmountsProblem: {
+            headers: {
+                /** @description The locale of `title` and `detail`. */
+                "Content-Language"?: string;
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["TipAmountsProblem"];
+            };
+        };
         /** @description The webhook breaks a rule; nothing was changed. */
         WebhookProblem: {
             headers: {
@@ -19670,6 +20062,8 @@ export interface components {
         EventId: components["schemas"]["Id"];
         /** @description Only the answers of this kind; every answer when omitted. */
         EventVoteFilter: components["schemas"]["EventVote"];
+        /** @description The ID of the delivery. */
+        DeliveryId: components["schemas"]["Id"];
         /** @description The ID of the domain action. */
         DomainActionId: components["schemas"]["Id"];
         /** @description The ID of the decision. */
@@ -19742,6 +20136,8 @@ export interface components {
         SupporterPlanId: components["schemas"]["Id"];
         /** @description The ID of the subscription. */
         SupporterSubscriptionId: components["schemas"]["Id"];
+        /** @description The ID of the tip. */
+        SupporterTipId: components["schemas"]["Id"];
         /** @description The ID of the account in the voice chat room. */
         VoiceAccountId: components["schemas"]["Id"];
         /** @description The ID of the voice chat room. */
@@ -20163,6 +20559,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SupporterListPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getInstanceTipAmounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The amounts. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TipAmounts"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -24665,6 +25083,57 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    startSupporterTip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SupporterTipRequest"];
+            };
+        };
+        responses: {
+            /** @description The checkout to open. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupporterTipCheckout"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getOwnSupporterTip: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the tip. */
+                id: components["parameters"]["SupporterTipId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The tip. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SupporterTip"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     listVoiceRooms: {
         parameters: {
             query?: {
@@ -26298,6 +26767,73 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AdminInstanceHealth"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listInstanceDeliveries: {
+        parameters: {
+            query?: {
+                /** @description Keep only the deliveries of the activities of this local account; audited. */
+                account_id?: components["schemas"]["Id"];
+                /** @description Keep only the deliveries of the activity with this ID. */
+                activity_uri?: string;
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /**
+                 * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+                 *     lower case without a trailing dot. A value that is not a host name is a 400.
+                 */
+                domain: components["parameters"]["InstanceDomain"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of deliveries. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDeliveryPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    revealInstanceDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+                 *     lower case without a trailing dot. A value that is not a host name is a 400.
+                 */
+                domain: components["parameters"]["InstanceDomain"];
+                /** @description The ID of the delivery. */
+                id: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The masked fields of the delivery. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDeliveryReveal"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };
@@ -30109,6 +30645,37 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["AdminSupporterProgram"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getSupporterTips: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminSupporterTips"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    setSupporterTips: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AdminSupporterTipsRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AdminSupporterTips"];
+            422: components["responses"]["TipAmountsProblem"];
             default: components["responses"]["Problem"];
         };
     };

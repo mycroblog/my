@@ -43,6 +43,8 @@ func SupporterRepositoryContract(t *testing.T, newHarness SupporterFactory) {
 		{"ListsAndCountsSubscriptions", supporterRepoLists},
 		{"ListsTheSupporters", supporterRepoListings},
 		{"RebuildsTheProjections", supporterRepoRebuild},
+		{"RecordsTipChanges", supporterRepoTipChanges},
+		{"RecordsTipsOnce", supporterRepoTips},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

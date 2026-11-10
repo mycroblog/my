@@ -10,6 +10,7 @@ import (
 	"time"
 
 	appfinance "github.com/mycroblog/my/internal/app/finance"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/finance"
 	"github.com/mycroblog/my/pkg/testkit"
 )
@@ -21,11 +22,14 @@ import (
 // movements newest first with the subscribers' accounts.
 
 // FakeSupporterDirectory is an appfinance.SupporterDirectory with fixed plans, accounts of
-// subscriptions, and provider rules.
+// subscriptions and tips, provider rules, and whether the tips are enabled.
 type FakeSupporterDirectory struct {
 	Plans    []appfinance.PlanCount
 	Accounts map[string]appfinance.Subscriber
-	Rules    []appfinance.ProviderRule
+	// Tippers are the accounts of the users of the tips, by tip ID.
+	Tippers map[string]appfinance.Subscriber
+	Rules   []appfinance.ProviderRule
+	Tips    bool
 }
 
 var _ appfinance.SupporterDirectory = (*FakeSupporterDirectory)(nil)
@@ -45,6 +49,20 @@ func (d *FakeSupporterDirectory) SubscriptionAccounts(_ context.Context, ids []s
 	}
 	return out, nil
 }
+
+// TipAccounts implements appfinance.SupporterDirectory.
+func (d *FakeSupporterDirectory) TipAccounts(_ context.Context, ids []string) (map[string]appfinance.Subscriber, error) {
+	out := map[string]appfinance.Subscriber{}
+	for _, id := range ids {
+		if acct, ok := d.Tippers[id]; ok {
+			out[id] = acct
+		}
+	}
+	return out, nil
+}
+
+// TipsEnabled implements appfinance.SupporterDirectory.
+func (d *FakeSupporterDirectory) TipsEnabled(context.Context) (bool, error) { return d.Tips, nil }
 
 // ProviderRules implements appfinance.SupporterDirectory.
 func (d *FakeSupporterDirectory) ProviderRules() []appfinance.ProviderRule {
@@ -262,6 +280,121 @@ func financeIncomeList(t *testing.T, e *financeEnv) {
 	}
 	if len(may) != 2 || may[0].ProviderID != "txn_fee" || may[1].ProviderID != "txn_partial" {
 		t.Errorf("movements of 2026-05-04..31 = %+v, want txn_fee and txn_partial", may)
+	}
+}
+
+// financeIncomeSources records a tip, its partial refund, which has no source of its own, a
+// subscription's payment, and a fee: the refund takes the source of its payment, the tip's rows
+// show the account of its user, and the totals break the net down by source.
+func financeIncomeSources(t *testing.T, e *financeEnv) {
+	ctx := t.Context()
+	tip := incomeMovement(t, "txn_tip", finance.IncomePayment, "2026-05-03", "1000", "36", "964")
+	tip.Source, tip.TipID = string(finance.SourceOneTime), testkit.NamedID("tip_1")
+	refund := incomeMovement(t, "txn_tip_refund", finance.IncomeRefund, "2026-05-10", "-300", "0", "-300")
+	refund.ParentID = "txn_tip"
+	sub := incomeMovement(t, "txn_sub", finance.IncomePayment, "2026-05-04", "500", "18", "482")
+	sub.Source, sub.SubscriptionID = string(finance.SourceSubscription), testkit.NamedID("sub_1")
+	sub.CoversStart, sub.CoversEnd = "2026-05-04", "2026-06-03"
+	fee := incomeMovement(t, "txn_fee", finance.IncomeFee, "2026-05-31", "0", "84", "-84")
+	if err := e.svc.RecordIncome(ctx, []appfinance.IncomeMovement{tip, refund, sub, fee}); err != nil {
+		t.Fatal(err)
+	}
+	e.dir.Tippers = map[string]appfinance.Subscriber{testkit.NamedID("tip_1"): {AccountID: testkit.NamedID("acct_tip"), Username: "bob"}}
+	all, err := e.svc.ListIncome(ctx, appfinance.IncomeFilter{From: finance.MinDate, To: finance.MaxDate}, "", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sources := map[string]finance.IncomeSource{}
+	for _, m := range all {
+		sources[m.ProviderID] = m.Source
+		if m.ProviderID == "txn_tip" && (m.TipID != testkit.NamedID("tip_1") || m.Subscriber.Username != "bob") {
+			t.Errorf("tip = %+v, want its tip and the account of its user", m)
+		}
+	}
+	want := map[string]finance.IncomeSource{
+		"txn_tip": finance.SourceOneTime, "txn_tip_refund": finance.SourceOneTime, "txn_sub": finance.SourceSubscription, "txn_fee": finance.SourceUnknown,
+	}
+	if !mapsEqual(sources, want) {
+		t.Errorf("sources = %v, want %v", sources, want)
+	}
+	got, err := e.svc.IncomeTotals(ctx, appfinance.IncomeQuery{TotalsQuery: appfinance.TotalsQuery{
+		Granularity: finance.GranularityMonth, From: financeDate(t, "2026-05-01"), To: financeDate(t, "2026-05-31"), Basis: finance.BasisCash,
+	}})
+	if err != nil || len(got) != 1 {
+		t.Fatalf("IncomeTotals(May) = %v, %v", got, err)
+	}
+	bySource := map[finance.IncomeSource]int64{}
+	for _, s := range got[0].NetBySource {
+		for _, m := range s.Net {
+			bySource[s.Source] += m.Minor
+		}
+	}
+	if w := map[finance.IncomeSource]int64{finance.SourceOneTime: 964 - 300, finance.SourceSubscription: 482, finance.SourceUnknown: -84}; !mapsEqual(bySource, w) {
+		t.Errorf("net by source = %v, want %v", bySource, w)
+	}
+	e.dir.Tips = true
+	if on, err := e.svc.TipsEnabled(ctx); err != nil || !on {
+		t.Errorf("TipsEnabled = %v, %v, want true", on, err)
+	}
+}
+
+// financeIncomeSourcesUpgrade records movements as the releases before the column source did
+// (all of them unknown) and runs the data upgrade step: the movements of a subscription become
+// subscription, a refund without a subscription takes its payment's source, a fee stays unknown,
+// a tip stays one_time, each statement rewrites at most its limit, and a second run rewrites
+// nothing.
+func financeIncomeSourcesUpgrade(t *testing.T, e *financeEnv) {
+	ctx := t.Context()
+	pay := incomeMovement(t, "txn_old", finance.IncomePayment, "2026-05-03", "500", "18", "482")
+	pay.SubscriptionID = testkit.NamedID("sub_old")
+	refund := incomeMovement(t, "txn_old_refund", finance.IncomeRefund, "2026-05-10", "-100", "0", "-100")
+	refund.ParentID, refund.SubscriptionID = "txn_old", testkit.NamedID("sub_old")
+	orphan := incomeMovement(t, "txn_old_orphan", finance.IncomeRefund, "2026-05-11", "-100", "0", "-100")
+	orphan.ParentID = "txn_old"
+	fee := incomeMovement(t, "txn_old_fee", finance.IncomeFee, "2026-05-31", "0", "84", "-84")
+	tip := incomeMovement(t, "txn_new_tip", finance.IncomePayment, "2026-05-12", "300", "10", "290")
+	tip.Source = string(finance.SourceOneTime)
+	if err := e.svc.RecordIncome(ctx, []appfinance.IncomeMovement{pay, refund, orphan, fee, tip}); err != nil {
+		t.Fatal(err)
+	}
+	var total int64
+	for range 20 {
+		var n int64
+		if err := e.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			var err error
+			n, err = e.h.Finance.UpgradeIncomeSources(ctx, tx, 1)
+			return err
+		}); err != nil {
+			t.Fatal(err)
+		}
+		if n > 1 {
+			t.Fatalf("UpgradeIncomeSources(limit 1) rewrote %d rows", n)
+		}
+		if n == 0 {
+			break
+		}
+		total += n
+	}
+	if total != 3 {
+		t.Errorf("rows rewritten = %d, want 3 (the payment, its refund, and the refund without a subscription)", total)
+	}
+	if err := appfinance.UpgradeIncomeSources(ctx, e.h.UnitOfWork, e.h.Finance); err != nil {
+		t.Fatalf("UpgradeIncomeSources again = %v", err)
+	}
+	all, err := e.svc.ListIncome(ctx, appfinance.IncomeFilter{From: finance.MinDate, To: finance.MaxDate}, "", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]finance.IncomeSource{}
+	for _, m := range all {
+		got[m.ProviderID] = m.Source
+	}
+	want := map[string]finance.IncomeSource{
+		"txn_old": finance.SourceSubscription, "txn_old_refund": finance.SourceSubscription, "txn_old_orphan": finance.SourceSubscription,
+		"txn_old_fee": finance.SourceUnknown, "txn_new_tip": finance.SourceOneTime,
+	}
+	if !mapsEqual(got, want) {
+		t.Errorf("sources after the upgrade = %v, want %v", got, want)
 	}
 }
 

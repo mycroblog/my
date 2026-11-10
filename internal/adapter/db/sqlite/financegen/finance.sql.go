@@ -57,7 +57,7 @@ func (q *Queries) DeleteCostItemHead(ctx context.Context, costItemID string) err
 }
 
 const findIncomeMovementID = `-- name: FindIncomeMovementID :one
-SELECT id FROM income_movements WHERE provider = ? AND provider_movement_id = ?
+SELECT id, source FROM income_movements WHERE provider = ? AND provider_movement_id = ?
 `
 
 type FindIncomeMovementIDParams struct {
@@ -65,11 +65,16 @@ type FindIncomeMovementIDParams struct {
 	ProviderMovementID string
 }
 
-func (q *Queries) FindIncomeMovementID(ctx context.Context, arg FindIncomeMovementIDParams) (string, error) {
+type FindIncomeMovementIDRow struct {
+	ID     string
+	Source string
+}
+
+func (q *Queries) FindIncomeMovementID(ctx context.Context, arg FindIncomeMovementIDParams) (FindIncomeMovementIDRow, error) {
 	row := q.db.QueryRowContext(ctx, findIncomeMovementID, arg.Provider, arg.ProviderMovementID)
-	var id string
-	err := row.Scan(&id)
-	return id, err
+	var i FindIncomeMovementIDRow
+	err := row.Scan(&i.ID, &i.Source)
+	return i, err
 }
 
 const getCostItemCurrent = `-- name: GetCostItemCurrent :one
@@ -345,9 +350,9 @@ func (q *Queries) InsertImportedCostRevision(ctx context.Context, arg InsertImpo
 const insertIncomeMovement = `-- name: InsertIncomeMovement :execrows
 
 INSERT INTO income_movements (
-  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, occurred_at, occurred_on, covers_starts_on,
-  covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, tip_id, source, occurred_at,
+  occurred_on, covers_starts_on, covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (provider, provider_movement_id) DO NOTHING
 `
 
@@ -358,6 +363,8 @@ type InsertIncomeMovementParams struct {
 	Kind               string
 	ParentMovementID   sql.NullString
 	SubscriptionID     sql.NullString
+	TipID              sql.NullString
+	Source             string
 	OccurredAt         int64
 	OccurredOn         string
 	CoversStartsOn     sql.NullString
@@ -380,6 +387,8 @@ func (q *Queries) InsertIncomeMovement(ctx context.Context, arg InsertIncomeMove
 		arg.Kind,
 		arg.ParentMovementID,
 		arg.SubscriptionID,
+		arg.TipID,
+		arg.Source,
 		arg.OccurredAt,
 		arg.OccurredOn,
 		arg.CoversStartsOn,
@@ -638,7 +647,7 @@ func (q *Queries) ListImportedCostHeads(ctx context.Context, arg ListImportedCos
 }
 
 const listIncomeMovements = `-- name: ListIncomeMovements :many
-SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.occurred_at, m.occurred_on, m.covers_starts_on,
+SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.tip_id, m.source, m.occurred_at, m.occurred_on, m.covers_starts_on,
   m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency, m.recorded_at, p.provider_movement_id AS parent_provider_movement_id
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE m.occurred_on >= ?1 AND m.occurred_on <= ?2
@@ -664,6 +673,8 @@ type ListIncomeMovementsRow struct {
 	ProviderMovementID       string
 	Kind                     string
 	SubscriptionID           sql.NullString
+	TipID                    sql.NullString
+	Source                   string
 	OccurredAt               int64
 	OccurredOn               string
 	CoversStartsOn           sql.NullString
@@ -699,6 +710,8 @@ func (q *Queries) ListIncomeMovements(ctx context.Context, arg ListIncomeMovemen
 			&i.ProviderMovementID,
 			&i.Kind,
 			&i.SubscriptionID,
+			&i.TipID,
+			&i.Source,
 			&i.OccurredAt,
 			&i.OccurredOn,
 			&i.CoversStartsOn,
@@ -724,7 +737,7 @@ func (q *Queries) ListIncomeMovements(ctx context.Context, arg ListIncomeMovemen
 }
 
 const listIncomeMovementsInWindow = `-- name: ListIncomeMovementsInWindow :many
-SELECT m.kind, m.occurred_on, m.covers_starts_on, m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency,
+SELECT m.kind, m.source, m.occurred_on, m.covers_starts_on, m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency,
   p.covers_starts_on AS parent_covers_starts_on, p.covers_ends_on AS parent_covers_ends_on
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE (m.occurred_on >= ?1 AND m.occurred_on <= ?2)
@@ -740,6 +753,7 @@ type ListIncomeMovementsInWindowParams struct {
 
 type ListIncomeMovementsInWindowRow struct {
 	Kind                 string
+	Source               string
 	OccurredOn           string
 	CoversStartsOn       sql.NullString
 	CoversEndsOn         sql.NullString
@@ -766,6 +780,7 @@ func (q *Queries) ListIncomeMovementsInWindow(ctx context.Context, arg ListIncom
 		var i ListIncomeMovementsInWindowRow
 		if err := rows.Scan(
 			&i.Kind,
+			&i.Source,
 			&i.OccurredOn,
 			&i.CoversStartsOn,
 			&i.CoversEndsOn,
@@ -842,6 +857,42 @@ func (q *Queries) SumBillingImportRuns(ctx context.Context, arg SumBillingImport
 	var i SumBillingImportRunsRow
 	err := row.Scan(&i.Requests, &i.BytesBilled)
 	return i, err
+}
+
+const upgradeIncomeChildSources = `-- name: UpgradeIncomeChildSources :execrows
+UPDATE income_movements SET source = (SELECT p.source FROM income_movements p WHERE p.id = income_movements.parent_movement_id)
+WHERE id IN (
+  SELECT c.id FROM income_movements c JOIN income_movements p ON p.id = c.parent_movement_id
+  WHERE c.source <> p.source ORDER BY c.id LIMIT ?1
+)
+`
+
+func (q *Queries) UpgradeIncomeChildSources(ctx context.Context, lim int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, upgradeIncomeChildSources, lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const upgradeIncomeSubscriptionSources = `-- name: UpgradeIncomeSubscriptionSources :execrows
+
+UPDATE income_movements SET source = 'subscription'
+WHERE id IN (
+  SELECT id FROM income_movements WHERE source = 'unknown' AND subscription_id IS NOT NULL ORDER BY id LIMIT ?1
+)
+`
+
+// The data upgrade step finance.income_sources (ADR-0023 section 5): the rows recorded before
+// the column source. A movement of a subscription is of the subscriptions, and a refund, a
+// chargeback, or a reversal takes the source of its payment; each statement rewrites up to lim
+// rows, and none once every row has its source.
+func (q *Queries) UpgradeIncomeSubscriptionSources(ctx context.Context, lim int64) (int64, error) {
+	result, err := q.db.ExecContext(ctx, upgradeIncomeSubscriptionSources, lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const upsertCostItemHead = `-- name: UpsertCostItemHead :exec

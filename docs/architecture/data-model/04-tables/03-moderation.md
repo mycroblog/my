@@ -193,9 +193,12 @@
   | `account_statuses_refetch_queued` | `account` | `accounts.id` | リモートのアカウントのハンドル | なし（元の記録を持たない操作） |
   | `domain_statuses_refetch_queued` | `domain` | ドメイン | ドメイン | なし（元の記録を持たない操作） |
   | `instance_marked_available` | `domain` | ドメイン | ドメイン | なし（空き状況のイベントの行は指さない） |
+  | `delivery_revealed` | `domain` | ドメイン | ドメイン | `deliveries.id`（伏せた送り手・アクティビティの URI・inbox を表示した配送） |
+  | `account_deliveries_viewed` | `account` | `accounts.id` | ローカルのアカウントのハンドルとサーバー（`@alice (misskey.io)`） | なし（元の記録を持たない読み取り） |
   | `billing_import_queued` | `billing_source` | 取り込み元（`aws`・`gcp`） | 事業者の名前（`AWS`） | なし（元の記録を持たない操作） |
   | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_deleted` | `cost_item` | `cost_items.id` | 項目の名前（変更は変更後の名前） | `cost_items.id` / `cost_item_label_revisions.id` / `cost_item_price_revisions.id` / `cost_item_end_changes.id` / `cost_item_cancellations.id` |
   | `supporter_program_enabled`, `supporter_program_disabled` | `supporter_program` | `supporter_program_changes.id` | 決済の事業者の名前（`stripe`・`payjp`） | `supporter_program_changes.id` |
+  | `supporter_tips_enabled`, `supporter_tips_revised`, `supporter_tips_disabled` | `supporter_program` | `supporter_tip_changes.id` | 通貨と金額の候補（最小単位、`JPY 300 500 1000`） | `supporter_tip_changes.id` |
   | `supporter_plan_created`, `supporter_plan_revised`, `supporter_plan_retired` | `supporter_plan` | `supporter_plans.id` | プランの名前（変更は変更後の名前） | `supporter_plan_revisions.id` / `supporter_plan_retirements.plan_id` |
   | `supporter_subscription_ended` | `supporter_subscription` | `supporter_subscriptions.id` | プランの名前と利用者のハンドル（`Supporter @alice`） | `supporter_subscriptions.id` |
   | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` | `custom_emoji_request` | `custom_emoji_requests.id` | `:shortcode:` | 申請はなし、ほかは `custom_emoji_request_outcomes.id` |

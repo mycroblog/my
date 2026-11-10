@@ -108,6 +108,9 @@ for (const name of readdirSync(schemaDir)
   db.exec(readFileSync(join(schemaDir, name, "sqlite.sql"), "utf8"));
 }
 db.close();
+// The data upgrade steps of this release, which the readiness check waits for (ADR-0023 §7); on a new database they
+// rewrite nothing and are only recorded.
+runMy(["db", "upgrade"], "", which);
 
 if (which === "voice") {
   // The spec creates its users with `bin/my`; any of them may open a room.

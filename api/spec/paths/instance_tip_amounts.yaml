@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getInstanceTipAmounts
+  summary: Get the amounts of the tips
+  description: |
+    The amounts that a tip, a one-time payment to the server's operation with nothing in
+    return, may be: the operator's choices, smallest first, in one currency. A 404 while the
+    server takes no tips (`Instance.tips_enabled`).
+  tags: [instance]
+  security: []
+  responses:
+    "200":
+      description: The amounts.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/TipAmounts.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

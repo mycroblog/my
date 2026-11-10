@@ -149,13 +149,13 @@ FOR UPDATE;
 -- InsertIncomeMovement writes nothing when the movement is already recorded.
 -- name: InsertIncomeMovement :execrows
 INSERT INTO income_movements (
-  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, occurred_at, occurred_on, covers_starts_on,
-  covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+  id, provider, provider_movement_id, kind, parent_movement_id, subscription_id, tip_id, source, occurred_at,
+  occurred_on, covers_starts_on, covers_ends_on, gross_minor, fee_minor, net_minor, currency, recorded_at
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 ON CONFLICT (provider, provider_movement_id) DO NOTHING;
 
 -- name: FindIncomeMovementID :one
-SELECT id FROM income_movements WHERE provider = $1 AND provider_movement_id = $2;
+SELECT id, source FROM income_movements WHERE provider = $1 AND provider_movement_id = $2;
 
 -- KnownIncomeMovements returns the provider IDs among ids that are recorded.
 -- name: KnownIncomeMovements :many
@@ -167,7 +167,7 @@ WHERE provider = sqlc.arg(provider) AND provider_movement_id = ANY(sqlc.arg(ids)
 -- and the movements on or before ends_on of a payment whose period ends on or after starts_on,
 -- with the period of their payment.
 -- name: ListIncomeMovementsInWindow :many
-SELECT m.kind, m.occurred_on, m.covers_starts_on, m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency,
+SELECT m.kind, m.source, m.occurred_on, m.covers_starts_on, m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency,
   p.covers_starts_on AS parent_covers_starts_on, p.covers_ends_on AS parent_covers_ends_on
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE (m.occurred_on >= sqlc.arg(starts_on)::date AND m.occurred_on <= sqlc.arg(ends_on)::date)
@@ -178,7 +178,7 @@ ORDER BY m.occurred_on, m.id;
 -- ListIncomeMovements returns up to lim movements on the dates from starts_on to ends_on, of
 -- kind unless it is empty, newest first, before the movement before unless it is empty.
 -- name: ListIncomeMovements :many
-SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.occurred_at, m.occurred_on, m.covers_starts_on,
+SELECT m.id, m.provider, m.provider_movement_id, m.kind, m.subscription_id, m.tip_id, m.source, m.occurred_at, m.occurred_on, m.covers_starts_on,
   m.covers_ends_on, m.gross_minor, m.fee_minor, m.net_minor, m.currency, m.recorded_at, p.provider_movement_id AS parent_provider_movement_id
 FROM income_movements m LEFT JOIN income_movements p ON p.id = m.parent_movement_id
 WHERE m.occurred_on >= sqlc.arg(starts_on)::date AND m.occurred_on <= sqlc.arg(ends_on)::date
@@ -187,3 +187,22 @@ WHERE m.occurred_on >= sqlc.arg(starts_on)::date AND m.occurred_on <= sqlc.arg(e
     OR (m.occurred_at, m.id) < (SELECT b.occurred_at, b.id FROM income_movements b WHERE b.id = sqlc.narg(before)::uuid))
 ORDER BY m.occurred_at DESC, m.id DESC
 LIMIT sqlc.arg(lim);
+
+-- The data upgrade step finance.income_sources (ADR-0023 section 5): the rows recorded before
+-- the column source. A movement of a subscription is of the subscriptions, and a refund, a
+-- chargeback, or a reversal takes the source of its payment; each statement rewrites up to lim
+-- rows, and none once every row has its source.
+
+-- name: UpgradeIncomeSubscriptionSources :execrows
+UPDATE income_movements SET source = 'subscription'
+WHERE id IN (
+  SELECT id FROM income_movements WHERE source = 'unknown' AND subscription_id IS NOT NULL ORDER BY id LIMIT sqlc.arg(lim)::integer
+);
+
+-- name: UpgradeIncomeChildSources :execrows
+UPDATE income_movements c SET source = p.source
+FROM income_movements p
+WHERE p.id = c.parent_movement_id AND c.id IN (
+  SELECT x.id FROM income_movements x JOIN income_movements y ON y.id = x.parent_movement_id
+  WHERE x.source <> y.source ORDER BY x.id LIMIT sqlc.arg(lim)::integer
+);
