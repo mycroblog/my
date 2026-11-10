@@ -90,9 +90,9 @@ tasks:
       - scripts/mailpit-cert.sh
       - MAILPIT_CERTS=./.tmp/mailpit docker compose up -d --wait --no-deps mailpit
 
-  # Not part of `check`: it pulls Mastodon, GoToSocial, and Misskey, builds Akkoma, and takes minutes (CI job federation-live, in the slow suite).
+  # Not part of `check`: it pulls Mastodon, GoToSocial, Misskey, and Bonfire Social, builds Akkoma, and takes minutes (CI job federation-live, in the slow suite).
   federation-live:
-    desc: Run the live interoperability scenarios against Mastodon, GoToSocial, Misskey, and Akkoma (test/federation-live)
+    desc: Run the live interoperability scenarios against Mastodon, GoToSocial, Misskey, Akkoma, and Bonfire Social (test/federation-live)
     env:
       MY_VERSION: "{{.VERSION}}"
     cmds:

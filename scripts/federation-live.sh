@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 # Live interoperability test (ADR-0006, ADR-0015, docs/architecture/federation.md §12): start
-# test/federation-live/compose.yaml (this server, Mastodon, GoToSocial, Misskey, Akkoma, Activity-Relay,
-# a private CA), create
+# test/federation-live/compose.yaml (this server, Mastodon, GoToSocial 0.22 and 0.21, Misskey, Akkoma,
+# Bonfire Social, Activity-Relay, a private CA), create
 # the users on each server, and run the scenarios in test/federation-live (go test -tags federationlive).
 #
 # Whatever the outcome, it writes to $FEDERATION_LIVE_OUT (default .tmp/federation-live/out):
@@ -41,7 +41,7 @@ printf '%s\n' \
 	'basicConstraints=critical,CA:FALSE' \
 	'keyUsage=critical,digitalSignature' \
 	'extendedKeyUsage=serverAuth' \
-	'subjectAltName=DNS:my.test,DNS:mastodon.test,DNS:gts.test,DNS:misskey.test,DNS:akkoma.test,DNS:relay.test' >"$certs/server.ext"
+	'subjectAltName=DNS:my.test,DNS:mastodon.test,DNS:gts.test,DNS:gts21.test,DNS:misskey.test,DNS:akkoma.test,DNS:relay.test,DNS:bonfire.test' >"$certs/server.ext"
 openssl x509 -req -in "$certs/server.csr" -CA "$certs/ca.pem" -CAkey "$certs/ca.key" -CAcreateserial \
 	-days 2 -extfile "$certs/server.ext" -out "$certs/server.pem" 2>/dev/null
 # The actor key of the relay: Activity-Relay reads a PKCS #1 RSA key.
@@ -68,6 +68,12 @@ MASTODON_AR_PRIMARY_KEY="$(rand 16)"
 AKKOMA_SECRET_KEY_BASE="$(rand 64)"
 AKKOMA_SIGNING_SALT="$(rand 8)"
 export AKKOMA_SECRET_KEY_BASE AKKOMA_SIGNING_SALT
+bonfire_password="$(rand 16)"
+BONFIRE_SECRET_KEY_BASE="$(rand 64)"
+BONFIRE_SIGNING_SALT="$(rand 16)"
+BONFIRE_ENCRYPTION_SALT="$(rand 16)"
+BONFIRE_RELEASE_COOKIE="$(rand 16)"
+export BONFIRE_SECRET_KEY_BASE BONFIRE_SIGNING_SALT BONFIRE_ENCRYPTION_SALT BONFIRE_RELEASE_COOKIE
 export MY_KEK MASTODON_SECRET_KEY_BASE MASTODON_OTP_SECRET MASTODON_AR_DETERMINISTIC_KEY \
 	MASTODON_AR_KEY_DERIVATION_SALT MASTODON_AR_PRIMARY_KEY
 
@@ -140,9 +146,11 @@ wait_ready() {
 wait_ready my.test /readyz
 wait_ready mastodon.test /health
 wait_ready gts.test /readyz
+wait_ready gts21.test /readyz
 wait_ready misskey.test /healthz
 wait_ready akkoma.test /api/v1/instance
 wait_ready relay.test /actor
+wait_ready bonfire.test /readyz
 
 # --- Users --------------------------------------------------------------------------------------
 # alice@my.test, frank@my.test (the user that the suspension scenario suspends), and otto@my.test (the
@@ -214,6 +222,10 @@ for user in carol erin arrive leave; do
 	"${compose[@]}" "${gts[@]}" create --username "$user" --email "$user@gts.test" --password "$gts_password" >/dev/null
 	"${compose[@]}" "${gts[@]}" confirm --username "$user" >/dev/null
 done
+# GoToSocial 0.21 serves the approvals of replies and boosts (TestInteractionApproval) only: carol there too.
+"${compose[@]}" exec -T gotosocial-0.21 /gotosocial/gotosocial admin account create \
+	--username carol --email carol@gts21.test --password "$gts_password" >/dev/null
+"${compose[@]}" exec -T gotosocial-0.21 /gotosocial/gotosocial admin account confirm --username carol >/dev/null
 
 # Misskey: the first account that admin/accounts/create makes is the administrator, who needs no token; it
 # makes the others. Each response carries the user's own API token ("i"). A new Misskey federates with no
@@ -250,6 +262,23 @@ akkoma_token="$(https akkoma.test /oauth/token -X POST -H 'Content-Type: applica
 	  username: "kate", password: $p, scope: "read write follow"}')" | jq -r '.access_token // empty')"
 [[ -n "$akkoma_token" ]] || fail "could not issue the access token of kate@akkoma.test"
 
+# Bonfire Social: bonnie, alice's follower, asks for and gives the approvals of quotes and replies to
+# alice's statuses without a request (TestInteractionApprovalBonfire). A new Bonfire federates with no one
+# until its instance setting says so. Its users are made with its release's RPC, and the password grant of
+# its OAuth API, which takes only an https redirect URI, issues bonnie's token.
+log "creating bonnie@bonfire.test"
+bonfire_rpc() { "${compose[@]}" exec -T bonfire ./bin/bonfire rpc "$1"; }
+bonfire_rpc 'Bonfire.Common.Settings.put([:activity_pub, :instance, :federating], true, scope: :instance, skip_boundary_check: true)' >/dev/null
+bonfire_rpc "acc = Bonfire.Me.Fake.fake_account!(%{email: %{email_address: \"bonnie@bonfire.test\"}, credential: %{password: \"$bonfire_password\"}})
+Bonfire.Me.Fake.fake_user!(acc, %{username: \"bonnie\", name: \"bonnie\", summary: \"\"})" >/dev/null
+bonfire_app="$(https bonfire.test /api/v1/apps -X POST -H 'Content-Type: application/json' \
+	-d '{"client_name":"federation-live","redirect_uris":"https://bonfire.test/federation-live","scopes":"read write follow"}')"
+bonfire_token="$(https bonfire.test /oauth/token -X POST -H 'Content-Type: application/json' -d "$(jq -nc \
+	--argjson app "$bonfire_app" --arg p "$bonfire_password" \
+	'{grant_type: "password", client_id: $app.client_id, client_secret: $app.client_secret,
+	  username: "bonnie", password: $p, scope: "read write follow"}')" | jq -r '.access_token // empty')"
+[[ -n "$bonfire_token" ]] || fail "could not issue the access token of bonnie@bonfire.test"
+
 # --- Scenarios ----------------------------------------------------------------------------------
 log "running the scenarios"
 # Also written to $work/scenarios.env, to rerun the scenarios against a stack kept with FEDERATION_LIVE_KEEP=1
@@ -269,6 +298,7 @@ export FEDERATION_LIVE_MISSKEY_TOKEN_ARRIVE="$misskey_token_arrive"
 export FEDERATION_LIVE_MISSKEY_TOKEN_LEAVE="$misskey_token_leave"
 export FEDERATION_LIVE_MISSKEY_ADMIN_TOKEN="$misskey_token_admin"
 export FEDERATION_LIVE_AKKOMA_TOKEN="$akkoma_token"
+export FEDERATION_LIVE_BONFIRE_TOKEN="$bonfire_token"
 env | grep '^FEDERATION_LIVE_' >"$work/scenarios.env"
 cd "$root"
 # The scenarios take longer than go test's default 10 minutes: TestClosure alone waits up to 15 for
