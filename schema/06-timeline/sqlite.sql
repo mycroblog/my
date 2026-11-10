@@ -159,6 +159,52 @@ CREATE TABLE feed_tag_follows (
 CREATE INDEX feed_tag_follows_tag_id ON feed_tag_follows (tag_id);
 
 -- ---------------------------------------------------------------------------------------------
+-- timeline: keyword filters (data-model §4.6, ADR-0157). Owned by internal/app/timeline: the
+-- account's commands write them, and the reads of the timelines, the threads, the notifications,
+-- and the streams match the statuses they show against the active filters of the viewer.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: a keyword filter of an account, at most 100 per account. A rebuild of the projections
+-- keeps them.
+CREATE TABLE keyword_filters (
+  id TEXT NOT NULL PRIMARY KEY,
+  account_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX keyword_filters_account_id_id ON keyword_filters (account_id, id);
+
+-- Current value: the title (1 to 50 graphemes), action, and expiry of a filter. expires_at is the
+-- time until which the filter applies (NULL for always), not a state: an expired filter is kept,
+-- listed as expired, and applies again when its expiry moves later. The cleanup job deletes the
+-- filters that expired long ago.
+CREATE TABLE keyword_filter_settings (
+  filter_id TEXT NOT NULL PRIMARY KEY,
+  title TEXT NOT NULL,
+  action TEXT NOT NULL CHECK (action IN ('warn', 'hide')),
+  expires_at INTEGER
+) STRICT;
+CREATE INDEX keyword_filter_settings_expires_at ON keyword_filter_settings (expires_at) WHERE expires_at IS NOT NULL;
+
+-- Current value: the contexts where a filter applies, at least one.
+CREATE TABLE keyword_filter_contexts (
+  filter_id TEXT NOT NULL,
+  context TEXT NOT NULL CHECK (context IN ('home', 'notifications', 'public', 'thread', 'account')),
+  PRIMARY KEY (filter_id, context)
+) STRICT;
+
+-- Current value: the words of a filter (1 to 100), in the order given (position): what the user
+-- typed, its normalized form that statuses are matched by (ADR-0157 §4), and whether it matches
+-- whole words only. A word is in a filter once by its normalized form.
+CREATE TABLE keyword_filter_words (
+  filter_id TEXT NOT NULL,
+  normalized_word TEXT NOT NULL,
+  word TEXT NOT NULL,
+  whole_word INTEGER NOT NULL CHECK (whole_word IN (0, 1)),
+  position INTEGER NOT NULL CHECK (position >= 0),
+  PRIMARY KEY (filter_id, normalized_word)
+) STRICT;
+
+-- ---------------------------------------------------------------------------------------------
 -- timeline: direct messages by conversation (data-model §4.6, §6.4, ADR-0154 §6). Owned by
 -- internal/app/timeline: its projectors derive feed_conversation_participants and
 -- feed_conversations from the direct posts and follow content.conversation_merged; the owner's

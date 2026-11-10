@@ -136,6 +136,8 @@ linters:
             - github.com/mycroblog/my/internal/i18n
             # Counting the grapheme clusters of a list's name (ADR-0013 §10): pure-Go Unicode data, not an external resource.
             - github.com/rivo/uniseg
+            # The NFKC of the keyword filters' normalization (ADR-0157 §4): pure-Go Unicode data, not an external resource.
+            - golang.org/x/text/unicode/norm
         domain-notification:
           list-mode: strict
           files:

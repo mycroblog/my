@@ -85,3 +85,26 @@ DELETE FROM lists WHERE lists.owner_account_id = sqlc.arg(account_id) AND lists.
 DELETE FROM feed_tag_follows WHERE feed_tag_follows.account_id = sqlc.arg(account_id) AND feed_tag_follows.tag_id IN (
   SELECT f.tag_id FROM feed_tag_follows f WHERE f.account_id = sqlc.arg(account_id)
   ORDER BY f.tag_id LIMIT sqlc.arg(lim));
+
+-- The keyword filters of an account (data-model 4.6). A filter's settings, contexts, and words go
+-- before the filter, and the steps pick the same first filters by ID.
+
+-- name: EraseKeywordFilterWordsOf :execrows
+DELETE FROM keyword_filter_words WHERE keyword_filter_words.filter_id IN (
+  SELECT f.id FROM keyword_filters f WHERE f.account_id = sqlc.arg(account_id)
+  ORDER BY f.id LIMIT sqlc.arg(lim));
+
+-- name: EraseKeywordFilterContextsOf :execrows
+DELETE FROM keyword_filter_contexts WHERE keyword_filter_contexts.filter_id IN (
+  SELECT f.id FROM keyword_filters f WHERE f.account_id = sqlc.arg(account_id)
+  ORDER BY f.id LIMIT sqlc.arg(lim));
+
+-- name: EraseKeywordFilterSettingsOf :execrows
+DELETE FROM keyword_filter_settings WHERE keyword_filter_settings.filter_id IN (
+  SELECT f.id FROM keyword_filters f WHERE f.account_id = sqlc.arg(account_id)
+  ORDER BY f.id LIMIT sqlc.arg(lim));
+
+-- name: EraseKeywordFiltersOf :execrows
+DELETE FROM keyword_filters WHERE keyword_filters.account_id = sqlc.arg(account_id) AND keyword_filters.id IN (
+  SELECT f.id FROM keyword_filters f WHERE f.account_id = sqlc.arg(account_id)
+  ORDER BY f.id LIMIT sqlc.arg(lim));

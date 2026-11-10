@@ -26,7 +26,7 @@ import (
 // their expiry and the subdomains of a domain; the home, local, federated, hashtag, profile, and
 // list timelines with their filters, languages, read window, and keyset paging; the facts of a
 // page and the muted domains; the lists with their members; the followed hashtags with the
-// hashtag branch of home; and the projections emptied for a rebuild. The timeline use cases and projectors on top of it are TimelineFlows, which
+// hashtag branch of home; the keyword filters; and the projections emptied for a rebuild. The timeline use cases and projectors on top of it are TimelineFlows, which
 // internal/flowtest/timeline runs once on SQLite.
 func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 	t.Helper()
@@ -49,6 +49,7 @@ func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 		{"KeepsConversations", timelineRepoConversations},
 		{"KeepsFollowedTags", timelineRepoTagFollows},
 		{"ListsTheHashtagBranchOfHome", timelineRepoHomeTags},
+		{"KeepsKeywordFilters", timelineRepoKeywordFilters},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

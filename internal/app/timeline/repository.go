@@ -353,4 +353,5 @@ type Repository interface {
 	ConversationRepository
 	// The followed hashtags (ADR-0013 §24 to §28).
 	TagFollowRepository
+	KeywordFilterRepository
 }
