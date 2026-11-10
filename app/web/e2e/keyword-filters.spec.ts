@@ -171,7 +171,8 @@ test.describe("keyword filters", () => {
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
     await form.getByRole("button", { name: message("filters.form.add"), exact: true }).click();
-    await expect(main.getByRole("status")).toHaveText(pattern("filters.added"));
+    // The add form keeps its own (empty) status until it closes, so find the page's status by its words.
+    await expect(main.getByRole("status").filter({ hasText: pattern("filters.added") })).toBeVisible();
     await expect(main.getByRole("listitem")).toHaveCount(1);
     await expectNoAxeViolations(makeAxeBuilder);
     await expectNoHorizontalScroll(page);
