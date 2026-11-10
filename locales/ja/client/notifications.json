@@ -91,6 +91,10 @@
     "defaultMessage": "webhook を開く",
     "description": "Link in an administrator's notification of a disabled webhook to the webhooks screen."
   },
+  "notifications.link.domain_list_subscriptions": {
+    "defaultMessage": "ブロックリストの購読を開く",
+    "description": "Link of an admin_domain_list_failing notification to the list of the subscriptions to domain block lists."
+  },
   "notifications.link.custom_emoji_requests": {
     "defaultMessage": "申請を確認する",
     "description": "Link in an administrator's notification of a custom emoji request to the requests tab of the custom emoji screen."
@@ -418,6 +422,10 @@
   "notifications.type.admin_hook_failing": {
     "defaultMessage": "外部の審査の呼び出しが失敗し続けています",
     "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
+  },
+  "notifications.type.admin_domain_list_failing": {
+    "defaultMessage": "ブロックリストの購読で取得の失敗が続いています",
+    "description": "Notification sentence to a moderator: the server could not fetch a subscribed domain block list three times in a row, so the list changes no domain actions until it works again."
   },
   "notifications.type.admin_hook_appeal": {
     "defaultMessage": "自動の審査に拒否された投稿に、異議が申し立てられました",

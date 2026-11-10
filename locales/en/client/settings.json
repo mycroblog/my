@@ -2699,6 +2699,10 @@
     "defaultMessage": "Failing external reviews",
     "description": "Row of the notification settings table: (moderators) calls of an external review keep failing."
   },
+  "settings.notifications.group.admin_domain_list_failing": {
+    "defaultMessage": "Failing blocklist subscriptions",
+    "description": "Row of the notification settings table: (moderators) the fetches of a subscribed domain block list keep failing."
+  },
   "settings.notifications.group.admin_hook_appeal": {
     "defaultMessage": "Appeals of refused posts",
     "description": "Row of the notification settings table: (moderators) a user appealed a post that the automated review refused."

@@ -23,7 +23,7 @@ CREATE TABLE notifications (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'status', 'announcement',
+    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'admin_domain_list_failing', 'status', 'announcement',
     'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit',
     'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected'
   )),
@@ -156,7 +156,7 @@ CREATE TABLE push_subscription_alerts (
     'supporter_payment_failed', 'supporter_subscription_ended', 'supporter_plan_retired',
     'account_moved', 'admin_account_moved',
     'service_closure', 'admin_service_closure_due', 'supporter_service_closure',
-    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'status', 'announcement',
+    'voice_room_started', 'voice_room_invited', 'admin_error_group', 'admin_hook_failing', 'admin_domain_list_failing', 'status', 'announcement',
     'admin_hook_appeal', 'hook_appeal_decided', 'auto_delete_limit',
     'reply_request', 'boost_request', 'quote_request', 'interaction_accepted', 'interaction_rejected'
   )),
@@ -174,7 +174,7 @@ CREATE TABLE notification_settings (
     'mention', 'follow', 'follow_request', 'follow_accepted', 'boost', 'favourite', 'reaction', 'quote', 'poll_closed',
     'account_moved', 'voice',
     'admin_report', 'admin_sign_up', 'admin_appeal', 'admin_webhook_disabled', 'admin_custom_emoji_request',
-    'admin_account_moved', 'admin_service_closure_due', 'admin_error_group', 'admin_hook_failing', 'admin_hook_appeal',
+    'admin_account_moved', 'admin_service_closure_due', 'admin_error_group', 'admin_hook_failing', 'admin_hook_appeal', 'admin_domain_list_failing',
     'moderation', 'status', 'announcement', 'auto_delete_limit', 'interaction_request'
   )),
   channel TEXT NOT NULL CHECK (channel IN ('in_app', 'email')),

@@ -643,6 +643,8 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 		p.Title, p.Path = l.ServerPushAdminWebhookDisabled(instance), "/admin/webhooks"
 	case notification.TypeAdminHookFailing:
 		p.Title, p.Path = l.ServerPushAdminHookFailing(instance), "/moderation/hook-decisions"
+	case notification.TypeAdminDomainListFailing:
+		p.Title, p.Path = l.ServerPushAdminDomainListFailing(instance), "/moderation/domain-actions/subscriptions"
 	case notification.TypeAdminHookAppeal:
 		p.Title, p.Path = l.ServerPushAdminHookAppeal(instance), "/moderation/hook-decisions/appeals"
 		if n.HookAppealID != "" {

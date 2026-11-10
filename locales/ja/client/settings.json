@@ -2699,6 +2699,10 @@
     "defaultMessage": "外部の審査の失敗",
     "description": "Row of the notification settings table: (moderators) calls of an external review keep failing."
   },
+  "settings.notifications.group.admin_domain_list_failing": {
+    "defaultMessage": "ブロックリストの購読の失敗",
+    "description": "Row of the notification settings table: (moderators) the fetches of a subscribed domain block list keep failing."
+  },
   "settings.notifications.group.admin_hook_appeal": {
     "defaultMessage": "拒否された投稿への異議申し立て",
     "description": "Row of the notification settings table: (moderators) a user appealed a post that the automated review refused."

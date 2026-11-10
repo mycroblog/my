@@ -189,6 +189,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   admin_appeal: "staff",
   admin_webhook_disabled: "staff",
   admin_hook_failing: "staff",
+  admin_domain_list_failing: "staff",
   admin_hook_appeal: "staff",
   hook_appeal_decided: "staff",
   admin_custom_emoji_request: "staff",
@@ -233,6 +234,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   admin_appeal: "client:notifications.type.admin_appeal",
   admin_webhook_disabled: "client:notifications.type.admin_webhook_disabled",
   admin_hook_failing: "client:notifications.type.admin_hook_failing",
+  admin_domain_list_failing: "client:notifications.type.admin_domain_list_failing",
   admin_hook_appeal: "client:notifications.type.admin_hook_appeal",
   hook_appeal_decided: "client:notifications.type.hook_appeal_decided",
   admin_custom_emoji_request: "client:notifications.type.admin_custom_emoji_request",
@@ -502,6 +504,13 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return [{ href: "/admin/webhooks", label: "client:notifications.link.webhooks" }];
     case "admin_hook_failing":
       return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_decisions" }];
+    case "admin_domain_list_failing":
+      return [
+        {
+          href: "/moderation/domain-actions/subscriptions",
+          label: "client:notifications.link.domain_list_subscriptions",
+        },
+      ];
     // An appeal of a refused post leads to its page; without its ID, to the appeals awaiting a moderator.
     case "admin_hook_appeal":
       return [

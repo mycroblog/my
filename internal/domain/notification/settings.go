@@ -68,6 +68,7 @@ const (
 	GroupAdminErrorGroup         Group = "admin_error_group"
 	GroupAdminHookFailing        Group = "admin_hook_failing"
 	GroupAdminHookAppeal         Group = "admin_hook_appeal"
+	GroupAdminDomainListFailing  Group = "admin_domain_list_failing"
 
 	// GroupModeration is moderation_notice, report_resolved, appeal_decided,
 	// relationships_severed, custom_emoji_request_decided, and hook_appeal_decided.
@@ -198,6 +199,7 @@ var Groups = []GroupSpec{
 	moderator(TypeAdminReport), moderator(TypeAdminSignUp), moderator(TypeAdminAppeal), moderator(TypeAdminWebhookDisabled),
 	moderator(TypeAdminCustomEmojiRequest), moderator(TypeAdminAccountMoved), moderator(TypeAdminServiceClosureDue),
 	moderator(TypeAdminErrorGroup), moderator(TypeAdminHookFailing), moderator(TypeAdminHookAppeal),
+	moderator(TypeAdminDomainListFailing),
 	{
 		Group: GroupModeration, Section: SectionInstance,
 		Types: []Type{

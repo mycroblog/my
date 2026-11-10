@@ -24,7 +24,8 @@ type Type string
 // whose subscription the announcement cancels (ADR-0088 §2). voice_room_started and
 // voice_room_invited come from the voice chat rooms (ADR-0100 §8). admin_report, admin_sign_up,
 // admin_appeal, admin_webhook_disabled, admin_custom_emoji_request, admin_account_moved,
-// admin_service_closure_due, admin_error_group, admin_hook_failing, and admin_hook_appeal go to the staff whose roles grant the permission they need
+// admin_service_closure_due, admin_error_group, admin_hook_failing, admin_hook_appeal, and
+// admin_domain_list_failing go to the staff whose roles grant the permission they need
 // (ModeratorPermission). status tells a subscriber of a new post of an account it subscribes to
 // (ADR-0086). announcement tells every local user of a server-wide announcement once it starts
 // to show (ADR-0125 §2). auto_delete_limit tells a local account in advance that the server
@@ -102,6 +103,10 @@ const (
 	// TypeAdminHookFailing tells the holders of manage_reports that calls of a decision hook keep
 	// failing, so that subjects go unreviewed or wait (ADR-0147).
 	TypeAdminHookFailing Type = "admin_hook_failing"
+	// TypeAdminDomainListFailing tells the holders of manage_domains that the fetches of a
+	// subscription to a domain block list keep failing (ADR-0159 §5), so that the list no longer
+	// changes the domain actions. It names none.
+	TypeAdminDomainListFailing Type = "admin_domain_list_failing"
 	// TypeAdminHookAppeal tells the holders of manage_reports that an author appealed a post that
 	// the decision hook local.status refused (ADR-0147 §9): HookAppealID is the appeal.
 	TypeAdminHookAppeal Type = "admin_hook_appeal"
@@ -232,6 +237,7 @@ var Types = []Type{
 	TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
 	TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit,
 	TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
+	TypeAdminDomainListFailing,
 }
 
 // Valid reports whether t is a known notification type.
@@ -246,7 +252,8 @@ func (t Type) Valid() bool {
 		TypeServiceClosure, TypeAdminServiceClosureDue, TypeSupporterServiceClosure,
 		TypeVoiceRoomStarted, TypeVoiceRoomInvited, TypeAdminErrorGroup, TypeAdminHookFailing, TypeStatus, TypeAnnouncement,
 		TypeAdminHookAppeal, TypeHookAppealDecided, TypeAutoDeleteLimit,
-		TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected:
+		TypeReplyRequest, TypeBoostRequest, TypeQuoteRequest, TypeInteractionAccepted, TypeInteractionRejected,
+		TypeAdminDomainListFailing:
 		return true
 	}
 	return false
@@ -395,6 +402,7 @@ func (n Notification) Validate() error {
 		n.Type == TypeAdminAppeal && n.SourceAccountID != "",
 		n.Type == TypeAdminWebhookDisabled && n.SourceAccountID != "",
 		n.Type == TypeAdminHookFailing && n.SourceAccountID != "",
+		n.Type == TypeAdminDomainListFailing && n.SourceAccountID != "",
 		n.Type == TypeAdminCustomEmojiRequest && n.SourceAccountID != "",
 		n.Type == TypeCustomEmojiRequestDecided && n.SourceAccountID != "",
 		n.Type == TypeAdminSignUp && (n.SubjectUserID == "" || n.SourceAccountID != ""):
@@ -535,14 +543,16 @@ const (
 	PermissionManageServiceClosure Permission = "manage_service_closure"
 	// PermissionManageErrors is the identity module's manage_errors.
 	PermissionManageErrors Permission = "manage_errors"
+	// PermissionManageDomains is the identity module's manage_domains.
+	PermissionManageDomains Permission = "manage_domains"
 )
 
 // ModeratorPermission returns the permission that the recipient of a notification of type t
 // needs, when they get it and while they read it, and whether t needs one: admin_report needs
 // manage_reports, admin_sign_up, admin_appeal, and admin_account_moved manage_accounts, admin_webhook_disabled
 // manage_webhooks, admin_custom_emoji_request manage_custom_emojis,
-// admin_service_closure_due manage_service_closure, and admin_error_group manage_errors. The
-// other types need none.
+// admin_service_closure_due manage_service_closure, admin_error_group manage_errors, and
+// admin_domain_list_failing manage_domains. The other types need none.
 func ModeratorPermission(t Type) (Permission, bool) {
 	switch t {
 	case TypeAdminReport, TypeAdminHookFailing, TypeAdminHookAppeal:
@@ -557,6 +567,8 @@ func ModeratorPermission(t Type) (Permission, bool) {
 		return PermissionManageServiceClosure, true
 	case TypeAdminErrorGroup:
 		return PermissionManageErrors, true
+	case TypeAdminDomainListFailing:
+		return PermissionManageDomains, true
 	}
 	return "", false
 }
@@ -596,6 +608,12 @@ func AdminWebhookDisabledKey(stateChangeID string) string {
 // day, however often its breaker opens.
 func AdminHookFailingKey(hook string, at time.Time) string {
 	return string(TypeAdminHookFailing) + ":" + hook + ":" + at.UTC().Format(time.DateOnly)
+}
+
+// AdminDomainListFailingKey is the dedupe key of an admin_domain_list_failing notification: one
+// per fetch that made the failures of the subscription reach the threshold.
+func AdminDomainListFailingKey(fetchID string) string {
+	return string(TypeAdminDomainListFailing) + ":" + fetchID
 }
 
 // AdminCustomEmojiRequestKey is the dedupe key of an admin_custom_emoji_request notification: one

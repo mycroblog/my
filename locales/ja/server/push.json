@@ -143,6 +143,10 @@
     "defaultMessage": "{instance} の外部の審査が失敗し続けています",
     "description": "Web Push notification to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.admin_domain_list_failing": {
+    "defaultMessage": "{instance} のブロックリストの購読で取得の失敗が続いています",
+    "description": "Web Push notification to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.admin_hook_appeal": {
     "defaultMessage": "{instance} のモデレーターに、拒否された投稿への異議申し立てが届きました",
     "description": "Web Push notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none."
