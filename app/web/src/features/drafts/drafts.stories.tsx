@@ -3,7 +3,7 @@
 // one whose schedule failed, nothing saved, loading, a failure, the schedule popover, Japanese, and narrow.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import { draftFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, withViewer } from "../../test/msw/http";
 import {
@@ -92,7 +92,9 @@ export const Reschedule: Story = {
     const [button] = await within(context.canvasElement).findAllByRole("button", { name: /^Change time: / });
     if (button === undefined) throw new Error("no Change time button");
     await userEvent.click(button);
-    await expect(await within(document.body).findByRole("dialog", { name: "Schedule the post" })).toBeVisible();
+    // The popover fades in from opacity 0: it is visible once the fade has run.
+    const picker = await within(document.body).findByRole("dialog", { name: "Schedule the post" });
+    await waitFor(() => expect(picker).toBeVisible());
   },
 };
 
