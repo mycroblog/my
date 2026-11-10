@@ -17182,7 +17182,7 @@ export interface components {
          *     cover.
          */
         StatusArticle: {
-            /** @description The title, as plain text. */
+            /** @description The title, as plain text; empty only for an article from another server that has none. */
             title: string;
             /** @description The summary, as plain text; the server makes one from the body when the author writes none. */
             summary: string;
@@ -17229,7 +17229,8 @@ export interface components {
             /**
              * @description The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
              *     remote status is what the server's sanitizer kept of the received document. For an
-             *     article, its rendered body, or empty in lists (see above).
+             *     article, its rendered body, or empty in lists (see above); the images in the body of an
+             *     article from another server load through the server's media proxy.
              */
             content: string;
             article?: components["schemas"]["StatusArticle"];

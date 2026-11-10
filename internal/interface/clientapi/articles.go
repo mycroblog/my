@@ -56,11 +56,18 @@ func (s *Server) articleProblem(ctx context.Context, err error) (problem, bool) 
 }
 
 // withArticleBody gives the Status of an article its body, which lists leave out (ADR-0160 §8):
-// the operations that present one article call it.
-func withArticleBody(st *Status, v appcontent.StatusView) {
-	if v.Revision.Article != nil && len(v.Revision.Bodies) > 0 {
-		st.Content = v.Revision.Bodies[0].ContentHTML
+// the operations that present one article call it. The images of a received article are shown
+// through the media proxy (StatusReader.ArticleBody).
+func (s *Server) withArticleBody(ctx context.Context, st *Status, v appcontent.StatusView) error {
+	if v.Revision.Article == nil {
+		return nil
 	}
+	body, err := s.o.StatusReader.ArticleBody(ctx, v.Revision)
+	if err != nil {
+		return err
+	}
+	st.Content = body
+	return nil
 }
 
 // newArticleSource is what the author wrote of an article besides its body, nil for a post.
@@ -110,7 +117,9 @@ func (s *Server) articleView(ctx context.Context, statusID string) (Status, erro
 	if err != nil {
 		return Status{}, err
 	}
-	withArticleBody(&out, view)
+	if err := s.withArticleBody(ctx, &out, view); err != nil {
+		return Status{}, err
+	}
 	return out, nil
 }
 

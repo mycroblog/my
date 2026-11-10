@@ -12,6 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/app/timeline"
+	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/hook"
 	domainidentity "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
@@ -32,6 +33,7 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 		Media:          medias,
 		RemoteMentions: remoteMentions{a}, // reads a.RemoteActors, built by setUpRemoteActors
 		Sanitizer:      newHTMLSanitizer(),
+		RemoteArticles: newRemoteArticleSanitizer(),
 		RemoteMedia:    remoteMediaRecorder{a}, // reads a.Media, built by setMedia
 		Quotes:         quotes,
 		// Reads a.Interactions, built below.
@@ -69,6 +71,7 @@ func (a *App) setUpContent(cfg *config.Config, statuses content.Repository, quot
 			return a.Media.ArticleImage(ctx, accountID, mediaID)
 		},
 		ArticleLimits:    a.articleLimits,
+		ArticleLimitsTx:  a.articleLimitsTx,
 		MayWriteArticles: a.mayWriteArticles,
 		Clock:            a.Clock, IDs: a.IDs, Host: cfg.Host, AccountDomain: cfg.AccountDomain,
 	})
@@ -94,7 +97,7 @@ func (a *App) setUpStatusReader(statuses content.Repository, interactions conten
 	a.Statuses = content.NewReader(content.ReaderDeps{
 		Statuses: statuses, Interactions: interactions, Accounts: a.Accounts, Relationships: a.Graph,
 		Restrictions: a.AccountPolicy.Content(), Media: a.Media, Clock: a.Clock, LinkCards: a.LinkCards,
-		Quotes: quotes, DomainMutes: a.Graph,
+		Quotes: quotes, DomainMutes: a.Graph, RemoteArticles: newRemoteArticleSanitizer(),
 	})
 }
 
@@ -139,6 +142,15 @@ func (a *App) moved(ctx context.Context, accountID string) (bool, error) {
 // articleLimits returns the instance settings that bound an article (ADR-0160 §5).
 func (a *App) articleLimits(ctx context.Context) (content.ArticleLimits, error) {
 	s, err := a.Instance.Settings(ctx)
+	if err != nil {
+		return content.ArticleLimits{}, err
+	}
+	return content.ArticleLimits{MaxBytes: s.MaxArticleBytes(), MaxImages: s.MaxArticleImages()}, nil
+}
+
+// articleLimitsTx is articleLimits inside tx.
+func (a *App) articleLimitsTx(ctx context.Context, tx uow.Tx) (content.ArticleLimits, error) {
+	s, err := a.Instance.SettingsTx(ctx, tx)
 	if err != nil {
 		return content.ArticleLimits{}, err
 	}

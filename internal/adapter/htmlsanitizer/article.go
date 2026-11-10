@@ -70,25 +70,51 @@ func classesOf(classes []string) *regexp.Regexp {
 // allowlist. Every link gets rel="nofollow noopener noreferrer" and target="_blank", and a link
 // whose scheme the allowlist of remote HTML does not have becomes its text; <h1> becomes <h2>. An
 // image is kept only when keepImage reports true for its src, an http or https URL, with its alt
-// text, size, and loading="lazy"; any other image becomes its alt text. Raw markup, comments,
-// styles, and every other attribute are dropped.
+// text, size, and loading="lazy"; any other image becomes a link to its src with its alt text as
+// the text (outside a link, and when the src is a link the allowlist has), else its alt text. Raw
+// markup, comments, styles, and every other attribute are dropped.
 func SanitizeArticle(in string, keepImage func(src string) bool) string {
+	return sanitizeArticle(in, func(src, _ string) (string, bool) { return src, keepImage != nil && keepImage(src) }).html
+}
+
+// articleOutput is what sanitizeArticle writes: the HTML, and the text of the body without its
+// headings, code, and images (and the links that images became).
+type articleOutput struct {
+	html, text string
+}
+
+// sanitizeArticle is SanitizeArticle with image, which returns the src that an image with src and
+// alt is written with and whether it is kept as an image. It is called for the images in document
+// order.
+func sanitizeArticle(in string, image func(src, alt string) (string, bool)) articleOutput {
 	nodes, err := nethtml.ParseFragment(strings.NewReader(in), &nethtml.Node{
 		Type: nethtml.ElementNode, Data: "body", DataAtom: atom.Body,
 	})
 	if err != nil { // only a failing reader makes the parser fail; a strings.Reader does not
-		return ""
+		return articleOutput{}
 	}
-	w := articleWriter{keepImage: keepImage}
+	w := articleWriter{image: image}
 	for _, n := range nodes {
 		w.node(n, false)
 	}
-	return articlePolicy.Sanitize(w.b.String())
+	return articleOutput{html: articlePolicy.Sanitize(w.b.String()), text: w.text.String()}
 }
 
 type articleWriter struct {
-	b         strings.Builder
-	keepImage func(string) bool
+	b     strings.Builder
+	image func(src, alt string) (string, bool)
+	// text is the text of the body outside headings, code, and images; quiet counts the
+	// elements around the current node whose text it leaves out.
+	text  strings.Builder
+	quiet int
+}
+
+// articleQuietElements are the elements whose text a summary made from the body leaves out.
+var articleQuietElements = []string{"h1", "h2", "h3", "h4", "h5", "h6", "pre", "code"}
+
+// articleBlocks are the elements after which the text of the body has a space.
+var articleBlocks = []string{
+	"p", "br", "hr", "h1", "h2", "h3", "h4", "h5", "h6", "pre", "blockquote", "ul", "ol", "li", "table", "tr", "th", "td",
 }
 
 // node writes n and its descendants; inLink is true inside a link, where links are unwrapped.
@@ -96,19 +122,26 @@ func (w *articleWriter) node(n *nethtml.Node, inLink bool) {
 	switch n.Type {
 	case nethtml.TextNode:
 		w.b.WriteString(escape(n.Data))
+		if w.quiet == 0 {
+			w.text.WriteString(n.Data)
+		}
 		return
 	case nethtml.ElementNode:
 	default: // comments, doctypes
 		return
 	}
 	name := n.Data
+	quiet := slices.Contains(articleQuietElements, name)
+	if quiet {
+		w.quiet++
+	}
 	switch {
 	case n.Namespace != "", slices.Contains(droppedElements, name):
 	case name == "a":
 		href, ok := linkHref(n)
 		if !ok || inLink {
 			w.children(n, inLink)
-			return
+			break
 		}
 		w.b.WriteString(`<a href="` + escape(href) + `"`)
 		if c := keepClasses(n, articleLinkClasses); c != "" {
@@ -118,13 +151,19 @@ func (w *articleWriter) node(n *nethtml.Node, inLink bool) {
 		w.children(n, true)
 		w.b.WriteString("</a>")
 	case name == "img":
-		w.image(n)
+		w.writeImage(n, inLink)
 	case name == "h1":
 		w.element(n, "h2", inLink)
 	case slices.Contains(articleElements, name):
 		w.element(n, name, inLink)
 	default: // other elements are unwrapped
 		w.children(n, inLink)
+	}
+	if quiet {
+		w.quiet--
+	}
+	if slices.Contains(articleBlocks, name) {
+		w.text.WriteByte(' ')
 	}
 }
 
@@ -156,22 +195,47 @@ func (w *articleWriter) element(n *nethtml.Node, name string, inLink bool) {
 	w.b.WriteString("</" + name + ">")
 }
 
-// image writes an image that keepImage lets through, and the alt text of any other.
-func (w *articleWriter) image(n *nethtml.Node) {
+// writeImage writes an image that w.image keeps, with the src it returns; any other image is
+// written as a link to its src with its alt text as the text, or as its alt text inside a link
+// or when the src is no link.
+func (w *articleWriter) writeImage(n *nethtml.Node, inLink bool) {
 	alt, _ := attr(n, "alt")
 	src, ok := attr(n, "src")
-	u, err := url.Parse(strings.TrimSpace(src))
-	if !ok || err != nil || !slices.Contains(imageScheme, u.Scheme) || u.Host == "" || w.keepImage == nil || !w.keepImage(src) {
+	if !ok {
 		w.b.WriteString(escape(alt))
 		return
 	}
-	w.b.WriteString(`<img src="` + escape(u.String()) + `" alt="` + escape(alt) + `"`)
-	for _, key := range []string{"width", "height"} {
-		if v, ok := attr(n, key); ok && imageSize.MatchString(v) {
-			w.b.WriteString(` ` + key + `="` + v + `"`)
+	if shown, keep := w.image(src, alt); keep {
+		if u, ok := imageURL(shown); ok {
+			w.b.WriteString(`<img src="` + escape(u) + `" alt="` + escape(alt) + `"`)
+			for _, key := range []string{"width", "height"} {
+				if v, ok := attr(n, key); ok && imageSize.MatchString(v) {
+					w.b.WriteString(` ` + key + `="` + v + `"`)
+				}
+			}
+			w.b.WriteString(` loading="lazy">`)
+			return
 		}
 	}
-	w.b.WriteString(` loading="lazy">`)
+	href, ok := linkHref(&nethtml.Node{Type: nethtml.ElementNode, Data: "a", Attr: []nethtml.Attribute{{Key: "href", Val: src}}})
+	if !ok || inLink {
+		w.b.WriteString(escape(alt))
+		return
+	}
+	text := alt
+	if strings.TrimSpace(text) == "" {
+		text = href
+	}
+	w.b.WriteString(`<a href="` + escape(href) + `" rel="` + LinkRel + `" target="_blank">` + escape(text) + `</a>`)
+}
+
+// imageURL returns src as the src of an image: an http or https URL with a host.
+func imageURL(src string) (string, bool) {
+	u, err := url.Parse(strings.TrimSpace(src))
+	if err != nil || !slices.Contains(imageScheme, u.Scheme) || u.Host == "" {
+		return "", false
+	}
+	return u.String(), true
 }
 
 func (w *articleWriter) children(n *nethtml.Node, inLink bool) {

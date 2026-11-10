@@ -209,7 +209,8 @@
   - 本文のメンションはリンクにするだけで、`status_revision_mentions` に記録しません（通知しない）。ハッシュタグはエディタで付けたものだけを `status_revision_tags` に記録し、本文の `#name` からは取りません。
   - 要約が空なら、本文のテキストの先頭から 200 文字を文か語の切れ目で切ったものを `summary_origin = body` で置きます。
 - 権限: インスタンス設定 `article_authoring`（`enum(everyone, permission)`、既定 `everyone`）が `permission` なら、作成に権限 `create_articles` が要ります。編集と削除は限りません。
-- 受信した `Article` も記事として取り込みます（[federation.md §4](../../federation.md#4-as2-の正規化)）。本文の `img` は `remote_media`（`purpose = attachment`）に記録し、表示ではメディアプロキシの URL にします。
+- 受信した `Article` も記事として取り込みます（[federation.md §4](../../federation.md#4-as2-の正規化)）。本文は記事用の許可リストでサニタイズし、`img` は受信した URL のまま保存して、最初の `max_article_images` 件を `remote_media`（`purpose = attachment`）に記録し `status_revision_article_images` に入れます。クライアント API は本文を返すときに、その URL をメディアプロキシの URL に置き換えます（メディアプロキシの鍵は変わり得るので、保存する HTML には入れません）。記録の無い画像はリンクにします。
+  受信した記事の題は空でもよく、添付は投稿と同じに読みます。投稿か記事かは変わらないので、記事を投稿にする `Update`（またはその逆）は捨てます。
 - 記事の下書きは `drafts` に `draft_articles` の行を足したもので、予約（上の「下書きと予約投稿」）も同じに働きます。下書きを公開すると、記事の行も下書きの行と一緒に消えます。
 
 #### ブースト

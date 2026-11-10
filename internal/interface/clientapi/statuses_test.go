@@ -128,6 +128,13 @@ func (f *fakeStatuses) Source(_ context.Context, v appcontent.Viewer, id string)
 	return f.View(context.Background(), v, id)
 }
 
+func (*fakeStatuses) ArticleBody(_ context.Context, rev content.Revision) (string, error) {
+	if rev.Article == nil || len(rev.Bodies) == 0 {
+		return "", nil
+	}
+	return rev.Bodies[0].ContentHTML, nil
+}
+
 func (f *fakeStatuses) Bookmarks(_ context.Context, v appcontent.Viewer, _ string, limit int) (appcontent.BookmarkPage, error) {
 	view, err := f.View(context.Background(), v, sampleStatusID)
 	if errors.Is(err, appcontent.ErrNotFound) {

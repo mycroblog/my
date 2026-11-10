@@ -15178,7 +15178,8 @@ type Status struct {
 
 	// Content The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
 	// remote status is what the server's sanitizer kept of the received document. For an
-	// article, its rendered body, or empty in lists (see above).
+	// article, its rendered body, or empty in lists (see above); the images in the body of an
+	// article from another server load through the server's media proxy.
 	Content string `json:"content"`
 
 	// CreatedAt When the status was posted.
@@ -15306,7 +15307,7 @@ type StatusArticle struct {
 	// Summary The summary, as plain text; the server makes one from the body when the author writes none.
 	Summary string `json:"summary"`
 
-	// Title The title, as plain text.
+	// Title The title, as plain text; empty only for an article from another server that has none.
 	Title string `json:"title"`
 }
 

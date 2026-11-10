@@ -205,7 +205,7 @@ func TestNormalizeSpoilerAndSensitive(t *testing.T) {
 }
 
 func TestNormalizeConvertedTypes(t *testing.T) {
-	for _, typ := range []string{"Article", "Page", "Event", "Image", "Video", "Audio"} {
+	for _, typ := range []string{"Page", "Event", "Image", "Video", "Audio"} {
 		t.Run(typ, func(t *testing.T) {
 			o := object(t, `{"type":"`+typ+`","id":"https://a.example/p/1","name":"Title <&>","summary":"<p>Line 1<br>Line 2</p>",
 				"content":"<h1>long article</h1>","url":"https://a.example/p/1.html","contentMap":{"ja":"<h1>長い記事</h1>"}}`)
@@ -219,6 +219,7 @@ func TestNormalizeConvertedTypes(t *testing.T) {
 	o := object(t, `{"type":"Page","id":"https://a.example/p/2","name":"T"}`)
 	equal(t, "link falls back to id", o.Bodies[0].HTML, `<p><strong>T</strong></p><p><a href="https://a.example/p/2">https://a.example/p/2</a></p>`)
 	equal(t, "Note is not converted", object(t, `{"type":"Note","id":"https://a.example/n/1"}`).Converted, false)
+	equal(t, "Article is not converted", object(t, `{"type":"Article","id":"https://a.example/a/1"}`).Converted, false)
 	o = object(t, `{"type":"Page","id":"https://a.example/p/3","name":"T","url":"javascript://a.example/%0Aalert(1)"}`)
 	equal(t, "a url that is not http(s) falls back to id", o.Bodies[0].HTML,
 		`<p><strong>T</strong></p><p><a href="https://a.example/p/3">https://a.example/p/3</a></p>`)
@@ -227,6 +228,37 @@ func TestNormalizeConvertedTypes(t *testing.T) {
 	o = object(t, `{"type":"Page","id":"https://a.example/p/5","name":"T","url":"https://a.example/p?q=\"><script>&'"}`)
 	equal(t, "the link is escaped for the attribute", o.Bodies[0].HTML,
 		`<p><strong>T</strong></p><p><a href="https://a.example/p?q=&#34;&gt;&lt;script&gt;&amp;&#39;">https://a.example/p?q=&#34;&gt;&lt;script&gt;&amp;&#39;</a></p>`)
+}
+
+// An Article is read in full, as an article (ADR-0160 §10): its name is the title, its summary a
+// summary and never a content warning, its content the body as received, and its first image
+// the cover.
+func TestNormalizeArticle(t *testing.T) {
+	o := object(t, `{"type":"Article","id":"https://a.example/a/1","name":" Title <&> ","summary":"<p>Line 1<br>Line 2</p>",
+		"content":"<h1>long article</h1>","contentMap":{"ja":"<h1>長い記事</h1><img src=\"https://a.example/i.png\">"},
+		"sensitive":true,"url":"https://a.example/@alice/a-title",
+		"image":[{"type":"Image","url":"https://a.example/cover.webp","mediaType":"image/webp","name":"a cat","width":1200,"height":630},"https://a.example/second.png"],
+		"tag":[{"type":"Hashtag","name":"#Go"}],"attachment":[{"type":"Image","url":"https://a.example/m/1.png"}]}`)
+	equal(t, "Converted", o.Converted, false)
+	equal(t, "SpoilerText", o.SpoilerText, "")
+	equal(t, "Sensitive", o.Sensitive, true)
+	equal(t, "Bodies", o.Bodies, []federation.Body{{Language: "ja", HTML: `<h1>長い記事</h1><img src="https://a.example/i.png">`}})
+	equal(t, "Article", o.Article, &federation.ReceivedArticle{
+		Title: "Title <&>", Summary: "Line 1\nLine 2",
+		Cover: &federation.Attachment{Type: "Image", URL: "https://a.example/cover.webp", MediaType: "image/webp", Name: "a cat", Width: 1200, Height: 630},
+	})
+	equal(t, "Hashtags", o.Hashtags, []string{"Go"})
+	equal(t, "len(Attachments)", len(o.Attachments), 1)
+
+	o = object(t, `{"type":"Article","id":"https://a.example/a/2","nameMap":{"en":"From the map"},"summaryMap":{"en":"Summary"},
+		"image":{"type":"Link","href":"https://a.example/c.png","mediaType":"image/png"}}`)
+	equal(t, "nameMap and summaryMap", o.Article, &federation.ReceivedArticle{
+		Title: "From the map", Summary: "Summary", Cover: &federation.Attachment{Type: "Image", URL: "https://a.example/c.png", MediaType: "image/png"},
+	})
+	o = object(t, `{"type":"Article","id":"https://a.example/a/3","image":"https://a.example/c.png"}`)
+	equal(t, "no title, an IRI as the image", o.Article, &federation.ReceivedArticle{Cover: &federation.Attachment{Type: "Image", URL: "https://a.example/c.png"}})
+	equal(t, "no image", object(t, `{"type":"Article","id":"https://a.example/a/4","image":[{"type":"Image"}]}`).Article.Cover, (*federation.Attachment)(nil))
+	equal(t, "a Note has no article", object(t, `{"type":"Note","id":"https://a.example/n/1","name":"x"}`).Article, (*federation.ReceivedArticle)(nil))
 }
 
 func TestNormalizeTags(t *testing.T) {

@@ -44,6 +44,9 @@ type ReaderDeps struct {
 	DomainMutes DomainMutes
 	// Clock tells whether a poll has ended; nil means the system's clock.
 	Clock kernel.Clock
+	// RemoteArticles shows the images of the bodies of received articles through the media proxy
+	// (ArticleBody); nil shows none of them as images.
+	RemoteArticles RemoteArticleSanitizer
 }
 
 // Reader presents statuses to a viewer: one status, its thread, its edit history, and a local

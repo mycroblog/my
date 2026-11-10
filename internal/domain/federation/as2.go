@@ -99,8 +99,8 @@ const (
 // ObjectType is a known object type.
 type ObjectType string
 
-// Known object types. Article, Page, Event, Image, Video, and Audio are converted to a Note-like
-// body (Object.Converted).
+// Known object types. Page, Event, Image, Video, and Audio are converted to a Note-like body
+// (Object.Converted); an Article is read in full, as an article (Object.Article).
 const (
 	ObjectNote      ObjectType = "Note"
 	ObjectQuestion  ObjectType = "Question"
@@ -290,7 +290,7 @@ type Poll struct {
 	VotersCount int
 }
 
-// Object is a normalized object: a post, a converted post, or a Tombstone.
+// Object is a normalized object: a post, an article, a converted post, or a Tombstone.
 type Object struct {
 	ID           IRI
 	Type         ObjectType
@@ -306,7 +306,7 @@ type Object struct {
 	Updated      time.Time
 	URL          IRI    // display URL (the first text/html url)
 	Bodies       []Body // one per language, in document order
-	SpoilerText  string // plain text
+	SpoilerText  string // plain text; an article has none (its summary is Article.Summary)
 	Sensitive    bool
 	Mentions     []Mention
 	Hashtags     []string // without the leading '#'
@@ -337,6 +337,20 @@ type Object struct {
 	// ReplyAuthorization is the replyAuthorization of a reply: the ReplyAuthorization that
 	// approves it, "" for none.
 	ReplyAuthorization IRI
+	// Article is what an Article has besides a post (ADR-0160 §10), nil for any other type.
+	Article *ReceivedArticle
+}
+
+// ReceivedArticle is the title, summary, and cover of an Article, read in full as an article (ADR-0160
+// §10). Its Bodies are its content as received.
+type ReceivedArticle struct {
+	// Title is the name, else the first value of nameMap, as received; "" for none.
+	Title string
+	// Summary is the summary, else the first value of summaryMap, as plain text; "" for none.
+	// It is never a content warning.
+	Summary string
+	// Cover is the first image of image, nil for none. Its Type is Image.
+	Cover *Attachment
 }
 
 // CanInteract is who may interact with a post by one kind (a can* of GoToSocial's

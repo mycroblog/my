@@ -144,6 +144,9 @@ type Deps struct {
 	Sanitizer kernel.HTMLSanitizer
 	// RemoteMedia records the attachments and custom emoji images of remote statuses.
 	RemoteMedia RemoteMediaRecorder
+	// RemoteArticles cleans the bodies of received Articles with the allowlist of articles
+	// (ADR-0160 §10); received articles need it.
+	RemoteArticles RemoteArticleSanitizer
 	// Quotes stores the quotes of statuses (ADR-0069); nil records none.
 	Quotes QuoteRepository
 	// ReconsiderRequests approves the pending requests of interactions with a status that its new
@@ -184,6 +187,9 @@ type Deps struct {
 	// ArticleLimits returns the current max_article_bytes and max_article_images, read per
 	// command; nil means their defaults.
 	ArticleLimits func(ctx context.Context) (ArticleLimits, error)
+	// ArticleLimitsTx is ArticleLimits inside tx, for the received articles that are stored in
+	// the transaction of their activity; nil means the defaults.
+	ArticleLimitsTx func(ctx context.Context, tx uow.Tx) (ArticleLimits, error)
 	// MayWriteArticles reports whether a local user may write new articles (ADR-0160 §3): every
 	// user while article_authoring is everyone, the holders of create_articles otherwise. Nil lets
 	// everyone.

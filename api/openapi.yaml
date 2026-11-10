@@ -26972,7 +26972,7 @@ components:
         - summary
       properties:
         title:
-          description: The title, as plain text.
+          description: The title, as plain text; empty only for an article from another server that has none.
           type: string
         summary:
           description: The summary, as plain text; the server makes one from the body when the author writes none.
@@ -27049,7 +27049,8 @@ components:
           description: |
             The text as sanitized HTML, with mentions, hashtags, and URLs linked. The HTML of a
             remote status is what the server's sanitizer kept of the received document. For an
-            article, its rendered body, or empty in lists (see above).
+            article, its rendered body, or empty in lists (see above); the images in the body of an
+            article from another server load through the server's media proxy.
           type: string
         article:
           $ref: '#/components/schemas/StatusArticle'
