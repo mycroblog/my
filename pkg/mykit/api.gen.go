@@ -8126,6 +8126,37 @@ type CloseServiceRequest struct {
 // account at a login provider (`link`).
 type ConfirmedOperation string
 
+// Conversation A conversation of the user's direct messages: the `direct` posts that the user sent or
+// received in one thread, whether or not the user follows their authors.
+type Conversation struct {
+	// Accounts The other accounts of the direct posts that the user sent or received in the
+	// conversation: their authors and the accounts they mention.
+	Accounts []Account `json:"accounts"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// LastStatus The newest direct post of the conversation that the user may see. A post of an
+	// account that the user blocks, is blocked by, or mutes, or of a suspended account, is
+	// skipped for the one before it.
+	LastStatus Status `json:"last_status"`
+
+	// Unread Whether a direct post by another account is newer than the point up to which the user
+	// read the conversation (`markConversationRead`), on any device.
+	Unread bool `json:"unread"`
+}
+
+// ConversationPage A page of the user's direct messages by conversation.
+type ConversationPage struct {
+	// Items The conversations of the page, the one with the newest direct post first.
+	Items []Conversation `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
 // CopyCustomEmojiRequest The local custom emoji that a copy of a remote one becomes.
 type CopyCustomEmojiRequest struct {
 	// Shortcode The shortcode of the local emoji: 2 to 30 letters (A to Z, a to z), digits, and
@@ -14608,6 +14639,11 @@ type AppealId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type BadgeRoleId = Id
 
+// ConversationId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type ConversationId = Id
+
 // CostItemId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -15250,6 +15286,15 @@ type ListBlocksParams struct {
 
 // ListBookmarksParams defines parameters for ListBookmarks.
 type ListBookmarksParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListConversationsParams defines parameters for ListConversations.
+type ListConversationsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -21050,6 +21095,50 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /bookmarks (the `ListBookmarks` operationId).
 	ListBookmarks(ctx context.Context, params *ListBookmarksParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListConversations List the direct messages by conversation
+	//
+	// Every conversation with a `direct` post that the user sent or received, whether or not the
+	// user follows its author, the one with the newest such post first. Each shows its newest
+	// direct post that the user may see, as the home timeline would show it: the posts of
+	// accounts that the user blocks, is blocked by, or mutes, and of suspended accounts and
+	// domains, are skipped for the one before, and a conversation with none left is left out.
+	// The user's timeline languages do not apply. A conversation that the user hid
+	// (`hideConversation`) is left out until a newer direct post arrives in it.
+	//
+	// A page may hold fewer conversations than `limit` while `next_cursor` is still given, when
+	// some have no post left that the user may see.
+	//
+	// Corresponds with GET /conversations (the `ListConversations` operationId).
+	ListConversations(ctx context.Context, params *ListConversationsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetConversation Get a conversation of the direct messages
+	//
+	// The conversation as `listConversations` shows it, even when the user hid it. A conversation
+	// in which the user sent or received no direct post, or none that the user may see, is a 404.
+	//
+	// Corresponds with GET /conversations/{id} (the `GetConversation` operationId).
+	GetConversation(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// HideConversation Hide a conversation
+	//
+	// Takes the conversation out of `listConversations` until a newer direct post arrives in it,
+	// on every device of the user. Its posts stay, and so do they for the other accounts. Hiding
+	// it again changes nothing. A conversation in which the user sent or received no direct post
+	// is a 404.
+	//
+	// Corresponds with POST /conversations/{id}/hide (the `HideConversation` operationId).
+	HideConversation(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// MarkConversationRead Mark a conversation read
+	//
+	// Marks the conversation read up to its newest direct post, on every device of the user:
+	// `unread` is false until a newer direct post by another account arrives. The user's open
+	// streams receive the conversation again (`conversation`). Marking it again changes nothing.
+	// A conversation in which the user sent or received no direct post is a 404.
+	//
+	// Corresponds with POST /conversations/{id}/read (the `MarkConversationRead` operationId).
+	MarkConversationRead(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ExportCsv Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
 	//
@@ -29878,6 +29967,90 @@ func (c *Client) ListBlocks(ctx context.Context, params *ListBlocksParams, reqEd
 // Corresponds with GET /bookmarks (the `ListBookmarks` operationId).
 func (c *Client) ListBookmarks(ctx context.Context, params *ListBookmarksParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListBookmarksRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListConversations List the direct messages by conversation
+//
+// Every conversation with a `direct` post that the user sent or received, whether or not the
+// user follows its author, the one with the newest such post first. Each shows its newest
+// direct post that the user may see, as the home timeline would show it: the posts of
+// accounts that the user blocks, is blocked by, or mutes, and of suspended accounts and
+// domains, are skipped for the one before, and a conversation with none left is left out.
+// The user's timeline languages do not apply. A conversation that the user hid
+// (`hideConversation`) is left out until a newer direct post arrives in it.
+//
+// A page may hold fewer conversations than `limit` while `next_cursor` is still given, when
+// some have no post left that the user may see.
+//
+// Corresponds with GET /conversations (the `ListConversations` operationId).
+func (c *Client) ListConversations(ctx context.Context, params *ListConversationsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListConversationsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetConversation Get a conversation of the direct messages
+//
+// The conversation as `listConversations` shows it, even when the user hid it. A conversation
+// in which the user sent or received no direct post, or none that the user may see, is a 404.
+//
+// Corresponds with GET /conversations/{id} (the `GetConversation` operationId).
+func (c *Client) GetConversation(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetConversationRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// HideConversation Hide a conversation
+//
+// Takes the conversation out of `listConversations` until a newer direct post arrives in it,
+// on every device of the user. Its posts stay, and so do they for the other accounts. Hiding
+// it again changes nothing. A conversation in which the user sent or received no direct post
+// is a 404.
+//
+// Corresponds with POST /conversations/{id}/hide (the `HideConversation` operationId).
+func (c *Client) HideConversation(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewHideConversationRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// MarkConversationRead Mark a conversation read
+//
+// Marks the conversation read up to its newest direct post, on every device of the user:
+// `unread` is false until a newer direct post by another account arrives. The user's open
+// streams receive the conversation again (`conversation`). Marking it again changes nothing.
+// A conversation in which the user sent or received no direct post is a 404.
+//
+// Corresponds with POST /conversations/{id}/read (the `MarkConversationRead` operationId).
+func (c *Client) MarkConversationRead(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewMarkConversationReadRequest(c.Server, id)
 	if err != nil {
 		return nil, err
 	}
@@ -43994,6 +44167,174 @@ func NewListBookmarksRequest(server string, params *ListBookmarksParams) (*http.
 	return req, nil
 }
 
+// NewListConversationsRequest constructs an http.Request for the ListConversations method
+func NewListConversationsRequest(server string, params *ListConversationsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/conversations")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetConversationRequest constructs an http.Request for the GetConversation method
+func NewGetConversationRequest(server string, id ConversationId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/conversations/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewHideConversationRequest constructs an http.Request for the HideConversation method
+func NewHideConversationRequest(server string, id ConversationId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/conversations/%s/hide", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewMarkConversationReadRequest constructs an http.Request for the MarkConversationRead method
+func NewMarkConversationReadRequest(server string, id ConversationId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/conversations/%s/read", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewExportCsvRequest constructs an http.Request for the ExportCsv method
 func NewExportCsvRequest(server string, kind DataImportKind) (*http.Request, error) {
 	var err error
@@ -54765,6 +55106,58 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with GET /bookmarks (the `ListBookmarks` operationId).
 	ListBookmarksWithResponse(ctx context.Context, params *ListBookmarksParams, reqEditors ...RequestEditorFn) (*ListBookmarksResponse, error)
+
+	// ListConversationsWithResponse List the direct messages by conversation
+	//
+	// Every conversation with a `direct` post that the user sent or received, whether or not the
+	// user follows its author, the one with the newest such post first. Each shows its newest
+	// direct post that the user may see, as the home timeline would show it: the posts of
+	// accounts that the user blocks, is blocked by, or mutes, and of suspended accounts and
+	// domains, are skipped for the one before, and a conversation with none left is left out.
+	// The user's timeline languages do not apply. A conversation that the user hid
+	// (`hideConversation`) is left out until a newer direct post arrives in it.
+	//
+	// A page may hold fewer conversations than `limit` while `next_cursor` is still given, when
+	// some have no post left that the user may see.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /conversations (the `ListConversations` operationId).
+	ListConversationsWithResponse(ctx context.Context, params *ListConversationsParams, reqEditors ...RequestEditorFn) (*ListConversationsResponse, error)
+
+	// GetConversationWithResponse Get a conversation of the direct messages
+	//
+	// The conversation as `listConversations` shows it, even when the user hid it. A conversation
+	// in which the user sent or received no direct post, or none that the user may see, is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /conversations/{id} (the `GetConversation` operationId).
+	GetConversationWithResponse(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*GetConversationResponse, error)
+
+	// HideConversationWithResponse Hide a conversation
+	//
+	// Takes the conversation out of `listConversations` until a newer direct post arrives in it,
+	// on every device of the user. Its posts stay, and so do they for the other accounts. Hiding
+	// it again changes nothing. A conversation in which the user sent or received no direct post
+	// is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /conversations/{id}/hide (the `HideConversation` operationId).
+	HideConversationWithResponse(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*HideConversationResponse, error)
+
+	// MarkConversationReadWithResponse Mark a conversation read
+	//
+	// Marks the conversation read up to its newest direct post, on every device of the user:
+	// `unread` is false until a newer direct post by another account arrives. The user's open
+	// streams receive the conversation again (`conversation`). Marking it again changes nothing.
+	// A conversation in which the user sent or received no direct post is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /conversations/{id}/read (the `MarkConversationRead` operationId).
+	MarkConversationReadWithResponse(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*MarkConversationReadResponse, error)
 
 	// ExportCsvWithResponse Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
 	//
@@ -71518,6 +71911,252 @@ func (r ListBookmarksResponse) ContentType() string {
 	return ""
 }
 
+// ListConversationsResponse200Headers the declared response headers of an HTTP 200 response for ListConversations
+type ListConversationsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListConversationsResponseDefaultHeaders the declared response headers of an HTTP default response for ListConversations
+type ListConversationsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListConversationsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *ConversationPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListConversationsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListConversationsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListConversationsResponse) GetJSON200() *ConversationPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListConversationsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListConversationsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListConversationsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListConversationsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListConversationsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetConversationResponse200Headers the declared response headers of an HTTP 200 response for GetConversation
+type GetConversationResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetConversationResponseDefaultHeaders the declared response headers of an HTTP default response for GetConversation
+type GetConversationResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetConversationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Conversation
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetConversationResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetConversationResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetConversationResponse) GetJSON200() *Conversation {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetConversationResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetConversationResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetConversationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetConversationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetConversationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// HideConversationResponseDefaultHeaders the declared response headers of an HTTP default response for HideConversation
+type HideConversationResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type HideConversationResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *HideConversationResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r HideConversationResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r HideConversationResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r HideConversationResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r HideConversationResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r HideConversationResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// MarkConversationReadResponse200Headers the declared response headers of an HTTP 200 response for MarkConversationRead
+type MarkConversationReadResponse200Headers struct {
+	CacheControl *string
+}
+
+// MarkConversationReadResponseDefaultHeaders the declared response headers of an HTTP default response for MarkConversationRead
+type MarkConversationReadResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type MarkConversationReadResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Conversation
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *MarkConversationReadResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *MarkConversationReadResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r MarkConversationReadResponse) GetJSON200() *Conversation {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r MarkConversationReadResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r MarkConversationReadResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r MarkConversationReadResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r MarkConversationReadResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r MarkConversationReadResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ExportCsvResponse200Headers the declared response headers of an HTTP 200 response for ExportCsv
 type ExportCsvResponse200Headers struct {
 	CacheControl       *string
@@ -87236,6 +87875,82 @@ func (c *ClientWithResponses) ListBookmarksWithResponse(ctx context.Context, par
 		return nil, err
 	}
 	return ParseListBookmarksResponse(rsp)
+}
+
+// ListConversationsWithResponse List the direct messages by conversation
+//
+// Every conversation with a `direct` post that the user sent or received, whether or not the
+// user follows its author, the one with the newest such post first. Each shows its newest
+// direct post that the user may see, as the home timeline would show it: the posts of
+// accounts that the user blocks, is blocked by, or mutes, and of suspended accounts and
+// domains, are skipped for the one before, and a conversation with none left is left out.
+// The user's timeline languages do not apply. A conversation that the user hid
+// (`hideConversation`) is left out until a newer direct post arrives in it.
+//
+// A page may hold fewer conversations than `limit` while `next_cursor` is still given, when
+// some have no post left that the user may see.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /conversations (the `ListConversations` operationId).
+func (c *ClientWithResponses) ListConversationsWithResponse(ctx context.Context, params *ListConversationsParams, reqEditors ...RequestEditorFn) (*ListConversationsResponse, error) {
+	rsp, err := c.ListConversations(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListConversationsResponse(rsp)
+}
+
+// GetConversationWithResponse Get a conversation of the direct messages
+//
+// The conversation as `listConversations` shows it, even when the user hid it. A conversation
+// in which the user sent or received no direct post, or none that the user may see, is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /conversations/{id} (the `GetConversation` operationId).
+func (c *ClientWithResponses) GetConversationWithResponse(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*GetConversationResponse, error) {
+	rsp, err := c.GetConversation(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetConversationResponse(rsp)
+}
+
+// HideConversationWithResponse Hide a conversation
+//
+// Takes the conversation out of `listConversations` until a newer direct post arrives in it,
+// on every device of the user. Its posts stay, and so do they for the other accounts. Hiding
+// it again changes nothing. A conversation in which the user sent or received no direct post
+// is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /conversations/{id}/hide (the `HideConversation` operationId).
+func (c *ClientWithResponses) HideConversationWithResponse(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*HideConversationResponse, error) {
+	rsp, err := c.HideConversation(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseHideConversationResponse(rsp)
+}
+
+// MarkConversationReadWithResponse Mark a conversation read
+//
+// Marks the conversation read up to its newest direct post, on every device of the user:
+// `unread` is false until a newer direct post by another account arrives. The user's open
+// streams receive the conversation again (`conversation`). Marking it again changes nothing.
+// A conversation in which the user sent or received no direct post is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /conversations/{id}/read (the `MarkConversationRead` operationId).
+func (c *ClientWithResponses) MarkConversationReadWithResponse(ctx context.Context, id ConversationId, reqEditors ...RequestEditorFn) (*MarkConversationReadResponse, error) {
+	rsp, err := c.MarkConversationRead(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseMarkConversationReadResponse(rsp)
 }
 
 // ExportCsvWithResponse Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
@@ -108008,6 +108723,300 @@ func ParseListBookmarksResponse(rsp *http.Response) (*ListBookmarksResponse, err
 		response.Headers200 = &headers
 	case true:
 		var headers ListBookmarksResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListConversationsResponse parses an HTTP response from a ListConversationsWithResponse call
+func ParseListConversationsResponse(rsp *http.Response) (*ListConversationsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListConversationsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ConversationPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListConversationsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListConversationsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetConversationResponse parses an HTTP response from a GetConversationWithResponse call
+func ParseGetConversationResponse(rsp *http.Response) (*GetConversationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetConversationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Conversation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetConversationResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetConversationResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseHideConversationResponse parses an HTTP response from a HideConversationWithResponse call
+func ParseHideConversationResponse(rsp *http.Response) (*HideConversationResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &HideConversationResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers HideConversationResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseMarkConversationReadResponse parses an HTTP response from a MarkConversationReadWithResponse call
+func ParseMarkConversationReadResponse(rsp *http.Response) (*MarkConversationReadResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &MarkConversationReadResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Conversation
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers MarkConversationReadResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers MarkConversationReadResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

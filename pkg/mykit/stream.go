@@ -30,7 +30,7 @@ const (
 )
 
 // StreamEvent is an event of GET /streaming: one of *UpdateEvent, *ListUpdateEvent, *NotificationEvent,
-// *AnnouncementEvent, *AnnouncementRemovedEvent, and *UnknownEvent. Branch on it with a type switch.
+// *ConversationEvent, *AnnouncementEvent, *AnnouncementRemovedEvent, and *UnknownEvent. Branch on it with a type switch.
 type StreamEvent interface {
 	// EventName is the `event` field of the event, such as "update".
 	EventName() string
@@ -48,6 +48,10 @@ type ListUpdateEvent struct {
 
 // NotificationEvent is a new notification.
 type NotificationEvent struct{ Notification Notification }
+
+// ConversationEvent is a conversation of the direct messages that changed (a direct post arrived in it, or the
+// user read it), as ListConversations shows it. A token without the read:direct scope receives none.
+type ConversationEvent struct{ Conversation Conversation }
 
 // AnnouncementEvent is an announcement that was published or changed.
 type AnnouncementEvent struct{ Announcement Announcement }
@@ -70,6 +74,9 @@ func (*ListUpdateEvent) EventName() string { return "list_update" }
 
 // EventName is "notification".
 func (*NotificationEvent) EventName() string { return "notification" }
+
+// EventName is "conversation".
+func (*ConversationEvent) EventName() string { return "conversation" }
 
 // EventName is "announcement".
 func (*AnnouncementEvent) EventName() string { return "announcement" }
@@ -322,6 +329,9 @@ func parseStreamEvent(ev rawEvent) (StreamEvent, error) {
 	case "notification":
 		e := &NotificationEvent{}
 		typed, target = e, &e.Notification
+	case "conversation":
+		e := &ConversationEvent{}
+		typed, target = e, &e.Conversation
 	case "announcement":
 		e := &AnnouncementEvent{}
 		typed, target = e, &e.Announcement

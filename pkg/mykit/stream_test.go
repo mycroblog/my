@@ -128,6 +128,7 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 			"event: list_update\ndata: {\"list_id\":\"l1\"}\n\n",
 			"event: notification\ndata: {\"id\":\"n1\",\"type\":\"follow\"}\n\n",
 			": heartbeat\n\n",
+			"event: conversation\ndata: {\"id\":\"c1\",\"unread\":true}\n\n",
 			"event: announcement\ndata: {\"id\":\"a1\"}\n\n",
 			"event: announcement_removed\ndata: {\"id\":\"a2\"}\n\n",
 			"event: poll\ndata: {\"id\":\"p1\"}\ndata: more\n\n",
@@ -146,8 +147,8 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 	if !slices.Equal(rec.opens, []bool{false, true}) {
 		t.Errorf("opens = %v, want [false true]", rec.opens)
 	}
-	if len(rec.events) != 6 {
-		t.Fatalf("events = %#v, want 6", rec.events)
+	if len(rec.events) != 7 {
+		t.Fatalf("events = %#v, want 7", rec.events)
 	}
 	if e, ok := rec.events[0].(*UpdateEvent); !ok || e.Status.Id != "s1" {
 		t.Errorf("events[0] = %#v, want the update of s1", rec.events[0])
@@ -159,6 +160,10 @@ func TestStreamDeliversTypedEventsAndReconnects(t *testing.T) {
 	if e, ok := rec.events[1].(*NotificationEvent); !ok || e.Notification.Id != "n1" {
 		t.Errorf("events[1] = %#v, want the notification n1", rec.events[1])
 	}
+	if e, ok := rec.events[2].(*ConversationEvent); !ok || e.Conversation.Id != "c1" || !e.Conversation.Unread || e.EventName() != "conversation" {
+		t.Errorf("events[2] = %#v, want the conversation c1", rec.events[2])
+	}
+	rec.events = slices.Delete(rec.events, 2, 3)
 	if e, ok := rec.events[2].(*AnnouncementEvent); !ok || e.Announcement.Id != "a1" {
 		t.Errorf("events[2] = %#v, want the announcement a1", rec.events[2])
 	}

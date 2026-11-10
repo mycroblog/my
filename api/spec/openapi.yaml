@@ -77,6 +77,8 @@ tags:
     description: The home, local, hashtag, list, and account timelines.
   - name: lists
     description: The authenticated user's lists of the accounts the user follows, which only the user sees.
+  - name: conversations
+    description: The authenticated user's direct messages by conversation, with what the user read and hid.
   - name: reports
     description: Reports of accounts and posts to the moderators.
   - name: streaming
@@ -358,6 +360,14 @@ paths:
     $ref: ./paths/timelines_tag_{hashtag}.yaml
   /timelines/list/{id}:
     $ref: ./paths/timelines_list_{id}.yaml
+  /conversations:
+    $ref: ./paths/conversations.yaml
+  /conversations/{id}:
+    $ref: ./paths/conversations_{id}.yaml
+  /conversations/{id}/read:
+    $ref: ./paths/conversations_{id}_read.yaml
+  /conversations/{id}/hide:
+    $ref: ./paths/conversations_{id}_hide.yaml
   /reports:
     $ref: ./paths/reports.yaml
   /announcements:
@@ -786,7 +796,7 @@ components:
             "read:blocks": Read the accounts the user blocks.
             "read:bookmarks": Read the user's bookmarks.
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
-            "read:direct": Read the direct posts the user sends and receives (`read:statuses` does not show them).
+            "read:direct": Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
             "read:finance": Read the totals of the instance's costs and income, as far as the user's roles allow.
             "read:follows": Read follows, follow requests, lists, and the accounts whose new posts notify the user.
             "read:mutes": Read the accounts and domains the user mutes.
@@ -828,6 +838,8 @@ components:
       $ref: ./components/parameters/BadgeRoleId.yaml
     BrandKind:
       $ref: ./components/parameters/BrandKind.yaml
+    ConversationId:
+      $ref: ./components/parameters/ConversationId.yaml
     CostItemId:
       $ref: ./components/parameters/CostItemId.yaml
     Cursor:
@@ -959,6 +971,8 @@ components:
       $ref: ./components/responses/AdminWebhook.yaml
     AdminWebhookDelivery:
       $ref: ./components/responses/AdminWebhookDelivery.yaml
+    Conversation:
+      $ref: ./components/responses/Conversation.yaml
     CostItem:
       $ref: ./components/responses/CostItem.yaml
     CustomEmojiProblem:
@@ -1414,6 +1428,10 @@ components:
       $ref: ./components/schemas/ConfirmedOperation.yaml
     CopyCustomEmojiRequest:
       $ref: ./components/schemas/CopyCustomEmojiRequest.yaml
+    Conversation:
+      $ref: ./components/schemas/Conversation.yaml
+    ConversationPage:
+      $ref: ./components/schemas/ConversationPage.yaml
     CostBasis:
       $ref: ./components/schemas/CostBasis.yaml
     CostBreakdownLine:

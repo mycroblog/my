@@ -341,6 +341,13 @@ entries:
     notes:
       - "Only the owner reads a list: every other account gets ErrNotFound (a 404), never a 403."
       - "A member is an active follow (feed_follow_edges); the projector of graph.follow_terminated removes it in the same update that deletes the follow edge, and RebuildProjections removes the members whose follow is gone."
+  - name: direct-messages
+    paths: ["internal/app/timeline/conversations.go", "internal/adapter/db/*/timeline/conversations.go", "queries/*/timeline/conversations.sql", "internal/interface/clientapi/conversations.go", "pkg/testkit/timelinetest/conversation_*.go", "api/spec/paths/conversations*.yaml", "api/spec/components/schemas/Conversation*.yaml"]
+    docs: ["docs/adr/0154-conversations.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#ダイレクトメッセージ", "docs/architecture/data-model/06-timeline-queries.md#64-ダイレクトメッセージ", "docs/architecture/visibility.md#3-判定の順序"]
+    userdocs: ["docs/guide/posting.md"]
+    notes:
+      - "The list is keyed by conversation ID: content.conversation_merged moves every row to the conversation merged into, keeping the newer boundary; a request that names a merged conversation is answered with the one it ended in (content.Service.ResolveConversation)."
+      - "A page reads its conversations, last visible entries, participants, and Facts with a fixed number of queries; CanView in ContextDirectMessages is applied again, and the projections and merges are set-based statements, never one per row."
   - name: module-notification
     paths: ["internal/domain/notification/**", "internal/app/notification/**"]
     docs: ["docs/architecture/data-model/04-tables/07-notification.md#47-notification"]

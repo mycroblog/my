@@ -74,6 +74,8 @@ tags:
     description: The home, local, hashtag, list, and account timelines.
   - name: lists
     description: The authenticated user's lists of the accounts the user follows, which only the user sees.
+  - name: conversations
+    description: The authenticated user's direct messages by conversation, with what the user read and hid.
   - name: reports
     description: Reports of accounts and posts to the moderators.
   - name: streaming
@@ -4566,6 +4568,104 @@ paths:
           $ref: '#/components/responses/StatusPage'
         default:
           $ref: '#/components/responses/Problem'
+  /conversations:
+    get:
+      operationId: listConversations
+      summary: List the direct messages by conversation
+      description: |
+        Every conversation with a `direct` post that the user sent or received, whether or not the
+        user follows its author, the one with the newest such post first. Each shows its newest
+        direct post that the user may see, as the home timeline would show it: the posts of
+        accounts that the user blocks, is blocked by, or mutes, and of suspended accounts and
+        domains, are skipped for the one before, and a conversation with none left is left out.
+        The user's timeline languages do not apply. A conversation that the user hid
+        (`hideConversation`) is left out until a newer direct post arrives in it.
+
+        A page may hold fewer conversations than `limit` while `next_cursor` is still given, when
+        some have no post left that the user may see.
+      tags:
+        - conversations
+      security:
+        - oauth2:
+            - read:direct
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of conversations.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConversationPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /conversations/{id}:
+    get:
+      operationId: getConversation
+      summary: Get a conversation of the direct messages
+      description: |
+        The conversation as `listConversations` shows it, even when the user hid it. A conversation
+        in which the user sent or received no direct post, or none that the user may see, is a 404.
+      tags:
+        - conversations
+      security:
+        - oauth2:
+            - read:direct
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Conversation'
+        default:
+          $ref: '#/components/responses/Problem'
+  /conversations/{id}/read:
+    post:
+      operationId: markConversationRead
+      summary: Mark a conversation read
+      description: |
+        Marks the conversation read up to its newest direct post, on every device of the user:
+        `unread` is false until a newer direct post by another account arrives. The user's open
+        streams receive the conversation again (`conversation`). Marking it again changes nothing.
+        A conversation in which the user sent or received no direct post is a 404.
+      tags:
+        - conversations
+      security:
+        - oauth2:
+            - read:direct
+            - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Conversation'
+        default:
+          $ref: '#/components/responses/Problem'
+  /conversations/{id}/hide:
+    post:
+      operationId: hideConversation
+      summary: Hide a conversation
+      description: |
+        Takes the conversation out of `listConversations` until a newer direct post arrives in it,
+        on every device of the user. Its posts stay, and so do they for the other accounts. Hiding
+        it again changes nothing. A conversation in which the user sent or received no direct post
+        is a 404.
+      tags:
+        - conversations
+      security:
+        - oauth2:
+            - read:direct
+            - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+      responses:
+        '204':
+          description: The conversation is hidden.
+        default:
+          $ref: '#/components/responses/Problem'
   /reports:
     get:
       operationId: listOwnReports
@@ -4748,7 +4848,8 @@ paths:
       summary: Stream real-time updates
       description: |
         A Server-Sent Events stream (`text/event-stream`) of the authenticated user's new home
-        and list timeline entries, notifications, and announcements, from the moment it opens. Read it with `fetch` and
+        and list timeline entries, notifications, conversations of the direct messages, and
+        announcements, from the moment it opens. Read it with `fetch` and
         send the access token in `Authorization`, like every other operation (`EventSource`
         cannot send it).
 
@@ -4760,6 +4861,10 @@ paths:
           timeline shows it (its author is a member), right after its `update`. `data` is
           `{"list_id": "<list id>", "status": <Status>}`.
         - `notification`: a new notification. `data` is a `Notification`.
+        - `conversation`: a conversation of the direct messages changed: a `direct` post that the
+          user sent or received arrived in it, or the user read it on a device. `data` is a
+          `Conversation`, as `listConversations` shows it; nothing is sent for a conversation that it
+          leaves out, nor without the `read:direct` scope.
         - `announcement`: an announcement that the users see was published or changed. `data`
           is an `Announcement`.
         - `announcement_removed`: an announcement no longer shows (it was withdrawn, or its
@@ -4768,7 +4873,7 @@ paths:
         A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
         the access token stops being valid, when the client does not keep up, and when it shuts
         down; nothing is replayed, so after reconnecting read the home timeline, the open list
-        timelines, and the notifications again for what was missed. Announcements whose window starts later
+        timelines, the notifications, and the conversations again for what was missed. Announcements whose window starts later
         arrive with no event: list the announcements again from time to time. A user may hold a limited number of streams
         open at once; past it the answer is 429 with type
         `/api/v1/problems/too-many-streams`. While the server cannot receive updates (its
@@ -11239,7 +11344,7 @@ components:
             read:blocks: Read the accounts the user blocks.
             read:bookmarks: Read the user's bookmarks.
             read:custom_emojis: Read the custom emoji the user made and their requests for new ones.
-            read:direct: Read the direct posts the user sends and receives (`read:statuses` does not show them).
+            read:direct: Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
             read:finance: Read the totals of the instance's costs and income, as far as the user's roles allow.
             read:follows: Read follows, follow requests, lists, and the accounts whose new posts notify the user.
             read:mutes: Read the accounts and domains the user mutes.
@@ -11320,6 +11425,15 @@ components:
       description: Which brand image.
       schema:
         $ref: '#/components/schemas/BrandKind'
+    ConversationId:
+      name: id
+      in: path
+      required: true
+      description: |
+        The ID of the conversation. The ID of a conversation that was merged into another, once a
+        reply showed both to be one thread, names the conversation it was merged into.
+      schema:
+        $ref: '#/components/schemas/Id'
     CostItemId:
       name: id
       in: path
@@ -11865,6 +11979,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AdminWebhookDelivery'
+    Conversation:
+      description: The conversation.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Conversation'
     CostItem:
       description: The cost item.
       headers:
@@ -17074,6 +17197,51 @@ components:
           type: string
           minLength: 2
           maxLength: 30
+    Conversation:
+      description: |
+        A conversation of the user's direct messages: the `direct` posts that the user sent or
+        received in one thread, whether or not the user follows their authors.
+      type: object
+      required:
+        - id
+        - accounts
+        - last_status
+        - unread
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        accounts:
+          description: |
+            The other accounts of the direct posts that the user sent or received in the
+            conversation: their authors and the accounts they mention.
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+        last_status:
+          description: |
+            The newest direct post of the conversation that the user may see. A post of an
+            account that the user blocks, is blocked by, or mutes, or of a suspended account, is
+            skipped for the one before it.
+          allOf:
+            - $ref: '#/components/schemas/Status'
+        unread:
+          description: |
+            Whether a direct post by another account is newer than the point up to which the user
+            read the conversation (`markConversationRead`), on any device.
+          type: boolean
+    ConversationPage:
+      description: A page of the user's direct messages by conversation.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              description: The conversations of the page, the one with the newest direct post first.
+              type: array
+              items:
+                $ref: '#/components/schemas/Conversation'
     CostBasis:
       description: |
         How the totals place a payment. `amortized` (the default) spreads each

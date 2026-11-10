@@ -70,7 +70,8 @@ func (s *Server) registerStreaming(r Router) {
 // serveStreaming serves GET /api/v1/streaming: a Server-Sent Events stream of the viewer's new
 // home timeline entries (event update, data a Status, and event list_update for each list of the
 // viewer whose timeline lists the entry, data its ID and the Status), notifications (event notification,
-// data a Notification), and announcements (event announcement, data an Announcement, and event
+// data a Notification), conversations of the direct messages (event conversation, data a
+// Conversation), and announcements (event announcement, data an Announcement, and event
 // announcement_removed, data its ID). The stream subscribes to the signals of stream.Subscriber and reads
 // each change back through the use cases, as the viewer would see it in the home timeline or
 // the notification list. It ends when the client goes, the subscription ends (the broker shuts
@@ -252,10 +253,37 @@ func (st *streamState) handle(ctx context.Context, e stream.Event) error {
 		return st.homeEntry(ctx, e.EntryID)
 	case stream.KindNotifications:
 		return st.notifications(ctx)
+	case stream.KindConversation:
+		return st.conversation(ctx, e)
 	case stream.KindAnnouncement:
 		return st.announcement(ctx, e.AnnouncementID)
 	}
 	return nil
+}
+
+// conversation sends the conversation of e as the viewer's list of direct messages shows it
+// (event conversation), when the list shows it. A token without read:direct sees no direct post,
+// so it receives none.
+func (st *streamState) conversation(ctx context.Context, e stream.Event) error {
+	if st.s.o.Conversations == nil || e.AccountID != st.viewer.AccountID {
+		return nil
+	}
+	viewer := localContentViewer(st.viewer)
+	if viewer.DirectDenied {
+		return nil
+	}
+	c, ok, err := st.s.o.Conversations.StreamConversation(ctx, viewer, e.ConversationID)
+	if err != nil {
+		return fmt.Errorf("conversation %s: %w", e.ConversationID, err)
+	}
+	if !ok {
+		return nil
+	}
+	items, err := st.s.presentConversations(ctx, &st.viewer, viewer, []apptimeline.Conversation{c})
+	if err != nil || len(items) == 0 {
+		return err
+	}
+	return st.event("conversation", items[0])
 }
 
 // announcementRemoved is the data of an announcement_removed event.

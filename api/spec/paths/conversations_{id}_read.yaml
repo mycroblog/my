@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: markConversationRead
+  summary: Mark a conversation read
+  description: |
+    Marks the conversation read up to its newest direct post, on every device of the user:
+    `unread` is false until a newer direct post by another account arrives. The user's open
+    streams receive the conversation again (`conversation`). Marking it again changes nothing.
+    A conversation in which the user sent or received no direct post is a 404.
+  tags: [conversations]
+  security:
+    - oauth2: ["read:direct", "write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/ConversationId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Conversation.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

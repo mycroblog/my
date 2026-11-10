@@ -8127,6 +8127,37 @@ type CloseServiceRequest struct {
 // account at a login provider (`link`).
 type ConfirmedOperation string
 
+// Conversation A conversation of the user's direct messages: the `direct` posts that the user sent or
+// received in one thread, whether or not the user follows their authors.
+type Conversation struct {
+	// Accounts The other accounts of the direct posts that the user sent or received in the
+	// conversation: their authors and the accounts they mention.
+	Accounts []Account `json:"accounts"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// LastStatus The newest direct post of the conversation that the user may see. A post of an
+	// account that the user blocks, is blocked by, or mutes, or of a suspended account, is
+	// skipped for the one before it.
+	LastStatus Status `json:"last_status"`
+
+	// Unread Whether a direct post by another account is newer than the point up to which the user
+	// read the conversation (`markConversationRead`), on any device.
+	Unread bool `json:"unread"`
+}
+
+// ConversationPage A page of the user's direct messages by conversation.
+type ConversationPage struct {
+	// Items The conversations of the page, the one with the newest direct post first.
+	Items []Conversation `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
 // CopyCustomEmojiRequest The local custom emoji that a copy of a remote one becomes.
 type CopyCustomEmojiRequest struct {
 	// Shortcode The shortcode of the local emoji: 2 to 30 letters (A to Z, a to z), digits, and
@@ -14599,6 +14630,11 @@ type AppealId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type BadgeRoleId = Id
 
+// ConversationId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type ConversationId = Id
+
 // CostItemId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -15241,6 +15277,15 @@ type ListBlocksParams struct {
 
 // ListBookmarksParams defines parameters for ListBookmarks.
 type ListBookmarksParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListConversationsParams defines parameters for ListConversations.
+type ListConversationsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -16537,6 +16582,18 @@ type ServerInterface interface {
 	// ListBookmarks List the posts the authenticated user bookmarked, newest bookmark first
 	// (GET /bookmarks)
 	ListBookmarks(w http.ResponseWriter, r *http.Request, params ListBookmarksParams)
+	// ListConversations List the direct messages by conversation
+	// (GET /conversations)
+	ListConversations(w http.ResponseWriter, r *http.Request, params ListConversationsParams)
+	// GetConversation Get a conversation of the direct messages
+	// (GET /conversations/{id})
+	GetConversation(w http.ResponseWriter, r *http.Request, id ConversationId)
+	// HideConversation Hide a conversation
+	// (POST /conversations/{id}/hide)
+	HideConversation(w http.ResponseWriter, r *http.Request, id ConversationId)
+	// MarkConversationRead Mark a conversation read
+	// (POST /conversations/{id}/read)
+	MarkConversationRead(w http.ResponseWriter, r *http.Request, id ConversationId)
 	// ExportCsv Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
 	// (GET /csv_exports/{kind})
 	ExportCsv(w http.ResponseWriter, r *http.Request, kind DataImportKind)
@@ -23348,6 +23405,130 @@ func (siw *ServerInterfaceWrapper) ListBookmarks(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// ListConversations operation middleware
+func (siw *ServerInterfaceWrapper) ListConversations(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListConversationsParams
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListConversations(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetConversation operation middleware
+func (siw *ServerInterfaceWrapper) GetConversation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ConversationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetConversation(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// HideConversation operation middleware
+func (siw *ServerInterfaceWrapper) HideConversation(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ConversationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.HideConversation(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// MarkConversationRead operation middleware
+func (siw *ServerInterfaceWrapper) MarkConversationRead(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ConversationId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MarkConversationRead(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ExportCsv operation middleware
 func (siw *ServerInterfaceWrapper) ExportCsv(w http.ResponseWriter, r *http.Request) {
 
@@ -28109,6 +28290,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/federated", wrapper.GetFederatedTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/tag/{hashtag}", wrapper.GetHashtagTimeline)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/timelines/list/{id}", wrapper.GetListTimeline)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/conversations", wrapper.ListConversations)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/conversations/{id}", wrapper.GetConversation)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/conversations/{id}/read", wrapper.MarkConversationRead)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/conversations/{id}/hide", wrapper.HideConversation)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/reports", wrapper.ListOwnReports)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/reports", wrapper.CreateReport)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/announcements", wrapper.ListAnnouncements)
@@ -28613,6 +28798,15 @@ type BrandProblemApplicationProblemPlusJSONResponse struct {
 	Body BrandProblem
 
 	Headers BrandProblemResponseHeaders
+}
+
+type ConversationResponseHeaders struct {
+	CacheControl *string
+}
+type ConversationJSONResponse struct {
+	Body Conversation
+
+	Headers ConversationResponseHeaders
 }
 
 type CostItemResponseHeaders struct {
@@ -41546,6 +41740,224 @@ func (response ListBookmarksdefaultApplicationProblemPlusJSONResponse) VisitList
 	return err
 }
 
+type ListConversationsRequestObject struct {
+	Params ListConversationsParams
+}
+
+type ListConversationsResponseObject interface {
+	VisitListConversationsResponse(w http.ResponseWriter) error
+}
+
+type ListConversations200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListConversations200JSONResponse struct {
+	Body    ConversationPage
+	Headers ListConversations200ResponseHeaders
+}
+
+func (response ListConversations200JSONResponse) VisitListConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListConversationsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListConversationsdefaultApplicationProblemPlusJSONResponse) VisitListConversationsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConversationRequestObject struct {
+	Id ConversationId `json:"id"`
+}
+
+type GetConversationResponseObject interface {
+	VisitGetConversationResponse(w http.ResponseWriter) error
+}
+
+type GetConversation200JSONResponse struct{ ConversationJSONResponse }
+
+func (response GetConversation200JSONResponse) VisitGetConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetConversationdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetConversationdefaultApplicationProblemPlusJSONResponse) VisitGetConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type HideConversationRequestObject struct {
+	Id ConversationId `json:"id"`
+}
+
+type HideConversationResponseObject interface {
+	VisitHideConversationResponse(w http.ResponseWriter) error
+}
+
+type HideConversation204Response struct {
+}
+
+func (response HideConversation204Response) VisitHideConversationResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type HideConversationdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response HideConversationdefaultApplicationProblemPlusJSONResponse) VisitHideConversationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkConversationReadRequestObject struct {
+	Id ConversationId `json:"id"`
+}
+
+type MarkConversationReadResponseObject interface {
+	VisitMarkConversationReadResponse(w http.ResponseWriter) error
+}
+
+type MarkConversationRead200JSONResponse struct{ ConversationJSONResponse }
+
+func (response MarkConversationRead200JSONResponse) VisitMarkConversationReadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type MarkConversationReaddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response MarkConversationReaddefaultApplicationProblemPlusJSONResponse) VisitMarkConversationReadResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ExportCsvRequestObject struct {
 	Kind DataImportKind `json:"kind"`
 }
@@ -51782,6 +52194,18 @@ type StrictServerInterface interface {
 	// ListBookmarks List the posts the authenticated user bookmarked, newest bookmark first
 	// (GET /bookmarks)
 	ListBookmarks(ctx context.Context, request ListBookmarksRequestObject) (ListBookmarksResponseObject, error)
+	// ListConversations List the direct messages by conversation
+	// (GET /conversations)
+	ListConversations(ctx context.Context, request ListConversationsRequestObject) (ListConversationsResponseObject, error)
+	// GetConversation Get a conversation of the direct messages
+	// (GET /conversations/{id})
+	GetConversation(ctx context.Context, request GetConversationRequestObject) (GetConversationResponseObject, error)
+	// HideConversation Hide a conversation
+	// (POST /conversations/{id}/hide)
+	HideConversation(ctx context.Context, request HideConversationRequestObject) (HideConversationResponseObject, error)
+	// MarkConversationRead Mark a conversation read
+	// (POST /conversations/{id}/read)
+	MarkConversationRead(ctx context.Context, request MarkConversationReadRequestObject) (MarkConversationReadResponseObject, error)
 	// ExportCsv Export the authenticated user's follows, blocks, mutes, muted domains, or bookmarks as CSV
 	// (GET /csv_exports/{kind})
 	ExportCsv(ctx context.Context, request ExportCsvRequestObject) (ExportCsvResponseObject, error)
@@ -58222,6 +58646,110 @@ func (sh *strictHandler) ListBookmarks(w http.ResponseWriter, r *http.Request, p
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListBookmarksResponseObject); ok {
 		if err := validResponse.VisitListBookmarksResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListConversations operation middleware
+func (sh *strictHandler) ListConversations(w http.ResponseWriter, r *http.Request, params ListConversationsParams) {
+	var request ListConversationsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListConversations(ctx, request.(ListConversationsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListConversations")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListConversationsResponseObject); ok {
+		if err := validResponse.VisitListConversationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetConversation operation middleware
+func (sh *strictHandler) GetConversation(w http.ResponseWriter, r *http.Request, id ConversationId) {
+	var request GetConversationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetConversation(ctx, request.(GetConversationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetConversation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetConversationResponseObject); ok {
+		if err := validResponse.VisitGetConversationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// HideConversation operation middleware
+func (sh *strictHandler) HideConversation(w http.ResponseWriter, r *http.Request, id ConversationId) {
+	var request HideConversationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.HideConversation(ctx, request.(HideConversationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "HideConversation")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(HideConversationResponseObject); ok {
+		if err := validResponse.VisitHideConversationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// MarkConversationRead operation middleware
+func (sh *strictHandler) MarkConversationRead(w http.ResponseWriter, r *http.Request, id ConversationId) {
+	var request MarkConversationReadRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.MarkConversationRead(ctx, request.(MarkConversationReadRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "MarkConversationRead")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(MarkConversationReadResponseObject); ok {
+		if err := validResponse.VisitMarkConversationReadResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

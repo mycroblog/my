@@ -144,6 +144,10 @@ type Options struct {
 	// Lists keeps the viewer's lists and reads their timelines; nil answers their operations
 	// with 404.
 	Lists Lists
+	// Conversations reads and keeps the viewer's direct messages by conversation and tells the
+	// streams how a conversation shows; nil answers their operations with 404 and streams no
+	// conversation events.
+	Conversations Conversations
 	// TimelineLanguages returns the languages that a user's timelines show, none for every
 	// language (FR-208); nil shows every language.
 	TimelineLanguages func(ctx context.Context, userID string) ([]string, error)

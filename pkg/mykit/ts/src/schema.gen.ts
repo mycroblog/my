@@ -3191,6 +3191,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the direct messages by conversation
+         * @description Every conversation with a `direct` post that the user sent or received, whether or not the
+         *     user follows its author, the one with the newest such post first. Each shows its newest
+         *     direct post that the user may see, as the home timeline would show it: the posts of
+         *     accounts that the user blocks, is blocked by, or mutes, and of suspended accounts and
+         *     domains, are skipped for the one before, and a conversation with none left is left out.
+         *     The user's timeline languages do not apply. A conversation that the user hid
+         *     (`hideConversation`) is left out until a newer direct post arrives in it.
+         *
+         *     A page may hold fewer conversations than `limit` while `next_cursor` is still given, when
+         *     some have no post left that the user may see.
+         */
+        get: operations["listConversations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a conversation of the direct messages
+         * @description The conversation as `listConversations` shows it, even when the user hid it. A conversation
+         *     in which the user sent or received no direct post, or none that the user may see, is a 404.
+         */
+        get: operations["getConversation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Mark a conversation read
+         * @description Marks the conversation read up to its newest direct post, on every device of the user:
+         *     `unread` is false until a newer direct post by another account arrives. The user's open
+         *     streams receive the conversation again (`conversation`). Marking it again changes nothing.
+         *     A conversation in which the user sent or received no direct post is a 404.
+         */
+        post: operations["markConversationRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/conversations/{id}/hide": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hide a conversation
+         * @description Takes the conversation out of `listConversations` until a newer direct post arrives in it,
+         *     on every device of the user. Its posts stay, and so do they for the other accounts. Hiding
+         *     it again changes nothing. A conversation in which the user sent or received no direct post
+         *     is a 404.
+         */
+        post: operations["hideConversation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/reports": {
         parameters: {
             query?: never;
@@ -3328,7 +3424,8 @@ export interface paths {
         /**
          * Stream real-time updates
          * @description A Server-Sent Events stream (`text/event-stream`) of the authenticated user's new home
-         *     and list timeline entries, notifications, and announcements, from the moment it opens. Read it with `fetch` and
+         *     and list timeline entries, notifications, conversations of the direct messages, and
+         *     announcements, from the moment it opens. Read it with `fetch` and
          *     send the access token in `Authorization`, like every other operation (`EventSource`
          *     cannot send it).
          *
@@ -3340,6 +3437,10 @@ export interface paths {
          *       timeline shows it (its author is a member), right after its `update`. `data` is
          *       `{"list_id": "<list id>", "status": <Status>}`.
          *     - `notification`: a new notification. `data` is a `Notification`.
+         *     - `conversation`: a conversation of the direct messages changed: a `direct` post that the
+         *       user sent or received arrived in it, or the user read it on a device. `data` is a
+         *       `Conversation`, as `listConversations` shows it; nothing is sent for a conversation that it
+         *       leaves out, nor without the `read:direct` scope.
          *     - `announcement`: an announcement that the users see was published or changed. `data`
          *       is an `Announcement`.
          *     - `announcement_removed`: an announcement no longer shows (it was withdrawn, or its
@@ -3348,7 +3449,7 @@ export interface paths {
          *     A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
          *     the access token stops being valid, when the client does not keep up, and when it shuts
          *     down; nothing is replayed, so after reconnecting read the home timeline, the open list
-         *     timelines, and the notifications again for what was missed. Announcements whose window starts later
+         *     timelines, the notifications, and the conversations again for what was missed. Announcements whose window starts later
          *     arrive with no event: list the announcements again from time to time. A user may hold a limited number of streams
          *     open at once; past it the answer is 429 with type
          *     `/api/v1/problems/too-many-streams`. While the server cannot receive updates (its
@@ -11076,6 +11177,34 @@ export interface components {
             shortcode?: string;
         };
         /**
+         * @description A conversation of the user's direct messages: the `direct` posts that the user sent or
+         *     received in one thread, whether or not the user follows their authors.
+         */
+        Conversation: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description The other accounts of the direct posts that the user sent or received in the
+             *     conversation: their authors and the accounts they mention.
+             */
+            accounts: components["schemas"]["Account"][];
+            /**
+             * @description The newest direct post of the conversation that the user may see. A post of an
+             *     account that the user blocks, is blocked by, or mutes, or of a suspended account, is
+             *     skipped for the one before it.
+             */
+            last_status: components["schemas"]["Status"];
+            /**
+             * @description Whether a direct post by another account is newer than the point up to which the user
+             *     read the conversation (`markConversationRead`), on any device.
+             */
+            unread: boolean;
+        };
+        /** @description A page of the user's direct messages by conversation. */
+        ConversationPage: components["schemas"]["PageInfo"] & {
+            /** @description The conversations of the page, the one with the newest direct post first. */
+            items: components["schemas"]["Conversation"][];
+        };
+        /**
          * @description How the totals place a payment. `amortized` (the default) spreads each
          *     payment of a schedule longer than a month (every 2 or more months, every year, every 5 or
          *     more weeks) by day over the days up to the next payment, with the cumulative rounding;
@@ -16146,6 +16275,16 @@ export interface components {
                 "application/json": components["schemas"]["AdminWebhookDelivery"];
             };
         };
+        /** @description The conversation. */
+        Conversation: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Conversation"];
+            };
+        };
         /** @description The cost item. */
         CostItem: {
             headers: {
@@ -16377,6 +16516,11 @@ export interface components {
         BadgeRoleId: components["schemas"]["Id"];
         /** @description Which brand image. */
         BrandKind: components["schemas"]["BrandKind"];
+        /**
+         * @description The ID of the conversation. The ID of a conversation that was merged into another, once a
+         *     reply showed both to be one thread, names the conversation it was merged into.
+         */
+        ConversationId: components["schemas"]["Id"];
         /** @description The ID of the cost item. */
         CostItemId: components["schemas"]["Id"];
         /** @description The `next_cursor` of the previous page; omitted for the first page. */
@@ -19933,6 +20077,96 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["StatusPage"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listConversations: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of conversations. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ID of the conversation. The ID of a conversation that was merged into another, once a
+                 *     reply showed both to be one thread, names the conversation it was merged into.
+                 */
+                id: components["parameters"]["ConversationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Conversation"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    markConversationRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ID of the conversation. The ID of a conversation that was merged into another, once a
+                 *     reply showed both to be one thread, names the conversation it was merged into.
+                 */
+                id: components["parameters"]["ConversationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Conversation"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    hideConversation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The ID of the conversation. The ID of a conversation that was merged into another, once a
+                 *     reply showed both to be one thread, names the conversation it was merged into.
+                 */
+                id: components["parameters"]["ConversationId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The conversation is hidden. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
             default: components["responses"]["Problem"];
         };
     };
