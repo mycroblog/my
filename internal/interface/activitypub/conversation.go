@@ -54,9 +54,10 @@ func (h *Handler) conversation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if c.RedirectTo != "" {
+		// The same page of the conversation it was merged into, from the parameters read above.
 		target := c.RedirectTo
-		if r.URL.RawQuery != "" {
-			target += "?" + r.URL.RawQuery
+		if paged {
+			target = conversationPageURI(target, after)
 		}
 		redirect(w, r, target, http.StatusPermanentRedirect)
 		return
