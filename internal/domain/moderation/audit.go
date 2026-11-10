@@ -382,6 +382,14 @@ const (
 	// deliveries to it resume. The event of the health is its own record, which the entry does not
 	// point at.
 	AuditInstanceMarkedAvailable AuditAction = "instance_marked_available"
+	// AuditDeliveryRevealed: a holder of manage_domains was shown the sender, the activity URI,
+	// and the personal inbox that the admin API masks on a delivery to a remote server (ADR-0058
+	// §9); the source event is the delivery, and the target its server.
+	AuditDeliveryRevealed AuditAction = "delivery_revealed"
+	// AuditAccountDeliveriesViewed: a holder of manage_domains listed the deliveries of one local
+	// account to a remote server (ADR-0058 §9); the target is the account, its label the handle
+	// and the server, and the operation has no row of its own.
+	AuditAccountDeliveriesViewed AuditAction = "account_deliveries_viewed"
 	// AuditDomainAllowAdded and AuditDomainAllowRemoved: a domain was added to the allowlist of
 	// federation, and removed from it (ADR-0159 §8). The rows are resources that a removal
 	// deletes (domain_allows), so these entries have no source event, except a removal while
@@ -515,6 +523,8 @@ var auditActions = []struct {
 	{AuditLinkCardDomainImagesStopped, AuditTargetLinkCardDomain},
 	{AuditLinkCardDomainRuleRemoved, AuditTargetLinkCardDomain},
 	{AuditInstanceMarkedAvailable, AuditTargetDomain},
+	{AuditDeliveryRevealed, AuditTargetDomain},
+	{AuditAccountDeliveriesViewed, AuditTargetAccount},
 	{AuditDomainAllowAdded, AuditTargetDomainAllow},
 	{AuditDomainAllowRemoved, AuditTargetDomainAllow},
 	{AuditDomainListSubscriptionCreated, AuditTargetDomainListSubscription},

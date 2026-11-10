@@ -1038,6 +1038,45 @@ func (q *Queries) InsertRemoteObjectTombstone(ctx context.Context, arg InsertRem
 	return result.RowsAffected()
 }
 
+const listAttemptsOfDeliveries = `-- name: ListAttemptsOfDeliveries :many
+SELECT id, delivery_id, outcome, signature_scheme, status_code, error, attempted_at FROM delivery_attempts
+WHERE delivery_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT)))
+ORDER BY delivery_id, id
+`
+
+// ListAttemptsOfDeliveries returns the attempts of the deliveries of a JSON array, by delivery,
+// oldest first.
+func (q *Queries) ListAttemptsOfDeliveries(ctx context.Context, deliveryIds string) ([]DeliveryAttempt, error) {
+	rows, err := q.db.QueryContext(ctx, listAttemptsOfDeliveries, deliveryIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DeliveryAttempt{}
+	for rows.Next() {
+		var i DeliveryAttempt
+		if err := rows.Scan(
+			&i.ID,
+			&i.DeliveryID,
+			&i.Outcome,
+			&i.SignatureScheme,
+			&i.StatusCode,
+			&i.Error,
+			&i.AttemptedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listClosureDeleteAccounts = `-- name: ListClosureDeleteAccounts :many
 SELECT account_id FROM closure_deletes WHERE account_id IN (/*SLICE:account_ids*/?) ORDER BY account_id
 `
@@ -1065,6 +1104,155 @@ func (q *Queries) ListClosureDeleteAccounts(ctx context.Context, accountIds []st
 			return nil, err
 		}
 		items = append(items, account_id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDeliveriesOfActivityToDomain = `-- name: ListDeliveriesOfActivityToDomain :many
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at
+FROM outbound_activities a
+JOIN deliveries d ON d.outbound_activity_id = a.id
+WHERE a.activity_uri = ?1 AND d.domain = ?2
+  AND (CAST(?3 AS TEXT) = '' OR a.actor_account_id = CAST(?3 AS TEXT))
+  AND d.id < COALESCE(NULLIF(CAST(?4 AS TEXT), ''), 'g')
+ORDER BY d.id DESC LIMIT ?5
+`
+
+type ListDeliveriesOfActivityToDomainParams struct {
+	ActivityUri    string
+	Domain         string
+	ActorAccountID string
+	Before         string
+	BatchLimit     int64
+}
+
+type ListDeliveriesOfActivityToDomainRow struct {
+	ID                 string
+	OutboundActivityID string
+	InboxUrl           string
+	Domain             string
+	CreatedAt          int64
+	ActivityUri        string
+	Type               string
+	ActorAccountID     string
+	ObjectType         string
+	ObjectID           string
+	ActivityCreatedAt  int64
+}
+
+// ListDeliveriesOfActivityToDomain is ListDeliveriesToDomain of the activity @activity_uri, of
+// the local actor @actor_account_id unless it is ”.
+func (q *Queries) ListDeliveriesOfActivityToDomain(ctx context.Context, arg ListDeliveriesOfActivityToDomainParams) ([]ListDeliveriesOfActivityToDomainRow, error) {
+	rows, err := q.db.QueryContext(ctx, listDeliveriesOfActivityToDomain,
+		arg.ActivityUri,
+		arg.Domain,
+		arg.ActorAccountID,
+		arg.Before,
+		arg.BatchLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDeliveriesOfActivityToDomainRow{}
+	for rows.Next() {
+		var i ListDeliveriesOfActivityToDomainRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OutboundActivityID,
+			&i.InboxUrl,
+			&i.Domain,
+			&i.CreatedAt,
+			&i.ActivityUri,
+			&i.Type,
+			&i.ActorAccountID,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.ActivityCreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDeliveriesOfActorToDomain = `-- name: ListDeliveriesOfActorToDomain :many
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at
+FROM outbound_activities a
+JOIN deliveries d ON d.outbound_activity_id = a.id
+WHERE a.actor_account_id = ?1 AND d.domain = ?2
+  AND d.id < COALESCE(NULLIF(CAST(?3 AS TEXT), ''), 'g')
+ORDER BY d.id DESC LIMIT ?4
+`
+
+type ListDeliveriesOfActorToDomainParams struct {
+	ActorAccountID string
+	Domain         string
+	Before         string
+	BatchLimit     int64
+}
+
+type ListDeliveriesOfActorToDomainRow struct {
+	ID                 string
+	OutboundActivityID string
+	InboxUrl           string
+	Domain             string
+	CreatedAt          int64
+	ActivityUri        string
+	Type               string
+	ActorAccountID     string
+	ObjectType         string
+	ObjectID           string
+	ActivityCreatedAt  int64
+}
+
+// ListDeliveriesOfActorToDomain is ListDeliveriesToDomain of the activities of one local actor.
+// outbound_activities_actor_account_id_id serves it.
+func (q *Queries) ListDeliveriesOfActorToDomain(ctx context.Context, arg ListDeliveriesOfActorToDomainParams) ([]ListDeliveriesOfActorToDomainRow, error) {
+	rows, err := q.db.QueryContext(ctx, listDeliveriesOfActorToDomain,
+		arg.ActorAccountID,
+		arg.Domain,
+		arg.Before,
+		arg.BatchLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDeliveriesOfActorToDomainRow{}
+	for rows.Next() {
+		var i ListDeliveriesOfActorToDomainRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OutboundActivityID,
+			&i.InboxUrl,
+			&i.Domain,
+			&i.CreatedAt,
+			&i.ActivityUri,
+			&i.Type,
+			&i.ActorAccountID,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.ActivityCreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -1103,6 +1291,73 @@ func (q *Queries) ListDeliveriesOfOutboundActivity(ctx context.Context, arg List
 			&i.InboxUrl,
 			&i.Domain,
 			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDeliveriesToDomain = `-- name: ListDeliveriesToDomain :many
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at
+FROM deliveries d
+JOIN outbound_activities a ON a.id = d.outbound_activity_id
+WHERE d.domain = ?1 AND d.id < COALESCE(NULLIF(CAST(?2 AS TEXT), ''), 'g')
+ORDER BY d.id DESC LIMIT ?3
+`
+
+type ListDeliveriesToDomainParams struct {
+	Domain     string
+	Before     string
+	BatchLimit int64
+}
+
+type ListDeliveriesToDomainRow struct {
+	ID                 string
+	OutboundActivityID string
+	InboxUrl           string
+	Domain             string
+	CreatedAt          int64
+	ActivityUri        string
+	Type               string
+	ActorAccountID     string
+	ObjectType         string
+	ObjectID           string
+	ActivityCreatedAt  int64
+}
+
+// ListDeliveriesToDomain returns the deliveries to a server with their activities, newest first,
+// before the delivery @before (” for the newest), for the admin API. deliveries_domain_id
+// serves it.
+func (q *Queries) ListDeliveriesToDomain(ctx context.Context, arg ListDeliveriesToDomainParams) ([]ListDeliveriesToDomainRow, error) {
+	rows, err := q.db.QueryContext(ctx, listDeliveriesToDomain, arg.Domain, arg.Before, arg.BatchLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDeliveriesToDomainRow{}
+	for rows.Next() {
+		var i ListDeliveriesToDomainRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.OutboundActivityID,
+			&i.InboxUrl,
+			&i.Domain,
+			&i.CreatedAt,
+			&i.ActivityUri,
+			&i.Type,
+			&i.ActorAccountID,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.ActivityCreatedAt,
 		); err != nil {
 			return nil, err
 		}

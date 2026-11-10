@@ -603,6 +603,33 @@ func (q *Queries) ListRemoteProfileURLs(ctx context.Context, accountIds []string
 	return items, nil
 }
 
+const listSharedInboxesAmong = `-- name: ListSharedInboxesAmong :many
+SELECT DISTINCT h.shared_inbox_url FROM remote_account_heads h
+WHERE h.shared_inbox_url = ANY($1::text[])
+`
+
+// ListSharedInboxesAmong returns the URLs of @urls that the head of a remote actor declares as
+// its shared inbox, for the admin API's masking of personal inboxes.
+func (q *Queries) ListSharedInboxesAmong(ctx context.Context, urls []string) ([]*string, error) {
+	rows, err := q.db.Query(ctx, listSharedInboxesAmong, urls)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*string{}
+	for rows.Next() {
+		var shared_inbox_url *string
+		if err := rows.Scan(&shared_inbox_url); err != nil {
+			return nil, err
+		}
+		items = append(items, shared_inbox_url)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listStaleRemoteAccountHeads = `-- name: ListStaleRemoteAccountHeads :many
 SELECT account_id, snapshot_id, inbox_url, shared_inbox_url, last_fetched_at, consecutive_fetch_failures
 FROM remote_account_heads

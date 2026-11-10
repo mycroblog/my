@@ -67,6 +67,8 @@ CREATE INDEX outbound_activities_object_type_object_id_id ON outbound_activities
 CREATE INDEX outbound_activities_retention ON outbound_activities (created_at, id) WHERE NOT (object_type = 'status' AND type = 'Create');
 CREATE INDEX outbound_activities_deletes ON outbound_activities (created_at) WHERE type = 'Delete';
 CREATE INDEX outbound_activities_status_creates ON outbound_activities (actor_account_id) WHERE object_type = 'status' AND type = 'Create';
+-- The deliveries of one local sender to a server, for the admin API's filter by account.
+CREATE INDEX outbound_activities_actor_account_id_id ON outbound_activities (actor_account_id, id);
 
 -- Event: the body of an outbound activity, built once by the fan-out so that every delivery
 -- and retry sends the same bytes.
@@ -86,6 +88,8 @@ CREATE TABLE deliveries (
   created_at INTEGER NOT NULL
 ) STRICT;
 CREATE UNIQUE INDEX deliveries_outbound_activity_id_inbox_url ON deliveries (outbound_activity_id, inbox_url);
+-- The deliveries to a server, newest first, for the admin API.
+CREATE INDEX deliveries_domain_id ON deliveries (domain, id);
 
 -- Event: one attempt of a delivery. signature_scheme is NULL when no response came back.
 CREATE TABLE delivery_attempts (

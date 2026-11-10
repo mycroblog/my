@@ -150,6 +150,47 @@ VALUES (@id, @delivery_id, @outcome, @signature_scheme, @status_code, @error, @a
 SELECT id, delivery_id, outcome, signature_scheme, status_code, error, attempted_at FROM delivery_attempts
 WHERE delivery_id = @delivery_id ORDER BY id;
 
+-- ListDeliveriesToDomain returns the deliveries to a server with their activities, newest first,
+-- before the delivery @before ('' for the newest), for the admin API. deliveries_domain_id
+-- serves it.
+-- name: ListDeliveriesToDomain :many
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at
+FROM deliveries d
+JOIN outbound_activities a ON a.id = d.outbound_activity_id
+WHERE d.domain = sqlc.arg(domain) AND d.id < COALESCE(NULLIF(CAST(sqlc.arg(before) AS TEXT), ''), 'g')
+ORDER BY d.id DESC LIMIT sqlc.arg(batch_limit);
+
+-- ListDeliveriesOfActorToDomain is ListDeliveriesToDomain of the activities of one local actor.
+-- outbound_activities_actor_account_id_id serves it.
+-- name: ListDeliveriesOfActorToDomain :many
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at
+FROM outbound_activities a
+JOIN deliveries d ON d.outbound_activity_id = a.id
+WHERE a.actor_account_id = sqlc.arg(actor_account_id) AND d.domain = sqlc.arg(domain)
+  AND d.id < COALESCE(NULLIF(CAST(sqlc.arg(before) AS TEXT), ''), 'g')
+ORDER BY d.id DESC LIMIT sqlc.arg(batch_limit);
+
+-- ListDeliveriesOfActivityToDomain is ListDeliveriesToDomain of the activity @activity_uri, of
+-- the local actor @actor_account_id unless it is ''.
+-- name: ListDeliveriesOfActivityToDomain :many
+SELECT d.id, d.outbound_activity_id, d.inbox_url, d.domain, d.created_at,
+  a.activity_uri, a.type, a.actor_account_id, a.object_type, a.object_id, a.created_at AS activity_created_at
+FROM outbound_activities a
+JOIN deliveries d ON d.outbound_activity_id = a.id
+WHERE a.activity_uri = sqlc.arg(activity_uri) AND d.domain = sqlc.arg(domain)
+  AND (CAST(sqlc.arg(actor_account_id) AS TEXT) = '' OR a.actor_account_id = CAST(sqlc.arg(actor_account_id) AS TEXT))
+  AND d.id < COALESCE(NULLIF(CAST(sqlc.arg(before) AS TEXT), ''), 'g')
+ORDER BY d.id DESC LIMIT sqlc.arg(batch_limit);
+
+-- ListAttemptsOfDeliveries returns the attempts of the deliveries of a JSON array, by delivery,
+-- oldest first.
+-- name: ListAttemptsOfDeliveries :many
+SELECT id, delivery_id, outcome, signature_scheme, status_code, error, attempted_at FROM delivery_attempts
+WHERE delivery_id IN (SELECT value FROM json_each(CAST(sqlc.arg(delivery_ids) AS TEXT)))
+ORDER BY delivery_id, id;
+
 -- InsertOutboundFanOutCompletion records once that the fan-out of an activity enqueued its last
 -- batch.
 -- name: InsertOutboundFanOutCompletion :exec

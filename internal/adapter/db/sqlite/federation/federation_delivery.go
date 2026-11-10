@@ -184,3 +184,73 @@ func instanceHealth(row federationgen.InstanceHealth) federation.InstanceHealth 
 		FailureDays: int(row.FailureDays), LastFailureDay: row.LastFailureDay,
 	}
 }
+
+// ListDeliveriesTo implements federation.Repository.
+func (r *Repository) ListDeliveriesTo(ctx context.Context, q appfederation.DeliveryQuery) ([]appfederation.DeliveryRecord, error) {
+	var rows []federationgen.ListDeliveriesToDomainRow
+	var err error
+	switch {
+	case q.ActivityURI != "":
+		var got []federationgen.ListDeliveriesOfActivityToDomainRow
+		got, err = r.db.reader().ListDeliveriesOfActivityToDomain(ctx, federationgen.ListDeliveriesOfActivityToDomainParams{
+			ActivityUri: string(q.ActivityURI), Domain: q.Domain, ActorAccountID: q.ActorAccountID, Before: q.Before, BatchLimit: int64(q.Limit),
+		})
+		for _, row := range got {
+			rows = append(rows, federationgen.ListDeliveriesToDomainRow(row))
+		}
+	case q.ActorAccountID != "":
+		var got []federationgen.ListDeliveriesOfActorToDomainRow
+		got, err = r.db.reader().ListDeliveriesOfActorToDomain(ctx, federationgen.ListDeliveriesOfActorToDomainParams{
+			ActorAccountID: q.ActorAccountID, Domain: q.Domain, Before: q.Before, BatchLimit: int64(q.Limit),
+		})
+		for _, row := range got {
+			rows = append(rows, federationgen.ListDeliveriesToDomainRow(row))
+		}
+	default:
+		rows, err = r.db.reader().ListDeliveriesToDomain(ctx, federationgen.ListDeliveriesToDomainParams{
+			Domain: q.Domain, Before: q.Before, BatchLimit: int64(q.Limit),
+		})
+	}
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list deliveries to "+q.Domain)
+	}
+	out := make([]appfederation.DeliveryRecord, len(rows))
+	for i, row := range rows {
+		out[i] = appfederation.DeliveryRecord{
+			Delivery: federation.Delivery{
+				ID: row.ID, OutboundActivityID: row.OutboundActivityID, InboxURL: federation.IRI(row.InboxUrl),
+				Domain: row.Domain, CreatedAt: sqlite.FromMillis(row.CreatedAt),
+			},
+			Activity: federation.OutboundActivity{
+				ID: row.OutboundActivityID, ActivityURI: federation.IRI(row.ActivityUri), Type: federation.ActivityType(row.Type),
+				ActorAccountID: row.ActorAccountID, ObjectKind: federation.OutboundObjectKind(row.ObjectType),
+				ObjectID: row.ObjectID, CreatedAt: sqlite.FromMillis(row.ActivityCreatedAt),
+			},
+		}
+	}
+	return out, nil
+}
+
+// ListAttemptsOfDeliveries implements federation.Repository.
+func (r *Repository) ListAttemptsOfDeliveries(ctx context.Context, ids []string) (map[string][]federation.DeliveryAttempt, error) {
+	out := map[string][]federation.DeliveryAttempt{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	list, err := sqlite.JSONList(ids)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := r.db.reader().ListAttemptsOfDeliveries(ctx, list)
+	if err != nil {
+		return nil, sqlite.Wrap(err, "list attempts of deliveries")
+	}
+	for _, row := range rows {
+		out[row.DeliveryID] = append(out[row.DeliveryID], federation.DeliveryAttempt{
+			ID: row.ID, DeliveryID: row.DeliveryID, Outcome: federation.DeliveryOutcome(row.Outcome),
+			Scheme: row.SignatureScheme.String, HTTPStatus: int(row.StatusCode.Int64), Error: row.Error.String,
+			AttemptedAt: sqlite.FromMillis(row.AttemptedAt),
+		})
+	}
+	return out, nil
+}

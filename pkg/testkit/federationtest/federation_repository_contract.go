@@ -22,7 +22,8 @@ import (
 // methods alone, the port contract of ADR-0153 §1: an outbound activity is found by its ID and
 // listed with the others about its object, oldest first; its first document stays; an inbox is
 // added to it once, and its deliveries are found and paged in ID order; the attempts of a
-// delivery are listed oldest first; the health of a server is replaced, read in a transaction,
+// delivery are listed oldest first; the deliveries to a server are paged newest first, by
+// sender and by activity, with the attempts of a page by delivery; the health of a server is replaced, read in a transaction,
 // and listed and counted by state, and a server without one is available; the availability
 // events of a server are paged newest first; a received activity is answered once; the closure's
 // Deletes are recorded once per account, and their fan-outs and deliveries counted by state; and
@@ -40,6 +41,7 @@ func FederationRepositoryContract(t *testing.T, newHarness FederationFactory) {
 		{"FindsTheContextOfADelivery", fedRepoDeliveryContext},
 		{"AddsAnInboxOnceAndPagesDeliveries", fedRepoDeliveries},
 		{"ListsTheAttemptsOfADelivery", fedRepoAttempts},
+		{"ListsTheDeliveriesToAServerNewestFirst", fedRepoDeliveriesTo},
 		{"ReplacesReadsAndListsTheHealthOfServers", fedRepoHealth},
 		{"PagesAvailabilityEventsNewestFirst", fedRepoAvailabilityEvents},
 		{"AnswersAReceivedActivityOnce", fedRepoAnswers},
@@ -306,6 +308,72 @@ func fedRepoAttempts(t *testing.T, r *fedRepo) {
 	}
 	if got, err := r.h.Federation.ListDeliveryAttempts(t.Context(), testkit.NamedID("unknown")); err != nil || len(got) != 0 {
 		t.Errorf("ListDeliveryAttempts(unknown) = %+v, %v; want none", got, err)
+	}
+}
+
+func fedRepoDeliveriesTo(t *testing.T, r *fedRepo) {
+	ctx := t.Context()
+	first := r.activity(t, federation.ActivityCreate, federation.OutboundStatus, testkit.NamedID("status"))
+	follow := r.activity(t, federation.ActivityFollow, federation.OutboundFollow, testkit.NamedID("follow"))
+	other := federation.OutboundActivity{
+		ID: r.ids.NewID(), ActivityURI: federation.IRI("https://" + testkit.ContractHost + "/ap/activities/other"), Type: federation.ActivityCreate,
+		ActorAccountID: testkit.NamedID("another actor"), ObjectKind: federation.OutboundStatus, ObjectID: testkit.NamedID("another status"),
+		CreatedAt: r.clock.Now(),
+	}
+	r.tx(t, func(ctx context.Context, tx uow.Tx) error {
+		return r.h.Federation.InsertOutboundActivity(ctx, tx, other)
+	})
+	d1 := r.delivery(t, first.ID, "remote.example")
+	r.delivery(t, first.ID, "elsewhere.example")
+	d2 := r.delivery(t, follow.ID, "remote.example")
+	d3 := r.delivery(t, other.ID, "remote.example")
+	rec := func(d federation.Delivery, a federation.OutboundActivity) appfederation.DeliveryRecord {
+		return appfederation.DeliveryRecord{Delivery: d, Activity: a}
+	}
+	list := func(q appfederation.DeliveryQuery) []appfederation.DeliveryRecord {
+		t.Helper()
+		got, err := r.h.Federation.ListDeliveriesTo(ctx, q)
+		if err != nil {
+			t.Fatalf("ListDeliveriesTo(%+v): %v", q, err)
+		}
+		return got
+	}
+	all := []appfederation.DeliveryRecord{rec(d3, other), rec(d2, follow), rec(d1, first)}
+	if got := list(appfederation.DeliveryQuery{Domain: "remote.example", Limit: 10}); !reflect.DeepEqual(got, all) {
+		t.Errorf("ListDeliveriesTo(remote.example) = %+v; want %+v", got, all)
+	}
+	if got := list(appfederation.DeliveryQuery{Domain: "remote.example", Before: d3.ID, Limit: 1}); !reflect.DeepEqual(got, all[1:2]) {
+		t.Errorf("ListDeliveriesTo(before the newest, 1) = %+v; want %+v", got, all[1:2])
+	}
+	mine := []appfederation.DeliveryRecord{rec(d2, follow), rec(d1, first)}
+	if got := list(appfederation.DeliveryQuery{Domain: "remote.example", ActorAccountID: first.ActorAccountID, Limit: 10}); !reflect.DeepEqual(got, mine) {
+		t.Errorf("ListDeliveriesTo(the local actor) = %+v; want %+v", got, mine)
+	}
+	if got := list(appfederation.DeliveryQuery{Domain: "remote.example", ActorAccountID: first.ActorAccountID, Before: d2.ID, Limit: 10}); !reflect.DeepEqual(got, mine[1:]) {
+		t.Errorf("ListDeliveriesTo(the local actor, before the follow) = %+v; want %+v", got, mine[1:])
+	}
+	byURI := appfederation.DeliveryQuery{Domain: "remote.example", ActivityURI: first.ActivityURI, Limit: 10}
+	if got := list(byURI); !reflect.DeepEqual(got, mine[1:]) {
+		t.Errorf("ListDeliveriesTo(the activity) = %+v; want %+v", got, mine[1:])
+	}
+	byURI.ActorAccountID = other.ActorAccountID
+	if got := list(byURI); len(got) != 0 {
+		t.Errorf("ListDeliveriesTo(the activity of another actor) = %+v; want none", got)
+	}
+	if got := list(appfederation.DeliveryQuery{Domain: "unknown.example", Limit: 10}); len(got) != 0 {
+		t.Errorf("ListDeliveriesTo(unknown.example) = %+v; want none", got)
+	}
+
+	a1 := r.attempt(t, d1.ID, federation.DeliveryRetryableFailure)
+	a2 := r.attempt(t, d1.ID, federation.DeliverySucceeded)
+	a3 := r.attempt(t, d3.ID, federation.DeliveryPermanentFailure)
+	got, err := r.h.Federation.ListAttemptsOfDeliveries(ctx, []string{d1.ID, d2.ID, d3.ID})
+	want := map[string][]federation.DeliveryAttempt{d1.ID: {a1, a2}, d3.ID: {a3}}
+	if err != nil || !reflect.DeepEqual(got, want) {
+		t.Errorf("ListAttemptsOfDeliveries = %+v, %v; want %+v", got, err, want)
+	}
+	if got, err := r.h.Federation.ListAttemptsOfDeliveries(ctx, nil); err != nil || len(got) != 0 {
+		t.Errorf("ListAttemptsOfDeliveries(none) = %+v, %v; want none", got, err)
 	}
 }
 

@@ -281,7 +281,7 @@ CREATE TABLE audit_log_entries (
     'voice_room_ended', 'login_provider_created', 'login_provider_updated', 'login_provider_deleted',
     'login_provider_enabled', 'login_provider_disabled', 'login_provider_secret_rotated',
     'link_card_domain_fetch_stopped', 'link_card_domain_images_stopped', 'link_card_domain_rule_removed',
-    'instance_marked_available',
+    'instance_marked_available', 'delivery_revealed', 'account_deliveries_viewed',
     'domain_allow_added', 'domain_allow_removed',
     'domain_list_subscription_created', 'domain_list_subscription_updated', 'domain_list_subscription_deleted',
     'domain_list_draft_accepted', 'domain_list_draft_rejected', 'domain_list_fetch_queued',

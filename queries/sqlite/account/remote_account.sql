@@ -73,6 +73,12 @@ WHERE h.shared_inbox_url IS NOT NULL AND h.shared_inbox_url > CAST(@after AS TEX
   )
 ORDER BY h.shared_inbox_url LIMIT @batch_limit;
 
+-- ListSharedInboxesAmong returns the URLs of a JSON array that the head of a remote actor declares
+-- as its shared inbox, for the admin API's masking of personal inboxes.
+-- name: ListSharedInboxesAmong :many
+SELECT DISTINCT h.shared_inbox_url FROM remote_account_heads h
+WHERE h.shared_inbox_url IN (SELECT value FROM json_each(CAST(sqlc.arg(urls) AS TEXT)));
+
 -- CountKnownSharedInboxes counts the shared inboxes of ListKnownSharedInboxes, for the estimate of
 -- the deliveries of the closure of the service (ADR-0088 section 1).
 -- name: CountKnownSharedInboxes :one

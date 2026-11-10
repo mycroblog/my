@@ -106,6 +106,8 @@ const (
 	AuditLinkCardDomainImagesStopped     = moderation.AuditLinkCardDomainImagesStopped
 	AuditLinkCardDomainRuleRemoved       = moderation.AuditLinkCardDomainRuleRemoved
 	AuditInstanceMarkedAvailable         = moderation.AuditInstanceMarkedAvailable
+	AuditDeliveryRevealed                = moderation.AuditDeliveryRevealed
+	AuditAccountDeliveriesViewed         = moderation.AuditAccountDeliveriesViewed
 
 	AuditTargetUser                  = moderation.AuditTargetUser
 	AuditTargetSetting               = moderation.AuditTargetSetting

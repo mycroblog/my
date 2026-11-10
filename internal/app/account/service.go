@@ -566,6 +566,23 @@ func (s *Service) KnownSharedInboxes(ctx context.Context, after string, limit in
 	return s.d.Repository.ListKnownSharedInboxes(ctx, after, limit)
 }
 
+// SharedInboxesAmong reports which of urls a remote actor declares as its shared inbox: an
+// inbox that names no recipient.
+func (s *Service) SharedInboxesAmong(ctx context.Context, urls []string) (map[string]bool, error) {
+	out := map[string]bool{}
+	if len(urls) == 0 {
+		return out, nil
+	}
+	shared, err := s.d.Repository.ListSharedInboxesAmong(ctx, urls)
+	if err != nil {
+		return nil, err
+	}
+	for _, u := range shared {
+		out[u] = true
+	}
+	return out, nil
+}
+
 // CountKnownSharedInboxes counts the shared inboxes of KnownSharedInboxes.
 func (s *Service) CountKnownSharedInboxes(ctx context.Context) (int, error) {
 	return s.d.Repository.CountKnownSharedInboxes(ctx)
