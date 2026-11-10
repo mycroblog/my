@@ -255,6 +255,10 @@
     "defaultMessage": "ブーストを除く",
     "description": "Tab of a profile: only the posts the account wrote itself, without replies and boosts."
   },
+  "profile.tab.articles": {
+    "defaultMessage": "記事",
+    "description": "Tab of a profile: only the account's articles (long posts with a title), newest first."
+  },
   "profile.tab.posts": {
     "defaultMessage": "投稿",
     "description": "Tab of a profile: the account's posts and boosts, without its replies."

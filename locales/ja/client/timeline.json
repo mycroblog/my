@@ -11,6 +11,10 @@
     "defaultMessage": "まだ投稿はありません",
     "description": "Shown instead of the posts of a profile's tab when it has none."
   },
+  "timeline.empty.account.articles.heading": {
+    "defaultMessage": "まだ記事はありません",
+    "description": "Shown instead of the articles of the articles tab of a profile when it has none."
+  },
   "timeline.empty.bookmarks.description": {
     "defaultMessage": "ブックマークした投稿がここに表示されます。ブックマークは自分にだけ見えます。",
     "description": "Text under the heading of the empty list of bookmarks."

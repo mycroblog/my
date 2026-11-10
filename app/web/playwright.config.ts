@@ -28,6 +28,7 @@ const primary = { locale: "en", width: 1440 } as const;
 const widthSpecs = [
   "admin-entry",
   "announcements",
+  "articles",
   "bookmarks",
   "emoji-picker",
   "federated",

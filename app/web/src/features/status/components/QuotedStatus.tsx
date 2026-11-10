@@ -15,6 +15,7 @@ import { useMediaViewerLabels } from "../hooks/useMediaViewerLabels";
 import { useAudioPlayerLabels } from "../hooks/useAudioPlayerLabels";
 import { useQuoteView } from "../hooks/useQuoteView";
 import { useStatusView } from "../hooks/useStatusView";
+import { StatusArticleCard } from "./StatusArticleCard";
 
 /**
  * The post that a post quotes (FR-114, ADR-0069 §5), inside the quoting post: the quoted author, the time as the
@@ -41,22 +42,26 @@ function QuotedPost({ label, status, notice }: { label: string; status: Status; 
   const view = useStatusView(status);
   const viewerLabels = useMediaViewerLabels();
   const audioLabels = useAudioPlayerLabels();
-  const body = (
-    <>
-      <PostContent html={view.html} lang={view.lang} emojis={view.emojis} onLinkClick={view.onLinkClick} />
-      {view.media.length > 0 && (
-        <MediaGrid
-          items={view.media}
-          sensitive={view.sensitive}
-          noDescriptionLabel={t("client:timeline.media.no_description")}
-          revealLabel={t("client:timeline.media.reveal")}
-          viewerLabels={viewerLabels}
-          audioLabels={audioLabels}
-          more={view.moreMedia ?? undefined}
-        />
-      )}
-    </>
-  );
+  // A quoted article is its card, as in a list (it has no body there).
+  const body =
+    view.article !== null ? (
+      <StatusArticleCard article={view.article} view={view} />
+    ) : (
+      <>
+        <PostContent html={view.html} lang={view.lang} emojis={view.emojis} onLinkClick={view.onLinkClick} />
+        {view.media.length > 0 && (
+          <MediaGrid
+            items={view.media}
+            sensitive={view.sensitive}
+            noDescriptionLabel={t("client:timeline.media.no_description")}
+            revealLabel={t("client:timeline.media.reveal")}
+            viewerLabels={viewerLabels}
+            audioLabels={audioLabels}
+            more={view.moreMedia ?? undefined}
+          />
+        )}
+      </>
+    );
   return (
     <QuoteCard
       label={label}

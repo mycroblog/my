@@ -354,15 +354,15 @@ test.describe("a profile", () => {
   // On a phone the tabs may not all fit: the list scrolls sideways and shows the selected tab whole.
   test("shows each tab whole once it is selected, also from the URL", async ({ page }) => {
     const tabs = page.getByRole("tab");
-    await expect(tabs).toHaveCount(3);
+    await expect(tabs).toHaveCount(4);
     await tabs.first().focus();
     const rtl = (await page.locator("html").getAttribute("dir")) === "rtl";
-    for (let index = 1; index < 3; index += 1) {
+    for (let index = 1; index < 4; index += 1) {
       await page.keyboard.press(rtl ? "ArrowLeft" : "ArrowRight");
       await expect(tabs.nth(index)).toHaveAttribute("aria-selected", "true");
       await expectTabWhollyVisible(tabs.nth(index));
     }
-    await expect(page).toHaveURL(/\?tab=no_boosts$/);
+    await expect(page).toHaveURL(/\?tab=articles$/);
     await page.reload();
     await expect(tabs.last()).toHaveAttribute("aria-selected", "true");
     await expectTabWhollyVisible(tabs.last());

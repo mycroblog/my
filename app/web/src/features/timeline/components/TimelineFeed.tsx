@@ -232,7 +232,11 @@ function TimelineEmpty({ timeline, origin }: { timeline: Timeline; origin: Timel
       return (
         <EmptyState
           headingLevel={3}
-          heading={t("client:timeline.empty.account.heading")}
+          heading={t(
+            timeline.filter === "articles"
+              ? "client:timeline.empty.account.articles.heading"
+              : "client:timeline.empty.account.heading",
+          )}
           {...(origin !== undefined && { description: origin.notice, action: origin.link })}
         />
       );

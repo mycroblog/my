@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {
+  ArticleCover,
   Avatar,
   Button,
   ContentWarning,
@@ -21,7 +22,7 @@ import {
   Stack,
   Text,
 } from "@my/ui";
-import { type Ref, useEffect, useId, useRef, useState } from "react";
+import { type ReactNode, type Ref, useEffect, useId, useRef, useState } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import { useIntl } from "react-intl";
 import { useBoundaryErrorReport } from "../../../lib/errorReporting";
@@ -34,6 +35,7 @@ import { translatedView, useStatusTranslation } from "../hooks/useStatusTranslat
 import { useFilteredLabel } from "../hooks/useFilteredLabel";
 import { useStatusView } from "../hooks/useStatusView";
 import { StatusActions } from "./StatusActions";
+import { StatusArticleCard } from "./StatusArticleCard";
 import { QuotedStatus } from "./QuotedStatus";
 import { StatusPoll } from "./StatusPoll";
 import { StatusReactions } from "./StatusReactions";
@@ -113,7 +115,12 @@ function StatusCardContent({
   const t = useT();
   const intl = useIntl();
   const view = useStatusView(status);
-  const translation = useStatusTranslation(status, withActions || report !== undefined, report);
+  // An article is not translated: a list carries no body to translate, and the server translates the body of posts.
+  const translation = useStatusTranslation(
+    status,
+    (withActions || report !== undefined) && view.article === null,
+    report,
+  );
   const { shown, action } = translation;
   const text = translatedView(view, shown);
   // Where the focus goes once the controls of the translation have changed: the line or the button that replaced the
@@ -249,6 +256,50 @@ function StatusCardContent({
       />
     </>
   );
+  // An article (ADR-0160 §1): in a list its card, which links to its page; on its page, under the title that is the
+  // page's heading, its summary, cover and body, the cover and body folded while it is sensitive (§6).
+  const article = view.article;
+  let articleContent: ReactNode = null;
+  if (article !== null && variant === "compact") {
+    articleContent = <StatusArticleCard article={article} view={view} />;
+  } else if (article !== null) {
+    const articleBody = (
+      <>
+        {article.cover !== undefined && (
+          <ArticleCover
+            image={article.cover}
+            lang={view.lang}
+            rounded
+            revealLabel={t("client:timeline.media.reveal")}
+          />
+        )}
+        <PostContent
+          html={view.html}
+          lang={view.lang}
+          emojis={view.emojis}
+          onLinkClick={view.onLinkClick}
+          size="lg"
+          article
+        />
+      </>
+    );
+    articleContent = (
+      <Stack gap="4" shrink>
+        {article.summary !== null && (
+          <Text as="p" size="lg" weight="medium" wrap="anywhere" dir="auto" lang={view.lang}>
+            <EmojiText text={article.summary} emojis={view.emojis} />
+          </Text>
+        )}
+        {view.sensitive ? (
+          <ContentWarning summary={t("client:status.article.sensitive")} toggleLabel={t("client:status.article.show")}>
+            {articleBody}
+          </ContentWarning>
+        ) : (
+          articleBody
+        )}
+      </Stack>
+    );
+  }
   const time =
     variant === "focused" ? (
       // The relative time as everywhere else (G8); the full date is in the details.
@@ -357,26 +408,29 @@ function StatusCardContent({
       time={time}
       visibility={view.visibility}
       content={
-        <>
-          {text.contentWarning === null ? (
-            body
-          ) : (
-            <ContentWarning
-              summary={<EmojiText text={text.contentWarning} emojis={view.emojis} />}
-              summaryLang={text.contentWarningLang}
-              toggleLabel={t("client:timeline.content_warning.toggle")}
-            >
-              {body}
-              {poll}
-              {media}
-              {quote}
-            </ContentWarning>
-          )}
-          {/* After the text, outside the warning, before the poll and the media. */}
-          {translationLine}
-        </>
+        articleContent ?? (
+          <>
+            {text.contentWarning === null ? (
+              body
+            ) : (
+              <ContentWarning
+                summary={<EmojiText text={text.contentWarning} emojis={view.emojis} />}
+                summaryLang={text.contentWarningLang}
+                toggleLabel={t("client:timeline.content_warning.toggle")}
+              >
+                {body}
+                {poll}
+                {media}
+                {quote}
+              </ContentWarning>
+            )}
+            {/* After the text, outside the warning, before the poll and the media. */}
+            {translationLine}
+          </>
+        )
       }
-      {...(text.contentWarning === null &&
+      {...(articleContent === null &&
+        text.contentWarning === null &&
         extras.length > 0 && {
           media:
             extras.length === 1 ? (

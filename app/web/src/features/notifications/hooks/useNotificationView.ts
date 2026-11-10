@@ -452,7 +452,13 @@ function postOf(status: NotificationStatus, filtered: string | null): NonNullabl
     // Behind a content warning or a keyword filter that folds it (ADR-0157 §7), the text stays on the post's page.
     // Status.content is the server-sanitized HTML of the post (api/openapi.yaml), parsed by @my/ui under the app's
     // Trusted Types.
-    text: contentWarning === null && filtered === null ? sanitizedHtmlText(serverSanitizedHtml(status.content)) : "",
+    // An article carries no body in a notification (ADR-0160 §8): its title stands for it.
+    text:
+      contentWarning !== null || filtered !== null
+        ? ""
+        : status.article !== undefined
+          ? status.article.title
+          : sanitizedHtmlText(serverSanitizedHtml(status.content)),
     lang: status.language === "und" ? undefined : status.language,
     contentWarning,
     filtered,

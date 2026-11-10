@@ -618,5 +618,21 @@
   "status.approval.rejected": {
     "defaultMessage": "Declined: only you can see this reply",
     "description": "Under the user's own reply that the author of the post it replies to refused; nobody else sees it."
+  },
+  "status.article.kind": {
+    "defaultMessage": "Article",
+    "description": "Line above the title of an article (a long post with a title) in a list, saying what the card is."
+  },
+  "status.article.sensitive": {
+    "defaultMessage": "The author marked this article as sensitive.",
+    "description": "On the page of an article the author marked sensitive, above the button that shows its cover and body; its title and summary are shown."
+  },
+  "status.article.show": {
+    "defaultMessage": "Show the article",
+    "description": "Button on the page of a sensitive article that shows or hides its cover and body. The same text is used in both states."
+  },
+  "status.article.untitled": {
+    "defaultMessage": "Untitled article",
+    "description": "Stands for the title of an article from another server that has none: the link of its card, and the heading of its page."
   }
 }

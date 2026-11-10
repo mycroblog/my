@@ -27,9 +27,10 @@ export type TimelinePage = components["schemas"]["AccountStatusPage"];
 
 /**
  * Which posts of an account its profile lists (FR-204): its posts and boosts without replies (`posts`),
- * with its replies too (`replies`), or its own posts only, without boosts (`no_boosts`).
+ * with its replies too (`replies`), its own posts only, without boosts (`no_boosts`), or its articles only
+ * (`articles`, ADR-0160 §11).
  */
-export const accountTimelineFilters = ["posts", "replies", "no_boosts"] as const;
+export const accountTimelineFilters = ["posts", "replies", "no_boosts", "articles"] as const;
 
 export type AccountTimelineFilter = (typeof accountTimelineFilters)[number];
 
@@ -58,6 +59,8 @@ function accountTimelineQuery(filter: AccountTimelineFilter) {
       return {};
     case "no_boosts":
       return { exclude_replies: true, exclude_boosts: true };
+    case "articles":
+      return { articles: true };
   }
 }
 

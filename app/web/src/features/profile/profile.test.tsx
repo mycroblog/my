@@ -248,9 +248,15 @@ describe("a profile", () => {
 
     await user.click(screen.getByRole("tab", { name: "Without boosts" }));
     expect(await screen.findByRole("feed", { name: "Without boosts" })).toBeInTheDocument();
+
+    // The articles tab lists the account's articles alone (ADR-0160 §11).
+    await user.click(screen.getByRole("tab", { name: "Articles" }));
+    expect(await screen.findByRole("feed", { name: "Articles" })).toBeInTheDocument();
+    expect(router.state.location.search).toEqual({ tab: "articles" });
     // The posts tab also reads the pinned posts (FR-403); the other tabs do not.
     expect(queries.toSorted()).toEqual([
       "",
+      "articles=true",
       "exclude_replies=true",
       "exclude_replies=true&exclude_boosts=true",
       "pinned=true",

@@ -302,6 +302,13 @@ export {
   type PickerUnicodeEmoji,
   type SkinTone,
 } from "./EmojiPicker";
+export {
+  ArticleCard,
+  ArticleCover,
+  type ArticleCardProps,
+  type ArticleCoverImage,
+  type ArticleCoverProps,
+} from "./ArticleCard";
 export { Feed, FeedArticle, type FeedArticleProps, type FeedProps } from "./Feed";
 export { LinkCard, type LinkCardImage, type LinkCardProps, type LinkCardSize } from "./LinkCard";
 export { AudioPlayer, type AudioPlayerLabels, type AudioPlayerProps } from "./AudioPlayer";
