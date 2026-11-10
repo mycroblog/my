@@ -82,7 +82,29 @@ func (p *FederationPolicy) RejectsMediaTx(ctx context.Context, tx uow.Tx, domain
 		return false, nil
 	}
 	rs, err := p.repo.DomainRestrictionsInEffectTx(ctx, tx, domains, p.clock.Now())
-	return slices.Contains(rs, moderation.RestrictMediaFetch), err
+	if err != nil {
+		return false, err
+	}
+	if rejectsMedia(rs) {
+		return true, nil
+	}
+	return p.cutOffTx(ctx, tx, domain)
+}
+
+// cutOffTx reports whether the allowlist cuts off domain as cutOffAmong does, read in tx.
+func (p *FederationPolicy) cutOffTx(ctx context.Context, tx uow.Tx, domain string) (bool, error) {
+	if p.scopes == nil {
+		return false, nil
+	}
+	scope, err := p.scopes.FederationScopeTx(ctx, tx)
+	if err != nil || scope != moderation.ScopeAllowlist {
+		return false, err
+	}
+	allowed, err := p.repo.AllowedDomainsTx(ctx, tx, moderation.DomainAndParents(domain))
+	if err != nil {
+		return false, err
+	}
+	return !moderation.Allowed(domain, allowed), nil
 }
 
 // SuspendedTx reports whether an account's own actions suspend it at the policy's now (the

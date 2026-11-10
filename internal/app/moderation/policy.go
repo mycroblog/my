@@ -217,10 +217,17 @@ func (p *FederationPolicy) AccountLimited(ctx context.Context, accountID string)
 	return slices.Contains(rs, moderation.RestrictVisibilityCeilingPrivate), err
 }
 
-// RejectsMedia reports whether the media of a domain, or of a parent domain, are not fetched
-// (reject_media).
+// RejectsMedia reports whether the media of a domain, or of a parent domain, are not fetched:
+// the domain has reject_media, or it is suspended (which a scoped policy also finds of a domain
+// the allowlist cuts off), since a suspension stops all fetching from it.
 func (p *FederationPolicy) RejectsMedia(ctx context.Context, domain string) (bool, error) {
-	return p.domainHas(ctx, domain, moderation.RestrictMediaFetch)
+	rs, err := p.DomainRestrictions(ctx, domain)
+	return rejectsMedia(rs), err
+}
+
+// rejectsMedia reports whether restrictions keep media from being fetched.
+func rejectsMedia(rs []moderation.Restriction) bool {
+	return slices.Contains(rs, moderation.RestrictMediaFetch) || slices.Contains(rs, moderation.RestrictFederation)
 }
 
 // RejectsReports reports whether the reports of a domain, or of a parent domain, are dropped
