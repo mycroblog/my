@@ -225,11 +225,11 @@ func httpsURL(s *string) string {
 }
 
 // thirdPartyScope returns the known scopes of a space-separated list that a third-party client
-// may hold, in normal form.
+// may request, in normal form: neither the first-party-only scopes nor the permission scopes.
 func thirdPartyScope(s string) Scope {
 	var tokens []string
 	for _, t := range strings.Fields(s) {
-		if slices.Contains(knownScopes, t) && !FirstPartyOnlyScope(t) {
+		if slices.Contains(knownScopes, t) && !FirstPartyOnlyScope(t) && !SelfIssuedOnlyScope(t) {
 			tokens = append(tokens, t)
 		}
 	}

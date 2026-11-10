@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/OAuthClientHost.yaml
 delete:
   operationId: allowOAuthClientHost
+  x-permission: manage_oauth_apps
   summary: Lift the denial of a host
   description: |
     The Client ID Metadata Documents on the host are accepted again. The tokens that the

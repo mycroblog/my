@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 delete:
   operationId: removeDomainAllow
+  x-permission: manage_domains
   summary: Remove a domain from the allowlist of federation
   description: |
     Removes the allow of a domain and records it in the audit log. While the instance setting

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: revokeInvite
+  x-permission: manage_invites
   summary: Revoke an invite
   description: |
     The invite stops working at once; the people who signed up with it keep their

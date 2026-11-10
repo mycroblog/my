@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listSignupBlocks
+  x-permission: manage_accounts
   summary: List the sign-up blocks
   description: |
     The blocks on sign-ups from the registration page, newest first, lifted and
@@ -40,6 +41,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createSignupBlock
+  x-permission: manage_accounts
   summary: Block sign-ups
   description: |
     Records a block on sign-ups from the registration page, in effect at once and

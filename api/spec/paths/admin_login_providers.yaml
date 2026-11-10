@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminLoginProviders
+  x-permission: manage_login_providers
   summary: List the login providers
   description: |
     The external login providers that are not deleted, enabled or not, newest first.
@@ -22,6 +23,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createLoginProvider
+  x-permission: manage_login_providers
   summary: Set up a login provider
   description: |
     Sets up an external login provider, enabled, with the client ID and secret that the

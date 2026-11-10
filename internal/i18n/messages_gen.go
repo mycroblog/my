@@ -116,6 +116,13 @@ func (l *Localizer) ServerAuthAuthorizeScopeAdmin() string {
 	return l.format("server:auth.authorize.scope.admin", nil)
 }
 
+// ServerAuthAuthorizeScopeAdminPermission formats "server:auth.authorize.scope.admin_permission". Permission (an OAuth permission scope admin:<permission>, which only a token the user issues to themselves holds) listed where scopes are described. {permission} is the name of a permission of the user's roles, such as manage_invites.
+//
+//	en: Use the permission {permission} of your roles
+func (l *Localizer) ServerAuthAuthorizeScopeAdminPermission(permission string) string {
+	return l.format("server:auth.authorize.scope.admin_permission", map[string]any{"permission": permission})
+}
+
 // ServerAuthAuthorizeScopeAdminRead formats "server:auth.authorize.scope.admin_read". Permission (OAuth scope admin:read) listed on the authorization page.
 //
 //	en: Read the instance's administration data, as far as your roles allow

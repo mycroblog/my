@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listHookAppeals
+  x-permission: manage_reports
   summary: List the appeals of refused posts
   description: |
     The authors' appeals of a `reject` of `local.status`, the newest first, with the text each

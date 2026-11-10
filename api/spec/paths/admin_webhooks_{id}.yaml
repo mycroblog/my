@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/WebhookId.yaml
 get:
   operationId: getAdminWebhook
+  x-permission: manage_webhooks
   summary: Get a webhook
   description: An unknown or deleted ID is a 404. Needs the `manage_webhooks` permission.
   tags: [admin-server]
@@ -15,6 +16,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 patch:
   operationId: updateWebhook
+  x-permission: manage_webhooks
   summary: Change a webhook
   description: |
     Changes what the request names and keeps the rest; an empty `description` removes it.
@@ -39,6 +41,7 @@ patch:
       $ref: ../components/responses/Problem.yaml
 delete:
   operationId: deleteWebhook
+  x-permission: manage_webhooks
   summary: Delete a webhook
   description: |
     Deletes the endpoint for good: it receives nothing more, and its deliveries are no

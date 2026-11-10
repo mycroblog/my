@@ -118,6 +118,10 @@ type operationAccess struct {
 	// authentication, passkeys, deleting the account) take only the token of a first-party
 	// client, whatever its scopes (x-first-party-only in api/openapi.yaml).
 	FirstPartyOnly bool
+	// Permission is the permission of the user's roles that an admin operation needs
+	// (x-permission in api/openapi.yaml). A token of its permission scope stands in for the
+	// operation's admin:read or admin:write scope (ADR-0090 §17).
+	Permission identity.Permission
 	// Deprecated and Sunset are Unix times, set for a deprecated operation (deprecated: true
 	// and x-sunset in api/openapi.yaml): its responses carry the Deprecation and Sunset
 	// headers (ADR-0090 section 8).
@@ -188,6 +192,9 @@ func (s *Server) guard(pattern string, next http.Handler) http.Handler {
 		if !ok || !s.authorize(w, r, a, v) || s.closureRefuses(w, r, a.Operation) || s.singleUserRefuses(w, r, a.Operation) {
 			return
 		}
+		if v != nil && admitsByPermissionScope(a, *v) {
+			r = r.WithContext(context.WithValue(r.Context(), permissionGrantKey{}, a.Permission))
+		}
 		// A path ID that is not canonical names nothing: the 404 of a missing resource. It comes
 		// after authorization, so that it shows no more to an anonymous client than a missing ID.
 		if !pathIDsValid(r) {
@@ -249,9 +256,10 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request, a operationAc
 		return false
 	}
 	for _, scope := range a.Scopes {
-		// A first-party-only scope is never granted to a third party, also not through a broad
-		// scope such as write.
-		if v.Scope.Grants(scope) && (v.FirstParty || !identity.FirstPartyOnlyScope(scope)) {
+		if scopeGranted(*v, scope) {
+			continue
+		}
+		if adminScope(scope) && permissionScopeGranted(a, *v) {
 			continue
 		}
 		l := s.localizer(r)
@@ -262,6 +270,50 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request, a operationAc
 	}
 	return true
 }
+
+// scopeGranted reports whether v's token grants scope. A first-party-only scope is never
+// granted to a third party, also not through a broad scope such as write.
+func scopeGranted(v Viewer, scope string) bool {
+	return v.Scope.Grants(scope) && (v.FirstParty || !identity.FirstPartyOnlyScope(scope))
+}
+
+// adminScope reports whether scope is one of the admin scopes that an operation names.
+func adminScope(scope string) bool {
+	return scope == identity.ScopeAdminRead || scope == identity.ScopeAdminWrite
+}
+
+// permissionScopeGranted reports whether v's token holds the permission scope of the
+// permission that the operation with access a needs. Only a first-party token has it through
+// the broad scope admin, which no other client may hold.
+func permissionScopeGranted(a operationAccess, v Viewer) bool {
+	ps, ok := identity.PermissionScope(a.Permission)
+	if !ok {
+		return false
+	}
+	if v.FirstParty {
+		return v.Scope.Grants(ps)
+	}
+	return v.Scope.Has(ps)
+}
+
+// admitsByPermissionScope reports whether v's token reaches the operation with access a only
+// through the permission scope of its permission, without the admin scopes it names.
+func admitsByPermissionScope(a operationAccess, v Viewer) bool {
+	if !permissionScopeGranted(a, v) {
+		return false
+	}
+	for _, scope := range a.Scopes {
+		if adminScope(scope) && !scopeGranted(v, scope) {
+			return true
+		}
+	}
+	return false
+}
+
+// permissionGrantKey holds, in the context of a request that a permission scope admitted, the
+// operation's x-permission: requirePermission then refuses the permissions outside the token's
+// permission scopes (ADR-0090 §17).
+type permissionGrantKey struct{}
 
 // challenge returns the Bearer challenge of a 401 response with params (RFC 6750 §3), adding the
 // URL of the protected resource metadata when the server has one (RFC 9728 §5.1).

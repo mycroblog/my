@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: enableCustomEmoji
+  x-permission: manage_custom_emojis
   summary: Enable a custom emoji
   description: |
     Shows the emoji again; enabling an enabled emoji changes nothing. Works on a local and a

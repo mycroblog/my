@@ -161,6 +161,31 @@ func (s *Server) ListAdminWebhooks(ctx context.Context, _ ListAdminWebhooksReque
 	return ListAdminWebhooks200JSONResponse{Body: out, Headers: ListAdminWebhooks200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
+// webhookEventsOutsideGrant returns the 403 of an insufficient scope when a permission scope
+// admitted the request and an event needs a permission outside the token's permission scopes:
+// a token reaches only the permissions its scopes name (ADR-0090 §17), and an endpoint sends
+// what its events show. It returns nil otherwise.
+func (s *Server) webhookEventsOutsideGrant(ctx context.Context, events []webhook.EventType) *problem {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil
+	}
+	granted, ok := permissionScopeGrants(ctx, v)
+	if !ok {
+		return nil
+	}
+	have := make([]webhook.Permission, len(granted))
+	for i, p := range granted {
+		have[i] = webhook.Permission(p)
+	}
+	missing := webhook.MissingPermissions(events, have)
+	if len(missing) == 0 {
+		return nil
+	}
+	p := s.missingPermissionScope(ctx, identity.Permission(missing[0]))
+	return &p
+}
+
 // CreateWebhook serves POST /api/v1/admin/webhooks.
 func (s *Server) CreateWebhook(ctx context.Context, req CreateWebhookRequestObject) (CreateWebhookResponseObject, error) {
 	v, p, err := s.requireWebhooks(ctx)
@@ -176,6 +201,9 @@ func (s *Server) CreateWebhook(ctx context.Context, req CreateWebhookRequestObje
 	settings := webhook.EndpointSettings{URL: req.Body.Url, Events: webhookEvents(req.Body.Events)}
 	if d := req.Body.Description; d != nil {
 		settings.Description = *d
+	}
+	if wp := s.webhookEventsOutsideGrant(ctx, settings.Events); wp != nil {
+		return CreateWebhookdefaultApplicationProblemPlusJSONResponse(*wp), nil
 	}
 	c, err := s.o.Webhooks.Create(ctx, settings, v.UserID)
 	if wp, ok := s.webhookProblem(ctx, err); ok {
@@ -238,6 +266,11 @@ func (s *Server) UpdateWebhook(ctx context.Context, req UpdateWebhookRequestObje
 	}
 	if ev := req.Body.Events; ev != nil {
 		settings.Events = webhookEvents(*ev)
+	}
+	// The events after the change count, so that a token cannot point an endpoint whose events it
+	// does not reach at a new URL either.
+	if wp := s.webhookEventsOutsideGrant(ctx, settings.Events); wp != nil {
+		return UpdateWebhookdefaultApplicationProblemPlusJSONResponse(*wp), nil
 	}
 	e, err := s.o.Webhooks.Update(ctx, req.Id, settings, v.UserID)
 	if wp, ok := s.webhookProblem(ctx, err); ok {

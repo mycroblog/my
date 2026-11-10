@@ -164,6 +164,7 @@ func AccountFlows(t *testing.T, newHarness AccountFactory) {
 		{"DisablesAndDeletesClients", oauthDisablesAndDeletesClients},
 		{"RegistersAndChangesUsersOAuthApps", oauthAppsRegisterAndChange},
 		{"IssuesTokensOfOAuthAppsToTheirOwner", oauthAppsIssueTokensToTheirOwner},
+		{"IssuesPermissionScopesToTheirOwner", oauthAppsIssuePermissionScopes},
 		{"LimitsOAuthAppRegistrations", oauthAppsLimitRegistrations},
 		{"StopsOAuthAppsWithTheirOwner", oauthAppsStopWithTheirOwner},
 		{"RegistersDynamicClients", oauthRegistersDynamicClients},

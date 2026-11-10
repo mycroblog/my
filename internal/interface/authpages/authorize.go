@@ -370,5 +370,8 @@ func scopeDescription(l *i18n.Localizer, scope string) string {
 	if describe, ok := scopeDescriptions[scope]; ok {
 		return describe(l)
 	}
+	if p, ok := identity.ScopePermission(scope); ok {
+		return l.ServerAuthAuthorizeScopeAdminPermission(string(p))
+	}
 	return scope
 }

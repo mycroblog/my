@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getHookSummary
+  x-permission: manage_reports
   summary: Summarize the decision hooks
   description: |
     Every decision hook with its settings, and the count and latency of its decisions of the

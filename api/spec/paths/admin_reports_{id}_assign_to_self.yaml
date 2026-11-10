@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: assignReportToSelf
+  x-permission: manage_reports
   summary: Take a report
   description: |
     Makes the authenticated user the moderator who handles the report. An unknown ID is a

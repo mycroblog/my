@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getReport
+  x-permission: manage_reports
   summary: Get a report
   description: |
     The report as a moderator opens it, with the posts it points at whatever their

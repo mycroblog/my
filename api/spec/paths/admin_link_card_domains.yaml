@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listLinkCardDomainRules
+  x-permission: manage_settings
   summary: List the rules of the link card crawler
   description: |
     Every rule by which the crawler of link cards fetches nothing, or no images, from a domain

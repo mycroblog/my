@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listInstanceRules
+  x-permission: manage_rules
   summary: List the instance rules
   description: |
     Every rule: the rules in effect by position, followed, when
@@ -31,6 +32,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createInstanceRule
+  x-permission: manage_rules
   summary: Add an instance rule
   description: |
     Adds a rule after the rules in effect. A text that is blank, longer than 300

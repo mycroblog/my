@@ -94,6 +94,7 @@ Use this for a bot, an integration, or a script that you run yourself. A signed-
 - The owner can edit and delete the app. A user keeps at most 25 apps, and registering is rate limited.
 - **Tokens for yourself:** a registered app can issue an access token and a refresh token for its owner's own account from the settings page (`POST /api/v1/oauth_apps/{id}/tokens`),
   with no redirect and no consent screen. Choose the scopes there. They are ordinary tokens with the lifetimes below. A bot stores the rotated refresh token each time it refreshes.
+  Only these tokens may hold a [permission scope](#permission-scopes), which lets a service outside the server call the administration operations of one permission.
 - An instance can turn off registration by users (the setting `user_app_registration`); apps already registered keep working.
 
 ### 3. Dynamic client registration (RFC 7591)
@@ -124,7 +125,8 @@ There is no `client_credentials` (every operation is done as a user; authorize a
 1. Generate a `code_verifier` and its `S256` `code_challenge` ([RFC 7636](https://www.rfc-editor.org/rfc/rfc7636)). **PKCE with `S256` is required for every client.** `plain` is refused.
 2. Send the user's browser to `GET /oauth/authorize` with `response_type=code`, `client_id`, `redirect_uri`, `code_challenge`, `code_challenge_method=S256`, `scope` (space-separated) and `state`.
    `redirect_uri` is required and must match one of the app's registered URIs exactly (a loopback URI ignores the port).
-   Scopes beyond the app's, or a first-party-only scope, are refused with `invalid_scope` rather than dropped.
+   Scopes beyond the app's, a first-party-only scope, or a [permission scope](#permission-scopes), are refused with `invalid_scope` rather than dropped.
+   Without `scope`, the request asks for the app's scopes without its permission scopes.
 3. The user signs in if needed and sees the **consent screen**. It is shown on every authorization; consent is not remembered.
    It names the app, where it comes from, the site, the scopes in words, and the host of the redirect URI.
    Every third-party app is labelled as one the server has not verified: the name and logo are the app's own claim; only the host of a `client_id` URL or the registering user is verified.
@@ -177,15 +179,32 @@ A request without enough scope gets `403` with `WWW-Authenticate: Bearer error="
 - **Voice chat rooms:** opening a room with a start post (`post`) publishes a post, so it needs `write:statuses` besides `write:voice`; without it the request gets `403` `/api/v1/problems/insufficient-scope`.
 - **Reading through a write scope:** a write scope reads the post it acts on, because the response to an action on a post (favouriting it with `write:favourites`, for example) is the whole post, followers-only content included.
 - **First-party-only scopes:** `admin`, `admin:read`, `admin:write` and `write:supporters` are never granted to a third-party app,
-  not even through `write`. Asking for one at the authorization endpoint is an `invalid_scope` error. Administration is done from the first-party web client.
+  not even through `write`. Asking for one at the authorization endpoint is an `invalid_scope` error. Administration is done from the first-party web client,
+  or with a [permission scope](#permission-scopes) on a token that the user issues to themselves.
 - **First-party-only operations:** the operations below are marked `x-first-party-only` in the OpenAPI document and answer a third-party token with `403` `/api/v1/problems/first-party-only`, whatever its scopes.
   - Account security: password, two-factor authentication, passkeys, deleting the account, the list of signed-in browsers, and the list of authorized apps.
   - Data exports, including the CSV exports, and data imports. Read the posts and lists an app needs through their own scopes instead.
   - Changing and previewing the automatic deletion of posts. Reading the policy stays under `read:accounts`.
   - Adding and removing aliases, which consent to another account moving its followers here. Reading them stays under `read:accounts`.
-  - Listing, creating, and revoking invites.
+  - Listing, creating, and revoking the user's own invites (`listOwnInvites`, `createOwnInvite`, `revokeOwnInvite`). The staff's invites are administration operations.
   - The user's list of moderation actions, and appeals.
 - **Moderator notifications:** a third-party token never gets the moderator notifications (`admin_report`, `admin_appeal`, `admin_sign_up`, and the like), whatever the user's roles. They are left out of the notification list, the stream, and the unread count of the marker, and they are dropped from the alerts of the app's Web Push subscription.
 - **Relationships:** a `Relationship` holds only the fields of the lists the token's scopes cover, and the others are absent. `following`, `requested`, `followed_by`, `requested_by`, `show_boosts`, and `notify` need `read:follows` or `write:follows`; `blocking` needs `read:blocks` or `write:blocks`; `muting` and `muting_notifications` need `read:mutes` or `write:mutes`. An absent field says nothing about the state, so do not read it as false.
+
+### Permission scopes
+
+A permission scope is `admin:` and the name of a permission of the user's roles: `admin:manage_invites`, `admin:manage_finance`, and so on.
+It lets a service outside the server, such as one that hands out invites or records costs, call the administration operations of that permission and nothing else.
+
+- **Which operations:** each administration operation names the permission it needs with `x-permission` in the OpenAPI document. A token with that permission's scope may call it in place of `admin:read` or `admin:write`.
+  An operation without `x-permission`, or one that needs another permission, answers `403` `/api/v1/problems/insufficient-scope`.
+  A webhook such a token sets up may subscribe only to the events that its permission scopes show.
+- **The roles still decide:** every call needs the permission on the user's roles, as for the web client. A token whose user loses the permission gets `403` `/api/v1/problems/missing-permission`.
+- **Only for yourself:** only a [token you issue to yourself](#2-registration-by-a-user) may hold a permission scope, and only for a permission your roles hold when you issue it. Add the scope to the app's scopes first.
+  No authorization request may ask for one, so a consent screen never asks a staff member for administration.
+- **Which permissions:** every moderation and server administration permission has one, except `manage_roles`, `manage_oauth_apps`, `manage_login_recovery`, `manage_login_providers`, and `manage_service_closure`. The member permissions have none.
+  `scopes_supported` does not list them, because no authorization request may ask for them.
+- **Give a service its own account:** sign up an account for the service, give it a role with only the permissions the service needs, register an app with that account, and issue the token from it.
+  The service then refreshes the token and stores the new refresh token each time, since the access token lasts one hour.
 
 Next: [paging](paging.md), [errors](errors.md), [rate limits](rate-limits.md), and the [event stream](streaming.md). To skip the plumbing, use the [client libraries](libraries.md).

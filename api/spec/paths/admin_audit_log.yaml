@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAuditLog
+  x-permission: view_audit
   summary: List the audit log
   description: |
     The operations of the moderators and administrators, newest first: who did

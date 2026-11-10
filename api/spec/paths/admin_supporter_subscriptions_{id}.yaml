@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getSupporterSubscription
+  x-permission: manage_supporters
   summary: Get a subscription
   description: |
     One subscription to a supporter plan, as the list shows it. An unknown subscription is a 404.

@@ -154,7 +154,7 @@ func (s *Service) RegisterDynamicClient(ctx context.Context, req DynamicRegistra
 	if strings.TrimSpace(req.Scope) != "" {
 		var keep []string
 		for _, t := range strings.Fields(req.Scope) {
-			if slices.Contains(identity.KnownScopes(), t) && !identity.FirstPartyOnlyScope(t) {
+			if slices.Contains(identity.KnownScopes(), t) && !identity.FirstPartyOnlyScope(t) && !identity.SelfIssuedOnlyScope(t) {
 				keep = append(keep, t)
 			}
 		}

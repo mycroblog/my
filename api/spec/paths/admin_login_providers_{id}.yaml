@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/LoginProviderId.yaml
 get:
   operationId: getAdminLoginProvider
+  x-permission: manage_login_providers
   summary: Get a login provider
   description: An unknown or deleted ID is a 404. Needs the `manage_login_providers` permission.
   tags: [admin-server]
@@ -15,6 +16,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 patch:
   operationId: updateLoginProvider
+  x-permission: manage_login_providers
   summary: Change a login provider
   description: |
     Changes what the request names and keeps the rest; empty `scopes`, `claims`, or
@@ -39,6 +41,7 @@ patch:
       $ref: ../components/responses/Problem.yaml
 delete:
   operationId: deleteLoginProvider
+  x-permission: manage_login_providers
   summary: Delete a login provider
   description: |
     Deletes the provider for good: the users linked to it no longer sign in with it. The

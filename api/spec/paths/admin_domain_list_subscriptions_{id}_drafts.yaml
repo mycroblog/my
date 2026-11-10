@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listDomainListDrafts
+  x-permission: manage_domains
   summary: List the drafts of a subscription
   description: |
     The differences between the list, as last read, and the actions the subscription issued

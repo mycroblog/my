@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: withdrawAdminAnnouncement
+  x-permission: manage_announcements
   summary: Withdraw an announcement
   description: |
     Withdraws an announcement for good: no user sees it again, and it can no longer change

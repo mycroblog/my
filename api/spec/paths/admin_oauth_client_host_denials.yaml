@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listOAuthClientHostDenials
+  x-permission: manage_oauth_apps
   summary: List the denied hosts of client metadata documents
   description: |
     The hosts whose Client ID Metadata Documents are denied, newest denial
@@ -25,6 +26,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: denyOAuthClientHost
+  x-permission: manage_oauth_apps
   summary: Deny a host of client metadata documents
   description: |
     From now on no `client_id` URL on the host is fetched or accepted, and the authorization

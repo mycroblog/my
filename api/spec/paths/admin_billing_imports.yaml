@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listBillingImports
+  x-permission: manage_finance
   summary: List the state of the billing imports
   description: |
     The state of the imports of every cloud provider of `billing_sources`, in its

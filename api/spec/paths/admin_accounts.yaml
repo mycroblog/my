@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminAccounts
+  x-permission: manage_accounts
   summary: Search the accounts
   description: |
     The local and remote accounts, newest first, without the instance actor:

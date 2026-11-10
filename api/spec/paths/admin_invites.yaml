@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listInvites
+  x-permission: manage_invites
   summary: List the invites
   description: |
     The invites that let people sign up while the registration mode is `open`, `approval`,
@@ -30,6 +31,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createInvite
+  x-permission: manage_invites
   summary: Create an invite
   description: |
     Creates an invite of the staff with a new random code; the caps of the members' invites

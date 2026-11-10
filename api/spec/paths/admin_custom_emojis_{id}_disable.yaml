@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: disableCustomEmoji
+  x-permission: manage_custom_emojis
   summary: Disable a custom emoji
   description: |
     Stops showing the emoji anywhere: its `:shortcode:` stays text. Disabling a disabled emoji

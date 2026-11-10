@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/ErrorGroupId.yaml
 post:
   operationId: muteErrorGroup
+  x-permission: manage_errors
   summary: Mute an error group
   description: |
     Mutes a group: it notifies nobody and sends no webhook event until it is unmuted, and it is still counted. Muting a muted group changes nothing. An unknown group is a 404. Needs the `manage_errors` permission.

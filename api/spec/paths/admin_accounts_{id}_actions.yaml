@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAccountActions
+  x-permission: manage_accounts
   summary: List the moderation actions on an account
   description: |
     The actions that moderators took on an account, newest first, lifted and
@@ -33,6 +34,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createAccountAction
+  x-permission: manage_accounts
   summary: Take a moderation action on an account
   description: |
     Records an action on an account, in effect at once and until it expires or is

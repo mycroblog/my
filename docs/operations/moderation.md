@@ -49,9 +49,23 @@ The navigation shows "Moderation" and "Administration" only to people whose role
 - The built-in `moderator` has only `manage_reports`, `manage_accounts` and `view_audit`, and does not see "Administration". It also does not see the Domain actions and Remote servers screens (`manage_domains`),
   so to delegate those, create a role with that permission and grant it ([granting and revoking roles](admin-cli.md#granting-and-revoking-roles)).
 - The admin API paths stay `/api/v1/admin/...` whatever the group, and the scopes are the same pair `admin:read` / `admin:write`. The groups are separated by tags in the API reference (`admin-moderation`, `admin-server`).
+  A service outside the server can call the operations of one permission with a permission scope instead ([letting another service use the admin API](#letting-another-service-use-the-admin-api)).
 - There is a third group of permissions, "user features" (`view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`), which lives outside the staff screens. Someone who has only these permissions sees neither "Moderation" nor "Administration",
   and for someone with `view_finance` the navigation shows "Finances" (`/finance`) after Settings.
   Its API is in the user namespace (`GET /api/v1/finance/cost_totals` and `GET /api/v1/finance/income_totals`, scope `read:finance`) and needs no `admin:*` scope. What it shows is set by `finance_viewer_*` in the [instance settings](instance-settings.md).
+
+### Letting another service use the admin API
+
+A service that you run beside the server, one that hands out invites or records costs, say, can call the admin API for one permission without a plugin.
+
+1. Sign up an account for the service, and grant it a role with only the permissions the service needs (for invites, a role with `manage_invites`; [granting and revoking roles](admin-cli.md#granting-and-revoking-roles)).
+2. Signed in as that account, register an app in **Settings → Your apps** whose scopes include the permission scope, `admin:` and the permission: `admin:manage_invites`.
+3. Issue a token to the account from the app, with that scope, and give the service the access token and the refresh token.
+
+- The token reaches only the operations of the permissions its scopes name, and only while the account's roles keep them; the audit log records what it does as the account's actions.
+- The access token lasts one hour. The service refreshes it with the refresh token and keeps the new refresh token each time: an old one used again revokes the token.
+- `manage_roles`, `manage_oauth_apps`, `manage_login_recovery`, `manage_login_providers` and `manage_service_closure` have no permission scope, and no app can ask a staff member for one on the consent screen.
+- To stop the service, revoke the app's tokens or delete the app, take the role away, or disable the app in Administration → OAuth apps.
 
 ## Account actions
 

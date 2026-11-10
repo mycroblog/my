@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listInstanceSettings
+  x-permission: manage_settings
   summary: List the instance settings
   description: |
     Every instance setting: its current
@@ -17,6 +18,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 patch:
   operationId: updateInstanceSettings
+  x-permission: manage_settings
   summary: Change instance settings
   description: |
     Sets the settings named in `values`, all of them or none: each value is checked against

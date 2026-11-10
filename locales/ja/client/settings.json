@@ -1456,7 +1456,7 @@
     "description": "Label of the field of the scopes of an OAuth app."
   },
   "settings.apps.scope.description": {
-    "defaultMessage": "アプリが要求できる範囲の上限を、スペースで区切って入力します (例: 「read write」)。管理やサポーターのスコープはアプリには使えません。",
+    "defaultMessage": "アプリが要求できる範囲の上限を、スペースで区切って入力します (例: 「read write」)。管理のスコープ admin・admin:read・admin:write とサポーターのスコープはアプリには使えません。権限のスコープ (「admin:」とロールの権限、例: 「admin:manage_invites」) は、自分に発行するトークンだけに入ります。",
     "description": "Description of the scopes field of an OAuth app."
   },
   "settings.apps.scope.required": {
@@ -1608,7 +1608,7 @@
     "description": "Label of the scopes field of the dialog that issues tokens."
   },
   "settings.apps.token.scope.description": {
-    "defaultMessage": "スペースで区切り、アプリのスコープの範囲内で入力します。空にするとすべてになります。",
+    "defaultMessage": "スペースで区切り、アプリのスコープの範囲内で入力します。空にするとすべてになります。「admin:manage_invites」のような権限のスコープには、ロールにその権限が要ります。そのトークンで使える管理は、権限のスコープに書いたものだけです。",
     "description": "Description of the scopes field of the dialog that issues tokens."
   },
   "settings.apps.token.submit": {

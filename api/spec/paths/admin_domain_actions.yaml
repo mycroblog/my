@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listDomainActions
+  x-permission: manage_domains
   summary: List the moderation actions on domains
   description: |
     The actions that moderators took on remote domains, newest first, lifted and
@@ -41,6 +42,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createDomainAction
+  x-permission: manage_domains
   summary: Take a moderation action on a domain
   description: |
     Records an action on a remote domain and its subdomains, in effect at once and

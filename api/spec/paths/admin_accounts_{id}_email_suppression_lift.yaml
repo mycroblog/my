@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: liftAdminAccountEmailSuppression
+  x-permission: manage_accounts
   summary: Lift the suppression of the email address of a local account
   description: |
     Lets the server send email again to the primary address of a local account's user, which

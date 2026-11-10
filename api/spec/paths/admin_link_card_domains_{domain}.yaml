@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 delete:
   operationId: removeLinkCardDomainRule
+  x-permission: manage_settings
   summary: Remove the rule of a domain for the link card crawler
   description: |
     Removes the rule of a domain and records it in the audit log. The cards already kept show
@@ -26,6 +27,7 @@ delete:
       $ref: ../components/responses/Problem.yaml
 put:
   operationId: setLinkCardDomainRule
+  x-permission: manage_settings
   summary: Set the rule of a domain for the link card crawler
   description: |
     Records the rule of a domain, replacing the rule it has, and records the change in the

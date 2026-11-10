@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 put:
   operationId: setInstanceText
+  x-permission: manage_settings
   summary: Set an instance text
   description: |
     Records a revision of the text of `key`, which becomes its current text in every locale:

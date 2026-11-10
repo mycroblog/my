@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: disableOAuthClient
+  x-permission: manage_oauth_apps
   summary: Disable an OAuth client
   description: |
     Revokes every token of the client at once (with the reason `client_disabled`) and refuses

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: sanitizeAdminBrand
+  x-permission: manage_settings
   summary: Check an SVG for a brand image
   description: |
     Checks and sanitizes an SVG as `setAdminBrand` would, without saving it, and answers the

@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: disableLoginProvider
+  x-permission: manage_login_providers
   summary: Disable a login provider
   description: |
     Nobody signs in, signs up, or links an account with the provider until it is enabled

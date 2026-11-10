@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getAdminTheme
+  x-permission: manage_settings
   summary: Read the instance theme
   description: |
     The current theme of the web client: the overridden design tokens and the
@@ -16,6 +17,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 put:
   operationId: setAdminTheme
+  x-permission: manage_settings
   summary: Replace the instance theme
   description: |
     Records a revision of the theme, which every visitor's web client and the server-rendered

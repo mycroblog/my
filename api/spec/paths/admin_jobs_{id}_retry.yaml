@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: retryAdminJob
+  x-permission: manage_jobs
   summary: Run a dead job again
   description: |
     Enqueues the dead job again with a fresh attempt count, to run now, and removes it from

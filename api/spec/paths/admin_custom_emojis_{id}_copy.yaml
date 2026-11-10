@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 post:
   operationId: copyCustomEmoji
+  x-permission: manage_custom_emojis
   summary: Copy a remote custom emoji into a local one
   description: |
     Registers a new local emoji with the image of a remote emoji, under the shortcode of the

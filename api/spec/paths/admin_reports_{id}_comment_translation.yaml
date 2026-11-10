@@ -3,6 +3,7 @@ parameters:
   - $ref: ../components/parameters/ReportId.yaml
 post:
   operationId: translateReportComment
+  x-permission: manage_reports
   summary: Translate the comment of a report into a language
   description: |
     Returns the reporter's comment in `target_language`, for a moderator who reads the report. An

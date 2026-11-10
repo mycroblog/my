@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listAdminWebhooks
+  x-permission: manage_webhooks
   summary: List the webhooks
   description: |
     The webhook endpoints of the instance that are not deleted, newest first.
@@ -22,6 +23,7 @@ get:
       $ref: ../components/responses/Problem.yaml
 post:
   operationId: createWebhook
+  x-permission: manage_webhooks
   summary: Set up a webhook
   description: |
     Sets up an endpoint, enabled, that receives the messages of the `events` it subscribes

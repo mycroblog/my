@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: getPaymentStatus
+  x-permission: manage_supporters
   summary: Get the state of the payment provider
   description: |
     The payment provider of the deployment's configuration: its name and mode

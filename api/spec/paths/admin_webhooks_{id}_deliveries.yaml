@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: MIT
 get:
   operationId: listWebhookDeliveries
+  x-permission: manage_webhooks
   summary: List the deliveries of a webhook
   description: |
     The messages sent to the endpoint in the last 14 days, newest first, with their

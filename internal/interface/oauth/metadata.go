@@ -43,10 +43,13 @@ type protectedResourceMetadata struct {
 	BearerMethodsSupported []string `json:"bearer_methods_supported"`
 }
 
-// thirdPartyScopes returns the scopes that a third-party client may hold: every known scope
-// except the ones that only first-party clients may hold (ADR-0090 §4).
+// thirdPartyScopes returns the scopes that a third-party client may request: every known scope
+// except the ones that only first-party clients may hold (ADR-0090 §4) and the permission
+// scopes, which only a self-issued token holds (ADR-0090 §17).
 func thirdPartyScopes() []string {
-	return slices.DeleteFunc(identity.KnownScopes(), identity.FirstPartyOnlyScope)
+	return slices.DeleteFunc(identity.KnownScopes(), func(t string) bool {
+		return identity.FirstPartyOnlyScope(t) || identity.SelfIssuedOnlyScope(t)
+	})
 }
 
 func writeMetadata(w http.ResponseWriter, doc any) {
