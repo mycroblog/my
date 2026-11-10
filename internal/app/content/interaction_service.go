@@ -144,7 +144,9 @@ func (s *Interactions) requestBoost(ctx context.Context, tx uow.Tx, b content.Bo
 	return err
 }
 
-// Unboost retracts accountID's live boost of statusID. Without one it changes nothing.
+// Unboost retracts accountID's live boost of statusID. Without one it withdraws the account's
+// pending requests to boost it (ADR-0155 §7), whose AnnounceRequest the federation module takes
+// back with the Undo of the Announce; without those either it changes nothing.
 func (s *Interactions) Unboost(ctx context.Context, accountID, statusID string) error {
 	st, err := s.d.Statuses.FindStatus(ctx, statusID)
 	if errors.Is(err, ErrNotFound) {
@@ -158,7 +160,7 @@ func (s *Interactions) Unboost(ctx context.Context, accountID, statusID string) 
 	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		edge, err := repo.BoostEdge(ctx, tx, accountID, statusID)
 		if errors.Is(err, ErrNotFound) {
-			return nil
+			return s.withdrawBoostRequests(ctx, tx, accountID, st)
 		}
 		if err != nil {
 			return err
@@ -452,4 +454,28 @@ func (s *Interactions) ensureLive(ctx context.Context, tx uow.Tx, statusID strin
 // a deleted or missing status fails with ErrNotFound.
 func (s *Interactions) Counters(ctx context.Context, statusID string) (content.Counters, error) {
 	return s.d.Statuses.FindCounters(ctx, statusID)
+}
+
+// withdrawBoostRequests withdraws in tx the pending requests of accountID to boost st.
+func (s *Interactions) withdrawBoostRequests(ctx context.Context, tx uow.Tx, accountID string, st content.Status) error {
+	if s.d.Quotes == nil {
+		return nil
+	}
+	own, err := s.d.Quotes.ListOwnInteractions(ctx, accountID, []string{st.URI})
+	if err != nil {
+		return err
+	}
+	for _, o := range own {
+		if o.Kind != content.InteractionAnnounce || o.State != content.InteractionRequestPending {
+			continue
+		}
+		r, err := s.d.Quotes.FindInteractionRequest(ctx, tx, o.RequestID)
+		if err != nil {
+			return err
+		}
+		if err := s.approvals().withdraw(ctx, tx, r); err != nil {
+			return err
+		}
+	}
+	return nil
 }

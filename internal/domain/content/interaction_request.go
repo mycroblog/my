@@ -84,12 +84,15 @@ const (
 	InteractionEventRejected InteractionEventKind = "rejected"
 	// InteractionEventRevoked takes an approval back (only of quotes, ADR-0155 §8).
 	InteractionEventRevoked InteractionEventKind = "revoked"
+	// InteractionEventWithdrawn ends a pending request on the side of the account that
+	// interacts: it undid its boost or deleted its reply before the answer.
+	InteractionEventWithdrawn InteractionEventKind = "withdrawn"
 )
 
 // Valid reports whether k is a known kind.
 func (k InteractionEventKind) Valid() bool {
 	switch k {
-	case InteractionEventAccepted, InteractionEventRejected, InteractionEventRevoked:
+	case InteractionEventAccepted, InteractionEventRejected, InteractionEventRevoked, InteractionEventWithdrawn:
 		return true
 	}
 	return false
@@ -116,6 +119,9 @@ const (
 	InteractionRequestAccepted InteractionRequestState = "accepted"
 	InteractionRequestRejected InteractionRequestState = "rejected"
 	InteractionRequestRevoked  InteractionRequestState = "revoked"
+	// InteractionRequestWithdrawn is a request that its interacting account withdrew while it
+	// was pending.
+	InteractionRequestWithdrawn InteractionRequestState = "withdrawn"
 )
 
 // InteractionState is the current state of an interaction request (the
@@ -135,10 +141,18 @@ func InitialInteractionState(r InteractionRequest) InteractionState {
 }
 
 // Apply returns the state after e. A revocation takes back only the approval of the
-// authorization it deletes.
+// authorization it deletes; a withdrawal ends only a pending request, and a withdrawn request
+// takes no answer after it.
 func (s InteractionState) Apply(e InteractionEvent) InteractionState {
 	out := s
+	if s.State == InteractionRequestWithdrawn {
+		return out
+	}
 	switch e.Kind {
+	case InteractionEventWithdrawn:
+		if s.State == InteractionRequestPending {
+			out.State, out.AuthorizationURI = InteractionRequestWithdrawn, ""
+		}
 	case InteractionEventAccepted:
 		out.State, out.AuthorizationURI = InteractionRequestAccepted, e.AuthorizationURI
 	case InteractionEventRejected:

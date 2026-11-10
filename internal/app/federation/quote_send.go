@@ -100,7 +100,9 @@ func (h *QuoteHandlers) Register(p *InboxProcessor) {
 //   - content.interaction_requested of a local account's pending reply or boost of a remote
 //     status: the ReplyRequest or AnnounceRequest to the status author's inbox (ADR-0155 §7).
 //   - content.interaction_answered of a remote account's interaction with a local status that
-//     no handler answered (Deferred): the Accept or Reject to its inbox (ADR-0155 §6).
+//     no handler answered (Deferred): the Accept or Reject to its inbox (ADR-0155 §6); of the
+//     withdrawal of a local account's pending reply or boost of a remote status: the Delete of the
+//     reply or the Undo of the Announce to the inbox that its request went to.
 func (h *QuoteHandlers) RegisterProjectors(r *uow.Projectors) {
 	r.Register(appcontent.EventInteractionRequested, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.InteractionRequested)
@@ -117,7 +119,15 @@ func (h *QuoteHandlers) RegisterProjectors(r *uow.Projectors) {
 	})
 	r.Register(appcontent.EventInteractionAnswered, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.InteractionAnswered)
-		if !ok || !ev.Deferred || ev.Request.Direction != appcontent.DirectionInbound {
+		switch {
+		case !ok:
+			return nil
+		case ev.Event.Kind == appcontent.InteractionEventWithdrawn:
+			if ev.Request.Direction != appcontent.DirectionOutbound {
+				return nil
+			}
+			return h.recordWithdrawal(ctx, tx, ev.Request)
+		case !ev.Deferred || ev.Request.Direction != appcontent.DirectionInbound:
 			return nil
 		}
 		return h.recordDeferredAnswer(ctx, tx, ev)
@@ -251,7 +261,8 @@ func (h *QuoteHandlers) remoteInbox(ctx context.Context, tx uow.Tx, accountID st
 // quotes of public and unlisted statuses (content.MayQuote).
 func (f *FanOut) quoteSubject(ctx context.Context, s subject, p fanOutPayload) (subject, error) {
 	switch s.act.Type {
-	case federation.ActivityQuoteRequest, federation.ActivityAnnounceRequest, federation.ActivityAccept, federation.ActivityReject, federation.ActivityDelete:
+	case federation.ActivityQuoteRequest, federation.ActivityAnnounceRequest, federation.ActivityAccept, federation.ActivityReject,
+		federation.ActivityDelete, federation.ActivityUndo:
 	default:
 		return subject{}, fmt.Errorf("%w: %s of a quote", federation.ErrInvalidOutbound, s.act.Type)
 	}
@@ -259,8 +270,8 @@ func (f *FanOut) quoteSubject(ctx context.Context, s subject, p fanOutPayload) (
 	if p.Inbox == "" && (p.Phase == "" || p.Phase == string(phaseRelay)) {
 		return subject{}, fmt.Errorf("%w: %s of quote %s without an inbox", federation.ErrInvalidOutbound, s.act.Type, s.act.ObjectID)
 	}
-	s.inbox = federation.IRI(p.Inbox)
-	if s.act.Type == federation.ActivityDelete {
+	s.inbox, s.followersToo = federation.IRI(p.Inbox), p.Followers
+	if s.followersToo || s.act.ObjectKind == federation.OutboundQuote && s.act.Type == federation.ActivityDelete {
 		var err error
 		if s.restrictions, err = f.d.Statuses.AuthorRestrictions(ctx, s.act.ActorAccountID); err != nil {
 			return subject{}, err
@@ -273,6 +284,11 @@ func (f *FanOut) quoteSubject(ctx context.Context, s subject, p fanOutPayload) (
 
 // store stores the document of act in tx and enqueues its fan-out to inbox alone.
 func (h *QuoteHandlers) store(ctx context.Context, tx uow.Tx, act federation.OutboundActivity, doc federation.ActivityDocument, inbox federation.IRI) error {
+	return h.storeTo(ctx, tx, act, doc, fanOutPayload{Inbox: string(inbox)})
+}
+
+// storeTo stores the document of act in tx and enqueues its fan-out with the payload p.
+func (h *QuoteHandlers) storeTo(ctx context.Context, tx uow.Tx, act federation.OutboundActivity, doc federation.ActivityDocument, p fanOutPayload) error {
 	b, err := doc.Marshal()
 	if err != nil {
 		return err
@@ -280,7 +296,7 @@ func (h *QuoteHandlers) store(ctx context.Context, tx uow.Tx, act federation.Out
 	if _, err := h.d.Recorder.Repository.InsertOutboundDocument(ctx, tx, act.ID, b, act.CreatedAt); err != nil {
 		return err
 	}
-	return h.rec.enqueue(ctx, tx, act, fanOutPayload{Inbox: string(inbox)})
+	return h.rec.enqueue(ctx, tx, act, p)
 }
 
 // answer decides a remote QuoteRequest of the local status quoted by the post quoting: the

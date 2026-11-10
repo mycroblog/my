@@ -672,6 +672,55 @@ func (q *Queries) ListPendingInteractionRequests(ctx context.Context, arg ListPe
 	return items, nil
 }
 
+const listPendingInteractionRequestsBy = `-- name: ListPendingInteractionRequestsBy :many
+SELECT r.id, r.kind, r.direction, r.target_uri, r.target_account_id, r.interacting_uri, r.interacting_account_id,
+  r.activity_uri, r.visibility, r.created_at
+FROM interaction_requests r JOIN interaction_request_states s ON s.request_id = r.id
+WHERE r.kind = ?1 AND r.interacting_uri = ?2 AND s.state = 'pending'
+ORDER BY r.id
+`
+
+type ListPendingInteractionRequestsByParams struct {
+	Kind           string
+	InteractingUri string
+}
+
+// ListPendingInteractionRequestsBy returns the pending requests of kind of the interaction
+// interacting_uri, oldest first.
+func (q *Queries) ListPendingInteractionRequestsBy(ctx context.Context, arg ListPendingInteractionRequestsByParams) ([]InteractionRequest, error) {
+	rows, err := q.db.QueryContext(ctx, listPendingInteractionRequestsBy, arg.Kind, arg.InteractingUri)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []InteractionRequest{}
+	for rows.Next() {
+		var i InteractionRequest
+		if err := rows.Scan(
+			&i.ID,
+			&i.Kind,
+			&i.Direction,
+			&i.TargetUri,
+			&i.TargetAccountID,
+			&i.InteractingUri,
+			&i.InteractingAccountID,
+			&i.ActivityUri,
+			&i.Visibility,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPendingInteractionRequestsTo = `-- name: ListPendingInteractionRequestsTo :many
 SELECT r.id, r.kind, r.direction, r.target_uri, r.target_account_id, r.interacting_uri, r.interacting_account_id,
   r.activity_uri, r.visibility, r.created_at

@@ -223,13 +223,13 @@ func (f *FanOut) Run(ctx context.Context, p fanOutPayload) error {
 	var nextJob *queue.NewJob
 	switch {
 	case next != "":
-		j, err := fanOutPayload{OutboundActivityID: act.ID, RevisionID: p.RevisionID, FollowURI: p.FollowURI, SharedInboxes: p.SharedInboxes, Phase: string(phases[idx]), After: next}.job(act)
+		j, err := fanOutPayload{OutboundActivityID: act.ID, RevisionID: p.RevisionID, FollowURI: p.FollowURI, SharedInboxes: p.SharedInboxes, Followers: p.Followers, Phase: string(phases[idx]), After: next}.job(act)
 		if err != nil {
 			return err
 		}
 		nextJob = &j
 	case idx+1 < len(phases):
-		j, err := fanOutPayload{OutboundActivityID: act.ID, RevisionID: p.RevisionID, FollowURI: p.FollowURI, SharedInboxes: p.SharedInboxes, Phase: string(phases[idx+1])}.job(act)
+		j, err := fanOutPayload{OutboundActivityID: act.ID, RevisionID: p.RevisionID, FollowURI: p.FollowURI, SharedInboxes: p.SharedInboxes, Followers: p.Followers, Phase: string(phases[idx+1])}.job(act)
 		if err != nil {
 			return err
 		}
@@ -391,6 +391,9 @@ type subject struct {
 	report appmoderation.Report
 	// inbox is the only recipient of an activity of the relay membership.
 	inbox federation.IRI
+	// followersToo sends an activity of the approval of an interaction to the actor's followers
+	// after its inbox (fanOutPayload.Followers).
+	followersToo bool
 }
 
 // retracting reports whether the Update of an actor takes something back rather than publishing
@@ -416,14 +419,14 @@ func (s subject) retracting() bool { return s.suspended || s.movedTo != "" }
 //   - Flag: the reported account.
 //   - Follow, Undo, Accept, and Reject of the relay membership, the activities of the approval of
 //     an interaction, and the ReplyRequest of a local reply: the inbox of the payload; the Delete
-//     of a revoked QuoteAuthorization then goes to the quoted author's followers too (ADR-0069
-//     §3).
+//     of a revoked QuoteAuthorization, and the Accept of a reply without a request, then go to
+//     the actor's followers too (ADR-0069 §3, ADR-0155 §6).
 func (s subject) phases() []phase {
 	switch s.act.ObjectKind {
 	case federation.OutboundRelay, federation.OutboundRefusal:
 		return []phase{phaseRelay}
-	case federation.OutboundQuote:
-		if s.act.Type == federation.ActivityDelete {
+	case federation.OutboundReply, federation.OutboundAnnounce, federation.OutboundQuote:
+		if s.followersToo || s.act.ObjectKind == federation.OutboundQuote && s.act.Type == federation.ActivityDelete {
 			return []phase{phaseRelay, phaseFollowers}
 		}
 		return []phase{phaseRelay}
@@ -478,7 +481,7 @@ func (f *FanOut) subject(ctx context.Context, act federation.OutboundActivity, p
 	if act.ObjectKind == federation.OutboundRelay || act.ObjectKind == federation.OutboundRefusal {
 		return relaySubject(s, p)
 	}
-	if act.ObjectKind == federation.OutboundQuote {
+	if act.ObjectKind.Approval() {
 		return f.quoteSubject(ctx, s, p)
 	}
 	if act.ObjectKind == federation.OutboundFollow {

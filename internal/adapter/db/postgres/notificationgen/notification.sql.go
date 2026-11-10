@@ -173,6 +173,29 @@ func (q *Queries) DeleteNotificationExclusionsOf(ctx context.Context, arg Delete
 	return err
 }
 
+const dismissNotificationByDedupeKey = `-- name: DismissNotificationByDedupeKey :execrows
+INSERT INTO notification_dismissals (notification_id, dismissed_at)
+SELECT n.id, $1 FROM notifications n
+WHERE n.recipient_account_id = $2 AND n.dedupe_key = $3
+ON CONFLICT (notification_id) DO NOTHING
+`
+
+type DismissNotificationByDedupeKeyParams struct {
+	DismissedAt        time.Time
+	RecipientAccountID string
+	DedupeKey          string
+}
+
+// DismissNotificationByDedupeKey dismisses the notification of a recipient with a dedupe key, if
+// there is one that is not dismissed yet (a request of an interaction that was withdrawn).
+func (q *Queries) DismissNotificationByDedupeKey(ctx context.Context, arg DismissNotificationByDedupeKeyParams) (int64, error) {
+	result, err := q.db.Exec(ctx, dismissNotificationByDedupeKey, arg.DismissedAt, arg.RecipientAccountID, arg.DedupeKey)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const domainExcluded = `-- name: DomainExcluded :one
 SELECT EXISTS (SELECT 1 FROM notification_domain_exclusions dx
   WHERE dx.viewer_account_id = $1

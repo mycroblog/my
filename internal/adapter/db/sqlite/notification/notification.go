@@ -88,6 +88,18 @@ func (r *Repository) Notification(ctx context.Context, tx uow.Tx, id string) (no
 	return notificationFrom(row), nil
 }
 
+// DismissByDedupeKey implements notification.Repository.
+func (r *Repository) DismissByDedupeKey(ctx context.Context, tx uow.Tx, recipientAccountID, dedupeKey string, at time.Time) error {
+	q, err := r.db.queries(tx)
+	if err != nil {
+		return err
+	}
+	_, err = q.DismissNotificationByDedupeKey(ctx, notificationgen.DismissNotificationByDedupeKeyParams{
+		DismissedAt: sqlite.ToMillis(at), RecipientAccountID: recipientAccountID, DedupeKey: dedupeKey,
+	})
+	return sqlite.Wrap(err, "dismiss notification by dedupe key")
+}
+
 // InsertDismissal implements notification.Repository.
 func (r *Repository) InsertDismissal(ctx context.Context, tx uow.Tx, d notification.Dismissal) (bool, error) {
 	q, err := r.db.queries(tx)

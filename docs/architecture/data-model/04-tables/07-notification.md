@@ -50,6 +50,7 @@
   | 承認待ちの依頼の記録（`content.interaction_requested` のうち状態が `pending` のもの） | 返信は `reply_request`、ブーストは `boost_request`、引用は `quote_request` | 対象の投稿のローカルの作者 | 交流する人・対象の投稿 | `<種類>:<request_id>` |
   | 依頼への答え（`content.interaction_answered` のうち、リモートのサーバーの答えと、ローカルの作者の答え（`Deferred`）） | `interaction_accepted` / `interaction_rejected` | 交流したローカルの人 | 対象の投稿の作者・対象の投稿 | `<種類>:<request_id>` |
 
+  取り下げられた依頼（`content.interaction_answered` の `withdrawn`）は、作者への依頼の通知を、重複排除キーで引いて消去として記録します（`notification_dismissals`）。
   承認された保留の返信（`content.status_released`）は、そのときにメンションを通知します。保留の間は `content.status_created` / `content.status_revised` の `HeldReply` でメンションを通知しません。
 - 投稿が削除されたら、その投稿についての通知（メンション・ブースト・お気に入り）は読み取り時に隠します。
   - 通知は【イベント】なので、projector は通知の行を消しません。`content.status_deleted` を購読する同期 projector が `notification_deleted_statuses` に投稿の `status_id` を記録し、一覧と未読数は `status_id` がそこにある通知を除きます（同じ削除を再処理しても 1 行です）。

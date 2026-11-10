@@ -582,13 +582,14 @@ CREATE INDEX interaction_requests_interacting_uri ON interaction_requests (inter
 CREATE INDEX interaction_requests_interacting_account_id_kind ON interaction_requests (interacting_account_id, kind);
 
 -- Event: the answer to an interaction request (ADR-0155 §8): approved, refused, or the approval
--- taken back. authorization_uri is the ReplyAuthorization, AnnounceAuthorization, or
+-- taken back; or the request withdrawn by the account that interacts, which undid its boost or
+-- deleted its reply while it waited. authorization_uri is the ReplyAuthorization, AnnounceAuthorization, or
 -- QuoteAuthorization that an accepted event verified or gave, or that a revoked event deleted;
 -- NULL for the others and for the approval of an interaction with the author's own status.
 CREATE TABLE interaction_request_events (
   id TEXT NOT NULL PRIMARY KEY,
   request_id TEXT NOT NULL,
-  kind TEXT NOT NULL CHECK (kind IN ('accepted', 'rejected', 'revoked')),
+  kind TEXT NOT NULL CHECK (kind IN ('accepted', 'rejected', 'revoked', 'withdrawn')),
   authorization_uri TEXT,
   occurred_at INTEGER NOT NULL,
   CHECK (authorization_uri IS NULL OR kind IN ('accepted', 'revoked'))
@@ -602,7 +603,7 @@ CREATE TABLE interaction_request_states (
   request_id TEXT NOT NULL PRIMARY KEY,
   kind TEXT NOT NULL CHECK (kind IN ('reply', 'announce', 'quote')),
   target_account_id TEXT,
-  state TEXT NOT NULL CHECK (state IN ('pending', 'accepted', 'rejected', 'revoked')),
+  state TEXT NOT NULL CHECK (state IN ('pending', 'accepted', 'rejected', 'revoked', 'withdrawn')),
   authorization_uri TEXT,
   CHECK (authorization_uri IS NULL OR state = 'accepted')
 ) STRICT;

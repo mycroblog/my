@@ -546,6 +546,14 @@ func (p *projector) interactionRequested(ctx context.Context, tx uow.Tx, ev appc
 // approval of a local interaction that the rules gave at once notifies no one.
 func (p *projector) interactionAnswered(ctx context.Context, tx uow.Tx, ev appcontent.InteractionAnswered) error {
 	r, target := ev.Request, ev.Target
+	if ev.Event.Kind == appcontent.InteractionEventWithdrawn {
+		// A withdrawn request asks the author nothing any more.
+		if target == nil || !target.IsLocal {
+			return nil
+		}
+		t := requestTypes[r.Kind]
+		return p.d.Repository.DismissByDedupeKey(ctx, tx, target.AuthorAccountID, notification.ApprovalKey(t, r.ID), ev.Event.OccurredAt)
+	}
 	told := r.Direction == appcontent.DirectionOutbound || r.Direction == appcontent.DirectionLocal && ev.Deferred
 	if target == nil || !told {
 		return nil

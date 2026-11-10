@@ -42,8 +42,11 @@ type fanOutPayload struct {
 	// Inbox is the only recipient of an activity of the relay membership (ADR-0006), "" for
 	// other activities.
 	Inbox string `json:"inbox,omitempty"`
-	Phase string `json:"phase,omitempty"`
-	After string `json:"after,omitempty"`
+	// Followers sends an activity of the approval of an interaction to the actor's followers
+	// after Inbox: the Accept of a reply without a request (ADR-0155 §6). false for others.
+	Followers bool   `json:"followers,omitempty"`
+	Phase     string `json:"phase,omitempty"`
+	After     string `json:"after,omitempty"`
 }
 
 // job returns the JobFanOut of p, a batch of a. Its ordering key is that of a (orderingKey), so
@@ -201,6 +204,11 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 		ev, ok := e.(appcontent.StatusDeleted)
 		if !ok || !ev.Status.IsLocal || ev.ByAccountErasure() {
 			return nil
+		}
+		if unsent, err := neverPublished(ctx, d.Repository, ev.Status); err != nil || unsent {
+			// A reply that waited for its approval went out only in its ReplyRequest, whose
+			// withdrawal takes it back (ADR-0155 §7).
+			return err
 		}
 		act, err := rec.insert(ctx, tx, federation.OutboundActivity{
 			Type: federation.ActivityDelete, ActorAccountID: ev.Status.AuthorAccountID,
@@ -479,4 +487,26 @@ func (r recorder) enqueue(ctx context.Context, tx uow.Tx, a federation.OutboundA
 		return err
 	}
 	return r.d.Outbox.EnqueueTx(ctx, tx, job)
+}
+
+// neverPublished reports whether the local reply st went out only in a ReplyRequest: it was
+// held, and its Create was never recorded.
+func neverPublished(ctx context.Context, repo Repository, st appcontent.Status) (bool, error) {
+	if st.InReplyToURI == "" {
+		return false, nil
+	}
+	acts, err := repo.ListOutboundActivitiesOf(ctx, federation.OutboundStatus, st.ID)
+	if err != nil {
+		return false, err
+	}
+	requested := false
+	for _, a := range acts {
+		switch a.Type {
+		case federation.ActivityCreate:
+			return false, nil
+		case federation.ActivityReplyRequest:
+			requested = true
+		}
+	}
+	return requested, nil
 }

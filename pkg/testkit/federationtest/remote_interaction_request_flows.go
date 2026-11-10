@@ -84,7 +84,7 @@ func remoteAnswersReplyAndAnnounceRequests(t *testing.T, e *remoteInteractionEnv
 	// A follower's ReplyRequest is approved at once: the Accept names this server's
 	// ReplyAuthorization, which a GET serves.
 	e.expect(t, requestDoc(t, "ReplyRequest", alice+"/requests/1", alice, post.URI, alice+"/notes/r1"), appfederation.InboxHandled)
-	sent := e.quoteActivities(t, federation.OutboundQuote, post.ID)
+	sent := e.quoteActivities(t, federation.OutboundReply, post.ID)
 	if len(sent) != 1 || sent[0].Type != federation.ActivityAccept || !slices.Equal(sent[0].Inboxes, []string{alice + "/inbox"}) {
 		t.Fatalf("answers = %+v, want an Accept to alice", sent)
 	}
@@ -111,8 +111,11 @@ func remoteAnswersReplyAndAnnounceRequests(t *testing.T, e *remoteInteractionEnv
 	e.expect(t, requestDoc(t, "AnnounceRequest", bob+"/requests/2", bob, post.URI, map[string]any{
 		"id": bob + "/announces/1", "type": "Announce", "actor": bob, "object": post.URI, "to": []string{string(federation.PublicIRI)},
 	}), appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, post.ID); len(sent) != 1 {
+	if sent := e.quoteActivities(t, federation.OutboundReply, post.ID); len(sent) != 1 {
 		t.Errorf("answers while the author decides = %+v, want the first Accept only", sent)
+	}
+	if sent := e.quoteActivities(t, federation.OutboundAnnounce, post.ID); len(sent) != 0 {
+		t.Errorf("answers of boosts while the author decides = %+v, want none", sent)
 	}
 	if n := e.notified(t, author, bobID, notification.TypeReplyRequest); n != 1 {
 		t.Errorf("reply_request notifications = %d, want 1", n)
@@ -143,10 +146,14 @@ func remoteAnswersReplyAndAnnounceRequests(t *testing.T, e *remoteInteractionEnv
 	if _, err := e.interactions.AnswerInteractionRequest(ctx, author, boost.ID, false); err != nil {
 		t.Fatal(err)
 	}
-	sent = e.quoteActivities(t, federation.OutboundQuote, post.ID)
-	if len(sent) != 3 || sent[1].Type != federation.ActivityAccept || sent[2].Type != federation.ActivityReject ||
-		!slices.Equal(sent[1].Inboxes, []string{bob + "/inbox"}) || sent[1].Doc.Object().ID != bob+"/requests/1" {
-		t.Fatalf("answers = %+v, want an Accept of the ReplyRequest and a Reject of the AnnounceRequest to bob", sent)
+	sent = e.quoteActivities(t, federation.OutboundReply, post.ID)
+	if len(sent) != 2 || sent[1].Type != federation.ActivityAccept || !slices.Equal(sent[1].Inboxes, []string{bob + "/inbox"}) ||
+		sent[1].Doc.Object().ID != bob+"/requests/1" {
+		t.Fatalf("answers of replies = %+v, want an Accept of the ReplyRequest to bob", sent)
+	}
+	if rejects := e.quoteActivities(t, federation.OutboundAnnounce, post.ID); len(rejects) != 1 || rejects[0].Type != federation.ActivityReject ||
+		rejects[0].Doc.Object().ID != bob+"/requests/2" {
+		t.Fatalf("answers of boosts = %+v, want a Reject of the AnnounceRequest", rejects)
 	}
 	// The boost that comes all the same is not recorded; the approved reply is in the thread.
 	e.expect(t, remoteAnnounce(t, bob+"/announces/1", bob, post.URI), appfederation.InboxDropped)
@@ -167,6 +174,8 @@ func remoteHoldsRepliesWithoutRequests(t *testing.T, e *remoteInteractionEnv) {
 	const carol = "https://remote.example/users/carol"
 	carolID := e.actor(t, carol)
 	e.follow(t, author, carolID) // so that carol's posts are taken in
+	const dave = "https://other.example/users/dave"
+	e.follow(t, e.actor(t, dave), author) // a follower of the author on another server
 	post := e.manualPost(t, author)
 
 	// A reply without a request (as Mastodon sends it) that a manual rule admits is held: out of
@@ -193,10 +202,13 @@ func remoteHoldsRepliesWithoutRequests(t *testing.T, e *remoteInteractionEnv) {
 	if got := e.replies(t, "", post.ID); !slices.Equal(got, []string{held.ID}) {
 		t.Errorf("replies after the approval = %v, want %s", got, held.ID)
 	}
-	sent := e.quoteActivities(t, federation.OutboundQuote, post.ID)
+	// It goes to the reply's author, the public, and the author's followers, for third servers.
+	sent := e.quoteActivities(t, federation.OutboundReply, post.ID)
 	if len(sent) != 1 || sent[0].Type != federation.ActivityAccept || sent[0].Doc.Object().ID != federation.IRI(held.URI) ||
-		sent[0].Doc.Target != federation.IRI(post.URI) || !strings.Contains(string(sent[0].Doc.Result), "/ap/reply_authorizations/") {
-		t.Errorf("answers = %+v, want an Accept of the reply to its parent with a ReplyAuthorization", sent)
+		sent[0].Doc.Target != federation.IRI(post.URI) || !strings.Contains(string(sent[0].Doc.Result), "/ap/reply_authorizations/") ||
+		!slices.Contains(sent[0].Doc.Audience.Cc, federation.PublicIRI) ||
+		!slices.Contains(sent[0].Inboxes, carol+"/inbox") || !slices.Contains(sent[0].Inboxes, dave+"/inbox") {
+		t.Errorf("answers = %+v, want an Accept of the reply to its parent with a ReplyAuthorization, to carol and dave", sent)
 	}
 
 	// A reply that no rule admits is refused with a Reject and stays held.
@@ -209,7 +221,7 @@ func remoteHoldsRepliesWithoutRequests(t *testing.T, e *remoteInteractionEnv) {
 	}
 	e.expect(t, remoteActivity(t, "Create", carol+"/notes/2/activity", carol, remoteNote(carol+"/notes/2", carol, remoteNow.Add(-time.Minute),
 		map[string]any{"inReplyTo": closed.Status.URI})), appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, closed.Status.ID); len(sent) != 1 || sent[0].Type != federation.ActivityReject {
+	if sent := e.quoteActivities(t, federation.OutboundReply, closed.Status.ID); len(sent) != 1 || sent[0].Type != federation.ActivityReject {
 		t.Errorf("answers = %+v, want a Reject", sent)
 	}
 	if got := e.replies(t, "", closed.Status.ID); len(got) != 0 {
@@ -237,7 +249,7 @@ func remoteHoldsRepliesWithoutRequests(t *testing.T, e *remoteInteractionEnv) {
 	if got := e.replies(t, "", waiting.ID); !slices.Equal(got, []string{third.ID}) {
 		t.Errorf("replies after widening the rules = %v, want %s", got, third.ID)
 	}
-	if sent := e.quoteActivities(t, federation.OutboundQuote, waiting.ID); len(sent) != 1 || sent[0].Type != federation.ActivityAccept {
+	if sent := e.quoteActivities(t, federation.OutboundReply, waiting.ID); len(sent) != 1 || sent[0].Type != federation.ActivityAccept {
 		t.Errorf("answers after widening the rules = %+v, want an Accept", sent)
 	}
 	if got := e.replies(t, "", closed.Status.ID); len(got) != 0 {
@@ -305,7 +317,7 @@ func remoteRequestsLocalRepliesAndBoosts(t *testing.T, e *remoteInteractionEnv) 
 			announceRequest = o.RequestID
 		}
 	}
-	requests := e.quoteActivities(t, federation.OutboundQuote, announceRequest)
+	requests := e.quoteActivities(t, federation.OutboundAnnounce, announceRequest)
 	if len(requests) != 1 || requests[0].Type != federation.ActivityAnnounceRequest || requests[0].Doc.Instrument.ID == "" {
 		t.Fatalf("AnnounceRequests = %+v, want one that embeds the Announce", requests)
 	}
@@ -348,5 +360,92 @@ func remoteRequestsLocalRepliesAndBoosts(t *testing.T, e *remoteInteractionEnv) 
 		"actor": mallory, "object": string(sent[0].Doc.ID)}), appfederation.InboxDropped)
 	if n := len(e.quoteActivities(t, federation.OutboundStatus, reply.ID)); n != 2 {
 		t.Errorf("activities of the reply = %d, want its ReplyRequest and one Create", n)
+	}
+}
+
+func remoteWithdrawsRequests(t *testing.T, e *remoteInteractionEnv) {
+	skipWithoutQuoteHandlers(t, e)
+	ctx := t.Context()
+	const alice, bob = "https://remote.example/users/alice", "https://other.example/users/bob"
+	fan, author := e.user(t, "fan"), e.user(t, "author")
+	aliceID, bobID := e.actor(t, alice), e.actor(t, bob)
+	e.follow(t, fan, aliceID)
+	e.follow(t, e.actor(t, "https://other.example/users/carol"), fan) // a remote follower of the fan
+	manual := map[string]any{"interactionPolicy": map[string]any{
+		"canReply":    map[string]any{"automaticApproval": []string{alice}, "manualApproval": []string{string(federation.PublicIRI)}},
+		"canAnnounce": map[string]any{"automaticApproval": []string{alice}, "manualApproval": []string{string(federation.PublicIRI)}},
+	}}
+	e.expect(t, remoteActivity(t, "Create", alice+"/notes/1/activity", alice, remoteNote(alice+"/notes/1", alice, remoteNow.Add(-time.Hour), manual)), appfederation.InboxHandled)
+	post := e.post(t, alice+"/notes/1").Status
+
+	// A local reply that waits is withdrawn by its deletion: a Delete to alice alone, and none to
+	// the fan's followers, who never got it.
+	p, err := e.content.Create(ctx, appcontent.CreateInput{
+		AuthorAccountID: fan, TextInput: appcontent.TextInput{Text: "never mind"}, Visibility: content.VisibilityPublic, InReplyToID: post.ID,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	reply := p.Status
+	e.runFanOut(t)
+	if _, err := e.content.Delete(ctx, fan, reply.ID); err != nil {
+		t.Fatal(err)
+	}
+	own, err := e.interactions.ListOwnInteractions(ctx, fan, []string{reply.URI})
+	if err != nil || len(own) != 1 || own[0].State != content.InteractionRequestWithdrawn {
+		t.Fatalf("request of the deleted reply = %+v, %v; want withdrawn", own, err)
+	}
+	withdrawals := e.quoteActivities(t, federation.OutboundReply, own[0].RequestID)
+	if len(withdrawals) != 1 || withdrawals[0].Type != federation.ActivityDelete || withdrawals[0].Doc.Object().ID != federation.IRI(reply.URI) ||
+		!slices.Equal(withdrawals[0].Inboxes, []string{alice + "/inbox"}) {
+		t.Errorf("withdrawal of the reply = %+v, want a Delete of it to alice", withdrawals)
+	}
+	for _, a := range e.quoteActivities(t, federation.OutboundStatus, reply.ID) {
+		if a.Type == federation.ActivityDelete {
+			t.Errorf("the deleted held reply sent a Delete to %v", a.Inboxes)
+		}
+	}
+
+	// A local boost that waits is withdrawn by undoing it: the Undo of its Announce to alice;
+	// undoing again sends nothing more.
+	if _, err := e.interactions.Boost(ctx, fan, post.ID); !errors.Is(err, appcontent.ErrInteractionAwaitsApproval) {
+		t.Fatalf("boost = %v", err)
+	}
+	for range 2 {
+		if err := e.interactions.Unboost(ctx, fan, post.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	own, err = e.interactions.ListOwnInteractions(ctx, fan, []string{post.URI})
+	if err != nil || len(own) != 1 || own[0].State != content.InteractionRequestWithdrawn {
+		t.Fatalf("request of the undone boost = %+v, %v; want withdrawn", own, err)
+	}
+	acts := e.quoteActivities(t, federation.OutboundAnnounce, own[0].RequestID)
+	if len(acts) != 2 || acts[0].Type != federation.ActivityAnnounceRequest || acts[1].Type != federation.ActivityUndo ||
+		acts[1].Doc.Object().ID != acts[0].Doc.Instrument.ID || !slices.Equal(acts[1].Inboxes, []string{alice + "/inbox"}) {
+		t.Errorf("activities of the boost = %+v, want its AnnounceRequest and the Undo of its Announce to alice", acts)
+	}
+
+	// A remote request withdrawn by its Delete, or a waiting boost by its Undo, asks the author
+	// nothing more: the pending request ends and its notification is dismissed.
+	local := e.manualPost(t, author)
+	e.expect(t, requestDoc(t, "ReplyRequest", bob+"/requests/1", bob, local.URI, bob+"/notes/r"), appfederation.InboxHandled)
+	e.expect(t, remoteAnnounce(t, bob+"/announces/1", bob, local.URI), appfederation.InboxDropped)
+	if n := e.notified(t, author, bobID, notification.TypeReplyRequest) + e.notified(t, author, bobID, notification.TypeBoostRequest); n != 2 {
+		t.Fatalf("request notifications = %d, want 2", n)
+	}
+	e.expect(t, remoteActivity(t, "Delete", bob+"/notes/r#delete", bob, bob+"/notes/r"), appfederation.InboxHandled)
+	e.expect(t, remoteActivity(t, "Undo", bob+"/announces/1#undo", bob, bob+"/announces/1"), appfederation.InboxHandled)
+	for range 2 { // again changes nothing
+		e.expect(t, remoteActivity(t, "Undo", bob+"/announces/1#undo", bob, bob+"/announces/1"), appfederation.InboxTombstoned)
+	}
+	if page, err := e.interactions.PendingInteractionRequests(ctx, author, nil, "", 10); err != nil || len(page.Requests) != 0 {
+		t.Errorf("pending after the withdrawals = %+v, %v; want none", page, err)
+	}
+	if n := e.notified(t, author, bobID, notification.TypeReplyRequest) + e.notified(t, author, bobID, notification.TypeBoostRequest); n != 0 {
+		t.Errorf("request notifications shown after the withdrawals = %d, want 0", n)
+	}
+	if sent := e.quoteActivities(t, federation.OutboundReply, local.ID); len(sent) != 0 {
+		t.Errorf("answers of withdrawn requests = %+v, want none", sent)
 	}
 }

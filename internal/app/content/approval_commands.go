@@ -210,6 +210,31 @@ func (s *Interactions) AnswerInteractionRequest(ctx context.Context, accountID, 
 	return out, err
 }
 
+// WithdrawRemoteInteraction withdraws the pending requests of the remote interaction
+// interactingURI of kind by accountID (ADR-0155 §6): the Undo of a boost, or the Delete of a reply,
+// that waits for its approval. It reports whether it withdrew one; a request of another account
+// is left as it is. Withdrawing again does nothing.
+func (s *Interactions) WithdrawRemoteInteraction(ctx context.Context, kind content.InteractionKind, interactingURI, accountID string) (bool, error) {
+	if s.d.Quotes == nil {
+		return false, nil
+	}
+	pending, err := s.d.Quotes.ListPendingInteractionRequestsBy(ctx, nil, kind, interactingURI)
+	if err != nil {
+		return false, err
+	}
+	withdrew := false
+	for _, r := range pending {
+		if r.InteractingAccountID != accountID {
+			continue
+		}
+		if err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.approvals().withdraw(ctx, tx, r) }); err != nil {
+			return withdrew, err
+		}
+		withdrew = true
+	}
+	return withdrew, nil
+}
+
 // ReconsiderRequests approves the pending requests of interactions with the local status
 // statusID that its rules admit at once now (ADR-0155 §3): after its author widened them. The
 // others keep waiting for the author's answer. An approval is answered as the author's would be

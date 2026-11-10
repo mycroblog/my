@@ -103,11 +103,19 @@ func (s *Interactions) RecordRemoteBoost(ctx context.Context, in RemoteBoostInpu
 }
 
 // RetractRemoteBoost retracts the boost whose Announce is uri (an Undo Announce), on behalf of
-// boosterAccountID. A boost that does not exist fails with ErrNotFound, and one of another
+// boosterAccountID; a boost that is not recorded because it waits for its approval withdraws its
+// request instead (WithdrawRemoteInteraction). A boost that does not exist fails with ErrNotFound, and one of another
 // account with ErrNotAuthor. Retracting a boost again changes nothing; so does retracting the
 // boost of a deleted status, which has no live edge, except that its retraction is recorded.
 func (s *Interactions) RetractRemoteBoost(ctx context.Context, uri, boosterAccountID string) error {
 	b, err := s.d.Interactions.FindBoostByURI(ctx, uri)
+	if errors.Is(err, ErrNotFound) {
+		// A boost that waits for its approval is withdrawn (ADR-0155 §6).
+		withdrew, werr := s.WithdrawRemoteInteraction(ctx, content.InteractionAnnounce, uri, boosterAccountID)
+		if werr != nil || withdrew {
+			return werr
+		}
+	}
 	if err != nil {
 		return err
 	}

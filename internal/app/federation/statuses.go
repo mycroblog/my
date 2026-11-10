@@ -280,6 +280,13 @@ func (h *StatusHandlers) Delete(ctx context.Context, a *InboxActivity) error {
 		if revoked, err := h.revokeQuoteAuthorization(ctx, id, a.Actor); err != nil || revoked {
 			return err
 		}
+		if h.d.Interactions != nil {
+			// The reply of a ReplyRequest that waits for its approval is withdrawn (ADR-0155 §6).
+			withdrew, err := h.d.Interactions.WithdrawRemoteInteraction(ctx, appcontent.InteractionReply, string(id), a.Actor.Account.ID)
+			if err != nil || withdrew {
+				return err
+			}
+		}
 		return fmt.Errorf("%w: %s", ErrUnknownObject, id)
 	case errors.Is(err, appcontent.ErrNotAuthor):
 		return fmt.Errorf("%w: %s is not the author of %s", ErrDropActivity, a.Actor.Account.URI, id)

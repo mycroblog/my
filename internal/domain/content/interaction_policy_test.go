@@ -136,6 +136,10 @@ func TestInteractionStateOf(t *testing.T) {
 			content.InteractionState{RequestID: "r", Kind: content.InteractionReply, TargetAccountID: "author", State: content.InteractionRequestRejected}},
 		{"revoked by its authorization", []content.InteractionEvent{ev(content.InteractionEventAccepted, "a"), ev(content.InteractionEventRevoked, "a")},
 			content.InteractionState{RequestID: "r", Kind: content.InteractionReply, TargetAccountID: "author", State: content.InteractionRequestRevoked}},
+		{"withdrawn while pending", []content.InteractionEvent{ev(content.InteractionEventWithdrawn, ""), ev(content.InteractionEventAccepted, "a")},
+			content.InteractionState{RequestID: "r", Kind: content.InteractionReply, TargetAccountID: "author", State: content.InteractionRequestWithdrawn}},
+		{"withdrawn after an answer", []content.InteractionEvent{ev(content.InteractionEventRejected, ""), ev(content.InteractionEventWithdrawn, "")},
+			content.InteractionState{RequestID: "r", Kind: content.InteractionReply, TargetAccountID: "author", State: content.InteractionRequestRejected}},
 		{"revoked by another authorization", []content.InteractionEvent{ev(content.InteractionEventAccepted, "a"), ev(content.InteractionEventRevoked, "b")},
 			content.InteractionState{RequestID: "r", Kind: content.InteractionReply, TargetAccountID: "author", State: content.InteractionRequestAccepted, AuthorizationURI: "a"}},
 	} {
