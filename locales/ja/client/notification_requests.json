@@ -1,0 +1,86 @@
+{
+  "notification_requests.accept": {
+    "defaultMessage": "受け入れる",
+    "description": "Button of a notification request that accepts it: its notifications move into the user's notifications, and the account's later notifications are let through."
+  },
+  "notification_requests.accepted": {
+    "defaultMessage": "{name}さんの通知を受け入れました",
+    "description": "Announced, or shown as a toast, after the user accepted a notification request. {name} is the display name of the account that sent the notifications."
+  },
+  "notification_requests.action": {
+    "defaultMessage": "{action}: {name}",
+    "description": "Accessible name of a button or a link of a notification request. {action} is its visible text (for example 'Accept'), {name} the display name of the account that sent the held notifications."
+  },
+  "notification_requests.answers.description": {
+    "defaultMessage": "受け入れると、これらの通知が通知の一覧に入り、以後{name}さんの通知は保留されません。閉じると、これらの通知は消えます。",
+    "description": "Above the buttons Accept and Dismiss on the page of one notification request. {name} is the display name of the account that sent the held notifications."
+  },
+  "notification_requests.count": {
+    "defaultMessage": "保留した通知 {count, plural, other {#件}}",
+    "description": "Under the account of a notification request: how many notifications it holds. {count} is at least 1."
+  },
+  "notification_requests.dismiss": {
+    "defaultMessage": "閉じる",
+    "description": "Button of a notification request that dismisses it: its notifications are removed, and the account is not accepted."
+  },
+  "notification_requests.dismissed": {
+    "defaultMessage": "{name}さんの通知のリクエストを閉じました",
+    "description": "Announced, or shown as a toast, after the user dismissed a notification request. {name} is the display name of the account that sent the notifications."
+  },
+  "notification_requests.empty": {
+    "defaultMessage": "リクエストはありません",
+    "description": "Heading of the empty list of notification requests."
+  },
+  "notification_requests.empty.description": {
+    "defaultMessage": "通知のポリシーで通知を保留すると、その差出人がここに出ます。",
+    "description": "Description of the empty list of notification requests."
+  },
+  "notification_requests.intro": {
+    "defaultMessage": "通知のポリシーで保留した通知を、差出人ごとに並べます。受け入れると、その人の通知が通知の一覧に入り、以後その人の通知は保留されません。閉じると、その通知は消えます。後で保留した通知が来れば、また新しいリクエストになります。",
+    "description": "Paragraph at the top of the page of the notification requests, which says what the page lists and what its two answers do."
+  },
+  "notification_requests.link": {
+    "defaultMessage": "{count, plural, other {#人からの通知のリクエスト}}",
+    "description": "Link at the top of the notifications page to the page of the notification requests. {count} is the number of accounts whose notifications the notification policy held (at least 1)."
+  },
+  "notification_requests.link.description": {
+    "defaultMessage": "通知のポリシーで保留した通知が{count, plural, other {#件}}あります。受け入れるか閉じるまで、ここには出ません。",
+    "description": "Under the link to the notification requests at the top of the notifications page. {count} is the number of held notifications (at least 1)."
+  },
+  "notification_requests.load_more": {
+    "defaultMessage": "さらに読み込む",
+    "description": "Button at the end of the list of notification requests that loads more of them."
+  },
+  "notification_requests.not_found.back": {
+    "defaultMessage": "通知のリクエストに戻る",
+    "description": "Link from the page of a missing notification request to the list of requests."
+  },
+  "notification_requests.not_found.body": {
+    "defaultMessage": "リクエストに答え済みか、このアカウントから保留した通知がありません。",
+    "description": "Text of the page of a notification request that does not exist."
+  },
+  "notification_requests.not_found.title": {
+    "defaultMessage": "リクエストが見つかりません",
+    "description": "Heading of the page of a notification request that does not exist: it was answered, or the account sent no held notifications."
+  },
+  "notification_requests.notifications.empty": {
+    "defaultMessage": "これらの通知はもう表示できません",
+    "description": "On the page of a notification request whose held notifications can no longer be shown (their posts were deleted)."
+  },
+  "notification_requests.request.title": {
+    "defaultMessage": "保留した通知",
+    "description": "Title of the page that shows the notifications held in the notification request of one account."
+  },
+  "notification_requests.settings_link": {
+    "defaultMessage": "通知のポリシーを変える",
+    "description": "Link on the page of the notification requests to the notification settings, where the notification policy is chosen."
+  },
+  "notification_requests.title": {
+    "defaultMessage": "通知のリクエスト",
+    "description": "Title of the page that lists the notification requests: the notifications that the user's notification policy held, grouped by the account that sent them, which wait for the user to accept or dismiss them. Also the name of the list on that page."
+  },
+  "notification_requests.view": {
+    "defaultMessage": "通知を見る",
+    "description": "Link of a notification request to the page that shows the notifications it holds."
+  }
+}

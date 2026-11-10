@@ -317,6 +317,15 @@ export const MentionsOnly: Story = { parameters: { screen: { path: "/notificatio
 /** Only the new posts of the accounts the viewer subscribes to. */
 export const NewPostsOnly: Story = { parameters: { screen: { path: "/notifications?filter=posts" } } };
 
+/** The notification policy held the notifications of three people: the row of the requests is above the tabs. */
+export const WithRequests: Story = answering(
+  http.get(`${apiBase}/notifications/requests/summary`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json({ accounts_count: 3, notifications_count: 7 } satisfies Schemas["NotificationRequestSummary"]),
+    ),
+  ),
+);
+
 /** Nothing yet. */
 export const Empty: Story = answering(...notifications([], 0));
 

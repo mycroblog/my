@@ -1,0 +1,86 @@
+{
+  "notification_requests.accept": {
+    "defaultMessage": "Accept",
+    "description": "Button of a notification request that accepts it: its notifications move into the user's notifications, and the account's later notifications are let through."
+  },
+  "notification_requests.accepted": {
+    "defaultMessage": "You accepted the notifications from {name}",
+    "description": "Announced, or shown as a toast, after the user accepted a notification request. {name} is the display name of the account that sent the notifications."
+  },
+  "notification_requests.action": {
+    "defaultMessage": "{action}: {name}",
+    "description": "Accessible name of a button or a link of a notification request. {action} is its visible text (for example 'Accept'), {name} the display name of the account that sent the held notifications."
+  },
+  "notification_requests.answers.description": {
+    "defaultMessage": "Accept moves these notifications into your notifications and lets the later ones from {name} through. Dismiss removes them.",
+    "description": "Above the buttons Accept and Dismiss on the page of one notification request. {name} is the display name of the account that sent the held notifications."
+  },
+  "notification_requests.count": {
+    "defaultMessage": "{count, plural, one {# held notification} other {# held notifications}}",
+    "description": "Under the account of a notification request: how many notifications it holds. {count} is at least 1."
+  },
+  "notification_requests.dismiss": {
+    "defaultMessage": "Dismiss",
+    "description": "Button of a notification request that dismisses it: its notifications are removed, and the account is not accepted."
+  },
+  "notification_requests.dismissed": {
+    "defaultMessage": "You dismissed the notification request from {name}",
+    "description": "Announced, or shown as a toast, after the user dismissed a notification request. {name} is the display name of the account that sent the notifications."
+  },
+  "notification_requests.empty": {
+    "defaultMessage": "No requests",
+    "description": "Heading of the empty list of notification requests."
+  },
+  "notification_requests.empty.description": {
+    "defaultMessage": "When your notification policy holds notifications, the people who sent them appear here.",
+    "description": "Description of the empty list of notification requests."
+  },
+  "notification_requests.intro": {
+    "defaultMessage": "Notifications that your notification policy held, by who sent them. Accept moves them into your notifications and lets that person's later notifications through. Dismiss removes them; a notification held later makes a new request.",
+    "description": "Paragraph at the top of the page of the notification requests, which says what the page lists and what its two answers do."
+  },
+  "notification_requests.link": {
+    "defaultMessage": "{count, plural, one {Notification requests from # person} other {Notification requests from # people}}",
+    "description": "Link at the top of the notifications page to the page of the notification requests. {count} is the number of accounts whose notifications the notification policy held (at least 1)."
+  },
+  "notification_requests.link.description": {
+    "defaultMessage": "{count, plural, one {Your notification policy held # notification.} other {Your notification policy held # notifications.}} They stay out of this list until you accept or dismiss them.",
+    "description": "Under the link to the notification requests at the top of the notifications page. {count} is the number of held notifications (at least 1)."
+  },
+  "notification_requests.load_more": {
+    "defaultMessage": "Load more requests",
+    "description": "Button at the end of the list of notification requests that loads more of them."
+  },
+  "notification_requests.not_found.back": {
+    "defaultMessage": "Back to the notification requests",
+    "description": "Link from the page of a missing notification request to the list of requests."
+  },
+  "notification_requests.not_found.body": {
+    "defaultMessage": "The request was answered, or there are no held notifications from this account.",
+    "description": "Text of the page of a notification request that does not exist."
+  },
+  "notification_requests.not_found.title": {
+    "defaultMessage": "Request not found",
+    "description": "Heading of the page of a notification request that does not exist: it was answered, or the account sent no held notifications."
+  },
+  "notification_requests.notifications.empty": {
+    "defaultMessage": "These notifications can no longer be shown",
+    "description": "On the page of a notification request whose held notifications can no longer be shown (their posts were deleted)."
+  },
+  "notification_requests.request.title": {
+    "defaultMessage": "Held notifications",
+    "description": "Title of the page that shows the notifications held in the notification request of one account."
+  },
+  "notification_requests.settings_link": {
+    "defaultMessage": "Change the notification policy",
+    "description": "Link on the page of the notification requests to the notification settings, where the notification policy is chosen."
+  },
+  "notification_requests.title": {
+    "defaultMessage": "Notification requests",
+    "description": "Title of the page that lists the notification requests: the notifications that the user's notification policy held, grouped by the account that sent them, which wait for the user to accept or dismiss them. Also the name of the list on that page."
+  },
+  "notification_requests.view": {
+    "defaultMessage": "View the notifications",
+    "description": "Link of a notification request to the page that shows the notifications it holds."
+  }
+}
