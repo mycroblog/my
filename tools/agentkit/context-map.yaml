@@ -808,9 +808,11 @@ entries:
     paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**", "app/web/src/routes/moderation.domain-actions*.tsx", "app/web/src/routes/moderation.signup-blocks*.tsx", "app/web/src/routes/moderation.invites*.tsx"]
     docs: ["docs/architecture/web-client/14-admin.md#14-管理画面"]
   - name: web-feature-compose
-    paths: ["app/web/src/features/compose/**"]
-    docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0110-web-experience-principles.md"]
+    paths: ["app/web/src/features/compose/**", "app/web/src/features/drafts/**", "app/web/src/routes/drafts.tsx", "app/web/e2e/drafts.spec.ts", "locales/*/client/drafts.json"]
+    docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0110-web-experience-principles.md", "docs/adr/0156-drafts-and-scheduled-posts.md#decision決定", "docs/architecture/web-client/screens/drafts.md"]
     userdocs: ["docs/guide/posting.md"]
+    notes:
+      - "The drafts saved on the server (ADR-0156): their queries and writes are compose's api/drafts.ts, which the form and the drafts page (features/drafts, through compose's index.ts) share; a draft opened from the page carries `saved` (ID, ETag, schedule) in the form's draft, so the next save is a PUT with If-Match and a post deletes it."
   - name: web-feature-status
     paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**", "app/web/src/features/relationship/**"]
     docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠"]
