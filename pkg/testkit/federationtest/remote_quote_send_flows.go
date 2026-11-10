@@ -509,15 +509,16 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 		t.Errorf("quote notifications = %d, want 1", n)
 	}
 	// The same request again gets the same approval, also when it names the status by the Create
-	// of this server's document, embedded (Bonfire).
+	// of this server's document, embedded or by its IRI (Bonfire).
 	e.expect(t, request(bob+"/quote_requests/2", public.URI), appfederation.InboxHandled)
 	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 2 || sent[1].Doc.Result != result {
 		t.Errorf("answers = %+v, want the same QuoteAuthorization twice", sent)
 	}
 	e.expect(t, mustJSON(t, map[string]any{"@context": "https://www.w3.org/ns/activitystreams", "id": bob + "/quote_requests/7", "type": "QuoteRequest", "actor": bob,
 		"object": map[string]any{"id": public.URI + "/activity", "type": "Create", "actor": e.localIRI(author), "object": public.URI}, "instrument": quoting}), appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 3 || sent[2].Doc.Result != result {
-		t.Errorf("answers to a request naming the Create = %+v, want the same QuoteAuthorization", sent)
+	e.expect(t, request(bob+"/quote_requests/8", public.URI+"/activity"), appfederation.InboxHandled)
+	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 4 || sent[2].Doc.Result != result || sent[3].Doc.Result != result {
+		t.Errorf("answers to requests naming the Create, embedded and by its IRI = %+v, want the same QuoteAuthorization", sent)
 	}
 	// The approval is bob's: it approves no quote of another account.
 	approval := string(result)[strings.LastIndexByte(string(result), '/')+1:]
@@ -539,7 +540,7 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 		t.Fatal(err)
 	}
 	e.expect(t, daveRequest, appfederation.InboxHandled)
-	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 4 || sent[3].Type != federation.ActivityReject {
+	if sent := e.quoteActivities(t, federation.OutboundQuote, public.ID); len(sent) != 5 || sent[4].Type != federation.ActivityReject {
 		t.Errorf("answers = %+v, want a Reject of dave's request for bob's post", sent)
 	}
 	if s := e.quoteState(t, other.ID); s.Approval != content.QuoteApprovalPending {

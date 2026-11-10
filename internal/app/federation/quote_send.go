@@ -320,11 +320,15 @@ func (h *QuoteHandlers) answer(ctx context.Context, in *InboxActivity, quoted, q
 }
 
 // quotedObject returns the status that a QuoteRequest's object names. Bonfire at times names the
-// Create of a status in this server's document, embedded, instead of the status; only the IRI of
-// its object is taken, and the caller checks that it is a local status.
-func quotedObject(ref federation.Ref) federation.IRI {
+// Create of a status in this server's document instead of the status: embedded, whose object's
+// IRI alone is taken, or by its IRI, the status's with /activity (createURI, ADR-0018), which
+// is read without fetching. The caller checks that the result is a local status.
+func (h *QuoteHandlers) quotedObject(ref federation.Ref) federation.IRI {
 	if d := ref.Untrusted(); d != nil && d.Activity != nil && d.Activity.Type == federation.ActivityCreate {
 		return d.Activity.Object().ID
+	}
+	if status, ok := strings.CutSuffix(string(ref.ID), "/activity"); ok && h.isLocal(ref.ID) {
+		return federation.IRI(status)
 	}
 	return ref.ID
 }
@@ -336,7 +340,7 @@ func quotedObject(ref federation.Ref) federation.IRI {
 // otherwise); a stored quoting post's quote is approved here too.
 func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) error {
 	act := in.Activity
-	quoted, quoting := quotedObject(act.Object()), act.Instrument.ID
+	quoted, quoting := h.quotedObject(act.Object()), act.Instrument.ID
 	switch {
 	case quoted == "" || !h.isLocal(quoted):
 		return fmt.Errorf("%w: QuoteRequest of %q, which is not a local status", ErrDropActivity, quoted)
