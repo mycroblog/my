@@ -334,6 +334,7 @@ function SettingsSection({ subscription }: { subscription: DomainListSubscriptio
           isRequired
           maxLength={subscriptionTitleLimit}
           autoComplete="off"
+          dir="auto"
           errorMessage={t("client:admin.domain_lists.title_field.required")}
         />
         <ApplyFields draft={form.draft} change={form.change} />

@@ -2,7 +2,7 @@
 start: "/moderation/domain-actions/subscriptions"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.domain-actions_.subscriptions_.new.tsx", "app/web/src/features/moderation/components/DomainListSubscriptions.tsx", "app/web/src/features/moderation/components/domainListParts.tsx", "app/web/src/features/moderation/hooks/useDomainListSubscriptions.ts", "app/web/src/features/moderation/api/domainLists.ts"]
-unavailable: {"https://lists.example/blocklist.csv を下書きのモードで購読する": "The demo server cannot serve a list over https, so the subscription's first fetch fails."}
+unavailable: {"lists.example の CSV のブロックリストを下書きのモードで購読する": "The demo server cannot serve a list over https, so the subscription's first fetch fails."}
 ---
 
 ## ブロックリストの購読の追加（`/moderation/domain-actions/subscriptions/new`）
@@ -18,7 +18,7 @@ unavailable: {"https://lists.example/blocklist.csv を下書きのモードで�
 
 | 作業 | 最短の手順の数 |
 | --- | --- |
-| https://lists.example/blocklist.csv を下書きのモードで購読する | 4 |
+| lists.example の CSV のブロックリストを下書きのモードで購読する | 4 |
 
 手順は、一覧の「購読を追加」を押す 1 つ、名前と URL の欄に入れる 2 つ（形式とモードは既定のまま）、「購読する」を押す 1 つ。
 
