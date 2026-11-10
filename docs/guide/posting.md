@@ -117,6 +117,25 @@ post shows its translation, a line under the text says which language it was tra
 original" to go back. If the server sends the text of posts to a translation service, the visibility picker tells you
 for which choices.
 
+## Writing an article
+
+"Write an article" under the new-post form opens the article editor, a page of its own. Give the article a title, a
+summary if you like (left empty, it is made from the start of the body), a cover image with its description, and the
+body, written in Markdown: `#` starts a heading, `**text**` is bold, and "Bold" and "Link" above the body do the same for
+the text you select (Ctrl+B and Ctrl+K, or Cmd on a Mac). Drop or paste images into the body, or pick them with "Add
+images": each one uploads and goes in where the cursor is as `![](media:…)`; write its description between the square
+brackets. Only images you upload show in an article; an image from another address becomes a link with its description.
+
+- Hashtags go in their own field, separated by spaces; the article is listed under them, and a `#` in the body stays text. Mentions in the body link to the people but do not notify them.
+- "Preview" shows the article as readers will see it, rendered by the server exactly as it will be published, with the size of the body and the number of its images against this server's limits.
+- "Mark as sensitive" shows readers the title and summary first and folds the cover and the body. An article cannot be "Mentioned people" only.
+- While you write, the article is saved as a draft every time you pause ("Draft saved"), so it opens on any device from "Drafts and scheduled posts", where "Edit" brings it back to the editor. If the draft was changed on another device meanwhile, nothing is overwritten: your text stays in the editor, and "Save as a new draft" keeps it as another draft.
+- "Publish" publishes the article now and opens its page; "Schedule" publishes it at the time you choose, as for a post.
+- To change an article you published, choose "Edit" in its "More actions" menu. The editor opens with what you wrote; "Save changes" replaces it, and the earlier version stays in its "Edit history". The visibility of an article does not change.
+
+A server may let only some people write new articles; then "Write an article" is not shown to the others, who can still
+edit the articles they published.
+
 ## Reading articles
 
 An article is a long post with a title, a summary, and often a cover image, written on this server or on another one.

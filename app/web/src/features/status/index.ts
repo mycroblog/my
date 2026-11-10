@@ -4,6 +4,7 @@
 // FR-113, FR-403). Routes and other features use it through this file only (web-client/README.md A3).
 export {
   cacheAnsweredRequest,
+  cacheEditedStatus,
   type InteractionRequest,
   pinnedStatusesQueryOptions,
   type Status,

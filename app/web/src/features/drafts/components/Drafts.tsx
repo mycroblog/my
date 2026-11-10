@@ -108,8 +108,11 @@ function DraftRow({ draft, list, pending, onRemoved }: DraftRowProps) {
   const intl = useIntl();
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const shown = draft.spoiler_text !== "" ? draft.spoiler_text : draft.text;
-  const excerpt = shown.trim() === "" ? t("client:drafts.row.no_text") : shown.trim().slice(0, excerptLength);
+  // An article's draft is named by its title (its body is Markdown); a post's by its content warning or its text.
+  const shown =
+    draft.article !== undefined ? draft.article.title : draft.spoiler_text !== "" ? draft.spoiler_text : draft.text;
+  const empty = draft.article === undefined ? t("client:drafts.row.no_text") : t("client:status.article.untitled");
+  const excerpt = shown.trim() === "" ? empty : shown.trim().slice(0, excerptLength);
   const label = (action: string) => t("client:drafts.action", { action, excerpt });
   const formatDate = (value: string) => intl.formatDate(value, { dateStyle: "medium", timeStyle: "short" });
   const time = (value: string) => (
@@ -118,6 +121,7 @@ function DraftRow({ draft, list, pending, onRemoved }: DraftRowProps) {
     </time>
   );
   const holds = [
+    ...(draft.article === undefined ? [] : [t("client:drafts.row.article")]),
     ...(draft.media.length > 0 ? [t("client:drafts.row.media", { count: draft.media.length })] : []),
     ...(draft.poll === undefined ? [] : [t("client:drafts.row.poll")]),
     ...(draft.in_reply_to_id === undefined ? [] : [t("client:drafts.row.reply")]),

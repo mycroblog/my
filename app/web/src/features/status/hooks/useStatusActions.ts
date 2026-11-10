@@ -85,6 +85,8 @@ export type StatusActions = {
   delete: (() => Promise<boolean>) | null;
   /** Whether the viewer can edit the post: their own posts without a poll only (FR-109, FR-112: its votes belong to the poll as posted). */
   canEdit: boolean;
+  /** The article editor of the viewer's own article, which edits it in place of the dialog (ADR-0160 §8); null otherwise. */
+  articleEditPath: string | null;
   /** Whether the post is being deleted. */
   isDeleting: boolean;
   /** Whether the viewer can report the post's author: anyone's posts but the viewer's own (FR-701). */
@@ -313,7 +315,8 @@ export function useStatusActions(status: Status): StatusActions | null {
             () => false,
           )
       : null,
-    canEdit: isAuthor && post.poll === undefined,
+    canEdit: isAuthor && post.poll === undefined && post.article === undefined,
+    articleEditPath: isAuthor && post.article !== undefined ? `/articles/${post.id}/edit` : null,
     isDeleting: remove.isPending,
     canReport: !isAuthor,
     pin:
