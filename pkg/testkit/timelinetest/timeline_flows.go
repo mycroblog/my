@@ -95,6 +95,7 @@ func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 		{"FollowedTagCommands", timelineFollowedTagCommands},
 		{"HomeShowsPostsOfFollowedTags", timelineHomeFollowedTags},
 		{"HomeFollowedTagsForStreams", timelineHomeFollowedTagStreams},
+		{"KeywordFilterCommands", timelineKeywordFilterCommands},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newTimelineEnv(t, newHarness)) })

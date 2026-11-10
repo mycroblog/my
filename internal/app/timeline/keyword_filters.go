@@ -68,6 +68,18 @@ type KeywordFilterInput struct {
 	ExpiresAt time.Time
 }
 
+// OwnedKeywordFilter is a keyword filter as its owner reads it, with whether it has expired.
+type OwnedKeywordFilter struct {
+	timeline.KeywordFilter
+	// Expired is whether the filter has expired and applies nowhere.
+	Expired bool
+}
+
+// asOwned returns f as its owner reads it now.
+func (s *Service) asOwned(f timeline.KeywordFilter) OwnedKeywordFilter {
+	return OwnedKeywordFilter{KeywordFilter: f, Expired: !f.ActiveAt(s.d.Clock.Now())}
+}
+
 // KeywordInput is a word of a KeywordFilterInput.
 type KeywordInput struct {
 	Word      string
@@ -140,20 +152,31 @@ func keywordFilter(in KeywordFilterInput) (timeline.KeywordFilter, error) {
 }
 
 // KeywordFilters returns the keyword filters of accountID, oldest first, the expired ones too.
-func (s *Service) KeywordFilters(ctx context.Context, accountID string) ([]timeline.KeywordFilter, error) {
-	return s.d.Repository.KeywordFiltersOf(ctx, accountID)
+func (s *Service) KeywordFilters(ctx context.Context, accountID string) ([]OwnedKeywordFilter, error) {
+	fs, err := s.d.Repository.KeywordFiltersOf(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]OwnedKeywordFilter, len(fs))
+	for i, f := range fs {
+		out[i] = s.asOwned(f)
+	}
+	return out, nil
 }
 
 // KeywordFilter returns the keyword filter id of accountID, ErrNotFound for a filter that
 // accountID does not have.
-func (s *Service) KeywordFilter(ctx context.Context, accountID, id string) (timeline.KeywordFilter, error) {
+func (s *Service) KeywordFilter(ctx context.Context, accountID, id string) (OwnedKeywordFilter, error) {
 	var f timeline.KeywordFilter
 	err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		var err error
 		f, err = s.ownedFilter(ctx, tx, accountID, id)
 		return err
 	})
-	return f, err
+	if err != nil {
+		return OwnedKeywordFilter{}, err
+	}
+	return s.asOwned(f), nil
 }
 
 // ownedFilter returns the filter id of accountID inside tx, ErrNotFound when it does not exist or
@@ -173,10 +196,10 @@ func (s *Service) ownedFilter(ctx context.Context, tx uow.Tx, accountID, id stri
 // timeline package's filter rules for an input that is not one, with
 // timeline.ErrTooManyKeywordFilters when the account has timeline.MaxKeywordFilters filters, and
 // with timeline.ErrTooManyFilterWords when the words would pass a limit.
-func (s *Service) CreateKeywordFilter(ctx context.Context, accountID string, in KeywordFilterInput) (timeline.KeywordFilter, error) {
+func (s *Service) CreateKeywordFilter(ctx context.Context, accountID string, in KeywordFilterInput) (OwnedKeywordFilter, error) {
 	f, err := keywordFilter(in)
 	if err != nil {
-		return timeline.KeywordFilter{}, err
+		return OwnedKeywordFilter{}, err
 	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		filters, words, err := s.d.Repository.CountKeywordFilters(ctx, tx, accountID)
@@ -192,18 +215,18 @@ func (s *Service) CreateKeywordFilter(ctx context.Context, accountID string, in 
 		return s.d.Repository.InsertKeywordFilter(ctx, tx, f)
 	})
 	if err != nil {
-		return timeline.KeywordFilter{}, err
+		return OwnedKeywordFilter{}, err
 	}
-	return f, nil
+	return s.asOwned(f), nil
 }
 
 // UpdateKeywordFilter replaces the title, action, contexts, words, and expiry of the keyword filter
 // id of accountID with in. It fails with ErrNotFound for a filter that accountID does not have,
 // and as CreateKeywordFilter for an input that is not one or words that pass a limit.
-func (s *Service) UpdateKeywordFilter(ctx context.Context, accountID, id string, in KeywordFilterInput) (timeline.KeywordFilter, error) {
+func (s *Service) UpdateKeywordFilter(ctx context.Context, accountID, id string, in KeywordFilterInput) (OwnedKeywordFilter, error) {
 	f, err := keywordFilter(in)
 	if err != nil {
-		return timeline.KeywordFilter{}, err
+		return OwnedKeywordFilter{}, err
 	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		old, err := s.ownedFilter(ctx, tx, accountID, id)
@@ -221,9 +244,9 @@ func (s *Service) UpdateKeywordFilter(ctx context.Context, accountID, id string,
 		return s.d.Repository.ReplaceKeywordFilter(ctx, tx, f)
 	})
 	if err != nil {
-		return timeline.KeywordFilter{}, err
+		return OwnedKeywordFilter{}, err
 	}
-	return f, nil
+	return s.asOwned(f), nil
 }
 
 // DeleteKeywordFilter deletes the keyword filter id of accountID. It fails with ErrNotFound for a
