@@ -319,6 +319,16 @@ func (h *QuoteHandlers) answer(ctx context.Context, in *InboxActivity, quoted, q
 	return appcontent.QuoteAuthorization{}, st, fmt.Errorf("%w: %w: mode %s", appcontent.ErrQuoteRefused, ErrFederationRestricted, in.mode())
 }
 
+// quotedObject returns the status that a QuoteRequest's object names. Bonfire at times names the
+// Create of a status in this server's document, embedded, instead of the status; only the IRI of
+// its object is taken, and the caller checks that it is a local status.
+func quotedObject(ref federation.Ref) federation.IRI {
+	if d := ref.Untrusted(); d != nil && d.Activity != nil && d.Activity.Type == federation.ActivityCreate {
+		return d.Activity.Object().ID
+	}
+	return ref.ID
+}
+
 // quoteRequest answers a remote QuoteRequest of a quote of a local status (ADR-0069 §2): the
 // content module decides it, and the Accept with this server's QuoteAuthorization as result, or
 // the Reject, goes to the actor's inbox. The quoting post (instrument) must be of the actor's
@@ -326,7 +336,7 @@ func (h *QuoteHandlers) answer(ctx context.Context, in *InboxActivity, quoted, q
 // otherwise); a stored quoting post's quote is approved here too.
 func (h *QuoteHandlers) quoteRequest(ctx context.Context, in *InboxActivity) error {
 	act := in.Activity
-	quoted, quoting := act.Object().ID, act.Instrument.ID
+	quoted, quoting := quotedObject(act.Object()), act.Instrument.ID
 	switch {
 	case quoted == "" || !h.isLocal(quoted):
 		return fmt.Errorf("%w: QuoteRequest of %q, which is not a local status", ErrDropActivity, quoted)
