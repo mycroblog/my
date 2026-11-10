@@ -175,15 +175,13 @@ CREATE INDEX keyword_filters_account_id_id ON keyword_filters (account_id, id);
 
 -- Current value: the title (1 to 50 graphemes), action, and expiry of a filter. expires_at is the
 -- time until which the filter applies (NULL for always), not a state: an expired filter is kept,
--- listed as expired, and applies again when its expiry moves later. The cleanup job deletes the
--- filters that expired long ago.
+-- listed as expired, and applies again when its expiry moves later.
 CREATE TABLE keyword_filter_settings (
   filter_id uuid NOT NULL PRIMARY KEY,
   title text NOT NULL,
   action text NOT NULL CHECK (action IN ('warn', 'hide')),
   expires_at timestamptz
 );
-CREATE INDEX keyword_filter_settings_expires_at ON keyword_filter_settings (expires_at) WHERE expires_at IS NOT NULL;
 
 -- Current value: the contexts where a filter applies, at least one.
 CREATE TABLE keyword_filter_contexts (

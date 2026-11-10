@@ -186,15 +186,3 @@ func (r *Repository) ActiveKeywordFilters(ctx context.Context, accountIDs []stri
 	}
 	return out, nil
 }
-
-// KeywordFiltersExpiredBefore implements timeline.KeywordFilterRepository.
-func (r *Repository) KeywordFiltersExpiredBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) ([]string, error) {
-	q, err := r.db.queries(tx)
-	if err != nil {
-		return nil, err
-	}
-	ids, err := q.ListKeywordFiltersExpiredBefore(ctx, timelinegen.ListKeywordFiltersExpiredBeforeParams{
-		Before: sqlite.ToMillis(before), Lim: int64(limit),
-	})
-	return ids, sqlite.Wrap(err, "list expired keyword filters")
-}

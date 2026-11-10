@@ -18,7 +18,7 @@ import (
 // statuses and the tag_usage projection (ADR-0092 §1). The direct messages by conversation
 // resolve merged conversations, and the followed hashtags find and store their tags, through the
 // content service. The keyword filters judge the statuses of notifications through the status
-// reader, and their cleanup job runs on the schedule.
+// reader.
 func (a *App) setUpTimeline(repo timeline.Repository, statuses appcontent.Repository) {
 	timeline.RegisterProjectors(a.Projectors, repo, moderatedEffects{a})
 	timeline.RegisterModerationProjectors(a.Projectors, repo, a.Accounts)
@@ -26,7 +26,6 @@ func (a *App) setUpTimeline(repo timeline.Repository, statuses appcontent.Reposi
 		UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs,
 		Conversations: a.Content, Stream: timelineStreams{a}, Tags: a.Content, Statuses: timelineStatusViews{a},
 	})
-	a.Timeline.RegisterKeywordFilterJobs(a.Handlers, a.Scheduler)
 	a.TagSearch = timeline.NewTagSearch(statuses, repo)
 }
 

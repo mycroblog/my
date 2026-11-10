@@ -38,8 +38,8 @@ when it ends:
 - **What it does:** "warn" folds a post behind the title of the filter, with a way to show it; "hide" leaves the post
   out, and its notification too. A post you open yourself is folded rather than hidden, so a link to it still shows
   something.
-- **When it ends:** a filter with an end stops applying at that moment. It stays in your list for 30 days, marked as
-  expired, so that you can move its end later and use it again; after that it is deleted.
+- **When it ends:** a filter with an end stops applying at that moment. It stays in your list, marked as expired, until
+  you delete it; move its end later to use it again.
 
 A word matches the text of a post, its content warning (and the text behind it), the choices of its poll, and the
 descriptions of its images. Upper and lower case, half-width and full-width forms, and katakana and hiragana all match

@@ -80,7 +80,6 @@ A job type can also be registered or do its work only with some settings; **Need
 | `account.erase_deleted` | Erases the data of deleted accounts, local and remote, in bounded batches. First fetches a remote account again when only a `410 Gone` marked it deleted. | Schedule, then itself | Default | Next run |
 | `account.prune_remote_profiles` | Shrinks the profile history of remote accounts that nothing local relates to, in batches, and deletes checks of remote handles after 90 days, keeping the newest of each account. | Schedule, then itself | Default | Next run |
 | `graph.expire_mutes` | Deletes the mutes that have expired. | Schedule | Default | Next run |
-| `timeline.purge_keyword_filters` | Deletes the keyword filters that expired more than 30 days ago. Until then an expired filter applies nowhere but stays in its owner's list, so that moving its expiry later uses it again. | Schedule | Default | Next run |
 | `graph.migrate_follows` | Moves one page of the relationships of a moved account, waiting 10 seconds between pages to spread its deliveries. | An account move being recorded | Default. A step whose data is gone is dead at once. | Safe. It does nothing once the move is cancelled or replaced. While the move is in force, a run much later also moves the accounts that follow, block, or mute the account by then. |
 | `identity.process_import` | Carries out one batch of a user's data import and records each item's result. An item that keeps failing is recorded as failed after 5 tries, and the import goes on. | A user's import, then itself | Default | Safe |
 | `identity.expire_imports` | Removes the imports past their lifetime. | Schedule | Default | Next run |
@@ -223,7 +222,6 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `media.purge_remote_cache` | 1 hour |
 | `moderation.purge_records` | 1 hour |
 | `queue.purge_dead_jobs` | 1 hour |
-| `timeline.purge_keyword_filters` | 1 hour |
 | `voice.purge_records` | 1 hour |
 | `webhook.purge_messages` | 1 hour |
 | `account.prune_remote_profiles` | 24 hours |

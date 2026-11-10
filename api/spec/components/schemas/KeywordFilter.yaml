@@ -28,7 +28,7 @@ properties:
   expires_at:
     description: |
       When the filter stops applying; omitted for a filter that never does. An expired filter
-      stays for 30 days, applying nowhere, and applies again when its expiry moves later.
+      stays, applying nowhere, and applies again when its expiry moves later.
     type: string
     format: date-time
   expired:

@@ -376,7 +376,7 @@ entries:
     docs: ["docs/adr/0157-keyword-filters.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#キーワードフィルタ", "docs/architecture/data-model/06-timeline-queries.md#6-タイムラインのクエリ"]
     userdocs: ["docs/guide/safety.md", "docs/guide/notifications.md", "docs/reference/jobs.md"]
     notes:
-      - "keyword_filters and their settings, contexts, and words are what the owner wrote, never a projection: RebuildProjections keeps them, the account erasure deletes them, and timeline.purge_keyword_filters deletes those expired more than KeywordFilterRetention ago."
+      - "keyword_filters and their settings, contexts, and words are what the owner wrote, never a projection: RebuildProjections keeps them, and the account erasure deletes them. An expired filter is never deleted (ADR-0157 §6): the reads leave it out, the owner sees it as expired, and extending its expiry applies it again."
       - "Matching is one function (timeline.NormalizeFilterText, FilterMatcher: Aho-Corasick over the normalized runes, NFKC given by apptimeline.NFKC) and one use case (StatusFilter.Judge). Every read path builds the viewer's StatusFilter for its context with one query and judges the StatusViews it presents right after CanView (clientapi applyJudgement): hide drops the row and keeps the cursor, warn fills Status.filtered. Nothing of a match is stored."
       - "The notification module judges through its StatusFilters port (platform notificationFilters over Service.JudgeStatuses) for the unread count, Web Push, and email; the client API judges the list and the stream itself. A new read path that shows statuses picks a timeline.FilterContext, or noFilter where ADR-0157 §6 says filters do not apply."
   - name: direct-messages

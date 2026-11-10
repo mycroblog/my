@@ -167,7 +167,7 @@ func TestKeywordFiltersAPI(t *testing.T) {
 		t.Errorf("unread_count = %d, want the %d listed", m.UnreadCount, len(notes.Items))
 	}
 
-	// An expired filter stops applying at once, stays listed, and the job removes it later.
+	// An expired filter stops applying at once and stays listed; a later expiry applies it again.
 	past := time.Now().Add(-time.Minute).UTC().Format(time.RFC3339)
 	res = e.listCall(t, alice, http.MethodPatch, "/filters/"+ads.Id, fmt.Sprintf(
 		`{"title":"Ads","action":"hide","contexts":["home"],"keywords":[{"keyword":"sale","whole_word":false}],"expires_at":%q}`, past))
@@ -177,8 +177,18 @@ func TestKeywordFiltersAPI(t *testing.T) {
 	if got := itemIDs(e.page(t, &alice, "/timelines/home")); !slices.Contains(got, hidden) {
 		t.Errorf("home after the expiry = %v, want the post back", got)
 	}
-	if n, err := e.app.Timeline.DeleteExpiredKeywordFilters(t.Context()); err != nil || n != 0 {
-		t.Errorf("DeleteExpiredKeywordFilters = %d, %v; want 0 while recently expired", n, err)
+	res = e.listCall(t, alice, http.MethodGet, "/filters/"+ads.Id, "")
+	if f := decodeJSON[clientapi.KeywordFilter](t, res); res.StatusCode != http.StatusOK || !f.Expired {
+		t.Errorf("GET /filters/{expired} = %d %+v, want it listed as expired", res.StatusCode, f)
+	}
+	future := time.Now().Add(time.Hour).UTC().Format(time.RFC3339)
+	res = e.listCall(t, alice, http.MethodPatch, "/filters/"+ads.Id, fmt.Sprintf(
+		`{"title":"Ads","action":"hide","contexts":["home"],"keywords":[{"keyword":"sale","whole_word":false}],"expires_at":%q}`, future))
+	if f := decodeJSON[clientapi.KeywordFilter](t, res); res.StatusCode != http.StatusOK || f.Expired {
+		t.Fatalf("PATCH /filters/{ads} with a later expiry = %d %+v, want it active", res.StatusCode, f)
+	}
+	if got := itemIDs(e.page(t, &alice, "/timelines/home")); slices.Contains(got, hidden) {
+		t.Errorf("home after the extension = %v, want the post hidden again", got)
 	}
 	if res := e.listCall(t, alice, http.MethodDelete, "/filters/"+ads.Id, ""); res.StatusCode != http.StatusNoContent {
 		t.Errorf("DELETE /filters/{ads} = %d", res.StatusCode)

@@ -70,10 +70,3 @@ WHERE f.account_id = ANY(sqlc.arg(account_ids)::uuid[])
   AND (s.expires_at IS NULL OR s.expires_at > sqlc.arg(now)::timestamptz)
 ORDER BY f.account_id, f.id, w.position;
 
--- ListKeywordFiltersExpiredBefore returns at most lim filters whose expiry is before a time, the
--- earliest first, for the cleanup job.
--- name: ListKeywordFiltersExpiredBefore :many
-SELECT filter_id FROM keyword_filter_settings
-WHERE expires_at IS NOT NULL AND expires_at < sqlc.arg(before)::timestamptz
-ORDER BY expires_at, filter_id
-LIMIT sqlc.arg(lim);

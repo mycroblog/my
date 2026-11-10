@@ -77,16 +77,20 @@ func timelineKeywordFilterCommands(t *testing.T, e *timelineEnv) {
 	if got, err := e.svc.KeywordFilters(ctx, alice); err != nil || len(got) != 1 || !got[0].Expired {
 		t.Errorf("KeywordFilters after the expiry = %+v, %v; want it expired", got, err)
 	}
-	// The cleanup keeps it for apptimeline.KeywordFilterRetention, then deletes it.
-	if n, err := e.svc.DeleteExpiredKeywordFilters(ctx); err != nil || n != 0 {
-		t.Errorf("DeleteExpiredKeywordFilters = %d, %v; want 0", n, err)
+	// It is never deleted (ADR-0157 §6), and moving its expiry later applies it again.
+	e.Clock.Advance(400 * 24 * time.Hour)
+	if got, err := e.svc.KeywordFilters(ctx, alice); err != nil || len(got) != 1 || !got[0].Expired {
+		t.Errorf("KeywordFilters long after the expiry = %+v, %v; want it kept, expired", got, err)
 	}
-	e.Clock.Advance(apptimeline.KeywordFilterRetention + time.Second)
-	if n, err := e.svc.DeleteExpiredKeywordFilters(ctx); err != nil || n != 1 {
-		t.Errorf("DeleteExpiredKeywordFilters = %d, %v; want 1", n, err)
+	expiring.ExpiresAt = e.Clock.Now().Add(time.Hour)
+	if got, err := e.svc.UpdateKeywordFilter(ctx, alice, f.ID, expiring); err != nil || got.Expired {
+		t.Errorf("UpdateKeywordFilter(a later expiry) = %+v, %v; want it active", got, err)
 	}
-	if got, err := e.svc.KeywordFilters(ctx, alice); err != nil || len(got) != 0 {
-		t.Errorf("KeywordFilters after the cleanup = %+v, %v; want none", got, err)
+	if active, err := e.svc.StatusFiltersOf(ctx, []string{alice}, timeline.FilterContextHome); err != nil || active[alice] == nil {
+		t.Errorf("StatusFiltersOf after the extension = %v, %v; want alice's", active, err)
+	}
+	if err := e.svc.DeleteKeywordFilter(ctx, alice, f.ID); err != nil {
+		t.Fatal(err)
 	}
 
 	// The words: 100 per filter and 1,000 in all.

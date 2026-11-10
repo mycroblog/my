@@ -119,7 +119,7 @@ func timelineRepoKeywordFilters(t *testing.T, r *timelineRepo) {
 		return nil
 	})
 
-	// The cleanup lists the filters expired before a time, the earliest first.
+	// Expired filters stay stored, and apply nowhere.
 	old := spoilers
 	old.ExpiresAt = now.Add(-2 * time.Hour)
 	older := bobs
@@ -130,16 +130,14 @@ func timelineRepoKeywordFilters(t *testing.T, r *timelineRepo) {
 				return err
 			}
 		}
-		ids, err := r.repo.KeywordFiltersExpiredBefore(ctx, tx, now.Add(-time.Hour), 10)
-		if want := []string{older.ID, old.ID}; err != nil || !slices.Equal(ids, want) {
-			t.Errorf("KeywordFiltersExpiredBefore = %v, %v; want %v", ids, err, want)
-		}
-		ids, err = r.repo.KeywordFiltersExpiredBefore(ctx, tx, now.Add(-time.Hour), 1)
-		if want := []string{older.ID}; err != nil || !slices.Equal(ids, want) {
-			t.Errorf("KeywordFiltersExpiredBefore(1) = %v, %v; want %v", ids, err, want)
-		}
 		return nil
 	})
+	if active, err := r.repo.ActiveKeywordFilters(ctx, []string{alice.id, bob.id}, timeline.FilterContextHome, now); err != nil || len(active) != 0 {
+		t.Errorf("ActiveKeywordFilters(expired) = %+v, %v; want none", active, err)
+	}
+	if got, err := r.repo.KeywordFiltersOf(ctx, bob.id); err != nil || len(got) != 1 || !got[0].ExpiresAt.Equal(older.ExpiresAt) {
+		t.Errorf("KeywordFiltersOf(bob) = %+v, %v; want the expired filter kept", got, err)
+	}
 
 	// A rebuild keeps them: they record what the accounts did.
 	r.tx(t, func(ctx context.Context, tx uow.Tx) error { return r.repo.DeleteProjection(ctx, tx) })

@@ -13,7 +13,6 @@ import (
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/app/kernel"
-	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/uow"
 	"github.com/mycroblog/my/internal/domain/timeline"
 )
@@ -46,9 +45,6 @@ type KeywordFilterRepository interface {
 	// (no expiry, or one after now), oldest first, each with its ID, AccountID, Title, Action,
 	// and Words; an account without one has no key.
 	ActiveKeywordFilters(ctx context.Context, accountIDs []string, c timeline.FilterContext, now time.Time) (map[string][]timeline.KeywordFilter, error)
-	// KeywordFiltersExpiredBefore returns at most limit filters whose expiry is before before,
-	// the earliest first.
-	KeywordFiltersExpiredBefore(ctx context.Context, tx uow.Tx, before time.Time, limit int) ([]string, error)
 }
 
 // StatusViews presents statuses as a viewer sees them, for the judgments that read no page of
@@ -85,22 +81,6 @@ type KeywordInput struct {
 	Word      string
 	WholeWord bool
 }
-
-// Timing of the cleanup of the expired keyword filters.
-const (
-	// JobPurgeKeywordFilters deletes the keyword filters that expired more than
-	// KeywordFilterRetention ago; no payload.
-	JobPurgeKeywordFilters = "timeline.purge_keyword_filters"
-	// KeywordFilterRetention is how long an expired filter is kept, listed as expired, so that the
-	// account can move its expiry later and use it again (ADR-0157 §6).
-	KeywordFilterRetention = 30 * 24 * time.Hour
-	// keywordFilterCleanupInterval is the period of the cleanup schedule.
-	keywordFilterCleanupInterval = time.Hour
-	// keywordFilterCleanupBatch is the number of filters one cleanup transaction deletes;
-	// keywordFilterCleanupMaxBatches bounds the batches of one run, and the next run continues.
-	keywordFilterCleanupBatch      = 200
-	keywordFilterCleanupMaxBatches = 20
-)
 
 // NFKC is the normalization form KC that keyword filters normalize with (ADR-0157 §4).
 func NFKC(s string) string { return norm.NFKC.String(s) }
@@ -258,53 +238,6 @@ func (s *Service) DeleteKeywordFilter(ctx context.Context, accountID, id string)
 		}
 		return s.d.Repository.DeleteKeywordFilter(ctx, tx, id)
 	})
-}
-
-// RegisterKeywordFilterJobs registers the cleanup of the expired keyword filters on reg and its
-// schedule on sched.
-func (s *Service) RegisterKeywordFilterJobs(reg *queue.JobHandlerRegistry, sched *queue.Scheduler) {
-	reg.Register(JobPurgeKeywordFilters, func(ctx context.Context, _ queue.Job) queue.Result {
-		if _, err := s.DeleteExpiredKeywordFilters(ctx); err != nil {
-			return queue.Retry(0, err)
-		}
-		return queue.Done()
-	})
-	sched.Add(queue.Schedule{
-		Name: JobPurgeKeywordFilters, Every: keywordFilterCleanupInterval, Job: queue.NewJob{Type: JobPurgeKeywordFilters},
-	})
-}
-
-// DeleteExpiredKeywordFilters deletes the keyword filters that expired more than
-// KeywordFilterRetention ago and returns how many it deleted. An expired filter already applies
-// nowhere (the reads leave it out); until then it stays, listed as expired. Each batch is one
-// short transaction, and one run deletes a bounded number; the next run continues.
-func (s *Service) DeleteExpiredKeywordFilters(ctx context.Context) (int, error) {
-	before := s.d.Clock.Now().Add(-KeywordFilterRetention)
-	deleted := 0
-	for range keywordFilterCleanupMaxBatches {
-		var n int
-		err := s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			ids, err := s.d.Repository.KeywordFiltersExpiredBefore(ctx, tx, before, keywordFilterCleanupBatch)
-			if err != nil {
-				return err
-			}
-			n = len(ids)
-			for _, id := range ids {
-				if err := s.d.Repository.DeleteKeywordFilter(ctx, tx, id); err != nil {
-					return err
-				}
-			}
-			return nil
-		})
-		if err != nil {
-			return deleted, err
-		}
-		deleted += n
-		if n < keywordFilterCleanupBatch {
-			break
-		}
-	}
-	return deleted, nil
 }
 
 // StatusFilter judges the statuses that a read shows to one viewer against the viewer's keyword
