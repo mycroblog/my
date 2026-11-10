@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Why a scheduled post was not published at its time; the draft stays, to fix and schedule
+  again. `restricted`: the account may not post (a moderation action, a suspension, or an
+  account that is not active). `reply_unavailable`: the post it replies to is gone, hidden from
+  the user, or does not take the reply. `quote_unavailable`: the post it quotes is gone, hidden
+  from the user, or may not be quoted. `media_unavailable`: an attached file is gone or failed
+  processing. `invalid`: the post does not pass the checks of a post, such as its length.
+  `rejected`: the server's automated review refused the post.
+type: string
+enum:
+  - restricted
+  - reply_unavailable
+  - quote_unavailable
+  - media_unavailable
+  - invalid
+  - rejected

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+name: If-Match
+in: header
+description: |
+  The `ETag` of the draft as the client last read it. When another save changed the draft
+  since, the answer is a 412 and nothing is saved, so that a save on one device never silently
+  overwrites one made on another; read the draft again and merge. Without it, the save is a 428.
+required: false
+schema:
+  type: string
+  minLength: 1

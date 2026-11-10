@@ -172,6 +172,23 @@ and `write:voice`. mykit has no audio connection: the room's event stream (`GET 
 signaling (`POST /voice/rooms/{id}/signals`) belong to the WebRTC connection of a client, so the Go client leaves them
 out and the library does not read the stream.
 
+## Drafts and scheduled posts
+
+The drafts operations (`/drafts/...`) are generated like every other operation: `CreateDraftWithResponse`,
+`ListDraftsWithResponse`, `GetDraftWithResponse`, `UpdateDraftWithResponse`, `DeleteDraftWithResponse`,
+`ScheduleDraftWithResponse`, `UnscheduleDraftWithResponse`, and `PublishDraftWithResponse` in Go, and
+`api.POST("/drafts")` and the like in TypeScript, with the scopes `read:statuses` and `write:statuses`.
+
+- A save replaces the whole draft. Send the `ETag` of the draft you last read as the `IfMatch` parameter: when another
+  device saved the draft since, the answer is a 412 problem, and you read the draft again and merge, rather than
+  overwrite the other save. Without it the answer is a 428.
+- `ScheduleDraft` publishes the draft at `publish_at` and `UnscheduleDraft` keeps it as a draft. The server checks the
+  draft again when it publishes it: a post that cannot be published then stays a draft, its `last_schedule` says why,
+  and the user gets the notification `scheduled_status_failed`.
+- The limits of drafts and schedules are in `limits.drafts` of `GET /instance`. A request past one is a 422 problem.
+- A save, a schedule, and a publication are not retried: they take no `Idempotency-Key`. A publication that got no
+  answer is safe to send again: the draft is gone once it is published, so the repeat is a 404.
+
 ## Errors
 
 An answer with a status of 400 or more is an error. The body is an [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457)

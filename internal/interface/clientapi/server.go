@@ -98,6 +98,9 @@ type Options struct {
 	// AutoDelete reads and replaces the viewer's automatic deletion of their old posts (FR-118);
 	// nil answers its operations 404.
 	AutoDelete AutoDeletePolicies
+	// DraftSchedules reads the schedules of drafts that the scheduled_status_failed notifications
+	// name (ADR-0156 §8); nil presents those notifications without scheduled_status_failure.
+	DraftSchedules DraftScheduleReader
 	// TwoFactor runs the viewer's two-factor authentication; nil answers its operations 404.
 	TwoFactor TwoFactorSettings
 	// Passkeys runs the viewer's passkeys; nil answers their operations 404.
@@ -133,6 +136,9 @@ type Options struct {
 	Statuses     Statuses
 	StatusReader StatusReader
 	Interactions Interactions
+	// Drafts runs the viewer's drafts and scheduled posts (the drafts operations); nil answers
+	// them 404.
+	Drafts Drafts
 	// InteractionRequests lists and answers the requests of interactions with the viewer's
 	// statuses (the interaction requests operations); nil lists none and answers 404.
 	InteractionRequests InteractionRequests

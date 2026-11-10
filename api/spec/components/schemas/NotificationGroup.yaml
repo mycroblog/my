@@ -15,7 +15,9 @@ description: |
   `hook_appeal_decided`),
   `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
   turns off in the app (on by default) and which has no `email` channel, and
-  `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
+  `auto_delete_limit`, whose app and email channels the user chooses, both on by default, and
+  `scheduled_status_failed`, which the user turns off in the app (on by default) and which has
+  no `email` channel.
 type: string
 enum:
   - mention
@@ -47,3 +49,4 @@ enum:
   - supporter
   - announcement
   - auto_delete_limit
+  - scheduled_status_failed

@@ -81,6 +81,11 @@ description: |
   `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
   policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
   has no `account`. It is sent once per notice.
+  `scheduled_status_failed` comes from the instance: a post that the user scheduled could not be
+  published at its time, and its draft stays to fix and schedule again. Its
+  `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
+  draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
+  sends nothing.
 type: string
 enum:
   - follow
@@ -120,6 +125,7 @@ enum:
   - admin_hook_appeal
   - hook_appeal_decided
   - auto_delete_limit
+  - scheduled_status_failed
   - reply_request
   - boost_request
   - quote_request

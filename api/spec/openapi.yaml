@@ -73,6 +73,8 @@ tags:
     description: The Web Push subscription of the access token's grant.
   - name: statuses
     description: Posts, their threads and edit history, and boosts, favourites, bookmarks, and pins of them.
+  - name: drafts
+    description: The drafts of posts that the authenticated user saves on the server, publishing them now or at a chosen time.
   - name: timelines
     description: The home, local, hashtag, list, and account timelines.
   - name: lists
@@ -320,6 +322,14 @@ paths:
     $ref: ./paths/bookmarks.yaml
   /statuses:
     $ref: ./paths/statuses.yaml
+  /drafts:
+    $ref: ./paths/drafts.yaml
+  /drafts/{id}:
+    $ref: ./paths/drafts_{id}.yaml
+  /drafts/{id}/schedule:
+    $ref: ./paths/drafts_{id}_schedule.yaml
+  /drafts/{id}/publish:
+    $ref: ./paths/drafts_{id}_publish.yaml
   /statuses/search:
     $ref: ./paths/statuses_search.yaml
   /statuses/{id}:
@@ -853,6 +863,8 @@ components:
   headers:
     CacheControl:
       $ref: ./components/headers/CacheControl.yaml
+    ETag:
+      $ref: ./components/headers/ETag.yaml
     XRobotsTag:
       $ref: ./components/headers/XRobotsTag.yaml
   parameters:
@@ -882,6 +894,8 @@ components:
       $ref: ./components/parameters/CustomEmojiRequestId.yaml
     DomainListSubscriptionId:
       $ref: ./components/parameters/DomainListSubscriptionId.yaml
+    DraftId:
+      $ref: ./components/parameters/DraftId.yaml
     ErrorGroupId:
       $ref: ./components/parameters/ErrorGroupId.yaml
     DomainActionId:
@@ -890,6 +904,8 @@ components:
       $ref: ./components/parameters/HookDecisionId.yaml
     IdempotencyKey:
       $ref: ./components/parameters/IdempotencyKey.yaml
+    IfMatch:
+      $ref: ./components/parameters/IfMatch.yaml
     InstanceDocumentKind:
       $ref: ./components/parameters/InstanceDocumentKind.yaml
     InstanceDomain:
@@ -971,6 +987,8 @@ components:
       $ref: ./components/responses/AdminLoginProvider.yaml
     BrandProblem:
       $ref: ./components/responses/BrandProblem.yaml
+    Draft:
+      $ref: ./components/responses/Draft.yaml
     ErrorGroup:
       $ref: ./components/responses/ErrorGroup.yaml
     AdminDomainAction:
@@ -1106,6 +1124,22 @@ components:
       $ref: ./components/schemas/CreateDomainListSubscriptionRequest.yaml
     DomainListDraftsRequest:
       $ref: ./components/schemas/DomainListDraftsRequest.yaml
+    Draft:
+      $ref: ./components/schemas/Draft.yaml
+    DraftFailureReason:
+      $ref: ./components/schemas/DraftFailureReason.yaml
+    DraftPage:
+      $ref: ./components/schemas/DraftPage.yaml
+    DraftPoll:
+      $ref: ./components/schemas/DraftPoll.yaml
+    DraftRequest:
+      $ref: ./components/schemas/DraftRequest.yaml
+    DraftScheduleOutcome:
+      $ref: ./components/schemas/DraftScheduleOutcome.yaml
+    DraftScheduleRequest:
+      $ref: ./components/schemas/DraftScheduleRequest.yaml
+    NotificationScheduledStatusFailure:
+      $ref: ./components/schemas/NotificationScheduledStatusFailure.yaml
     RelationshipList:
       $ref: ./components/schemas/RelationshipList.yaml
     TagSuggestionList:
@@ -1746,6 +1780,8 @@ components:
       $ref: ./components/schemas/InstanceExternalReviewScope.yaml
     InstanceClosure:
       $ref: ./components/schemas/InstanceClosure.yaml
+    InstanceDraftLimits:
+      $ref: ./components/schemas/InstanceDraftLimits.yaml
     InstanceLimits:
       $ref: ./components/schemas/InstanceLimits.yaml
     InstanceRegistrations:

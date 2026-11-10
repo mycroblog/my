@@ -276,6 +276,60 @@ func TestListErrorGroupNotifications(t *testing.T) {
 	}
 }
 
+// fakeDraftSchedules holds the schedules of drafts by ID.
+type fakeDraftSchedules map[string]appcontent.DraftScheduleRecord
+
+func (f fakeDraftSchedules) DraftSchedules(_ context.Context, ids []string) (map[string]appcontent.DraftScheduleRecord, error) {
+	out := map[string]appcontent.DraftScheduleRecord{}
+	for _, id := range ids {
+		if r, ok := f[id]; ok {
+			out[id] = r
+		}
+	}
+	return out, nil
+}
+
+// TestListScheduledStatusFailedNotifications checks that a scheduled_status_failed presents its
+// draft, the reason, and when it was to be published while the draft exists, and nothing once
+// it is gone or without the reader.
+func TestListScheduledStatusFailedNotifications(t *testing.T) {
+	const scheduleID, goneID, draftID = "01890a5d-ac96-774b-bcce-b302099a9301", "01890a5d-ac96-774b-bcce-b302099a9302", "01890a5d-ac96-774b-bcce-b302099a9303"
+	at := time.Date(2026, 11, 20, 8, 30, 0, 0, time.UTC)
+	f := &fakeNotifications{dismissed: map[string]bool{}, markers: map[string]string{}, ns: []notification.Notification{
+		{ID: notificationID(1), RecipientAccountID: aliceAccountID, Type: notification.TypeScheduledStatusFailed, DraftScheduleID: scheduleID, CreatedAt: at},
+		{ID: notificationID(2), RecipientAccountID: aliceAccountID, Type: notification.TypeScheduledStatusFailed, DraftScheduleID: goneID, CreatedAt: at},
+	}}
+	schedules := fakeDraftSchedules{scheduleID: {
+		Schedule: content.DraftSchedule{ID: scheduleID, DraftID: draftID, PublishAt: at},
+		Outcome:  content.DraftScheduleOutcome{ScheduleID: scheduleID, FailureReason: content.DraftFailureReplyUnavailable, OccurredAt: at},
+	}}
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.Notifications, o.DraftSchedules = f, schedules })
+	res := e.send(t, http.MethodGet, "/notifications", "read", "")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("status = %d, want 200", res.StatusCode)
+	}
+	page := decode[clientapi.NotificationPage](t, res)
+	if len(page.Items) != 2 {
+		t.Fatalf("items = %+v, want 2", page.Items)
+	}
+	gone, failed := page.Items[0], page.Items[1]
+	if gone.Type != clientapi.NotificationTypeScheduledStatusFailed || gone.ScheduledStatusFailure != nil || gone.Account != nil {
+		t.Errorf("the notification of a deleted draft = %+v, want no details", gone)
+	}
+	if got := failed.ScheduledStatusFailure; got == nil || got.DraftId != draftID ||
+		got.Reason != clientapi.DraftFailureReasonReplyUnavailable || !got.PublishAt.Equal(at) {
+		t.Errorf("scheduled_status_failure = %+v, want draft %s, reply_unavailable, %v", got, draftID, at)
+	}
+
+	e = newAuthEnv(t, func(o *clientapi.Options) { o.Notifications = f })
+	page = decode[clientapi.NotificationPage](t, e.send(t, http.MethodGet, "/notifications", "read", ""))
+	for _, n := range page.Items {
+		if n.ScheduledStatusFailure != nil {
+			t.Errorf("without the reader: %+v", n)
+		}
+	}
+}
+
 // fakeSeverances holds severances by ID.
 type fakeSeverances map[string]moderation.SeveranceRecord
 

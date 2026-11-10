@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: publishDraft
+  summary: Publish a draft now
+  description: |
+    Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
+    and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+  tags: [drafts]
+  security:
+    - oauth2: ["write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/DraftId.yaml
+  responses:
+    "201":
+      description: The posted status.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/Status.yaml
+    "422":
+      $ref: ../components/responses/StatusRejectedProblem.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

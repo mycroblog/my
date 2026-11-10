@@ -141,6 +141,10 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 	if err != nil {
 		return nil, err
 	}
+	schedules, err := s.notifiedDraftSchedules(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
 	presented, err := s.presentedAccounts(ctx, ns, severances, moves)
 	if err != nil {
 		return nil, err
@@ -312,6 +316,11 @@ func (s *Server) newNotifications(ctx context.Context, viewer Viewer, ns []notif
 		}
 		if notice, ok := limitNotices[n.AutoDeleteLimitNoticeID]; ok && n.Type == notification.TypeAutoDeleteLimit {
 			item.AutoDeleteLimit = &NotificationAutoDeleteLimit{MaxAgeDays: notice.MaxAgeDays, EnforceFrom: notice.EnforceFrom.UTC()}
+		}
+		if r, ok := schedules[n.DraftScheduleID]; ok && n.Type == notification.TypeScheduledStatusFailed && r.Outcome.FailureReason != "" {
+			item.ScheduledStatusFailure = &NotificationScheduledStatusFailure{
+				DraftId: r.Schedule.DraftID, Reason: DraftFailureReason(r.Outcome.FailureReason), PublishAt: r.Schedule.PublishAt.UTC(),
+			}
 		}
 		if a, ok := announcements[n.AnnouncementID]; ok && n.AnnouncementID != "" {
 			view := newAnnouncement(a)
@@ -843,4 +852,31 @@ func (s *Server) notifiedAutoDeleteLimits(ctx context.Context, accountID string,
 		return nil, fmt.Errorf("clientapi: the auto delete notices of %s: %w", accountID, err)
 	}
 	return notices, nil
+}
+
+// DraftScheduleReader reads the schedules of drafts with their results, by ID
+// (ADR-0156 §8); *appcontent.DraftService implements it. A schedule whose draft
+// was deleted is absent.
+type DraftScheduleReader interface {
+	DraftSchedules(ctx context.Context, ids []string) (map[string]appcontent.DraftScheduleRecord, error)
+}
+
+// notifiedDraftSchedules returns the schedules that the scheduled_status_failed notifications
+// among ns tell of, by ID. The notifications are the viewer's own, made for the author of the
+// draft, so the schedules are the viewer's.
+func (s *Server) notifiedDraftSchedules(ctx context.Context, ns []notification.Notification) (map[string]appcontent.DraftScheduleRecord, error) {
+	var ids []string
+	for _, n := range ns {
+		if n.Type == notification.TypeScheduledStatusFailed {
+			ids = append(ids, n.DraftScheduleID)
+		}
+	}
+	if len(ids) == 0 || s.o.DraftSchedules == nil {
+		return nil, nil
+	}
+	schedules, err := s.o.DraftSchedules.DraftSchedules(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: the draft schedules of the notifications: %w", err)
+	}
+	return schedules, nil
 }

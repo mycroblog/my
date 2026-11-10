@@ -127,6 +127,11 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 		s.documentURLs(texts, &out)
 	}
 	out.Limits = InstanceLimits{MaxPostCharacters: settings.MaxStatusLength(), RequireMediaDescription: settings.RequireMediaDescription()}
+	out.Limits.Drafts = &InstanceDraftLimits{
+		MaxDrafts: settings.MaxDrafts(), MaxScheduledPosts: settings.MaxScheduledPosts(),
+		MaxScheduledPostsPerDay: settings.MaxScheduledPostsPerDay(), ScheduledPostMinLeadMinutes: settings.ScheduledPostMinLeadMinutes(),
+		ScheduledPostMaxLeadDays: settings.ScheduledPostMaxLeadDays(),
+	}
 	out.Timelines = InstanceTimelines{Local: InstanceAudience(settings.LocalTimelineVisibility()), Federated: InstanceAudience(settings.FederatedTimelineVisibility())}
 	// The direction the instance federates in, by which clients offer the operations on remote
 	// accounts and posts (FR-413, ADR-0006).
