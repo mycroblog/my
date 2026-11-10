@@ -76,4 +76,8 @@ func RegisterCommitHooks(r *uow.Projectors, pub stream.Publisher) {
 	r.OnCommit(appcontent.EventReacted, func(_ context.Context, e uow.Event) {
 		signal(e.(appcontent.Reacted).Status.AuthorAccountID)
 	})
+	// The counts of the requests changed: the streams send them again (ADR-0158 §7).
+	r.OnCommit(EventRequestsChanged, func(_ context.Context, e uow.Event) {
+		signal(e.(RequestsChanged).AccountID)
+	})
 }

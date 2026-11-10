@@ -16,7 +16,11 @@ get:
     - `list_update`: the same post or boost, once for each of the viewer's lists whose
       timeline shows it (its author is a member), right after its `update`. `data` is
       `{"list_id": "<list id>", "status": <Status>}`.
-    - `notification`: a new notification. `data` is a `Notification`.
+    - `notification`: a new notification. `data` is a `Notification`. A notification that the
+      user's notification policy filters into a notification request sends none.
+    - `notification_requests`: the counts of the notification requests changed (a notification
+      was filtered into one, or one was accepted or dismissed). `data` is a
+      `NotificationRequestSummary`.
     - `conversation`: a conversation of the direct messages changed: a `direct` post that the
       user sent or received arrived in it, or the user read it on a device. `data` is a
       `Conversation`, as `listConversations` shows it; nothing is sent for a conversation that it

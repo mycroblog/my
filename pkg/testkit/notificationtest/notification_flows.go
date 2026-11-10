@@ -120,6 +120,8 @@ type notificationEnv struct {
 	reach        *contractReach
 	// only holds just the notification projectors, for projecting an event again.
 	only *uow.Projectors
+	// signals records the stream signals of the committed events.
+	signals *recordedSignals
 	// staff stands in for the roles and addresses of the moderators and users; outbox keeps the
 	// email jobs that the projectors enqueue.
 	staff  *stubStaff
@@ -162,6 +164,8 @@ func newNotificationEnv(t *testing.T, newHarness NotificationFactory) *notificat
 	e.deps = deps
 	appnotification.RegisterProjectors(captured.Projectors, deps)
 	appnotification.RegisterProjectors(e.only, deps)
+	e.signals = &recordedSignals{}
+	appnotification.RegisterCommitHooks(captured.Projectors, e.signals)
 	modDeps := appnotification.ModeratorDeps{Repository: nh.Notifications, Staff: e.staff, IDs: ae.IDs, Outbox: e.outbox}
 	appnotification.RegisterModeratorProjectors(captured.Projectors, modDeps)
 	appnotification.RegisterModeratorProjectors(e.only, modDeps)

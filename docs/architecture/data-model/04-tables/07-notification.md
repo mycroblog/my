@@ -60,7 +60,7 @@
   - 判定は、上の作らない規則・スレッドのミュート・アプリ内の設定のあとに、ドメインの `notification.Classify`（条件の事実とポリシーから動作を返す純粋な関数）で行います。呼ぶのは通知を作る projector だけです。当てはまった条件の動作のうち最も厳しいもの（破棄 > 保留 > 受け入れる）を採ります。
   - 条件の事実は同じトランザクションで他モジュールの公開 API から得ます。`not_following`・`not_follower` は `graph` の `Follows` を両方向に、`new_account` は `account` の `CreatedAtTx`（`accounts.created_at`。30 日未満）、`unsolicited_private_mention` は `content` の `PrivateMentionTx`（投稿が `direct` で、その会話に、受け取る人の書いた差出人をメンションする `direct` の投稿が無い）、`limited_account` はポート `ReachPolicy` です。受け取る人のポリシーをまとめて読み、すべて受け入れるポリシー（既定）では事実を読みません。
   - 受け入れた差出人（`notification_accepted_sources`）はどの条件にも当てはまらず、受け取る人がフォローしている差出人は `limited_account` 以外に当てはまりません。
-  - 破棄は通知を作りません。保留は通知を作り、`notification_filterings` に行を足し、その（受け取る人、差出人）の `notification_requests` を作り直します。Web Push とメールのジョブは積みません。一覧に出ないので、ストリームも流しません。
+  - 破棄は通知を作りません。保留は通知を作り、`notification_filterings` に行を足し、その（受け取る人、差出人）の `notification_requests` を作り直します。Web Push とメールのジョブは積みません。一覧に出ないので、ストリームも通知を流しません。保留・受け入れ・閉じるは同じトランザクションでイベント `notification.requests_changed` を出し、コミット後にその人のストリームへ合図します。ストリームは受け入れ待ちの数を読み、前に送った数と違えば `notification_requests` を流します（ADR-0158 §7）。
   - 一覧・未読数・`Listed` は、`notification_filterings` にある通知のうち、差出人を受け入れていないもの、または閉じたこと（`last_notification_id` がその通知以上）があるものを除きます。受け入れれば、閉じていない保留した通知は一覧に出て、既読位置より新しければ未読に数えます。
   - `notification_requests` は、（受け取る人、差出人）ごとに、受け入れておらず閉じたことにも含まれない保留した通知の数と最新の通知です。保留・受け入れ（`notification_accepted_sources` の挿入）・閉じる（`notification_request_dismissals` の挿入）・投稿についての通知の消去のたびに、同じトランザクションでその組の行を元の 3 つから作り直します。再構築（`my projection rebuild notification_requests`）は全体を作り直します。
   - アカウントの消去は、そのアカウントが受け取る人か差出人のポリシー・保留・受け入れ・閉じたこと・受け入れ待ちの行を消します（§8）。

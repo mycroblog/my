@@ -5,18 +5,45 @@ package notificationtest
 import (
 	"errors"
 	"reflect"
+	"slices"
+	"sync"
 	"testing"
 	"time"
 
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/moderation"
 	"github.com/mycroblog/my/internal/domain/notification"
 )
 
 // The flows of the notification policy (ADR-0158), part of NotificationFlows.
+
+// recordedSignals is a stream.Publisher that keeps the accounts it signals.
+type recordedSignals struct {
+	mu       sync.Mutex
+	accounts []string
+}
+
+// Publish implements stream.Publisher.
+func (r *recordedSignals) Publish(e stream.Event) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if e.Kind == stream.KindNotifications {
+		r.accounts = append(r.accounts, e.AccountID)
+	}
+}
+
+// take returns the accounts signalled since the last take.
+func (r *recordedSignals) take() []string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	out := r.accounts
+	r.accounts = nil
+	return out
+}
 
 func (e *notificationEnv) policy(t *testing.T, accountID string, actions map[notification.Condition]notification.Action) {
 	t.Helper()
@@ -155,8 +182,13 @@ func notificationPolicyDismisses(t *testing.T, e *notificationEnv) {
 	alice, bob := e.user(t, "alice"), e.user(t, "bob")
 	e.policy(t, alice, map[notification.Condition]notification.Action{notification.ConditionNotFollower: notification.ActionFilter})
 	e.post(t, bob, "hi @alice")
+	e.signals.take()
 	if err := e.svc.DismissRequest(ctx, alice, bob); err != nil {
 		t.Fatalf("DismissRequest = %v", err)
+	}
+	// The streams of alice send the new counts of the requests.
+	if got := e.signals.take(); !slices.Equal(got, []string{alice}) {
+		t.Errorf("signals of the dismissal = %v, want alice's", got)
 	}
 	if s := e.requestSummary(t, alice); s != (notification.RequestSummary{}) {
 		t.Errorf("RequestSummary after the dismissal = %+v, want none", s)
@@ -170,6 +202,9 @@ func notificationPolicyDismisses(t *testing.T, e *notificationEnv) {
 	}
 	if err := e.svc.AcceptRequest(ctx, alice, bob); err != nil {
 		t.Fatalf("AcceptRequest = %v", err)
+	}
+	if got := e.signals.take(); !slices.Contains(got, alice) {
+		t.Errorf("signals of a filtered mention and the acceptance = %v, want alice's", got)
 	}
 	checkSummaries(t, e, alice, summary{Type: notification.TypeMention, Source: bob, StatusID: later.Status.ID})
 }

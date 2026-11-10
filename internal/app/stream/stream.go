@@ -25,7 +25,8 @@ const (
 	// KindHomeEntry signals a new entry of the home timelines (a post or a boost). It goes to
 	// every subscriber, which decides whether its own home timeline lists the entry.
 	KindHomeEntry Kind = "home_entry"
-	// KindNotifications signals that an account may have new notifications.
+	// KindNotifications signals that an account may have new notifications, or that the counts of
+	// its notification requests may have changed.
 	KindNotifications Kind = "notifications"
 	// KindConversation signals that a conversation of an account's direct messages changed (a
 	// new direct post, or the account read it): it goes to the account subscriptions of

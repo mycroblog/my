@@ -415,6 +415,7 @@ entries:
       - "A filtered notification is a notifications row with a notification_filterings row; it enqueues no Web Push or email, and the reads of the list, the unread count, and Listed leave it out until its source is accepted and no request dismissal covers it."
       - "notification_requests is derived per (recipient, source) by RefreshRequests in the same transaction as each filtering, acceptance, dismissal, and erasure of notifications about statuses; RebuildRequests derives it all (projection notification_requests)."
       - "The moderator notifications and the notices of the instance are outside notification.PolicyApplies and never filtered or dropped."
+      - "Every change of the requests (a filtering, an acceptance, a dismissal) emits notification.requests_changed in its transaction; its commit hook signals KindNotifications, and each open stream sends notification_requests when the RequestSummary differs from the one it last sent or read on opening."
   - name: module-federation
     paths: ["internal/domain/federation/**", "internal/app/federation/**"]
     docs: ["docs/architecture/data-model/04-tables/08-federation.md#48-federation", "docs/architecture/federation.md#1-構成"]

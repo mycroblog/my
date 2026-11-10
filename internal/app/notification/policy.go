@@ -62,6 +62,17 @@ type PolicyRepository interface {
 	RequestNotifications(ctx context.Context, recipientAccountID, sourceAccountID, before string, limit int) ([]notification.Notification, error)
 }
 
+// EventRequestsChanged is emitted in the transaction that changes an account's requests: a
+// notification filtered into one, an acceptance, or a dismissal. Its commit hook signals the
+// account's streams, which send the counts again (ADR-0158 §7).
+const EventRequestsChanged = "notification.requests_changed"
+
+// RequestsChanged is the event EventRequestsChanged of AccountID, the recipient.
+type RequestsChanged struct{ AccountID string }
+
+// EventType implements uow.Event.
+func (RequestsChanged) EventType() string { return EventRequestsChanged }
+
 // RequestPair names the request of a recipient and a source.
 type RequestPair struct {
 	RecipientAccountID string
@@ -170,13 +181,25 @@ func (p *projector) filter(ctx context.Context, tx uow.Tx, ns []notification.Not
 		return err
 	}
 	var pairs []RequestPair
+	var recipients []string
 	for _, n := range ns {
 		pair := RequestPair{RecipientAccountID: n.RecipientAccountID, SourceAccountID: n.SourceAccountID}
 		if !slices.Contains(pairs, pair) {
 			pairs = append(pairs, pair)
 		}
+		if !slices.Contains(recipients, n.RecipientAccountID) {
+			recipients = append(recipients, n.RecipientAccountID)
+		}
 	}
-	return p.d.Repository.RefreshRequests(ctx, tx, pairs)
+	if err := p.d.Repository.RefreshRequests(ctx, tx, pairs); err != nil {
+		return err
+	}
+	for _, id := range recipients {
+		if err := tx.Emit(ctx, RequestsChanged{AccountID: id}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // classifyEach returns the action of each of ns, reading the policies of their recipients
@@ -306,7 +329,10 @@ func (s *Service) AcceptRequest(ctx context.Context, accountID, sourceID string)
 		if err != nil {
 			return err
 		}
-		return s.d.Repository.RefreshRequests(ctx, tx, []RequestPair{{RecipientAccountID: accountID, SourceAccountID: sourceID}})
+		if err := s.d.Repository.RefreshRequests(ctx, tx, []RequestPair{{RecipientAccountID: accountID, SourceAccountID: sourceID}}); err != nil {
+			return err
+		}
+		return tx.Emit(ctx, RequestsChanged{AccountID: accountID})
 	})
 }
 
@@ -329,7 +355,10 @@ func (s *Service) DismissRequest(ctx context.Context, accountID, sourceID string
 		if err != nil {
 			return err
 		}
-		return s.d.Repository.RefreshRequests(ctx, tx, []RequestPair{{RecipientAccountID: accountID, SourceAccountID: sourceID}})
+		if err := s.d.Repository.RefreshRequests(ctx, tx, []RequestPair{{RecipientAccountID: accountID, SourceAccountID: sourceID}}); err != nil {
+			return err
+		}
+		return tx.Emit(ctx, RequestsChanged{AccountID: accountID})
 	})
 }
 

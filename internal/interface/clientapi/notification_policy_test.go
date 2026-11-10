@@ -4,11 +4,15 @@ package clientapi_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"slices"
+	"strings"
 	"testing"
 
 	appnotification "github.com/mycroblog/my/internal/app/notification"
+	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 )
@@ -213,5 +217,43 @@ func TestDismissNotificationRequest(t *testing.T) {
 	}
 	if s := decode[clientapi.NotificationRequestSummary](t, e.send(t, http.MethodGet, "/notifications/requests/summary", "read", "")); s.AccountsCount != 0 || s.NotificationsCount != 0 {
 		t.Errorf("summary after the dismissal = %+v", s)
+	}
+}
+
+// TestStreamingNotificationRequests checks that a stream sends the counts of the requests when a
+// signal finds them changed, and nothing when they did not change.
+func TestStreamingNotificationRequests(t *testing.T) {
+	hub := stream.NewHub(stream.HubOptions{})
+	f := &fakePolicies{choices: map[notification.Condition]notification.Action{}}
+	e, _, _ := newNotificationEnvWithViews(t, func(o *clientapi.Options) { o.Streams = hub; o.NotificationPolicies = f })
+	srv := httptest.NewServer(e.h)
+	t.Cleanup(srv.Close)
+
+	_, _, r := openStream(t.Context(), t, srv, "read")
+	if line := readLine(t, r); line != ": connected" {
+		t.Fatalf("first line = %q, want the connected comment", line)
+	}
+	// A filtered notification arrives: no notification event, the new counts.
+	f.waiting = []notification.Notification{{ID: notificationID(7), RecipientAccountID: aliceAccountID, Type: notification.TypeFollow, SourceAccountID: bobAccountID}}
+	hub.Publish(stream.Event{Kind: stream.KindNotifications, AccountID: aliceAccountID})
+	if line := readLine(t, r); line != "event: notification_requests" {
+		t.Fatalf("line = %q, want the counts of the requests", line)
+	}
+	var sum clientapi.NotificationRequestSummary
+	if err := json.Unmarshal([]byte(strings.TrimPrefix(readLine(t, r), "data: ")), &sum); err != nil {
+		t.Fatal(err)
+	}
+	if sum.AccountsCount != 1 || sum.NotificationsCount != 1 {
+		t.Errorf("counts = %+v, want 1 and 1", sum)
+	}
+	// Unchanged counts send nothing; the dismissal sends zero.
+	hub.Publish(stream.Event{Kind: stream.KindNotifications, AccountID: aliceAccountID})
+	f.waiting = nil
+	hub.Publish(stream.Event{Kind: stream.KindNotifications, AccountID: aliceAccountID})
+	if line := readLine(t, r); line != "event: notification_requests" {
+		t.Fatalf("line = %q, want the counts after the dismissal", line)
+	}
+	if line := readLine(t, r); line != `data: {"accounts_count":0,"notifications_count":0}` {
+		t.Errorf("data = %q, want zero counts", line)
 	}
 }
