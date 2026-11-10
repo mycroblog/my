@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import type { Preferences, PreferencesChange, ProfileChange } from "./api/me";
 import {
   accountFixture,
+  changedPreferences,
   instanceFixture,
   mediaFixture,
   preferencesFixture,
@@ -60,8 +61,7 @@ function preferencesServer(initial: Partial<Preferences> = {}) {
       const change = (await request.json()) as PreferencesChange;
       changes.push(change);
       preferences = {
-        ...preferences,
-        ...change,
+        ...changedPreferences(preferences, change),
         time_zone_chosen: preferences.time_zone_chosen || change.time_zone !== undefined,
         locale_follows_browser:
           change.locale_follows_browser ?? (change.locale === undefined && preferences.locale_follows_browser),

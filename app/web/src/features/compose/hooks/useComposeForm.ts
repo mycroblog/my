@@ -20,6 +20,8 @@ import {
   type PostingLimits,
   preferencesQueryOptions,
   type QuotePolicy,
+  quotePolicyChange,
+  quotePolicyOf,
   type Status,
   statusQueryOptions,
   statusRejection,
@@ -186,7 +188,7 @@ function requestBody(draft: Draft, visibility: Visibility, language: string): Cr
     ...(draft.poll === null ? {} : { poll: pollRequest(draft.poll) }),
     ...(draft.replyToId === null ? {} : { in_reply_to_id: draft.replyToId }),
     ...(draft.quoteId === null ? {} : { quoted_status_id: draft.quoteId }),
-    ...(draft.quotePolicy === null ? {} : { quote_policy: draft.quotePolicy }),
+    ...(draft.quotePolicy === null ? {} : { interaction_policy: quotePolicyChange(draft.quotePolicy) }),
   };
 }
 
@@ -324,7 +326,7 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const { default_post_language: preferredLanguage, require_media_description: requireDescriptions } = preferences.data;
   const replyTo = targetOf(draft.replyToId, replyPost, replyQuery.isError);
   const quoteOf = targetOf(draft.quoteId, draft.quoteId === null ? undefined : quoteQuery.data, quoteQuery.isError);
-  const quotePolicy = draft.quotePolicy ?? preferences.data.default_quote_policy;
+  const quotePolicy = draft.quotePolicy ?? quotePolicyOf(preferences.data.default_interaction_policy.quote);
   const ownDomain = accountDomain.toLowerCase();
   const staysLocal =
     !reachesRemote &&

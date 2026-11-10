@@ -5,6 +5,7 @@
 // actions of the profile feature's handlers.
 import { http, HttpResponse } from "msw";
 import {
+  changedPreferences,
   preferencesFixture,
   relationshipFixture,
   type Schemas,
@@ -342,7 +343,7 @@ export const handlers = [
   ),
   http.patch(`${apiBase}/preferences`, async ({ request }) => {
     const change = (await request.clone().json()) as Schemas["UpdatePreferencesRequest"];
-    return withViewer(request, () => HttpResponse.json({ ...preferencesFixture, ...change }));
+    return withViewer(request, () => HttpResponse.json(changedPreferences(preferencesFixture, change)));
   }),
   // operationIds getNotificationSettings, updateNotificationSettings: a user without moderator permissions at the
   // defaults; a change answers the defaults with it.
