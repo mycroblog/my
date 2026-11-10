@@ -133,6 +133,10 @@ func (f *fakeObjects) Featured(context.Context, string) ([]federation.NoteDocume
 	return f.featured, f.err
 }
 
+func (f *fakeObjects) Conversation(_ context.Context, _ appfederation.Requester, id string, _ bool, _ string) (appfederation.ConversationCollection, error) {
+	return appfederation.ConversationCollection{}, fmt.Errorf("conversation %s: %w", id, appfederation.ErrNotFound)
+}
+
 // fakeGraph is an activitypub.Graph over a list of edges.
 type fakeGraph struct {
 	edges []graph.Edge // newest first

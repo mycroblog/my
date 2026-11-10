@@ -83,6 +83,7 @@ func RemoteStatusFlows(t *testing.T, newHarness RemoteStatusFactory) {
 	}{
 		{"IngestsNotesOfMajorImplementations", remoteIngestsFixtures},
 		{"StoresOnlyCreatesRelatedToLocalAccounts", remoteScope},
+		{"JoinsAndMergesConversations", remoteConversations},
 		{"RecordsTheDeclaredParts", remoteRecordsParts},
 		{"KeepsTheAuthorAndTheOrigin", remoteChecksAuthor},
 		{"TakesTheAddressingOfTheActivityOnlyFromTheAuthor", remoteTakesAddressingFromTheAuthor},
@@ -530,8 +531,10 @@ func remoteScope(t *testing.T, e *remoteStatusEnv) {
 	if p := e.post(t, addressed); p.Status.Visibility != content.VisibilityDirect || !slices.Contains(p.Revision.MentionedAccountIDs, local) {
 		t.Errorf("addressed post = %+v, want direct and mentioning %s", p, local)
 	}
-	if p := e.post(t, nested); p.Status.ConversationURI != mine.Status.URI {
-		t.Errorf("conversation of the nested reply = %q, want the local post's %q", p.Status.ConversationURI, mine.Status.URI)
+	n := e.post(t, nested)
+	if convs, err := e.content.ConversationsOf(t.Context(), []string{mine.Status.ID, n.Status.ID}); err != nil ||
+		convs[n.Status.ID] != convs[mine.Status.ID] || !convs[mine.Status.ID].IsLocal {
+		t.Errorf("conversations = %+v, %v; want the nested reply in the local post's", convs, err)
 	}
 	// Following the author brings the next post in.
 	e.follow(t, local, e.actor(t, alice))
@@ -539,6 +542,102 @@ func remoteScope(t *testing.T, e *remoteStatusEnv) {
 	e.expect(t, doc, appfederation.InboxHandled)
 	if !e.stored(t, followed) {
 		t.Errorf("a post of a followed author was not stored")
+	}
+}
+
+// remoteConversations checks the conversations of remote posts (ADR-0154 §2, §3): a post joins
+// the conversation it declares even when its parent is unknown, reads Mastodon's conversation
+// when it has no context, never joins a conversation of this server by declaring it, and a
+// parent that arrives later merges the reply's conversation into its own, which the thread then
+// shows.
+func remoteConversations(t *testing.T, e *remoteStatusEnv) {
+	ctx := t.Context()
+	const alice = "https://remote.example/users/alice"
+	local := e.user(t, "local")
+	e.follow(t, local, e.actor(t, alice))
+	deliver := func(name string, fields map[string]any) string {
+		t.Helper()
+		id := alice + "/notes/" + name
+		e.expect(t, remoteActivity(t, "Create", id+"/activity", alice, remoteNote(id, alice, remoteNow.Add(-time.Hour), fields)), appfederation.InboxHandled)
+		return id
+	}
+	conv := func(statusID string) appcontent.Conversation {
+		t.Helper()
+		convs, err := e.content.ConversationsOf(ctx, []string{statusID})
+		if err != nil || len(convs) != 1 {
+			t.Fatalf("ConversationsOf(%s) = %+v, %v; want one", statusID, convs, err)
+		}
+		return convs[statusID]
+	}
+
+	const declared = "https://remote.example/contexts/thread"
+	reply := e.post(t, deliver("reply", map[string]any{"inReplyTo": alice + "/notes/root", "context": declared}))
+	if c := conv(reply.Status.ID); c.URI != declared || c.IsLocal {
+		t.Errorf("conversation of a reply to an unknown parent = %+v, want the declared %s", c, declared)
+	}
+	const tag = "tag:remote.example,2026-10-01:objectId=1:objectType=Conversation"
+	if c := conv(e.post(t, deliver("tagged", map[string]any{"conversation": tag})).Status.ID); c.URI != tag || c.HTTPS() {
+		t.Errorf("conversation of a post with Mastodon's conversation = %+v, want %s", c, tag)
+	}
+	mine, err := e.content.Create(ctx, appcontent.CreateInput{
+		AuthorAccountID: local, TextInput: appcontent.TextInput{Text: "local post"}, Visibility: content.VisibilityPublic,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ours := conv(mine.Status.ID)
+	if c := conv(e.post(t, deliver("claims-ours", map[string]any{"context": ours.URI})).Status.ID); c.ID == ours.ID || !c.IsLocal {
+		t.Errorf("conversation of a post that declares %s = %+v, want a new one of this server", ours.URI, c)
+	}
+
+	// The parent arrives and declares nothing: the reply's conversation is merged into the new
+	// one of the parent.
+	declaredConv, err := e.content.FindConversationByURI(ctx, declared)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := e.post(t, deliver("root", nil))
+	rootConv := conv(root.Status.ID)
+	if c := conv(reply.Status.ID); c != rootConv || !c.IsLocal {
+		t.Errorf("conversation of the reply after its parent arrived = %+v, want the parent's %+v", c, rootConv)
+	}
+	m, err := e.content.FindConversationMerge(ctx, declaredConv.ID)
+	if err != nil || m.IntoConversationID != rootConv.ID || m.StatusID != root.Status.ID {
+		t.Errorf("merge of %s = %+v, %v; want into %s by the root", declared, m, err, rootConv.ID)
+	}
+	// A later post that declares the merged IRI joins the conversation it was merged into, but
+	// the thread shows only the statuses that the reply links reach.
+	late := e.post(t, deliver("late", map[string]any{"context": declared}))
+	if c := conv(late.Status.ID); c != rootConv {
+		t.Errorf("conversation of a post that declares the merged IRI = %+v, want %+v", c, rootConv)
+	}
+	nested := e.post(t, deliver("nested", map[string]any{"inReplyTo": reply.Status.URI}))
+	reader := appcontent.NewReader(appcontent.ReaderDeps{
+		Statuses: e.h.Statuses, Interactions: e.h.Pins, Accounts: e.Accounts, Relationships: e.graph,
+		Quotes: e.h.Quotes, DomainMutes: e.graph, Clock: e.Clock,
+	})
+	viewer := appcontent.Viewer{Kind: appcontent.ViewerLocal, AccountID: local}
+	thread, err := reader.Thread(ctx, viewer, root.Status.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, v := range thread.Descendants {
+		got = append(got, v.Status.ID)
+	}
+	if want := []string{reply.Status.ID, nested.Status.ID}; !slices.Equal(got, want) {
+		t.Errorf("descendants of the root = %v, want the reply and the nested reply %v", got, want)
+	}
+	thread, err = reader.Thread(ctx, viewer, nested.Status.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got = got[:0]
+	for _, v := range thread.Ancestors {
+		got = append(got, v.Status.ID)
+	}
+	if want := []string{root.Status.ID, reply.Status.ID}; !slices.Equal(got, want) || len(thread.Descendants) != 0 {
+		t.Errorf("thread of the nested reply = %v and %d descendants, want the ancestors %v", got, len(thread.Descendants), want)
 	}
 }
 
@@ -973,6 +1072,81 @@ func remoteStatusActivities(steps ...string) func(t *testing.T) [][]byte {
 		}
 		return out
 	}
+}
+
+// The contexts that the root and the nested reply of remoteThreadActivities declare.
+const (
+	remoteThreadRootContext   = "https://remote.example/contexts/root"
+	remoteThreadNestedContext = "https://remote.example/contexts/nested"
+)
+
+// remoteThreadActivities returns the Creates of a thread of alice: the root, which declares
+// remoteThreadRootContext, a reply to it, which declares nothing, and a reply to the reply, which
+// declares remoteThreadNestedContext.
+func remoteThreadActivities(t *testing.T) [][]byte {
+	root, reply, nested := inboxAlice+"/notes/root", inboxAlice+"/notes/reply", inboxAlice+"/notes/nested"
+	create := func(id string, fields map[string]any) []byte {
+		return remoteActivity(t, "Create", id+"/activity", inboxAlice, remoteNote(id, inboxAlice, remoteOrderPublished, fields))
+	}
+	return [][]byte{
+		create(root, map[string]any{"context": remoteThreadRootContext}),
+		create(reply, map[string]any{"inReplyTo": root}),
+		create(nested, map[string]any{"inReplyTo": reply, "context": remoteThreadNestedContext}),
+	}
+}
+
+// inboxThreadConversation is what the order of remoteThreadActivities must not change: the number
+// of conversations its posts are in, the IRI of that conversation, and whether the nested reply's
+// declared conversation ended in it through its merges.
+type inboxThreadConversation struct {
+	Conversations      int
+	URI                string
+	NestedMergedIntoIt bool
+}
+
+func remoteThreadConversationRows(t *testing.T, e *inboxProcessEnv) any {
+	ctx := t.Context()
+	var ids []string
+	for _, n := range []string{"root", "reply", "nested"} {
+		st, err := e.h.Statuses.FindStatusByURI(ctx, inboxAlice+"/notes/"+n)
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, st.ID)
+	}
+	convs, err := e.h.Statuses.StatusConversations(ctx, ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out inboxThreadConversation
+	seen := map[string]bool{}
+	for _, id := range ids {
+		c := convs[id]
+		if !seen[c.ID] {
+			seen[c.ID] = true
+			out.Conversations++
+		}
+		out.URI = c.URI
+	}
+	nested, err := e.h.Statuses.FindConversationByURI(ctx, remoteThreadNestedContext)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The nested reply's conversation may have been merged into another first, which was then
+	// merged into the root's.
+	id := nested.ID
+	for range content.MaxConversationMergeHops {
+		m, err := e.h.Statuses.FindConversationMerge(ctx, id)
+		if errors.Is(err, appcontent.ErrNotFound) {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		id = m.IntoConversationID
+	}
+	out.NestedMergedIntoIt = id != nested.ID && id == convs[ids[0]].ID
+	return out
 }
 
 // wireStatusHandlers registers the handlers of remote posts on e, on the content module of its

@@ -84,12 +84,12 @@ func (h *StatusHandlers) RegisterJobs(r *queue.JobHandlerRegistry) {
 	r.Register(JobVerifyQuote, h.handleVerifyQuote)
 }
 
-// fetchParentTx enqueues in tx the fetch of the parent of a reply that was just ingested, when
-// the parent is not stored (its conversation is unknown) and is remote: one level, with no
-// further ancestors (federation.md §6.3).
-func (h *StatusHandlers) fetchParentTx(ctx context.Context, tx uow.Tx, st appcontent.Status) error {
-	parent := federation.IRI(st.InReplyToURI)
-	if h.d.Outbox == nil || parent == "" || st.ConversationURI != "" || h.isLocal(parent) {
+// fetchParentTx enqueues in tx the fetch of the parent of a reply p that was just ingested, when
+// the parent is not stored and is remote: one level, with no further ancestors (federation.md
+// §6.3). Storing the parent merges the reply's conversation into the parent's (ADR-0154 §3).
+func (h *StatusHandlers) fetchParentTx(ctx context.Context, tx uow.Tx, p appcontent.Post) error {
+	parent := federation.IRI(p.Status.InReplyToURI)
+	if h.d.Outbox == nil || parent == "" || p.ParentStored || h.isLocal(parent) {
 		return nil
 	}
 	job, err := fetchObjectJob(fetchObjectPayload{URI: string(parent)})
@@ -487,7 +487,7 @@ func (h *StatusHandlers) store(ctx context.Context, author appaccount.Actor, obj
 		case opts.relay != nil:
 			return h.recordRelayed(ctx, tx, st, opts.relay)
 		case opts.parent:
-			return h.fetchParentTx(ctx, tx, st)
+			return h.fetchParentTx(ctx, tx, p)
 		}
 		return nil
 	})

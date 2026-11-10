@@ -1,0 +1,7 @@
+{
+  "@context": "https://www.w3.org/ns/activitystreams",
+  "id": "https://social.example.org/ap/contexts/0192f3b0-2c3d-7e4f-8a00-1122334455c0",
+  "type": "OrderedCollection",
+  "first": "https://social.example.org/ap/contexts/0192f3b0-2c3d-7e4f-8a00-1122334455c0?page=true"
+}
+

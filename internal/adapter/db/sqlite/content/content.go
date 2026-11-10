@@ -41,7 +41,6 @@ func (r *StatusRepository) InsertStatus(ctx context.Context, tx uow.Tx, s conten
 		IsLocal:         sqlite.BoolToInt(s.IsLocal),
 		Visibility:      string(s.Visibility),
 		InReplyToUri:    sqlite.ToNullString(s.InReplyToURI),
-		ConversationUri: sqlite.ToNullString(s.ConversationURI),
 		PublishedAt:     sqlite.ToMillis(s.PublishedAt),
 	})
 	if sqlite.IsUniqueViolation(err, "statuses.uri") {
@@ -642,7 +641,7 @@ func (r *StatusRepository) ListCurrentPosts(ctx context.Context, tx uow.Tx) ([]a
 	for i, row := range rows {
 		out[i].Status = statusFrom(contentgen.Status{
 			ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
-			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri, ConversationUri: row.ConversationUri,
+			Visibility: row.Visibility, InReplyToUri: row.InReplyToUri,
 			PublishedAt: row.PublishedAt,
 		})
 		if out[i].Revision, err = findRevision(ctx, q, row.RevisionID); err != nil {
@@ -878,7 +877,6 @@ func statusFrom(row contentgen.Status) content.Status {
 		IsLocal:         row.IsLocal != 0,
 		Visibility:      content.Visibility(row.Visibility),
 		InReplyToURI:    row.InReplyToUri.String,
-		ConversationURI: row.ConversationUri.String,
 		PublishedAt:     sqlite.FromMillis(row.PublishedAt),
 	}
 }

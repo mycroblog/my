@@ -147,6 +147,7 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 		Converted:    slices.Contains(convertedTypes, t),
 		AttributedTo: n.firstRef(o.get("attributedTo")),
 		InReplyTo:    n.firstRef(o.get("inReplyTo")),
+		Conversation: n.conversation(o),
 		Published:    n.time(o.get("published")),
 		Updated:      n.time(o.get("updated")),
 		URL:          n.displayURL(o.get("url")),
@@ -205,6 +206,32 @@ func (n normalizer) object(o object, t ObjectType, raw string) (*Object, error) 
 		obj.InteractionTarget = n.firstRef(o.get("interactionTarget"))
 	}
 	return obj, nil
+}
+
+// maxConversationURILength bounds the tag: URI of a declared conversation, which NormalizeIRI does
+// not read.
+const maxConversationURILength = 2048
+
+// conversation reads the conversation that a post declares (federation.md §4, ADR-0154 §2): the
+// first context, when it is an https IRI (a string, the href of a Link, or the id of an embedded
+// object), else the conversation (ostatus:conversation), when it is an https IRI or a tag: URI
+// (RFC 4151, which Mastodon sends for its older conversations). Anything else declares none.
+func (n normalizer) conversation(o object) IRI {
+	if c := n.firstRef(o.get("context")); c != PublicIRI && strings.HasPrefix(string(c), "https://") {
+		return c
+	}
+	v, _ := o.get("conversation").(string)
+	v = strings.TrimSpace(v)
+	if strings.HasPrefix(v, "tag:") {
+		if len(v) > maxConversationURILength || strings.ContainsFunc(v, func(r rune) bool { return r <= ' ' || r == 0x7f || r == utf8.RuneError }) {
+			return ""
+		}
+		return IRI(v)
+	}
+	if c := n.normalizeIRI(v); c != PublicIRI && strings.HasPrefix(string(c), "https://") {
+		return c
+	}
+	return ""
 }
 
 // quoteProperties are the properties that name the quoted post, in the order they are read

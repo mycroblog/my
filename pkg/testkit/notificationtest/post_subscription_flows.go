@@ -233,7 +233,7 @@ func notificationNewPosts(t *testing.T, e *notificationEnv) {
 		}
 	}
 	// Projecting the post again and running its job again notifies nobody twice.
-	e.project(t, appcontent.StatusCreated(p))
+	e.project(t, appcontent.StatusCreated{Status: p.Status, Revision: p.Revision})
 	run()
 	checkSummaries(t, e, carol, status(p.Status.ID))
 

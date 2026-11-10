@@ -49,8 +49,9 @@ func (a *App) setUpExports(repo identity.Repository) {
 func (a *App) archiveObjects() *federation.Objects {
 	return federation.NewObjects(federation.ObjectsDeps{
 		Statuses: a.Content, Accounts: a.Accounts, Graph: a.Graph, Timeline: a.Timeline, Reader: a.Statuses, Moves: a.Accounts,
-		Aliases: a.Accounts,
-		Quotes:  federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
-		Host:    a.Config.Host, AccountDomain: a.Config.AccountDomain, Logger: a.Logger,
+		Aliases:       a.Accounts,
+		Quotes:        federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
+		Conversations: a.Content,
+		Host:          a.Config.Host, AccountDomain: a.Config.AccountDomain, Logger: a.Logger,
 	})
 }

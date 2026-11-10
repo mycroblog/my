@@ -30,7 +30,7 @@ func (r *StatusRepository) ListAuthorStatusesToErase(ctx context.Context, tx uow
 		out[i] = appcontent.ErasableStatus{
 			Status: statusFrom(contentgen.Status{
 				ID: row.ID, Uri: row.Uri, Url: row.Url, AuthorAccountID: row.AuthorAccountID, IsLocal: row.IsLocal,
-				Visibility: row.Visibility, InReplyToUri: row.InReplyToUri, ConversationUri: row.ConversationUri,
+				Visibility: row.Visibility, InReplyToUri: row.InReplyToUri,
 				PublishedAt: row.PublishedAt,
 			}),
 			Deleted: row.Deleted,

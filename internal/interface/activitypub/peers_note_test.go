@@ -23,6 +23,12 @@ import (
 const (
 	noteStatusID = "0192f3b0-2c3d-7e4f-8a00-1122334455aa"
 	bobID        = "0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e80" // a remote account on remote.example
+	// noteConversationID is the conversation of the status; noteMergedID one merged into it, and
+	// noteRemoteMergedID one merged into a remote conversation.
+	noteConversationID = "0192f3b0-2c3d-7e4f-8a00-1122334455c0"
+	noteMergedID       = "0192f3b0-2c3d-7e4f-8a00-1122334455c1"
+	noteRemoteMergedID = "0192f3b0-2c3d-7e4f-8a00-1122334455c2"
+	noteReplyID        = "0192f3b0-2c3d-7e4f-8a00-1122334455ab"
 )
 
 // noteWorld is the content, account, and graph modules behind appfederation.Objects with one
@@ -141,6 +147,69 @@ func (w *noteWorld) Parts(context.Context, appcontent.Revision) (appcontent.Revi
 	return w.parts, nil
 }
 
+// conversation is the local conversation of the status.
+func (w *noteWorld) conversation() appcontent.Conversation {
+	return appcontent.Conversation{ID: noteConversationID, URI: content.ConversationURI(host, noteConversationID), IsLocal: true}
+}
+
+func (w *noteWorld) ConversationsOf(_ context.Context, ids []string) (map[string]appcontent.Conversation, error) {
+	out := map[string]appcontent.Conversation{}
+	for _, id := range ids {
+		if id == w.status.ID {
+			out[id] = w.conversation()
+		}
+	}
+	return out, nil
+}
+
+func (w *noteWorld) ResolveConversation(_ context.Context, id string) (appcontent.ResolvedConversation, error) {
+	conv := w.conversation()
+	switch id {
+	case noteConversationID:
+		return appcontent.ResolvedConversation{Named: conv, Final: conv}, nil
+	case noteMergedID:
+		return appcontent.ResolvedConversation{
+			Named: appcontent.Conversation{ID: id, URI: content.ConversationURI(host, id), IsLocal: true}, Final: conv,
+		}, nil
+	case noteRemoteMergedID:
+		return appcontent.ResolvedConversation{
+			Named: appcontent.Conversation{ID: id, URI: content.ConversationURI(host, id), IsLocal: true},
+			Final: appcontent.Conversation{ID: testkit.NamedID("remote-conversation"), URI: "https://remote.example/contexts/1"},
+		}, nil
+	}
+	return appcontent.ResolvedConversation{}, appcontent.ErrNotFound
+}
+
+// ConversationStatuses returns the status and two replies of bob: a public one, which anyone may
+// see, and a direct one, which the collection never lists.
+func (w *noteWorld) ConversationStatuses(_ context.Context, conversationID, after string, limit int) (appcontent.ConversationPage, error) {
+	if conversationID != noteConversationID || after != "" {
+		return appcontent.ConversationPage{Revisions: map[string]appcontent.Revision{}}, nil
+	}
+	reply := func(id string, v appcontent.Visibility) appcontent.Status {
+		return appcontent.Status{
+			ID: id, URI: "https://remote.example/users/bob/statuses/" + id, AuthorAccountID: bobID, Visibility: v,
+			InReplyToURI: w.status.URI, PublishedAt: w.status.PublishedAt.Add(time.Minute),
+		}
+	}
+	page := appcontent.ConversationPage{
+		Statuses:  []appcontent.Status{w.status, reply(noteReplyID, appcontent.VisibilityPublic), reply(testkit.NamedID("direct-reply"), appcontent.VisibilityDirect)},
+		Revisions: map[string]appcontent.Revision{w.status.ID: w.rev},
+	}
+	if limit < len(page.Statuses) {
+		page.Statuses, page.Next = page.Statuses[:limit], page.Statuses[limit-1].ID
+	}
+	return page, nil
+}
+
+func (w *noteWorld) AuthorRestrictionsOf(_ context.Context, ids []string) (map[string]appcontent.AuthorRestrictions, error) {
+	out := map[string]appcontent.AuthorRestrictions{}
+	for _, id := range ids {
+		out[id] = appcontent.AuthorRestrictions{}
+	}
+	return out, nil
+}
+
 // noteRequired lists the properties of a Create and its Note that each implementation reads
 // when it imports a remote status (Mastodon: ActivityPub::Activity::Create and
 // ActivityPub::Parser::StatusParser / MediaAttachmentParser; GoToSocial: internal/ap/extract.go;
@@ -152,7 +221,7 @@ var noteRequired = map[string][]string{
 		"object.summary", "object.sensitive", "object.content", "object.contentMap",
 		"object.attachment[].type", "object.attachment[].mediaType", "object.attachment[].url", "object.attachment[].name",
 		"object.attachment[].blurhash", "object.attachment[].focalPoint", "object.attachment[].width", "object.attachment[].height",
-		"object.tag[].type", "object.tag[].href", "object.tag[].name",
+		"object.tag[].type", "object.tag[].href", "object.tag[].name", "object.conversation",
 	},
 	"gotosocial": {
 		"@context", "id", "type", "actor", "to", "cc",
@@ -199,7 +268,7 @@ func TestCreateNoteMatchesPeers(t *testing.T) {
 func newNoteServer(t *testing.T, w *noteWorld, quotes appfederation.ObjectQuotes) *server {
 	t.Helper()
 	objects := appfederation.NewObjects(appfederation.ObjectsDeps{
-		Statuses: w, Accounts: w, Graph: w, Timeline: w, Reader: w, Quotes: quotes, Host: host, AccountDomain: accountDomain,
+		Statuses: w, Accounts: w, Graph: w, Timeline: w, Reader: w, Quotes: quotes, Conversations: w, Host: host, AccountDomain: accountDomain,
 	})
 	s := &server{mux: http.NewServeMux(), accounts: newAccounts(t), objects: newObjects(), graph: &fakeGraph{}}
 	activitypub.New(activitypub.Options{
@@ -262,5 +331,43 @@ func TestCollectionsServeTheQuotingNote(t *testing.T) {
 	items = decode(t, rec.Body.Bytes())["orderedItems"].([]any)
 	if len(items) != 1 || !reflect.DeepEqual(items[0].(map[string]any)["object"], own) {
 		t.Errorf("outbox items = %v, want the Create of %v", items, own)
+	}
+}
+
+// TestConversationCollection checks the collection of a conversation (ADR-0154 §9): the IRIs of
+// the statuses that the requester may see, oldest first, with no totalItems, a redirect for a
+// conversation merged into another of this server, and 404 for the others.
+func TestConversationCollection(t *testing.T) {
+	s := newNoteServer(t, newNoteWorld(), nil)
+	path := "/ap/contexts/" + noteConversationID
+
+	rec := s.get(t, path, acceptMastodon)
+	if rec.Code != http.StatusOK || rec.Header().Get("Cache-Control") != "public, max-age=60" {
+		t.Fatalf("GET the collection = %d %s %s", rec.Code, rec.Header().Get("Cache-Control"), rec.Body)
+	}
+	checkGolden(t, "collection-context.json", rec.Body.Bytes())
+
+	rec = s.get(t, path+"?page=true", acceptMastodon)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET the first page = %d %s", rec.Code, rec.Body)
+	}
+	checkGolden(t, "collection-context-page.json", rec.Body.Bytes())
+	page := decode(t, rec.Body.Bytes())
+	want := []any{appcontent.StatusURI(host, noteStatusID), "https://remote.example/users/bob/statuses/" + noteReplyID}
+	if !reflect.DeepEqual(page["orderedItems"], want) {
+		t.Errorf("items = %v, want %v (the direct reply left out)", page["orderedItems"], want)
+	}
+	if _, ok := page["totalItems"]; ok {
+		t.Errorf("page has totalItems: %v", page)
+	}
+
+	rec = s.get(t, "/ap/contexts/"+noteMergedID+"?page=true", acceptMastodon)
+	if loc := rec.Header().Get("Location"); rec.Code != http.StatusPermanentRedirect || loc != content.ConversationURI(host, noteConversationID)+"?page=true" {
+		t.Errorf("GET a merged conversation = %d %q, want 308 to the conversation it was merged into", rec.Code, loc)
+	}
+	for _, id := range []string{noteRemoteMergedID, testkit.NamedID("no-conversation"), "not-an-id"} {
+		if rec := s.get(t, "/ap/contexts/"+id, acceptMastodon); rec.Code != http.StatusNotFound {
+			t.Errorf("GET /ap/contexts/%s = %d, want 404", id, rec.Code)
+		}
 	}
 }

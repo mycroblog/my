@@ -55,6 +55,34 @@ type Repository interface {
 	// read; it returns the stored tags by NameNormalized.
 	EnsureTags(ctx context.Context, tx uow.Tx, tags []content.Tag) (map[string]content.Tag, error)
 
+	// Conversations (ADR-0154): the resource, the conversation of each status (a current value
+	// written with the status), and the merges.
+
+	// EnsureConversation inserts c unless a conversation has its URI, and returns the stored one.
+	EnsureConversation(ctx context.Context, tx uow.Tx, c content.Conversation) (content.Conversation, error)
+	// FindConversationTx returns a conversation by ID inside tx.
+	FindConversationTx(ctx context.Context, tx uow.Tx, id string) (content.Conversation, error)
+	// ConversationMergeTargetTx returns, inside tx, the conversation that a merged conversation
+	// was merged into; ErrNotFound means that it is not merged.
+	ConversationMergeTargetTx(ctx context.Context, tx uow.Tx, id string) (string, error)
+	// StatusConversationsTx is StatusConversations inside tx.
+	StatusConversationsTx(ctx context.Context, tx uow.Tx, statusIDs []string) (map[string]content.Conversation, error)
+	// InsertStatusConversation records the conversation that a status belongs to.
+	InsertStatusConversation(ctx context.Context, tx uow.Tx, statusID, conversationID string) error
+	// MergeConversation records m and moves every status of the merged conversation to the one
+	// it is merged into. A conversation that is merged already fails.
+	MergeConversation(ctx context.Context, tx uow.Tx, m content.ConversationMerge) error
+	FindConversation(ctx context.Context, id string) (content.Conversation, error)
+	FindConversationByURI(ctx context.Context, uri string) (content.Conversation, error)
+	// FindConversationMerge returns the merge of a merged conversation.
+	FindConversationMerge(ctx context.Context, id string) (content.ConversationMerge, error)
+	// StatusConversations returns the conversation that each of statusIDs belongs to, by status,
+	// with one query; a status without one is left out.
+	StatusConversations(ctx context.Context, statusIDs []string) (map[string]content.Conversation, error)
+	// ListLiveConversationStatuses returns up to limit statuses of a conversation that are not
+	// deleted, in ID order after the ID after ("" for the first page).
+	ListLiveConversationStatuses(ctx context.Context, conversationID, after string, limit int) ([]content.Status, error)
+
 	// Projections, written only by this module's projectors and rebuild.
 
 	// Head returns the head of a status.
@@ -232,9 +260,9 @@ type Repository interface {
 	// Remote statuses: custom emoji, poll tallies, and the scope of ingestion (ADR-0006).
 	// InsertRevision also writes a revision's Poll and Remote, and FindRevision reads them.
 
-	// LocalStatusInConversation reports whether a local status that is not deleted belongs to
-	// the conversation conversationURI.
-	LocalStatusInConversation(ctx context.Context, conversationURI string) (bool, error)
+	// LocalStatusInConversationOf reports whether a local status that is not deleted belongs to
+	// the conversation of the status statusID.
+	LocalStatusInConversationOf(ctx context.Context, statusID string) (bool, error)
 	// EnsureCustomEmoji inserts e unless an emoji with its Shortcode and Domain exists, and
 	// returns the stored emoji. A URI that another emoji has is not stored again.
 	EnsureCustomEmoji(ctx context.Context, tx uow.Tx, e content.CustomEmoji) (content.CustomEmoji, error)

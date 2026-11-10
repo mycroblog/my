@@ -63,6 +63,7 @@ func StatusRepositoryContract(t *testing.T, newHarness StatusFactory) {
 		{"IncrementalProjectionEqualsRebuild", statusProjectionEqualsRebuild},
 		{"LinksAParentAndAReplyCreatedConcurrently", statusLinksConcurrentParentAndReply},
 		{"KeepsADeletionOverAConcurrentRevision", statusDeletionWinsOverConcurrentRevision},
+		{"StoresConversationsAndMerges", statusStoresConversations},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newStatusEnv(t, newHarness)) })
@@ -362,7 +363,6 @@ func statusStores(t *testing.T, e *StatusEnv) {
 	s := e.NewStatus(author, content.VisibilityUnlisted)
 	s.URL = "https://" + testkit.ContractHost + "/@alice/" + s.ID
 	s.InReplyToURI = "https://remote.example/notes/1"
-	s.ConversationURI = "https://remote.example/contexts/1"
 	local := content.LocalStatus{StatusID: s.ID, AuthorAccountID: author, ClientID: e.IDs.NewID(), IdempotencyKey: "key-1"}
 	tags := []string{e.IDs.NewID(), e.IDs.NewID()}
 	rev := content.Revision{
@@ -1267,5 +1267,115 @@ func statusReadsCurrentRevisions(t *testing.T, e *StatusEnv) {
 	}
 	if got, err := e.H.Statuses.FindCurrentRevisions(t.Context(), nil); err != nil || len(got) != 0 {
 		t.Errorf("FindCurrentRevisions(nil) = %+v, %v; want none", got, err)
+	}
+}
+
+// statusStoresConversations checks the conversations of statuses (ADR-0154): a conversation is
+// stored once per IRI, each status belongs to one, a merge records itself and moves every status
+// of the merged conversation, and the statuses of a conversation are listed without the deleted
+// ones.
+func statusStoresConversations(t *testing.T, e *StatusEnv) {
+	ctx := t.Context()
+	repo := e.H.Statuses
+	tx := func(fn func(tx uow.Tx) error) {
+		t.Helper()
+		if err := e.H.UnitOfWork.Tx(ctx, fn); err != nil {
+			t.Fatal(err)
+		}
+	}
+	remote := content.Conversation{ID: e.IDs.NewID(), URI: "https://remote.example/contexts/1"}
+	localID := e.IDs.NewID()
+	local := content.Conversation{ID: localID, URI: content.ConversationURI(testkit.ContractHost, localID), IsLocal: true}
+	tx(func(tx uow.Tx) error {
+		for _, c := range []content.Conversation{remote, local} {
+			got, err := repo.EnsureConversation(ctx, tx, c)
+			if err != nil || got != c {
+				t.Errorf("EnsureConversation(%+v) = %+v, %v", c, got, err)
+			}
+		}
+		// The same IRI again keeps the stored conversation.
+		got, err := repo.EnsureConversation(ctx, tx, content.Conversation{ID: e.IDs.NewID(), URI: remote.URI})
+		if err != nil || got != remote {
+			t.Errorf("EnsureConversation of a stored IRI = %+v, %v; want %+v", got, err, remote)
+		}
+		return nil
+	})
+	if got, err := repo.FindConversation(ctx, local.ID); err != nil || got != local {
+		t.Errorf("FindConversation = %+v, %v; want %+v", got, err, local)
+	}
+	if got, err := repo.FindConversationByURI(ctx, remote.URI); err != nil || got != remote {
+		t.Errorf("FindConversationByURI = %+v, %v; want %+v", got, err, remote)
+	}
+	if _, err := repo.FindConversation(ctx, e.IDs.NewID()); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindConversation of a missing one = %v, want ErrNotFound", err)
+	}
+
+	author := e.IDs.NewID()
+	var sts []content.Status
+	for i := range 3 {
+		s := e.NewStatus(author, content.VisibilityPublic)
+		if i > 0 { // remote statuses in the remote conversation
+			s.IsLocal, s.URI = false, "https://remote.example/notes/"+s.ID
+		}
+		e.mustCreate(t, s)
+		sts = append(sts, s)
+	}
+	tx(func(tx uow.Tx) error {
+		for i, s := range sts {
+			c := remote
+			if i == 0 {
+				c = local
+			}
+			if err := repo.InsertStatusConversation(ctx, tx, s.ID, c.ID); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	ids := []string{sts[0].ID, sts[1].ID, sts[2].ID, e.IDs.NewID()}
+	convs, err := repo.StatusConversations(ctx, ids)
+	if err != nil || len(convs) != 3 || convs[sts[0].ID] != local || convs[sts[1].ID] != remote || convs[sts[2].ID] != remote {
+		t.Errorf("StatusConversations = %+v, %v", convs, err)
+	}
+	if ok, err := repo.LocalStatusInConversationOf(ctx, sts[1].ID); err != nil || ok {
+		t.Errorf("LocalStatusInConversationOf before the merge = %v, %v; want false", ok, err)
+	}
+
+	m := content.ConversationMerge{MergedConversationID: remote.ID, IntoConversationID: local.ID, StatusID: sts[0].ID, MergedAt: e.Clock.Now()}
+	tx(func(tx uow.Tx) error {
+		if _, err := repo.ConversationMergeTargetTx(ctx, tx, remote.ID); !errors.Is(err, appcontent.ErrNotFound) {
+			t.Errorf("ConversationMergeTargetTx before the merge = %v, want ErrNotFound", err)
+		}
+		if err := repo.MergeConversation(ctx, tx, m); err != nil {
+			return err
+		}
+		into, err := repo.ConversationMergeTargetTx(ctx, tx, remote.ID)
+		if err != nil || into != local.ID {
+			t.Errorf("ConversationMergeTargetTx = %q, %v; want %s", into, err, local.ID)
+		}
+		got, err := repo.StatusConversationsTx(ctx, tx, ids[:3])
+		if err != nil || got[sts[1].ID] != local || got[sts[2].ID] != local {
+			t.Errorf("StatusConversationsTx after the merge = %+v, %v; want all in %s", got, err, local.ID)
+		}
+		return nil
+	})
+	if got, err := repo.FindConversationMerge(ctx, remote.ID); err != nil || got != m {
+		t.Errorf("FindConversationMerge = %+v, %v; want %+v", got, err, m)
+	}
+	err = e.H.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return repo.MergeConversation(ctx, tx, m) })
+	if err == nil {
+		t.Errorf("a second merge of %s succeeded", remote.ID)
+	}
+
+	e.MustRemove(t, sts[1])
+	list, err := repo.ListLiveConversationStatuses(ctx, local.ID, "", 10)
+	if err != nil || len(list) != 2 || list[0] != sts[0] || list[1] != sts[2] {
+		t.Errorf("ListLiveConversationStatuses = %+v, %v; want the live statuses in ID order", list, err)
+	}
+	if list, err := repo.ListLiveConversationStatuses(ctx, local.ID, sts[0].ID, 1); err != nil || len(list) != 1 || list[0] != sts[2] {
+		t.Errorf("ListLiveConversationStatuses after %s = %+v, %v; want %s", sts[0].ID, list, err, sts[2].ID)
+	}
+	if ok, err := repo.LocalStatusInConversationOf(ctx, sts[2].ID); err != nil || !ok {
+		t.Errorf("LocalStatusInConversationOf after the merge = %v, %v; want true", ok, err)
 	}
 }

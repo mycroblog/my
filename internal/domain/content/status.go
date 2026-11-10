@@ -20,7 +20,6 @@ type Status struct {
 	IsLocal         bool
 	Visibility      Visibility
 	InReplyToURI    string // "" unless the status is a reply
-	ConversationURI string // "" when the conversation is unknown
 	PublishedAt     time.Time
 }
 

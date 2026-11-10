@@ -99,7 +99,7 @@ func (r *StatusRepository) PurgeStatuses(ctx context.Context, tx uow.Tx, statusI
 		q.PurgePollVotes, q.PurgePollTallies, q.PurgePollOptions, q.PurgePolls, q.PurgeStatusRevisions,
 		q.PurgeRemoteBoostRetractions, q.PurgeRemoteBoosts, q.PurgeRelayedStatuses, q.PurgeStatusQuoteStates,
 		q.PurgeStatusQuoteEvents, q.PurgeStatusQuotes, q.PurgeStatusQuotePolicies,
-		q.PurgeQuoteAuthorizationRevocations, q.PurgeQuoteAuthorizations, q.PurgeStatuses,
+		q.PurgeQuoteAuthorizationRevocations, q.PurgeQuoteAuthorizations, q.PurgeStatusConversations, q.PurgeStatuses,
 	}
 	for _, step := range steps {
 		if err := step(ctx, ids); err != nil {

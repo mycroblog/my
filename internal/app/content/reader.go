@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -19,6 +20,9 @@ const (
 	MaxThreadAncestors = 40
 	// MaxThreadDescendants is the number of replies Thread returns below a status.
 	MaxThreadDescendants = 60
+	// MaxThreadStatuses is the number of statuses of a conversation, oldest first, that Thread
+	// reads to find the ancestors and descendants among.
+	MaxThreadStatuses = 2000
 )
 
 // ReaderDeps are the ports a Reader uses.
@@ -257,86 +261,101 @@ func (r *Reader) Live(ctx context.Context, statusID string) error {
 	return err
 }
 
-// Thread returns the ancestors and descendants of a status that viewer may see (FR-106).
+// Thread returns the ancestors and descendants of a status that viewer may see (FR-106). The
+// candidates are the statuses of its conversation that are not deleted (ADR-0154 §1), read
+// once; the ancestors and descendants are those that the reply links reach from the status, so
+// that a status that only declares the conversation is not shown. The candidates are then
+// decided and presented a page at a time (Reader.page): the ancestors with the first
+// descendants, and more descendants while fewer than MaxThreadDescendants are shown.
 func (r *Reader) Thread(ctx context.Context, viewer Viewer, statusID string) (Thread, error) {
 	st, _, err := r.aud.visibleStatus(ctx, viewer, statusID)
 	if err != nil {
 		return Thread{}, err
 	}
-	var out Thread
-	seen := map[string]bool{st.ID: true}
-	for cur := st; len(out.Ancestors) < MaxThreadAncestors && cur.InReplyToURI != ""; {
-		parent, view, ok, err := r.viewByURI(ctx, viewer, cur.InReplyToURI)
-		if err != nil {
-			return Thread{}, err
+	convs, err := r.d.Statuses.StatusConversations(ctx, []string{st.ID})
+	if err != nil {
+		return Thread{}, err
+	}
+	conv, ok := convs[st.ID]
+	if !ok {
+		return Thread{}, nil
+	}
+	candidates, err := r.d.Statuses.ListLiveConversationStatuses(ctx, conv.ID, "", MaxThreadStatuses)
+	if err != nil {
+		return Thread{}, err
+	}
+	byURI := make(map[string]content.Status, len(candidates))
+	replies := map[string][]content.Status{} // by the URI replied to, in ID order
+	for _, c := range candidates {
+		byURI[c.URI] = c
+		if c.InReplyToURI != "" {
+			replies[c.InReplyToURI] = append(replies[c.InReplyToURI], c)
 		}
+	}
+	seen := map[string]bool{st.ID: true}
+	var up []string // the ancestors, nearest first
+	for cur := st; len(up) < MaxThreadAncestors && cur.InReplyToURI != ""; {
+		parent, ok := byURI[cur.InReplyToURI]
 		if !ok || seen[parent.ID] {
 			break
 		}
 		seen[parent.ID] = true
-		out.Ancestors = append([]StatusView{view}, out.Ancestors...)
+		up = append(up, parent.ID)
 		cur = parent
 	}
-	if err := r.descend(ctx, viewer, st, seen, &out.Descendants); err != nil {
+	// The descendants depth first in posting order; skip[i] is where the replies below down[i] end.
+	var down []string
+	var skip []int
+	var walk func(uri string)
+	walk = func(uri string) {
+		for _, reply := range replies[uri] {
+			if seen[reply.ID] {
+				continue
+			}
+			seen[reply.ID] = true
+			i := len(down)
+			down, skip = append(down, reply.ID), append(skip, 0)
+			walk(reply.URI)
+			skip[i] = len(down)
+		}
+	}
+	walk(st.URI)
+
+	loaded := min(len(down), MaxThreadDescendants)
+	page, err := r.page(ctx, viewer, slices.Concat(up, down[:loaded]))
+	if err != nil {
 		return Thread{}, err
 	}
-	return out, nil
-}
-
-// descend appends the visible replies to st, each followed by its own replies.
-func (r *Reader) descend(ctx context.Context, viewer Viewer, st content.Status, seen map[string]bool, out *[]StatusView) error {
-	replies, err := r.d.Statuses.ListReplies(ctx, st.URI)
-	if err != nil {
-		return err
-	}
-	for _, reply := range replies {
-		if len(*out) >= MaxThreadDescendants {
-			return nil
-		}
-		if seen[reply.ID] {
-			continue
-		}
-		seen[reply.ID] = true
-		ok, author, err := r.aud.visible(ctx, viewer, reply)
-		if err != nil {
-			return err
-		}
-		if !ok {
-			continue
-		}
-		view, err := r.present(ctx, viewer, reply, author)
+	var out Thread
+	for _, id := range up {
+		view, err := page.View(ctx, viewer, id)
 		if errors.Is(err, ErrNotFound) {
-			continue // deleted meanwhile
+			break // the ancestors stop at the first that the viewer may not see
 		}
 		if err != nil {
-			return err
+			return Thread{}, err
 		}
-		*out = append(*out, view)
-		if err := r.descend(ctx, viewer, reply, seen, out); err != nil {
-			return err
+		out.Ancestors = append([]StatusView{view}, out.Ancestors...)
+	}
+	for i := 0; i < len(down) && len(out.Descendants) < MaxThreadDescendants; {
+		if i >= loaded {
+			loaded = min(len(down), i+MaxThreadDescendants)
+			if page, err = r.page(ctx, viewer, down[i:loaded]); err != nil {
+				return Thread{}, err
+			}
 		}
+		view, err := page.View(ctx, viewer, down[i])
+		if errors.Is(err, ErrNotFound) {
+			i = skip[i] // nor the replies below one that the viewer may not see
+			continue
+		}
+		if err != nil {
+			return Thread{}, err
+		}
+		out.Descendants = append(out.Descendants, view)
+		i++
 	}
-	return nil
-}
-
-// viewByURI returns the live status with uri as viewer sees it; ok is false when it is
-// missing, deleted, or hidden from the viewer.
-func (r *Reader) viewByURI(ctx context.Context, viewer Viewer, uri string) (content.Status, StatusView, bool, error) {
-	st, err := r.d.Statuses.FindStatusByURI(ctx, uri)
-	if errors.Is(err, ErrNotFound) {
-		return content.Status{}, StatusView{}, false, nil
-	}
-	if err != nil {
-		return content.Status{}, StatusView{}, false, err
-	}
-	view, err := r.View(ctx, viewer, st.ID)
-	if errors.Is(err, ErrNotFound) {
-		return content.Status{}, StatusView{}, false, nil
-	}
-	if err != nil {
-		return content.Status{}, StatusView{}, false, err
-	}
-	return st, view, true, nil
+	return out, nil
 }
 
 // History returns the revisions of a status that viewer may see, oldest first (FR-109). What

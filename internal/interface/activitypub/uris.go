@@ -27,6 +27,10 @@ const (
 // before the UUID (ADR-0069 §1).
 const quoteAuthorizationsPrefix = "/ap/quote_authorizations/"
 
+// contextsPrefix is the path of the IRIs of this server's conversations before the UUID
+// (ADR-0018, ADR-0154 §4).
+const contextsPrefix = "/ap/contexts/"
+
 // activitiesPrefix is the path of the IRIs of this server's activities other than Create before
 // the UUID (ADR-0018); only the Announce of a public or unlisted boost is served (ADR-0018 §16).
 const activitiesPrefix = "/ap/activities/"

@@ -3,7 +3,6 @@
 package content
 
 import (
-	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -201,6 +200,10 @@ func NewService(d Deps) *Service {
 type Post struct {
 	Status   content.Status
 	Revision content.Revision
+	// ParentStored reports, for a status just stored, that the status it replies to was stored
+	// before it (its conversation is the parent's); false for one that replies to nothing and on
+	// every read.
+	ParentStored bool
 }
 
 // TextInput is the content of a post or an edit.
@@ -380,14 +383,14 @@ func (s *Service) PrepareCreate(ctx context.Context, in CreateInput) (PreparedCr
 // StatusCreated, and returns it.
 func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Post, error) {
 	repo := s.d.Repository
-	if err := repo.InsertStatus(ctx, tx, p.st); err != nil {
+	parentStored, err := s.insertStatus(ctx, tx, p.st, "")
+	if err != nil {
 		return Post{}, err
 	}
 	if err := repo.InsertLocalStatus(ctx, tx, p.local); err != nil {
 		return Post{}, err
 	}
 	rev := p.rev
-	var err error
 	if rev.TagIDs, err = ensureTags(ctx, tx, repo, p.tags); err != nil {
 		return Post{}, err
 	}
@@ -418,7 +421,7 @@ func (s *Service) CreateTx(ctx context.Context, tx uow.Tx, p PreparedCreate) (Po
 			return Post{}, err
 		}
 	}
-	return Post{Status: p.st, Revision: rev}, nil
+	return Post{Status: p.st, Revision: rev, ParentStored: parentStored}, nil
 }
 
 // prepareCreate checks and builds the status of in by author, outside any transaction.
@@ -453,7 +456,6 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 		Visibility:      content.EffectiveVisibility(in.Visibility, restrictions.Author),
 		PublishedAt:     now,
 	}
-	st.ConversationURI = st.URI
 	if in.InReplyToID != "" {
 		if !restrictions.CanInteract() {
 			return PreparedCreate{}, fmt.Errorf("account %s: %w", in.AuthorAccountID, ErrInteractionRestricted)
@@ -463,7 +465,6 @@ func (s *Service) prepareCreate(ctx context.Context, author appaccount.Actor, in
 			return PreparedCreate{}, err
 		}
 		st.InReplyToURI = parent.URI
-		st.ConversationURI = cmp.Or(parent.ConversationURI, parent.URI)
 	}
 	quotePolicy, err := s.newQuotePolicy(ctx, author, in.QuotePolicy)
 	if err != nil {

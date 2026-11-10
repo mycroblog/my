@@ -16,7 +16,6 @@ CREATE TABLE statuses (
   is_local boolean NOT NULL,
   visibility text NOT NULL CHECK (visibility IN ('public', 'local', 'unlisted', 'private', 'direct')),
   in_reply_to_uri text,
-  conversation_uri text,
   published_at timestamptz NOT NULL,
   -- local statuses are never federated, so only this instance has them (ADR-0017).
   CONSTRAINT statuses_local_check CHECK (visibility <> 'local' OR is_local)
@@ -24,7 +23,34 @@ CREATE TABLE statuses (
 CREATE UNIQUE INDEX statuses_uri ON statuses (uri);
 CREATE INDEX statuses_author_account_id_id ON statuses (author_account_id, id);
 CREATE INDEX statuses_in_reply_to_uri ON statuses (in_reply_to_uri);
-CREATE INDEX statuses_conversation_uri_id ON statuses (conversation_uri, id);
+
+-- Resource: a conversation (ADR-0154 §1), with the IRI that a remote post declared or that this
+-- server made (https://{host}/ap/contexts/{id}); is_local tells which. A row stays when its
+-- statuses go, so that its IRI never names another conversation.
+CREATE TABLE conversations (
+  id uuid NOT NULL PRIMARY KEY,
+  uri text NOT NULL,
+  is_local boolean NOT NULL
+);
+CREATE UNIQUE INDEX conversations_uri ON conversations (uri);
+
+-- Current value: the conversation each status belongs to now; a merge moves the rows of the
+-- merged conversation to the one it is merged into, so a row never names a merged conversation.
+CREATE TABLE status_conversations (
+  status_id uuid NOT NULL PRIMARY KEY,
+  conversation_id uuid NOT NULL
+);
+CREATE INDEX status_conversations_conversation_id_status_id ON status_conversations (conversation_id, status_id);
+
+-- Event: a conversation merged into another once a reply showed both to be one thread
+-- (ADR-0154 §3), with the status whose storing showed it. A conversation is merged once.
+CREATE TABLE conversation_merges (
+  merged_conversation_id uuid NOT NULL PRIMARY KEY,
+  into_conversation_id uuid NOT NULL,
+  status_id uuid NOT NULL,
+  merged_at timestamptz NOT NULL
+);
+CREATE INDEX conversation_merges_into_conversation_id ON conversation_merges (into_conversation_id);
 
 -- Resource (subtype): a status posted on this instance, with the client API's Idempotency-Key.
 CREATE TABLE local_statuses (

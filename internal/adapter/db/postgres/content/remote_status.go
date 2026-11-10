@@ -54,15 +54,6 @@ func insertRemoteRevisionParts(ctx context.Context, q *contentgen.Queries, rev c
 	return nil
 }
 
-// LocalStatusInConversation implements content.Repository.
-func (r *StatusRepository) LocalStatusInConversation(ctx context.Context, conversationURI string) (bool, error) {
-	if conversationURI == "" {
-		return false, nil
-	}
-	ok, err := r.db.reader().ExistsLocalStatusInConversation(ctx, postgres.ToNullString(conversationURI))
-	return ok, postgres.Wrap(err, "find local status in conversation")
-}
-
 // EnsureCustomEmoji implements content.Repository.
 func (r *StatusRepository) EnsureCustomEmoji(ctx context.Context, tx uow.Tx, e content.CustomEmoji) (content.CustomEmoji, error) {
 	q, err := r.db.queries(tx)

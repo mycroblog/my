@@ -79,7 +79,7 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 		UnitOfWork: a.UnitOfWork, Repository: repo, Outbox: outbox,
 		Statuses: federation.ContentStatuses{Service: a.Content, Interactions: a.Interactions},
 		Accounts: a.Accounts, Graph: a.Graph, Parts: a.Statuses, Follows: a.Graph, Images: a.Media.Images, Moves: a.Accounts,
-		EmojiTags: a.Media.EmojiTags, Quotes: a.Content, Aliases: a.Accounts,
+		EmojiTags: a.Media.EmojiTags, Quotes: a.Content, Conversations: a.Content, Aliases: a.Accounts,
 		Blocks:  a.Graph,
 		Reports: a.Moderation,
 		Relays:  a.Relays,
@@ -99,11 +99,12 @@ func (a *App) setUpFanOut(cfg *config.Config, repo federation.Repository, outbox
 func (a *App) newObjects(cfg *config.Config) *federation.Objects {
 	return federation.NewObjects(federation.ObjectsDeps{
 		Statuses: a.Content, Accounts: a.Accounts, Graph: a.Graph, Timeline: a.Timeline, Reader: a.Statuses, Images: a.Media.Images,
-		Aliases:    a.Accounts,
-		Quotes:     federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
-		Boosts:     a.Interactions,
-		Signatures: federation.NewSignatureVerifier(httpsig.New(), a.RemoteActors, a.KV, a.Clock),
-		Domains:    a.ModerationPolicy,
+		Aliases:       a.Accounts,
+		Quotes:        federation.ContentQuotes{Service: a.Content, Interactions: a.Interactions},
+		Conversations: a.Content,
+		Boosts:        a.Interactions,
+		Signatures:    federation.NewSignatureVerifier(httpsig.New(), a.RemoteActors, a.KV, a.Clock),
+		Domains:       a.ModerationPolicy,
 		// Authorized fetch (FR-408) is the instance setting, read per request.
 		Settings: a.Instance,
 		Host:     cfg.Host, AccountDomain: cfg.AccountDomain, Logger: a.Logger,

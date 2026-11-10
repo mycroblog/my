@@ -45,6 +45,9 @@ type FanOutDeps struct {
 	// Quotes reads the quotes and quote policies that Notes present (ADR-0069); nil presents
 	// none.
 	Quotes NoteQuotes
+	// Conversations reads the conversations whose IRIs Notes carry (ADR-0154 §5); nil leaves
+	// context and conversation out.
+	Conversations NoteConversations
 	// Images reads the avatars and headers of the actors that Updates carry; nil sends none.
 	Images ProfileImages
 	// EmojiTags reads the custom emoji of the profiles of the actors that Updates carry; nil
@@ -133,7 +136,7 @@ func NewFanOut(d FanOutDeps) *FanOut {
 	if d.AccountDomain == "" {
 		d.AccountDomain = d.Host
 	}
-	return &FanOut{d: d, notes: notes{parts: d.Parts, graph: d.Graph, quotes: d.Quotes, host: d.Host, accountDomain: d.AccountDomain}}
+	return &FanOut{d: d, notes: notes{parts: d.Parts, graph: d.Graph, quotes: d.Quotes, conversations: d.Conversations, host: d.Host, accountDomain: d.AccountDomain}}
 }
 
 // RegisterJobs registers the JobFanOut handler.

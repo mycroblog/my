@@ -45,6 +45,19 @@ type BoostRetraction struct {
 	RetractedAt time.Time
 }
 
+type Conversation struct {
+	ID      string
+	Uri     string
+	IsLocal bool
+}
+
+type ConversationMerge struct {
+	MergedConversationID string
+	IntoConversationID   string
+	StatusID             string
+	MergedAt             time.Time
+}
+
 type CustomEmoji struct {
 	ID              string
 	Shortcode       string
@@ -252,7 +265,6 @@ type Status struct {
 	IsLocal         bool
 	Visibility      string
 	InReplyToUri    *string
-	ConversationUri *string
 	PublishedAt     time.Time
 }
 

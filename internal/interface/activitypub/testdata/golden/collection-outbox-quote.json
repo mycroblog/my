@@ -18,6 +18,7 @@
         "@id": "gts:canQuote",
         "@type": "@id"
       },
+      "conversation": "ostatus:conversation",
       "discoverable": "toot:discoverable",
       "featured": {
         "@id": "toot:featured",
@@ -50,6 +51,7 @@
         "@id": "as:movedTo",
         "@type": "@id"
       },
+      "ostatus": "http://ostatus.org#",
       "quote": {
         "@id": "https://w3id.org/fep/044f#quote",
         "@type": "@id"
@@ -131,6 +133,8 @@
             "name": "#FediVerse"
           }
         ],
+        "context": "https://social.example.org/ap/contexts/0192f3b0-2c3d-7e4f-8a00-1122334455c0",
+        "conversation": "https://social.example.org/ap/contexts/0192f3b0-2c3d-7e4f-8a00-1122334455c0",
         "quote": "https://remote.example/users/bob/statuses/1",
         "_misskey_quote": "https://remote.example/users/bob/statuses/1",
         "quoteUrl": "https://remote.example/users/bob/statuses/1",
