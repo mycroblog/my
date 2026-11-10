@@ -128,7 +128,7 @@ These names are used under the activities below. List each one you use.
 | --- | --- |
 | Purposes | Telling people about activity and about their account, by email and Web Push |
 | Data subjects | People with an account, people named in a notification |
-| Personal data | Notifications and read markers, notification settings, email address, the text of each email, bounce and complaint records, Web Push address and keys, post subscriptions |
+| Personal data | Notifications and read markers, notification settings, the notification policy with the accepted and dismissed notification requests, email address, the text of each email, bounce and complaint records, Web Push address and keys, post subscriptions |
 | Recipients | Hosting, mail provider, push services (the message body is encrypted, and they hold it up to 48 hours) |
 | Erasure | At account erasure, or with the post they are about. Web Push: also when the person or the push service ends it. The mail provider: {{ITS PERIOD}} |
 | Legal basis | {{e.g. contract, legitimate interests}} |
