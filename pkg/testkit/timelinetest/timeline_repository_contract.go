@@ -25,8 +25,8 @@ import (
 // reads their latest revision; the follow edges, exclusions, domain mutes, and restrictions, with
 // their expiry and the subdomains of a domain; the home, local, federated, hashtag, profile, and
 // list timelines with their filters, languages, read window, and keyset paging; the facts of a
-// page and the muted domains; the lists with their members; and the projections emptied for a
-// rebuild. The timeline use cases and projectors on top of it are TimelineFlows, which
+// page and the muted domains; the lists with their members; the followed hashtags with the
+// hashtag branch of home; and the projections emptied for a rebuild. The timeline use cases and projectors on top of it are TimelineFlows, which
 // internal/flowtest/timeline runs once on SQLite.
 func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 	t.Helper()
@@ -47,6 +47,8 @@ func TimelineContract(t *testing.T, newHarness TimelineFactory) {
 		{"ListsTheListTimeline", timelineRepoListTimeline},
 		{"EmptiesTheProjectionsForARebuild", timelineRepoRebuild},
 		{"KeepsConversations", timelineRepoConversations},
+		{"KeepsFollowedTags", timelineRepoTagFollows},
+		{"ListsTheHashtagBranchOfHome", timelineRepoHomeTags},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -196,7 +198,7 @@ func timelineRepoEntries(t *testing.T, r *timelineRepo) {
 		if inserted, err := r.repo.InsertEntry(ctx, tx, p); err != nil || inserted {
 			t.Errorf("InsertEntry(again) = %v, %v; want false", inserted, err)
 		}
-		if got, err := r.repo.Entry(ctx, tx, b.ID); err != nil || got != b {
+		if got, err := r.repo.Entry(ctx, tx, b.ID); err != nil || !reflect.DeepEqual(got, b) {
 			t.Errorf("Entry(boost) = %+v, %v; want %+v", got, err, b)
 		}
 		if _, err := r.repo.Entry(ctx, tx, r.ids.NewID()); !errors.Is(err, apptimeline.ErrNotFound) {

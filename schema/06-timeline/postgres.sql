@@ -143,6 +143,22 @@ CREATE INDEX list_members_owner_member ON list_members (owner_account_id, member
 CREATE INDEX list_members_member_account_id ON list_members (member_account_id);
 
 -- ---------------------------------------------------------------------------------------------
+-- timeline: followed hashtags (data-model §4.6, ADR-0013 §27). Owned by internal/app/timeline:
+-- the account's commands write them, and the home timeline reads the posts of the followed tags
+-- from feed_tag_entries (data-model §6.1).
+-- ---------------------------------------------------------------------------------------------
+
+-- Current value: a hashtag (a tag of content) that an account follows, at most 100 per account;
+-- unfollowing it deletes the row. A rebuild of the projections keeps them.
+CREATE TABLE feed_tag_follows (
+  account_id uuid NOT NULL,
+  tag_id uuid NOT NULL,
+  followed_at timestamptz NOT NULL,
+  PRIMARY KEY (account_id, tag_id)
+);
+CREATE INDEX feed_tag_follows_tag_id ON feed_tag_follows (tag_id);
+
+-- ---------------------------------------------------------------------------------------------
 -- timeline: direct messages by conversation (data-model §4.6, §6.4, ADR-0154 §6). Owned by
 -- internal/app/timeline: its projectors derive feed_conversation_participants and
 -- feed_conversations from the direct posts and follow content.conversation_merged; the owner's

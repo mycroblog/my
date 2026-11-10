@@ -79,6 +79,9 @@ func (r *Repository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accountID stri
 			return q.EraseListsOf(ctx, timelinegen.EraseListsOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {
+			return q.EraseFeedTagFollowsOf(ctx, timelinegen.EraseFeedTagFollowsOfParams{AccountID: a, Lim: n})
+		},
+		func(ctx context.Context, a string, n int32) (int64, error) {
 			return q.EraseFeedConversationParticipantsOf(ctx, timelinegen.EraseFeedConversationParticipantsOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int32) (int64, error) {

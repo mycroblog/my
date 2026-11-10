@@ -37,6 +37,11 @@ type Entry struct {
 	RevisionSeq int
 	// IsReply is true for a post that replies to a status; a boost never is one.
 	IsReply bool
+	// FollowedTagIDs are, for a post that the home timeline lists only for the hashtags the
+	// viewer follows (ADR-0013 §28), those of its hashtags, sorted; nil for every other entry.
+	// FollowedTags are their names, sorted, which Service fills in.
+	FollowedTagIDs []string
+	FollowedTags   []string
 }
 
 // DirectRecipient is an account that a direct post is addressed to (feed_direct_recipients).
@@ -211,8 +216,8 @@ type Facts struct {
 }
 
 // Repository is the persistence port of the timeline module (data-model §4.6). It reads and
-// writes only the feed_* tables (those of the direct messages by conversation included),
-// tag_usage, and the tables of lists. The database adapters implement it and pass
+// writes only the feed_* tables (those of the direct messages by conversation and the followed
+// hashtags included), tag_usage, and the tables of lists. The database adapters implement it and pass
 // timelinetest.TimelineContract; timelinetest.TimelineFlows (internal/flowtest/timeline) drives the timeline use
 // cases and projectors on them.
 //
@@ -346,4 +351,6 @@ type Repository interface {
 
 	// The direct messages by conversation (FR-212).
 	ConversationRepository
+	// The followed hashtags (ADR-0013 §24 to §28).
+	TagFollowRepository
 }
