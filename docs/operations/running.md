@@ -221,7 +221,7 @@ The setting `metrics_exporter` (default `none`) exports service metrics. Its rel
 
 | `metrics_exporter` | Path | Suited to |
 | --- | --- | --- |
-| `none` | Nothing is exported. Instrumentation costs almost nothing | Cloud Run (use the platform's metrics and log-based metrics instead) |
+| `none` | Nothing is exported. Instrumentation costs almost nothing. The instance-wide values still go to one `metrics snapshot` log line every 15 minutes | Cloud Run (use the platform's metrics and log-based metrics instead) |
 | `prometheus` | `GET /metrics` on `metrics_listen` (default `127.0.0.1:9464`). It is a listener separate from the public `listen`, with no authentication, and runs for every `role` | Self-hosted (scraped by a Prometheus-compatible server or KEDA) |
 | `otlp` | Sent to an OpenTelemetry Collector over OTLP/HTTP. The destination comes from the standard OTel environment variables such as `OTEL_EXPORTER_OTLP_ENDPOINT` | Setups where you can run a collector |
 | `emf` | CloudWatch Embedded Metric Format JSON lines. Request and job metrics ride on the closing log lines above; the others are written to standard output, one line per label set, when a request or job finishes | AWS ECS |
