@@ -165,6 +165,9 @@ type Options struct {
 	// StatusFilters judges the statuses that the timelines, threads, notifications, and streams
 	// show against their viewers' keyword filters; nil judges none.
 	StatusFilters StatusFilters
+	// FeaturedTags keeps the hashtags that accounts feature on their profiles; nil answers the
+	// change with 404, and lists none.
+	FeaturedTags FeaturedTags
 	// Conversations reads and keeps the viewer's direct messages by conversation and tells the
 	// streams how a conversation shows; nil answers their operations with 404 and streams no
 	// conversation events.

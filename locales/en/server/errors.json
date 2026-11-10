@@ -627,6 +627,10 @@
     "defaultMessage": "This is the only administrator of this server. Make another user an administrator first.",
     "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
   },
+  "errors.featured_tags.too_many": {
+    "defaultMessage": "You can feature at most 10 hashtags on your profile.",
+    "description": "API error title for HTTP 422 when the user asks to feature more hashtags on their profile than the limit."
+  },
   "errors.followed_tags.too_many": {
     "defaultMessage": "You already follow the most hashtags allowed. Unfollow one first.",
     "description": "API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags."

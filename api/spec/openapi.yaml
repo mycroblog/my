@@ -266,6 +266,8 @@ paths:
     $ref: ./paths/accounts_{id}_following.yaml
   /accounts/{id}/lists:
     $ref: ./paths/accounts_{id}_lists.yaml
+  /accounts/{id}/featured_tags:
+    $ref: ./paths/accounts_{id}_featured_tags.yaml
   /accounts/{id}/mute:
     $ref: ./paths/accounts_{id}_mute.yaml
   /accounts/{id}/follower:
@@ -378,6 +380,8 @@ paths:
     $ref: ./paths/filters.yaml
   /filters/{id}:
     $ref: ./paths/filters_{id}.yaml
+  /featured_tags:
+    $ref: ./paths/featured_tags.yaml
   /timelines/home:
     $ref: ./paths/timelines_home.yaml
   /timelines/local:
@@ -854,7 +858,7 @@ components:
             "read:statuses": Read posts and timelines.
             "read:supporters": Read the user's own supporter subscription.
             "read:voice": Read the voice chat rooms the user sees.
-            "write:accounts": Change the user's profile, preferences, notification settings, badges, and supporter listing.
+            "write:accounts": Change the user's profile, featured hashtags, preferences, notification settings, badges, and supporter listing.
             "write:blocks": Block and unblock accounts.
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
@@ -1087,6 +1091,8 @@ components:
       $ref: ./components/responses/KeywordFilter.yaml
     KeywordFilterCollection:
       $ref: ./components/responses/KeywordFilterCollection.yaml
+    FeaturedHashtagCollection:
+      $ref: ./components/responses/FeaturedHashtagCollection.yaml
   schemas:
     AdminBrandImage:
       $ref: ./components/schemas/AdminBrandImage.yaml
@@ -1866,6 +1872,12 @@ components:
       $ref: ./components/schemas/FilterResult.yaml
     MatchedKeywordFilter:
       $ref: ./components/schemas/MatchedKeywordFilter.yaml
+    FeaturedHashtag:
+      $ref: ./components/schemas/FeaturedHashtag.yaml
+    FeaturedHashtagCollection:
+      $ref: ./components/schemas/FeaturedHashtagCollection.yaml
+    SetFeaturedTagsRequest:
+      $ref: ./components/schemas/SetFeaturedTagsRequest.yaml
     ListRequest:
       $ref: ./components/schemas/ListRequest.yaml
     MediaAnimatedVariants:

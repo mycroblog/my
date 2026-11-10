@@ -131,6 +131,8 @@ description: |
     follow request was accepted) can be added to a list.
   - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
     hashtags allowed (100). Unfollow one first.
+  - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
+    than allowed (10).
   - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
     account's actor, or to the user itself.
   - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases

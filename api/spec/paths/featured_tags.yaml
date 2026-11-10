@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listFeaturedTags
+  summary: List the hashtags the user features
+  description: |
+    The hashtags that the user features on their profile (at most 10), in the order the user
+    chose, with how many of the user's `public` and `unlisted` posts carry each.
+  tags: [accounts]
+  security:
+    - oauth2: ["read:accounts"]
+  responses:
+    "200":
+      $ref: ../components/responses/FeaturedHashtagCollection.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+put:
+  operationId: setFeaturedTags
+  summary: Choose the hashtags the user features
+  description: |
+    Replaces the hashtags that the user features on their profile with `names`, in their
+    order; a hashtag that no post has used yet can be featured. The other servers that follow
+    the user learn of the change as of a change of the profile. A name that is no hashtag is a
+    422, and more than 10 hashtags a 422 `/api/v1/problems/too-many-featured-tags`; either
+    changes nothing.
+  tags: [accounts]
+  security:
+    - oauth2: ["write:accounts"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/SetFeaturedTagsRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/FeaturedHashtagCollection.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

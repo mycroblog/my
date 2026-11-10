@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A hashtag that an account features on its profile, with how many of the account's `public`
+  and `unlisted` posts that this server has carry it. The account's posts of the other
+  visibilities are never counted.
+type: object
+required: [name, url, statuses_count]
+properties:
+  name:
+    description: The hashtag without `#`, as first written on the server.
+    type: string
+  url:
+    description: The hashtag's page.
+    type: string
+    format: uri
+  statuses_count:
+    description: How many of the account's `public` and `unlisted` posts carry the hashtag now.
+    type: integer
+    format: int64
+    minimum: 0
+  last_status_at:
+    description: |
+      When one of those posts was last posted or edited with the hashtag; absent when none
+      carries it.
+    type: string
+    format: date-time
