@@ -48,8 +48,8 @@ import them on the new account. Mastodon has no file of followed hashtags, so on
 this one imports that file. "Merge" keeps what you have and adds what the file lists; "Overwrite" makes the list exactly what the file
 lists. Accounts and posts on other servers are looked up in the background, which can take a while.
 
-"Archive and deletion" prepares a ZIP archive of your posts, your profile, and your follows, followed hashtags, blocks,
-mutes, muted domains, and bookmarks.
+"Archive and deletion" prepares a ZIP archive of your posts, your profile, your keyword filters, and your follows,
+followed hashtags, blocks, mutes, muted domains, and bookmarks.
 
 ## When an account you follow moves
 

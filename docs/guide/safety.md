@@ -56,6 +56,7 @@ is folded, even for "hide". A boost is filtered by the post it boosts.
 
 A filter applies at once to every post, old ones too, but an app shows the change when it loads the timeline again.
 You can have up to 100 filters, with up to 100 words each and 1,000 words in all.
+The archive of "Archive and deletion" in the settings holds your filters, expired ones included, as `keyword_filters.json`.
 
 ## Reporting an account or a post
 
