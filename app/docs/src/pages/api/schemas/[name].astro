@@ -1,0 +1,34 @@
+---
+// SPDX-License-Identifier: AGPL-3.0-only
+// The page of a schema of the client API reference (src/api-schemas.ts): its fields and the example generated from
+// them, rendered by starlight-openapi's own component and generator as on the operation pages, with the schemas it
+// holds linked to their pages.
+import StarlightPage from "@astrojs/starlight/components/StarlightPage.astro";
+import Schema from "starlight-openapi-sources/components/schema/Schema.astro";
+import { createSchemaExampleValue } from "starlight-openapi-sources/libs/exampleValue";
+import { schemaDescription, type SchemaPage, schemaPages, schemaSidebar } from "../../../api-schemas";
+
+export function getStaticPaths() {
+  return schemaPages().map((page) => ({ params: { name: page.slug }, props: { page } }));
+}
+
+interface Props {
+  page: SchemaPage;
+}
+
+const { page } = Astro.props;
+---
+
+<StarlightPage
+  frontmatter={{ title: page.name, description: schemaDescription(page) }}
+  headings={[]}
+  sidebar={schemaSidebar()}
+>
+  <Schema
+    schema={page.schema}
+    example={createSchemaExampleValue(page.schema)}
+    examples={undefined}
+    generated
+    headingLevel={2}
+  />
+</StarlightPage>
