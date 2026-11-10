@@ -1141,25 +1141,38 @@ describe("the notifications page", () => {
 
       list.hold();
       const button = screen.getByRole("button", { name: "Try again" });
+      let requests = list.state.requests;
       await user.click(button);
+      // Answer once the request is held, so the answer cannot overtake it.
+      await waitFor(() => {
+        expect(list.state.requests).toBeGreaterThan(requests);
+      });
       list.answer(false);
 
       const alert = await within(screen.getByRole("main")).findByRole("alert");
       expect(alert).toHaveTextContent("Could not load the notifications");
       expect(alert).not.toHaveTextContent("Service Unavailable");
+      // The alert and the button settle in separate renders: wait for the button, then assert.
+      await waitFor(() => {
+        expect(button).not.toHaveAttribute("data-pending");
+      });
       expect(button).toHaveFocus();
-      expect(button).not.toHaveAttribute("data-pending");
 
       // And again: the alert goes while the retry runs, and comes back with its result.
       list.hold();
+      requests = list.state.requests;
       await user.click(button);
       await waitFor(() => {
         expect(within(screen.getByRole("main")).queryByRole("alert")).not.toBeInTheDocument();
+        expect(list.state.requests).toBeGreaterThan(requests);
       });
       list.answer(false);
       expect(await within(screen.getByRole("main")).findByRole("alert")).toHaveTextContent(
         "Could not load the notifications",
       );
+      await waitFor(() => {
+        expect(button).not.toHaveAttribute("data-pending");
+      });
       expect(button).toHaveFocus();
     });
 
