@@ -45,6 +45,12 @@
 - **下書き**（`hooks/draftStore.ts`）: フォームの外のストア（`useSyncExternalStore`）に置き、シート・返信ボタンが同じ下書きを共有する。
   リロードやタブの異常終了で失わないように、アカウントごとのキー（`my:user:compose:<アカウント ID>`）で sessionStorage に保存する。このタブだけのもので、タブを閉じるかセッションが終わると消える（§10）。
   アップロードの途中のファイルは保存しない（再開できない）。アップロード済みの画像は ID と説明を保存し、リロード後はサーバーのサムネイルを表示する。
+- **サーバーの下書きと予約投稿**（[ADR-0156](../../adr/0156-drafts-and-scheduled-posts.md)、[screens/drafts.md](screens/drafts.md)）: 書きかけは `saved`（サーバーの下書きの ID・`ETag`・予約の時刻）を持てる。
+  「下書きに保存」は `saved` がなければ `POST /drafts`、あれば `PUT /drafts/{id}`（`If-Match` に `ETag`）で中身全体を送り、フォームを空にする。412 は `saved` を外して理由を出し、次の保存を新しい下書きにする。
+  下書きの中身（`DraftRequest`）は投稿と違い、空の本文・処理中の添付・書きかけの投票を持てる。予約は保存の後に `PUT /drafts/{id}/schedule` を送る。
+  下書きの画面の「編集する」は `GET /drafts/{id}` で `ETag` とともに読み、書きかけを置き換える（`DraftStore.open`）。`saved` のある書きかけを送ると、投稿が成功した後に `DELETE /drafts/{id}` で下書きを消す。
+  予約の日付と時刻は、利用者のタイムゾーン（`useDisplaySettings` の `timeZone`、なければブラウザの）の壁時計の時刻として `Intl.DateTimeFormat` で UTC の時刻に直す（`hooks/zonedTime.ts`。夏時間で存在しない時刻は後ろへずらす）。
+  上限（`limits.drafts` の `scheduled_post_min_lead_minutes`・`scheduled_post_max_lead_days`）の外の時刻は送らない。下書きの一覧の query は compose の `api/drafts.ts` が持ち、保存・予約・削除のたびに無効化の印を付ける。
 - **既定値**: 公開範囲・交流できる人・言語は、利用者が選ぶまで `GET /preferences` の既定値に従う（state にコピーせず、表示のたびに求める）。返信の公開範囲の既定は、既定値と返信先のうち狭いほう（ADR-0017。`local` への返信は `local`）。
   `direct` の投稿（DM）への返信は、選んだものによらず `direct` にする（`policy.ts` の `chosenVisibility`）。会話にいなかった人に広げないため（ADR-0154 §6）で、公開範囲の選択肢は `direct` のほかを無効にし、グループの説明でその理由を言う（[screens/direct-messages.md](screens/direct-messages.md)）。
   公開範囲は 5 段階を説明付きのラジオグループ（ポップオーバーの中）で選ぶ。
