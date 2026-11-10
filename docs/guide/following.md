@@ -32,6 +32,11 @@ People who want to follow your account get a request when you approve your follo
 settings, where you "Accept" or "Reject" each one, or "Approve" or "Decline" it from its notification. Your followers and the accounts you follow are on the profile page,
 which shows how many there are.
 
+"Who can see your follows and followers" under "Follows and followers" in the profile settings decides who can open
+those two lists: "Everyone" (the default), "Your followers" (people on this server whose follow you accepted), or
+"Only you". You always see both lists, and everyone still sees how many there are. Other servers get only the numbers
+unless you choose "Everyone". A list you cannot open says so in place of the accounts.
+
 ## Timelines
 
 | Timeline | What it shows |

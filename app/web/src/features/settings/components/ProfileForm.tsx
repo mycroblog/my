@@ -11,6 +11,8 @@ import {
   FormActionBar,
   Hint,
   InlineError,
+  Radio,
+  RadioGroup,
   ProfileField,
   ProfileFields as ProfileFieldList,
   ProfileHeader,
@@ -33,6 +35,7 @@ import { acceptedImageTypes } from "../api/media";
 import {
   characterCount,
   type FieldDraft,
+  type FollowsVisibility,
   type ImageControl,
   profileLimits,
   type ServerCrawlerPolicy,
@@ -153,6 +156,7 @@ export function ProfileForm() {
         </Section>
         <CrawlerSettings indexable={form.indexable} aiOptOut={form.aiOptOut} serverPolicy={form.serverPolicy} />
         <FeedSettings form={form} />
+        <FollowsVisibilitySettings control={form.followsVisibility} />
         <FormActionBar sticky result={form.result}>
           <Button type="submit" variant="primary" isPending={form.isSaving} isDisabled={form.isBusy && !form.isSaving}>
             {t("client:settings.profile.save")}
@@ -308,6 +312,54 @@ function FeedSettings({ form }: { form: ReturnType<typeof useProfileForm> }) {
           )}
         </Text>
       )}
+    </Section>
+  );
+}
+
+const followsVisibilities = ["public", "followers", "private"] as const satisfies readonly FollowsVisibility[];
+
+const followsVisibilityLabel: Record<FollowsVisibility, ClientMessageKey> = {
+  public: "client:settings.profile.follows_visibility.public",
+  followers: "client:settings.profile.follows_visibility.followers",
+  private: "client:settings.profile.follows_visibility.private",
+};
+
+const followsVisibilityDescription: Record<FollowsVisibility, ClientMessageKey> = {
+  public: "client:settings.profile.follows_visibility.public.description",
+  followers: "client:settings.profile.follows_visibility.followers.description",
+  private: "client:settings.profile.follows_visibility.private.description",
+};
+
+function isFollowsVisibility(value: string): value is FollowsVisibility {
+  return (followsVisibilities as readonly string[]).includes(value);
+}
+
+type FollowsVisibilitySettingsProps = {
+  control: { value: FollowsVisibility; onChange: (value: FollowsVisibility) => void };
+};
+
+/**
+ * Who may read the lists of the accounts the user follows and of their followers (FR-311). The counts stay on the
+ * profile whatever it is, which the group's description says.
+ */
+function FollowsVisibilitySettings({ control }: FollowsVisibilitySettingsProps) {
+  const t = useT();
+  return (
+    <Section title={t("client:settings.profile.follows")}>
+      <RadioGroup
+        label={t("client:settings.profile.follows_visibility")}
+        description={t("client:settings.profile.follows_visibility.description")}
+        value={control.value}
+        onChange={(value) => {
+          if (isFollowsVisibility(value)) control.onChange(value);
+        }}
+      >
+        {followsVisibilities.map((visibility) => (
+          <Radio key={visibility} value={visibility} description={t(followsVisibilityDescription[visibility])}>
+            {t(followsVisibilityLabel[visibility])}
+          </Radio>
+        ))}
+      </RadioGroup>
     </Section>
   );
 }

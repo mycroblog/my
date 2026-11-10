@@ -12,12 +12,15 @@ import {
   cacheSavedProfile,
   type CredentialAccount,
   credentialsQueryOptions,
+  type FollowsVisibility,
   instanceQueryOptions,
   type ProfileChange,
   type SearchIndexing,
   updateProfileMutation,
 } from "../api/me";
 import { type ImagePurpose, type MediaAttachment, MediaProcessingError, uploadImage } from "../api/media";
+
+export type { FollowsVisibility };
 
 /** The limits of a profile (UpdateCredentialsRequest in api/openapi.yaml), counted in code points as the server does. */
 export const profileLimits = { displayName: 30, note: 500, fields: 4, fieldName: 255, fieldValue: 255 } as const;
@@ -81,6 +84,8 @@ export function useProfileForm() {
   const [feedChoice, setFeedChoice] = useState<boolean | undefined>(
     account.feed_follows_indexable ? undefined : account.feed_enabled,
   );
+  // Who may read the follows and followers lists (FR-311).
+  const [followsVisibility, setFollowsVisibility] = useState<FollowsVisibility>(account.follows_visibility);
   // How many edits the form has had, and how many it had when it was last submitted: the result of a save shows
   // until the next edit.
   const [edits, setEdits] = useState(0);
@@ -119,6 +124,7 @@ export function useProfileForm() {
     indexable,
     ai_opt_out: aiOptOut,
     ...(feedChoice === undefined ? {} : { feed_enabled: feedChoice }),
+    follows_visibility: followsVisibility,
     ...avatar.change("avatar_media_id"),
     ...header.change("header_media_id"),
   });
@@ -135,6 +141,7 @@ export function useProfileForm() {
     draft.ai_opt_out !== account.ai_opt_out ||
     (draft.feed_enabled !== undefined &&
       (account.feed_follows_indexable || draft.feed_enabled !== account.feed_enabled)) ||
+    draft.follows_visibility !== account.follows_visibility ||
     draft.avatar_media_id !== undefined ||
     draft.header_media_id !== undefined ||
     !sameFields(draft.fields ?? [], account.source.fields);
@@ -188,6 +195,8 @@ export function useProfileForm() {
     feedFollowsIndexable: feedChoice === undefined,
     /** The address of the profile's feed: its page's, followed by `.atom`. */
     feedUrl: `${account.url}.atom`,
+    /** Who may read the follows and followers lists. */
+    followsVisibility: { value: followsVisibility, onChange: edit(setFollowsVisibility) },
     serverPolicy,
     featuredTags: {
       rows: featuredTags.rows,

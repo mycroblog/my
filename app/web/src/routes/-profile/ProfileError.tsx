@@ -2,8 +2,9 @@
 // The errors of the profile routes. Their h1 is the account's name, which is not known when the account failed
 // to load, so the page keeps the handle from its address instead (web-client/16-look-states-and-wording.md G16).
 import { type ErrorComponentProps, useParams } from "@tanstack/react-router";
-import { isolate } from "../../features/profile";
+import { FollowListHidden, isFollowsHidden, isolate } from "../../features/profile";
 import { useT } from "../../lib/i18n";
+import { PageHeading } from "../-layout/PageHeading";
 import { RouteError } from "../-layout/RouteStates";
 
 /** The handle of the address, `@alice` or `@alice@example.com`. */
@@ -20,10 +21,17 @@ export function ProfileError(props: ErrorComponentProps) {
 
 export type FollowListErrorProps = ErrorComponentProps & { list: "followers" | "following" };
 
-/** The error of a follow list, under the list's name with the handle in place of the account's name. */
+/**
+ * The error of a follow list, under the list's name with the handle in place of the account's name. A list that the
+ * account's owner keeps from the viewer is no error: the account has loaded, and the page says that the list is not
+ * shown.
+ */
 export function FollowListError({ list, ...props }: FollowListErrorProps) {
   const t = useT();
+  const { acct } = useParams({ strict: false });
   const name = isolate(useHandle());
+  if (isFollowsHidden(props.error) && acct !== undefined)
+    return <FollowListHidden acct={acct} list={list} renderHeading={(text) => <PageHeading>{text}</PageHeading>} />;
   return (
     <RouteError
       {...props}

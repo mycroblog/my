@@ -684,6 +684,26 @@ describe("the follow lists", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 2, name: "Not following anyone yet" })).toBeInTheDocument();
   });
+
+  test("say so, with no error to retry, when the account keeps its followers from the viewer", async () => {
+    bobServer();
+    server.use(
+      http.get(`${apiBase}/accounts/:id/followers`, () =>
+        problem(
+          403,
+          "/api/v1/problems/follows-hidden",
+          "This account keeps who it follows and who follows it to itself.",
+        ),
+      ),
+    );
+    await renderApp({ path: "/@bob/followers" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Followers of ⁨Bob⁩" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 2, name: "⁨Bob⁩ does not show their followers" })).toBeInTheDocument();
+    expect(screen.getByText("The profile still shows how many there are.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Back to the profile of ⁨Bob⁩" })).toHaveAttribute("href", "/@bob");
+    expect(screen.queryByRole("button", { name: "Try again" })).not.toBeInTheDocument();
+  });
 });
 
 describe("a profile of another server", () => {

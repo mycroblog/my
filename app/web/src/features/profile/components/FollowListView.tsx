@@ -27,24 +27,10 @@ export function FollowListView({ acct, list, renderHeading }: FollowListViewProp
   const t = useT();
   const profile = useProfile(acct);
   const { items, hasMore, isLoadingMore, loadMore, loadMoreError } = useFollowList(profile.account.id, list);
-  // The name is the user's text, isolated from the sentence around it (FSI … PDI, web-client/README.md Y10).
-  const isolated = isolate(profile.name);
 
   return (
     <Stack gap="4">
-      <Stack gap="1">
-        {renderHeading(
-          list === "followers"
-            ? t("client:profile.followers.title", { name: isolated })
-            : t("client:profile.following.title", { name: isolated }),
-        )}
-        <p>
-          <Link href={profilePath(profile.account.acct)} variant="standalone" gap="1">
-            <BackIcon />
-            {t("client:profile.list.back", { name: isolated })}
-          </Link>
-        </p>
-      </Stack>
+      <FollowListHeading acct={acct} list={list} renderHeading={renderHeading} />
       {items.length === 0 ? (
         <EmptyState
           heading={list === "followers" ? t("client:profile.followers.empty") : t("client:profile.following.empty")}
@@ -77,6 +63,53 @@ export function FollowListView({ acct, list, renderHeading }: FollowListViewProp
           </Button>
         </Cluster>
       )}
+    </Stack>
+  );
+}
+
+/** The heading of a follow list, with the link back to the profile under it. */
+function FollowListHeading({ acct, list, renderHeading }: FollowListViewProps) {
+  const t = useT();
+  const profile = useProfile(acct);
+  // The name is the user's text, isolated from the sentence around it (FSI … PDI, web-client/README.md Y10).
+  const isolated = isolate(profile.name);
+  return (
+    <Stack gap="1">
+      {renderHeading(
+        list === "followers"
+          ? t("client:profile.followers.title", { name: isolated })
+          : t("client:profile.following.title", { name: isolated }),
+      )}
+      <p>
+        <Link href={profilePath(profile.account.acct)} variant="standalone" gap="1">
+          <BackIcon />
+          {t("client:profile.list.back", { name: isolated })}
+        </Link>
+      </p>
+    </Stack>
+  );
+}
+
+/**
+ * The follow list of the account whose handle is `acct` when its owner keeps the list from the viewer
+ * (`follows_visibility`, FR-311): the list's heading, and in place of the accounts that the list is not shown, which
+ * is no error to retry. The route loader has fetched the account; the count stays on its profile.
+ */
+export function FollowListHidden({ acct, list, renderHeading }: FollowListViewProps) {
+  const t = useT();
+  const profile = useProfile(acct);
+  const isolated = isolate(profile.name);
+  return (
+    <Stack gap="4">
+      <FollowListHeading acct={acct} list={list} renderHeading={renderHeading} />
+      <EmptyState
+        heading={
+          list === "followers"
+            ? t("client:profile.followers.hidden", { name: isolated })
+            : t("client:profile.following.hidden", { name: isolated })
+        }
+        description={t("client:profile.list.hidden.description")}
+      />
     </Stack>
   );
 }

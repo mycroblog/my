@@ -131,6 +131,10 @@
     "defaultMessage": "まだフォロワーはいません",
     "description": "Shown instead of the list of followers when there are none."
   },
+  "profile.followers.hidden": {
+    "defaultMessage": "{name} はフォロワーの一覧を公開していません",
+    "description": "Shown instead of the list of followers when the account's owner keeps the list from the viewer. {name} is the account's display name."
+  },
   "profile.followers.title": {
     "defaultMessage": "{name} のフォロワー",
     "description": "Heading and document title of the list of an account's followers. {name} is the account's display name."
@@ -142,6 +146,10 @@
   "profile.following.empty": {
     "defaultMessage": "まだ誰もフォローしていません",
     "description": "Shown instead of the list of followed accounts when there are none."
+  },
+  "profile.following.hidden": {
+    "defaultMessage": "{name} はフォローしている人の一覧を公開していません",
+    "description": "Shown instead of the list of followed accounts when the account's owner keeps the list from the viewer. {name} is the account's display name."
   },
   "profile.following.title": {
     "defaultMessage": "{name} がフォロー中のアカウント",
@@ -162,6 +170,10 @@
   "profile.list.back": {
     "defaultMessage": "{name} のプロフィールに戻る",
     "description": "Link from a follow list to the account's profile. {name} is the account's display name."
+  },
+  "profile.list.hidden.description": {
+    "defaultMessage": "数はプロフィールで見られます。",
+    "description": "Under the message that a follow list is hidden: its count stays on the profile."
   },
   "profile.list.load_more": {
     "defaultMessage": "さらに表示",

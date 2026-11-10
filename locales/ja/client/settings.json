@@ -579,6 +579,42 @@
     "defaultMessage": "フィードのアドレス: {url}",
     "description": "The address of the user's Atom feed, shown while the feed is on. {url} is the address, which reads left to right."
   },
+  "settings.profile.follows": {
+    "defaultMessage": "フォローとフォロワー",
+    "description": "Heading of the part of the profile form about who may read the lists of the accounts the user follows and of their followers."
+  },
+  "settings.profile.follows_visibility": {
+    "defaultMessage": "フォローとフォロワーの一覧を見られる人",
+    "description": "Label of the radio group that chooses who may read the user's follows and followers lists."
+  },
+  "settings.profile.follows_visibility.description": {
+    "defaultMessage": "数はどれを選んでも誰にでも見え、あなたはいつでも両方の一覧を見られます。",
+    "description": "Help text of the radio group of who may read the follows and followers lists."
+  },
+  "settings.profile.follows_visibility.public": {
+    "defaultMessage": "すべての人",
+    "description": "Option of who may read the follows and followers lists: everyone."
+  },
+  "settings.profile.follows_visibility.public.description": {
+    "defaultMessage": "このサーバーでもほかのサーバーでも、誰でもあなたのフォローとフォロワーを見られます。",
+    "description": "Help text of the option that shows the follows and followers lists to everyone."
+  },
+  "settings.profile.follows_visibility.followers": {
+    "defaultMessage": "フォロワー",
+    "description": "Option of who may read the follows and followers lists: the user's approved followers on this server."
+  },
+  "settings.profile.follows_visibility.followers.description": {
+    "defaultMessage": "フォローを承認したこのサーバーの人だけが一覧を見られます。ほかのサーバーには数だけが見えます。",
+    "description": "Help text of the option that shows the follows and followers lists to the user's approved followers only."
+  },
+  "settings.profile.follows_visibility.private": {
+    "defaultMessage": "自分だけ",
+    "description": "Option of who may read the follows and followers lists: the user alone."
+  },
+  "settings.profile.follows_visibility.private.description": {
+    "defaultMessage": "ほかの人には一覧は見えず、数だけが見えます。",
+    "description": "Help text of the option that keeps the follows and followers lists to the user."
+  },
   "settings.profile.characters_left": {
     "defaultMessage": "{count, plural, other {残り # 文字}}",
     "description": "Character count under the bio field while the text is within the limit."
