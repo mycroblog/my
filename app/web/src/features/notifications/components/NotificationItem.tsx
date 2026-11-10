@@ -2,7 +2,7 @@
 // One notification as an article of the notifications feed (web-client/README.md Y6): a sentence that says what
 // happened ("Alice followed you") with the actor's name as a link to their profile, when, relative to now
 // as in the timelines (G8), and for the types about a post, a quote of the post that links to its page.
-// A follow offers to follow back. PostCard lays it out, so the article is named by the sentence and the
+// A follow offers to follow back, and a follow request to approve or decline it while it waits. PostCard lays it out, so the article is named by the sentence and the
 // time and described by the post. The follows that a suspension by the moderators ended say which server or
 // account was suspended and how many followers and follows the user lost.
 //
@@ -23,7 +23,7 @@
 // article's name.
 //
 // A row has one tab stop per place it leads to: the actor's name (the avatar is the same link for the
-// pointer, out of the tab order), and the quote of the post or the follow back button. The avatars of the
+// pointer, out of the tab order), and the quote of the post, the follow back button, or the answers to a follow request. The avatars of the
 // others are links to their profiles for the pointer only; the post's page lists who favourited and
 // boosted it.
 import {
@@ -31,6 +31,7 @@ import {
   EmojiText,
   Hint,
   Button,
+  Cluster,
   Link,
   NotificationKindMark,
   NotificationLinks,
@@ -45,13 +46,14 @@ import {
   ReplyIcon,
   Text,
 } from "@my/ui";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { useReply } from "../../compose";
 import { isolate, RelationshipActions, useRelationship } from "../../profile";
 import type { NotificationAccount } from "../api/notifications";
 import type { NotificationGroup } from "../hooks/groupNotifications";
+import { type FollowRequestOutcome, useFollowRequestAnswer } from "../hooks/useFollowRequestAnswer";
 import {
   type ModerationNoticeView,
   type MoveOutcomeKey,
@@ -71,7 +73,7 @@ export type NotificationItemProps = {
   isUnread: boolean;
   /**
    * `card` is a row of the notifications page. `plain` is a row of the third column's panel, which is a card already:
-   * it has no buttons (follow back, reply), which the notifications page has, so that the panel stays short to tab
+   * it has no buttons (follow back, the answers to a follow request, reply), which the notifications page has, so that the panel stays short to tab
    * through and reads no relationships. The links to where a notification is followed up stay.
    */
   surface?: "card" | "plain";
@@ -87,6 +89,7 @@ export function NotificationItem({ group, isUnread, surface = "card" }: Notifica
   const named = actor ?? view.subject;
   const replyTo = surface === "card" ? view.replyTo : null;
   const followBack = surface === "card" ? view.followBack : null;
+  const followRequest = surface === "card" ? view.followRequest : null;
   return (
     <PostCard
       surface={surface}
@@ -169,6 +172,7 @@ export function NotificationItem({ group, isUnread, surface = "card" }: Notifica
         ) : null
       }
       {...(followBack !== null && { actions: <FollowBack account={followBack} /> })}
+      {...(followRequest !== null && { actions: <FollowRequestActions account={followRequest} /> })}
       {...(replyTo !== null &&
         reply !== null && {
           // A mention most often wants an answer: the reply starts here, without opening the post first.
@@ -427,4 +431,72 @@ function FollowBack({ account }: { account: NotificationAccount }) {
       showMenu={false}
     />
   );
+}
+
+/** What the row says of a follow request it answered, or found gone. */
+const outcomeMessages = {
+  accepted: "client:notifications.follow_request.approved",
+  rejected: "client:notifications.follow_request.declined",
+  gone: "client:notifications.follow_request.gone",
+} as const satisfies Record<FollowRequestOutcome, string>;
+
+/**
+ * Approve and Decline from a follow request notification, as on the settings' list of follow requests, each named with
+ * the account, while the request waits. Once answered, the row says what happened in their place, and the focus that
+ * was on them goes to the row's article, so that it is not lost with them.
+ */
+function FollowRequestActions({ account }: { account: NotificationAccount }) {
+  const t = useT();
+  const state = useFollowRequestAnswer(account);
+  const outcomeRef = useRef<HTMLParagraphElement>(null);
+  const answered = state.kind === "answered";
+  useEffect(() => {
+    const outcome = outcomeRef.current;
+    if (!answered || outcome === null) return;
+    const { activeElement } = outcome.ownerDocument;
+    if (activeElement === null || activeElement === outcome.ownerDocument.body)
+      outcome.closest<HTMLElement>("article")?.focus();
+  }, [answered]);
+  switch (state.kind) {
+    case "none":
+      return null;
+    case "answered":
+      return (
+        <Text as="p" ref={outcomeRef} weight="semibold">
+          {t(outcomeMessages[state.outcome])}
+        </Text>
+      );
+    case "waiting": {
+      const name = account.display_name || account.username;
+      const approve = t("client:notifications.follow_request.approve");
+      const decline = t("client:notifications.follow_request.decline");
+      return (
+        <Cluster gap="2" align="center">
+          <Button
+            size="sm"
+            variant="primary"
+            isPending={state.pending === "accept"}
+            isDisabled={state.pending === "reject"}
+            aria-label={t("client:notifications.follow_request.action", { action: approve, name })}
+            onPress={() => {
+              state.answer("accept");
+            }}
+          >
+            {approve}
+          </Button>
+          <Button
+            size="sm"
+            isPending={state.pending === "reject"}
+            isDisabled={state.pending === "accept"}
+            aria-label={t("client:notifications.follow_request.action", { action: decline, name })}
+            onPress={() => {
+              state.answer("reject");
+            }}
+          >
+            {decline}
+          </Button>
+        </Cluster>
+      );
+    }
+  }
 }

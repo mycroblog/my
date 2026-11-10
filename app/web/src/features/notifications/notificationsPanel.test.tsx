@@ -6,7 +6,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { otherAccountFixture, type Schemas } from "../../test/fixtures";
+import { otherAccountFixture, relationshipFixture, type Schemas } from "../../test/fixtures";
 import { apiBase, problem, signedInHandler } from "../../test/msw/http";
 import { server } from "../../test/msw/server";
 import { streamingServer } from "../../test/msw/streaming";
@@ -194,12 +194,24 @@ describe("the notifications panel", () => {
 
   test("has no buttons on its rows", async () => {
     stubWideScreen();
-    const { handler } = notificationsServer(() => [follow(1)]);
-    server.use(signedInHandler, handler);
+    // Neither a follow back nor the answers to a follow request that waits.
+    const { handler } = notificationsServer(() => [{ ...follow(2), type: "follow_request" }, follow(1)]);
+    server.use(
+      signedInHandler,
+      handler,
+      http.get(`${apiBase}/accounts/relationships`, ({ request }) =>
+        HttpResponse.json({
+          items: new URL(request.url).searchParams
+            .getAll("id")
+            .map((id) => relationshipFixture(id, { requested_by: true })),
+        }),
+      ),
+    );
     await renderApp({ path: "/home" });
 
     const panel = await screen.findByRole("complementary", { name: panelName });
     await within(panel).findByText("Person 1");
+    await within(panel).findByText("Person 2");
     expect(within(panel).queryByRole("button")).not.toBeInTheDocument();
   });
 

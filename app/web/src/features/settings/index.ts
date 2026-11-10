@@ -10,6 +10,13 @@ export { credentialsQueryOptions, preferencesQueryOptions } from "./api/me";
 export { badgeChoicesQueryOptions } from "./api/badges";
 export { BadgeSettings } from "./components/BadgeSettings";
 export { blocksQueryOptions, followRequestsQueryOptions, mutesQueryOptions } from "./api/relationships";
+// Answering a follow request from its notification, through the list's own calls and cache changes (FR-302).
+export {
+  cacheFollowRequestAnswer,
+  type FollowRequestAnswer,
+  followRequestMutation,
+  forgetFollowRequest,
+} from "./api/relationships";
 export { BlockedAccounts, FollowRequests, MutedAccounts } from "./components/AccountLists";
 export { interactionRequestsQueryOptions } from "./api/interactionRequests";
 export { InteractionRequests } from "./components/InteractionRequests";

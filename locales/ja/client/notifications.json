@@ -407,6 +407,42 @@
     "defaultMessage": "返信する",
     "description": "Button in the row of a mention notification that opens the form to reply to the post that mentioned the user."
   },
+  "notifications.follow_request.approve": {
+    "defaultMessage": "承認",
+    "description": "Button in the row of a follow request notification that accepts the request, so that the account follows the user."
+  },
+  "notifications.follow_request.decline": {
+    "defaultMessage": "拒否",
+    "description": "Button in the row of a follow request notification that rejects the request."
+  },
+  "notifications.follow_request.action": {
+    "defaultMessage": "{action}: {name}",
+    "description": "Accessible name of a button of a follow request notification. {action} is its visible text (for example 'Approve'), {name} the display name of the account that asked to follow the user."
+  },
+  "notifications.follow_request.approved": {
+    "defaultMessage": "承認しました",
+    "description": "Shown in the row of a follow request notification, in place of its buttons, after the user approved the request."
+  },
+  "notifications.follow_request.declined": {
+    "defaultMessage": "拒否しました",
+    "description": "Shown in the row of a follow request notification, in place of its buttons, after the user declined the request."
+  },
+  "notifications.follow_request.gone": {
+    "defaultMessage": "このリクエストは、すでに承認・拒否されたか、取り消されました。",
+    "description": "Shown in the row of a follow request notification, in place of its buttons, and announced, when the user pressed one but the request no longer waits (answered on another device, or withdrawn by the account)."
+  },
+  "notifications.follow_request.accepted": {
+    "defaultMessage": "{name} さんのフォローを承認しました。",
+    "description": "Announced after the user approved a follow request from its notification. {name} is the account's display name."
+  },
+  "notifications.follow_request.rejected": {
+    "defaultMessage": "{name} さんのフォローリクエストを拒否しました。",
+    "description": "Announced after the user declined a follow request from its notification. {name} is the account's display name."
+  },
+  "notifications.follow_request.failed": {
+    "defaultMessage": "フォローリクエストに答えられませんでした: {reason}",
+    "description": "Toast when approving or declining a follow request from its notification failed. {reason} is the localized reason of the failure."
+  },
   "notifications.announcement.titled": {
     "defaultMessage": "お知らせ: {title}",
     "description": "Notification sentence to every user: the administrators of the server published an announcement. {title} is its title, a link that opens it."

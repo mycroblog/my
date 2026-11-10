@@ -29,7 +29,7 @@ server answers. Some servers do not follow accounts of other servers; the profil
 After you follow an account, the bell "Notify me of new posts" notifies you of each of its new posts.
 
 People who want to follow your account get a request when you approve your followers: see "Follow requests" in the
-settings, where you "Accept" or "Reject" each one. Your followers and the accounts you follow are on the profile page,
+settings, where you "Accept" or "Reject" each one, or "Approve" or "Decline" it from its notification. Your followers and the accounts you follow are on the profile page,
 which shows how many there are.
 
 ## Timelines

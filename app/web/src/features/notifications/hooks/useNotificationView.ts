@@ -137,6 +137,8 @@ export type NotificationView = {
   } | null;
   /** The account to offer a follow back to: the follower of a follow notification, else null. */
   followBack: NotificationAccount | null;
+  /** The account whose follow request to answer from the row: the requester of a follow request notification, else null. */
+  followRequest: NotificationAccount | null;
   /**
    * What a `relationships_severed` tells, for `{domain}`, `{followers}`, and `{following}` in its sentence:
    * the suspended server (null for an account, which is the actor), and how many followers and follows the
@@ -657,6 +659,7 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
     time,
     post: status === undefined ? null : postOf(status, filtered),
     followBack: notification.type === "follow" && account !== undefined ? account : null,
+    followRequest: notification.type === "follow_request" && account !== undefined ? account : null,
     severance: severed?.severance ?? null,
     notice: action === undefined ? null : noticeOf(action, formatDate),
     reaction: reactionOf(notification),

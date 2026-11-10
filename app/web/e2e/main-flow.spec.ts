@@ -409,11 +409,20 @@ test.describe("the main flow", () => {
 
     await test.step("the second user is notified of the request and accepts it", async () => {
       await navigate(bobPage, "notifications");
+      const request = bobPage
+        .getByRole("feed")
+        .getByRole("article")
+        .filter({ hasText: message("notifications.type.follow_request", { name: alice.username }) });
+      await expect(request).toBeVisible();
+      // The notification can answer the request too, while it waits; this flow answers it in the settings.
       await expect(
-        bobPage
-          .getByRole("feed")
-          .getByRole("article")
-          .filter({ hasText: message("notifications.type.follow_request", { name: alice.username }) }),
+        request.getByRole("button", {
+          name: message("notifications.follow_request.action", {
+            action: message("notifications.follow_request.approve"),
+            name: alice.username,
+          }),
+          exact: true,
+        }),
       ).toBeVisible();
       await expectQuality(bobPage);
       await navigate(bobPage, "settings");
