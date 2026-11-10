@@ -83,6 +83,9 @@ func newAdminDomainAction(v appmoderation.DomainActionView) AdminDomainAction {
 		t := v.Lift.LiftedAt.UTC()
 		out.LiftedAt = &t
 	}
+	if v.SubscriptionID != "" {
+		out.SubscriptionId = &v.SubscriptionID
+	}
 	return out
 }
 

@@ -652,6 +652,20 @@ paths:
     $ref: ./paths/admin_domain_actions_import_preview.yaml
   /admin/domain_actions/import:
     $ref: ./paths/admin_domain_actions_import.yaml
+  /admin/domain_list_subscriptions:
+    $ref: ./paths/admin_domain_list_subscriptions.yaml
+  /admin/domain_list_subscriptions/{id}:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}.yaml
+  /admin/domain_list_subscriptions/{id}/fetch:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_fetch.yaml
+  /admin/domain_list_subscriptions/{id}/fetches:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_fetches.yaml
+  /admin/domain_list_subscriptions/{id}/drafts:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_drafts.yaml
+  /admin/domain_list_subscriptions/{id}/drafts/accept:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_drafts_accept.yaml
+  /admin/domain_list_subscriptions/{id}/drafts/reject:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_drafts_reject.yaml
   /admin/settings:
     $ref: ./paths/admin_settings.yaml
   /admin/settings/login_providers_only/impact:
@@ -866,6 +880,8 @@ components:
       $ref: ./components/parameters/CustomEmojiId.yaml
     CustomEmojiRequestId:
       $ref: ./components/parameters/CustomEmojiRequestId.yaml
+    DomainListSubscriptionId:
+      $ref: ./components/parameters/DomainListSubscriptionId.yaml
     ErrorGroupId:
       $ref: ./components/parameters/ErrorGroupId.yaml
     DomainActionId:
@@ -927,6 +943,10 @@ components:
     WebhookId:
       $ref: ./components/parameters/WebhookId.yaml
   responses:
+    AdminDomainListDraftResult:
+      $ref: ./components/responses/AdminDomainListDraftResult.yaml
+    AdminDomainListSubscription:
+      $ref: ./components/responses/AdminDomainListSubscription.yaml
     AdminHookAppeal:
       $ref: ./components/responses/AdminHookAppeal.yaml
     AccountAliasList:
@@ -1052,6 +1072,40 @@ components:
       $ref: ./components/schemas/AccountList.yaml
     AccountSuggestionList:
       $ref: ./components/schemas/AccountSuggestionList.yaml
+    AdminDomainListChange:
+      $ref: ./components/schemas/AdminDomainListChange.yaml
+    AdminDomainListDraft:
+      $ref: ./components/schemas/AdminDomainListDraft.yaml
+    AdminDomainListDraftList:
+      $ref: ./components/schemas/AdminDomainListDraftList.yaml
+    AdminDomainListDraftResult:
+      $ref: ./components/schemas/AdminDomainListDraftResult.yaml
+    AdminDomainListFetch:
+      $ref: ./components/schemas/AdminDomainListFetch.yaml
+    AdminDomainListFetchError:
+      $ref: ./components/schemas/AdminDomainListFetchError.yaml
+    AdminDomainListFetchOutcome:
+      $ref: ./components/schemas/AdminDomainListFetchOutcome.yaml
+    AdminDomainListFetchPage:
+      $ref: ./components/schemas/AdminDomainListFetchPage.yaml
+    AdminDomainListFormat:
+      $ref: ./components/schemas/AdminDomainListFormat.yaml
+    AdminDomainListHold:
+      $ref: ./components/schemas/AdminDomainListHold.yaml
+    AdminDomainListMode:
+      $ref: ./components/schemas/AdminDomainListMode.yaml
+    AdminDomainListSilenceAs:
+      $ref: ./components/schemas/AdminDomainListSilenceAs.yaml
+    AdminDomainListSubscription:
+      $ref: ./components/schemas/AdminDomainListSubscription.yaml
+    AdminDomainListSubscriptionPage:
+      $ref: ./components/schemas/AdminDomainListSubscriptionPage.yaml
+    AdminDomainListSuspendAs:
+      $ref: ./components/schemas/AdminDomainListSuspendAs.yaml
+    CreateDomainListSubscriptionRequest:
+      $ref: ./components/schemas/CreateDomainListSubscriptionRequest.yaml
+    DomainListDraftsRequest:
+      $ref: ./components/schemas/DomainListDraftsRequest.yaml
     RelationshipList:
       $ref: ./components/schemas/RelationshipList.yaml
     TagSuggestionList:
@@ -2072,6 +2126,8 @@ components:
       $ref: ./components/schemas/UpdateCredentialsRequest.yaml
     UpdateCustomEmojiRequest:
       $ref: ./components/schemas/UpdateCustomEmojiRequest.yaml
+    UpdateDomainListSubscriptionRequest:
+      $ref: ./components/schemas/UpdateDomainListSubscriptionRequest.yaml
     UpdateInstanceSettingsRequest:
       $ref: ./components/schemas/UpdateInstanceSettingsRequest.yaml
     UpdateLoginProviderRequest:

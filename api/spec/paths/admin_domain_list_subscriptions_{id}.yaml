@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/DomainListSubscriptionId.yaml
+get:
+  operationId: getDomainListSubscription
+  summary: Get a subscription to a domain block list
+  description: An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  responses:
+    "200":
+      $ref: ../components/responses/AdminDomainListSubscription.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+patch:
+  operationId: updateDomainListSubscription
+  summary: Change the settings of a subscription
+  description: |
+    Changes the settings the request names and keeps the rest, and queues a fetch that applies
+    them; the URL and the format do not change. An invalid setting is a 422. A change is
+    audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/UpdateDomainListSubscriptionRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminDomainListSubscription.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: deleteDomainListSubscription
+  summary: Delete a subscription to a domain block list
+  description: |
+    Deletes the subscription: the list is no longer fetched. The actions it issued stay, as
+    if a moderator had issued them, unless `lift_actions` is set, which lifts them first. The
+    deletion is audited. An unknown or deleted ID is a 404. Needs the `manage_domains`
+    permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - name: lift_actions
+      in: query
+      required: false
+      description: Lift the actions the subscription issued.
+      schema:
+        type: boolean
+  responses:
+    "204":
+      description: The subscription is deleted.
+    default:
+      $ref: ../components/responses/Problem.yaml

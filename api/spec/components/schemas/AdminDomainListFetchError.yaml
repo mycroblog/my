@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Why a fetch failed. `http_status`: the server answered another status than 2xx or 304,
+  such as 401, 403, or 404 of a server that does not publish its domain blocks. `network`:
+  the server could not be reached or did not answer in time. `forbidden_destination`: the
+  URL or a redirect leads to an address the server does not fetch from. `too_large`: the
+  list is larger than 2 MiB. `too_many_entries`: it has more than 5000 rows. `malformed`: it
+  cannot be read in the subscription's format.
+type: string
+enum: [http_status, network, forbidden_destination, too_large, too_many_entries, malformed]

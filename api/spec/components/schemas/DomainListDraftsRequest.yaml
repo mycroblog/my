@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: MIT
+description: The drafts to accept or reject, by key; omitted or empty for every draft.
+type: object
+properties:
+  keys:
+    type: array
+    maxItems: 15000
+    items:
+      type: string
+      maxLength: 300

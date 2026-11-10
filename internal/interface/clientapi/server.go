@@ -339,6 +339,9 @@ type Options struct {
 	Registrations Registrations
 	// SignupBlocks runs the sign-up block list (admin_signup_blocks.go).
 	SignupBlocks SignupBlocks
+	// DomainListSubscriptions runs the subscriptions to domain block lists
+	// (admin_domain_list_subscriptions.go).
+	DomainListSubscriptions DomainListSubscriptions
 	// Settings reads and changes the instance settings (admin_settings.go).
 	Settings InstanceSettings
 	// SingleUserAccount finds the operator's account of a one-person server, which GET /instance

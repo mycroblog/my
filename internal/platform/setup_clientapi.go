@@ -87,7 +87,8 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		Reports:       a.LocalReports,
 		ReportCounts:  a.Moderation, RegistrationCounts: a.Identity, Registrations: a.Identity,
 		OwnAppeals: a.Moderation, AppealModeration: a.Moderation, SignupBlocks: a.Moderation,
-		OwnAccount: a.Identity, VerificationEmails: a.Identity, Exports: a.Exports, Imports: a.Imports,
+		DomainListSubscriptions: a.Moderation,
+		OwnAccount:              a.Identity, VerificationEmails: a.Identity, Exports: a.Exports, Imports: a.Imports,
 		Voice: a.voiceAPI(), VoiceModeration: a.VoiceRooms, VoiceStreams: a.Streams,
 		FullTextSearch: a.searchAPI(),
 		// The moves of local accounts check their targets as received Moves do (ADR-0089).

@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listDomainListSubscriptions
+  summary: List the subscriptions to domain block lists
+  description: The subscriptions that are not deleted, newest first, each with its last fetch. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of subscriptions.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminDomainListSubscriptionPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: createDomainListSubscription
+  summary: Subscribe to a domain block list
+  description: |
+    Subscribes to the list at an https URL, which the server fetches at once and then every
+    day, through the same guard as the fetches of other servers: a URL or a redirect to a
+    private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+    `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+    `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+    action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+    The subscription is audited. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/CreateDomainListSubscriptionRequest.yaml
+  responses:
+    "201":
+      $ref: ../components/responses/AdminDomainListSubscription.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

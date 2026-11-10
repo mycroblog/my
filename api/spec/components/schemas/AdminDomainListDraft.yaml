@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: MIT
+description: A difference between a subscribed list and the actions the subscription issued, waiting for a moderator.
+type: object
+required: [key, change, domain, kind, held]
+properties:
+  key:
+    description: Names the draft to accept or reject.
+    type: string
+  change:
+    $ref: ./AdminDomainListChange.yaml
+  domain:
+    description: The domain, in IDNA A-labels.
+    type: string
+  kind:
+    $ref: ./AdminDomainActionKind.yaml
+  held:
+    $ref: ./AdminDomainListHold.yaml
+  action_id:
+    description: The action that a `lift` lifts; omitted for an `issue`.
+    allOf:
+      - $ref: ./Id.yaml
+  severity:
+    description: The severity as the list gives it, for an `issue`.
+    type: string
+  public_comment:
+    description: The public comment of the row, for an `issue`; omitted when there is none.
+    type: string
+  obfuscate:
+    description: Whether the row asks to hide part of the domain, for an `issue`.
+    type: boolean

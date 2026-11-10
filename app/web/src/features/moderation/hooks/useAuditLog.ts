@@ -119,6 +119,12 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   instance_marked_available: "client:admin.audit_log.action.instance_marked_available",
   domain_allow_added: "client:admin.audit_log.action.domain_allow_added",
   domain_allow_removed: "client:admin.audit_log.action.domain_allow_removed",
+  domain_list_subscription_created: "client:admin.audit_log.action.domain_list_subscription_created",
+  domain_list_subscription_updated: "client:admin.audit_log.action.domain_list_subscription_updated",
+  domain_list_subscription_deleted: "client:admin.audit_log.action.domain_list_subscription_deleted",
+  domain_list_draft_accepted: "client:admin.audit_log.action.domain_list_draft_accepted",
+  domain_list_draft_rejected: "client:admin.audit_log.action.domain_list_draft_rejected",
+  domain_list_fetch_queued: "client:admin.audit_log.action.domain_list_fetch_queued",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
@@ -152,6 +158,7 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   login_provider: "client:admin.audit_log.target_kind.login_provider",
   link_card_domain: "client:admin.audit_log.target_kind.link_card_domain",
   domain_allow: "client:admin.audit_log.target_kind.domain_allow",
+  domain_list_subscription: "client:admin.audit_log.target_kind.domain_list_subscription",
 };
 
 /** Who performed an operation without a user's account to show. */

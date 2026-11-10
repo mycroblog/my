@@ -1,0 +1,28 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listDomainListDrafts
+  summary: List the drafts of a subscription
+  description: |
+    The differences between the list, as last read, and the actions the subscription issued
+    that wait for a moderator: every difference in the `draft` mode, and in the `automatic`
+    mode those of an unknown severity and the lifts of a fetch that would lift too many. A
+    domain that an action in effect covers already, on it or a parent domain, whoever issued
+    it, is no draft. Rejected drafts are not listed. An unknown or deleted ID is a 404. Needs
+    the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - $ref: ../components/parameters/DomainListSubscriptionId.yaml
+  responses:
+    "200":
+      description: The drafts.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/AdminDomainListDraftList.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

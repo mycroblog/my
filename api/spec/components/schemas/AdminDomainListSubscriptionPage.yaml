@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: A page of subscriptions to domain block lists, newest first.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./AdminDomainListSubscription.yaml

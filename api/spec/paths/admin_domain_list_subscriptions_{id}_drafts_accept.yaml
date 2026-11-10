@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: acceptDomainListDrafts
+  summary: Accept drafts of a subscription
+  description: |
+    Issues the action of each `issue` draft for the subscription, until it is lifted, and
+    lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+    draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+    a 404. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/DomainListSubscriptionId.yaml
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/DomainListDraftsRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminDomainListDraftResult.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

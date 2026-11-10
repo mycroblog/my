@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: rejectDomainListDrafts
+  summary: Reject drafts of a subscription
+  description: |
+    Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+    of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+    audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - $ref: ../components/parameters/DomainListSubscriptionId.yaml
+  requestBody:
+    required: false
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/DomainListDraftsRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/AdminDomainListDraftResult.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
