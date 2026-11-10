@@ -34,21 +34,25 @@ const (
 	// ImportDomainMutes is the domains the user mutes (FR-304), as the domains a Mastodon user
 	// blocks (blocked_domains.csv).
 	ImportDomainMutes ImportKind = "domain_mutes"
+	// ImportFollowedTags is the hashtags the user follows (followed_hashtags.csv, one hashtag
+	// per line without its #). Mastodon exports no such file.
+	ImportFollowedTags ImportKind = "followed_tags"
 )
 
 // ImportKinds are the kinds, in the order of the settings page.
-var ImportKinds = []ImportKind{ImportFollowing, ImportBlocks, ImportMutes, ImportDomainMutes, ImportBookmarks}
+var ImportKinds = []ImportKind{ImportFollowing, ImportFollowedTags, ImportBlocks, ImportMutes, ImportDomainMutes, ImportBookmarks}
 
 // Valid reports whether k is a known kind.
 func (k ImportKind) Valid() bool {
 	switch k {
-	case ImportFollowing, ImportBlocks, ImportMutes, ImportBookmarks, ImportDomainMutes:
+	case ImportFollowing, ImportBlocks, ImportMutes, ImportBookmarks, ImportDomainMutes, ImportFollowedTags:
 		return true
 	}
 	return false
 }
 
-// FileName returns the name Mastodon gives the exported file of k.
+// FileName returns the name Mastodon gives the exported file of k, and for followed hashtags,
+// which Mastodon does not export, the name of this server.
 func (k ImportKind) FileName() string {
 	switch k {
 	case ImportFollowing:
@@ -61,6 +65,8 @@ func (k ImportKind) FileName() string {
 		return "bookmarks.csv"
 	case ImportDomainMutes:
 		return "blocked_domains.csv"
+	case ImportFollowedTags:
+		return "followed_hashtags.csv"
 	}
 	return ""
 }
@@ -97,6 +103,9 @@ const (
 	headerURI               = "#uri"
 	headerDomain            = "#domain"
 	headerListName          = "List name"
+	// headerHashtag is the column of the hashtags of followed_hashtags.csv, which has no header
+	// row.
+	headerHashtag = "#hashtag"
 )
 
 // defaultHeaders returns the columns of a file of kind without a header row.
@@ -110,6 +119,8 @@ func defaultHeaders(k ImportKind) []string {
 		return []string{headerURI}
 	case ImportDomainMutes:
 		return []string{headerDomain}
+	case ImportFollowedTags:
+		return []string{headerHashtag}
 	}
 	return []string{headerAccountAddress}
 }
@@ -124,12 +135,13 @@ func isKnownFirstHeader(field string) bool {
 }
 
 // ImportEntry is one entry of a CSV file: an account address (username@domain, or a bare
-// username for this instance's account), for bookmarks the URL of a post, or for domain mutes
-// a domain, with the settings that its kind carries.
+// username for this instance's account), for bookmarks the URL of a post, for domain mutes a
+// domain, or for followed hashtags a hashtag, with the settings that its kind carries.
 type ImportEntry struct {
 	// Line is the line of the file, from 1.
 	Line int
-	// Target is the account address without a leading "@", the URL of the post, or the domain.
+	// Target is the account address without a leading "@", the URL of the post, the domain, or
+	// the hashtag without a leading "#".
 	Target string
 	// ShowBoosts and Notify are the settings of a follow.
 	ShowBoosts bool
@@ -212,6 +224,9 @@ func ParseImportCSV(k ImportKind, text string) ([]ImportEntry, []ImportSkipped, 
 		case ImportDomainMutes:
 			e.Target = fields[headerDomain]
 			key, ok = DomainKey(e.Target)
+		case ImportFollowedTags:
+			e.Target = strings.TrimPrefix(fields[headerHashtag], "#")
+			key, ok = HashtagKey(e.Target)
 		default:
 			e.Target = strings.TrimPrefix(fields[headerAccountAddress], "@")
 			key, ok = AddressKey(e.Target)
@@ -267,6 +282,18 @@ func DomainKey(domain string) (string, bool) {
 	return d, true
 }
 
+// HashtagKey returns the form of a hashtag of a file that identifies it, to compare hashtags: in
+// lower case without a leading "#". It reports false for what cannot be a hashtag: empty, or with
+// a space or punctuation that ends a hashtag in a text. The content module decides whether the
+// rest is a hashtag when the import follows it.
+func HashtagKey(name string) (string, bool) {
+	h := strings.ToLower(strings.TrimPrefix(name, "#"))
+	if h == "" || strings.ContainsAny(h, " \t#@/?:,.") {
+		return "", false
+	}
+	return h, true
+}
+
 // isPostURL reports whether s is an absolute http(s) URL, as the URIs of posts are.
 func isPostURL(s string) bool {
 	u, err := url.Parse(s)
@@ -274,7 +301,8 @@ func isPostURL(s string) bool {
 }
 
 // ExportRow is an entry of a CSV export: an account address, for bookmarks the URI of a post,
-// or for domain mutes a domain, with the settings of its kind.
+// for domain mutes a domain, or for followed hashtags a hashtag without its #, with the settings
+// of its kind.
 type ExportRow struct {
 	Target            string
 	ShowBoosts        bool
@@ -283,7 +311,8 @@ type ExportRow struct {
 }
 
 // WriteExportCSV writes rows as the CSV file of kind that Mastodon exports: following and
-// mutes with their header row, blocks, bookmarks, and domains one value per line.
+// mutes with their header row, blocks, bookmarks, and domains one value per line; followed
+// hashtags, which Mastodon does not export, one hashtag per line as well.
 func WriteExportCSV(w io.Writer, k ImportKind, rows []ExportRow) error {
 	cw := csv.NewWriter(w)
 	flag := func(b bool) string {

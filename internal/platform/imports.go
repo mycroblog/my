@@ -19,10 +19,11 @@ import (
 	domgraph "github.com/mycroblog/my/internal/domain/graph"
 	domidentity "github.com/mycroblog/my/internal/domain/identity"
 	domnotification "github.com/mycroblog/my/internal/domain/notification"
+	domtimeline "github.com/mycroblog/my/internal/domain/timeline"
 )
 
-// setUpImports builds the CSV exports and imports of the users' follows, blocks, mutes,
-// bookmarks, and muted domains (FR-008, FR-304) and registers their jobs. The targets read the services that are built
+// setUpImports builds the CSV exports and imports of the users' follows, followed hashtags,
+// blocks, mutes, bookmarks, and muted domains (FR-008, FR-304) and registers their jobs. The targets read the services that are built
 // later (the status reader, the resolver of remote posts) only when an export or a job runs.
 func (a *App) setUpImports(repo identity.Repository) {
 	outbox := a.Outbox
@@ -38,7 +39,7 @@ func (a *App) setUpImports(repo identity.Repository) {
 	a.Imports.RegisterJobs(a.Handlers, a.Scheduler)
 }
 
-// importTargets implements identity.ImportTargets with the graph and content modules, and
+// importTargets implements identity.ImportTargets with the graph, content, and timeline modules, and
 // resolves the accounts and posts of an import as a search does (FR-305).
 type importTargets struct{ a *App }
 
@@ -50,9 +51,9 @@ func (t importTargets) accountDomain() string {
 	return t.a.Config.Host
 }
 
-// List implements identity.ImportTargets: the active follows, the blocks, the mutes in effect,
-// and the bookmarks of statuses the account may still see, newest first, and the muted domains
-// in the order of their domains. Accounts without an
+// List implements identity.ImportTargets: the active follows, the followed hashtags, the blocks,
+// the mutes in effect, and the bookmarks of statuses the account may still see, newest first,
+// and the muted domains in the order of their domains. Accounts without an
 // address (a remote actor whose handle is unconfirmed) are left out.
 func (t importTargets) List(ctx context.Context, accountID string, kind domidentity.ImportKind) ([]identity.ImportTarget, error) {
 	var out []identity.ImportTarget
@@ -140,6 +141,15 @@ func (t importTargets) List(ctx context.Context, accountID string, kind domident
 			}
 			p.After = mutes[len(mutes)-1].Domain
 		}
+	case domidentity.ImportFollowedTags:
+		tags, err := t.a.Timeline.FollowedTags(ctx, accountID)
+		if err != nil {
+			return nil, err
+		}
+		for _, f := range tags {
+			out = append(out, identity.ImportTarget{ID: f.Tag.Name, Row: domidentity.ExportRow{Target: f.Tag.Name}})
+		}
+		return out, nil
 	case domidentity.ImportBookmarks:
 		for before := ""; ; {
 			page, err := t.a.Statuses.Bookmarks(ctx, content.Viewer{Kind: content.ViewerLocal, AccountID: accountID}, before, graph.MaxPageLimit)
@@ -182,6 +192,10 @@ func (t importTargets) Add(ctx context.Context, accountID string, kind domidenti
 			return err
 		}
 		return itemError(t.a.Interactions.Bookmark(ctx, accountID, res.Status.ID))
+	}
+	if kind == domidentity.ImportFollowedTags {
+		_, err := t.a.Timeline.FollowTag(ctx, accountID, item.Target)
+		return itemError(err)
 	}
 	if kind == domidentity.ImportDomainMutes {
 		domain, err := federation.CanonicalHost(item.Target)
@@ -259,9 +273,9 @@ func itemError(err error) error {
 		return nil
 	case errors.Is(err, domgraph.ErrSelfFollow), errors.Is(err, domgraph.ErrSelfBlock), errors.Is(err, domgraph.ErrSelfMute):
 		failure = domidentity.ImportFailureSelf
-	case errors.Is(err, domgraph.ErrInvalidDomain):
+	case errors.Is(err, domgraph.ErrInvalidDomain), errors.Is(err, content.ErrInvalidHashtag):
 		failure = domidentity.ImportFailureUnresolvable
-	case errors.Is(err, domgraph.ErrTooManyDomainMutes):
+	case errors.Is(err, domgraph.ErrTooManyDomainMutes), errors.Is(err, domtimeline.ErrTooManyFollowedTags):
 		failure = domidentity.ImportFailureLimit
 	case errors.Is(err, graph.ErrBlocked):
 		failure = domidentity.ImportFailureBlocked
@@ -290,6 +304,8 @@ func (t importTargets) Remove(ctx context.Context, accountID string, kind domide
 		err = t.a.Interactions.Unbookmark(ctx, accountID, targetID)
 	case domidentity.ImportDomainMutes:
 		err = t.a.Graph.UnmuteDomain(ctx, accountID, targetID)
+	case domidentity.ImportFollowedTags:
+		_, err = t.a.Timeline.UnfollowTag(ctx, accountID, targetID)
 	default:
 		return fmt.Errorf("platform: unknown import kind %q", kind)
 	}

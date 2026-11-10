@@ -232,11 +232,14 @@ func (m *Imports) PreviewImport(ctx context.Context, in ImportInput) (ImportPrev
 
 // key returns the form of a target that identifies it: an address in lower case, with this
 // instance's domains (or none) as AccountDomain; a post's URL as it is; a domain in canonical
-// form.
+// form; a hashtag in lower case without its #.
 func (m *Imports) key(kind identity.ImportKind, target string) string {
 	switch kind {
 	case identity.ImportBookmarks:
 		return target
+	case identity.ImportFollowedTags:
+		h, _ := identity.HashtagKey(target)
+		return h
 	case identity.ImportDomainMutes:
 		if m.d.CanonicalDomain != nil {
 			if d, err := m.d.CanonicalDomain(target); err == nil {
