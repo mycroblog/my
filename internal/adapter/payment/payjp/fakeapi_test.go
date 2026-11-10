@@ -37,6 +37,8 @@ type fakeAPI struct {
 	seq        int
 	// failPost answers the next POST of this path with a 500.
 	failPost string
+	// v2 is API v2, under /v2.
+	v2 fakeV2
 
 	srv *httptest.Server
 }
@@ -71,6 +73,7 @@ func newFakeAPI(t *testing.T, secret string, live bool, now func() time.Time) *f
 		t: t, secret: secret, live: live, now: now,
 		plans: map[string]*fakePlan{}, subs: map[string]*fakeSub{}, customers: map[string]*fakeCustomer{},
 		charges: map[string]*fakeCharge{}, statements: map[string]statement{}, tokens: map[string]token{},
+		v2: newFakeV2(),
 	}
 	f.srv = httptest.NewServer(http.HandlerFunc(f.serve))
 	t.Cleanup(f.srv.Close)
@@ -171,6 +174,8 @@ func (f *fakeAPI) serve(w http.ResponseWriter, r *http.Request) {
 	}
 	parts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
 	switch {
+	case parts[0] == "v2":
+		f.serveV2(w, r, parts[1:])
 	case parts[0] == "plans":
 		f.servePlans(w, r, parts[1:])
 	case parts[0] == "subscriptions":

@@ -71,7 +71,7 @@ for example as a step of the deployment before the new version takes traffic.
 ### Reachable over `https`
 
 - **Why**: other servers fetch the ids at `https://<host>/` on port 443, and browsers send the sign-in cookies only over `https`.
-- **Verify**: `curl -sI https://<host>/healthz` answers `200` from outside your network with a certificate that is valid for `host`,
+- **Verify**: `curl -sI https://<host>/health/live` answers `200` from outside your network with a certificate that is valid for `host`,
   and `my config check` reports no error about `web_origin`. `http://<host>/` redirects to `https`, which the reverse proxy,
   load balancer, or CDN in front of the server does (with Docker Compose, the layer `compose.caddy.yaml` is such a proxy).
 - **Details**: [running the server](running.md), [`web_origin`](../reference/configuration.md#web_origin).
@@ -82,7 +82,7 @@ for example as a step of the deployment before the new version takes traffic.
   and a caller on the CDN's own platform can choose the client IP that the rate limits see. Needed only in that case: not when a firewall or the platform already limits who can connect,
   and without a CDN there is nothing to bypass.
 - **Verify**: `origin_secret` and `origin_secret_header` are set and the CDN sets the header on every host name. `curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/`
-  answers `403`, its `/healthz` answers `200`, and `https://<host>/` answers `200`.
+  answers `403`, its `/health/live` answers `200`, and `https://<host>/` answers `200`.
 - **Details**: [Refuse requests that did not come through the CDN](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), including how to recover when it locks everyone out.
 
 ## Secrets
@@ -172,7 +172,7 @@ or with `my instance set`. `my config check -instance` warns about the texts, co
   can sign in and post. A backup that was never restored is not known to work. The database and the media must not be in a
   temporary directory; `my config check` warns when they are.
   See [key management](key-management.md) (backing up the KEK) and [database](database.md).
-- **Monitoring and alerts**: an external monitor checks `/healthz` and alerts someone who can act, and the job queue's dead jobs
+- **Monitoring and alerts**: an external monitor checks `/health/live` and alerts someone who can act, and the job queue's dead jobs
   are watched. See [monitoring](monitoring.md) and [running the server](running.md) (health checks, metrics, and the job queue).
 - **The image**: the instance runs a released image pinned by digest (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, from the release's notes), not one
   that changes on a restart, and [its provenance has been verified](running.md#verify-an-image). There is no `latest` tag.

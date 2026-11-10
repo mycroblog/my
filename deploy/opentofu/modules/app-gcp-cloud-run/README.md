@@ -73,7 +73,7 @@ On the rows that say yes, nothing closes `run.app`. For the header, the value is
 
 - **It keeps the service's default `run.app` URL on**, because Cloud Tasks and Cloud Scheduler call it. Do not disable it: jobs stop.
 - Without an ingress, `MY_TRUSTED_PROXIES` is `169.254.0.0/16`, taken to be Cloud Run's front end. A backend or `env` that names `MY_TRUSTED_PROXIES` replaces that. No document we have read says what Cloud Run adds to `X-Forwarded-For` for a direct request or what peer address a container sees, and the container contract says nothing about either, so `169.254.0.0/16` is an assumption. The external load balancer's documented form is `[<supplied>,]<client-ip>,<lb-ip>`.
-- Request-based billing with min instances 0 unless those inputs say otherwise, a `/readyz` startup probe, and a `/healthz` liveness probe. The startup probe
+- Request-based billing with min instances 0 unless those inputs say otherwise, a `/health/ready` startup probe, and a `/health/live` liveness probe. The startup probe
   keeps a revision from taking traffic until the schema and the data upgrade steps of its release are in place.
 - A plan fails without a KEK when the server needs one: `kek` with `key_manager = local`, or `kms_key` otherwise.
 - A backend's `cloud_sql_instances` are mounted at `/cloudsql` on the service and every job, for `db-gcp-cloud-sql`. A backend's `direct_secret_env` goes to the jobs only.

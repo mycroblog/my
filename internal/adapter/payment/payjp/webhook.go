@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -17,10 +18,15 @@ import (
 // ParseWebhook implements supporters.PaymentProvider (ADR-0074 §12). PAY.JP authenticates a
 // delivery by the account's fixed token only, without a time or a signature of the body, so a
 // replayed delivery passes; the job re-reads what it points at, so a replay changes nothing.
+// The events of API v1 and v2 come to the same endpoint with the same token, and are told apart
+// by their shape (isV2Event).
 func (p *Provider) ParseWebhook(header http.Header, body []byte, _ time.Time) (supporters.Notice, error) {
 	got := header.Get(TokenHeader)
 	if got == "" || subtle.ConstantTimeCompare([]byte(got), []byte(p.o.WebhookToken)) != 1 {
 		return supporters.Notice{}, supporters.ErrInvalidSignature
+	}
+	if isV2Event(body) {
+		return p.parseV2(body)
 	}
 	var ev event
 	if err := json.Unmarshal(body, &ev); err != nil || ev.ID == "" || ev.Type == "" {
@@ -58,7 +64,32 @@ func noticeOf(ev event) supporters.Notice {
 	return n
 }
 
-// Resolve implements supporters.PaymentProvider.
+// parseV2 maps an event of API v2 to a notice (ADR-0162 §11): a Checkout Session's completion
+// and expiry point at the session; a PaymentFlow's success, a refund's events, and a dispute's
+// creation at their object, whose transactions moneyOfV2 reads; the others are ignored.
+func (p *Provider) parseV2(body []byte) (supporters.Notice, error) {
+	var ev eventV2
+	if err := json.Unmarshal(body, &ev); err != nil || ev.ID == "" || ev.Type == "" {
+		return supporters.Notice{}, fmt.Errorf("payjp: %w: the body is not an event", supporters.ErrInvalidPaymentResponse)
+	}
+	if ev.Livemode != (p.mode == supporters.ModeLive) {
+		return supporters.Notice{}, supporters.ErrModeMismatch
+	}
+	var obj eventObject
+	_ = json.Unmarshal(ev.Data, &obj)
+	n := supporters.Notice{EventID: ev.ID, Type: ev.Type, Kind: supporters.NoticeIgnored, ObjectID: obj.ID, OccurredAt: ev.CreatedAt.UTC()}
+	switch {
+	case ev.Type == "checkout.session.completed", ev.Type == "checkout.session.expired":
+		n.Kind = supporters.NoticeCheckout
+	case ev.Type == "payment_flow.succeeded", strings.HasPrefix(ev.Type, "refund."), ev.Type == evDisputeCreated:
+		n.Kind = supporters.NoticeMoney
+	}
+	return n, nil
+}
+
+// Resolve implements supporters.PaymentProvider. A checkout's notice is of a one-time checkout
+// when PAY.JP has a Checkout Session of one payment by its ID, and of a subscription's checkout
+// otherwise (the pages of API v1 send none).
 func (p *Provider) Resolve(ctx context.Context, n supporters.Notice) (supporters.Change, error) {
 	switch n.Kind {
 	case supporters.NoticeSubscription:
@@ -68,9 +99,24 @@ func (p *Provider) Resolve(ctx context.Context, n supporters.Notice) (supporters
 		}
 		return supporters.Change{Subscriptions: []supporters.SubscriptionRef{ref}}, nil
 	case supporters.NoticeCheckout:
-		return supporters.Change{Checkout: supporters.CheckoutRef(n.ObjectID)}, nil
+		ref := supporters.CheckoutRef(n.ObjectID)
+		if _, _, _, ok := parseCheckoutRef(ref); ok || ref == "" {
+			return supporters.Change{Checkout: ref}, nil
+		}
+		_, err := p.getSession(ctx, ref)
+		switch {
+		case err == nil:
+			return supporters.Change{OneTimeCheckout: ref}, nil
+		case errors.Is(err, supporters.ErrPaymentNotFound):
+			return supporters.Change{Checkout: ref}, nil
+		}
+		return supporters.Change{}, err
 	case supporters.NoticeMoney:
-		ms, err := p.moneyOf(ctx, n.ObjectID)
+		read := p.moneyOf
+		if strings.HasPrefix(n.Type, "payment_flow.") || strings.HasPrefix(n.Type, "refund.") {
+			read = p.moneyOfV2 // types of API v2 alone
+		}
+		ms, err := read(ctx, n.ObjectID)
 		if err != nil {
 			return supporters.Change{}, err
 		}

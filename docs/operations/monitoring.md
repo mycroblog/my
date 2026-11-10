@@ -11,12 +11,12 @@ Third-party facts below carry the date they were confirmed and their source. Ser
 | Path | For | Touches the DB | In the maintenance mode |
 | --- | --- | --- | --- |
 | `GET /api/v1/instance/health` | Uptime monitors, status pages, the web client | At most once per 60 s per process | `503` with `Retry-After` and `{"status":"maintenance"}` |
-| `GET /healthz` | The platform's liveness probe | Never | `200` `{"status":"maintenance"}` |
-| `GET /readyz` | The load balancer's or Kubernetes' readiness probe | On every request (concurrent requests share one check) | `200` `{"status":"maintenance"}` |
+| `GET /healthz`, `GET /health/live` | The platform's liveness probe | Never | `200` `{"status":"maintenance"}` |
+| `GET /readyz`, `GET /health/ready` | The load balancer's or Kubernetes' readiness probe | On every request (concurrent requests share one check) | `200` `{"status":"maintenance"}` |
 
-Point the external monitor at **`/api/v1/instance/health`**, not at `/readyz`: `/readyz` queries the database on every request,
+Point the external monitor at **`/api/v1/instance/health`**, not at `/readyz` (`/health/ready`): it queries the database on every request,
 so a monitor with a short interval keeps a scale-to-zero database awake. The probes are for your platform.
-The modules [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) and [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) check `/readyz` from the platform's own monitor at a long interval, and their READMEs say what that costs.
+The modules [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) and [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) check `/health/live` (`monitoring-gcp`) or `/health/ready` (`monitoring-aws` checks `/readyz`) from the platform's own monitor at a long interval, and their READMEs say what that costs.
 
 Responses of `/api/v1/instance/health` (no authentication, `Cache-Control: no-store`):
 
@@ -26,7 +26,9 @@ Responses of `/api/v1/instance/health` (no authentication, `Cache-Control: no-st
 | Unavailable (the database is unreachable or the schema is not applied) | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
 | Maintenance mode | `503` with `Retry-After` | `{"status":"maintenance"}` |
 
-`/healthz` and `/readyz` answer `200` with `{"status":"ok"}` when healthy, and `/readyz` answers `503` with a problem document when the database is not ready.
+`/healthz` and `/readyz` answer `200` with `{"status":"ok"}` when healthy, and `/readyz` answers `503` with a problem document when the database is not ready. `/health/live` and `/health/ready` are the same checks under other names.
+
+**On Cloud Run, call the paths that do not end in `z`.** Cloud Run reserves some paths that end in `z` and answers them with its own `404` before a request reaches the container: `/healthz` is one, and nothing promises that `/readyz` keeps answering. From outside a Cloud Run deployment (an uptime monitor, `curl`), use `/health/live`, `/health/ready`, or `/api/v1/instance/health`. The probes of the container itself are not affected.
 The body never carries a reason, host name, or version. The cause is in the server log.
 
 `checked_at` is the time of the check the answer is based on. The server runs the database check at most once a minute per process and reuses the result,
@@ -42,8 +44,8 @@ With [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)
   As a rule of thumb, an interval of 5 minutes or more lets an idle database stop between checks, and each check wakes it for the check plus the idle time.
   A federated server receives deliveries from other servers around the clock, so its database is awake for much of the day anyway;
   the extra cost is limited to the quiet hours.
-- **Prefer a cheaper split if idle cost matters most.** Monitor `/healthz` (it never touches the database) at a short interval, and the database-backed
-  `/api/v1/instance/health` at a long one (15 minutes or more). `/healthz` answers `200` during the maintenance mode too, so match `"status":"ok"` in the body.
+- **Prefer a cheaper split if idle cost matters most.** Monitor `/health/live` (it never touches the database) at a short interval, and the database-backed
+  `/api/v1/instance/health` at a long one (15 minutes or more). `/health/live` answers `200` during the maintenance mode too, so match `"status":"ok"` in the body.
 - **The requests themselves are small.** One check every 5 minutes is about 8,640 requests a month, every minute about 43,200. That fits in the free tier
   of Cloud Run (2 million requests, 180,000 vCPU-seconds, and 360,000 GiB-seconds a month; time rounded up to 100 ms; confirmed 2026-10-23, [Cloud Run pricing](https://cloud.google.com/run/pricing)).
 

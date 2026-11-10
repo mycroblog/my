@@ -19,9 +19,14 @@ module "blob" {
 | Input | Meaning |
 | --- | --- |
 | `bucket_name` | Name of the bucket, unique across AWS |
+| `versioning` | Keep deleted and overwritten objects as noncurrent versions, and delete them after `noncurrent_version_days`. Default `false` |
+| `noncurrent_version_days` | Days a noncurrent version is kept, 35 by default: at least the age of your oldest database backup |
 
 | Output | Value |
 | --- | --- |
 | `env` | `MY_BLOB`, `MY_BLOB_S3_BUCKET`, `MY_BLOB_S3_REGION` |
 | `secret_env` | Empty: no access key, the role is used |
 | `permissions` | Reading, writing, and deleting objects, stopping a multipart upload, and listing the bucket |
+
+Versioning protects against a mistake, not against losing the account: keep a copy of the bucket in another account too
+([Backup and restore](../../../../docs/operations/backup.md#media-in-a-bucket)).

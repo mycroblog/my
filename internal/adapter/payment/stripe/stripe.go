@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package stripe is the supporters.PaymentProvider of Stripe (ADR-0074 §2): products and
-// recurring prices, hosted Checkout in subscription mode, the customer portal, the commands on
+// recurring prices, hosted Checkout in subscription mode and, for the tips, in payment mode
+// (supporters.OneTimePayments, ADR-0162 §10), the customer portal, the commands on
 // subscriptions (Subscription Schedules for the changes at the period's end), the webhook
 // verifier, the lists of the reconciliation, and the balance transactions as money movements.
 //

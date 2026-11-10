@@ -537,7 +537,13 @@ func contentInteractionRepoConcurrentFavourites(t *testing.T, r *contentInteract
 		inserted int
 	)
 	for range 6 {
-		f := content.Favourite{ID: r.id(), AccountID: account, StatusID: s.ID, CreatedAt: r.se.Clock.Now()}
+		// Each attempt has its own URI, as the favourites of a server do: only the pair of account and status
+		// conflicts, which is what the test is about.
+		id := r.id()
+		f := content.Favourite{
+			ID: id, URI: "https://" + testkit.ContractHost + "/ap/activities/" + id,
+			AccountID: account, StatusID: s.ID, CreatedAt: r.se.Clock.Now(),
+		}
 		wg.Go(func() {
 			err := r.h.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 				ok, err := r.repo.InsertFavourite(ctx, tx, f)

@@ -183,7 +183,7 @@ func TestServeSQLite(t *testing.T) {
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
 	s := start(t, cfg, platform.ServeOptions{}, nil)
 
-	for _, path := range []string{platform.PathLiveness, platform.PathReadiness} {
+	for _, path := range []string{platform.PathLiveness, platform.PathReadiness, platform.PathHealthLive, platform.PathHealthReady} {
 		resp, body := s.do(t, http.MethodGet, path, nil)
 		if resp.StatusCode != http.StatusOK || body != "{\"status\":\"ok\"}\n" {
 			t.Errorf("GET %s = %d %q, want 200 {\"status\":\"ok\"}", path, resp.StatusCode, body)

@@ -67,6 +67,8 @@ func TestResponses(t *testing.T) {
 	}{
 		{"liveness", http.MethodGet, "/healthz", nil, 200, "application/json", statusBody},
 		{"readiness", http.MethodGet, "/readyz", nil, 200, "application/json", statusBody},
+		{"liveness under the new path", http.MethodGet, "/health/live", nil, 200, "application/json", statusBody},
+		{"readiness under the new path", http.MethodGet, "/health/ready", nil, 200, "application/json", statusBody},
 		{"instance health", http.MethodGet, "/api/v1/instance/health", nil, 503, "application/json", statusBody},
 		{"client API", http.MethodGet, "/api/v1/timelines/home", nil, 503, "application/problem+json", problem},
 		{"client API POST", http.MethodPost, "/api/v1/statuses", map[string]string{"Content-Type": "application/json"}, 503, "application/problem+json", problem},

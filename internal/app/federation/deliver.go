@@ -33,6 +33,18 @@ var DeliveryRetryPolicy = queue.RetryPolicy{
 	Jitter: 0.2,
 }
 
+// Keys that the log line of a federation.deliver run carries beside those of every job line,
+// with LabelActivityType.
+const (
+	// LogDeliveryDomain is the domain of the server the delivery went to.
+	LogDeliveryDomain = "my.delivery.domain"
+	// LogDeliveryOutcome is how the attempt ended: succeeded, retryable_failure,
+	// permanent_failure, or skipped (federation.DeliveryOutcome).
+	LogDeliveryOutcome = "my.delivery.outcome"
+	// LogStatusCode is the status code the inbox answered with, absent when it gave none.
+	LogStatusCode = "http.response.status_code"
+)
+
 // maxAttemptError is the longest error text kept in delivery_attempts.error.
 const maxAttemptError = 1000
 
@@ -218,7 +230,7 @@ func (d *Deliverer) Deliver(ctx context.Context, deliveryID string) queue.Result
 	del, act := dc.Delivery, dc.Activity
 	// finish is d.finish with what the context read of the server's health.
 	finish := func(a federation.DeliveryAttempt, retryAfter time.Duration) queue.Result {
-		return d.finish(ctx, del, a, retryAfter, !dc.HealthRow)
+		return d.finish(ctx, del, act, a, retryAfter, !dc.HealthRow)
 	}
 
 	st := federation.DomainStatus{State: dc.Health}
@@ -369,7 +381,19 @@ func (d *Deliverer) send(ctx context.Context, del federation.Delivery, document 
 
 // finish records a in one transaction with its event, so that the instance_health projector
 // sees it, and turns the outcome into the job's result.
-func (d *Deliverer) finish(ctx context.Context, del federation.Delivery, a federation.DeliveryAttempt, retryAfter time.Duration, noHealthRow bool) queue.Result {
+func (d *Deliverer) finish(ctx context.Context, del federation.Delivery, act federation.OutboundActivity, a federation.DeliveryAttempt, retryAfter time.Duration, noHealthRow bool) queue.Result {
+	// The log line of the job run says where the delivery went and how it ended. It carries the
+	// server's domain, never the sender, the activity's URI, or the inbox's URL, which the
+	// admin API masks for activities that are not public.
+	attrs := []slog.Attr{
+		slog.String(LogDeliveryDomain, del.Domain),
+		slog.String(LabelActivityType, string(act.Type)),
+		slog.String(LogDeliveryOutcome, string(a.Outcome)),
+	}
+	if a.HTTPStatus != 0 {
+		attrs = append(attrs, slog.Int(LogStatusCode, a.HTTPStatus))
+	}
+	queue.AddRunAttrs(ctx, attrs...)
 	d.attempts.Add(ctx, 1, kernel.NewLabels(LabelOutcome, deliveryOutcome(a)))
 	a.ID = d.d.IDs.NewID()
 	a.DeliveryID = del.ID

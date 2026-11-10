@@ -30,6 +30,11 @@ const (
 	// PathReadiness answers 200 when the database is reachable and its schema is applied
 	// (every table of schema/<dialect> exists), and 503 with a problem document otherwise.
 	PathReadiness = "/readyz"
+	// PathHealthLive and PathHealthReady are the same checks under paths that do not end in z:
+	// Cloud Run reserves some of those (/healthz among them) and answers them itself, so a
+	// monitor outside a Cloud Run deployment calls these.
+	PathHealthLive  = "/health/live"
+	PathHealthReady = "/health/ready"
 	// PathInstanceHealth is the health endpoint of the client API for uptime monitors, status
 	// pages, and the clients (ADR-0088 §15): the readiness check's answer, which reaches the
 	// database at most once every healthCacheTTL per process (healthCache). The client API
@@ -58,6 +63,8 @@ func (a *App) handler(gateDomains bool) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET "+PathLiveness, a.liveness)
 	mux.HandleFunc("GET "+PathReadiness, a.readiness)
+	mux.HandleFunc("GET "+PathHealthLive, a.liveness)
+	mux.HandleFunc("GET "+PathHealthReady, a.readiness)
 	var page http.Handler
 	targets := map[string]routeTarget{}
 	if a.Config.Role != config.RoleWorker {
@@ -94,7 +101,7 @@ func (a *App) domainsGate(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !a.domainsVerified.Load() {
 			switch r.URL.Path {
-			case PathLiveness, PathReadiness, PathInstanceHealth:
+			case PathLiveness, PathReadiness, PathHealthLive, PathHealthReady, PathInstanceHealth:
 			default:
 				l := (&i18n.Resolver{Bundle: a.Messages}).RequestLocalizer(r)
 				w.Header().Set("Retry-After", strconv.Itoa(int(defaultDomainsRetry/time.Second)))
@@ -491,7 +498,11 @@ func (a *App) accessLog(next http.Handler) http.Handler {
 // isHealthCheck tells whether path is a health check: a probe of the platform or the endpoint
 // of the uptime monitors, which the access log writes at debug level and no span traces.
 func isHealthCheck(path string) bool {
-	return path == PathLiveness || path == PathReadiness || path == PathInstanceHealth
+	switch path {
+	case PathLiveness, PathReadiness, PathHealthLive, PathHealthReady, PathInstanceHealth:
+		return true
+	}
+	return false
 }
 
 // statusClientClosedRequest is the status that the access log, the metric, and the span record

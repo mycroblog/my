@@ -30,7 +30,7 @@ Add `module.monitoring` to `backends` of the app module, so that a setting of `m
 | `workers` | `{}` | [The same value as the app](../../README.md#workers). The lines and the memory of each worker's service count too. Requests stay the default's, since a worker takes none from outside |
 | `name` | `my` | Start of the names of the metrics and the check |
 | `uptime_period` | `900s` | `60s`, `300s`, `600s`, or `900s`. [What it costs](#what-the-uptime-check-costs) |
-| `uptime_path` | `/readyz` | Or `/healthz`, or `/api/v1/instance/health` |
+| `uptime_path` | `/health/live` | Or `/health/ready`, or `/api/v1/instance/health`. `/healthz` and `/readyz` are refused: Cloud Run reserves paths that end in `z` and answers them itself |
 | `uptime_timeout` | `30s` | Long enough for a cold start and a database that wakes up |
 | `uptime_regions` | three in the USA | Must hold 3 checkers. Each is one more request per period |
 | `metrics_exporter` | `none` | `none` or `otlp`. Returned in `env` |
@@ -74,7 +74,7 @@ A rate over few points is noisy, which is why the ratios keep the runbook's lowe
 
 ## What the uptime check costs
 
-Each run wakes an instance, and through `/readyz`, which touches the database on every request, it wakes a scale-to-zero database. The checks are few enough for the free allowances: with the default 3 checkers, `900s` makes 8,640 requests a month and `60s` makes 129,600, against Cloud Run's 2 million and Cloud Monitoring's 1 million executions (then $0.30 per 1,000, from a search of [the pricing page](https://cloud.google.com/products/observability/pricing), which could not be read directly). The cost is Neon's. It stops a compute after 5 minutes without activity, so at 0.25 CU:
+Each run wakes an instance. The default `/health/live` never touches the database, so the cost below is that of `uptime_path = "/health/ready"`, which touches it on every request and wakes a scale-to-zero database. The checks are few enough for the free allowances: with the default 3 checkers, `900s` makes 8,640 requests a month and `60s` makes 129,600, against Cloud Run's 2 million and Cloud Monitoring's 1 million executions (then $0.30 per 1,000, from a search of [the pricing page](https://cloud.google.com/products/observability/pricing), which could not be read directly). The cost is Neon's. It stops a compute after 5 minutes without activity, so at 0.25 CU:
 
 | `uptime_period` | Checkers fire together | Checkers spread over the period |
 | --- | --- | --- |
@@ -82,12 +82,12 @@ Each run wakes an instance, and through `/readyz`, which touches the database on
 | `600s` | Awake 1/2 of the time, about 91 CU-hours | Never stops, 182.5 CU-hours |
 | `300s`, `60s` | Never stops, 182.5 CU-hours | Never stops, 182.5 CU-hours |
 
-Google's documents do not say which of the two columns holds, so look at the requests on the first day. Neon's Free plan has 100 CU-hours, and [the tick's trade-off in the guide](../../../../docs/operations/deploy-cloud-run.md#costs) has the same arithmetic:
+The table holds for `/health/ready` only; with the default `/health/live` the database is not woken by the check. Google's documents do not say which of the two columns holds, so look at the requests on the first day. Neon's Free plan has 100 CU-hours, and [the tick's trade-off in the guide](../../../../docs/operations/deploy-cloud-run.md#costs) has the same arithmetic:
 
-- With the default `tick_schedule` of `* * * * *`, the compute never stops anyway, and the check adds nothing to the bill. Choose the period for how soon you want to know.
-- With `*/10 * * * *`, the tick alone is about 91 CU-hours. The default check on top of it comes to as much as 2/3 of the time, about 121 CU-hours, which is over the Free plan. To stay inside it, set `uptime_path = "/healthz"`, which wakes the instance and not the database, at the price of not seeing a database outage from outside. `MyNotReady` and the HTTP alerts still see one when anything calls the server.
+- With the default `tick_schedule` of `* * * * *`, the compute never stops anyway, and the check adds nothing to the bill, whichever path. Choose the period for how soon you want to know.
+- With `*/10 * * * *`, the tick alone is about 91 CU-hours. A check of `/health/ready` on top of it comes to as much as 2/3 of the time, about 121 CU-hours, which is over the Free plan. The default `/health/live` wakes the instance and not the database, so it stays inside the plan, at the price of not seeing a database outage from outside; set `uptime_path = "/health/ready"` to see one. `MyNotReady` and the HTTP alerts still see one when anything calls the server.
 
-The default is `900s` because it is the longest there is, and it means up to about 15 minutes more before `MyTargetDown` fires. `/readyz` answers `200` in the maintenance mode, so the check stays green during one.
+The default is `900s` because it is the longest there is, and it means up to about 15 minutes more before `MyTargetDown` fires. `/health/live` and `/health/ready` answer `200` in the maintenance mode, so the check stays green during one.
 
 ## The alerts of the runbook
 
@@ -96,7 +96,7 @@ The default is `900s` because it is the longest there is, and it means up to abo
 | Alert | Status | How |
 | --- | --- | --- |
 | `MyTargetDown` | Covered differently | The uptime check instead of a scrape: more than one checker fails for one period, at least 5 minutes. It stays green in the maintenance mode |
-| `MyNotReady` | Covered differently | Lines `not ready`: more than one in 15 minutes for 5 minutes. A failure needs something to call `/readyz`, here the check or a starting revision. More than one, because a database that wakes slowly fails the 3-second check once |
+| `MyNotReady` | Covered differently | Lines `not ready`: more than one in 15 minutes for 5 minutes. A failure needs something to call `/health/ready`: a starting revision, or the check when `uptime_path` is `/health/ready`. More than one, because a database that wakes slowly fails the 3-second check once |
 | `MyQueueBacklog` | Covered differently | The snapshot line every 15 minutes, with the age compared in the filter. One sample over the threshold fires, in place of 10 minutes above it |
 | `MyQueueStalled` | Covered differently | The same, at 30 minutes. A stalled queue also holds back the snapshot job, so `MyMetricsSnapshotStale` may come first |
 | `MyMetricsSnapshotStale` | Covered differently | The line's absence, instead of the age of each part |
@@ -155,6 +155,6 @@ Read from `tofu providers schema -json` and Google's documents, and never run:
 - The numeric comparison on a dotted field, `EXTRACT` on one, and the fields of a nested group (`jsonPayload."my.media.stored_bytes".local`).
 - The aggregation of `MyTargetDown` and of the absence condition.
 - That a log-based metric whose filter matches nothing yet takes `disable_metric_validation`.
-- That the checkers get through an ingress. Cloudflare may challenge them, and `/readyz` answers without the origin secret only at the origin.
+- That the checkers get through an ingress. Cloudflare may challenge them, and `/health/live` answers without the origin secret only at the origin.
 - The prices, and whether the checkers fire together.
 - The output of the server on Cloud Run: the fields come from its code and tests, not from Cloud Logging.

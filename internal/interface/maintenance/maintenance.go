@@ -31,6 +31,8 @@ const MaxRetryAfter = 24 * time.Hour
 const (
 	PathLiveness       = "/healthz"
 	PathReadiness      = "/readyz"
+	PathHealthLive     = "/health/live"
+	PathHealthReady    = "/health/ready"
 	PathInstanceHealth = "/api/v1/instance/health"
 )
 
@@ -85,7 +87,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	hd.Set("Cache-Control", "no-store")
 	path := r.URL.Path
 	switch {
-	case (path == PathLiveness || path == PathReadiness) && safe(r.Method):
+	case (path == PathLiveness || path == PathReadiness || path == PathHealthLive || path == PathHealthReady) && safe(r.Method):
 		writeJSON(w, http.StatusOK, `{"status":"maintenance"}`)
 	case path == PathInstanceHealth:
 		writeJSON(w, http.StatusServiceUnavailable, `{"status":"maintenance"}`)

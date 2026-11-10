@@ -65,7 +65,7 @@
 
 - 本プロジェクトの既定はリクエストベース課金 + min instances 0（コールドスタートを許容）。
 - HTTP/1 のリクエストは 32 MiB まで。サーバーは HTTP/1.1 で受けるので、`deploy/opentofu` の例は `media_max_av_bytes` を 30 MiB にする。
-- 起動プローブ `/readyz`、生存プローブ `/healthz`。プローブにも CPU とメモリの課金がある（リクエストの課金はない）。
+- 起動プローブ `/health/ready`、生存プローブ `/health/live`（Cloud Run は `/healthz` など `z` で終わる一部のパスを予約し、外からのリクエストを自分で 404 にするため、`z` で終わらない別名を使う。`/healthz`・`/readyz` も同じ答えを返す）。プローブにも CPU とメモリの課金がある（リクエストの課金はない）。
 - 無料の外向き転送は北米発 1 GiB/月のみ。連合配送の外向き通信量は M6 で計測する。
 
 ### Cloud Tasks
@@ -303,7 +303,7 @@ Cloud Run の ingress は、Cloudflare のようにインターネットから�
 
 - CDN がすべてのリクエストに静的なヘッダを設定する（Cloudflare は全プランの Transform Rules、CloudFront はオリジンのカスタムヘッダ、Google Cloud のロードバランサはカスタムリクエストヘッダ）。ヘッダを足せない経路（Cloud Run のドメインマッピングなど）には効かない。
 - 検査は `internal/platform/origincheck.go` のミドルウェアで、通常の `App.handler` と保守モードの `MaintenanceApp.Handler` の両方の最も外側に置く。リクエスト ID・アクセスログ・`traceparent`・クライアント IP より先に動く。公開しない `metrics_listen` は検査しない。
-- 除外するのは CDN を通らない呼び出しだけで、メソッドまで絞る: `/healthz`・`/readyz`・`/api/v1/instance/health` の `GET` / `HEAD`、`/_internal/` の `POST`（OIDC で認証する）。Web クライアントはルートのない `GET` に答えるので、`GET /_internal/...` を除外すると HTML が CDN を迂回して読める。`POST` に絞るのはこのため。
+- 除外するのは CDN を通らない呼び出しだけで、メソッドまで絞る: `/healthz`・`/readyz`・`/health/live`・`/health/ready`・`/api/v1/instance/health` の `GET` / `HEAD`、`/_internal/` の `POST`（OIDC で認証する）。Web クライアントはルートのない `GET` に答えるので、`GET /_internal/...` を除外すると HTML が CDN を迂回して読める。`POST` に絞るのはこのため。
 - 秘密を示していないリクエストは、除外の対象でも信頼するプロキシの言い分を持たない。`X-Forwarded-For` / `Forwarded`・`traceparent`・`X-Request-Id` を消してから進める。
 - 拒否は `403` の問題詳細で、文言は他の `403` と同じ。ヘッダ名は応答にもログにもトレースにも出さない。DB を読まない（ロケールは `Accept-Language` だけで決める）。span は作らず、カウンタ `my.http.origin_refused` とアクセスログ 1 行だけを残す。ログの量はルートのない 404 と変わらない。
 - ヘッダは検査のあと必ず消すので、ハンドラ・ログ・トレース・ログに残るエラーレポートには届かない。

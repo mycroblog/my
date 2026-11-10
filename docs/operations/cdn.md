@@ -99,7 +99,7 @@ With none of them set, nothing is checked and the server behaves as if this sect
 
 | Request | Why |
 | --- | --- |
-| `GET` or `HEAD` of `/healthz`, `/readyz`, `/api/v1/instance/health` | The platform's probes and uptime monitors call them directly |
+| `GET` or `HEAD` of `/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health` | The platform's probes and uptime monitors call them directly |
 | `POST` to `/_internal/` paths | Cloud Tasks and Cloud Scheduler call them on the server's own URL. They carry their own signed token |
 
 Everything else needs the header, in the maintenance mode too: the web client and its assets, `/media/`, the client API, OAuth, and ActivityPub, including the deliveries of other servers.
@@ -130,7 +130,7 @@ Every host name that the CDN forwards to the server needs the header: `host`, th
    ```sh
    curl -s -o /dev/null -w '%{http_code}\n' https://<host>/                 # 200: through the CDN
    curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/       # 403: directly
-   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/healthz # 200: a health check
+   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/health/live # 200: a health check
    ```
 
 Also list the CDN's addresses in [`trusted_proxies`](../reference/configuration.md#trusted_proxies), or the server sees one client and every request shares the CDN's rate limits; `my config check` warns about this.
@@ -139,7 +139,7 @@ A refused request gets the same `403` problem document as any other forbidden re
 
 ### When everyone is locked out
 
-A wrong setup refuses every request while the health checks stay `200`, so the platform sees a healthy server and an uptime monitor of `/healthz` sees nothing. The signs are:
+A wrong setup refuses every request while the health checks stay `200`, so the platform sees a healthy server and an uptime monitor of `/health/live` sees nothing. The signs are:
 
 - `403` for every page through the CDN.
 - The metric `my.http.origin_refused` rising while the requests of `http.server.request.duration` stop.

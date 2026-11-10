@@ -61,3 +61,6 @@ Egress is free. Nothing is billed while the server is idle beyond what is stored
 
 R2 expires an unfinished multipart upload seven days after it starts by default, so this module adds no lifecycle rule, where
 `blob-aws-s3` must.
+
+R2 has no object versioning, so the module has no `versioning` input. Keep the media with a scheduled copy of the bucket to another account or provider
+([Backup and restore](../../../../docs/operations/backup.md#media-in-a-bucket)).

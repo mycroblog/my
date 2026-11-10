@@ -1,6 +1,6 @@
 # Supporter payments with Stripe
 
-With `payments = stripe`, local users subscribe to monthly or yearly plans on Stripe's hosted payment page (Checkout), and the plan's role is granted and removed as the payment state changes.
+With `payments = stripe`, local users subscribe to monthly or yearly plans on Stripe's hosted payment page (Checkout), and the plan's role is granted and removed as the payment state changes. When an administrator enables them, users can also send one-time [tips](#tips) on the same page.
 The deployment keys are described in the [configuration reference](../reference/configuration.md#payments). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
 An administrator enables the program and creates plans in the administration. This setting only lets the server talk to Stripe.
 
@@ -31,6 +31,7 @@ One server can use only one provider. To switch to another provider later, ask t
   In addition, a reconciliation every `payments_reconcile_interval` (default 6 hours) reads the event list, the unfinished Checkout sessions, the balance transactions, and a sweep of all subscriptions, and repairs any webhook the server missed.
 - **Income**: The server records the gross amount, the fee, and the net of each balance transaction. Fees such as Billing's 0.7% appear as separate `stripe_fee` transactions and are subtracted from the income.
   `stripe_fee` covers the fees of the whole account, so **use a Stripe account dedicated to this server**. On an account used for other sales, those fees are subtracted from the income too.
+- **Tips**: see [Tips](#tips).
 - **Dates**: Income dates are counted in the time zone of the Stripe account (the time zone under "Settings > Business > Account details" in the dashboard, `settings.dashboard.timezone` in the API). When it cannot be read, the server counts in UTC and reads it again every hour.
 
 Each server process sends at most 20 requests per second (10 in test mode). [Stripe's limits](https://docs.stripe.com/rate-limits) are per account: 100 requests per second in live mode, 25 in a sandbox, and 25 per second for each endpoint. Processes of one server share them, as does anything else that uses the account.
@@ -39,10 +40,23 @@ When Stripe returns `429`, the server waits as long as `Retry-After` says if tha
 Stripe also allocates read requests per account: an average of 500 per transaction over 30 days, and at least 10,000 a month whatever the number of transactions. At the default interval, reconciliation stays far below that on a small server. A reconciliation that finds nothing still reads a few pages, so the shortest interval of 15 minutes (2,880 runs in 30 days) comes close to the 10,000 on an account with few transactions.
 Stripe limits each subscription to 10 new invoices a minute and 20 a day, and a plan change billed at once makes a new invoice.
 
+## Tips
+
+A tip (see [tips](supporters.md#tips) for what they are and how to enable them) is a Checkout session with `mode=payment` that the server creates for the one payment:
+
+- **The page**: one line item priced in the request, named "Tip for <server name>" in the user's language, at the amount and currency the user chose. The server creates no Product, Price, or customer for it: the user's email address only prefills the page. The page takes cards only, so that every completed page is paid; it does not use Adaptive Pricing, so the user pays in the currency of your amounts; and its button says "Pay", not "Donate". The page expires after one hour, like a subscription's.
+- **Our IDs**: the server's tip ID goes into `client_reference_id`, `metadata.my_tip_id`, and the `metadata.my_tip_id` of the PaymentIntent of the payment, which you can search for in the dashboard.
+- **Amounts**: a tip can use the currencies and their minimums of the plans (see [What the server does at Stripe](#what-the-server-does-at-stripe)), up to Stripe's largest charge of eight digits (999,999.99 US dollars, or 99,999,999 yen).
+- **The result**: the server reads the session back when its `checkout.session.completed` or `checkout.session.expired` event arrives, when the user returns from the page, and in the reconciliation. A session that is complete and whose `payment_status` is `paid` is a paid tip, with its PaymentIntent and the amount it charged.
+- **Refunds and disputes**: refund a tip in the dashboard. The refund, a dispute, and a won dispute arrive through the events and the balance transactions that the subscriptions use, and name the tip's PaymentIntent, which leads the server to the tip.
+- **Testing**: in test mode, pay a tip's page with the test cards of [Try it in test mode](#5-try-it-in-test-mode); `4000 0000 0000 0259` makes a dispute of it.
+
+The restricted key of [Create an API key](#2-create-an-api-key) needs no other permission for the tips. They have not been run in a sandbox yet.
+
 ## Card data and PCI DSS
 
 Payment methods are entered only on Stripe's Checkout and customer portal, and this server's web client loads neither Stripe's script nor an iframe.
-The server stores only Stripe object IDs (`cus_`, `sub_`, `price_`, `prod_`, `cs_`, `txn_`), amounts, periods, and states. It does not store card numbers, last four digits, expiry dates, or billing addresses. Webhook bodies and Stripe responses are kept in neither the logs nor the database.
+The server stores only Stripe object IDs (`cus_`, `sub_`, `price_`, `prod_`, `cs_`, `pi_`, `txn_`), amounts, periods, and states. It does not store card numbers, last four digits, expiry dates, or billing addresses. Webhook bodies and Stripe responses are kept in neither the logs nor the database.
 For this reason, the operator's PCI DSS scope is expected to be that of a merchant using a hosted payment page (SAQ A). Check the scope that applies and the type of self-assessment questionnaire in Stripe's dashboard guidance ("Settings > Compliance").
 
 ## 1. Prepare the Stripe account
@@ -87,7 +101,7 @@ Under "Developers > Webhooks > Add endpoint", register the following. The server
 - URL: `https://<server domain>/payments/webhooks/stripe`
 - Events from: "Your account" (not Connected accounts)
 - Payload style: snapshot. The server reads only `id`, `type`, `livemode`, `created`, `data.object.id`, and `data.object.object` of the body, so the endpoint's API version does not matter.
-- Events to send (16 types):
+- Events to send (16 types; the tips need no other type):
 
   - `checkout.session.completed`, `checkout.session.expired`
   - `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed`
@@ -167,7 +181,7 @@ stripe trigger charge.dispute.created
 stripe events resend evt_...   # send an event you missed again (up to 30 days)
 ```
 
-The objects that `stripe trigger` creates carry no subscription ID of this server, so no subscription changes state (the server reads them back and ignores what is not its own subscription). To check the whole subscription flow, subscribe from the web client and pay with a test card.
+The objects that `stripe trigger` creates carry no subscription or tip ID of this server, so nothing changes state (the server reads them back and ignores what is not its own subscription or tip). To check the whole subscription flow, or a tip, subscribe or tip from the web client and pay with a test card.
 
 ## 7. Operation
 
@@ -195,3 +209,5 @@ These have not been tried against Stripe, in a sandbox or live, and rest on Stri
 - That one session cannot be paid twice from two tabs. A session holds one subscription and completes once, but the documentation does not state it for two submissions at the same moment.
 - Whether a failed authentication on the payment page leaves an `incomplete` subscription that names the server's subscription. The server would link it and keep the user pending, and a payment on another page would be refunded as the second one.
 - A refund of a second subscription, with a restricted key whose "Charges" and "Refunds" permissions are as the table says, and the money movements that follow it.
+- A tip from its page to its refund and dispute, with a restricted key. In particular: that `allowed_payment_method_types=["card"]` keeps every other method off the page, that a session created with Adaptive Pricing off charges the currency asked, and that Stripe takes a one-time charge of eight digits in every currency of the table.
+- Whether Stripe accepts tips for running a service, and for a sole proprietor in Japan. Ask Stripe before you enable them.

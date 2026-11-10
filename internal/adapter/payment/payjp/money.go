@@ -235,7 +235,8 @@ func (p *Provider) disputeOf(ctx context.Context, ev event) ([]supporters.MoneyM
 
 // adjustmentOf returns the fee of a sales statement that the adapter's fees of its term miss:
 // the statement's fees and offsets less the fees of the term's charges, refunds, and chargebacks
-// as the adapter computes them (ADR-0074 §13).
+// as the adapter computes them (ADR-0074 §13), and less the fees of the term's transactions of
+// API v2, which the movements of v2 carry (ADR-0162 §11).
 func (p *Provider) adjustmentOf(ctx context.Context, st statement) ([]supporters.MoneyMovement, error) {
 	if st.Type != "sales" || st.Term == nil || st.Term.ID == "" || st.Term.EndAt == 0 {
 		return nil, nil
@@ -278,6 +279,10 @@ func (p *Provider) adjustmentOf(ctx context.Context, st statement) ([]supporters
 			return nil, err
 		}
 		for _, ev := range evs {
+			var obj eventObject
+			if json.Unmarshal(ev.Data, &obj) == nil && v2Objects[obj.Object] {
+				continue // the transactions of API v2 below carry its fee
+			}
 			fee, err := p.returnedFee(ctx, ev)
 			if err != nil {
 				return nil, err
@@ -285,6 +290,11 @@ func (p *Provider) adjustmentOf(ctx context.Context, st statement) ([]supporters
 			computed -= fee
 		}
 	}
+	v2, err := p.feesOfTermV2(ctx, st.Term.ID)
+	if err != nil {
+		return nil, err
+	}
+	computed += v2
 	diff := reported - computed
 	if diff == 0 {
 		return nil, nil
@@ -351,6 +361,11 @@ func (p *Provider) allEvents(ctx context.Context, q url.Values) ([]event, error)
 
 // moneyOfEvent returns the movements of an event.
 func (p *Provider) moneyOfEvent(ctx context.Context, cache intervals, ev event) ([]supporters.MoneyMovement, error) {
+	var obj eventObject
+	if json.Unmarshal(ev.Data, &obj) == nil && v2Objects[obj.Object] {
+		// An event of API v2 in the list of v1: its money comes from the transactions of v2.
+		return nil, nil
+	}
 	switch ev.Type {
 	case evChargeSucceeded:
 		var c charge
@@ -372,8 +387,8 @@ func (p *Provider) moneyOfEvent(ctx context.Context, cache intervals, ev event) 
 	return nil, nil
 }
 
-// moneyOf returns the movements of an ID: a charge, an event, or a statement; none for an ID
-// that PAY.JP does not have.
+// moneyOf returns the movements of an ID: a charge, an event, or a statement of API v1, or an
+// object of API v2 (moneyOfV2); none for an ID that PAY.JP does not have.
 func (p *Provider) moneyOf(ctx context.Context, id string) ([]supporters.MoneyMovement, error) {
 	if id == "" {
 		return nil, nil
@@ -400,10 +415,10 @@ func (p *Provider) moneyOf(ctx context.Context, id string) ([]supporters.MoneyMo
 	if err == nil {
 		return p.adjustmentOf(ctx, st)
 	}
-	if errors.Is(err, supporters.ErrPaymentNotFound) {
-		return nil, nil
+	if !errors.Is(err, supporters.ErrPaymentNotFound) {
+		return nil, err
 	}
-	return nil, err
+	return p.moneyOfV2(ctx, id)
 }
 
 // GetMoney implements supporters.PaymentProvider.
@@ -420,10 +435,14 @@ func (p *Provider) GetMoney(ctx context.Context, id string) (supporters.MoneyMov
 	return supporters.MoneyMovement{}, fmt.Errorf("payjp: %w: money %q", supporters.ErrPaymentNotFound, id)
 }
 
-// ListMoney implements supporters.PaymentProvider: the movements of the money's events, oldest
-// first, from the cursor's time (ADR-0074 §13).
+// ListMoney implements supporters.PaymentProvider: the movements of the money's events of API v1,
+// oldest first, from the cursor's time (ADR-0074 §13); then those of the payment transactions of
+// API v2, oldest first after the cursor's transaction; and last the reversals of the chargebacks
+// whose disputes ended since the cursor's time and that the transactions do not report
+// (ADR-0162 §11). A page holds the movements of one of the three.
 func (p *Provider) ListMoney(ctx context.Context, since time.Time, cursor string) (supporters.MoneyPage, error) {
-	from, err := timeCursor(cursor, since)
+	c := parseMoneyCursor(cursor)
+	from, err := timeCursor(c.v1, since)
 	if err != nil {
 		return supporters.MoneyPage{}, err
 	}
@@ -431,7 +450,8 @@ func (p *Provider) ListMoney(ctx context.Context, since time.Time, cursor string
 	if err != nil {
 		return supporters.MoneyPage{}, err
 	}
-	out := supporters.MoneyPage{Next: strconv.FormatInt(w.Next.Unix(), 10), More: !w.Next.After(w.Until)}
+	c.v1 = strconv.FormatInt(w.Next.Unix(), 10)
+	var out supporters.MoneyPage
 	cache := intervals{}
 	for _, ev := range w.Events {
 		ms, err := p.moneyOfEvent(ctx, cache, ev)
@@ -440,5 +460,40 @@ func (p *Provider) ListMoney(ctx context.Context, since time.Time, cursor string
 		}
 		out.Movements = append(out.Movements, ms...)
 	}
+	if !w.Next.After(w.Until) || len(out.Movements) > 0 {
+		out.Next, out.More = c.String(), true
+		return out, nil
+	}
+	txns, last, more, err := p.walkTransactions(ctx, since, c.v2)
+	if err != nil {
+		return supporters.MoneyPage{}, err
+	}
+	c.v2 = last
+	c2 := newCacheV2()
+	for _, t := range txns {
+		ms, err := p.movementOfTxn(ctx, c2, t)
+		if err != nil {
+			return supporters.MoneyPage{}, err
+		}
+		out.Movements = append(out.Movements, ms...)
+	}
+	if more || len(txns) > 0 {
+		out.Next, out.More = c.String(), true
+		return out, nil
+	}
+	after, err := c.disputesAfter(since)
+	if err != nil {
+		return supporters.MoneyPage{}, err
+	}
+	until := p.o.Now().Add(-eventLag).Truncate(time.Second)
+	if until.After(after) {
+		ms, err := p.disputeOutcomes(ctx, after, until)
+		if err != nil {
+			return supporters.MoneyPage{}, err
+		}
+		out.Movements = append(out.Movements, ms...)
+		c.disputes = strconv.FormatInt(until.Unix(), 10)
+	}
+	out.Next = c.String()
 	return out, nil
 }

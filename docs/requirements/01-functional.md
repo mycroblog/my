@@ -156,10 +156,10 @@
 | ID | 要件 | 優先度 |
 | --- | --- | --- |
 | FR-801 | CLI: DB 初期化と更新（Atlas の宣言的なスキーマで適用。`v0.1.0` 以降は版の間の更新でデータを引き継ぎ、データの書き換えは `my db upgrade` で行う。[ADR-0023](../adr/0023-declarative-schema-management.md)）、管理者作成、設定検証、ジョブ再実行 | M |
-| FR-802 | ヘルスチェックエンドポイント（liveness / readiness）。メンテナンスモードの間も 200 を返し、本文でメンテナンス中と分かる（[ADR-0088](../adr/0088-service-shutdown-modes.md)） | M |
+| FR-802 | ヘルスチェックエンドポイント（liveness / readiness）: `/healthz`・`/readyz` と、同じ答えを返す `/health/live`・`/health/ready`（Cloud Run は `z` で終わる一部のパスを予約するので、外からは後者を使う）。メンテナンスモードの間も 200 を返し、本文でメンテナンス中と分かる（[ADR-0088](../adr/0088-service-shutdown-modes.md)） | M |
 | FR-803 | 期限切れデータ（リモートメディア・古いリモート投稿・失敗ジョブ）の定期クリーンアップ | M |
 | FR-804 | バックアップ / リストア手順（ターゲットごと） | S |
-| FR-805 | メンテナンスモード: 設定 `maintenance`（環境変数・設定ファイル・`my serve -maintenance`）で、DB・KV・キュー・Blob・Mailer・外への HTTP に触れずに起動し、Web にはメンテナンスのページを、client API には `/api/v1/problems/maintenance` の Problem を、ActivityPub・WebFinger・NodeInfo には応答を、いずれも `503` と `Retry-After` で返す。`/healthz`・`/readyz` は 200 でメンテナンス中と分かる本文を返す。告知文・終了予定・ステータスページへのリンクを設定から出し、文言は `Accept-Language` で選ぶ（[ADR-0088](../adr/0088-service-shutdown-modes.md)） | M |
+| FR-805 | メンテナンスモード: 設定 `maintenance`（環境変数・設定ファイル・`my serve -maintenance`）で、DB・KV・キュー・Blob・Mailer・外への HTTP に触れずに起動し、Web にはメンテナンスのページを、client API には `/api/v1/problems/maintenance` の Problem を、ActivityPub・WebFinger・NodeInfo には応答を、いずれも `503` と `Retry-After` で返す。`/healthz`・`/readyz`（と同じ答えを返す `/health/live`・`/health/ready`。Cloud Run は `z` で終わる一部のパスを予約していて外からは届かない）は 200 でメンテナンス中と分かる本文を返す。告知文・終了予定・ステータスページへのリンクを設定から出し、文言は `Accept-Language` で選ぶ（[ADR-0088](../adr/0088-service-shutdown-modes.md)） | M |
 | FR-806 | メンテナンスのページの書き出し: `my maintenance export` が、メンテナンスモードと同じテンプレートで、言語ごとの自己完結した静的な HTML を書き出す。DB に届けばサーバーの名前とテーマを焼き込み、届かなくても設定から書き出せる（[ADR-0088](../adr/0088-service-shutdown-modes.md)） | S |
 | FR-807 | 外形監視向けの状態エンドポイント: 認証なしで、サーバーの状態（正常・障害・メンテナンス中）を HTTP の状態コードと JSON で返す。DB の検査の結果をキャッシュし、監視の頻度によらず DB に触れる回数に上限を設ける。内部の情報（ホスト名・版・エラーの文言）を出さない（[ADR-0088](../adr/0088-service-shutdown-modes.md)） | M |
 | FR-808 | サービスの終了の予告: `manage_service_closure` を持つ人が、閉鎖日とデータの持ち出しの期限を決めて終了を予告し、変更し、取り消す。予告の間は登録・招待・サポーターの新しい加入を止め、続いている加入を期間の終わりで解約し、全画面の帯・`GET /instance`・NodeInfo・通知・メールで知らせ、エクスポートと移転（`Move`）へ案内する。操作は監査ログに残す（[ADR-0088](../adr/0088-service-shutdown-modes.md)） | S |

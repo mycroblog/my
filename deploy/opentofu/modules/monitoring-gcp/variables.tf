@@ -77,7 +77,7 @@ variable "page_notification_channels" {
 }
 
 variable "uptime_period" {
-  description = "How often the uptime check runs: 60s, 300s, 600s, or 900s. Every run wakes an instance, and through /readyz a scale-to-zero database. The README says what that costs."
+  description = "How often the uptime check runs: 60s, 300s, 600s, or 900s. Every run wakes an instance, and, with /health/ready, a scale-to-zero database. The README says what that costs."
   type        = string
   default     = "900s"
   nullable    = false
@@ -89,14 +89,14 @@ variable "uptime_period" {
 }
 
 variable "uptime_path" {
-  description = "Path of the uptime check. /readyz touches the database on every request; /healthz never does, and so stays green while the database is down."
+  description = "Path of the uptime check. /health/ready touches the database on every request; /health/live never does, and so stays green while the database is down. Cloud Run answers some paths that end in z itself (/healthz among them), so /healthz and /readyz are refused."
   type        = string
-  default     = "/readyz"
+  default     = "/health/live"
   nullable    = false
 
   validation {
-    condition     = contains(["/readyz", "/healthz", "/api/v1/instance/health"], var.uptime_path)
-    error_message = "uptime_path must be /readyz, /healthz, or /api/v1/instance/health."
+    condition     = contains(["/health/ready", "/health/live", "/api/v1/instance/health"], var.uptime_path)
+    error_message = "uptime_path must be /health/ready, /health/live, or /api/v1/instance/health. /healthz and /readyz are refused because Cloud Run reserves paths that end in z and answers them itself, so the check would always fail."
   }
 }
 
