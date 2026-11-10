@@ -140,6 +140,30 @@ func TestApplySchemaAddsAColumn(t *testing.T) {
 	}
 }
 
+func TestApplySchemaChangesTheExpressionOfACheck(t *testing.T) {
+	t.Parallel()
+	path := newEmptyFile(t)
+	probe := func(values string) string {
+		return schema.SQLite + "\nCREATE TABLE probe_kinds (kind TEXT NOT NULL CHECK (kind IN (" + values + ")));\n"
+	}
+	mustApply(t, path, probe("'a'"), schemaapply.Options{})
+	r := mustApply(t, path, probe("'a', 'b'"), schemaapply.Options{})
+	if !r.Applied || len(r.Drops) > 0 {
+		t.Fatalf("applying a changed CHECK = %+v, want it applied with nothing dropped", r)
+	}
+	db, err := sql.Open("sqlite", "file:"+path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+	if _, err := db.ExecContext(t.Context(), "INSERT INTO probe_kinds (kind) VALUES ('b')"); err != nil {
+		t.Errorf("inserting a value the changed CHECK allows: %v", err)
+	}
+	if again := mustApply(t, path, probe("'a', 'b'"), schemaapply.Options{}); len(again.Statements) > 0 {
+		t.Errorf("ApplySchema after the change = %+v, want nothing to do", again)
+	}
+}
+
 func TestApplySchemaRefusesDropsUnlessAllowed(t *testing.T) {
 	t.Parallel()
 	path := newEmptyFile(t)
