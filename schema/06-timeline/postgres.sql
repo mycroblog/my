@@ -54,6 +54,9 @@ CREATE TABLE feed_tag_entries (
 CREATE INDEX feed_tag_entries_entry_id ON feed_tag_entries (entry_id);
 -- tag_usage.last_used_at is the latest revised_at of the posts that tag_usage counts.
 CREATE INDEX feed_tag_entries_usage ON feed_tag_entries (tag_id, revised_at) WHERE visibility IN ('public', 'local', 'unlisted');
+-- The counts of an account's featured hashtags (featured_tags) read its public and unlisted posts
+-- of each tag.
+CREATE INDEX feed_tag_entries_author ON feed_tag_entries (author_account_id, tag_id, revised_at) WHERE visibility IN ('public', 'unlisted');
 
 -- Projection: how many posts of visibility public, local, or unlisted carry each hashtag now,
 -- and the latest time one of them was revised with it, for the prefix search of hashtags
@@ -143,9 +146,10 @@ CREATE INDEX list_members_owner_member ON list_members (owner_account_id, member
 CREATE INDEX list_members_member_account_id ON list_members (member_account_id);
 
 -- ---------------------------------------------------------------------------------------------
--- timeline: followed hashtags (data-model §4.6, ADR-0013 §27). Owned by internal/app/timeline:
--- the account's commands write them, and the home timeline reads the posts of the followed tags
--- from feed_tag_entries (data-model §6.1).
+-- timeline: followed and featured hashtags (data-model §4.6, ADR-0013 §27, ADR-0006 §17). Owned
+-- by internal/app/timeline: the account's commands write them, the home timeline reads the posts
+-- of the followed tags from feed_tag_entries (data-model §6.1), and the profile counts the posts
+-- of the featured tags there.
 -- ---------------------------------------------------------------------------------------------
 
 -- Current value: a hashtag (a tag of content) that an account follows, at most 100 per account;
@@ -157,6 +161,20 @@ CREATE TABLE feed_tag_follows (
   PRIMARY KEY (account_id, tag_id)
 );
 CREATE INDEX feed_tag_follows_tag_id ON feed_tag_follows (tag_id);
+
+-- Current value: a hashtag (a tag of content) that an account features on its profile, at most
+-- 10 per account in the order of ordinal (ADR-0006 §17). A local account's own command writes
+-- them; those of a remote account are the copy of its featuredTags collection, which the fetch
+-- replaces. The counts and the last use come from feed_tag_entries. A rebuild of the
+-- projections keeps them.
+CREATE TABLE featured_tags (
+  account_id uuid NOT NULL,
+  tag_id uuid NOT NULL,
+  ordinal integer NOT NULL CHECK (ordinal BETWEEN 1 AND 10),
+  featured_at timestamptz NOT NULL,
+  PRIMARY KEY (account_id, tag_id)
+);
+CREATE UNIQUE INDEX featured_tags_account_id_ordinal ON featured_tags (account_id, ordinal);
 
 -- ---------------------------------------------------------------------------------------------
 -- timeline: keyword filters (data-model §4.6, ADR-0157). Owned by internal/app/timeline: the

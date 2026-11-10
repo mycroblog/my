@@ -16,14 +16,14 @@ type ErasureRepository interface {
 	// EraseFeedsOf deletes up to limit of each of: the entries by the account or of its
 	// statuses (with their recipients and hashtags), the direct entries to it, the follows into
 	// and out of it, the exclusions by and of it, its domain mutes, its lists (with their names
-	// and members), its membership in the lists of others, the hashtags it follows, and its keyword
-	// filters (with their settings, contexts, and words). It
-	// returns the most rows that one kind lost.
+	// and members), its membership in the lists of others, the hashtags it follows and features,
+	// and its keyword filters (with their settings, contexts, and words). It returns the most
+	// rows that one kind lost.
 	EraseFeedsOf(ctx context.Context, tx uow.Tx, accountID string, limit int) (int64, error)
 }
 
 // Eraser erases a deleted local account's rows of the timeline projections, its lists, its
-// followed hashtags, and its keyword filters (data-model §8).
+// followed and featured hashtags, and its keyword filters (data-model §8).
 // The restrictions of moderation (feed_author_restrictions) stay with the moderation records.
 type Eraser struct {
 	uow     uow.UnitOfWork

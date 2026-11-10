@@ -97,6 +97,9 @@ func (r *Repository) EraseFeedsOf(ctx context.Context, tx uow.Tx, accountID stri
 			return q.EraseKeywordFiltersOf(ctx, timelinegen.EraseKeywordFiltersOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {
+			return q.EraseFeaturedTagsOf(ctx, timelinegen.EraseFeaturedTagsOfParams{AccountID: a, Lim: n})
+		},
+		func(ctx context.Context, a string, n int64) (int64, error) {
 			return q.EraseFeedConversationParticipantsOf(ctx, timelinegen.EraseFeedConversationParticipantsOfParams{AccountID: a, Lim: n})
 		},
 		func(ctx context.Context, a string, n int64) (int64, error) {

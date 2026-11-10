@@ -354,4 +354,6 @@ type Repository interface {
 	// The followed hashtags (ADR-0013 §24 to §28).
 	TagFollowRepository
 	KeywordFilterRepository
+	// The featured hashtags of profiles (ADR-0006 §17).
+	FeaturedTagRepository
 }

@@ -3,6 +3,7 @@
 package timelinetest
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand/v2"
@@ -96,6 +97,8 @@ func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 		{"HomeShowsPostsOfFollowedTags", timelineHomeFollowedTags},
 		{"HomeFollowedTagsForStreams", timelineHomeFollowedTagStreams},
 		{"KeywordFilterCommands", timelineKeywordFilterCommands},
+		{"FeaturedTagCommands", timelineFeaturedTagCommands},
+		{"FeaturedTagsOfRemoteAccounts", timelineRemoteFeaturedTags},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newTimelineEnv(t, newHarness)) })
@@ -112,6 +115,8 @@ type timelineEnv struct {
 	graph        *appgraph.Service
 	interactions *appcontent.Interactions
 	svc          *apptimeline.Service
+	// featuredChanges are the FeaturedTagsChanged that the commands emitted.
+	featuredChanges []apptimeline.FeaturedTagsChanged
 }
 
 func newTimelineEnv(t *testing.T, newHarness TimelineFactory) *timelineEnv {
@@ -137,6 +142,10 @@ func newTimelineEnv(t *testing.T, newHarness TimelineFactory) *timelineEnv {
 		Accounts: e.actors, Relationships: e.graph, Clock: clock, IDs: ids, Host: testkit.ContractHost,
 	})
 	apptimeline.RegisterModerationProjectors(projectors, h.Timeline, e.actors)
+	projectors.Register(apptimeline.EventFeaturedTagsChanged, func(_ context.Context, _ uow.Tx, ev uow.Event) error {
+		e.featuredChanges = append(e.featuredChanges, ev.(apptimeline.FeaturedTagsChanged))
+		return nil
+	})
 	tags := appcontent.NewService(appcontent.Deps{UnitOfWork: h.UnitOfWork, Repository: h.Statuses, Clock: clock, IDs: ids, Host: testkit.ContractHost})
 	e.svc = apptimeline.NewService(apptimeline.Deps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Timeline, Clock: clock, IDs: ids, Conversations: conversationResolver{h.Statuses},

@@ -108,3 +108,10 @@ DELETE FROM keyword_filter_settings WHERE keyword_filter_settings.filter_id IN (
 DELETE FROM keyword_filters WHERE keyword_filters.account_id = sqlc.arg(account_id) AND keyword_filters.id IN (
   SELECT f.id FROM keyword_filters f WHERE f.account_id = sqlc.arg(account_id)
   ORDER BY f.id LIMIT sqlc.arg(lim));
+
+-- The hashtags that an account features (data-model 4.6).
+
+-- name: EraseFeaturedTagsOf :execrows
+DELETE FROM featured_tags WHERE featured_tags.account_id = sqlc.arg(account_id) AND featured_tags.tag_id IN (
+  SELECT f.tag_id FROM featured_tags f WHERE f.account_id = sqlc.arg(account_id)
+  ORDER BY f.tag_id LIMIT sqlc.arg(lim));
