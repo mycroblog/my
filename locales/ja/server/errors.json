@@ -348,7 +348,7 @@
     "description": "API error title for HTTP 422 when the amounts of the tips break a rule; the detail says which (ADR-0162 §6)."
   },
   "errors.supporters.tip_amounts_invalid_detail": {
-    "defaultMessage": "{reason, select, count {1 つの通貨で、異なる金額を 1〜6 つ選んでください。} currency {チップは円か米ドルで受け、決済の事業者がその通貨を受けられる必要があります。} range {各金額は 100〜100,000 円か 1〜1,000 米ドルで、決済の事業者の最低額以上にしてください。} other {金額が決まりを満たしていません。}}",
+    "defaultMessage": "{reason, select, count {1 つの通貨で、異なる金額を 1〜6 つ選んでください。} currency {チップは円か米ドルで受け、決済の事業者がその通貨を受けられる必要があります。} range {各金額は 100 円〜10 万円か 1〜1000 米ドルで、決済の事業者の最低額以上にしてください。} other {金額が決まりを満たしていません。}}",
     "description": "API error detail for HTTP 422 when the amounts of the tips break a rule. {reason} is count, currency, or range."
   },
   "errors.supporters.payment_failed": {
