@@ -72,11 +72,17 @@ func LDContext() []any {
 
 // ActorLDContext returns the JSON-LD context of a local actor's document and of the Update that
 // carries it: LDContext with the Controlled Identifiers context, which defines the
-// assertionMethod and Multikey of FEP-521a, after the security vocabulary.
+// assertionMethod and Multikey of FEP-521a, after the security vocabulary, and the term
+// webfinger of FEP-2c59, defined in place as its context document defines it, so that no remote
+// context needs to be fetched to read it.
 func ActorLDContext() []any {
 	c := LDContext()
+	c[2].(map[string]any)["webfinger"] = map[string]string{"@id": WebfingerTerm, "@type": "http://www.w3.org/2001/XMLSchema#string"}
 	return append(c[:2:2], append([]any{ControlledIdentifierContext}, c[2:]...)...)
 }
+
+// WebfingerTerm is the IRI of FEP-2c59's webfinger property.
+const WebfingerTerm = "https://purl.archive.org/socialweb/webfinger#webfinger"
 
 // FormatTime formats t as the documents carry times: RFC 3339 in UTC, to the second, as
 // Mastodon publishes them.
@@ -527,6 +533,7 @@ type ActorDocument struct {
 	Featured                  IRI                `json:"featured,omitempty"`
 	FeaturedTags              IRI                `json:"featuredTags,omitempty"`
 	PreferredUsername         string             `json:"preferredUsername"`
+	Webfinger                 string             `json:"webfinger,omitempty"` // user@{account domain} (FEP-2c59)
 	Name                      *string            `json:"name,omitempty"`
 	Summary                   *string            `json:"summary,omitempty"`
 	URL                       string             `json:"url,omitempty"`

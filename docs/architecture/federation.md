@@ -320,7 +320,7 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
 - 鍵は、`publicKey` の PEM（PKIX と PKCS #1）、`publicKey` が `id` だけで示す鍵の文書（取得する。2 件まで）、FEP-521a の `assertionMethod` の `Multikey`（Ed25519）から読みます。鍵の `id` は Actor と同じオリジンで、`owner` / `controller` は Actor でなければなりません。
 - `keyId` を取得して `Key` の文書が返ったら、`owner`（または `controller`）の Actor を取得します（ADR-0006）。
 - 初めて文書を保存したドメインは `remote_instances` に記録し、ジョブ `federation.observe_instance` が NodeInfo 2.x（`/.well-known/nodeinfo` が指す同じホストの文書）のソフトウェア名と版を `instance_nodeinfo_observations` に記録します（前回と同じなら記録しない）。
-- ハンドル（`account_handles`）は WebFinger で確かめたものだけです。`acct:{preferredUsername}@{Actor のホスト}` を引き、`self` リンクが Actor の `id` を指すこと、`subject` のドメインが異なるならそのドメインでも同じことを確かめます（ADR-0018 のドメイン分離に相当する構成）。
+- ハンドル（`account_handles`）は WebFinger で確かめたものだけです。Actor が `webfinger` でハンドルを名乗れば、先にそれを確かめます（[§6.5](#65-webfinger-の拡張)）。名乗らないか確かめられなければ、`acct:{preferredUsername}@{Actor のホスト}` を引き、`self` リンクが Actor の `id` を指すこと、`subject` のドメインが異なるならそのドメインでも同じことを確かめます（ADR-0018 のドメイン分離に相当する構成）。
   - `subject` のドメインにも §6.1 の取得先の規則が掛かります。自サーバーと `federation` の制限があるドメインには問い合わせず `mismatch` を記録し、`unavailable` のドメインには問い合わせず何も記録しません。
   - 答え（404 を含む）が確かめなければ `mismatch` を記録し、ハンドルを持たないアカウントとして扱います。
   - WebFinger が答えなかった（接続の失敗・429・5xx）ときは何も記録せず、それまでのハンドルを残します。
@@ -410,6 +410,21 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   - アカウントは、削除されていないリモートの投稿を新しい順（`content.LiveRemoteStatusIDs`）に 100 件（`RefetchBatch`）ずつ、合わせて 1,000 件（`RefetchMaxStatuses`）までたどります。
   - ドメインは、そのドメインのリモートのアカウントを新しい順（`account.Search`）に 5 件（`RefetchAccountsBatch`）ずつ読み、アカウントごとに新しい投稿 20 件（`RefetchStatusesPerAccount`）まで、合わせて 1,000 件までたどります。
   - 続きのジョブは 1 分後（`RefetchBatchInterval`）に実行し、1 つのサーバーへの取得が一度に集まらないようにします。
+
+### 6.5 WebFinger の拡張
+
+- ローカルの Actor の文書（インスタンス Actor、凍結中の文書、Authorized Fetch の最小の文書、`Update` とエクスポートの文書を含む）は、FEP-2c59 の `webfinger` に `{username}@{account_domain}` を載せます。インスタンス Actor は `{account_domain}@{account_domain}` です。
+  その WebFinger の `subject` は同じハンドルで、`self` リンクは Actor の `id` そのものです（ADR-0018 §2）。`@context` は文脈の文書（`https://purl.archive.org/socialweb/webfinger`）を参照せず、`webfinger` の項（`https://purl.archive.org/socialweb/webfinger#webfinger`、`xsd:string`）を Actor の文脈の中で定義します。JSON-LD として読む相手が、文脈の文書を取得しなくても読めるようにするためです。
+- リモートの Actor の `webfinger`（先頭の `acct:` は除く）は名乗りで、保存の前に確かめます（`RemoteActors.checkHandle`）。名乗ったハンドルの WebFinger を `https://{domain}` に引き、`self` が Actor の `id` を指し、`subject`（あれば）が同じハンドルなら、それをハンドルとして `verified` を記録します。`preferredUsername` と違うユーザー名でもかまいません。
+  - 取得先の規則（§6.1）が掛かります。自サーバーと `federation` の制限があるドメインのハンドルは名乗りを無視し、`unavailable` のドメインと答えなかった WebFinger（接続の失敗・429・5xx）は何も記録せず、それまでのハンドルを残します。
+  - 答えが別の Actor を指す・`subject` が別のハンドル・404 などで確かめられないとき、またハンドルの形でないときは、FEP-2c59 のとおり名乗りを使わず、§6.2 の Mastodon と同じ方法（`preferredUsername` と Actor のホスト）でハンドルを確かめます。
+  - 名乗りを読むのは Actor の `id` から取得した文書と、Actor 自身が署名した `Update` だけです（§6.2 の保存の経路）。ほかの文書に埋め込まれた Actor の `webfinger` は使いません（FEP-2c59 の Security Considerations）。
+- ローカルのアカウントとインスタンス Actor の WebFinger は、`links` の最後に FEP-3b86 の Activity Intents を載せます。テンプレートはすべてのアカウントで同じ、Web クライアント（`web_origin`）の 1 つのページ `/intent` です（FEP-3b86 §3.6）。
+  - `https://w3id.org/fep/3b86/Follow`: `{web_origin}/intent?follow={object}`。アカウントを解決（`GET /api/v1/accounts/lookup?resolve=true`）して、フォローのボタンのあるプロフィールを開きます。
+  - `https://w3id.org/fep/3b86/Create`: `{web_origin}/intent?reply={inReplyTo}`。投稿を解決（`GET /api/v1/statuses/lookup`、`federation.Resolver`）して、その投稿の画面で返信を始めたフォームを開きます。
+  - ページはサインインを求め、サインインの後に同じページへ戻ります。開いただけでは何も解決せず、利用者がボタンを押してから解決します。ほかのサイトがブラウザをこのページへ送るだけで、このサーバーに取得させないためです（FEP-3b86 §6.1）。画面は [screens/intent.md](web-client/screens/intent.md) です。
+  - `on-success`・`on-cancel` はテンプレートに含めません。終えた後はこのサーバーの画面に残り、ほかのサイトへの転送（FEP-3b86 §6.2 の中継のページ）を持ちません。
+  - `GET /api/v1/statuses/lookup` は `federation.Resolver.Stored` で保存済みの投稿を引き、無ければ連合の向きが取り込む（`ingest`・`follow_out`）ときだけ `Resolve` で取得します。取得は `lookupAccount` の `resolve` と同じ回数の制限（アカウントごとに 30 回 / 5 分）を使い、見つけた投稿は `getStatus` と同じく `canView` を通して返します。
 
 ## 7. 送信（配送）
 

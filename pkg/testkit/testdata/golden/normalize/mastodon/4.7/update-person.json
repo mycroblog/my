@@ -30,7 +30,8 @@
             "Published": "2026-10-17T00:00:00Z",
             "SharedInbox": "https://mastodon.example/inbox",
             "Type": "Person",
-            "URL": "https://mastodon.example/@bob"
+            "URL": "https://mastodon.example/@bob",
+            "Webfinger": "bob@mastodon.example"
           }
         },
         "ID": "https://mastodon.example/ap/users/117454922805771612",

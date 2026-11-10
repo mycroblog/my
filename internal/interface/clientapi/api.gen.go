@@ -18102,6 +18102,12 @@ type CreateStatusParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// LookupStatusParams defines parameters for LookupStatus.
+type LookupStatusParams struct {
+	// Uri The `https` URL of the post.
+	Uri string `form:"uri" json:"uri"`
+}
+
 // SearchStatusesParams defines parameters for SearchStatuses.
 type SearchStatusesParams struct {
 	// Q The words to find, 1 to 200 characters. Anything else is a 400.
@@ -19750,6 +19756,9 @@ type ServerInterface interface {
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(w http.ResponseWriter, r *http.Request, params CreateStatusParams)
+	// LookupStatus Look up or resolve a status by its URL
+	// (GET /statuses/lookup)
+	LookupStatus(w http.ResponseWriter, r *http.Request, params LookupStatusParams)
 	// SearchStatuses Search the text of posts
 	// (GET /statuses/search)
 	SearchStatuses(w http.ResponseWriter, r *http.Request, params SearchStatusesParams)
@@ -30561,6 +30570,39 @@ func (siw *ServerInterfaceWrapper) CreateStatus(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// LookupStatus operation middleware
+func (siw *ServerInterfaceWrapper) LookupStatus(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params LookupStatusParams
+
+	// ------------- Required query parameter "uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, true, "uri", r.URL.Query(), &params.Uri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "uri", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LookupStatus(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SearchStatuses operation middleware
 func (siw *ServerInterfaceWrapper) SearchStatuses(w http.ResponseWriter, r *http.Request) {
 
@@ -33121,6 +33163,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/drafts/{id}/schedule", wrapper.ScheduleDraft)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/drafts/{id}/publish", wrapper.PublishDraft)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/search", wrapper.SearchStatuses)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/lookup", wrapper.LookupStatus)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/statuses/{id}", wrapper.DeleteStatus)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/statuses/{id}", wrapper.GetStatus)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/statuses/{id}", wrapper.EditStatus)
@@ -56112,6 +56155,68 @@ func (response CreateStatusdefaultApplicationProblemPlusJSONResponse) VisitCreat
 	return err
 }
 
+type LookupStatusRequestObject struct {
+	Params LookupStatusParams
+}
+
+type LookupStatusResponseObject interface {
+	VisitLookupStatusResponse(w http.ResponseWriter) error
+}
+
+type LookupStatus200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type LookupStatus200JSONResponse struct {
+	Body    Status
+	Headers LookupStatus200ResponseHeaders
+}
+
+func (response LookupStatus200JSONResponse) VisitLookupStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type LookupStatusdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response LookupStatusdefaultApplicationProblemPlusJSONResponse) VisitLookupStatusResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type SearchStatusesRequestObject struct {
 	Params SearchStatusesParams
 }
@@ -61689,6 +61794,9 @@ type StrictServerInterface interface {
 	// CreateStatus Post a status
 	// (POST /statuses)
 	CreateStatus(ctx context.Context, request CreateStatusRequestObject) (CreateStatusResponseObject, error)
+	// LookupStatus Look up or resolve a status by its URL
+	// (GET /statuses/lookup)
+	LookupStatus(ctx context.Context, request LookupStatusRequestObject) (LookupStatusResponseObject, error)
 	// SearchStatuses Search the text of posts
 	// (GET /statuses/search)
 	SearchStatuses(ctx context.Context, request SearchStatusesRequestObject) (SearchStatusesResponseObject, error)
@@ -72248,6 +72356,32 @@ func (sh *strictHandler) CreateStatus(w http.ResponseWriter, r *http.Request, pa
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CreateStatusResponseObject); ok {
 		if err := validResponse.VisitCreateStatusResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// LookupStatus operation middleware
+func (sh *strictHandler) LookupStatus(w http.ResponseWriter, r *http.Request, params LookupStatusParams) {
+	var request LookupStatusRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LookupStatus(ctx, request.(LookupStatusRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LookupStatus")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LookupStatusResponseObject); ok {
+		if err := validResponse.VisitLookupStatusResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

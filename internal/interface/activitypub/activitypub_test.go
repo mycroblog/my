@@ -451,3 +451,61 @@ func TestWebFingerCanonicalDomain(t *testing.T) {
 		t.Errorf("another port: status %d, want 404", rec.Code)
 	}
 }
+
+// TestActorWebfingerNamesTheActor checks FEP-2c59: the webfinger of each local actor, the
+// instance actor's too, is a handle whose WebFinger links to the actor's id verbatim.
+func TestActorWebfingerNamesTheActor(t *testing.T) {
+	s := newServer(t, accountDomain)
+	for _, id := range []string{aliceID, botID, instanceID} {
+		actor := decode(t, s.get(t, "/ap/actors/"+id, acceptMastodon).Body.Bytes())
+		handle, _ := actor["webfinger"].(string)
+		if handle == "" {
+			t.Errorf("actor %s has no webfinger", id)
+			continue
+		}
+		rec := s.get(t, "/.well-known/webfinger?resource="+url.QueryEscape("acct:"+handle), "")
+		if rec.Code != http.StatusOK {
+			t.Errorf("WebFinger of %s = %d", handle, rec.Code)
+			continue
+		}
+		doc := decode(t, rec.Body.Bytes())
+		if doc["subject"] != "acct:"+handle {
+			t.Errorf("WebFinger of %s: subject = %v", handle, doc["subject"])
+		}
+		if self := linkOf(doc, "self")["href"]; self != actor["id"] {
+			t.Errorf("WebFinger of %s: self = %v, want %v", handle, self, actor["id"])
+		}
+	}
+}
+
+// TestWebFingerIntentsOpenTheWebClient checks that the Activity Intents (FEP-3b86) open the web
+// client's page on its own origin.
+func TestWebFingerIntentsOpenTheWebClient(t *testing.T) {
+	s := &server{mux: http.NewServeMux(), accounts: newAccounts(t), objects: newObjects(), graph: &fakeGraph{}}
+	activitypub.New(activitypub.Options{
+		Host: host, AccountDomain: accountDomain, WebOrigin: "https://app.example.org", SoftwareVersion: "0.1.0",
+		Accounts: s.accounts, Objects: s.objects, Graph: s.graph, Problem: problem,
+	}).Register(s.mux)
+	for _, resource := range []string{"acct:alice@" + accountDomain, "acct:" + accountDomain + "@" + accountDomain} {
+		doc := decode(t, s.get(t, "/.well-known/webfinger?resource="+url.QueryEscape(resource), "").Body.Bytes())
+		for rel, want := range map[string]string{
+			"https://w3id.org/fep/3b86/Follow": "https://app.example.org/intent?follow={object}",
+			"https://w3id.org/fep/3b86/Create": "https://app.example.org/intent?reply={inReplyTo}",
+		} {
+			if got := linkOf(doc, rel)["template"]; got != want {
+				t.Errorf("%s: %s template = %v, want %s", resource, rel, got, want)
+			}
+		}
+	}
+}
+
+// linkOf returns the first link of a JRD with rel, or nil.
+func linkOf(doc map[string]any, rel string) map[string]any {
+	links, _ := doc["links"].([]any)
+	for _, l := range links {
+		if l, ok := l.(map[string]any); ok && l["rel"] == rel {
+			return l
+		}
+	}
+	return nil
+}

@@ -79,6 +79,8 @@ type Options struct {
 	// Resolver fetches unknown remote accounts for lookupAccount's resolve; nil resolves none
 	// (lookups find only stored accounts).
 	Resolver AccountResolver
+	// StatusResolver finds and fetches the posts of lookupStatus; nil finds none (404).
+	StatusResolver StatusResolver
 	// Profiles changes the viewer's profile.
 	Profiles Profiles
 	// Aliases reads and changes the viewer's aliases (ADR-0089); nil answers their operations

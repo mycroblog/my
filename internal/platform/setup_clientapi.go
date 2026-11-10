@@ -66,7 +66,7 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		SendsEmail:    sendsEmail(cfg),
 		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Aliases: a.Accounts, Posting: a.Content, PostCounts: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, Drafts: a.Drafts, DraftSchedules: a.Drafts, TwoFactor: a.Identity, Passkeys: a.Identity, LinkedIdentities: a.Identity, AuthorizedApps: a.Identity, SignedInBrowsers: a.Identity, OAuthApps: a.Identity, Media: a.Media,
 		AccountDomain: cfg.AccountDomain, Graph: a.Graph, Subscriptions: a.Subscriptions, ThreadMutes: a.ThreadMutes, InstanceThumbnail: a.instanceThumbnail, MediaImage: a.mediaImage,
-		Resolver: a.RemoteActors, RemoteProfiles: a.Accounts, AccountSearch: a.AccountSearch, AccountSuggestions: a.AccountSuggestions, TagSearch: a.TagSearch,
+		Resolver: a.RemoteActors, StatusResolver: a.Resolver, RemoteProfiles: a.Accounts, AccountSearch: a.AccountSearch, AccountSuggestions: a.AccountSuggestions, TagSearch: a.TagSearch,
 		Notifications: a.Notifications, NotificationPreferences: a.Notifications, NotificationPolicies: a.Notifications, Push: a.Push,
 		Statuses: a.Content, Articles: a.Content, StatusReader: a.Statuses, Translations: a.Translation, Interactions: a.Interactions, InteractionRequests: a.Interactions, Threads: a.RemoteStatuses, Outboxes: a.RemoteStatuses,
 		Timelines: a.Timeline, TimelineReader: a.Statuses, TimelineLanguages: a.timelineLanguages, Lists: a.Timeline, FollowedTags: a.Timeline, FeaturedTags: a.Timeline, KeywordFilters: a.Timeline, StatusFilters: a.Timeline, Conversations: a.Timeline,

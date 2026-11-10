@@ -219,6 +219,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/push/subscription":                                                 {Operation: "getPushSubscription", Scopes: []string{"push"}},
 	"GET /api/v1/reports":                                                           {Operation: "listOwnReports", Scopes: []string{"read:reports"}},
 	"GET /api/v1/sessions":                                                          {Operation: "listSessions", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},
+	"GET /api/v1/statuses/lookup":                                                   {Operation: "lookupStatus", Scopes: []string{"read:statuses"}},
 	"GET /api/v1/statuses/search":                                                   {Operation: "searchStatuses", Scopes: []string{"read:statuses"}},
 	"GET /api/v1/statuses/{id}":                                                     {Operation: "getStatus", Anonymous: true, Scopes: []string{"read:statuses"}},
 	"GET /api/v1/statuses/{id}/context":                                             {Operation: "getStatusContext", Anonymous: true, Scopes: []string{"read:statuses"}},

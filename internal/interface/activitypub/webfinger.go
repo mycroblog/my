@@ -16,7 +16,27 @@ const (
 	relSelf        = "self"
 	relProfilePage = "http://webfinger.net/rel/profile-page"
 	relLRDD        = "lrdd"
+	// The Activity Intents (FEP-3b86) of following an actor and of replying to a post.
+	relIntentFollow = "https://w3id.org/fep/3b86/Follow"
+	relIntentCreate = "https://w3id.org/fep/3b86/Create"
 )
+
+// PathIntent is the web client's page that the Activity Intents open (FEP-3b86): after the
+// visitor signs in and presses its button, it opens the profile to follow (?follow=) or a reply
+// to the post (?reply=).
+const PathIntent = "/intent"
+
+// intentLinks are the Activity Intents (FEP-3b86) that every account's descriptor and the
+// instance actor's carry: one page of the web client for every account, which acts as the
+// visitor who opens it. Their templates take no on-success or on-cancel: the page stays on
+// this server when it is done.
+func (h *Handler) intentLinks() []jrdLink {
+	page := strings.TrimSuffix(h.o.WebOrigin, "/") + PathIntent
+	return []jrdLink{
+		{Rel: relIntentFollow, Template: page + "?follow={object}"},
+		{Rel: relIntentCreate, Template: page + "?reply={inReplyTo}"},
+	}
+}
 
 // jrd is a JSON Resource Descriptor (RFC 7033 §4.4).
 type jrd struct {
@@ -115,18 +135,19 @@ func sameHost(domain, host string) bool {
 	return err == nil && d == c
 }
 
-// descriptor builds the JRD of a visible local actor.
+// descriptor builds the JRD of a visible local actor. Its self link is the actor's id as the
+// actor's webfinger names it (FEP-2c59), and its links end with the Activity Intents.
 func (h *Handler) descriptor(a appaccount.Actor) jrd {
 	id := a.Account.URI
 	self := jrdLink{Rel: relSelf, Type: typeActivityJSON, Href: id}
 	if a.Local == nil { // the instance actor
-		return jrd{Subject: "acct:" + h.instanceActorUsername() + "@" + h.o.AccountDomain, Aliases: []string{id}, Links: []jrdLink{self}}
+		return jrd{Subject: "acct:" + h.instanceActorUsername() + "@" + h.o.AccountDomain, Aliases: []string{id}, Links: append([]jrdLink{self}, h.intentLinks()...)}
 	}
 	profile := profileURL(h.o.Host, a.Local.Username)
 	return jrd{
 		Subject: "acct:" + a.Local.Username + "@" + h.o.AccountDomain,
 		Aliases: []string{profile, id},
-		Links:   []jrdLink{{Rel: relProfilePage, Type: "text/html", Href: profile}, self},
+		Links:   append([]jrdLink{{Rel: relProfilePage, Type: "text/html", Href: profile}, self}, h.intentLinks()...),
 	}
 }
 

@@ -8,6 +8,14 @@
       "rel": "self",
       "type": "application/activity+json",
       "href": "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e74"
+    },
+    {
+      "rel": "https://w3id.org/fep/3b86/Follow",
+      "template": "https://social.example.org/intent?follow={object}"
+    },
+    {
+      "rel": "https://w3id.org/fep/3b86/Create",
+      "template": "https://social.example.org/intent?reply={inReplyTo}"
     }
   ]
 }

@@ -92,7 +92,11 @@
       "suspended": "toot:suspended",
       "toot": "http://joinmastodon.org/ns#",
       "value": "schema:value",
-      "votersCount": "toot:votersCount"
+      "votersCount": "toot:votersCount",
+      "webfinger": {
+        "@id": "https://purl.archive.org/socialweb/webfinger#webfinger",
+        "@type": "http://www.w3.org/2001/XMLSchema#string"
+      }
     }
   ],
   "id": "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e70",
@@ -104,6 +108,7 @@
   "featured": "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e70/featured",
   "featuredTags": "https://social.example.org/ap/actors/0192f3a4-7b1c-7d2e-9f00-1a2b3c4d5e70/featured-tags",
   "preferredUsername": "Botty",
+  "webfinger": "Botty@example.org",
   "name": "Botty",
   "summary": "",
   "url": "https://social.example.org/@Botty",

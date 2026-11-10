@@ -394,7 +394,7 @@ func (f *FanOut) document(ctx context.Context, act federation.OutboundActivity, 
 			return nil, err
 		}
 		images.MovedTo = s.movedTo
-		return accountDocument(f.d.Host, act, s.actor, images, s.suspended)
+		return accountDocument(f.d.Host, f.d.AccountDomain, act, s.actor, images, s.suspended)
 	}
 	if act.ObjectKind == federation.OutboundMove {
 		return moveDocument(act, s.actor, s.movedTo)
@@ -464,12 +464,12 @@ func announceDocument(b appcontent.Boost, st appcontent.Status, actor federation
 // starts, the same document a GET of the actor returns; a later revision sends an Update of its
 // own. The document of a suspended actor is emptied and marked suspended (federation.md §11.1).
 // The Delete names the actor by its id.
-func accountDocument(host string, act federation.OutboundActivity, a appaccount.Actor, images ActorImages, suspended bool) ([]byte, error) {
+func accountDocument(host, accountDomain string, act federation.OutboundActivity, a appaccount.Actor, images ActorImages, suspended bool) ([]byte, error) {
 	actor := federation.IRI(a.Account.URI)
 	aud := federation.Audience{To: []federation.IRI{federation.PublicIRI}}
 	var object any = actor
 	if act.Type == federation.ActivityUpdate {
-		doc := LocalActorDocument(host, a, "", images)
+		doc := LocalActorDocument(host, accountDomain, a, "", images)
 		if suspended {
 			doc = doc.Suspend()
 		}

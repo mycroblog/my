@@ -3105,6 +3105,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/statuses/lookup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Look up or resolve a status by its URL
+         * @description Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+         *     else fetches it from its server, as a reply button of another server asks to (the page that
+         *     `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+         *     followed to the post's id. The post's parent is fetched too, one level. Posts of this
+         *     instance are found by their id only.
+         *
+         *     The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+         *     404, the same as a URL that leads to no post, or to an account.
+         *
+         *     Only signed-in users can look a status up (anonymous requests get the 401 of
+         *     `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+         *     `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+         *     `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+         *     other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+         *     found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+         *     fetched.
+         */
+        get: operations["lookupStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/statuses/{id}": {
         parameters: {
             query?: never;
@@ -22860,6 +22895,31 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["StatusPage"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    lookupStatus: {
+        parameters: {
+            query: {
+                /** @description The `https` URL of the post. */
+                uri: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The status. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

@@ -410,6 +410,7 @@ type Actor struct {
 	ID                        IRI
 	Type                      ActorType
 	PreferredUsername         string
+	Webfinger                 string // the handle it names as its own (FEP-2c59), without "acct:"; WebFinger confirms it
 	Name                      string // plain text (AS2 name carries no markup)
 	Summary                   string // HTML as received
 	URL                       IRI

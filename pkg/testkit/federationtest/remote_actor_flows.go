@@ -69,6 +69,7 @@ func RemoteActorFlows(t *testing.T, newHarness RemoteActorFactory) {
 		{"RevokesARotatedKey", remoteRevokesRotatedKey},
 		{"KeepsNoUnconfirmedHandle", remoteKeepsNoUnconfirmedHandle},
 		{"VerifiesHandlesOnAnotherDomain", remoteVerifiesHandleOnAnotherDomain},
+		{"VerifiesTheHandleTheActorNames", remoteVerifiesClaimedHandle},
 		{"RejectsIDsOfAnotherOrigin", remoteRejectsForeignIDs},
 		{"AppliesTheFetchRules", remoteAppliesFetchRules},
 		{"MarksGoneActorsDeleted", remoteMarksGoneActorsDeleted},
@@ -610,6 +611,48 @@ func remoteVerifiesHandleOnAnotherDomain(t *testing.T, e *remoteEnv) {
 	e.net.set(webFingerURL("example.org", "acct:"+username+"@example.org"), remoteResponse{status: http.StatusOK, contentType: "application/jrd+json", body: string(jrd)})
 	if a = e.refresh(t, id); a.Handle == nil || a.Handle.Username != username || a.Handle.Domain != "example.org" {
 		t.Errorf("handle = %+v, want %s@example.org", a.Handle, username)
+	}
+}
+
+// remoteVerifiesClaimedHandle checks the handle that an actor names in its webfinger (FEP-2c59):
+// it is the actor's handle when WebFinger of it names the actor, and otherwise the claim is
+// ignored for the handle that Mastodon's method finds.
+func remoteVerifiesClaimedHandle(t *testing.T, e *remoteEnv) {
+	var fields map[string]any
+	if err := json.Unmarshal(fixtureActor(t, "mastodon/4.8/actor"), &fields); err != nil {
+		t.Fatal(err)
+	}
+	fields["webfinger"] = "acct:someone@example.org"
+	doc, _ := json.Marshal(fields)
+	id, username, host := e.serveActor(doc)
+	claimed := webFingerURL("example.org", "acct:someone@example.org")
+	jrd := func(self string) remoteResponse {
+		b, _ := json.Marshal(map[string]any{
+			"subject": "acct:someone@example.org",
+			"links":   []map[string]string{{"rel": "self", "type": activityJSON, "href": self}},
+		})
+		return remoteResponse{status: http.StatusOK, contentType: "application/jrd+json", body: string(b)}
+	}
+	// example.org names another actor: the claim is ignored, and the server's own WebFinger
+	// confirms the handle on its host.
+	e.net.set(claimed, jrd("https://example.org/users/mallory"))
+	a := e.resolve(t, id)
+	if a.Handle == nil || a.Handle.Username != username || a.Handle.Domain != host {
+		t.Errorf("handle = %+v, want %s@%s when the claimed handle names another actor", a.Handle, username, host)
+	}
+	// example.org names the actor: the claimed handle is the actor's, even with another username
+	// than preferredUsername.
+	e.net.set(claimed, jrd(id))
+	if a = e.refresh(t, id); a.Handle == nil || a.Handle.Username != "someone" || a.Handle.Domain != "example.org" {
+		t.Errorf("handle = %+v, want someone@example.org once its WebFinger names the actor", a.Handle)
+	}
+	if got, err := e.accounts.FindByHandle(t.Context(), "someone", "example.org"); err != nil || got.Account.ID != a.Account.ID {
+		t.Errorf("FindByHandle(someone@example.org) = %s, %v", got.Account.ID, err)
+	}
+	// WebFinger of the claimed handle does not answer: the handle stays.
+	e.net.set(claimed, remoteResponse{status: http.StatusServiceUnavailable})
+	if a = e.refresh(t, id); a.Handle == nil || a.Handle.Username != "someone" {
+		t.Errorf("handle = %+v, want it kept while WebFinger does not answer", a.Handle)
 	}
 }
 

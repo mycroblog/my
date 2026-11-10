@@ -18111,6 +18111,12 @@ type CreateStatusParams struct {
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
 
+// LookupStatusParams defines parameters for LookupStatus.
+type LookupStatusParams struct {
+	// Uri The `https` URL of the post.
+	Uri string `form:"uri" json:"uri"`
+}
+
 // SearchStatusesParams defines parameters for SearchStatuses.
 type SearchStatusesParams struct {
 	// Q The words to find, 1 to 200 characters. Anything else is a 400.
@@ -26347,6 +26353,28 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /statuses (the `CreateStatus` operationId).
 	CreateStatus(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// LookupStatus Look up or resolve a status by its URL
+	//
+	// Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+	// else fetches it from its server, as a reply button of another server asks to (the page that
+	// `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+	// followed to the post's id. The post's parent is fetched too, one level. Posts of this
+	// instance are found by their id only.
+	//
+	// The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+	// 404, the same as a URL that leads to no post, or to an account.
+	//
+	// Only signed-in users can look a status up (anonymous requests get the 401 of
+	// `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+	// `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+	// `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+	// other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+	// found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+	// fetched.
+	//
+	// Corresponds with GET /statuses/lookup (the `LookupStatus` operationId).
+	LookupStatus(ctx context.Context, params *LookupStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// SearchStatuses Search the text of posts
 	//
@@ -38344,6 +38372,38 @@ func (c *Client) CreateStatusWithBody(ctx context.Context, params *CreateStatusP
 // Corresponds with POST /statuses (the `CreateStatus` operationId).
 func (c *Client) CreateStatus(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCreateStatusRequest(c.Server, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// LookupStatus Look up or resolve a status by its URL
+//
+// Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+// else fetches it from its server, as a reply button of another server asks to (the page that
+// `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+// followed to the post's id. The post's parent is fetched too, one level. Posts of this
+// instance are found by their id only.
+//
+// The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+// 404, the same as a URL that leads to no post, or to an account.
+//
+// Only signed-in users can look a status up (anonymous requests get the 401 of
+// `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+// `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+// `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+// other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+// found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+// fetched.
+//
+// Corresponds with GET /statuses/lookup (the `LookupStatus` operationId).
+func (c *Client) LookupStatus(ctx context.Context, params *LookupStatusParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewLookupStatusRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -56547,6 +56607,56 @@ func NewCreateStatusRequestWithBody(server string, params *CreateStatusParams, c
 	return req, nil
 }
 
+// NewLookupStatusRequest constructs an http.Request for the LookupStatus method
+func NewLookupStatusRequest(server string, params *LookupStatusParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/statuses/lookup")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "uri", params.Uri, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewSearchStatusesRequest constructs an http.Request for the SearchStatuses method
 func NewSearchStatusesRequest(server string, params *SearchStatusesParams) (*http.Request, error) {
 	var err error
@@ -66510,6 +66620,30 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /statuses (the `CreateStatus` operationId).
 	CreateStatusWithResponse(ctx context.Context, params *CreateStatusParams, body CreateStatusJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateStatusResponse, error)
+
+	// LookupStatusWithResponse Look up or resolve a status by its URL
+	//
+	// Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+	// else fetches it from its server, as a reply button of another server asks to (the page that
+	// `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+	// followed to the post's id. The post's parent is fetched too, one level. Posts of this
+	// instance are found by their id only.
+	//
+	// The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+	// 404, the same as a URL that leads to no post, or to an account.
+	//
+	// Only signed-in users can look a status up (anonymous requests get the 401 of
+	// `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+	// `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+	// `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+	// other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+	// found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+	// fetched.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /statuses/lookup (the `LookupStatus` operationId).
+	LookupStatusWithResponse(ctx context.Context, params *LookupStatusParams, reqEditors ...RequestEditorFn) (*LookupStatusResponse, error)
 
 	// SearchStatusesWithResponse Search the text of posts
 	//
@@ -91732,6 +91866,71 @@ func (r CreateStatusResponse) ContentType() string {
 	return ""
 }
 
+// LookupStatusResponse200Headers the declared response headers of an HTTP 200 response for LookupStatus
+type LookupStatusResponse200Headers struct {
+	CacheControl *string
+}
+
+// LookupStatusResponseDefaultHeaders the declared response headers of an HTTP default response for LookupStatus
+type LookupStatusResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type LookupStatusResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Status
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *LookupStatusResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *LookupStatusResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r LookupStatusResponse) GetJSON200() *Status {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r LookupStatusResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r LookupStatusResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r LookupStatusResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r LookupStatusResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r LookupStatusResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // SearchStatusesResponse200Headers the declared response headers of an HTTP 200 response for SearchStatuses
 type SearchStatusesResponse200Headers struct {
 	CacheControl *string
@@ -106049,6 +106248,36 @@ func (c *ClientWithResponses) CreateStatusWithResponse(ctx context.Context, para
 		return nil, err
 	}
 	return ParseCreateStatusResponse(rsp)
+}
+
+// LookupStatusWithResponse Look up or resolve a status by its URL
+//
+// Finds the status whose ActivityPub id is `uri`, among the statuses the instance knows, or
+// else fetches it from its server, as a reply button of another server asks to (the page that
+// `Create` intents of WebFinger open). A page that serves the post, such as its `url`, is
+// followed to the post's id. The post's parent is fetched too, one level. Posts of this
+// instance are found by their id only.
+//
+// The answer is the status as `getStatus` gives it: a status that the viewer may not see is a
+// 404, the same as a URL that leads to no post, or to an account.
+//
+// Only signed-in users can look a status up (anonymous requests get the 401 of
+// `/api/v1/problems/unauthenticated`). Fetching an unknown status shares the limit of
+// `lookupAccount`'s `resolve`, 30 fetches per account every 5 minutes (429 with
+// `Retry-After`); finding a known one is not limited. While the instance takes nothing in from
+// other servers (`Instance.federation.mode` `off` or `outbound`), only the known statuses are
+// found: an unknown one is a 403 `/api/v1/problems/federation-restricted`, and nothing is
+// fetched.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /statuses/lookup (the `LookupStatus` operationId).
+func (c *ClientWithResponses) LookupStatusWithResponse(ctx context.Context, params *LookupStatusParams, reqEditors ...RequestEditorFn) (*LookupStatusResponse, error) {
+	rsp, err := c.LookupStatus(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseLookupStatusResponse(rsp)
 }
 
 // SearchStatusesWithResponse Search the text of posts
@@ -136586,6 +136815,83 @@ func ParseCreateStatusResponse(rsp *http.Response) (*CreateStatusResponse, error
 		response.Headers422 = &headers
 	case true:
 		var headers CreateStatusResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseLookupStatusResponse parses an HTTP response from a LookupStatusWithResponse call
+func ParseLookupStatusResponse(rsp *http.Response) (*LookupStatusResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &LookupStatusResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Status
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers LookupStatusResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers LookupStatusResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

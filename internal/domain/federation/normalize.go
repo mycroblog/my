@@ -407,6 +407,7 @@ func (n normalizer) actor(o object, t ActorType) (*Actor, error) {
 		ID:                        n.iri(o.get("id")),
 		Type:                      t,
 		PreferredUsername:         strings.TrimSpace(str(o.get("preferredUsername"))),
+		Webfinger:                 strings.TrimPrefix(strings.TrimSpace(str(o.get("webfinger"))), "acct:"),
 		Name:                      strings.TrimSpace(str(o.get("name"))),
 		URL:                       n.displayURL(o.get("url")),
 		Inbox:                     n.firstRef(o.get("inbox")),

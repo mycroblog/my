@@ -37,13 +37,13 @@ func (h *Handler) actorDocument(ctx context.Context, a appaccount.Actor) (federa
 	if images.MovedTo, err = appfederation.LocalActorMovedTo(ctx, h.o.Moves, a); err != nil {
 		return federation.ActorDocument{}, err
 	}
-	return appfederation.LocalActorDocument(h.o.Host, a, h.instanceActorUsername(), images), nil
+	return appfederation.LocalActorDocument(h.o.Host, h.o.AccountDomain, a, h.instanceActorUsername(), images), nil
 }
 
 // keyDocument is the minimal actor document that authorized fetch serves to a request without
 // a verified signature: what a server needs to verify the actor's signatures and to address it,
 // with the properties Mastodon keeps in the same case (id, type, preferredUsername, inbox,
-// publicKey, endpoints), the assertionMethod that holds the key of the actor's integrity proofs
+// publicKey, endpoints), the webfinger that names its handle (FEP-2c59), the assertionMethod that holds the key of the actor's integrity proofs
 // (FEP-521a, FEP-8b32), and the movedTo of an actor that moved, which Misskey reads when the
 // actor's Move arrives (ADR-0089) and which a federation mode that sends the Move must serve.
 type keyDocument struct {
@@ -51,6 +51,7 @@ type keyDocument struct {
 	ID                federation.IRI                `json:"id"`
 	Type              federation.ActorType          `json:"type"`
 	PreferredUsername string                        `json:"preferredUsername"`
+	Webfinger         string                        `json:"webfinger,omitempty"`
 	Inbox             federation.IRI                `json:"inbox"`
 	PublicKey         *federation.PublicKeyDocument `json:"publicKey,omitempty"`
 	AssertionMethod   []federation.MultikeyDocument `json:"assertionMethod,omitempty"`
@@ -61,7 +62,7 @@ type keyDocument struct {
 // keyDocumentOf returns the minimal document of a full actor document.
 func keyDocumentOf(doc federation.ActorDocument) keyDocument {
 	return keyDocument{
-		Context: doc.Context, ID: doc.ID, Type: doc.Type, PreferredUsername: doc.PreferredUsername,
+		Context: doc.Context, ID: doc.ID, Type: doc.Type, PreferredUsername: doc.PreferredUsername, Webfinger: doc.Webfinger,
 		Inbox: doc.Inbox, PublicKey: doc.PublicKey, AssertionMethod: doc.AssertionMethod, Endpoints: doc.Endpoints, MovedTo: doc.MovedTo,
 	}
 }

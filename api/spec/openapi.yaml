@@ -366,6 +366,8 @@ paths:
     $ref: ./paths/drafts_{id}_publish.yaml
   /statuses/search:
     $ref: ./paths/statuses_search.yaml
+  /statuses/lookup:
+    $ref: ./paths/statuses_lookup.yaml
   /statuses/{id}:
     $ref: ./paths/statuses_{id}.yaml
   /statuses/{id}/bookmark:

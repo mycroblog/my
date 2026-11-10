@@ -678,7 +678,7 @@ entries:
     userdocs: ["docs/developers/authentication.md", "docs/developers/rate-limits.md", "docs/developers/stability.md"]
   - name: activitypub
     paths: ["internal/interface/activitypub/**"]
-    docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get"]
+    docs: ["docs/architecture/federation.md#3-受信inbox", "docs/architecture/federation.md#10-コレクションとオブジェクトの-get", "docs/architecture/federation.md#65-webfinger-の拡張"]
   - name: maintenance
     paths: ["internal/interface/maintenance/**", "internal/platform/maintenance.go", "cmd/my/maintenance*.go", "cmd/my/closure_export*.go"]
     docs: ["docs/adr/0088-service-shutdown-modes.md#8-メンテナンスモードの切り替え", "docs/adr/0088-service-shutdown-modes.md#18-メンテナンスモードとの関係", "docs/adr/0088-service-shutdown-modes.md#6-停止の後", "docs/operations/maintenance.md", "docs/operations/service-closure.md"]
@@ -855,7 +855,7 @@ entries:
       - "Unicode emoji are drawn with the Noto Color Emoji web font of @my/ui/emoji.css everywhere (ADR-0091), never with an OS-font check: the fonts cover every emoji of EMOJI_VERSION."
   - name: web-feature-search
     paths: ["app/web/src/features/search/**"]
-    docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー"]
+    docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー", "docs/architecture/web-client/screens/intent.md"]
     userdocs: ["docs/guide/following.md"]
   - name: web-feature-report
     paths: ["app/web/src/features/report/**"]

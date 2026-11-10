@@ -46,12 +46,58 @@ func (j jrd) self() federation.IRI {
 	return ""
 }
 
-// checkHandle checks the handle of an actor with WebFinger (federation.md §6.2): the handle is
+// checkHandle checks the handle of an actor with WebFinger (federation.md §6.2). The handle that
+// the actor names in its webfinger (FEP-2c59) is its handle when WebFinger of it on its domain
+// names the actor as self; when that answer does not name the actor, or the handle is not one,
+// the claim is ignored and the handle is found as Mastodon finds it (preferredHandle). The
+// result is a mismatch when an answer does not confirm the handle, and the zero HandleCheck when
+// WebFinger did not answer, so that the stored handle stays.
+func (r *RemoteActors) checkHandle(ctx context.Context, a *federation.Actor) appaccount.HandleCheck {
+	if c, ok := r.claimedHandle(ctx, a); ok {
+		return c
+	}
+	return r.preferredHandle(ctx, a)
+}
+
+// claimedHandle checks the handle that a names in its webfinger (FEP-2c59): verified when
+// WebFinger of acct:{user}@{domain} on https://{domain} names a as self, and the zero
+// HandleCheck when WebFinger did not answer. ok is false when a names no handle, or one that
+// WebFinger does not confirm (another self, or a subject with another handle), or one on a
+// domain that cannot confirm it (this instance, a suspended server), which the caller then
+// ignores.
+func (r *RemoteActors) claimedHandle(ctx context.Context, a *federation.Actor) (appaccount.HandleCheck, bool) {
+	user, domain, ok := parseAcct("acct:" + a.Webfinger)
+	if a.Webfinger == "" || !ok || strings.ContainsAny(user, "@/?#: ") {
+		return appaccount.HandleCheck{}, false
+	}
+	if r.d.Fetcher != nil {
+		switch err := r.d.Fetcher.check(ctx, federation.IRI("https://"+domain+"/")); {
+		case errors.Is(err, ErrFetchRefused):
+			return appaccount.HandleCheck{}, false
+		case err != nil:
+			return appaccount.HandleCheck{}, true
+		}
+	}
+	answer, err := r.webFinger(ctx, "https://"+domain, "acct:"+user+"@"+domain)
+	switch {
+	case errors.Is(err, errWebFingerUnanswered):
+		return appaccount.HandleCheck{}, true
+	case err != nil || answer.self() != a.ID:
+		return appaccount.HandleCheck{}, false
+	}
+	// An answer whose subject is another handle (a server whose handles are on another domain
+	// than it says) leaves the handle to the subject's own check.
+	if su, sd, ok := parseAcct(answer.Subject); ok && (!strings.EqualFold(su, user) || sd != domain) {
+		return appaccount.HandleCheck{}, false
+	}
+	return appaccount.HandleCheck{Outcome: appaccount.HandleVerified, Username: user, Domain: domain}, true
+}
+
+// preferredHandle checks the handle of an actor as Mastodon does: the handle is
 // acct:{preferredUsername}@{the actor's host} when WebFinger of it names the actor as self, and
 // when its subject has another domain, WebFinger of the subject on that domain names the actor
-// too. The result is a mismatch when an answer does not confirm the handle, and the zero
-// HandleCheck when WebFinger did not answer, so that the stored handle stays.
-func (r *RemoteActors) checkHandle(ctx context.Context, a *federation.Actor) appaccount.HandleCheck {
+// too.
+func (r *RemoteActors) preferredHandle(ctx context.Context, a *federation.Actor) appaccount.HandleCheck {
 	host := a.ID.Host()
 	username := a.PreferredUsername
 	mismatch := appaccount.HandleCheck{Outcome: appaccount.HandleMismatch, Username: username, Domain: host}
