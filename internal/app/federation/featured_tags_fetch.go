@@ -47,7 +47,7 @@ type fetchFeaturedTagsPayload struct {
 // actor declares a featuredTags collection of its origin. One job of an account is pending at a
 // time.
 func enqueueFetchFeaturedTagsTx(ctx context.Context, tx uow.Tx, outbox queue.Outbox, accountID string, actor, featuredTags federation.IRI) error {
-	if outbox == nil || featuredTags == "" || !federation.SameOrigin(featuredTags, actor) {
+	if outbox == nil || !mirrorsCollection(actor, featuredTags) {
 		return nil
 	}
 	payload, err := json.Marshal(fetchFeaturedTagsPayload{AccountID: accountID})
@@ -59,14 +59,46 @@ func enqueueFetchFeaturedTagsTx(ctx context.Context, tx uow.Tx, outbox queue.Out
 	})
 }
 
-// enqueueFetchFeaturedAllTx enqueues in tx the fetches of what a remote actor features that its
-// document declares: its pinned posts (JobFetchFeatured) and its featured hashtags
-// (JobFetchFeaturedTags).
-func enqueueFetchFeaturedAllTx(ctx context.Context, tx uow.Tx, outbox queue.Outbox, accountID string, actor *federation.Actor) error {
-	if err := enqueueFetchFeaturedTx(ctx, tx, outbox, accountID, actor.ID, actor.Featured); err != nil {
-		return err
+// RemoteFeaturedClearers clear in a transaction what a remote account features once its actor
+// document stops declaring the collection: *appcontent.Interactions clears the pins and
+// *apptimeline.Service the featured hashtags. A nil one clears nothing.
+type RemoteFeaturedClearers struct {
+	Pins interface {
+		ClearRemotePinsTx(ctx context.Context, tx uow.Tx, accountID string) error
 	}
-	return enqueueFetchFeaturedTagsTx(ctx, tx, outbox, accountID, actor.ID, actor.FeaturedTags)
+	FeaturedTags interface {
+		ClearRemoteFeaturedTagsTx(ctx context.Context, tx uow.Tx, accountID string) error
+	}
+}
+
+// mirrorsCollection reports whether a remote actor's collection is mirrored: declared, and of
+// the actor's origin.
+func mirrorsCollection(actor, collection federation.IRI) bool {
+	return collection != "" && federation.SameOrigin(collection, actor)
+}
+
+// syncFeaturedTx keeps in tx what the remote account accountID features in step with its actor
+// document, which was just stored: a collection the document declares (pinned posts, featured
+// hashtags) enqueues its fetch, and one it no longer declares clears what was stored from it
+// (ADR-0006 §17). Clearing is a write of this database only, so it happens in the transaction
+// that stores the document, and doing it again changes nothing.
+func (c RemoteFeaturedClearers) syncFeaturedTx(ctx context.Context, tx uow.Tx, outbox queue.Outbox, accountID string, actor *federation.Actor) error {
+	if mirrorsCollection(actor.ID, actor.Featured) {
+		if err := enqueueFetchFeaturedTx(ctx, tx, outbox, accountID, actor.ID, actor.Featured); err != nil {
+			return err
+		}
+	} else if c.Pins != nil {
+		if err := c.Pins.ClearRemotePinsTx(ctx, tx, accountID); err != nil {
+			return err
+		}
+	}
+	if mirrorsCollection(actor.ID, actor.FeaturedTags) {
+		return enqueueFetchFeaturedTagsTx(ctx, tx, outbox, accountID, actor.ID, actor.FeaturedTags)
+	}
+	if c.FeaturedTags != nil {
+		return c.FeaturedTags.ClearRemoteFeaturedTagsTx(ctx, tx, accountID)
+	}
+	return nil
 }
 
 // handleFetchFeaturedTags is the queue.Handler of JobFetchFeaturedTags. A collection that cannot

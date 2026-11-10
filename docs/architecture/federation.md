@@ -335,11 +335,12 @@ ActivityPub の配送は順序を保証しません。ハンドラは、どの�
   URL は、正規化した IRI で保存済みのアカウント・投稿を引き、無ければ文書を 1 回だけ取得して、Actor なら保存してから `ResolveURL` と同じくハンドルを確かめ、投稿なら §6.3 の取得した投稿として取り込みます（ADR-0006 の「URL の検索で解決した」）。投稿の返信先は受信時と同じく 1 段だけ取得します。
   自サーバーの URL は取得せず、保存済みのものだけを返します。それ以外（コレクションなど）と取得できないものは `ErrUnresolvable` です。
 - ピン留め（`featured`、[ADR-0006](../adr/0006-federation-protocol-scope.md)）: Actor の文書を保存するとき（取得・取り直し・Actor 自身の `Update`）、文書が Actor と同じオリジンの `featured` を宣言していれば、保存のトランザクションでジョブ `federation.fetch_featured`（ペイロードは `account_id`、冪等キー `fetch_featured:<account_id>`）を `queue.Outbox` に投入します。
+    文書が同じオリジンの `featured` を宣言しなければ（宣言しなくなった文書を含む）、同じ保存のトランザクションで `content.Interactions.ClearRemotePinsTx` がそのアカウントの `status_pins` を消します。消すのはこのデータベースへの書き込みだけで、外への I/O はなく、何度消しても同じ結果です。
   - Actor が自分の `featured` への `Add` / `Remove`（Mastodon・Misskey などがピン留めの変化で送る）を送ってきたときも、同じジョブを同じ冪等キーで投入します（§3.4）。冪等キーにより、そのアカウントのジョブが完了するまで次のジョブは投入されず、続けて届いた通知の取得は重なりません。
   - ジョブ（`StatusHandlers`）は、実行時にもアカウントの条件（有効なリモート・`federation` の制限なし・同じオリジンの `featured`）を確かめ直し、コレクションの項目か、無ければ `first` のページ（同じオリジンのものだけ。2 ページ目はたどらない）を読みます。
   - 項目の順に、埋め込みなら `attributedTo` がそのアカウントで宛先に `as:Public` を含む投稿、IRI ならアカウントと同じオリジンの投稿を 5 件（`FeaturedMaxPosts`）まで選び、保存済みでなければ §6.3 の outbox と同じく取得した投稿として取り込みます（返信先は取得しない）。1 回の文書はコレクション・ページ・投稿の合わせて 7 件（`FeaturedMaxDocuments`）までです。
-  - 選んだ投稿で `content.Interactions.ReplaceRemotePins` がそのアカウントの `status_pins` を置き換えます（コレクションの順、新しいピン留めが先）。空のコレクションと `featured` を宣言しなくなった文書はピン留めを消し、コレクションが取得できなければピン留めを残してジョブを完了にします。ストアの失敗は `Retry` です。
-  - 注目のハッシュタグ（`featuredTags`、[ADR-0006](../adr/0006-federation-protocol-scope.md) §17）: 同じ保存のときに、文書が Actor と同じオリジンの `featuredTags` を宣言していれば、ジョブ `federation.fetch_featured_tags`（冪等キー `fetch_featured_tags:<account_id>`）を投入します。
+  - 選んだ投稿で `content.Interactions.ReplaceRemotePins` がそのアカウントの `status_pins` を置き換えます（コレクションの順、新しいピン留めが先）。空のコレクションと、ジョブの実行時に `featured` を宣言しなくなっていた文書はピン留めを消し、コレクションが取得できなければピン留めを残してジョブを完了にします。ストアの失敗は `Retry` です。
+  - 注目のハッシュタグ（`featuredTags`、[ADR-0006](../adr/0006-federation-protocol-scope.md) §17）: 同じ保存のときに、文書が Actor と同じオリジンの `featuredTags` を宣言していれば、ジョブ `federation.fetch_featured_tags`（冪等キー `fetch_featured_tags:<account_id>`）を投入し、宣言しなければ（宣言しなくなった文書を含む）同じトランザクションで `timeline.Service.ClearRemoteFeaturedTagsTx` がそのアカウントの注目のハッシュタグを消します。
     ジョブはコレクションの項目か `first` のページ（同じオリジンのものだけ。2 ページ目はたどらない）から `Hashtag` の名前を 10 件まで読み、そのアカウントの注目のハッシュタグを置き換えます。空のコレクションと `featuredTags` を宣言しなくなった文書は消し、取得できなければ残して完了にします。
     数と最後の使用は、ローカルと同じく、このサーバーが知るそのアカウントの `public` / `unlisted` の投稿から数えます。
     コレクションの URL は `remote_account_snapshots.featured_tags_url` に、名前は `timeline.Service.ReplaceRemoteFeaturedTags` が `featured_tags` に置きます。`Hashtag` の項目は `id` を持たないので、正規化はほかの項目と分けて名前だけを `federation.Collection.Hashtags` に読みます。

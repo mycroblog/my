@@ -76,7 +76,7 @@ func (r *RemoteActors) ReceiveActorUpdate(ctx context.Context, act *federation.A
 		if err := r.applyActorVerdict(ctx, tx, v, stored.ID); err != nil {
 			return err
 		}
-		if err := enqueueFetchFeaturedAllTx(ctx, tx, r.d.Outbox, stored.ID, actor); err != nil {
+		if err := r.d.Featured.syncFeaturedTx(ctx, tx, r.d.Outbox, stored.ID, actor); err != nil {
 			return err
 		}
 		return r.seeInstance(ctx, tx, in.Domain)

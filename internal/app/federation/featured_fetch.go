@@ -44,7 +44,7 @@ type fetchFeaturedPayload struct {
 // whose actor document was just stored or which changed its pins, when the actor declares a
 // featured collection of its origin. One job of an account is pending at a time.
 func enqueueFetchFeaturedTx(ctx context.Context, tx uow.Tx, outbox queue.Outbox, accountID string, actor, featured federation.IRI) error {
-	if outbox == nil || featured == "" || !federation.SameOrigin(featured, actor) {
+	if outbox == nil || !mirrorsCollection(actor, featured) {
 		return nil
 	}
 	payload, err := json.Marshal(fetchFeaturedPayload{AccountID: accountID})

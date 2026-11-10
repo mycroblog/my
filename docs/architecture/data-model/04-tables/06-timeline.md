@@ -33,7 +33,7 @@
 - `feed_tag_follows` は投影ではなく利用者の操作の記録で、`timeline` のコマンドが書きます。`timeline.RebuildProjections` は空にしません。フォローの解除は行を消し、履歴を持ちません（ADR-0020 規約 5）。
   上限は 1 人 100 タグで、数は挿入の後に数えるので、フォロー済みのタグをフォローし直しても上限で断られません。アカウントの消去（§8）で本人の行を消します。
 - `featured_tags` も投影ではなく、`timeline.RebuildProjections` は空にしません。ローカルのアカウントの行は本人のコマンド（`timeline.Service.SetFeaturedTags`）が一覧ごと置き換え、変わったときだけ `timeline.featured_tags_changed` を出して Actor の `Update` を配送させます（federation.md §7.1）。
-  リモートのアカウントの行は Actor の `featuredTags` の写しで、ジョブ `federation.fetch_featured_tags` が `timeline.Service.ReplaceRemoteFeaturedTags` で置き換えます（federation.md §6.2）。どちらも、残るタグの `featured_at` は最初に載せた時刻のままです。
+  リモートのアカウントの行は Actor の `featuredTags` の写しで、ジョブ `federation.fetch_featured_tags` が `timeline.Service.ReplaceRemoteFeaturedTags` で置き換え、Actor の文書が `featuredTags` を宣言しなくなったら、文書を保存するトランザクションで `timeline.Service.ClearRemoteFeaturedTagsTx` が消します（federation.md §6.2）。どちらも、残るタグの `featured_at` は最初に載せた時刻のままです。
   タグは `content` の `tags` に同じトランザクションで作るので（`EnsureTagTx`）、まだ投稿に使われていないタグも載せられます。
   投稿の数と最後の使用は保存せず、読むたびに `feed_tag_entries` の部分インデックス `(author_account_id, tag_id, revised_at)` から、そのアカウントの `public` / `unlisted` の投稿だけを数えます（`private` / `direct` / `local` の投稿は、数から存在が漏れるので数えません）。リモートのアカウントも、このサーバーが受け取った投稿だけを数えます。
   アカウントの消去（§8）で本人の行を消します。
