@@ -184,10 +184,10 @@ test.describe("the federated timeline while the server serves it", () => {
 
   test("fits every item of the navigation in its width, with every label whole", async ({ page }) => {
     const nav = page.getByRole("navigation");
-    // Six in the phones' tab bar (Home, Local, Federated, Notifications, Search and the menu button), ten in the
-    // rail (the eight the user orders, Announcements and Lists). A label that does not fit wraps, inside a word if it must, and is never cut.
+    // Six in the phones' tab bar (Home, Local, Federated, Notifications, Search and the menu button), eleven in the
+    // rail (the nine the user orders, Announcements and Lists). A label that does not fit wraps, inside a word if it must, and is never cut.
     const items = nav.getByRole("listitem").filter({ visible: true });
-    await expect(items).toHaveCount(hasTabBar(page) ? 6 : 10);
+    await expect(items).toHaveCount(hasTabBar(page) ? 6 : 11);
     await expect(nav.getByRole("button")).toBeVisible({ visible: hasTabBar(page) });
     const navBox = await nav.boundingBox();
     expect(navBox).not.toBeNull();

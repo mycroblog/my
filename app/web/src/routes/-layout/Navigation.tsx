@@ -13,7 +13,9 @@
 //
 // The notifications item shows the number of unread notifications as a badge on the icon's corner. The
 // badge's digits are hidden from assistive technology; the link is named with the count instead
-// ("Notifications, 3 unread"), a name that starts with the visible label (WCAG 2.5.3).
+// ("Notifications, 3 unread"), a name that starts with the visible label (WCAG 2.5.3). The direct messages item
+// (one of the user's items, after Search by default) shows the number of unread conversations the same way
+// ("Direct messages, 2 unread").
 //
 // The staff's screens are two areas (ADR-0058). A viewer whose roles have a permission of a moderation screen
 // also has Moderation, and one with a permission of a server administration screen has Administration, in that
@@ -78,6 +80,7 @@ import { useUnreadAnnouncementCount } from "../../features/announcements";
 import { useOpenCompose } from "../../features/compose";
 import { useAdminEntry } from "../../features/admin";
 import { useFinanceEntry } from "../../features/costs";
+import { useUnreadDirectMessageCount } from "../../features/direct-messages";
 import { DocumentLinks } from "../../features/documents";
 import { useSignUpHref } from "../../features/landing";
 import { useModerationEntry } from "../../features/moderation";
@@ -106,6 +109,7 @@ export const navigationSections = [
   "/local",
   "/public",
   "/search",
+  "/direct-messages",
   "/notifications",
   "/profile",
   "/bookmarks",
@@ -145,6 +149,7 @@ const entryTargets: Record<NavigationEntryId, { section: Section; timeline?: key
   public: { section: "/public", timeline: "federated" },
   notifications: { section: "/notifications" },
   search: { section: "/search" },
+  direct: { section: "/direct-messages" },
   profile: { section: "/profile" },
   bookmarks: { section: "/bookmarks" },
   settings: { section: "/settings" },
@@ -325,6 +330,7 @@ export function Navigation() {
   const status = useSessionStatus();
   const unread = useUnreadNotificationCount();
   const unreadAnnouncements = useUnreadAnnouncementCount();
+  const unreadDirectMessages = useUnreadDirectMessageCount();
   const moderationEntry = useModerationEntry();
   const adminEntry = useAdminEntry();
   const financeEntry = useFinanceEntry();
@@ -370,6 +376,13 @@ export function Navigation() {
         count: unread,
         label: t("client:notifications.unread_count", { count: unread }),
         name: t("client:shell.nav.notifications_unread", { count: unread }),
+      };
+    }
+    if (section === "/direct-messages" && unreadDirectMessages > 0) {
+      return {
+        count: unreadDirectMessages,
+        label: t("client:direct_messages.unread_count", { count: unreadDirectMessages }),
+        name: t("client:direct_messages.nav_unread", { count: unreadDirectMessages }),
       };
     }
     if (section === "/announcements" && unreadAnnouncements > 0) {

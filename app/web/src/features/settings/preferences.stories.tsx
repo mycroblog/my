@@ -40,7 +40,10 @@ export const Normal: Story = {
   },
 };
 
-/** Moving Profile up puts it in the tab bar: the preview of the phones' tab bar shows it at once, before Menu. */
+/**
+ * Moving Profile up twice (past Direct messages and Search) puts it in the tab bar: the preview of the phones' tab bar
+ * shows it at once, before Menu.
+ */
 export const NavigationMoved: Story = {
   play: async (context) => {
     const { canvas, userEvent } = context;
@@ -51,6 +54,7 @@ export const NavigationMoved: Story = {
         .getAllByRole("listitem")
         .map((item) => item.textContent);
     await expect(labels()).toEqual(["Home", "Local", "Federated", "Notifications", "Search", "Menu"]);
+    await userEvent.click(canvas.getByRole("button", { name: "Move Profile up" }));
     await userEvent.click(canvas.getByRole("button", { name: "Move Profile up" }));
     await expect(labels()).toEqual(["Home", "Local", "Federated", "Notifications", "Profile", "Menu"]);
   },

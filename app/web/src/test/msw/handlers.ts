@@ -12,6 +12,7 @@ export * as compose from "../../features/compose/test/handlers";
 export * as costs from "../../features/costs/test/handlers";
 export * as core from "./http";
 export * as customEmojis from "../../features/custom-emojis/test/handlers";
+export * as directMessages from "../../features/direct-messages/test/handlers";
 export * as emoji from "../../features/emoji/test/handlers";
 export * as landing from "../../features/landing/test/handlers";
 export * as lists from "../../features/lists/test/handlers";

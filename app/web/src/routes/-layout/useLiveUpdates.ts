@@ -4,11 +4,13 @@
 // posts" button (or join its cache while no page shows it), and so do the new entries of a loaded list's timeline
 // (`list_update`, ADR-0013 §13); notifications update the unread badge and play the
 // notification sound where this device has it on for their type (lib/notificationSound), and a moderator's notifications of a new report or
-// registration read the Moderation entry's counts again, and the server's announcements join, change, or leave
+// registration read the Moderation entry's counts again, the conversations of the direct messages take their new place
+// in the list that the navigation's unread count reads, and the server's announcements join, change, or leave
 // the list above the home timeline. After a reconnect, all of them read again what the
 // gap may have missed, since the server replays nothing (client-api.md §5).
 import { useQueryClient } from "@tanstack/react-query";
 import { catchUpAnnouncements, receiveAnnouncement, removeAnnouncement } from "../../features/announcements";
+import { catchUpConversations, receiveConversation } from "../../features/direct-messages";
 import { refreshAdminCounts } from "../../features/moderation";
 import { catchUpNotifications, receiveNotification } from "../../features/notifications";
 import { catchUpHome, catchUpLists, receiveHomeStatus, receiveListStatus } from "../../features/timeline";
@@ -33,6 +35,9 @@ export function useLiveUpdates(): void {
           refreshAdminCounts(queryClient, api, event.notification.type);
           playNotificationSound(event.notification.type);
           break;
+        case "conversation":
+          receiveConversation(queryClient, api, event.conversation);
+          break;
         case "announcement":
           receiveAnnouncement(queryClient, api, event.announcement);
           break;
@@ -51,6 +56,7 @@ export function useLiveUpdates(): void {
         console.warn("a list timeline could not be read after reconnecting", error);
       });
       catchUpNotifications(queryClient, api);
+      catchUpConversations(queryClient, api);
       catchUpAnnouncements(queryClient, api);
       refreshAdminCounts(queryClient, api);
     },

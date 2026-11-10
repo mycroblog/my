@@ -411,7 +411,7 @@ describe("navigation", () => {
     expect(section).toHaveAccessibleDescription(
       expect.stringContaining("the first 5 shown items are in the tab bar") as string,
     );
-    expect(within(section).getAllByRole("checkbox")).toHaveLength(8);
+    expect(within(section).getAllByRole("checkbox")).toHaveLength(9);
     expect(within(section).getByRole("checkbox", { name: "Settings" })).toBeDisabled();
     expect(within(section).getByRole("checkbox", { name: "Search" })).toHaveAccessibleDescription(
       "In the tab bar on phones",
@@ -437,7 +437,9 @@ describe("navigation", () => {
     await waitFor(() => {
       expect(within(section).getByRole("button", { name: "Move Profile up" })).toHaveFocus();
     });
-    expect(await screen.findByText("Profile moved to position 5 of 8")).toBeInTheDocument();
+    expect(await screen.findByText("Profile moved to position 6 of 9")).toBeInTheDocument();
+    await user.keyboard("{Enter}");
+    expect(await screen.findByText("Profile moved to position 5 of 9")).toBeInTheDocument();
     expect(within(section).getByRole("checkbox", { name: "Profile" })).toHaveAccessibleDescription(
       "In the tab bar on phones",
     );
@@ -462,7 +464,7 @@ describe("navigation", () => {
     expect(previewItems()).toEqual(["Home", "Federated", "Notifications", "Profile", "Search", "Menu"]);
 
     expect(navigationKey.read()).toEqual({
-      order: ["home", "local", "public", "notifications", "profile", "search", "settings", "bookmarks"],
+      order: ["home", "local", "public", "notifications", "profile", "search", "direct", "settings", "bookmarks"],
       hidden: ["local"],
     });
     const nav = screen.getByRole("navigation", { name: "Main" });
@@ -476,6 +478,7 @@ describe("navigation", () => {
       "/notifications",
       "/profile",
       "/search",
+      "/direct-messages",
       "/settings",
       "/bookmarks",
       "/announcements",
@@ -487,7 +490,7 @@ describe("navigation", () => {
     await user.click(within(section).getByRole("button", { name: "Restore the default" }));
     expect(localStorage.getItem("my:display:navigation")).toBeNull();
     expect(within(section).getByRole("checkbox", { name: "Local" })).toBeChecked();
-    expect(within(section).getAllByRole("checkbox", { checked: true })).toHaveLength(8);
+    expect(within(section).getAllByRole("checkbox", { checked: true })).toHaveLength(9);
   });
 
   test("says which timeline this server does not offer", async () => {
