@@ -1456,7 +1456,7 @@
     "description": "Label of the field of the scopes of an OAuth app."
   },
   "settings.apps.scope.description": {
-    "defaultMessage": "The most the app may ask for, separated by spaces, for example “read write”. Administration and supporter scopes are not available to apps.",
+    "defaultMessage": "The most the app may ask for, separated by spaces, for example “read write”. The administration scopes admin, admin:read, and admin:write and the supporter scopes are not available to apps. A permission scope, “admin:” and a permission of your roles such as “admin:manage_invites”, goes only into the tokens you issue to yourself.",
     "description": "Description of the scopes field of an OAuth app."
   },
   "settings.apps.scope.required": {
@@ -1608,7 +1608,7 @@
     "description": "Label of the scopes field of the dialog that issues tokens."
   },
   "settings.apps.token.scope.description": {
-    "defaultMessage": "Separated by spaces, within the app's scopes. Leave empty for all of them.",
+    "defaultMessage": "Separated by spaces, within the app's scopes. Leave empty for all of them. A permission scope such as “admin:manage_invites” needs that permission on your roles, and the token can then use only the administration that its permission scopes name.",
     "description": "Description of the scopes field of the dialog that issues tokens."
   },
   "settings.apps.token.submit": {
