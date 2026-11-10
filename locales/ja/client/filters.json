@@ -96,11 +96,11 @@
     "description": "Where a keyword filter applies, in its row. {contexts} is the list of places (for example 'Home and lists and Notifications')."
   },
   "filters.words": {
-    "defaultMessage": "語 {count} 個: {words}",
+    "defaultMessage": "{count, plural, other {語 # 個}}: {words}",
     "description": "The words of a keyword filter, in its row. {count} is how many, {words} the list of them."
   },
   "filters.words.more": {
-    "defaultMessage": "語 {count} 個: {words} ほか {rest} 個",
+    "defaultMessage": "{count, plural, other {語 # 個}}: {words} ほか {rest} 個",
     "description": "The words of a keyword filter with many words, in its row. {count} is how many, {words} the first ones, {rest} how many more there are."
   },
   "filters.form.title": {
@@ -220,15 +220,15 @@
     "description": "The choice that keeps the end of a keyword filter that has already expired."
   },
   "filters.form.duration.minutes": {
-    "defaultMessage": "{count} 分後",
+    "defaultMessage": "{count, plural, other {# 分後}}",
     "description": "A choice of when a keyword filter ends. {count} is the number of minutes from now."
   },
   "filters.form.duration.hours": {
-    "defaultMessage": "{count} 時間後",
+    "defaultMessage": "{count, plural, other {# 時間後}}",
     "description": "A choice of when a keyword filter ends. {count} is the number of hours from now."
   },
   "filters.form.duration.days": {
-    "defaultMessage": "{count} 日後",
+    "defaultMessage": "{count, plural, other {# 日後}}",
     "description": "A choice of when a keyword filter ends. {count} is the number of days from now."
   },
   "filters.form.add": {
