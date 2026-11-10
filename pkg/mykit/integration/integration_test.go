@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -391,5 +392,52 @@ func TestRetryAfterALostAnswer(t *testing.T) {
 	}
 	if other := post(t, api, "once"); other.Id == first.Id {
 		t.Error("a post without the key answered the earlier status")
+	}
+}
+
+// TestDrafts saves a draft, replaces it with the ETag of the version read, is refused a save with an older
+// ETag, and publishes the draft as a post, after which the draft is gone.
+func TestDrafts(t *testing.T) {
+	t.Parallel()
+	srv := platformtest.Start(t, platformtest.Options{})
+	api := signIn(t, srv, srv.User(t, "alice"), mykit.Config{})
+	ctx := t.Context()
+
+	text := "a first line"
+	created, err := api.CreateDraftWithResponse(ctx, mykit.DraftRequest{Text: &text, Visibility: mykit.VisibilityPublic})
+	if err != nil {
+		t.Fatalf("create a draft: %v", err)
+	}
+	if created.JSON201 == nil || created.HTTPResponse.Header.Get("ETag") == "" {
+		t.Fatalf("create a draft = %d %s, want 201 with the draft and its ETag", created.StatusCode(), created.Body)
+	}
+	id, first := created.JSON201.Id, created.HTTPResponse.Header.Get("ETag")
+
+	text = "a first line, and a second"
+	updated, err := api.UpdateDraftWithResponse(ctx, id, &mykit.UpdateDraftParams{IfMatch: &first}, mykit.DraftRequest{Text: &text, Visibility: mykit.VisibilityPublic})
+	if err != nil {
+		t.Fatalf("update the draft: %v", err)
+	}
+	if updated.JSON200 == nil || updated.JSON200.Text != text || updated.HTTPResponse.Header.Get("ETag") == first {
+		t.Fatalf("update the draft = %d %s, want 200 with the new text and a new ETag", updated.StatusCode(), updated.Body)
+	}
+
+	stale := "overwritten"
+	_, err = api.UpdateDraftWithResponse(ctx, id, &mykit.UpdateDraftParams{IfMatch: &first}, mykit.DraftRequest{Text: &stale, Visibility: mykit.VisibilityPublic})
+	var problem *mykit.Problem
+	if !errors.As(err, &problem) || problem.Status != http.StatusPreconditionFailed {
+		t.Fatalf("update with an older ETag = %v, want a 412 problem", err)
+	}
+
+	published, err := api.PublishDraftWithResponse(ctx, id)
+	if err != nil {
+		t.Fatalf("publish the draft: %v", err)
+	}
+	if published.JSON201 == nil || !strings.Contains(published.JSON201.Content, "a second") {
+		t.Fatalf("publish the draft = %d %s, want 201 with a post of the saved text", published.StatusCode(), published.Body)
+	}
+	_, err = api.GetDraftWithResponse(ctx, id)
+	if !errors.As(err, &problem) || problem.Status != http.StatusNotFound {
+		t.Errorf("get the published draft = %v, want a 404 problem", err)
 	}
 }

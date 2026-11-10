@@ -70,7 +70,7 @@ func notificationSettings(t *testing.T, e *notificationEnv) {
 		groups = append(groups, string(r.Spec.Group))
 	}
 	if got, want := strings.Join(groups, ","),
-		"mention,follow,follow_request,follow_accepted,boost,favourite,reaction,quote,poll_closed,account_moved,voice,status,interaction_request,moderation,service_closure,announcement,auto_delete_limit"; got != want {
+		"mention,follow,follow_request,follow_accepted,boost,favourite,reaction,quote,poll_closed,account_moved,voice,status,interaction_request,moderation,service_closure,announcement,auto_delete_limit,scheduled_status_failed"; got != want {
 		t.Errorf("rows of a user = %s, want %s (no moderator rows, no supporter row while the program is off)", got, want)
 	}
 	wantRow(alice, notification.GroupMention, cells{inApp: true})
@@ -79,6 +79,7 @@ func notificationSettings(t *testing.T, e *notificationEnv) {
 	wantRow(alice, notification.GroupServiceClosure, cells{inApp: true, inAppFixed: true, email: true, emailFixed: true})
 	wantRow(alice, notification.GroupAnnouncement, cells{inApp: true})
 	wantRow(alice, notification.GroupAutoDeleteLimit, cells{inApp: true, email: true})
+	wantRow(alice, notification.GroupScheduledStatusFailed, cells{inApp: true})
 	wantRow(mod, notification.GroupAdminReport, cells{inApp: true, email: true})
 	if _, ok := e.settingsOf(t, mod)[notification.GroupAdminSignUp]; ok {
 		t.Error("admin_sign_up is offered without manage_accounts")

@@ -309,6 +309,12 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 					return err
 				}
 			}
+			// Alice follows two hashtags.
+			for range 2 {
+				if _, err := feeds.InsertTagFollow(ctx, tx, apptimeline.TagFollow{AccountID: aliceID, TagID: e.IDs.NewID(), FollowedAt: e.Clock.Now()}); err != nil {
+					return err
+				}
+			}
 			return nil
 		})
 		if err != nil {
@@ -319,6 +325,7 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 	}
 	e.rows(t, "lists", "owner_account_id", aliceID, 1)
 	e.rows(t, "list_members", "member_account_id", aliceID, 1)
+	e.rows(t, "feed_tag_follows", "account_id", aliceID, 2)
 
 	e.deleteAccount(t, aliceID)
 	e.Clock.Advance(appaccount.ErasureDelay)
@@ -356,6 +363,7 @@ func erasureErasesDeletedAccounts(t *testing.T, e *erasureEnv) {
 	e.rows(t, "follow_edges", "followee_account_id", aliceID, 0)
 	e.rows(t, "feed_follow_edges", "follower_account_id", aliceID, 0)
 	e.rows(t, "feed_follow_edges", "followee_account_id", aliceID, 0)
+	e.rows(t, "feed_tag_follows", "account_id", aliceID, 0)
 	e.rows(t, "mutes", "target_account_id", aliceID, 0)
 	e.rows(t, "feed_exclusions", "viewer_account_id", aliceID, 0)
 	e.rows(t, "feed_domain_mutes", "viewer_account_id", aliceID, 0)

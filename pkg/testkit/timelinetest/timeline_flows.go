@@ -52,8 +52,9 @@ type TimelineFactory func(t *testing.T, opts uow.Options) TimelineHarness
 // home), the language filter, keyset paging, deletions of statuses and of accounts (local and
 // remote), the tag_usage projection and the prefix search of hashtags over it (ADR-0092 §1), the
 // property that incrementally updated projections equal a rebuild from the events the content and
-// graph modules replay, the lists with their timelines (ADR-0013, timeline_lists_flows.go), and
-// the direct messages by conversation (FR-212, conversation_flows.go).
+// graph modules replay, the lists with their timelines (ADR-0013, timeline_lists_flows.go), the
+// direct messages by conversation (FR-212, conversation_flows.go), and the followed hashtags
+// with their posts on home (ADR-0013 §24 to §28, timeline_tag_follows_flows.go).
 func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 	t.Helper()
 	cases := []struct {
@@ -91,6 +92,9 @@ func TimelineFlows(t *testing.T, newHarness TimelineFactory) {
 		{"ConversationsHideUntilNewerPost", conversationsHide},
 		{"ConversationsFollowMerges", conversationsMerge},
 		{"ConversationsFollowEditsAndDeletes", conversationsEditsAndDeletes},
+		{"FollowedTagCommands", timelineFollowedTagCommands},
+		{"HomeShowsPostsOfFollowedTags", timelineHomeFollowedTags},
+		{"HomeFollowedTagsForStreams", timelineHomeFollowedTagStreams},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newTimelineEnv(t, newHarness)) })
@@ -132,8 +136,10 @@ func newTimelineEnv(t *testing.T, newHarness TimelineFactory) *timelineEnv {
 		Accounts: e.actors, Relationships: e.graph, Clock: clock, IDs: ids, Host: testkit.ContractHost,
 	})
 	apptimeline.RegisterModerationProjectors(projectors, h.Timeline, e.actors)
+	tags := appcontent.NewService(appcontent.Deps{UnitOfWork: h.UnitOfWork, Repository: h.Statuses, Clock: clock, IDs: ids, Host: testkit.ContractHost})
 	e.svc = apptimeline.NewService(apptimeline.Deps{
 		UnitOfWork: h.UnitOfWork, Repository: h.Timeline, Clock: clock, IDs: ids, Conversations: conversationResolver{h.Statuses},
+		Tags: tags,
 	})
 	return e
 }

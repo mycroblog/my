@@ -22,11 +22,12 @@ func (q *Queries) EraseRelationshipSeverances(ctx context.Context, accountID str
 }
 
 const getRelationshipSeverance = `-- name: GetRelationshipSeverance :one
-SELECT s.id, s.domain_action_id, s.action_id, s.account_id, s.followers_lost, s.following_lost, s.occurred_at,
-  d.domain AS target_domain, a.target_account_id
+SELECT s.id, s.domain_action_id, s.action_id, s.allowlist_cutoff_id, s.account_id, s.followers_lost, s.following_lost, s.occurred_at,
+  COALESCE(d.domain, c.domain, '') AS target_domain, a.target_account_id
 FROM relationship_severances s
 LEFT JOIN domain_moderation_actions d ON d.id = s.domain_action_id
 LEFT JOIN moderation_actions a ON a.id = s.action_id
+LEFT JOIN allowlist_cutoffs c ON c.id = s.allowlist_cutoff_id
 WHERE s.id = ? AND s.account_id = ?
 `
 
@@ -36,19 +37,20 @@ type GetRelationshipSeveranceParams struct {
 }
 
 type GetRelationshipSeveranceRow struct {
-	ID              string
-	DomainActionID  sql.NullString
-	ActionID        sql.NullString
-	AccountID       string
-	FollowersLost   int64
-	FollowingLost   int64
-	OccurredAt      int64
-	TargetDomain    sql.NullString
-	TargetAccountID sql.NullString
+	ID                string
+	DomainActionID    sql.NullString
+	ActionID          sql.NullString
+	AllowlistCutoffID sql.NullString
+	AccountID         string
+	FollowersLost     int64
+	FollowingLost     int64
+	OccurredAt        int64
+	TargetDomain      string
+	TargetAccountID   sql.NullString
 }
 
 // GetRelationshipSeverance returns a severance of an account with the domain or the account that
-// its action suspended.
+// its action suspended, or the domain whose allow its cutoff removed.
 func (q *Queries) GetRelationshipSeverance(ctx context.Context, arg GetRelationshipSeveranceParams) (GetRelationshipSeveranceRow, error) {
 	row := q.db.QueryRowContext(ctx, getRelationshipSeverance, arg.ID, arg.AccountID)
 	var i GetRelationshipSeveranceRow
@@ -56,6 +58,7 @@ func (q *Queries) GetRelationshipSeverance(ctx context.Context, arg GetRelations
 		&i.ID,
 		&i.DomainActionID,
 		&i.ActionID,
+		&i.AllowlistCutoffID,
 		&i.AccountID,
 		&i.FollowersLost,
 		&i.FollowingLost,
@@ -69,23 +72,24 @@ func (q *Queries) GetRelationshipSeverance(ctx context.Context, arg GetRelations
 const insertRelationshipSeverance = `-- name: InsertRelationshipSeverance :execrows
 
 
-INSERT INTO relationship_severances (id, domain_action_id, action_id, account_id, followers_lost, following_lost, occurred_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO relationship_severances (id, domain_action_id, action_id, allowlist_cutoff_id, account_id, followers_lost, following_lost, occurred_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT DO NOTHING
 `
 
 type InsertRelationshipSeveranceParams struct {
-	ID             string
-	DomainActionID sql.NullString
-	ActionID       sql.NullString
-	AccountID      string
-	FollowersLost  int64
-	FollowingLost  int64
-	OccurredAt     int64
+	ID                string
+	DomainActionID    sql.NullString
+	ActionID          sql.NullString
+	AllowlistCutoffID sql.NullString
+	AccountID         string
+	FollowersLost     int64
+	FollowingLost     int64
+	OccurredAt        int64
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
-// The follows that suspensions cut (event, FR-717).
+// The follows that suspensions and the allowlist cut (event, FR-717).
 // InsertRelationshipSeverance inserts nothing when the account already has a severance of the
 // same action.
 func (q *Queries) InsertRelationshipSeverance(ctx context.Context, arg InsertRelationshipSeveranceParams) (int64, error) {
@@ -93,6 +97,7 @@ func (q *Queries) InsertRelationshipSeverance(ctx context.Context, arg InsertRel
 		arg.ID,
 		arg.DomainActionID,
 		arg.ActionID,
+		arg.AllowlistCutoffID,
 		arg.AccountID,
 		arg.FollowersLost,
 		arg.FollowingLost,
@@ -105,19 +110,20 @@ func (q *Queries) InsertRelationshipSeverance(ctx context.Context, arg InsertRel
 }
 
 const insertRelationshipSeverances = `-- name: InsertRelationshipSeverances :many
-INSERT INTO relationship_severances (id, domain_action_id, action_id, account_id, followers_lost, following_lost, occurred_at)
-SELECT value ->> '$.id', CAST(?1 AS TEXT), CAST(?2 AS TEXT), value ->> '$.account_id',
-  value ->> '$.followers_lost', value ->> '$.following_lost', CAST(?3 AS INTEGER)
-FROM json_each(CAST(?4 AS TEXT)) WHERE true
+INSERT INTO relationship_severances (id, domain_action_id, action_id, allowlist_cutoff_id, account_id, followers_lost, following_lost, occurred_at)
+SELECT value ->> '$.id', CAST(?1 AS TEXT), CAST(?2 AS TEXT), CAST(?3 AS TEXT), value ->> '$.account_id',
+  value ->> '$.followers_lost', value ->> '$.following_lost', CAST(?4 AS INTEGER)
+FROM json_each(CAST(?5 AS TEXT)) WHERE true
 ON CONFLICT DO NOTHING
 RETURNING account_id
 `
 
 type InsertRelationshipSeverancesParams struct {
-	DomainActionID sql.NullString
-	ActionID       sql.NullString
-	OccurredAt     int64
-	Severances     string
+	DomainActionID    sql.NullString
+	ActionID          sql.NullString
+	AllowlistCutoffID sql.NullString
+	OccurredAt        int64
+	Severances        string
 }
 
 // InsertRelationshipSeverances is InsertRelationshipSeverance of the accounts of one action, a
@@ -126,6 +132,7 @@ func (q *Queries) InsertRelationshipSeverances(ctx context.Context, arg InsertRe
 	rows, err := q.db.QueryContext(ctx, insertRelationshipSeverances,
 		arg.DomainActionID,
 		arg.ActionID,
+		arg.AllowlistCutoffID,
 		arg.OccurredAt,
 		arg.Severances,
 	)

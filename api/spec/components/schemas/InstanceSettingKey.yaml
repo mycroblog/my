@@ -39,6 +39,7 @@ enum:
   - supporter_list_visibility
   - income_visibility
   - federation_mode
+  - federation_scope
   - user_app_registration
   - dynamic_client_registration
   - oauth_metadata_document_clients
@@ -106,3 +107,8 @@ enum:
   - auto_delete_max_allow_thresholds
   - auto_delete_grace_days
   - single_user
+  - max_drafts
+  - max_scheduled_posts
+  - max_scheduled_posts_per_day
+  - scheduled_post_min_lead_minutes
+  - scheduled_post_max_lead_days

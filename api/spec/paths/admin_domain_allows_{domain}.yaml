@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+delete:
+  operationId: removeDomainAllow
+  summary: Remove a domain from the allowlist of federation
+  description: |
+    Removes the allow of a domain and records it in the audit log. While the instance setting
+    `federation_scope` is `allowlist` and no parent domain is allowed, the domain and its
+    subdomains that no other allow covers are cut off at once, as a suspension of the domain
+    cuts them off: nothing is received from, delivered to, or fetched from them, and the follows
+    between the local accounts and their accounts end for good, each local user who loses one
+    being notified. A domain without an allow changes nothing. Needs the `manage_domains`
+    permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:write"]
+  parameters:
+    - name: domain
+      in: path
+      required: true
+      description: The canonical domain of the allow.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 253
+  responses:
+    "204":
+      description: The domain has no allow.
+    default:
+      $ref: ../components/responses/Problem.yaml

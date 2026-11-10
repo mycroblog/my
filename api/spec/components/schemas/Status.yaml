@@ -95,6 +95,14 @@ properties:
     type: array
     items:
       $ref: ./StatusTag.yaml
+  followed_tags:
+    description: |
+      On the home timeline and its stream, the names (without `#`) of the hashtags that the
+      user follows and the post carries, when the post is there only for them: its author is
+      neither the user nor an account the user follows. Omitted everywhere else.
+    type: array
+    items:
+      type: string
   emojis:
     description: |
       The custom emoji of the text, the content warning, and the poll's choices. Clients show each `:shortcode:` of those texts that is in this list as its

@@ -730,11 +730,15 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 | アカウントの `federation`（`suspend` / `ban`） | リモートなら `Delete` / `Undo` / `Reject` 以外を捨てる | ローカルなら、下の「処分の伝播」のアクティビティ以外を送らない | ローカルの Actor の GET は、空のプロフィールに `suspended: true` を付けた Actor を返す（鍵は返す）。投稿などのオブジェクトの GET は `404` |
 
 - 判定はサブドメインにも効きます（[data-model §4.3](data-model/04-tables/03-moderation.md#ドメイン単位の処分)）。
+- インスタンス設定 `federation_scope` が `allowlist` のとき（[ADR-0159](../adr/0159-federation-allowlist-and-blocklist-subscriptions.md)）、`moderation.FederationPolicy` は、自身も親ドメインも `domain_allows` に無いドメインを、`suspend` の制限（`federation`・`profile_view`）を持つものとして返します。表の各入口は今の判定のまま、新しい分岐を持ちません。許可は処分を打ち消さず、許可したドメインの処分はそのまま効きます。`domain_restrictions` には行を書かず、判定のときに `domain_allows` と設定から合成します。
+  リンクのカードの取得先はウェブサイトで連合の相手ではないので、`FederationPolicy.Unscoped`（処分だけを読む）で判定します。`allowlist` の間は、ローカルの Actor・投稿・コレクションの GET が Authorized Fetch の設定にかかわらず署名を求めます（§10）。NodeInfo は `metadata.federationScope` に値を出します。
+  `allowlist` への切り替えと、`allowlist` の間の許可の削除は、`allowlist_cutoffs` を記録し、ジョブ `moderation.sever_allowlist` がドメインの `suspend` と同じく両方向のフォローを切って `relationship_severances` に記録します（FR-717）。
 - プロフィールを開いたときの outbox の取得（§6.3、ADR-0006）は、アカウントの `federation` の制限があれば始めず、ドメインの `federation` の制限は `Fetcher` が止めます。ドメインの `public_discovery` の制限は止めません（利用者が自分で開いたプロフィールで、取り込んだ投稿は連合タイムライン・検索に出ない）。
 - `Block` の受信は `graph` の関係として記録します（相手からのブロックで、モデレーションの処分ではありません）。
 - `Move` の受信（§3.4、ADR-0089）は、移転元・移転先のアカウントかドメインに `suspend` があれば捨てます。処分は移転先へ引き継ぎません。移転元に `limit` があれば（`FederationPolicy.AccountLimited`、`visibility_ceiling_private` の制限）、`manage_accounts` を持つモデレーターに通知 `admin_account_moved` を出し、移転先に処分を下すかはモデレーターが決めます。
 - `Flag` の受信は `reports`（`uri` は `Flag` の `id`、`id` が無ければ受信の記録と同じ `urn:my:digest:…`。同じ `Flag` の再処理は何もしない）と `report_states`（`open`）になり、モデレーターの通報一覧に入ります（FR-701）。コメントは 5,000 文字で切ります。
 - `moderation.FederationPolicy` は、呼ばれるたびに期限内の制限を読みます（`DomainPolicy`・`AccountPolicy`・`content.MediaFetchPolicy` と、`Flag` の `RejectsReports`）。処分は `moderation.Service` の `IssueDomainAction` / `LiftDomainAction` と、アカウントへの `IssueAccountAction`（リモートのアカウントには制限だけを生む `limit` / `suspend` / `force_sensitive`）/ `LiftAccountAction` が記録します。
+  ブロックリストの購読（ADR-0159 §4・§5）が下す処分も手で下す処分と同じ行と経路（`moderation.Service` の `insertDomainAction`）で記録し、判定は区別しません。リストの取得は ActivityPub の取得ではないので `Fetcher` のドメインの検査を掛けず、`kernel.HTTPClient`（`HTTPPurposeDomainList`）で行います。
   ドメイン単位の処分の発行・解除・一覧と、通報の一覧・担当・解決は、管理 API（`/api/v1/admin/domain_actions`・`/api/v1/admin/reports`、権限 `manage_domains` / `manage_reports`）と CLI（`my admin domain` / `my admin report`）から行います（[運用手順](../operations/moderation.md)）。入力されたドメインは `CanonicalHost` で正規化してから渡します。
 - `Block` / `Undo Block` の送信（§7.1）は、ローカルのアカウントがリモートのアカウントをブロック・解除したときだけです。`Block` の `id` はブロックの URI（`/ap/activities/{block_id}`）、宛先はブロックした相手だけで、相手の個人の inbox に送ります（shared inbox に集約しない。Mastodon と同じ）。
 - 通報の転送（FR-709）は、ローカルの通報者が転送を選んだリモートのアカウントへの通報を、受け付けのトランザクションで outbox に積みます。受け付けで転送しなかったこのサーバーの通報（判定フックの通報を含む）は、モデレーターが後から転送でき（ADR-0058 §6、`moderation.report_forwarded`）、そのトランザクションで同じ形の `Flag` を積みます。転送は通報ごとに 1 回です。

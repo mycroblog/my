@@ -17,7 +17,9 @@ description: |
   (an instance setting), `text_changed` (an instance text). On a `rule`:
   `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
   `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
-  card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
+  card crawler set on the domain), `link_card_domain_rule_removed`. On a `domain_allow`:
+  `domain_allow_added`, `domain_allow_removed` (a domain added to and removed from the allowlist
+  of federation). On a `role`: `role_granted`,
   `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
   `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
   an `appeal`:
@@ -70,7 +72,13 @@ description: |
   `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
   (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
   and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
-  name.
+  name. On a `domain_list_subscription`: `domain_list_subscription_created`,
+  `domain_list_subscription_updated` (its settings), `domain_list_subscription_deleted`,
+  `domain_list_draft_accepted` (which also records the `domain_action_issued` or
+  `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
+  `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
+  that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
+  the `system` as the actor.
 type: string
 enum:
   - account_action_issued
@@ -173,3 +181,11 @@ enum:
   - link_card_domain_images_stopped
   - link_card_domain_rule_removed
   - instance_marked_available
+  - domain_allow_added
+  - domain_allow_removed
+  - domain_list_subscription_created
+  - domain_list_subscription_updated
+  - domain_list_subscription_deleted
+  - domain_list_draft_accepted
+  - domain_list_draft_rejected
+  - domain_list_fetch_queued

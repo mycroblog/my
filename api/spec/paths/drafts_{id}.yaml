@@ -1,0 +1,56 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getDraft
+  summary: Get a draft
+  description: A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+  tags: [drafts]
+  security:
+    - oauth2: ["read:statuses"]
+  parameters:
+    - $ref: ../components/parameters/DraftId.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Draft.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+put:
+  operationId: updateDraft
+  summary: Replace the content of a draft
+  description: |
+    Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+    last read it: a draft that another save changed since is a 412, and a request without
+    `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+    then.
+  tags: [drafts]
+  security:
+    - oauth2: ["write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/DraftId.yaml
+    - $ref: ../components/parameters/IfMatch.yaml
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/DraftRequest.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Draft.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: deleteDraft
+  summary: Delete a draft
+  description: |
+    Deletes a draft with its schedule (204). The media it attaches, when no post attaches them,
+    are deleted with the next cleanup of unattached uploads.
+  tags: [drafts]
+  security:
+    - oauth2: ["write:statuses"]
+  parameters:
+    - $ref: ../components/parameters/DraftId.yaml
+  responses:
+    "204":
+      description: The draft is deleted.
+    default:
+      $ref: ../components/responses/Problem.yaml

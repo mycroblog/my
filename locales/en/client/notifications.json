@@ -91,6 +91,10 @@
     "defaultMessage": "Open the webhooks",
     "description": "Link in an administrator's notification of a disabled webhook to the webhooks screen."
   },
+  "notifications.link.domain_list_subscriptions": {
+    "defaultMessage": "Open the blocklist subscriptions",
+    "description": "Link of an admin_domain_list_failing notification to the list of the subscriptions to domain block lists."
+  },
   "notifications.link.custom_emoji_requests": {
     "defaultMessage": "Review the requests",
     "description": "Link in an administrator's notification of a custom emoji request to the requests tab of the custom emoji screen."
@@ -210,6 +214,10 @@
   "notifications.type.auto_delete_limit": {
     "defaultMessage": "The server's maximum for keeping posts will apply to your posts",
     "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
+  },
+  "notifications.type.scheduled_status_failed": {
+    "defaultMessage": "Your scheduled post could not be published",
+    "description": "Notification sentence: a post that the user scheduled could not be published at its time. The draft stays, to fix and schedule again; the notification says why below."
   },
   "notifications.type.supporter_payment_failed": {
     "defaultMessage": "A payment for your supporter plan failed",
@@ -419,6 +427,10 @@
     "defaultMessage": "Calls of an external review keep failing",
     "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
   },
+  "notifications.type.admin_domain_list_failing": {
+    "defaultMessage": "Fetches of a blocklist subscription keep failing",
+    "description": "Notification sentence to a moderator: the server could not fetch a subscribed domain block list three times in a row, so the list changes no domain actions until it works again."
+  },
   "notifications.type.admin_hook_appeal": {
     "defaultMessage": "A user appealed a post that the automated review refused",
     "description": "Notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. Names neither the user nor the post."
@@ -442,6 +454,10 @@
   "notifications.auto_delete_limit.detail": {
     "defaultMessage": "From {date}, your posts older than {days, plural, one {# day} other {# days}} will be deleted, except those this server lets you keep. Until then, your own settings apply.",
     "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
+  },
+  "notifications.scheduled_status_failed.detail": {
+    "defaultMessage": "{reason, select, restricted {Your account cannot post right now.} reply_unavailable {The post it replies to is no longer available.} quote_unavailable {The post it quotes is no longer available.} media_unavailable {An attached file is no longer available.} invalid {It does not meet the requirements for a post.} rejected {The server's automated review refused it.} other {}} It was scheduled for {date}. The draft is kept, so you can fix it and schedule it again.",
+    "description": "In the notification that a scheduled post could not be published: {reason} says why (restricted: the account may not post now, because of a moderation action, a suspension, or an account that is not active; reply_unavailable: the post it replies to is gone, hidden from the user, or does not take the reply; quote_unavailable: the post it quotes is gone, hidden, or may not be quoted; media_unavailable: an attached file is gone or failed processing; invalid: the post does not pass the checks of a post, such as its length; rejected: the server's automated review refused the post). {date} is the formatted date and time it was to be published."
   },
   "notifications.link.auto_delete": {
     "defaultMessage": "Check which posts will go",
@@ -470,5 +486,13 @@
   "notifications.link.interaction_requests": {
     "defaultMessage": "Review the requests",
     "description": "Link in a notification that someone's reply, boost, or quote waits for the user's approval, to the page of the approval requests."
+  },
+  "notifications.severed.allowlist": {
+    "defaultMessage": "This server now federates only with the servers it allows. You lost {followers, plural, one {# follower} other {# followers}} and {following, plural, one {# account you followed} other {# accounts you followed}} on the other servers.",
+    "description": "Notification sentence: the administrators of this server switched it to federate only with the servers it allows, which ended the follows between the user and the accounts of every other server in both directions; they are not restored when the server federates with them again. {followers} is the number of those accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.severed.allowlist_domain": {
+    "defaultMessage": "This server no longer federates with {domain}. You lost {followers, plural, one {# follower} other {# followers}} and {following, plural, one {# account you followed} other {# accounts you followed}} there.",
+    "description": "Notification sentence: the moderators of this server removed another server from the servers it federates with, which ended the follows between its accounts and the user in both directions; they are not restored when it is allowed again. {domain} is the server's domain name. {followers} is the number of its accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
   }
 }

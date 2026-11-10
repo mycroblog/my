@@ -8,7 +8,7 @@ get:
     mutes with notifications hidden are left out, also those that came before the block or
     mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
     `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-    `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
+    `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
     the user's roles no longer grant the permission they need.
   tags: [notifications]
   security:

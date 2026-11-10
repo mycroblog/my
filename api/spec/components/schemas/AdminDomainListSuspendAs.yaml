@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: What a `suspend` of the list issues on this server; `ignore` issues nothing.
+type: string
+enum: [suspend, limit, ignore]

@@ -1,0 +1,52 @@
+# SPDX-License-Identifier: MIT
+description: |
+  A draft of a post, saved on the server so that the user goes on writing it on another device,
+  and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+type: object
+required: [id, created_at, updated_at, text, spoiler_text, sensitive, visibility, media]
+properties:
+  id:
+    $ref: ./Id.yaml
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    description: When the draft was last saved.
+    type: string
+    format: date-time
+  text:
+    description: The plain text.
+    type: string
+  spoiler_text:
+    description: The content warning; empty for none.
+    type: string
+  sensitive:
+    type: boolean
+  language:
+    description: A BCP 47 language tag; left out for the user's default post language.
+    type: string
+  visibility:
+    $ref: ./Visibility.yaml
+  in_reply_to_id:
+    $ref: ./Id.yaml
+  quoted_status_id:
+    $ref: ./Id.yaml
+  interaction_policy:
+    description: Who may reply to, boost, and quote the post, of the kinds the user chose.
+    allOf:
+      - $ref: ./InteractionPolicyChange.yaml
+  media:
+    description: The media to attach, in order.
+    type: array
+    items:
+      $ref: ./StatusMediaItem.yaml
+  poll:
+    $ref: ./DraftPoll.yaml
+  scheduled_at:
+    description: When the draft is scheduled to be published; left out while it is not scheduled.
+    type: string
+    format: date-time
+  last_schedule:
+    description: How the newest schedule that is over ended; left out when none ended.
+    allOf:
+      - $ref: ./DraftScheduleOutcome.yaml

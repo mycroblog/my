@@ -17,8 +17,9 @@ import (
 )
 
 // TestDeliveryQueries counts the database round trips of one delivery attempt of the Create of a
-// post to a remote follower's server, outside the HTTP request: at most 5 (one query is one round
-// trip, one call in pg_stat_statements).
+// post to a remote follower's server, outside the HTTP request: at most 6 (one query is one round
+// trip, one call in pg_stat_statements), one of them the read of federation_scope by the domain
+// policy, which under allowlist also reads the allowlist (ADR-0159 §2).
 func TestDeliveryQueries(t *testing.T) {
 	t.Parallel()
 	tracer := testkit.NewTracer()
@@ -82,7 +83,7 @@ func TestDeliveryQueries(t *testing.T) {
 	}
 	sort.Strings(names)
 	t.Logf("one delivery attempt: %d queries: %v", count, names)
-	if count > 5 {
-		t.Errorf("one delivery attempt makes %d queries, want at most 5", count)
+	if count > 6 {
+		t.Errorf("one delivery attempt makes %d queries, want at most 6", count)
 	}
 }

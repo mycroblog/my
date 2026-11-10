@@ -35,7 +35,9 @@ description: |
   `admin_hook_appeal` (a user appealed a post that the automated review refused;
   `hook_appeal_id` is the appeal) to those with `manage_reports`, and
   `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
-  `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
+  `custom_emoji_request` is the request) to those with `manage_custom_emojis`, and
+  `admin_domain_list_failing` (three fetches in a row of a subscribed domain block list
+  failed; it names none) to those with `manage_domains`.
   `custom_emoji_request_decided` also comes from the instance: an administrator approved
   or rejected the user's custom emoji request, which `custom_emoji_request` carries with
   its state and the reason of a rejection.
@@ -79,6 +81,11 @@ description: |
   `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
   policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
   has no `account`. It is sent once per notice.
+  `scheduled_status_failed` comes from the instance: a post that the user scheduled could not be
+  published at its time, and its draft stays to fix and schedule again. Its
+  `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
+  draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
+  sends nothing.
 type: string
 enum:
   - follow
@@ -99,6 +106,7 @@ enum:
   - admin_appeal
   - admin_webhook_disabled
   - admin_hook_failing
+  - admin_domain_list_failing
   - admin_custom_emoji_request
   - custom_emoji_request_decided
   - supporter_payment_failed
@@ -117,6 +125,7 @@ enum:
   - admin_hook_appeal
   - hook_appeal_decided
   - auto_delete_limit
+  - scheduled_status_failed
   - reply_request
   - boost_request
   - quote_request

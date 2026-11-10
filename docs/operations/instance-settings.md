@@ -42,6 +42,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `remote_media_cache_max_bytes` | integer from 1 (bytes) | `1073741824` | The size limit of the copies of remote media the media proxy keeps. The hourly cleanup deletes the expired copies, then the least recently accessed ones over this limit |
 | `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch (secure mode). When `true`, an ActivityPub GET without a verifiable HTTP signature is answered with `401` for objects and collections, and with a minimal document that carries the key for a user's actor. The instance actor always returns its whole document, so any server can fetch the key to verify a signature |
 | `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | The direction of federation. `off`: no federation. `inbound`: you follow and read remote accounts, but local posts, profiles, and reactions are not sent out, and follows from outside are refused (`Reject`). `outbound`: you accept follows from outside and deliver local posts, but remote posts and reactions are not taken in. `both`: send and receive. A change takes effect at once and needs the permission `manage_settings` |
+| `federation_scope` | `open` / `allowlist` | `open` | Which servers this server federates with. `open`: every server that no domain action suspends. `allowlist`: only the domains on the allowlist and their subdomains; every other server is treated as suspended, and ActivityPub GETs need a signature from an allowed server whatever `authorized_fetch` says. Switching to `allowlist` ends the follows with the servers it cuts off for good; see [federating only with allowed servers](moderation.md#federating-only-with-allowed-servers). A change takes effect at once and needs the permission `manage_settings` |
 | `dynamic_client_registration` | `true` / `false` | `true` | Dynamic client registration (RFC 7591). While `true`, `POST /oauth/register` accepts the registration of public clients without authentication. When `false`, the endpoint refuses every request with `403` (`access_denied`); clients that are already registered keep working. A periodic job deletes dynamically registered clients that are not used, following the configuration `dynamic_client_unredeemed_retention` and `dynamic_client_idle_retention`. A change takes effect at once and needs `manage_settings` |
 | `domain_actions_visibility` | `off` / `signed_in` / `everyone` | `off` | Who can see the list of domains with actions taken (`GET /api/v1/instance/domain_actions`): nobody, signed-in users, or everyone ([moderation](moderation.md#publishing-the-domains-you-act-on)) |
 | `domain_actions_rationale_visibility` | `off` / `signed_in` / `everyone` | `off` | Who can see the public comments of that list. Someone who cannot see the list never sees them |
@@ -111,6 +112,11 @@ default locale, who can see the timelines, the instance name, description, terms
 | `hook_local_profile_account_age_days` | integer 0-3650 (days) | `7` | `local.profile` [reviews the profile changes](decision-hooks.md#local-profiles) of accounts younger than this; `0` reviews every account. The information page (`/about`) states it while the hook is in use. |
 | `hook_decisions_retention_days` | integer 30-3650 (days) | `90` | How many days to keep the [decisions of the hooks](decision-hooks.md#the-decisions). |
 | `single_user` | boolean | `false` | Whether the server is a [one-person server](#one-person-server). It can be turned on only while the server has exactly one local account, and turned off at any time |
+| `max_drafts` | integer 1-10000 | `100` | How many drafts that are not scheduled one user may keep on the server. Lowering it deletes no draft: a user above it saves no new one |
+| `max_scheduled_posts` | integer 1-10000 | `300` | How many scheduled posts of one user may wait. Lowering it cancels no schedule |
+| `max_scheduled_posts_per_day` | integer 1-10000 | `25` | How many scheduled posts of one user may wait for one UTC day |
+| `scheduled_post_min_lead_minutes` | integer 1-1440 (minutes) | `5` | How many minutes ahead, at least, a post may be scheduled |
+| `scheduled_post_max_lead_days` | integer 1-3660 (days) | `366` | How many days ahead, at most, a post may be scheduled |
 
 - Values are normalized before they are stored (`TRUE` becomes `true`, `0750` becomes `750`, `ja_jp` becomes `ja-JP`, media IDs are lowercased).
   An invalid value is rejected and nothing is written.
@@ -182,6 +188,25 @@ The maximum is public: `GET /api/v1/instance` returns it in `auto_delete_limit`,
 know it before they sign up. Changes of these keys need `manage_settings` and are recorded in the audit log like any
 other setting. In the web client they are on the "Post deletion" page of "Server settings", which asks before it saves a
 maximum that is turned on or made stricter.
+
+### Drafts and scheduled posts
+
+Users save drafts of posts on the server, go on writing them on another device, and publish them at once or at a chosen
+time. Only their author reads a draft; drafts are never federated, are not in the export of an account's data, and go
+with the account when it is erased. The five `max_drafts` and `scheduled_post_*` settings above bound them; a save or a
+schedule past a limit is refused with a message that names it.
+
+- A scheduled post is published by the job `content.publish_scheduled_draft` at its time or soon after, also when the
+  time is further ahead than the delay limit of the queue service: the job comes back and waits again. Set them with
+  `my instance set`, for example `my instance set max_scheduled_posts 100`.
+- The post is checked when it is published, not only when it is scheduled: a user whom a moderation action bars from
+  posting by then, or whose post replies to or quotes a post that is gone, gets no post. The draft stays, and the user
+  gets a notification that says why (`scheduled_status_failed`, which users may turn off in their notification
+  settings, and which is never emailed). The automated review of local posts, while it is in use, reviews the post
+  when it is published.
+- A post is stamped with the time it is published, and the automatic deletion of old posts counts from then.
+- The media files a draft attaches are kept while the draft is; deleting the draft makes them unattached, and they go
+  with the cleanup of unattached uploads.
 
 ### Texts (one key, one value)
 

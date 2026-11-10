@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: The version of the draft, for the `If-Match` of its next save.
+schema:
+  type: string

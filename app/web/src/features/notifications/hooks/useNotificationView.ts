@@ -26,6 +26,7 @@ import { announcementPath } from "../../announcements";
 import { useViewer } from "../../session";
 import { statusPath } from "../../status";
 import type {
+  DraftFailureReason,
   ModerationAction,
   Notification,
   NotificationAccount,
@@ -163,6 +164,11 @@ export type NotificationView = {
    */
   autoDeleteLimit: { days: number; from: { dateTime: string; text: string } } | null;
   /**
+   * What a `scheduled_status_failed` tells of the scheduled post (ADR-0156 §8): why it was not published, and when it
+   * was to be; null for the other types and once its draft is gone.
+   */
+  scheduledFailure: { reason: DraftFailureReason; at: { dateTime: string; text: string } } | null;
+  /**
    * The pages the row leads to besides the actor's profile and the post, where the user follows up what it
    * tells: the account status, the report, the registrations, or the user's follow lists.
    */
@@ -189,6 +195,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   admin_appeal: "staff",
   admin_webhook_disabled: "staff",
   admin_hook_failing: "staff",
+  admin_domain_list_failing: "staff",
   admin_hook_appeal: "staff",
   hook_appeal_decided: "staff",
   admin_custom_emoji_request: "staff",
@@ -207,6 +214,7 @@ const kinds: Readonly<Record<NotificationType, NotificationKind>> = {
   status: "status",
   announcement: "announcement",
   auto_delete_limit: "notice",
+  scheduled_status_failed: "notice",
   reply_request: "mention",
   boost_request: "boost",
   quote_request: "quote",
@@ -233,6 +241,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   admin_appeal: "client:notifications.type.admin_appeal",
   admin_webhook_disabled: "client:notifications.type.admin_webhook_disabled",
   admin_hook_failing: "client:notifications.type.admin_hook_failing",
+  admin_domain_list_failing: "client:notifications.type.admin_domain_list_failing",
   admin_hook_appeal: "client:notifications.type.admin_hook_appeal",
   hook_appeal_decided: "client:notifications.type.hook_appeal_decided",
   admin_custom_emoji_request: "client:notifications.type.admin_custom_emoji_request",
@@ -247,6 +256,7 @@ const sentences: Readonly<Record<NotificationType, ClientMessageKey>> = {
   supporter_service_closure: "client:notifications.type.supporter_service_closure",
   announcement: "client:notifications.type.announcement",
   auto_delete_limit: "client:notifications.type.auto_delete_limit",
+  scheduled_status_failed: "client:notifications.type.scheduled_status_failed",
   voice_room_started: "client:notifications.type.voice_room_started",
   voice_room_invited: "client:notifications.type.voice_room_invited",
   admin_error_group: "client:notifications.type.admin_error_group",
@@ -426,7 +436,8 @@ function postOf(status: NotificationStatus): NonNullable<NotificationView["post"
 
 /**
  * The sentence and the values of a `relationships_severed`: the server or the account that the moderators
- * suspended, with the counts; without its severance, the sentence that says only that follows ended.
+ * suspended, or the servers that the allowlist cut off, with the counts; without its severance, the sentence that
+ * says only that follows ended.
  */
 function severanceOf(notification: Notification): Pick<NotificationView, "sentence" | "severance"> {
   const severance = notification.relationship_severance;
@@ -438,6 +449,15 @@ function severanceOf(notification: Notification): Pick<NotificationView, "senten
       sentence: "client:notifications.severed.domain",
       severance: { domain: severance.domain ?? "", ...counts },
     };
+  }
+  if (severance.kind === "allowlist_cutoff") {
+    // The server whose allow was removed, or none when the server switched to its allowlist.
+    return severance.domain === undefined
+      ? { sentence: "client:notifications.severed.allowlist", severance: { domain: null, ...counts } }
+      : {
+          sentence: "client:notifications.severed.allowlist_domain",
+          severance: { domain: severance.domain, ...counts },
+        };
   }
   if (notification.account === undefined) return fallback;
   return { sentence: "client:notifications.severed.account", severance: { domain: null, ...counts } };
@@ -492,6 +512,13 @@ function linksOf(notification: Notification, ownAcct: string | null): Notificati
       return [{ href: "/admin/webhooks", label: "client:notifications.link.webhooks" }];
     case "admin_hook_failing":
       return [{ href: "/moderation/hook-decisions", label: "client:notifications.link.hook_decisions" }];
+    case "admin_domain_list_failing":
+      return [
+        {
+          href: "/moderation/domain-actions/subscriptions",
+          label: "client:notifications.link.domain_list_subscriptions",
+        },
+      ];
     // An appeal of a refused post leads to its page; without its ID, to the appeals awaiting a moderator.
     case "admin_hook_appeal":
       return [
@@ -631,6 +658,16 @@ export function useNotificationView(group: NotificationGroup): NotificationView 
             from: {
               dateTime: notification.auto_delete_limit.enforce_from,
               text: intl.formatDate(notification.auto_delete_limit.enforce_from, { dateStyle: "long" }),
+            },
+          }
+        : null,
+    scheduledFailure:
+      notification.type === "scheduled_status_failed" && notification.scheduled_status_failure !== undefined
+        ? {
+            reason: notification.scheduled_status_failure.reason,
+            at: {
+              dateTime: notification.scheduled_status_failure.publish_at,
+              text: formatDate(notification.scheduled_status_failure.publish_at),
             },
           }
         : null,

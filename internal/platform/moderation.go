@@ -41,8 +41,13 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 		Emails: moderationEmails{a}, CanonicalDomain: federation.CanonicalHost,
 		LocalDomains: []string{a.Config.Host, a.Config.AccountDomain},
 		Evidence:     moderationEvidence{a}, AuditTargets: moderationAuditTargets{a},
+		Scopes: federationScopes{a},
+		// The subscribed domain block lists are on third parties' servers (ADR-0159 §4).
+		HTTP: a.HTTPClient,
 	})
-	a.ModerationPolicy = moderation.NewFederationPolicy(repo, a.Clock)
+	// The policy follows the allowlist of federation_scope (ADR-0159 §2) besides the actions on
+	// domains.
+	a.ModerationPolicy = moderation.NewFederationPolicy(repo, a.Clock).Scoped(federationScopes{a})
 	a.AccountPolicy = moderation.NewAccountPolicy(repo, a.Accounts, a.Clock)
 	// The removal of expired restrictions, which ends expired suspensions on other servers
 	// (federation.md §11.1).
@@ -51,6 +56,7 @@ func (a *App) setUpModeration(repo moderation.Repository) {
 	// The administrative use cases of every module emit their audit log entries; the projector
 	// writes them in the transaction of the operation (ADR-0058).
 	moderation.RegisterAuditProjector(a.Projectors, repo)
+	a.registerFederationScopeSwitch()
 }
 
 // appealWindow reads the appeal window of the moderation module from the instance setting
@@ -197,6 +203,11 @@ func (m moderationFollows) SeverByModeration(ctx context.Context, tx uow.Tx, acc
 // CounterpartsOf implements moderation.Follows.
 func (m moderationFollows) CounterpartsOf(ctx context.Context, tx uow.Tx, ids []string) (map[string][]string, error) {
 	return m.a.Graph.CounterpartsOf(ctx, tx, ids)
+}
+
+// ActiveFollowsOf implements moderation.ActiveFollows.
+func (m moderationFollows) ActiveFollowsOf(ctx context.Context, tx uow.Tx, ids []string) ([]graph.ActiveFollow, error) {
+	return m.a.Graph.ActiveFollowsOf(ctx, tx, ids)
 }
 
 // SeverAmong implements moderation.Follows.

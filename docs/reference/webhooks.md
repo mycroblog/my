@@ -54,7 +54,7 @@ An endpoint subscribes to some of these events. Setting up the subscription need
 | `moderation_action.created` | An action on an account | `AdminAccountAction` (state `active`) | `manage_accounts` |
 | `moderation_action.lifted` | The lift of an action on an account | `AdminAccountAction` (state `lifted`) | `manage_accounts` |
 | `appeal.created` | An account appeals an action | `AdminAppeal`, with the action | `manage_accounts` |
-| `domain_moderation_action.created` | An action on a domain | `AdminDomainAction` (state `active`) | `manage_domains` |
+| `domain_moderation_action.created` | An action on a domain, a moderator's or a blocklist subscription's | `AdminDomainAction` (state `active`; `subscription_id` names the subscription that issued it) | `manage_domains` |
 | `domain_moderation_action.lifted` | The lift of an action on a domain | `AdminDomainAction` (state `lifted`) | `manage_domains` |
 | `status.created` | A local account posts publicly | `WebhookStatus` | none besides `manage_webhooks` |
 | `custom_emoji.created` | An administrator registers a custom emoji | `WebhookCustomEmoji`: `AdminCustomEmoji` and the `operation` | `manage_custom_emojis` |

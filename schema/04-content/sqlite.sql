@@ -835,3 +835,102 @@ CREATE TABLE local_post_counters (
   account_id TEXT NOT NULL PRIMARY KEY,
   posts_count INTEGER NOT NULL CHECK (posts_count > 0)
 ) STRICT;
+
+-- ---------------------------------------------------------------------------------------------
+-- content: drafts and scheduled posts (data-model §4.4, ADR-0156). Owned by internal/app/content.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: a draft of a local post, which only its author reads and writes. Publishing it, and
+-- deleting it, delete every row of the draft.
+CREATE TABLE drafts (
+  id TEXT NOT NULL PRIMARY KEY,
+  account_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX drafts_account_id_id ON drafts (account_id, id);
+
+-- Current value: the content of a draft, replaced by every save. language is NULL for the
+-- author's default post language; in_reply_to_status_id and quoted_status_id are NULL for none.
+-- updated_at is the source of the API's ETag.
+CREATE TABLE draft_contents (
+  draft_id TEXT NOT NULL PRIMARY KEY,
+  source_text TEXT NOT NULL,
+  spoiler_text TEXT NOT NULL,
+  sensitive INTEGER NOT NULL CHECK (sensitive IN (0, 1)),
+  language TEXT,
+  visibility TEXT NOT NULL CHECK (visibility IN ('public', 'local', 'unlisted', 'private', 'direct')),
+  in_reply_to_status_id TEXT,
+  quoted_status_id TEXT,
+  updated_at INTEGER NOT NULL
+) STRICT;
+
+-- Current value: who may reply to, boost, and quote the post of a draft, as a local author
+-- chooses it (status_interaction_policies of the status it becomes): the audience admitted at
+-- once (automatic) and the wider one admitted after approval (manual). A kind without rows takes
+-- the author's default when the draft is published.
+CREATE TABLE draft_interaction_policies (
+  draft_id TEXT NOT NULL,
+  kind TEXT NOT NULL CHECK (kind IN ('reply', 'announce', 'quote')),
+  approval TEXT NOT NULL CHECK (approval IN ('automatic', 'manual')),
+  audience TEXT NOT NULL CHECK (audience IN ('everyone', 'followers', 'mentioned', 'nobody')),
+  PRIMARY KEY (draft_id, kind, approval)
+) STRICT;
+
+-- Current value: the media files a draft attaches, with their alt text. The cleanup of
+-- unattached uploads counts them as attached.
+CREATE TABLE draft_attachments (
+  draft_id TEXT NOT NULL,
+  position INTEGER NOT NULL CHECK (position BETWEEN 0 AND 3),
+  media_id TEXT NOT NULL,
+  description TEXT,
+  PRIMARY KEY (draft_id, position)
+) STRICT;
+CREATE INDEX draft_attachments_media_id ON draft_attachments (media_id);
+
+-- Current value: the poll of a draft; its end is set when the draft is published.
+CREATE TABLE draft_polls (
+  draft_id TEXT NOT NULL PRIMARY KEY,
+  multiple INTEGER NOT NULL CHECK (multiple IN (0, 1)),
+  hide_totals INTEGER NOT NULL CHECK (hide_totals IN (0, 1)),
+  duration_seconds INTEGER NOT NULL CHECK (duration_seconds BETWEEN 300 AND 2592000)
+) STRICT;
+
+-- Current value: one choice of the poll of a draft.
+CREATE TABLE draft_poll_options (
+  draft_id TEXT NOT NULL,
+  position INTEGER NOT NULL CHECK (position BETWEEN 0 AND 3),
+  title TEXT NOT NULL,
+  PRIMARY KEY (draft_id, position)
+) STRICT;
+
+-- Resource: one schedule of a draft, to publish it at publish_at. A new time is a new schedule
+-- after the outcome cancelled of the one before.
+CREATE TABLE draft_schedules (
+  id TEXT NOT NULL PRIMARY KEY,
+  draft_id TEXT NOT NULL,
+  publish_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX draft_schedules_draft_id_id ON draft_schedules (draft_id, id);
+
+-- Event: the end of a schedule, at most one. failure_reason says why a failed schedule did not
+-- publish, for the author's screens and notification.
+CREATE TABLE draft_schedule_outcomes (
+  schedule_id TEXT NOT NULL PRIMARY KEY,
+  outcome TEXT NOT NULL CHECK (outcome IN ('published', 'failed', 'cancelled')),
+  failure_reason TEXT CHECK (failure_reason IN ('restricted', 'reply_unavailable', 'quote_unavailable', 'media_unavailable', 'invalid', 'rejected')),
+  occurred_at INTEGER NOT NULL,
+  CONSTRAINT draft_schedule_outcomes_failed_check CHECK ((outcome = 'failed') = (failure_reason IS NOT NULL))
+) STRICT;
+
+-- Projection: the schedule in effect of each scheduled draft, written with the schedule and
+-- deleted with its outcome in the same transaction; rebuilt from the draft_schedules without an
+-- outcome. It keeps one schedule per draft and counts the limits of scheduled posts.
+CREATE TABLE scheduled_drafts (
+  draft_id TEXT NOT NULL PRIMARY KEY,
+  schedule_id TEXT NOT NULL,
+  account_id TEXT NOT NULL,
+  publish_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX scheduled_drafts_schedule_id ON scheduled_drafts (schedule_id);
+CREATE INDEX scheduled_drafts_account_id_publish_at ON scheduled_drafts (account_id, publish_at);

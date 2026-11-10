@@ -1,0 +1,54 @@
+# SPDX-License-Identifier: MIT
+description: A subscription to a domain block list that another server or person publishes.
+type: object
+required:
+  - id
+  - url
+  - format
+  - title
+  - mode
+  - suspend_as
+  - silence_as
+  - apply_reject_media
+  - apply_reject_reports
+  - public_comment_from_list
+  - consecutive_failures
+  - created_at
+  - updated_at
+properties:
+  id:
+    $ref: ./Id.yaml
+  url:
+    description: The https URL of the list.
+    type: string
+  format:
+    $ref: ./AdminDomainListFormat.yaml
+  title:
+    type: string
+  mode:
+    $ref: ./AdminDomainListMode.yaml
+  suspend_as:
+    $ref: ./AdminDomainListSuspendAs.yaml
+  silence_as:
+    $ref: ./AdminDomainListSilenceAs.yaml
+  apply_reject_media:
+    description: Whether the `reject_media` of a row issues a `reject_media` action.
+    type: boolean
+  apply_reject_reports:
+    description: Whether the `reject_reports` of a row issues a `reject_reports` action.
+    type: boolean
+  public_comment_from_list:
+    description: Whether the actions copy the public comment of their row.
+    type: boolean
+  consecutive_failures:
+    description: The failed fetches since the last one that did not fail.
+    type: integer
+  last_fetch:
+    $ref: ./AdminDomainListFetch.yaml
+  created_at:
+    type: string
+    format: date-time
+  updated_at:
+    description: When the settings last changed; the creation for settings never changed.
+    type: string
+    format: date-time

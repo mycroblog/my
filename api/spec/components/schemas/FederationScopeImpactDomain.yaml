@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: MIT
+description: The follows with one server that switching to the allowlist would end.
+type: object
+required: [domain, follows]
+properties:
+  domain:
+    description: The server's domain.
+    type: string
+  follows:
+    description: How many follows with its accounts would end.
+    type: integer
+    minimum: 1

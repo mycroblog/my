@@ -92,6 +92,10 @@ func TestSingleUserMode(t *testing.T) {
 	if res := c.do("alice", http.MethodGet, "/timelines/home", nil, nil); res.StatusCode != http.StatusOK {
 		t.Errorf("home timeline on a one-person server = %d", res.StatusCode)
 	}
+	// The one person follows hashtags, whose posts reach home from other servers.
+	if res := c.do("alice", http.MethodPost, "/tags/cats/follow", nil, nil); res.StatusCode != http.StatusOK {
+		t.Errorf("following a hashtag on a one-person server = %d", res.StatusCode)
+	}
 
 	// No new post is local, and the posting limits leave it out.
 	if res := c.do("alice", http.MethodPost, "/statuses", map[string]any{"text": "here", "visibility": "local"}, nil); res.StatusCode != http.StatusUnprocessableEntity {

@@ -189,9 +189,11 @@ func (q *Queries) GetDomainModerationAction(ctx context.Context, id string) (Dom
 
 const getDomainModerationActionRecord = `-- name: GetDomainModerationActionRecord :one
 SELECT a.id, a.domain, a.kind, a.public_comment, a.private_note, a.obfuscate, a.issued_by_user_id,
-  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at
+  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at,
+  sa.subscription_id
 FROM domain_moderation_actions a
 LEFT JOIN domain_moderation_action_lifts l ON l.action_id = a.id
+LEFT JOIN subscription_domain_actions sa ON sa.action_id = a.id
 WHERE a.id = ?
 `
 
@@ -208,6 +210,7 @@ type GetDomainModerationActionRecordRow struct {
 	LiftActionID   sql.NullString
 	LiftedByUserID sql.NullString
 	LiftedAt       sql.NullInt64
+	SubscriptionID sql.NullString
 }
 
 func (q *Queries) GetDomainModerationActionRecord(ctx context.Context, id string) (GetDomainModerationActionRecordRow, error) {
@@ -226,6 +229,7 @@ func (q *Queries) GetDomainModerationActionRecord(ctx context.Context, id string
 		&i.LiftActionID,
 		&i.LiftedByUserID,
 		&i.LiftedAt,
+		&i.SubscriptionID,
 	)
 	return i, err
 }
@@ -1012,9 +1016,11 @@ func (q *Queries) ListAccountRestrictionsInEffect(ctx context.Context, arg ListA
 
 const listDomainModerationActions = `-- name: ListDomainModerationActions :many
 SELECT a.id, a.domain, a.kind, a.public_comment, a.private_note, a.obfuscate, a.issued_by_user_id,
-  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at
+  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at,
+  sa.subscription_id
 FROM domain_moderation_actions a
 LEFT JOIN domain_moderation_action_lifts l ON l.action_id = a.id
+LEFT JOIN subscription_domain_actions sa ON sa.action_id = a.id
 WHERE (CAST(?1 AS TEXT) = '' OR a.domain = ?1)
   AND (CAST(?2 AS TEXT) = ''
     OR a.kind IN (SELECT value FROM json_each(CAST(?2 AS TEXT))))
@@ -1046,6 +1052,7 @@ type ListDomainModerationActionsRow struct {
 	LiftActionID   sql.NullString
 	LiftedByUserID sql.NullString
 	LiftedAt       sql.NullInt64
+	SubscriptionID sql.NullString
 }
 
 // ListDomainModerationActions returns the domain actions with their lifts, newest first: those
@@ -1080,6 +1087,7 @@ func (q *Queries) ListDomainModerationActions(ctx context.Context, arg ListDomai
 			&i.LiftActionID,
 			&i.LiftedByUserID,
 			&i.LiftedAt,
+			&i.SubscriptionID,
 		); err != nil {
 			return nil, err
 		}

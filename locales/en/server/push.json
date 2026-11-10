@@ -35,6 +35,10 @@
     "defaultMessage": "{instance}: posts older than {days, plural, one {# day} other {# days}} will be deleted automatically {daysLeft, plural, =0 {from now on} one {in # day} other {in # days}}",
     "description": "Web Push notification, and the subject of its email, telling a local user that the server's maximum of the automatic deletion of old posts now applies to their posts. {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.scheduled_status_failed": {
+    "defaultMessage": "{instance}: your scheduled post could not be published {reason, select, restricted {because your account cannot post now} reply_unavailable {because the post it replies to is no longer available} quote_unavailable {because the post it quotes is no longer available} media_unavailable {because an attached file is no longer available} invalid {because it does not meet the requirements for a post} rejected {because the server's automated review refused it} other {}}",
+    "description": "Web Push notification telling a local user that a post they scheduled could not be published at its time; the draft stays and can be fixed and scheduled again. {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.appeal_decided": {
     "defaultMessage": "The moderators of {instance} decided your appeal",
     "description": "Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none."
@@ -88,8 +92,8 @@
     "description": "Web Push notification. {name} is the display name, or the @handle, of the account that reacted to the user's post with an emoji."
   },
   "push.relationships_severed": {
-    "defaultMessage": "A suspension by the moderators of {instance} ended some of your follows",
-    "description": "Web Push notification: the moderators suspended a server or an account, which ended follows between it and the user. {instance} is the server's display name, or its domain name when it has none."
+    "defaultMessage": "{instance} ended some of your follows with accounts on other servers",
+    "description": "Web Push notification: follows between the user and accounts of other servers ended, because the moderators suspended a server or an account, or because this server stopped federating with a server (it federates only with the servers it allows). {instance} is the server's display name, or its domain name when it has none."
   },
   "push.report_resolved": {
     "defaultMessage": "A report you filed on {instance} has been resolved",
@@ -142,6 +146,10 @@
   "push.admin_hook_failing": {
     "defaultMessage": "An external review of {instance} keeps failing",
     "description": "Web Push notification to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
+  "push.admin_domain_list_failing": {
+    "defaultMessage": "A blocklist subscription of {instance} keeps failing",
+    "description": "Web Push notification to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "push.admin_hook_appeal": {
     "defaultMessage": "A refused post was appealed to the moderators of {instance}",

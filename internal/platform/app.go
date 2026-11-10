@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"golang.org/x/sync/singleflight"
 
@@ -145,6 +146,8 @@ type App struct {
 	Statuses *content.Reader
 	// AutoDelete holds the users' automatic deletion of their old posts and runs it (FR-118).
 	AutoDelete *content.AutoDelete
+	// Drafts holds the users' drafts and publishes the scheduled ones (ADR-0156).
+	Drafts *content.DraftService
 	// Timeline reads the home, local, hashtag, and profile timelines (FR-201 to FR-204).
 	Timeline *timeline.Service
 	// TagSearch is the prefix search of hashtags (ADR-0092 §1).
@@ -407,6 +410,10 @@ type AppOptions struct {
 	// Clock, when set, tells the time instead of the system clock. Tests only, to give the App a
 	// clock that never goes back, as the wall clock does when the host steps it.
 	Clock kernel.Clock
+	// InlineQueueMaxDelay, when set, gives queue = inline the delay limit of a queue service
+	// (inline.Options.MaxDelay). Tests only, to run jobs further ahead than the limit through
+	// the re-enqueue chain.
+	InlineQueueMaxDelay time.Duration
 	// KeyManager stands in for the KMS adapter of a key_manager other than local, which then wraps
 	// behind the cache of the DEKs, next to the KEKs of kek and kek_previous, and with
 	// key_manager = local for the KMS adapter of kms_key that only unwraps. Tests only, to move
@@ -493,7 +500,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 			_ = a.Close()
 		}
 	}()
-	if err := a.setUpQueue(cfg); err != nil {
+	if err := a.setUpQueue(cfg, opts.InlineQueueMaxDelay); err != nil {
 		return nil, err
 	}
 	if err := a.setUpKV(ctx, cfg); err != nil {
@@ -553,6 +560,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.registerBusinessMetrics(a.Projectors)
 	fedOutbox := a.setUpFederation(cfg, repos.feds)
 	a.setUpPolls(cfg, repos.statuses, repos.feds, fedOutbox)
+	a.setUpDrafts(repos.drafts, repos.medias, fedOutbox)
 	if err := a.setUpDelivery(repos.feds); err != nil {
 		return nil, err
 	}

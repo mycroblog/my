@@ -27,7 +27,7 @@ func (r *Repository) InsertSeverance(ctx context.Context, tx uow.Tx, s moderatio
 		return false, err
 	}
 	n, err := q.InsertRelationshipSeverance(ctx, moderationgen.InsertRelationshipSeveranceParams{
-		ID: s.ID, DomainActionID: postgres.ToNullString(s.DomainActionID), ActionID: postgres.ToNullString(s.ActionID), AccountID: s.AccountID,
+		ID: s.ID, DomainActionID: postgres.ToNullString(s.DomainActionID), ActionID: postgres.ToNullString(s.ActionID), AllowlistCutoffID: postgres.ToNullString(s.AllowlistCutoffID), AccountID: s.AccountID,
 		FollowersLost: followers, FollowingLost: following, OccurredAt: s.OccurredAt,
 	})
 	if err != nil {
@@ -47,7 +47,7 @@ func (r *Repository) InsertSeverances(ctx context.Context, tx uow.Tx, ss []moder
 		return nil, err
 	}
 	arg := moderationgen.InsertRelationshipSeverancesParams{
-		DomainActionID: postgres.ToNullString(ss[0].DomainActionID), ActionID: postgres.ToNullString(ss[0].ActionID), OccurredAt: ss[0].OccurredAt,
+		DomainActionID: postgres.ToNullString(ss[0].DomainActionID), ActionID: postgres.ToNullString(ss[0].ActionID), AllowlistCutoffID: postgres.ToNullString(ss[0].AllowlistCutoffID), OccurredAt: ss[0].OccurredAt,
 	}
 	for _, s := range ss {
 		arg.Ids, arg.AccountIds = append(arg.Ids, s.ID), append(arg.AccountIds, s.AccountID)
@@ -84,9 +84,10 @@ func (r *Repository) FindSeverance(ctx context.Context, accountID, id string) (m
 func severanceFrom(row moderationgen.GetRelationshipSeveranceRow) moderation.SeveranceRecord {
 	return moderation.SeveranceRecord{
 		Severance: moderation.Severance{
-			ID: row.ID, DomainActionID: postgres.FromNullString(row.DomainActionID), ActionID: postgres.FromNullString(row.ActionID), AccountID: row.AccountID,
+			ID: row.ID, DomainActionID: postgres.FromNullString(row.DomainActionID), ActionID: postgres.FromNullString(row.ActionID),
+			AllowlistCutoffID: postgres.FromNullString(row.AllowlistCutoffID), AccountID: row.AccountID,
 			FollowersLost: int(row.FollowersLost), FollowingLost: int(row.FollowingLost), OccurredAt: postgres.UTC(row.OccurredAt),
 		},
-		Domain: postgres.FromNullString(row.TargetDomain), TargetAccountID: postgres.FromNullString(row.TargetAccountID),
+		Domain: row.TargetDomain, TargetAccountID: postgres.FromNullString(row.TargetAccountID),
 	}
 }

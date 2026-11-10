@@ -65,7 +65,7 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 		feds: sqlitefederation.NewRepository(d), mods: sqlitemoderation.NewRepository(d), hooks: sqlitewebhook.NewRepository(d),
 		finance: sqlitefinance.NewRepository(d), payments: sqlitesupporters.NewPaymentRepository(d), supporters: sqlitesupporters.NewSupporterRepository(d),
 		voice: sqlitevoice.NewRepository(d), diagnostics: sqlitediagnostics.NewRepository(d), translations: sqlitetranslation.NewRepository(d), search: sqlitesearch.NewRepository(d),
-		decisions: sqlitehook.NewRepository(d), existingStatuses: sqlitecontent.NewStatusRepository(d),
+		decisions: sqlitehook.NewRepository(d), existingStatuses: sqlitecontent.NewStatusRepository(d), drafts: sqlitecontent.NewStatusRepository(d),
 		retention: retentionRepositories{
 			statuses: sqlitecontent.NewStatusRepository(d), purges: sqlitefederation.NewRepository(d), profiles: sqliteaccount.NewRepository(d), emojis: sqlitecontent.NewCustomEmojiRepository(d),
 			autoDeletes: sqlitecontent.NewStatusRepository(d),

@@ -226,9 +226,11 @@ LIMIT sqlc.arg(lim);
 -- (empty for the first page).
 -- name: ListDomainModerationActions :many
 SELECT a.id, a.domain, a.kind, a.public_comment, a.private_note, a.obfuscate, a.issued_by_user_id,
-  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at
+  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at,
+  sa.subscription_id
 FROM domain_moderation_actions a
 LEFT JOIN domain_moderation_action_lifts l ON l.action_id = a.id
+LEFT JOIN subscription_domain_actions sa ON sa.action_id = a.id
 WHERE (CAST(sqlc.arg(domain) AS TEXT) = '' OR a.domain = sqlc.arg(domain))
   AND (CAST(sqlc.arg(kinds) AS TEXT) = ''
     OR a.kind IN (SELECT value FROM json_each(CAST(sqlc.arg(kinds) AS TEXT))))
@@ -240,9 +242,11 @@ LIMIT sqlc.arg(lim);
 
 -- name: GetDomainModerationActionRecord :one
 SELECT a.id, a.domain, a.kind, a.public_comment, a.private_note, a.obfuscate, a.issued_by_user_id,
-  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at
+  a.expires_at, a.issued_at, l.action_id AS lift_action_id, l.lifted_by_user_id, l.lifted_at,
+  sa.subscription_id
 FROM domain_moderation_actions a
 LEFT JOIN domain_moderation_action_lifts l ON l.action_id = a.id
+LEFT JOIN subscription_domain_actions sa ON sa.action_id = a.id
 WHERE a.id = ?;
 
 -- ListModerationActions returns the actions on accounts with their lifts, newest first: those

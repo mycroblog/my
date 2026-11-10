@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The draft.
+headers:
+  ETag:
+    $ref: ../headers/ETag.yaml
+content:
+  application/json:
+    schema:
+      $ref: ../schemas/Draft.yaml

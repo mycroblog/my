@@ -67,6 +67,8 @@ type repositories struct {
 	translations translation.Repository
 	search       search.Repository
 	decisions    apphook.Repository
+	// drafts holds the drafts and scheduled posts (ADR-0156).
+	drafts content.DraftRepository
 	// existingStatuses tells the retention of the decisions which statuses have a row.
 	existingStatuses apphook.Statuses
 	retention        retentionRepositories

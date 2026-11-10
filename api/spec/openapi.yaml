@@ -73,6 +73,8 @@ tags:
     description: The Web Push subscription of the access token's grant.
   - name: statuses
     description: Posts, their threads and edit history, and boosts, favourites, bookmarks, and pins of them.
+  - name: drafts
+    description: The drafts of posts that the authenticated user saves on the server, publishing them now or at a chosen time.
   - name: timelines
     description: The home, local, hashtag, list, and account timelines.
   - name: lists
@@ -320,6 +322,14 @@ paths:
     $ref: ./paths/bookmarks.yaml
   /statuses:
     $ref: ./paths/statuses.yaml
+  /drafts:
+    $ref: ./paths/drafts.yaml
+  /drafts/{id}:
+    $ref: ./paths/drafts_{id}.yaml
+  /drafts/{id}/schedule:
+    $ref: ./paths/drafts_{id}_schedule.yaml
+  /drafts/{id}/publish:
+    $ref: ./paths/drafts_{id}_publish.yaml
   /statuses/search:
     $ref: ./paths/statuses_search.yaml
   /statuses/{id}:
@@ -356,6 +366,12 @@ paths:
     $ref: ./paths/accounts_{id}_statuses.yaml
   /tags/search:
     $ref: ./paths/tags_search.yaml
+  /tags/{hashtag}:
+    $ref: ./paths/tags_{hashtag}.yaml
+  /tags/{hashtag}/follow:
+    $ref: ./paths/tags_{hashtag}_follow.yaml
+  /followed_tags:
+    $ref: ./paths/followed_tags.yaml
   /timelines/home:
     $ref: ./paths/timelines_home.yaml
   /timelines/local:
@@ -646,10 +662,30 @@ paths:
     $ref: ./paths/admin_domain_actions_import_preview.yaml
   /admin/domain_actions/import:
     $ref: ./paths/admin_domain_actions_import.yaml
+  /admin/domain_list_subscriptions:
+    $ref: ./paths/admin_domain_list_subscriptions.yaml
+  /admin/domain_list_subscriptions/{id}:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}.yaml
+  /admin/domain_list_subscriptions/{id}/fetch:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_fetch.yaml
+  /admin/domain_list_subscriptions/{id}/fetches:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_fetches.yaml
+  /admin/domain_list_subscriptions/{id}/drafts:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_drafts.yaml
+  /admin/domain_list_subscriptions/{id}/drafts/accept:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_drafts_accept.yaml
+  /admin/domain_list_subscriptions/{id}/drafts/reject:
+    $ref: ./paths/admin_domain_list_subscriptions_{id}_drafts_reject.yaml
   /admin/settings:
     $ref: ./paths/admin_settings.yaml
   /admin/settings/login_providers_only/impact:
     $ref: ./paths/admin_settings_login_providers_only_impact.yaml
+  /admin/settings/federation_scope/impact:
+    $ref: ./paths/admin_settings_federation_scope_impact.yaml
+  /admin/domain_allows:
+    $ref: ./paths/admin_domain_allows.yaml
+  /admin/domain_allows/{domain}:
+    $ref: ./paths/admin_domain_allows_{domain}.yaml
   /invites:
     $ref: ./paths/invites.yaml
   /invites/{id}/revoke:
@@ -804,7 +840,7 @@ components:
             "read:custom_emojis": Read the custom emoji the user made and their requests for new ones.
             "read:direct": Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
             "read:finance": Read the totals of the instance's costs and income, as far as the user's roles allow.
-            "read:follows": Read follows, follow requests, lists, and the accounts whose new posts notify the user.
+            "read:follows": Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
             "read:mutes": Read the accounts and domains the user mutes.
             "read:notifications": Read the user's notifications.
             "read:reports": Read the reports the user filed and whether they are resolved.
@@ -816,7 +852,7 @@ components:
             "write:bookmarks": Bookmark posts and remove bookmarks.
             "write:custom_emojis": Request new custom emoji, and change and delete the ones the user made.
             "write:favourites": Favourite posts and react to them with emoji, and take both back.
-            "write:follows": Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts.
+            "write:follows": Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
             "write:media": Upload media, read their state while they process, and change their descriptions.
             "write:mutes": Mute and unmute accounts and domains.
             "write:notifications": Mark notifications read and dismiss them.
@@ -827,6 +863,8 @@ components:
   headers:
     CacheControl:
       $ref: ./components/headers/CacheControl.yaml
+    ETag:
+      $ref: ./components/headers/ETag.yaml
     XRobotsTag:
       $ref: ./components/headers/XRobotsTag.yaml
   parameters:
@@ -854,6 +892,10 @@ components:
       $ref: ./components/parameters/CustomEmojiId.yaml
     CustomEmojiRequestId:
       $ref: ./components/parameters/CustomEmojiRequestId.yaml
+    DomainListSubscriptionId:
+      $ref: ./components/parameters/DomainListSubscriptionId.yaml
+    DraftId:
+      $ref: ./components/parameters/DraftId.yaml
     ErrorGroupId:
       $ref: ./components/parameters/ErrorGroupId.yaml
     DomainActionId:
@@ -862,6 +904,8 @@ components:
       $ref: ./components/parameters/HookDecisionId.yaml
     IdempotencyKey:
       $ref: ./components/parameters/IdempotencyKey.yaml
+    IfMatch:
+      $ref: ./components/parameters/IfMatch.yaml
     InstanceDocumentKind:
       $ref: ./components/parameters/InstanceDocumentKind.yaml
     InstanceDomain:
@@ -884,6 +928,8 @@ components:
       $ref: ./components/parameters/ListAccountId.yaml
     ListId:
       $ref: ./components/parameters/ListId.yaml
+    HashtagName:
+      $ref: ./components/parameters/HashtagName.yaml
     OAuthAppId:
       $ref: ./components/parameters/OAuthAppId.yaml
     RegistrationId:
@@ -913,6 +959,10 @@ components:
     WebhookId:
       $ref: ./components/parameters/WebhookId.yaml
   responses:
+    AdminDomainListDraftResult:
+      $ref: ./components/responses/AdminDomainListDraftResult.yaml
+    AdminDomainListSubscription:
+      $ref: ./components/responses/AdminDomainListSubscription.yaml
     AdminHookAppeal:
       $ref: ./components/responses/AdminHookAppeal.yaml
     AccountAliasList:
@@ -937,6 +987,8 @@ components:
       $ref: ./components/responses/AdminLoginProvider.yaml
     BrandProblem:
       $ref: ./components/responses/BrandProblem.yaml
+    Draft:
+      $ref: ./components/responses/Draft.yaml
     ErrorGroup:
       $ref: ./components/responses/ErrorGroup.yaml
     AdminDomainAction:
@@ -1017,6 +1069,10 @@ components:
       $ref: ./components/responses/List.yaml
     ListCollection:
       $ref: ./components/responses/ListCollection.yaml
+    Hashtag:
+      $ref: ./components/responses/Hashtag.yaml
+    FollowedHashtagCollection:
+      $ref: ./components/responses/FollowedHashtagCollection.yaml
   schemas:
     AdminBrandImage:
       $ref: ./components/schemas/AdminBrandImage.yaml
@@ -1034,6 +1090,56 @@ components:
       $ref: ./components/schemas/AccountList.yaml
     AccountSuggestionList:
       $ref: ./components/schemas/AccountSuggestionList.yaml
+    AdminDomainListChange:
+      $ref: ./components/schemas/AdminDomainListChange.yaml
+    AdminDomainListDraft:
+      $ref: ./components/schemas/AdminDomainListDraft.yaml
+    AdminDomainListDraftList:
+      $ref: ./components/schemas/AdminDomainListDraftList.yaml
+    AdminDomainListDraftResult:
+      $ref: ./components/schemas/AdminDomainListDraftResult.yaml
+    AdminDomainListFetch:
+      $ref: ./components/schemas/AdminDomainListFetch.yaml
+    AdminDomainListFetchError:
+      $ref: ./components/schemas/AdminDomainListFetchError.yaml
+    AdminDomainListFetchOutcome:
+      $ref: ./components/schemas/AdminDomainListFetchOutcome.yaml
+    AdminDomainListFetchPage:
+      $ref: ./components/schemas/AdminDomainListFetchPage.yaml
+    AdminDomainListFormat:
+      $ref: ./components/schemas/AdminDomainListFormat.yaml
+    AdminDomainListHold:
+      $ref: ./components/schemas/AdminDomainListHold.yaml
+    AdminDomainListMode:
+      $ref: ./components/schemas/AdminDomainListMode.yaml
+    AdminDomainListSilenceAs:
+      $ref: ./components/schemas/AdminDomainListSilenceAs.yaml
+    AdminDomainListSubscription:
+      $ref: ./components/schemas/AdminDomainListSubscription.yaml
+    AdminDomainListSubscriptionPage:
+      $ref: ./components/schemas/AdminDomainListSubscriptionPage.yaml
+    AdminDomainListSuspendAs:
+      $ref: ./components/schemas/AdminDomainListSuspendAs.yaml
+    CreateDomainListSubscriptionRequest:
+      $ref: ./components/schemas/CreateDomainListSubscriptionRequest.yaml
+    DomainListDraftsRequest:
+      $ref: ./components/schemas/DomainListDraftsRequest.yaml
+    Draft:
+      $ref: ./components/schemas/Draft.yaml
+    DraftFailureReason:
+      $ref: ./components/schemas/DraftFailureReason.yaml
+    DraftPage:
+      $ref: ./components/schemas/DraftPage.yaml
+    DraftPoll:
+      $ref: ./components/schemas/DraftPoll.yaml
+    DraftRequest:
+      $ref: ./components/schemas/DraftRequest.yaml
+    DraftScheduleOutcome:
+      $ref: ./components/schemas/DraftScheduleOutcome.yaml
+    DraftScheduleRequest:
+      $ref: ./components/schemas/DraftScheduleRequest.yaml
+    NotificationScheduledStatusFailure:
+      $ref: ./components/schemas/NotificationScheduledStatusFailure.yaml
     RelationshipList:
       $ref: ./components/schemas/RelationshipList.yaml
     TagSuggestionList:
@@ -1234,6 +1340,10 @@ components:
       $ref: ./components/schemas/AdminPasswordResetLink.yaml
     LoginProvidersOnlyImpact:
       $ref: ./components/schemas/LoginProvidersOnlyImpact.yaml
+    FederationScopeImpact:
+      $ref: ./components/schemas/FederationScopeImpact.yaml
+    FederationScopeImpactDomain:
+      $ref: ./components/schemas/FederationScopeImpactDomain.yaml
     AdminQueue:
       $ref: ./components/schemas/AdminQueue.yaml
     AdminRegistration:
@@ -1480,6 +1590,8 @@ components:
       $ref: ./components/schemas/CreateCustomEmojiRequest.yaml
     CreateDomainActionRequest:
       $ref: ./components/schemas/CreateDomainActionRequest.yaml
+    CreateDomainAllowRequest:
+      $ref: ./components/schemas/CreateDomainAllowRequest.yaml
     CreateInviteRequest:
       $ref: ./components/schemas/CreateInviteRequest.yaml
     CreateOwnInviteRequest:
@@ -1562,6 +1674,10 @@ components:
       $ref: ./components/schemas/DomainBlockImportPreview.yaml
     DomainBlockImportResult:
       $ref: ./components/schemas/DomainBlockImportResult.yaml
+    DomainAllow:
+      $ref: ./components/schemas/DomainAllow.yaml
+    DomainAllowList:
+      $ref: ./components/schemas/DomainAllowList.yaml
     DomainBlockImportRow:
       $ref: ./components/schemas/DomainBlockImportRow.yaml
     DomainBlockImportSkipped:
@@ -1664,6 +1780,8 @@ components:
       $ref: ./components/schemas/InstanceExternalReviewScope.yaml
     InstanceClosure:
       $ref: ./components/schemas/InstanceClosure.yaml
+    InstanceDraftLimits:
+      $ref: ./components/schemas/InstanceDraftLimits.yaml
     InstanceLimits:
       $ref: ./components/schemas/InstanceLimits.yaml
     InstanceRegistrations:
@@ -1712,6 +1830,12 @@ components:
       $ref: ./components/schemas/List.yaml
     ListCollection:
       $ref: ./components/schemas/ListCollection.yaml
+    Hashtag:
+      $ref: ./components/schemas/Hashtag.yaml
+    FollowedHashtag:
+      $ref: ./components/schemas/FollowedHashtag.yaml
+    FollowedHashtagCollection:
+      $ref: ./components/schemas/FollowedHashtagCollection.yaml
     ListRequest:
       $ref: ./components/schemas/ListRequest.yaml
     MediaAnimatedVariants:
@@ -2038,6 +2162,8 @@ components:
       $ref: ./components/schemas/UpdateCredentialsRequest.yaml
     UpdateCustomEmojiRequest:
       $ref: ./components/schemas/UpdateCustomEmojiRequest.yaml
+    UpdateDomainListSubscriptionRequest:
+      $ref: ./components/schemas/UpdateDomainListSubscriptionRequest.yaml
     UpdateInstanceSettingsRequest:
       $ref: ./components/schemas/UpdateInstanceSettingsRequest.yaml
     UpdateLoginProviderRequest:

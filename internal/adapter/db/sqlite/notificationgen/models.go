@@ -42,6 +42,7 @@ type Notification struct {
 	AnnouncementID          sql.NullString
 	HookAppealID            sql.NullString
 	AutoDeleteLimitNoticeID sql.NullString
+	DraftScheduleID         sql.NullString
 	DedupeKey               string
 	CreatedAt               int64
 }

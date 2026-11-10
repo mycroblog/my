@@ -36,6 +36,9 @@ type Deps struct {
 	// none).
 	Conversations ConversationResolver
 	Stream        stream.Publisher
+	// Tags finds and stores the hashtags that accounts follow (ADR-0013 §27); the followed
+	// hashtags need it.
+	Tags Tags
 }
 
 // Service reads the home, local, hashtag, and profile timelines (FR-201 to FR-204, FR-208) from
@@ -81,8 +84,10 @@ type Page struct {
 // Home returns the home timeline of a logged-in viewer (FR-201): the viewer's own posts and
 // boosts and those of the accounts the viewer follows, except the boosts of follows that hide
 // them, the direct posts not addressed to the viewer, and the entries of accounts the viewer
-// blocks, is blocked by, or mutes. The query first reads only the entries within
-// timeline.HomeWindow before the cursor and widens the window when that does not fill the page.
+// blocks, is blocked by, or mutes; and the public and local posts of the hashtags the viewer
+// follows (ADR-0013 §24, §25), which CanView judges as on the hashtag timeline and which carry
+// the names of those tags. The query first reads only the entries within timeline.HomeWindow
+// before the cursor and widens the window of both when that does not fill the page.
 func (s *Service) Home(ctx context.Context, viewer appcontent.Viewer, q Query) (Page, error) {
 	if viewer.Kind != appcontent.ViewerLocal || viewer.AccountID == "" {
 		return Page{}, ErrLoginRequired
@@ -100,7 +105,7 @@ func (s *Service) Home(ctx context.Context, viewer appcontent.Viewer, q Query) (
 			hq.Floor = kernel.UUIDv7Floor(base.Add(-windows[i]))
 		}
 		var err error
-		if rows, err = s.d.Repository.ListHome(ctx, hq); err != nil {
+		if rows, err = s.homeRows(ctx, hq); err != nil {
 			return Page{}, err
 		}
 		if len(rows) >= w.Limit || hq.Floor == "" {
@@ -206,7 +211,9 @@ func (s *Service) window(viewer appcontent.Viewer, q Query) Window {
 
 func loggedIn(v appcontent.Viewer) bool { return v.Kind == appcontent.ViewerLocal && v.AccountID != "" }
 
-// page cuts rows to the page and keeps the entries that CanView lets the viewer see in vctx.
+// page cuts rows to the page and keeps the entries that CanView lets the viewer see in vctx; an
+// entry of the hashtag branch of home (FollowedTagIDs) is judged as on the hashtag timeline,
+// since the viewer need not follow its author, and gets the names of its tags.
 func (s *Service) page(ctx context.Context, vctx appcontent.ViewContext, viewer appcontent.Viewer, w Window, rows []Entry) (Page, error) {
 	var p Page
 	if len(rows) >= w.Limit {
@@ -221,9 +228,16 @@ func (s *Service) page(ctx context.Context, vctx appcontent.ViewContext, viewer 
 		return Page{}, err
 	}
 	for _, e := range rows {
-		if facts.canView(vctx, viewer, e) {
+		ectx := vctx
+		if vctx == appcontent.ContextHome && len(e.FollowedTagIDs) > 0 {
+			ectx = appcontent.ContextHashtag
+		}
+		if facts.canView(ectx, viewer, e) {
 			p.Entries = append(p.Entries, e)
 		}
+	}
+	if err := s.tagNames(ctx, p.Entries); err != nil {
+		return Page{}, err
 	}
 	return p, nil
 }

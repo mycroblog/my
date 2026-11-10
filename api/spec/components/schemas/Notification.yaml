@@ -83,3 +83,8 @@ properties:
   auto_delete_limit:
     description: What an `auto_delete_limit` tells of; omitted for the other types.
     $ref: ./NotificationAutoDeleteLimit.yaml
+  scheduled_status_failure:
+    description: |
+      The scheduled post that a `scheduled_status_failed` tells of, while its draft exists;
+      omitted otherwise and for the other types.
+    $ref: ./NotificationScheduledStatusFailure.yaml

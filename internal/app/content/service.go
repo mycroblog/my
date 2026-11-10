@@ -224,6 +224,8 @@ type TextInput struct {
 	// Media are the media files to attach, in order (FR-105): at most MaxAttachments, each
 	// an upload of the author that finished processing.
 	Media []MediaInput
+	// allowProcessing lets Check pass an attachment whose processing has not finished.
+	allowProcessing bool
 }
 
 // MediaInput is a media file to attach.
@@ -274,6 +276,12 @@ type CreateInput struct {
 // a reject in force fails with a *RejectedByReviewError and writes nothing. On a one-person server
 // a local post fails with ErrLocalVisibilityUnavailable (ADR-0152 §5).
 func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
+	return s.create(ctx, in, nil)
+}
+
+// create is Create, running before inside the transaction that writes the status, before it:
+// an error from before writes nothing.
+func (s *Service) create(ctx context.Context, in CreateInput, before func(ctx context.Context, tx uow.Tx) error) (Post, error) {
 	if err := s.checkNewVisibility(ctx, in.Visibility); err != nil {
 		return Post{}, err
 	}
@@ -306,6 +314,11 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (Post, error) {
 	}
 	var post Post
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		if before != nil {
+			if err := before(ctx, tx); err != nil {
+				return err
+			}
+		}
 		var err error
 		if post, err = s.CreateTx(ctx, tx, p); err != nil {
 			return err
@@ -352,6 +365,23 @@ func (s *Service) singleUser(ctx context.Context) (bool, error) {
 		return false, fmt.Errorf("content: instance single_user: %w", err)
 	}
 	return on, nil
+}
+
+// Check runs the checks of Create on in without writing anything or asking the decision hook
+// local.status: the checks that scheduling a draft makes (ADR-0156 §2). An attachment still being
+// processed passes, since it may be ready by the time the draft is published.
+func (s *Service) Check(ctx context.Context, in CreateInput) error {
+	if err := s.checkNewVisibility(ctx, in.Visibility); err != nil {
+		return err
+	}
+	in.IdempotencyKey = ""
+	author, err := s.localActive(ctx, in.AuthorAccountID)
+	if err != nil {
+		return err
+	}
+	in.allowProcessing = true
+	_, err = s.prepareCreate(ctx, author, in)
+	return err
 }
 
 // PreparedCreate is a new local status that PrepareCreate checked and built and CreateTx writes.
@@ -874,7 +904,7 @@ func (s *Service) prepareText(ctx context.Context, author appaccount.Actor, in T
 	if err != nil {
 		return preparedText{}, err
 	}
-	attachments, err := s.attachments(ctx, author.Account.ID, in.Media)
+	attachments, err := s.attachments(ctx, author.Account.ID, in.Media, in.allowProcessing)
 	if err != nil {
 		return preparedText{}, err
 	}
@@ -941,7 +971,7 @@ func (s *Service) RenderProfileText(ctx context.Context, text string) (string, e
 // attachments checks the media files that authorID attaches (FR-105): at most MaxAttachments
 // distinct files, each an upload of authorID whose newest processing result is ready, with a
 // valid alt text, which must not be blank while the instance requires alt text.
-func (s *Service) attachments(ctx context.Context, authorID string, in []MediaInput) ([]content.Attachment, error) {
+func (s *Service) attachments(ctx context.Context, authorID string, in []MediaInput, allowProcessing bool) ([]content.Attachment, error) {
 	if len(in) == 0 {
 		return nil, nil
 	}
@@ -967,7 +997,7 @@ func (s *Service) attachments(ctx context.Context, authorID string, in []MediaIn
 		if requireDescription && strings.TrimSpace(d) == "" {
 			return nil, fmt.Errorf("media %s: %w", m.MediaID, ErrMissingMediaDescription)
 		}
-		if err := s.checkMedia(ctx, authorID, m.MediaID); err != nil {
+		if err := s.checkMedia(ctx, authorID, m.MediaID, allowProcessing); err != nil {
 			return nil, err
 		}
 		out = append(out, content.Attachment{Position: i, MediaID: m.MediaID, Description: d})
@@ -975,8 +1005,9 @@ func (s *Service) attachments(ctx context.Context, authorID string, in []MediaIn
 	return out, nil
 }
 
-// checkMedia fails unless mediaID is an upload of authorID that was processed successfully.
-func (s *Service) checkMedia(ctx context.Context, authorID, mediaID string) error {
+// checkMedia fails unless mediaID is an upload of authorID that was processed successfully, or,
+// with allowProcessing, one whose processing has not finished.
+func (s *Service) checkMedia(ctx context.Context, authorID, mediaID string, allowProcessing bool) error {
 	notFound := fmt.Errorf("media %s: %w", mediaID, ErrMediaNotFound)
 	if s.d.Media == nil {
 		return notFound
@@ -993,6 +1024,9 @@ func (s *Service) checkMedia(ctx context.Context, authorID, mediaID string) erro
 	}
 	result, err := s.d.Media.FindLatestProcessingResult(ctx, mediaID)
 	if errors.Is(err, ErrNotFound) {
+		if allowProcessing {
+			return nil
+		}
 		return fmt.Errorf("media %s: %w", mediaID, ErrMediaNotReady)
 	}
 	if err != nil {

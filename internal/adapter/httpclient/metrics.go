@@ -49,6 +49,8 @@ func purposeLabel(p kernel.HTTPPurpose) string {
 		return "login_provider"
 	case kernel.HTTPPurposeRobots:
 		return "robots"
+	case kernel.HTTPPurposeDomainList:
+		return "domain_list"
 	}
 	return "_OTHER"
 }

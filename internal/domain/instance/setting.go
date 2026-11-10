@@ -101,6 +101,9 @@ const (
 	SettingIncomeVisibility SettingKey = "income_visibility"
 	// SettingFederationMode is the direction the instance federates in (FR-413, ADR-0006).
 	SettingFederationMode SettingKey = "federation_mode"
+	// SettingFederationScope is which domains the instance federates with: every domain that no
+	// action suspends, or only the allowed ones (ADR-0159 §2).
+	SettingFederationScope SettingKey = "federation_scope"
 	// SettingUserAppRegistration is whether users may register OAuth apps (ADR-0090 §1).
 	SettingUserAppRegistration SettingKey = "user_app_registration"
 	// SettingOAuthMetadataDocumentClients is whether OAuth clients may use the https URL of a
@@ -251,6 +254,16 @@ const (
 	FederationInbound  FederationMode = "inbound"  // follows and reads remote accounts, sends nothing out
 	FederationOutbound FederationMode = "outbound" // delivers to remote followers, takes nothing in
 	FederationBoth     FederationMode = "both"     // federates in both directions
+)
+
+// FederationScope is the value of SettingFederationScope (ADR-0159 §2). Its values are those of
+// moderation.FederationScope, which the instance module does not import.
+type FederationScope string
+
+// Values of FederationScope.
+const (
+	FederationScopeOpen      FederationScope = "open"      // every domain that no action suspends
+	FederationScopeAllowlist FederationScope = "allowlist" // only the allowed domains and their subdomains
 )
 
 // RemoteMediaPolicy is the value of SettingRemoteMediaPolicy (FR-409, ADR-0005): which remote
@@ -677,6 +690,11 @@ var definitions = []Definition{
 		Doc:     "The direction the instance federates in: off (neither), inbound (follows and reads remote accounts but sends none of the local posts, profiles, and reactions out), outbound (takes remote followers and delivers the local posts to them but takes none of the remote posts and reactions in), or both; narrowing it keeps the follows, the posts taken in, and the delivery records (FR-413, ADR-0006).",
 	},
 	{
+		Key: SettingFederationScope, Kind: KindEnum, Default: string(FederationScopeOpen),
+		Choices: []string{string(FederationScopeOpen), string(FederationScopeAllowlist)},
+		Doc:     "Which servers the instance federates with: open (every server that no domain action suspends) or allowlist (only the allowed domains and their subdomains, whose domain actions still apply; every other server is treated as suspended, and ActivityPub GETs need a signature from an allowed server whatever authorized_fetch says). Switching to allowlist, and removing an allow while it is on, ends the follows with the servers it cuts off, which switching back does not restore (ADR-0159 §2, §3).",
+	},
+	{
 		Key: SettingUserAppRegistration, Kind: KindBool, Default: "true",
 		Doc: "Whether signed-in users may register their own OAuth apps, public or confidential, through the client API; apps registered earlier keep working when it is off (ADR-0090 §1).",
 	},
@@ -852,6 +870,26 @@ var definitions = []Definition{
 	{
 		Key: SettingSingleUser, Kind: KindBool, Default: "false",
 		Doc: "Whether the server is a one-person server: registration stays closed, the local and federated timelines, invites, the review of registrations, the sign-up blocks, and the suggestions of accounts are off, and new posts cannot be local. It can be turned on only while exactly one local account exists (FR-811, ADR-0152).",
+	},
+	{
+		Key: SettingMaxDrafts, Kind: KindInt, Default: "100", Min: 1, Max: MaxDraftLimit,
+		Doc: "How many drafts without a schedule a local account may keep on the server; lowering it deletes none (ADR-0156 §7).",
+	},
+	{
+		Key: SettingMaxScheduledPosts, Kind: KindInt, Default: "300", Min: 1, Max: MaxDraftLimit,
+		Doc: "How many scheduled posts a local account may have waiting; lowering it cancels none (ADR-0156 §7).",
+	},
+	{
+		Key: SettingMaxScheduledPostsPerDay, Kind: KindInt, Default: "25", Min: 1, Max: MaxDraftLimit,
+		Doc: "How many scheduled posts of a local account may wait for one UTC day (ADR-0156 §7).",
+	},
+	{
+		Key: SettingScheduledPostMinLeadMinutes, Kind: KindInt, Default: "5", Min: 1, Max: 1440,
+		Doc: "How many minutes ahead, at least, a post may be scheduled (ADR-0156 §7).",
+	},
+	{
+		Key: SettingScheduledPostMaxLeadDays, Kind: KindInt, Default: "366", Min: 1, Max: 3660,
+		Doc: "How many days ahead, at most, a post may be scheduled (ADR-0156 §7).",
 	},
 }
 
@@ -1243,6 +1281,18 @@ func (s Settings) RemoteMediaCacheTTL() time.Duration {
 
 // AuthorizedFetch returns the value of SettingAuthorizedFetch.
 func (s Settings) AuthorizedFetch() bool { return s.boolValue(SettingAuthorizedFetch) }
+
+// FederationScope returns the value of SettingFederationScope.
+func (s Settings) FederationScope() FederationScope {
+	v, _ := s.Value(SettingFederationScope)
+	return FederationScope(v)
+}
+
+// EffectiveAuthorizedFetch reports whether the ActivityPub GETs need a verified signature: the
+// setting authorized_fetch, or the allowlist, which requires it (ADR-0159 §2).
+func (s Settings) EffectiveAuthorizedFetch() bool {
+	return s.AuthorizedFetch() || s.FederationScope() == FederationScopeAllowlist
+}
 
 // FederationMode returns the value of SettingFederationMode.
 func (s Settings) FederationMode() FederationMode {

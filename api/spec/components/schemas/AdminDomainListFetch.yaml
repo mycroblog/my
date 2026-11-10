@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: MIT
+description: One fetch of a subscribed domain block list.
+type: object
+required: [id, outcome, entry_count, fetched_at]
+properties:
+  id:
+    $ref: ./Id.yaml
+  outcome:
+    $ref: ./AdminDomainListFetchOutcome.yaml
+  http_status:
+    description: The status code of the answer; omitted when no answer came.
+    type: integer
+  error_code:
+    $ref: ./AdminDomainListFetchError.yaml
+  entry_count:
+    description: The domains the subscription holds after the fetch.
+    type: integer
+  fetched_at:
+    type: string
+    format: date-time

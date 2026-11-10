@@ -78,3 +78,10 @@ DELETE FROM list_names WHERE list_names.list_id IN (
 DELETE FROM lists WHERE lists.owner_account_id = sqlc.arg(account_id) AND lists.id IN (
   SELECT l.id FROM lists l WHERE l.owner_account_id = sqlc.arg(account_id)
   ORDER BY l.id LIMIT sqlc.arg(lim));
+
+-- The hashtags that an account follows (data-model 4.6).
+
+-- name: EraseFeedTagFollowsOf :execrows
+DELETE FROM feed_tag_follows WHERE feed_tag_follows.account_id = sqlc.arg(account_id) AND feed_tag_follows.tag_id IN (
+  SELECT f.tag_id FROM feed_tag_follows f WHERE f.account_id = sqlc.arg(account_id)
+  ORDER BY f.tag_id LIMIT sqlc.arg(lim));

@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: The allowed domains, by domain.
+type: object
+required: [items]
+properties:
+  items:
+    type: array
+    items:
+      $ref: ./DomainAllow.yaml

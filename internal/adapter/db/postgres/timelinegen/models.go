@@ -81,6 +81,12 @@ type FeedTagEntry struct {
 	RevisedAt       time.Time
 }
 
+type FeedTagFollow struct {
+	AccountID  string
+	TagID      string
+	FollowedAt time.Time
+}
+
 type ListMember struct {
 	ListID          string
 	MemberAccountID string

@@ -8,13 +8,16 @@ description: |
   `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
   `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
   `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-  `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
+  `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`,
+  `admin_domain_list_failing`). The instance's
   notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
   `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
   `hook_appeal_decided`),
   `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
   turns off in the app (on by default) and which has no `email` channel, and
-  `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
+  `auto_delete_limit`, whose app and email channels the user chooses, both on by default, and
+  `scheduled_status_failed`, which the user turns off in the app (on by default) and which has
+  no `email` channel.
 type: string
 enum:
   - mention
@@ -36,6 +39,7 @@ enum:
   - admin_webhook_disabled
   - admin_hook_failing
   - admin_hook_appeal
+  - admin_domain_list_failing
   - admin_custom_emoji_request
   - admin_account_moved
   - admin_service_closure_due
@@ -45,3 +49,4 @@ enum:
   - supporter
   - announcement
   - auto_delete_limit
+  - scheduled_status_failed

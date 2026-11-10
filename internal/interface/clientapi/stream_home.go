@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/mycroblog/my/internal/app/stream"
+	apptimeline "github.com/mycroblog/my/internal/app/timeline"
 )
 
 // homeGateEntries is how many home entries a homeGate remembers its decision on: the streams of
@@ -16,8 +17,10 @@ const homeGateEntries = 256
 // homeAudienceBatch is a HomeEntries that tells, for an entry, which of many accounts may list it,
 // as *apptimeline.Service does.
 type homeAudienceBatch interface {
-	HomeAudience(ctx context.Context, authorID string, accountIDs []string) (map[string]bool, error)
+	HomeAudience(ctx context.Context, entryID, authorID string, accountIDs []string) (map[string]bool, error)
 }
+
+var _ homeAudienceBatch = (*apptimeline.Service)(nil)
 
 // homeGate decides, once per home entry and process, which of the accounts with an open user
 // stream may have the entry in their home timelines (HomeAudience): one query for every stream
@@ -82,7 +85,7 @@ func (g *homeGate) mayList(ctx context.Context, batch homeAudienceBatch, e strea
 			g.order = g.order[1:]
 		}
 		g.mu.Unlock()
-		d.audience, d.err = batch.HomeAudience(ctx, e.AuthorAccountID, ids)
+		d.audience, d.err = batch.HomeAudience(ctx, e.EntryID, e.AuthorAccountID, ids)
 		close(d.done)
 	} else {
 		g.mu.Unlock()

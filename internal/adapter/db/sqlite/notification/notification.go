@@ -67,7 +67,7 @@ func (r *Repository) InsertNotification(ctx context.Context, tx uow.Tx, n notifi
 		ServiceClosureEventID: sqlite.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: sqlite.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: sqlite.ToNullString(n.VoiceRoomID),
 		ErrorGroupChange: sqlite.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: sqlite.ToNullString(n.ErrorGroupID), ErrorGroupHour: sqlite.ToNullTime(n.ErrorGroupHour),
 		AnnouncementID: sqlite.ToNullString(n.AnnouncementID), HookAppealID: sqlite.ToNullString(n.HookAppealID),
-		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DedupeKey: n.DedupeKey, CreatedAt: sqlite.ToMillis(n.CreatedAt),
+		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DraftScheduleID: sqlite.ToNullString(n.DraftScheduleID), DedupeKey: n.DedupeKey, CreatedAt: sqlite.ToMillis(n.CreatedAt),
 	})
 	if err != nil {
 		return false, sqlite.Wrap(err, "insert notification")
@@ -293,7 +293,7 @@ func notificationFrom(row notificationgen.Notification) notification.Notificatio
 		ServiceClosureEventID: row.ServiceClosureEventID.String, ServiceClosureChange: notification.ClosureChange(row.ServiceClosureChange.String), VoiceRoomID: row.VoiceRoomID.String,
 		ErrorGroupChange: notification.ErrorGroupChange(row.ErrorGroupChange.String), ErrorGroupID: row.ErrorGroupID.String, ErrorGroupHour: sqlite.FromNullTime(row.ErrorGroupHour),
 		AnnouncementID: row.AnnouncementID.String, HookAppealID: row.HookAppealID.String,
-		AutoDeleteLimitNoticeID: row.AutoDeleteLimitNoticeID.String, DedupeKey: row.DedupeKey, CreatedAt: sqlite.FromMillis(row.CreatedAt),
+		AutoDeleteLimitNoticeID: row.AutoDeleteLimitNoticeID.String, DraftScheduleID: row.DraftScheduleID.String, DedupeKey: row.DedupeKey, CreatedAt: sqlite.FromMillis(row.CreatedAt),
 	}
 }
 
@@ -400,7 +400,7 @@ func (r *Repository) InsertNotificationsFor(ctx context.Context, tx uow.Tx, n no
 		ServiceClosureEventID: sqlite.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: sqlite.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: sqlite.ToNullString(n.VoiceRoomID),
 		ErrorGroupChange: sqlite.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: sqlite.ToNullString(n.ErrorGroupID), ErrorGroupHour: sqlite.ToNullTime(n.ErrorGroupHour),
 		AnnouncementID: sqlite.ToNullString(n.AnnouncementID), HookAppealID: sqlite.ToNullString(n.HookAppealID),
-		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DedupeKey: n.DedupeKey, CreatedAt: sqlite.ToMillis(n.CreatedAt),
+		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DraftScheduleID: sqlite.ToNullString(n.DraftScheduleID), DedupeKey: n.DedupeKey, CreatedAt: sqlite.ToMillis(n.CreatedAt),
 		Recipients: string(list),
 	}
 	inserted, err := q.InsertNotificationsFor(ctx, arg)
@@ -453,8 +453,8 @@ func (r *Repository) InsertNotificationsForEach(ctx context.Context, tx uow.Tx, 
 		ServiceClosureEventID: sqlite.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: sqlite.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: sqlite.ToNullString(n.VoiceRoomID),
 		ErrorGroupChange: sqlite.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: sqlite.ToNullString(n.ErrorGroupID), ErrorGroupHour: sqlite.ToNullTime(n.ErrorGroupHour),
 		AnnouncementID: sqlite.ToNullString(n.AnnouncementID), HookAppealID: sqlite.ToNullString(n.HookAppealID),
-		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID),
-		Recipients:              string(list),
+		AutoDeleteLimitNoticeID: sqlite.ToNullString(n.AutoDeleteLimitNoticeID), DraftScheduleID: sqlite.ToNullString(n.DraftScheduleID),
+		Recipients: string(list),
 	}
 	inserted, err := q.InsertNotificationsForEach(ctx, arg)
 	if err != nil {

@@ -86,6 +86,52 @@ type CustomEmojiSetting struct {
 	Category        sql.NullString
 }
 
+type Draft struct {
+	ID        string
+	AccountID string
+	CreatedAt int64
+}
+
+type DraftAttachment struct {
+	DraftID     string
+	Position    int64
+	MediaID     string
+	Description sql.NullString
+}
+
+type DraftContent struct {
+	DraftID           string
+	SourceText        string
+	SpoilerText       string
+	Sensitive         int64
+	Language          sql.NullString
+	Visibility        string
+	InReplyToStatusID sql.NullString
+	QuotedStatusID    sql.NullString
+	UpdatedAt         int64
+}
+
+type DraftInteractionPolicy struct {
+	DraftID  string
+	Kind     string
+	Approval string
+	Audience string
+}
+
+type DraftPoll struct {
+	DraftID         string
+	Multiple        int64
+	HideTotals      int64
+	DurationSeconds int64
+}
+
+type DraftSchedule struct {
+	ID        string
+	DraftID   string
+	PublishAt int64
+	CreatedAt int64
+}
+
 type Favourite struct {
 	AccountID string
 	StatusID  string
@@ -284,6 +330,13 @@ type RemoteStatusRevision struct {
 	ActivityUri            sql.NullString
 	HtmlPolicyVersion      int64
 	OmittedAttachmentCount int64
+}
+
+type ScheduledDraft struct {
+	DraftID    string
+	ScheduleID string
+	AccountID  string
+	PublishAt  int64
 }
 
 type Status struct {

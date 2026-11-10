@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The poll of a draft. A draft keeps a poll still being written (fewer than two options, or
+  blank ones); publishing it checks the limits of `PollInput`. It ends `expires_in` seconds after
+  the draft is published.
+type: object
+required: [options, expires_in]
+properties:
+  options:
+    description: The options, in order, as plain text.
+    type: array
+    maxItems: 4
+    items:
+      type: string
+      maxLength: 50
+  expires_in:
+    description: How long the poll takes votes, in seconds (5 minutes to 30 days).
+    type: integer
+    minimum: 300
+    maximum: 2592000
+  multiple:
+    description: Whether a vote may choose several options.
+    type: boolean
+  hide_totals:
+    description: Whether the votes of each option are hidden until the poll ends.
+    type: boolean

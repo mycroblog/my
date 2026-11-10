@@ -13,3 +13,5 @@ properties:
       setting `require_media_description`). While it is on, a post or an edit with
       a media file without one is a 422, so clients ask for it before sending.
     type: boolean
+  drafts:
+    $ref: ./InstanceDraftLimits.yaml

@@ -42,6 +42,7 @@ type Notification struct {
 	AnnouncementID          *string
 	HookAppealID            *string
 	AutoDeleteLimitNoticeID *string
+	DraftScheduleID         *string
 	DedupeKey               string
 	CreatedAt               time.Time
 }

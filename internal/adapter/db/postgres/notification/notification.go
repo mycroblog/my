@@ -65,7 +65,7 @@ func (r *Repository) InsertNotification(ctx context.Context, tx uow.Tx, n notifi
 		ServiceClosureEventID: postgres.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: postgres.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: postgres.ToNullString(n.VoiceRoomID),
 		ErrorGroupChange: postgres.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: postgres.ToNullString(n.ErrorGroupID), ErrorGroupHour: postgres.ToNullTime(n.ErrorGroupHour),
 		AnnouncementID: postgres.ToNullString(n.AnnouncementID), HookAppealID: postgres.ToNullString(n.HookAppealID),
-		AutoDeleteLimitNoticeID: postgres.ToNullString(n.AutoDeleteLimitNoticeID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
+		AutoDeleteLimitNoticeID: postgres.ToNullString(n.AutoDeleteLimitNoticeID), DraftScheduleID: postgres.ToNullString(n.DraftScheduleID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
 	})
 	if err != nil {
 		return false, postgres.Wrap(err, "insert notification")
@@ -339,7 +339,7 @@ func notificationFrom(row notificationgen.Notification) notification.Notificatio
 		ServiceClosureEventID: postgres.FromNullString(row.ServiceClosureEventID), ServiceClosureChange: notification.ClosureChange(postgres.FromNullString(row.ServiceClosureChange)), VoiceRoomID: postgres.FromNullString(row.VoiceRoomID),
 		ErrorGroupChange: notification.ErrorGroupChange(postgres.FromNullString(row.ErrorGroupChange)), ErrorGroupID: postgres.FromNullString(row.ErrorGroupID), ErrorGroupHour: postgres.FromNullTime(row.ErrorGroupHour),
 		AnnouncementID: postgres.FromNullString(row.AnnouncementID), HookAppealID: postgres.FromNullString(row.HookAppealID),
-		AutoDeleteLimitNoticeID: postgres.FromNullString(row.AutoDeleteLimitNoticeID), DedupeKey: row.DedupeKey, CreatedAt: postgres.UTC(row.CreatedAt),
+		AutoDeleteLimitNoticeID: postgres.FromNullString(row.AutoDeleteLimitNoticeID), DraftScheduleID: postgres.FromNullString(row.DraftScheduleID), DedupeKey: row.DedupeKey, CreatedAt: postgres.UTC(row.CreatedAt),
 	}
 }
 
@@ -384,7 +384,7 @@ func (r *Repository) InsertNotificationsFor(ctx context.Context, tx uow.Tx, n no
 		ServiceClosureEventID: postgres.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: postgres.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: postgres.ToNullString(n.VoiceRoomID),
 		ErrorGroupChange: postgres.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: postgres.ToNullString(n.ErrorGroupID), ErrorGroupHour: postgres.ToNullTime(n.ErrorGroupHour),
 		AnnouncementID: postgres.ToNullString(n.AnnouncementID), HookAppealID: postgres.ToNullString(n.HookAppealID),
-		AutoDeleteLimitNoticeID: postgres.ToNullString(n.AutoDeleteLimitNoticeID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
+		AutoDeleteLimitNoticeID: postgres.ToNullString(n.AutoDeleteLimitNoticeID), DraftScheduleID: postgres.ToNullString(n.DraftScheduleID), DedupeKey: n.DedupeKey, CreatedAt: n.CreatedAt,
 	}
 	for i, id := range ids {
 		arg.Ids, arg.RecipientAccountIds = append(arg.Ids, id), append(arg.RecipientAccountIds, recipients[i])
@@ -421,7 +421,7 @@ func (r *Repository) InsertNotificationsForEach(ctx context.Context, tx uow.Tx, 
 		ServiceClosureEventID: postgres.ToNullString(n.ServiceClosureEventID), ServiceClosureChange: postgres.ToNullString(string(n.ServiceClosureChange)), VoiceRoomID: postgres.ToNullString(n.VoiceRoomID),
 		ErrorGroupChange: postgres.ToNullString(string(n.ErrorGroupChange)), ErrorGroupID: postgres.ToNullString(n.ErrorGroupID), ErrorGroupHour: postgres.ToNullTime(n.ErrorGroupHour),
 		AnnouncementID: postgres.ToNullString(n.AnnouncementID), HookAppealID: postgres.ToNullString(n.HookAppealID),
-		AutoDeleteLimitNoticeID: postgres.ToNullString(n.AutoDeleteLimitNoticeID),
+		AutoDeleteLimitNoticeID: postgres.ToNullString(n.AutoDeleteLimitNoticeID), DraftScheduleID: postgres.ToNullString(n.DraftScheduleID),
 	}
 	for _, m := range ns {
 		arg.Ids, arg.RecipientAccountIds = append(arg.Ids, m.ID), append(arg.RecipientAccountIds, m.RecipientAccountID)

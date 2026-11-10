@@ -627,6 +627,10 @@
     "defaultMessage": "This is the only administrator of this server. Make another user an administrator first.",
     "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
   },
+  "errors.followed_tags.too_many": {
+    "defaultMessage": "You already follow the most hashtags allowed. Unfollow one first.",
+    "description": "API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags."
+  },
   "errors.list_members.not_followed": {
     "defaultMessage": "Only accounts you follow can be added to a list.",
     "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
@@ -846,5 +850,49 @@
   "errors.interaction_request.answered": {
     "defaultMessage": "This request is answered already.",
     "description": "Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before."
+  },
+  "errors.precondition_failed": {
+    "defaultMessage": "The resource changed since you read it.",
+    "description": "API error title for HTTP 412 when the If-Match of a request names an older version of the resource."
+  },
+  "errors.precondition_required": {
+    "defaultMessage": "This request needs the version you read.",
+    "description": "API error title for HTTP 428 when a request that replaces a resource has no If-Match header."
+  },
+  "errors.draft.changed": {
+    "defaultMessage": "The draft was saved elsewhere since you opened it. Open it again to see the latest version.",
+    "description": "Detail of the HTTP 412 API error when a draft was saved on another device or tab after the client read it."
+  },
+  "errors.draft.if_match_required": {
+    "defaultMessage": "Send the If-Match header with the ETag of the draft you read.",
+    "description": "Detail of the HTTP 428 API error when a save of a draft has no If-Match header."
+  },
+  "errors.draft.invalid": {
+    "defaultMessage": "The draft cannot be saved: the text, a media file, or the poll is outside what a draft keeps.",
+    "description": "Detail of the HTTP 422 API error when the content of a draft is too long, attaches too many files or one twice, or has a poll with too many choices or a duration out of range."
+  },
+  "errors.draft.not_scheduled": {
+    "defaultMessage": "The draft is not scheduled.",
+    "description": "Detail of the HTTP 409 API error when the user cancels the schedule of a draft that has none."
+  },
+  "errors.draft.max_drafts": {
+    "defaultMessage": "{max, plural, one {You can keep at most # draft that is not scheduled. Delete or publish one first.} other {You can keep at most # drafts that are not scheduled. Delete or publish one first.}}",
+    "description": "Detail of the HTTP 422 API error when the user saves a new draft while at the limit. {max} is the number of drafts without a schedule a user may keep."
+  },
+  "errors.draft.max_scheduled_posts": {
+    "defaultMessage": "{max, plural, one {You can have at most # scheduled post waiting.} other {You can have at most # scheduled posts waiting.}}",
+    "description": "Detail of the HTTP 422 API error when the user schedules a post while at the limit. {max} is the number of scheduled posts a user may have waiting."
+  },
+  "errors.draft.max_scheduled_posts_per_day": {
+    "defaultMessage": "{max, plural, one {You can schedule at most # post for one day (UTC).} other {You can schedule at most # posts for one day (UTC).}}",
+    "description": "Detail of the HTTP 422 API error when the user schedules a post on a UTC day that already has as many scheduled posts as allowed. {max} is that number."
+  },
+  "errors.draft.schedule_too_soon": {
+    "defaultMessage": "{minutes, plural, one {Schedule the post at least # minute from now.} other {Schedule the post at least # minutes from now.}}",
+    "description": "Detail of the HTTP 422 API error when the time of a schedule is too soon. {minutes} is how many minutes ahead a post must be scheduled at least."
+  },
+  "errors.draft.schedule_too_far": {
+    "defaultMessage": "{days, plural, one {Schedule the post at most # day from now.} other {Schedule the post at most # days from now.}}",
+    "description": "Detail of the HTTP 422 API error when the time of a schedule is too far ahead. {days} is how many days ahead a post may be scheduled at most."
   }
 }

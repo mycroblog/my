@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: listDrafts
+  summary: List the user's drafts, newest first
+  description: |
+    The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
+    ones (`true`) or the others (`false`).
+  tags: [drafts]
+  security:
+    - oauth2: ["read:statuses"]
+  parameters:
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+    - name: scheduled
+      in: query
+      description: Whether to list only the scheduled drafts (`true`) or only the others (`false`).
+      required: false
+      schema:
+        type: boolean
+  responses:
+    "200":
+      description: A page of drafts.
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/DraftPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+post:
+  operationId: createDraft
+  summary: Save a new draft
+  description: |
+    Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+    (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+    uploads (422 otherwise), processed or not.
+  tags: [drafts]
+  security:
+    - oauth2: ["write:statuses"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/DraftRequest.yaml
+  responses:
+    "201":
+      $ref: ../components/responses/Draft.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

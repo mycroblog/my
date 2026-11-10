@@ -18,14 +18,82 @@ import (
 //
 // Callers pass canonical hosts (federation.CanonicalHost); the local domain "" has no
 // restrictions.
+//
+// A policy with the scopes (Scoped) also follows the allowlist (ADR-0159 §2): while
+// federation_scope is allowlist, a domain that neither it nor a parent domain allows has the
+// restrictions of a domain suspension besides those of its actions, so that the entry points of
+// federation refuse it through the checks they already make.
 type FederationPolicy struct {
-	repo  Repository
-	clock kernel.Clock
+	repo   Repository
+	clock  kernel.Clock
+	scopes FederationScopes
 }
 
-// NewFederationPolicy returns the FederationPolicy on repo.
+// NewFederationPolicy returns the FederationPolicy on repo, which reads the actions on domains
+// only.
 func NewFederationPolicy(repo Repository, clock kernel.Clock) *FederationPolicy {
 	return &FederationPolicy{repo: repo, clock: clock}
+}
+
+// Scoped returns the policy that also follows the allowlist while scopes reads allowlist.
+func (p *FederationPolicy) Scoped(scopes FederationScopes) *FederationPolicy {
+	c := *p
+	c.scopes = scopes
+	return &c
+}
+
+// Unscoped returns the policy that reads the actions on domains only, for the hosts that are not
+// servers to federate with (the websites of link cards).
+func (p *FederationPolicy) Unscoped() *FederationPolicy {
+	c := *p
+	c.scopes = nil
+	return &c
+}
+
+// cutOffAmong returns which of domains the allowlist cuts off now: none unless the policy is
+// scoped and federation_scope is allowlist, and then those that neither they nor a parent domain
+// allow, read with one query.
+func (p *FederationPolicy) cutOffAmong(ctx context.Context, domains []string) (map[string]bool, error) {
+	if p.scopes == nil || len(domains) == 0 {
+		return nil, nil
+	}
+	scope, err := p.scopes.FederationScope(ctx)
+	if err != nil || scope != moderation.ScopeAllowlist {
+		return nil, err
+	}
+	var all []string
+	for _, d := range domains {
+		for _, dd := range moderation.DomainAndParents(d) {
+			if !slices.Contains(all, dd) {
+				all = append(all, dd)
+			}
+		}
+	}
+	if len(all) == 0 {
+		return nil, nil
+	}
+	allowed, err := p.repo.AllowedDomains(ctx, all)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]bool, len(domains))
+	for _, d := range domains {
+		if !moderation.Allowed(d, allowed) {
+			out[d] = true
+		}
+	}
+	return out, nil
+}
+
+// withCutOff returns rs with the restrictions of a cut-off domain when cut is true, in
+// restriction order and each once.
+func withCutOff(rs []moderation.Restriction, cut bool) []moderation.Restriction {
+	if !cut {
+		return rs
+	}
+	rs = append(slices.Clone(rs), moderation.CutOffRestrictions()...)
+	slices.Sort(rs)
+	return slices.Compact(rs)
 }
 
 // ValidDomain reports whether d looks like a canonical host, as a domain action requires.
@@ -42,7 +110,15 @@ func (p *FederationPolicy) DomainRestrictions(ctx context.Context, domain string
 	if len(domains) == 0 {
 		return nil, nil
 	}
-	return p.repo.DomainRestrictionsInEffect(ctx, domains, p.clock.Now())
+	rs, err := p.repo.DomainRestrictionsInEffect(ctx, domains, p.clock.Now())
+	if err != nil {
+		return nil, err
+	}
+	cut, err := p.cutOffAmong(ctx, []string{domain})
+	if err != nil {
+		return nil, err
+	}
+	return withCutOff(rs, cut[domain]), nil
 }
 
 func (p *FederationPolicy) domainHas(ctx context.Context, domain string, r moderation.Restriction) (bool, error) {
@@ -76,7 +152,14 @@ func (p *FederationPolicy) FederationSuspendedAmong(ctx context.Context, domains
 	if err != nil {
 		return nil, err
 	}
+	cut, err := p.cutOffAmong(ctx, domains)
+	if err != nil {
+		return nil, err
+	}
 	for _, d := range domains {
+		if cut[d] {
+			out[d] = true
+		}
 		for _, dd := range moderation.DomainAndParents(d) {
 			if slices.Contains(of[dd], moderation.RestrictFederation) {
 				out[d] = true
@@ -105,13 +188,17 @@ func (p *FederationPolicy) DomainRestrictionsAmong(ctx context.Context, domains 
 	if err != nil {
 		return nil, err
 	}
+	cut, err := p.cutOffAmong(ctx, domains)
+	if err != nil {
+		return nil, err
+	}
 	for _, d := range domains {
 		var rs []moderation.Restriction
 		for _, dd := range moderation.DomainAndParents(d) {
 			rs = append(rs, of[dd]...)
 		}
 		slices.Sort(rs)
-		out[d] = slices.Compact(rs)
+		out[d] = withCutOff(slices.Compact(rs), cut[d])
 	}
 	return out, nil
 }

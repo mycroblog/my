@@ -64,12 +64,12 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		// The counts and the operators of the landing page, read again every few minutes.
 		Overview:      instance.NewOverview(overviewSources{a}, a.Clock),
 		SendsEmail:    sendsEmail(cfg),
-		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Aliases: a.Accounts, Posting: a.Content, PostCounts: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, TwoFactor: a.Identity, Passkeys: a.Identity, LinkedIdentities: a.Identity, AuthorizedApps: a.Identity, SignedInBrowsers: a.Identity, OAuthApps: a.Identity, Media: a.Media,
+		Authenticator: a.Identity, Accounts: a.Accounts, Profiles: a.Accounts, Aliases: a.Accounts, Posting: a.Content, PostCounts: a.Content, Preferences: a.Identity, Badges: a.Identity, AutoDelete: a.AutoDelete, Drafts: a.Drafts, DraftSchedules: a.Drafts, TwoFactor: a.Identity, Passkeys: a.Identity, LinkedIdentities: a.Identity, AuthorizedApps: a.Identity, SignedInBrowsers: a.Identity, OAuthApps: a.Identity, Media: a.Media,
 		AccountDomain: cfg.AccountDomain, Graph: a.Graph, Subscriptions: a.Subscriptions, InstanceThumbnail: a.instanceThumbnail, MediaImage: a.mediaImage,
 		Resolver: a.RemoteActors, RemoteProfiles: a.Accounts, AccountSearch: a.AccountSearch, AccountSuggestions: a.AccountSuggestions, TagSearch: a.TagSearch,
 		Notifications: a.Notifications, NotificationPreferences: a.Notifications, Push: a.Push,
 		Statuses: a.Content, StatusReader: a.Statuses, Translations: a.Translation, Interactions: a.Interactions, InteractionRequests: a.Interactions, Threads: a.RemoteStatuses, Outboxes: a.RemoteStatuses,
-		Timelines: a.Timeline, TimelineReader: a.Statuses, TimelineLanguages: a.timelineLanguages, Lists: a.Timeline, Conversations: a.Timeline,
+		Timelines: a.Timeline, TimelineReader: a.Statuses, TimelineLanguages: a.timelineLanguages, Lists: a.Timeline, FollowedTags: a.Timeline, Conversations: a.Timeline,
 		Streams: a.Streams, HomeEntries: a.Timeline, EntryLists: a.Timeline, TimelineStreams: a.Streams, PublicEntries: a.Timeline,
 		Permissions: a.Identity, InstanceHealth: a.InstanceHealth, DeadJobs: a.DeadJobs,
 		Queue:      clientapi.QueueDashboard{Adapter: cfg.Queue, Inspector: a.JobInspector, Attempts: a.JobAttempts, Clock: a.Clock},
@@ -80,13 +80,15 @@ func (a *App) setUpClientAPI(cfg *config.Config, version string, accountLimit ke
 		Rules:    a.Instance,
 		// The rules of the link card crawler.
 		LinkCardDomainRules: a.Instance,
+		DomainAllows:        a.Moderation,
 		// The server-wide announcements (FR-726).
 		Announcements: a.Instance,
 		Roles:         a.Identity,
 		Reports:       a.LocalReports,
 		ReportCounts:  a.Moderation, RegistrationCounts: a.Identity, Registrations: a.Identity,
 		OwnAppeals: a.Moderation, AppealModeration: a.Moderation, SignupBlocks: a.Moderation,
-		OwnAccount: a.Identity, VerificationEmails: a.Identity, Exports: a.Exports, Imports: a.Imports,
+		DomainListSubscriptions: a.Moderation,
+		OwnAccount:              a.Identity, VerificationEmails: a.Identity, Exports: a.Exports, Imports: a.Imports,
 		Voice: a.voiceAPI(), VoiceModeration: a.VoiceRooms, VoiceStreams: a.Streams,
 		FullTextSearch: a.searchAPI(),
 		// The moves of local accounts check their targets as received Moves do (ADR-0089).

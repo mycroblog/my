@@ -592,6 +592,37 @@ describe("the notifications page", () => {
       );
     });
 
+    test("a scheduled post that could not be published says why and when it was to be", async () => {
+      server.use(resumableSession());
+      markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+      server.use(
+        http.get(`${apiBase}/notifications`, () =>
+          HttpResponse.json({
+            items: [
+              {
+                id: "0192f0c4-7a8e-7000-8000-0000000000f6",
+                type: "scheduled_status_failed",
+                created_at: "2026-11-20T08:30:05Z",
+                scheduled_status_failure: {
+                  draft_id: "0192f0c4-7a8e-7000-8000-0000000000d1",
+                  reason: "quote_unavailable",
+                  publish_at: "2026-11-20T08:30:00Z",
+                },
+              },
+            ] satisfies Notification[],
+          }),
+        ),
+      );
+
+      await renderApp({ path: "/notifications" });
+
+      const feed = await screen.findByRole("feed", { name: "Notifications" });
+      const row = within(feed).getByRole("article", { name: /Your scheduled post could not be published/ });
+      expect(row).toHaveTextContent("The post it quotes is no longer available. It was scheduled for");
+      expect(row).toHaveTextContent("The draft is kept, so you can fix it and schedule it again.");
+      expect(within(row).getByText(/2026/, { selector: "time[datetime='2026-11-20T08:30:00Z']" })).toBeInTheDocument();
+    });
+
     test("lead nowhere to pay in the Tauri app", async () => {
       (globalThis as { isTauri?: unknown }).isTauri = true;
       server.use(resumableSession());
@@ -800,6 +831,24 @@ describe("the notifications page", () => {
       },
       // A severance that is no longer there says only that follows ended.
       { id: "0192f0c4-7a8e-7000-8000-0000000000d3", type: "relationships_severed", created_at: at },
+      // The allowlist cut every server off that it does not allow, then one whose allow was removed.
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000d4",
+        type: "relationships_severed",
+        created_at: at,
+        relationship_severance: { kind: "allowlist_cutoff", followers_lost: 3, following_lost: 2 },
+      },
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000d5",
+        type: "relationships_severed",
+        created_at: at,
+        relationship_severance: {
+          kind: "allowlist_cutoff",
+          domain: "gone.example",
+          followers_lost: 0,
+          following_lost: 1,
+        },
+      },
     ];
     server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
 
@@ -822,6 +871,16 @@ describe("the notifications page", () => {
     expect(within(account).getByRole("link", { name: "Bob" })).toHaveAttribute("href", "/@bob");
     expect(
       within(feed).getByRole("article", { name: /A suspension by the moderators ended some of your follows/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(feed).getByRole("article", {
+        name: /This server now federates only with the servers it allows\. You lost 3 followers and 2 accounts you followed on the other servers\./,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      within(feed).getByRole("article", {
+        name: /This server no longer federates with gone\.example\. You lost 0 followers and 1 account you followed there\./,
+      }),
     ).toBeInTheDocument();
   });
 

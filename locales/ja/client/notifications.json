@@ -91,6 +91,10 @@
     "defaultMessage": "webhook を開く",
     "description": "Link in an administrator's notification of a disabled webhook to the webhooks screen."
   },
+  "notifications.link.domain_list_subscriptions": {
+    "defaultMessage": "ブロックリストの購読を開く",
+    "description": "Link of an admin_domain_list_failing notification to the list of the subscriptions to domain block lists."
+  },
   "notifications.link.custom_emoji_requests": {
     "defaultMessage": "申請を確認する",
     "description": "Link in an administrator's notification of a custom emoji request to the requests tab of the custom emoji screen."
@@ -210,6 +214,10 @@
   "notifications.type.auto_delete_limit": {
     "defaultMessage": "サーバーの投稿の保持の上限があなたの投稿に適用されます",
     "description": "Notification sentence: the server's maximum of the automatic deletion of old posts now applies to the user's posts, and after a grace period it deletes the posts that the user's own settings keep. The settings of the automatic deletion show which posts will go."
+  },
+  "notifications.type.scheduled_status_failed": {
+    "defaultMessage": "予約した投稿を公開できませんでした",
+    "description": "Notification sentence: a post that the user scheduled could not be published at its time. The draft stays, to fix and schedule again; the notification says why below."
   },
   "notifications.type.supporter_payment_failed": {
     "defaultMessage": "サポーターのプランの支払いに失敗しました",
@@ -419,6 +427,10 @@
     "defaultMessage": "外部の審査の呼び出しが失敗し続けています",
     "description": "Notification sentence to a moderator: calls of the external review of submissions keep failing, so submissions go through unreviewed or wait."
   },
+  "notifications.type.admin_domain_list_failing": {
+    "defaultMessage": "ブロックリストの購読で取得の失敗が続いています",
+    "description": "Notification sentence to a moderator: the server could not fetch a subscribed domain block list three times in a row, so the list changes no domain actions until it works again."
+  },
   "notifications.type.admin_hook_appeal": {
     "defaultMessage": "自動の審査に拒否された投稿に、異議が申し立てられました",
     "description": "Notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. Names neither the user nor the post."
@@ -442,6 +454,10 @@
   "notifications.auto_delete_limit.detail": {
     "defaultMessage": "{date}から、{days, plural, other {# 日}}より古いあなたの投稿は、このサーバーで残せるものを除いて削除されます。それまでは、あなたの設定のとおりです。",
     "description": "In the notification that the server's maximum of the automatic deletion binds the user: {date} is the formatted date it starts to delete their posts, {days} the most days a post is kept."
+  },
+  "notifications.scheduled_status_failed.detail": {
+    "defaultMessage": "{reason, select, restricted {今はあなたのアカウントから投稿できません。} reply_unavailable {返信先の投稿が見られなくなりました。} quote_unavailable {引用した投稿が見られなくなりました。} media_unavailable {添付したファイルが使えなくなりました。} invalid {投稿の条件を満たしていません。} rejected {サーバーの自動審査で断られました。} other {}}{date}に公開する予定でした。下書きは残っているので、直して予約し直せます。",
+    "description": "In the notification that a scheduled post could not be published: {reason} says why (restricted: the account may not post now, because of a moderation action, a suspension, or an account that is not active; reply_unavailable: the post it replies to is gone, hidden from the user, or does not take the reply; quote_unavailable: the post it quotes is gone, hidden, or may not be quoted; media_unavailable: an attached file is gone or failed processing; invalid: the post does not pass the checks of a post, such as its length; rejected: the server's automated review refused the post). {date} is the formatted date and time it was to be published."
   },
   "notifications.link.auto_delete": {
     "defaultMessage": "削除される投稿を確かめる",
@@ -470,5 +486,13 @@
   "notifications.link.interaction_requests": {
     "defaultMessage": "依頼を確かめる",
     "description": "Link in a notification that someone's reply, boost, or quote waits for the user's approval, to the page of the approval requests."
+  },
+  "notifications.severed.allowlist": {
+    "defaultMessage": "このサーバーが許可したサーバーとだけ連合するようになったため、ほかのサーバーのフォロワー{followers, plural, other {#人}}とフォロー{following, plural, other {#人}}の関係が解除されました。",
+    "description": "Notification sentence: the administrators of this server switched it to federate only with the servers it allows, which ended the follows between the user and the accounts of every other server in both directions; they are not restored when the server federates with them again. {followers} is the number of those accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.severed.allowlist_domain": {
+    "defaultMessage": "このサーバーが{domain}と連合しなくなったため、そのサーバーのフォロワー{followers, plural, other {#人}}とフォロー{following, plural, other {#人}}の関係が解除されました。",
+    "description": "Notification sentence: the moderators of this server removed another server from the servers it federates with, which ended the follows between its accounts and the user in both directions; they are not restored when it is allowed again. {domain} is the server's domain name. {followers} is the number of its accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
   }
 }

@@ -165,19 +165,24 @@
 | テーブル | 分類 | カラム | 制約 |
 | --- | --- | --- | --- |
 | `drafts` | リソース | `id`, `account_id`, `created_at` | インデックス `(account_id, id)` |
-| `draft_contents` | 現在値 | `draft_id`（PK）, `source_text`, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`、NULL 可 = 利用者設定の既定）, `visibility`（`enum`）, `in_reply_to_status_id`（NULL 可）, `quoted_status_id`（NULL 可）, `quote_policy`（`enum(everyone, followers, nobody)`。引用の自動の相手）, `updated_at` | 保存のたびに置き換える。`updated_at` は API の ETag の元 |
+| `draft_contents` | 現在値 | `draft_id`（PK）, `source_text`, `spoiler_text`, `sensitive`（`bool`）, `language`（`lang`、NULL 可 = 利用者設定の既定）, `visibility`（`enum`）, `in_reply_to_status_id`（NULL 可）, `quoted_status_id`（NULL 可）, `updated_at` | 保存のたびに置き換える。`updated_at`（ミリ秒）は API の ETag の元で、保存のたびに進む |
+| `draft_interaction_policies` | 現在値 | `draft_id`, `kind`（`enum(reply, announce, quote)`）, `approval`（`enum(automatic, manual)`）, `audience`（`enum(everyone, followers, mentioned, nobody)`） | PK `(draft_id, kind, approval)`。返信・ブースト・引用を許す相手（ADR-0155 §5 の選び方）。行の無い種類は公開のときの利用者の既定 |
 | `draft_attachments` | 現在値 | `draft_id`, `position`（`int`、0〜3）, `media_id`, `description`（`text`、NULL 可） | PK `(draft_id, position)`。インデックス `(media_id)`（未添付の掃除） |
 | `draft_polls` | 現在値 | `draft_id`（PK）, `multiple`（`bool`）, `hide_totals`（`bool`）, `duration_seconds`（`int`、300〜2592000） | 締め切りは公開のときに決める |
 | `draft_poll_options` | 現在値 | `draft_id`, `position`, `title` | PK `(draft_id, position)` |
 | `draft_schedules` | リソース | `id`, `draft_id`, `publish_at`, `created_at` | インデックス `(draft_id, id)` |
-| `draft_schedule_outcomes` | イベント | `schedule_id`（PK）, `outcome`（`enum(published, failed, cancelled)`）, `failure_reason`（`enum`、NULL 可）, `occurred_at` | CHECK `(outcome = 'failed') = (failure_reason IS NOT NULL)` |
+| `draft_schedule_outcomes` | イベント | `schedule_id`（PK）, `outcome`（`enum(published, failed, cancelled)`）, `failure_reason`（`enum(restricted, reply_unavailable, quote_unavailable, media_unavailable, invalid, rejected)`、NULL 可）, `occurred_at` | CHECK `(outcome = 'failed') = (failure_reason IS NOT NULL)` |
 | `scheduled_drafts` | 投影 | `draft_id`（PK）, `schedule_id`, `account_id`, `publish_at` | 一意 `(schedule_id)`。インデックス `(account_id, publish_at)`。結果の行の無い `draft_schedules` から作り直せる |
 
 - 下書きの中身は履歴を使わないので現在値です（ADR-0020 規約 5）。予約は 1 回ごとのリソースで、取り消し・時刻の変更（取り消しと新しい予約）・公開・失敗は結果のイベントです。
 - 保存（`PUT`）は中身の行を 1 つのトランザクションで置き換えます。添付は本人の `uploaded_media` だけで、`ready` でなくてもよく（公開のときに確かめる）、代替テキストは行に写します。
+  保存と予約は `drafts` の行をロックして（PostgreSQL は `FOR UPDATE`）、同じ下書きへの保存・予約を 1 つずつ通します。保存は `If-Match` の `updated_at` が今の行と違えば断ります。
+  下書きに残せるのは本文と注意書き合わせて 100,000 文字・添付 4 件・選択肢 4 件までで、文字数の上限（`max_status_length`）や空の本文は公開のときに確かめます。
 - 予約は、予約と `scheduled_drafts` の行を記録するトランザクションで、`publish_at` に動くジョブ `content.publish_scheduled_draft`（冪等キーは予約の ID）を outbox に入れます。
-  ジョブは `scheduled_drafts` がその予約を指すときだけ、すぐの投稿と同じ `content.Service.Create` で公開します。冪等キーは下書きの ID から作り（`local_statuses (author_account_id, idempotency_key)`）、同じトランザクションで `published` を記録して下書きの行をすべて消します。
-  処分・返信先や引用先が見られない・検査や外部の審査で断られたときは、`failed` と理由を記録して `scheduled_drafts` から外し、通知 `scheduled_status_failed` を作ります。下書きは残ります。
+  ジョブは `scheduled_drafts` がその予約を指すときだけ、すぐの投稿と同じ `content.Service.Create` で公開します。冪等キーは下書きの ID から作り（`draft:{draft_id}`、`local_statuses (author_account_id, idempotency_key)`）、投稿を書くトランザクションの最初に `scheduled_drafts` のその予約の行を消し（消せなければ何もせずに終わる）、下書きの行を予約と結果ごとすべて消します。行が残らないので `published` の結果の行は書きません。
+  同時の 2 つの実行は、`scheduled_drafts` の行の削除と冪等キーの一意制約で 1 つだけが投稿を作ります。予約のときにも同じ検査（`Check`。外部の審査は呼ばず、処理中の添付は通す）をします。
+  処分・返信先や引用先が見られない・検査や外部の審査で断られたときは、`failed` と理由を記録して `scheduled_drafts` から外し、`content.draft_schedule_failed` を発行します（`notification` が通知 `scheduled_status_failed` を作る）。下書きは残ります。DB や外部の審査に届かない失敗はジョブの再試行に任せます。
+- `scheduled_drafts` は `my projection rebuild scheduled_drafts` で、下書きごとに結果の行の無い最新の `draft_schedules` から作り直せます。
 - 投稿の `id`・`published_at` は公開のときに作ります。自動削除の日数もそこから数えます。
 - 上限はインスタンス設定 `max_drafts`（予約の無い下書き）・`max_scheduled_posts`・`max_scheduled_posts_per_day`（`publish_at` の UTC の日）で、`scheduled_drafts` と `drafts` を数えます。予約できる時刻は `scheduled_post_min_lead_minutes`（既定 5 分）から `scheduled_post_max_lead_days`（既定 366 日）先までです。
 - `media.purge_unattached` は `draft_attachments` が参照するファイルを添付として数えます。下書きを消すと参照が外れ、次の実行で消えます。アカウントの消去は下書きの行をすべて消します。

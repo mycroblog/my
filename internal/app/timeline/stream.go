@@ -51,31 +51,48 @@ func publicTimelines(isLocal bool, v appcontent.Visibility) (onLocal, onFederate
 
 // HomeEntry returns the entry id when the home timeline of a logged-in viewer lists it, as Home
 // would, in the timeline languages q.Languages (q.Before and q.Limit are ignored); false when it
-// does not, because the viewer does not follow its author, may not see it, or it is in another
-// language. It reads the entries from id up, so it is meant for an entry that has just been
+// does not, because the viewer follows neither its author nor one of its hashtags, may not see
+// it, or it is in another language. It reads the entries from id up, so it is meant for an entry that has just been
 // added, as the streaming endpoint asks.
 func (s *Service) HomeEntry(ctx context.Context, viewer appcontent.Viewer, id string, q Query) (Entry, bool, error) {
 	if viewer.Kind != appcontent.ViewerLocal || viewer.AccountID == "" {
 		return Entry{}, false, ErrLoginRequired
 	}
 	w := s.window(viewer, Query{Languages: q.Languages, Limit: MaxLimit})
-	rows, err := s.d.Repository.ListHome(ctx, HomeQuery{Window: w, Floor: id})
+	rows, err := s.homeRows(ctx, HomeQuery{Window: w, Floor: id})
 	if err != nil {
 		return Entry{}, false, err
 	}
 	return s.entry(ctx, appcontent.ContextHome, viewer, w, id, rows)
 }
 
-// HomeAudience returns which of accountIDs may have in their home timelines an entry of the
-// account authorID (a post by it, or a boost by it): authorID itself and the accounts whose home
-// timelines follow it, with one query. HomeEntry decides for each of them.
-func (s *Service) HomeAudience(ctx context.Context, authorID string, accountIDs []string) (map[string]bool, error) {
+// HomeAudience returns which of accountIDs may have in their home timelines the entry entryID of
+// the account authorID (a post by it, or a boost by it): authorID itself, the accounts whose
+// home timelines follow it, and those that follow a hashtag of a public or local post
+// (ADR-0013 §26), with one query each. HomeEntry decides for each of them.
+func (s *Service) HomeAudience(ctx context.Context, entryID, authorID string, accountIDs []string) (map[string]bool, error) {
 	out, err := s.d.Repository.FeedFollowersAmong(ctx, authorID, accountIDs)
 	if err != nil {
 		return nil, err
 	}
 	if slices.Contains(accountIDs, authorID) {
 		out[authorID] = true
+	}
+	var rest []string
+	for _, id := range accountIDs {
+		if !out[id] {
+			rest = append(rest, id)
+		}
+	}
+	if len(rest) == 0 || entryID == "" {
+		return out, nil
+	}
+	tagged, err := s.d.Repository.FeedTagFollowersAmong(ctx, entryID, rest)
+	if err != nil {
+		return nil, err
+	}
+	for id := range tagged {
+		out[id] = true
 	}
 	return out, nil
 }

@@ -4,7 +4,7 @@ Every job type the server runs and every job it starts on a schedule: what the j
 again by hand does. Use this page to read the types on the admin jobs page, in `my job list`, and in the `my.job.*` metrics. How the queue runs, and the commands and pages that manage it, are in
 [The job queue and failed (dead) jobs](../operations/running.md#the-job-queue-and-failed-dead-jobs).
 
-The server has 94 job types. 40 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
+The server has 98 job types. 41 periodic jobs start some of them on a schedule; [Periodic jobs](#periodic-jobs) lists those.
 
 A worker can run only some of these types: [Splitting workers by job type](../operations/running.md#splitting-workers-by-job-type).
 
@@ -57,12 +57,13 @@ A job type can also be registered or do its work only with some settings; **Need
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `media.process` | Re-encodes one upload into its variants, asks the [`media.check` hook](../operations/decision-hooks.md#what-mediacheck-reviews) about a new upload when it has a plugin, records the result, and deletes the received file. Content the processor rejects, and an upload the hook rejects, records a failed result. | An upload, or a change of what a file is used for | Default | Safe |
-| `media.purge_unattached` | Deletes the uploads that nothing attached in time. | Schedule | Default | Next run |
+| `media.purge_unattached` | Deletes the uploads that nothing attached in time. A file that a post or a draft attaches is attached; a file of a deleted draft goes with the next run. | Schedule | Default | Next run |
 | `media.purge_replaced` | Deletes the old versions of images that a newer version replaced more than `media_replaced_retention` ago. An image's current version is never deleted. | Schedule | Default | Next run |
 | `media.reprocess_walk` | Walks the uploaded images last processed before a time and queues a `media.reprocess` for each, one batch per minute. | `my admin media reprocess` | Default | Safe |
 | `media.reprocess` | Processes one image again with the current settings, from its large version. An image processed since the time, or that the processor no longer accepts, stays as it is. | `media.reprocess_walk` | Default | Safe |
 | `media.purge_remote_cache` | Deletes the copies in the remote media cache past their expiry or over the size limit. | Schedule | Default | Next run |
 | `content.close_poll` | Closes one poll when its end has passed. A job that runs early waits until the end. | A post with a poll, due at the poll's end | Default | Safe |
+| `content.publish_scheduled_draft` | Publishes one scheduled draft as a new post, with the checks of a new post at that time, and deletes the draft. A draft that cannot be published (the author may not post, the post it replies to or quotes is gone, a file is not usable, the checks or the automated review refuse it) stays a draft, its schedule ends as failed, and the author gets a `scheduled_status_failed` notification. A schedule that was cancelled or moved ends the job without doing anything. A job that runs early waits until the time, also beyond the delay limit of the queue. | Scheduling a draft, due at its time | Default, only for failures of this server's stores and the automated review that may pass | Safe: a draft is published once |
 | `content.fetch_link_card` | Fetches the card of the URL a post links. A busy host, or a host that answers 429 or 503, postpones the job without counting as a failure. A `robots.txt` that cannot be read retries an hour later. Details are in [Link previews](../operations/link-previews.md). | A post created or revised, after a delay for a remote post | Default, for failures of this server's stores | Safe |
 | `content.purge_link_cards` | Deletes the cards no post refers to and the images no card uses. | Schedule | Default | Next run |
 | `translation.purge_cache` | Deletes the translations of posts 30 days after they were made, however often they were read, and the counts of translated characters from before last month. | Schedule | Default | Next run |
@@ -121,8 +122,11 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `moderation.sever_domain` | Cuts the follows of local accounts with a suspended domain, and records what each account lost. Above 1,000 of them, the first job only queues jobs of the same type for up to 1,000 each. Running one again repeats nothing it did. | A domain suspension | Default. An action that is gone or is not a domain suspension is dead at once. | Safe |
+| `moderation.sever_allowlist` | Cuts the follows of local accounts with the servers that the allowlist of federation cuts off (when `federation_scope` becomes `allowlist`, or an allow is removed while it is), and records what each account lost. It cuts nothing once `federation_scope` is `open` again or the server is allowed again. Above 1,000 local accounts, the first job only queues jobs of the same type for up to 1,000 each. Running one again repeats nothing it did. | The switch to `allowlist`, or the removal of an allow | Default. A cutoff that is gone is dead at once. | Safe |
 | `moderation.expire_restrictions` | Removes expired account and domain restrictions, tells other servers when a suspension ends, and with a search backend queues `search.sync_author` or `search.sync_domain` for what they restricted. | Schedule | Default | Next run |
 | `moderation.purge_records` | Erases the moderation records past their retention, including released retention holds. | Schedule | Default | Next run |
+| `moderation.fetch_domain_lists` | Queues `moderation.fetch_domain_list` for every subscribed domain block list. | Schedule | Default | Next run |
+| `moderation.fetch_domain_list` | Fetches one subscribed domain block list, records the fetch, and replaces the domains the subscription holds. In the automatic mode it then issues and lifts the subscription's domain actions. A failed fetch is recorded and changes nothing else. | `moderation.fetch_domain_lists`, a new subscription or new settings of one, and **Fetch now** | Default. A subscription deleted since is done at once. | Safe |
 | `identity.reject_for_closure` | Rejects the pending registrations when the closure's notice period starts. Stops if the closure is withdrawn. | The closure being recorded | Default | Safe |
 | `instance.closure_delete_actors` | Records the `Delete` of one page of local accounts and passes them to the fan-out. | The closure being recorded, then itself | Default | Safe |
 | `instance.check_closure_delivery` | Records that the closure's deletes have all been delivered. | Schedule | Default | Next run |
@@ -222,6 +226,7 @@ The scheduler queues one job per period, however many processes run it, and the 
 | `webhook.purge_messages` | 1 hour |
 | `account.prune_remote_profiles` | 24 hours |
 | `content.purge_link_cards` | 24 hours |
+| `moderation.fetch_domain_lists` | 24 hours |
 | `content.purge_remote_emojis` | 24 hours |
 | `diagnostics.purge_error_counts` | 24 hours |
 | `hook.purge_decisions` | 1 hour |

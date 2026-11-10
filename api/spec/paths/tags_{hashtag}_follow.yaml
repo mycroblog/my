@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: MIT
+post:
+  operationId: followTag
+  summary: Follow a hashtag
+  description: |
+    The home timeline then also shows the `public` and `local` posts with the hashtag that the
+    server has, from accounts the user does not follow, as the hashtag's timeline shows them:
+    without boosts, and without the posts of accounts and servers kept from public timelines
+    or that the user blocks or mutes. Such a post carries `followed_tags`. Following a
+    hashtag that the user follows changes nothing, and a hashtag that no post has used yet
+    can be followed. A user follows at most 100 hashtags; one more is a 422
+    `/api/v1/problems/too-many-followed-tags`.
+  tags: [statuses]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/HashtagName.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Hashtag.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml
+delete:
+  operationId: unfollowTag
+  summary: Unfollow a hashtag
+  description: Without a follow it changes nothing.
+  tags: [statuses]
+  security:
+    - oauth2: ["write:follows"]
+  parameters:
+    - $ref: ../components/parameters/HashtagName.yaml
+  responses:
+    "200":
+      $ref: ../components/responses/Hashtag.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

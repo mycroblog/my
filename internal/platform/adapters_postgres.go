@@ -73,7 +73,7 @@ func (a *App) openPostgres(ctx context.Context, cfg *config.Config, queueOpts qu
 		feds: postgresfederation.NewRepository(d), mods: postgresmoderation.NewRepository(d), hooks: postgreswebhook.NewRepository(d),
 		finance: postgresfinance.NewRepository(d), payments: postgressupporters.NewPaymentRepository(d), supporters: postgressupporters.NewSupporterRepository(d),
 		voice: postgresvoice.NewRepository(d), diagnostics: postgresdiagnostics.NewRepository(d), translations: postgrestranslation.NewRepository(d), search: postgressearch.NewRepository(d),
-		decisions: postgreshook.NewRepository(d), existingStatuses: postgrescontent.NewStatusRepository(d),
+		decisions: postgreshook.NewRepository(d), existingStatuses: postgrescontent.NewStatusRepository(d), drafts: postgrescontent.NewStatusRepository(d),
 		retention: retentionRepositories{
 			statuses: postgrescontent.NewStatusRepository(d), purges: postgresfederation.NewRepository(d), profiles: postgresaccount.NewRepository(d), emojis: postgrescontent.NewCustomEmojiRepository(d),
 			autoDeletes: postgrescontent.NewStatusRepository(d),

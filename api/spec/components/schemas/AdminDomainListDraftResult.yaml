@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MIT
+description: What accepting or rejecting drafts did.
+type: object
+required: [done, missing]
+properties:
+  done:
+    description: The drafts that were accepted or rejected.
+    type: array
+    items:
+      $ref: ./AdminDomainListDraft.yaml
+  missing:
+    description: The keys of the request that name no draft, such as one handled since.
+    type: array
+    items:
+      type: string

@@ -105,8 +105,9 @@ func (a *App) newObjects(cfg *config.Config) *federation.Objects {
 		Boosts:        a.Interactions,
 		Signatures:    federation.NewSignatureVerifier(httpsig.New(), a.RemoteActors, a.KV, a.Clock),
 		Domains:       a.ModerationPolicy,
-		// Authorized fetch (FR-408) is the instance setting, read per request.
-		Settings: a.Instance,
+		// Authorized fetch (FR-408) is the instance setting, or the allowlist, which requires it
+		// (ADR-0159 §2), read per request.
+		Settings: authorizedFetch{a},
 		Host:     cfg.Host, AccountDomain: cfg.AccountDomain, Logger: a.Logger,
 	})
 }

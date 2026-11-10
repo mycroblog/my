@@ -68,6 +68,8 @@ func (r *Repository) ExistingAuditTargets(ctx context.Context, kind moderation.A
 		out, err = q.ListExistingAppealIDs(ctx, ids)
 	case moderation.AuditTargetSignupBlock:
 		out, err = q.ListExistingSignupBlockIDs(ctx, ids)
+	case moderation.AuditTargetDomainAllow:
+		out, err = q.ListExistingDomainAllows(ctx, ids)
 	default:
 		return nil, fmt.Errorf("postgres: the existence of %s targets is not recorded here", kind)
 	}

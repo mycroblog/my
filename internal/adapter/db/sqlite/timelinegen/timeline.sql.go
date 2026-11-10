@@ -1293,9 +1293,6 @@ type ListFeedFollowersAmongParams struct {
 // before = ” starts at the newest entry. A language filter applies when all_languages is 0:
 // entries in an undetermined language ('und') always pass. A restriction or mute applies while
 // its end is NULL or after now. A domain restriction also covers the subdomains of its domain.
-// ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
-// accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
-// boosts, within the read window (id >= window_floor).
 // The accounts among follower_ids whose home timelines follow the followee.
 func (q *Queries) ListFeedFollowersAmong(ctx context.Context, arg ListFeedFollowersAmongParams) ([]string, error) {
 	rows, err := q.db.QueryContext(ctx, listFeedFollowersAmong, arg.Followee, arg.FollowerIds)
@@ -1369,6 +1366,9 @@ type ListHomeEntriesParams struct {
 	PageLimit    int64
 }
 
+// ListHomeEntries is the home timeline (FR-201) of a viewer: the posts of the viewer and of the
+// accounts the viewer follows, their boosts unless the follow hides them, and the viewer's own
+// boosts, within the read window (id >= window_floor).
 func (q *Queries) ListHomeEntries(ctx context.Context, arg ListHomeEntriesParams) ([]FeedEntry, error) {
 	rows, err := q.db.QueryContext(ctx, listHomeEntries,
 		arg.Viewer,

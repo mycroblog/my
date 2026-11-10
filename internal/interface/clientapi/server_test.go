@@ -59,9 +59,11 @@ func TestGetInstance(t *testing.T) {
 	want := clientapi.Instance{
 		Domain: "social.example", Name: "social.example", Version: "1.2.3", SourceUrl: "https://git.example/my",
 		Registrations: clientapi.InstanceRegistrations{Mode: clientapi.InstanceRegistrationsModeApproval},
-		Limits:        clientapi.InstanceLimits{MaxPostCharacters: 500},
-		Timelines:     clientapi.InstanceTimelines{Local: clientapi.InstanceAudienceEveryone, Federated: clientapi.InstanceAudienceSignedIn},
-		Rules:         []clientapi.InstanceRule{},
+		Limits: clientapi.InstanceLimits{MaxPostCharacters: 500, Drafts: &clientapi.InstanceDraftLimits{
+			MaxDrafts: 100, MaxScheduledPosts: 300, MaxScheduledPostsPerDay: 25, ScheduledPostMinLeadMinutes: 5, ScheduledPostMaxLeadDays: 366,
+		}},
+		Timelines: clientapi.InstanceTimelines{Local: clientapi.InstanceAudienceEveryone, Federated: clientapi.InstanceAudienceSignedIn},
+		Rules:     []clientapi.InstanceRule{},
 		// Unset, the instance federates both ways (ADR-0006).
 		Federation: clientapi.InstanceFederation{Mode: clientapi.InstanceFederationModeBoth},
 		// Unset, the instance denies search engines and AI (ADR-0057).

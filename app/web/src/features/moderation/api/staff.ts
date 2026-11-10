@@ -387,6 +387,14 @@ export const auditActions = [
   "link_card_domain_images_stopped",
   "link_card_domain_rule_removed",
   "instance_marked_available",
+  "domain_allow_added",
+  "domain_allow_removed",
+  "domain_list_subscription_created",
+  "domain_list_subscription_updated",
+  "domain_list_subscription_deleted",
+  "domain_list_draft_accepted",
+  "domain_list_draft_rejected",
+  "domain_list_fetch_queued",
 ] as const satisfies readonly AuditAction[];
 
 /** The kinds of target of an audited operation, in the order of the filter. */
@@ -420,6 +428,8 @@ export const auditTargetKinds = [
   "voice_room",
   "login_provider",
   "link_card_domain",
+  "domain_allow",
+  "domain_list_subscription",
 ] as const satisfies readonly AuditTargetKind[];
 
 /**

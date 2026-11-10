@@ -627,6 +627,10 @@
     "defaultMessage": "このサーバーの管理者はこのアカウントだけです。先に別のユーザーを管理者にしてください。",
     "description": "API error title for HTTP 409 when an operation would leave the server without an administrator, such as the only administrator deleting their own account."
   },
+  "errors.followed_tags.too_many": {
+    "defaultMessage": "フォローできるハッシュタグの数が上限に達しています。先にどれかのフォローを解除してください。",
+    "description": "API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags."
+  },
   "errors.list_members.not_followed": {
     "defaultMessage": "リストに追加できるのはフォロー中のアカウントだけです。",
     "description": "API error title for HTTP 422 when the user adds to a list an account that the user does not follow, or whose follow request is still pending."
@@ -846,5 +850,49 @@
   "errors.interaction_request.answered": {
     "defaultMessage": "この依頼にはすでに答えています。",
     "description": "Detail of the HTTP 409 API error when the user approves or refuses a reply, boost, or quote of their post that they answered before."
+  },
+  "errors.precondition_failed": {
+    "defaultMessage": "読み込んだあとにリソースが変更されました。",
+    "description": "API error title for HTTP 412 when the If-Match of a request names an older version of the resource."
+  },
+  "errors.precondition_required": {
+    "defaultMessage": "このリクエストには、読み込んだ版の指定が必要です。",
+    "description": "API error title for HTTP 428 when a request that replaces a resource has no If-Match header."
+  },
+  "errors.draft.changed": {
+    "defaultMessage": "開いたあとに、ほかの場所でこの下書きが保存されました。もう一度開いて最新の内容を確認してください。",
+    "description": "Detail of the HTTP 412 API error when a draft was saved on another device or tab after the client read it."
+  },
+  "errors.draft.if_match_required": {
+    "defaultMessage": "読み込んだ下書きの ETag を If-Match ヘッダーに入れて送ってください。",
+    "description": "Detail of the HTTP 428 API error when a save of a draft has no If-Match header."
+  },
+  "errors.draft.invalid": {
+    "defaultMessage": "下書きを保存できません。本文・メディア・投票のいずれかが、下書きに保存できる範囲を超えています。",
+    "description": "Detail of the HTTP 422 API error when the content of a draft is too long, attaches too many files or one twice, or has a poll with too many choices or a duration out of range."
+  },
+  "errors.draft.not_scheduled": {
+    "defaultMessage": "この下書きは予約されていません。",
+    "description": "Detail of the HTTP 409 API error when the user cancels the schedule of a draft that has none."
+  },
+  "errors.draft.max_drafts": {
+    "defaultMessage": "{max, plural, other {予約していない下書きは # 件まで保存できます。先にどれかを削除するか公開してください。}}",
+    "description": "Detail of the HTTP 422 API error when the user saves a new draft while at the limit. {max} is the number of drafts without a schedule a user may keep."
+  },
+  "errors.draft.max_scheduled_posts": {
+    "defaultMessage": "{max, plural, other {予約投稿は # 件まで待機させられます。}}",
+    "description": "Detail of the HTTP 422 API error when the user schedules a post while at the limit. {max} is the number of scheduled posts a user may have waiting."
+  },
+  "errors.draft.max_scheduled_posts_per_day": {
+    "defaultMessage": "{max, plural, other {1 日 (UTC) に予約できる投稿は # 件までです。}}",
+    "description": "Detail of the HTTP 422 API error when the user schedules a post on a UTC day that already has as many scheduled posts as allowed. {max} is that number."
+  },
+  "errors.draft.schedule_too_soon": {
+    "defaultMessage": "{minutes, plural, other {予約する時刻は、今から # 分以上先にしてください。}}",
+    "description": "Detail of the HTTP 422 API error when the time of a schedule is too soon. {minutes} is how many minutes ahead a post must be scheduled at least."
+  },
+  "errors.draft.schedule_too_far": {
+    "defaultMessage": "{days, plural, other {予約する時刻は、今から # 日以内にしてください。}}",
+    "description": "Detail of the HTTP 422 API error when the time of a schedule is too far ahead. {days} is how many days ahead a post may be scheduled at most."
   }
 }
