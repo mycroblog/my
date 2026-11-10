@@ -630,5 +630,17 @@
   "admin.audit_log.target_kind.login_provider": {
     "defaultMessage": "ログインのプロバイダー",
     "description": "Kind of target of an audited operation: an external identity provider that users sign in with, shown by its display name."
+  },
+  "admin.audit_log.action.domain_allow_added": {
+    "defaultMessage": "サーバーを許可",
+    "description": "Kind of an audited operation: a moderator added a domain to the allowlist of federation, the only servers this server federates with while it federates by allowlist."
+  },
+  "admin.audit_log.action.domain_allow_removed": {
+    "defaultMessage": "サーバーの許可を削除",
+    "description": "Kind of an audited operation: a moderator removed a domain from the allowlist of federation; while the server federates by allowlist, this cuts the domain off as a suspension does."
+  },
+  "admin.audit_log.target_kind.domain_allow": {
+    "defaultMessage": "許可したサーバー",
+    "description": "Kind of target of an audited operation: a domain of the allowlist of federation, shown by its domain name."
   }
 }

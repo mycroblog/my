@@ -426,7 +426,8 @@ function postOf(status: NotificationStatus): NonNullable<NotificationView["post"
 
 /**
  * The sentence and the values of a `relationships_severed`: the server or the account that the moderators
- * suspended, with the counts; without its severance, the sentence that says only that follows ended.
+ * suspended, or the servers that the allowlist cut off, with the counts; without its severance, the sentence that
+ * says only that follows ended.
  */
 function severanceOf(notification: Notification): Pick<NotificationView, "sentence" | "severance"> {
   const severance = notification.relationship_severance;
@@ -438,6 +439,15 @@ function severanceOf(notification: Notification): Pick<NotificationView, "senten
       sentence: "client:notifications.severed.domain",
       severance: { domain: severance.domain ?? "", ...counts },
     };
+  }
+  if (severance.kind === "allowlist_cutoff") {
+    // The server whose allow was removed, or none when the server switched to its allowlist.
+    return severance.domain === undefined
+      ? { sentence: "client:notifications.severed.allowlist", severance: { domain: null, ...counts } }
+      : {
+          sentence: "client:notifications.severed.allowlist_domain",
+          severance: { domain: severance.domain, ...counts },
+        };
   }
   if (notification.account === undefined) return fallback;
   return { sentence: "client:notifications.severed.account", severance: { domain: null, ...counts } };

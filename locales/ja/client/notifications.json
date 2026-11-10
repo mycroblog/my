@@ -470,5 +470,13 @@
   "notifications.link.interaction_requests": {
     "defaultMessage": "依頼を確かめる",
     "description": "Link in a notification that someone's reply, boost, or quote waits for the user's approval, to the page of the approval requests."
+  },
+  "notifications.severed.allowlist": {
+    "defaultMessage": "このサーバーが許可したサーバーとだけ連合するようになったため、ほかのサーバーのフォロワー{followers, plural, other {#人}}とフォロー{following, plural, other {#人}}の関係が解除されました。",
+    "description": "Notification sentence: the administrators of this server switched it to federate only with the servers it allows, which ended the follows between the user and the accounts of every other server in both directions; they are not restored when the server federates with them again. {followers} is the number of those accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.severed.allowlist_domain": {
+    "defaultMessage": "このサーバーが{domain}と連合しなくなったため、そのサーバーのフォロワー{followers, plural, other {#人}}とフォロー{following, plural, other {#人}}の関係が解除されました。",
+    "description": "Notification sentence: the moderators of this server removed another server from the servers it federates with, which ended the follows between its accounts and the user in both directions; they are not restored when it is allowed again. {domain} is the server's domain name. {followers} is the number of its accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
   }
 }

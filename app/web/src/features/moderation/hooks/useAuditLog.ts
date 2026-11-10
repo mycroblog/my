@@ -117,6 +117,8 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   link_card_domain_images_stopped: "client:admin.audit_log.action.link_card_domain_images_stopped",
   link_card_domain_rule_removed: "client:admin.audit_log.action.link_card_domain_rule_removed",
   instance_marked_available: "client:admin.audit_log.action.instance_marked_available",
+  domain_allow_added: "client:admin.audit_log.action.domain_allow_added",
+  domain_allow_removed: "client:admin.audit_log.action.domain_allow_removed",
 };
 
 export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessageKey>> = {
@@ -149,6 +151,7 @@ export const auditTargetKindLabels: Readonly<Record<AuditTargetKind, ClientMessa
   voice_room: "client:admin.audit_log.target_kind.voice_room",
   login_provider: "client:admin.audit_log.target_kind.login_provider",
   link_card_domain: "client:admin.audit_log.target_kind.link_card_domain",
+  domain_allow: "client:admin.audit_log.target_kind.domain_allow",
 };
 
 /** Who performed an operation without a user's account to show. */

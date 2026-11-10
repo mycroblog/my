@@ -470,5 +470,13 @@
   "notifications.link.interaction_requests": {
     "defaultMessage": "Review the requests",
     "description": "Link in a notification that someone's reply, boost, or quote waits for the user's approval, to the page of the approval requests."
+  },
+  "notifications.severed.allowlist": {
+    "defaultMessage": "This server now federates only with the servers it allows. You lost {followers, plural, one {# follower} other {# followers}} and {following, plural, one {# account you followed} other {# accounts you followed}} on the other servers.",
+    "description": "Notification sentence: the administrators of this server switched it to federate only with the servers it allows, which ended the follows between the user and the accounts of every other server in both directions; they are not restored when the server federates with them again. {followers} is the number of those accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
+  },
+  "notifications.severed.allowlist_domain": {
+    "defaultMessage": "This server no longer federates with {domain}. You lost {followers, plural, one {# follower} other {# followers}} and {following, plural, one {# account you followed} other {# accounts you followed}} there.",
+    "description": "Notification sentence: the moderators of this server removed another server from the servers it federates with, which ended the follows between its accounts and the user in both directions; they are not restored when it is allowed again. {domain} is the server's domain name. {followers} is the number of its accounts that followed the user, {following} the number of those that the user followed (either may be 0)."
   }
 }
