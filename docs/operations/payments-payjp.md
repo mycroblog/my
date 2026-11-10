@@ -1,6 +1,6 @@
 # Supporter payments with PAY.JP
 
-With `payments = payjp`, local users subscribe to monthly or yearly plans on this server's payment page, and the plan's role is granted and removed as the payment state changes.
+With `payments = payjp`, local users subscribe to monthly or yearly plans on this server's payment page, and the plan's role is granted and removed as the payment state changes. When tips are enabled, users also pay one-time tips on PAY.JP's hosted page (see [Tips](#tips)).
 The deployment keys are described in the [configuration reference](../reference/configuration.md#payments). For the program as a whole (plans, roles, the list of members), see [supporters.md](supporters.md).
 An administrator enables the program and creates plans in the administration. This setting only lets the server talk to PAY.JP.
 
@@ -9,6 +9,7 @@ One server can use only one provider. To switch from Stripe to PAY.JP (or the re
 ## What the server does at PAY.JP
 
 PAY.JP has API v1 and v2. v2 has no recurring-billing API yet, so the server uses the recurring billing of **API v1** (Plan and Subscription). v1 has neither a hosted payment page nor a customer portal, so this server serves pages in their place.
+Tips are one-time payments on **API v2**, which has a hosted payment page; see [Tips](#tips). PAY.JP allows both versions on one account with the same keys.
 
 [How a subscription works](supporters.md#how-a-subscription-works) shows in a diagram how the payment page, the webhook, the reconciliation, the plan's role, and the income fit together.
 
@@ -28,17 +29,27 @@ PAY.JP has API v1 and v2. v2 has no recurring-billing API yet, so the server use
 - **Reading state back**: The server treats a webhook as a signal and reads the subscription and the money movements back from the PAY.JP API to decide the state.
   In addition, a reconciliation every `payments_reconcile_interval` reads the event list, the money movements, and a sweep of all subscriptions, and repairs any webhook the server missed.
 - **Income**: For each payment the server records the gross amount, the fee (computed from the charge's `fee_rate`, rounding down below one yen), and the net. A refund and a chargeback record the returned fee as a negative fee.
-  When a term closes and a statement is issued, the difference between the statement's fee and the server's computation is recorded as a fee movement (its ID is the statement's ID), so that the term's fee total matches the statement.
+  When a term closes and a statement is issued, the difference between the statement's fee and the server's computation (the fees of the subscriptions' charges and of the term's tips) is recorded as a fee movement (its ID is the statement's ID), so that the term's fee total matches the statement.
   A statement covers the fees of the whole account, so **use a PAY.JP account dedicated to this server**.
 - **Dates**: Income dates are counted in Japan time.
 
-The server sends at most 20 requests per second (2 in test mode). That stays within PAY.JP's rate limit (for secret-key requests, 30 per second in live mode and 2 in test mode). On `429` the server waits 1 second, doubling each time, and retries up to 3 times.
+The server sends at most 20 requests per second (2 in test mode), API v1 and v2 together. That stays within PAY.JP's rate limit (for secret-key requests, 30 per second in live mode and 2 in test mode). On `429` the server waits 1 second, doubling each time, and retries up to 3 times.
 In test mode a single reconciliation is slow (about 8 minutes at the limit of 1,000 requests). A continuation job takes over, so no action is needed.
+
+## Tips
+
+Tips (see [supporters.md](supporters.md#tips)) use PAY.JP's API v2 with the same keys and webhook token as the subscriptions. PAY.JP lists tipping among the goods it finds hard to approve: whether your account may take tips is for you to settle with PAY.JP under its review and its terms.
+
+- **Paying**: The server creates a Checkout Session (`mode=payment`) of the one amount, by card only, that expires in one hour, and sends the user to its page on PAY.JP (an `https` page on `pay.jp`; the server refuses any other address). The server's tip ID is in the session's `client_reference_id` and in `metadata.my_tip_id` of the session and of its PaymentFlow. The creation carries an `Idempotency-Key`, so a retry gets the same session. PAY.JP runs 3-D Secure on the hosted page when the card company asks for it.
+  A tip is paid when its session is `complete` and its PaymentFlow has succeeded. When a user starts another tip, the server expires the open session first (`POST /v2/checkout/sessions/{id}/expire`); if the user paid it in the meantime, that payment is recorded instead.
+- **Income**: The money of the tips comes from the account's payment transactions of API v2: a payment (its ID is the PaymentFlow's), a refund, a chargeback, and the cancellation of a chargeback, each with the fee that PAY.JP reports. A refund and a chargeback record the returned fee as a negative fee, as for the subscriptions.
+- **Disputes**: PAY.JP sends an event only when a dispute opens. Each reconciliation also reads the disputes that ended in your favour (status `cancel`), and records the cancellation of a chargeback that the payment transactions do not report themselves. A dispute that closed without a chargeback (an inquiry) records nothing.
+- **Refunds**: Refund a tip in the PAY.JP dashboard. A refund in full and a chargeback are recorded with the tip; a partial refund only in the income.
 
 ## Card data and PCI DSS
 
 Card numbers, expiry dates, and security codes are entered only inside PAY.JP's iframe, which payjp.js shows. This server's page and script never touch them. The server receives only the token ID that payjp.js created and the cardholder name and email address that 3-D Secure needs.
-The server stores only PAY.JP object IDs (`cus_`, `sub_`, `ch_`, Plan IDs, event IDs), amounts, periods, and states. It does not store card numbers, last four digits, or expiry dates (the card page only reads the last four digits, the expiry date, and the customer's email address from PAY.JP and shows them). Webhook bodies and PAY.JP responses are kept in neither the logs nor the database.
+The server stores only PAY.JP object IDs (`cus_`, `sub_`, `ch_`, Plan IDs, event IDs, and the Checkout Sessions, PaymentFlows, refunds, and disputes of the tips), amounts, periods, and states. The card of a tip is entered on PAY.JP's own page, which this server never serves. It does not store card numbers, last four digits, or expiry dates (the card page only reads the last four digits, the expiry date, and the customer's email address from PAY.JP and shows them). Webhook bodies and PAY.JP responses are kept in neither the logs nor the database.
 
 The payment page is served from this server's origin, so it is built with PCI DSS v4's management of payment-page scripts (requirement 6.4.3) and detection of tampering (requirement 11.6.1) in mind.
 
@@ -83,6 +94,9 @@ The server uses these events (other types are accepted but not recorded).
 - `charge.succeeded`, `charge.failed`, `charge.refunded`
 - `dispute.created`
 - `statement.created`
+- For tips (API v2): `checkout.session.completed`, `checkout.session.expired`, `payment_flow.succeeded`, `refund.created`, `refund.updated`, `refund.failed`, and `dispute.created`
+
+The server tells the events of API v1 and v2 apart by their shape, so both versions go to the same URL with the same token.
 
 PAY.JP resends a notification only every 3 minutes, at most 3 times, and a notification past that does not arrive until you resend it from the dashboard. The reconciliation repairs what was missed, so **setting `payments_reconcile_interval` to 1 hour is recommended**.
 The state of the provider (the mode, when the last webhook arrived, and the result of the last reconciliation) is shown in the "Payment provider" section of `/admin/supporters` in the administration.
@@ -131,7 +145,7 @@ Open the payment and card pages on this server's origin (they also work on `http
 - A reconciliation failure of kind `permission` means a wrong secret key.
 - `duplicate_charge` in the warnings of the "Payment provider" section means that the server could not finish refunding a payment for a closed subscription. The log line `a second subscription could not be canceled and refunded` names the subscription, and each reconciliation tries again, also after the subscription is deleted. Refund the charge in the dashboard if it goes on: the next try finds it refunded and clears the warning, as long as PAY.JP still lists the charges of the deleted subscription (see [Items to verify](#items-to-verify)). A charge more than 180 days old cannot be refunded: the server logs it and goes on.
 - Other refunds are handled in the PAY.JP dashboard. A full refund and a chargeback remove the role and delete the subscription at once, and a partial refund does not remove the role.
-- **A chargeback cancellation** is not recorded automatically, because PAY.JP emits neither an event nor an API for it. When one happens, record the cancelled amount on the income screen of the costs page (`finance`). The role is not restored automatically.
+- **A chargeback cancellation** of a subscription's charge is not recorded automatically, because API v1 has neither an event nor an API for it (one of a tip is, see [Tips](#tips)). When one happens, record the cancelled amount on the income screen of the costs page (`finance`). The role is not restored automatically.
 - **PAY.JP's paid-plan fees and transfer fees** are not subtracted from the income. Record them as costs in `finance`.
 - When reconciliations often hit the request limit, raise `payments_reconcile_max_requests` or lengthen `payments_reconcile_interval`.
 
@@ -150,4 +164,5 @@ The following behaviors are not settled by PAY.JP's documentation or by test mod
 - Whether the CSP report on loading the payment page matters: `pay.js` applies an inline style against `style-src 'self'`, while the card fields and 3-D Secure work in Chromium. Other browsers were not checked.
 - Whether payjp-cli can forward v1 events.
 - That a charge of a customer's saved card asks for no 3-D Secure unless the request does. A declined charge is listed by `GET /v1/charges` with `paid: false`, and the server ignores one that is not paid.
+- For tips on API v2, which were built from PAY.JP's guides and official SDK and not yet tried in test mode: that PAY.JP sends the events of v2 to the same destination with the same token as those of v1; that the hosted page is on `pay.jp` or one of its subdomains; that the creation of a Checkout Session honours `Idempotency-Key`; that a payment transaction's `resource_id` is the PaymentFlow of a payment, the refund of a refund, and the dispute of a chargeback and of its cancellation; that the lists are newest first with `starting_after` and `ending_before`; the signs of a transaction's amount and fee; and that a term's statement of v1 includes the fees of v2.
 - That `GET /v1/charges` with `subscription` still lists the charges of a deleted subscription. The server refunds before it deletes, so only a try after a refund that failed for good relies on this. The API reference documents the filter and says nothing about deleted subscriptions. If the list comes back empty, the server reports a failure instead of a refund, and `duplicate_charge` stays even after the charge is refunded by hand.
