@@ -139,6 +139,7 @@ export function relationshipFixture(
     blocking: false,
     muting: false,
     muting_notifications: false,
+    note: "",
     ...overrides,
   };
 }

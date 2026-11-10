@@ -278,5 +278,69 @@
   "profile.title": {
     "defaultMessage": "プロフィール",
     "description": "Heading and document title of the signed-in user's own profile page."
+  },
+  "profile.note.title": {
+    "defaultMessage": "非公開のメモ",
+    "description": "Heading of the region of a profile with the user's private note on the account, which only the user sees."
+  },
+  "profile.note.description": {
+    "defaultMessage": "あなただけが見られます。",
+    "description": "Note under the heading of the private note on a profile: the account is not told."
+  },
+  "profile.note.empty": {
+    "defaultMessage": "{name} へのメモはありません。",
+    "description": "Shown in the private note region of a profile while the user has no note on the account. {name} is the account's display name."
+  },
+  "profile.note.add": {
+    "defaultMessage": "メモを書く",
+    "description": "Button in the private note region of a profile that opens the dialog to write a note on the account."
+  },
+  "profile.note.edit": {
+    "defaultMessage": "メモを編集",
+    "description": "Button in the private note region of a profile that opens the dialog to change the note on the account."
+  },
+  "profile.note.dialog_title": {
+    "defaultMessage": "{name} についての非公開のメモ",
+    "description": "Title of the dialog where the user writes a private note on an account. {name} is the account's display name."
+  },
+  "profile.note.field": {
+    "defaultMessage": "メモ",
+    "description": "Label of the text area of the private note dialog."
+  },
+  "profile.note.field_description": {
+    "defaultMessage": "あなただけが見られ、{name} には知らされません。空にするとメモを消します。",
+    "description": "Description of the text area of the private note dialog. {name} is the account's display name."
+  },
+  "profile.note.characters_left": {
+    "defaultMessage": "{count, plural, other {残り # 文字}}",
+    "description": "How many more characters the private note on an account takes."
+  },
+  "profile.note.characters_over": {
+    "defaultMessage": "{count, plural, other {# 文字超えています}}",
+    "description": "How many characters the private note on an account is over its limit."
+  },
+  "profile.note.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button that closes the private note dialog without saving."
+  },
+  "profile.note.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves the private note on an account."
+  },
+  "profile.note.close": {
+    "defaultMessage": "閉じる",
+    "description": "Accessible name of the close button of the private note dialog."
+  },
+  "profile.note.save_failed": {
+    "defaultMessage": "メモを保存できませんでした: {reason}",
+    "description": "Error in the private note dialog when the note could not be saved. {reason} is the server's explanation."
+  },
+  "profile.note.saved": {
+    "defaultMessage": "{name} へのメモを保存しました。",
+    "description": "Toast when the private note on an account was saved. {name} is the account's display name."
+  },
+  "profile.note.removed": {
+    "defaultMessage": "{name} へのメモを消しました。",
+    "description": "Toast when the private note on an account was removed by saving it empty. {name} is the account's display name."
   }
 }

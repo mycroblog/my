@@ -70,6 +70,13 @@ that server.
 An empty home timeline says "Your home timeline is empty". Follow someone, or "Browse the local timeline"; on a server
 without a local timeline, "Find people to follow" opens the search.
 
+## Private notes
+
+Another person's profile has a "Private note" area where you keep a note on that account, up to 2,000 characters: how
+you met, what they like. Only you can see it; the account is not told, and the note does not leave this server. "Add
+note" or "Edit note" opens it, and saving it empty removes the note. The archive of "Archive and deletion" in the
+settings holds your notes, and a note goes when you or the other account is deleted.
+
 ## Lists
 
 "Lists" puts people you follow in a list, so that you read their posts apart from your home timeline. Only you see your
