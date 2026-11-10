@@ -12,6 +12,8 @@ export {
   statusPath,
   statusQueryOptions,
 } from "./api/status";
+// What a notification about the viewer's post changes in its cached copies (web-client/README.md S10).
+export { receivePostNotification } from "./api/live";
 export { CompactStatus } from "./components/QuotedStatus";
 export { StatusCard } from "./components/StatusCard";
 // What a post that the viewer's keyword filters fold says in its place (ADR-0157 §2).
