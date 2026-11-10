@@ -15,6 +15,28 @@ characters are left. Besides text you can:
 A post that could not be sent stays under "Posts being sent", where you can "Send again", "Edit", or "Discard" it.
 A server can refuse a post after an automated review. When the refusal can be appealed, the post offers "Appeal".
 
+## Drafts and scheduled posts
+
+Choose "Save draft" to keep what you are writing on the server and empty the form. A saved draft opens on any device
+you sign in on: the link "Drafts and scheduled posts" under the form leads to the page that lists them, where "Edit"
+opens a draft in the form again. When the form already holds something else, you are asked before it is replaced.
+Saving a draft you opened from that page replaces it; posting it publishes it and removes it from your drafts. If the
+same draft was saved on another device since you opened it, nothing is overwritten: save again to keep your version as
+a new draft.
+
+To publish a post later, choose "Schedule the post" (the clock among the form's tools), pick a date and a time, and
+choose "Schedule". The date and time are in your time zone, the one in your preferences, and the form names it. A time
+in the past, too soon, or too far ahead is refused before anything is sent; the server sets how soon and how far
+ahead you can schedule. The post is published at that time, or soon after.
+
+The page "Drafts and scheduled posts" lists your scheduled posts first, with the time each is published, then your
+drafts. A scheduled post can be moved with "Change time" or turned back into a draft with "Cancel schedule", and any
+draft can be deleted. Only you see your drafts.
+
+When a scheduled post cannot be published at its time, for example because the post it replies to is gone, it stays
+among your drafts with the reason, and you get a notification that leads to your drafts, so you can fix it and
+schedule it again.
+
 ## Who can see a post
 
 The "Visibility" button of the form opens "Who can see this post?" for that post. The default for new posts is the
