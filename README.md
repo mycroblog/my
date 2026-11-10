@@ -100,6 +100,15 @@ the newest, `/v0.1/` and the like) and `/next/` for the development version.
 > **Status: in development, before the first release (v0).** Data may not survive an upgrade before `v0.1.0`: the
 > database may have to be recreated. From `v0.1.0` on, every upgrade between releases keeps your data.
 
+## Sponsors
+
+mycroblog is supported by its sponsors. Thank you! To join them, see
+[GitHub Sponsors](https://github.com/sponsors/mycroblog).
+
+<p align="center">
+  <a href="https://github.com/sponsors/mycroblog"><img src="https://sponsors.mycroblog.dev/sponsors.svg" alt="Sponsors of mycroblog"></a>
+</p>
+
 ## Contributing
 
 To work on mycroblog, read [CONTRIBUTING.md](CONTRIBUTING.md).
