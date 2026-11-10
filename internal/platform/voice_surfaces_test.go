@@ -216,8 +216,9 @@ func TestVoiceSurfacesThroughAPI(t *testing.T) {
 	if sum.State != clientapi.VoiceRoomSummaryStateOpen || sum.Name != nil || sum.Host != nil {
 		t.Errorf("summary of a room of the followers = %+v, want the state only", sum)
 	}
-	if body := page(); strings.Contains(body, "og:title") {
-		t.Errorf("the page of a room that shows no summary carries a preview:\n%s", body)
+	// The generic shell has only the site-wide preview, which has no URL of its own.
+	if body := page(); strings.Contains(body, "og:url") {
+		t.Errorf("the page of a room that shows no summary carries a preview of its own:\n%s", body)
 	}
 	e.want(e.do(http.MethodPatch, "/admin/settings", alice.token, map[string]any{"values": map[string]string{"voice_public_summary": "true"}}, nil), http.StatusOK, "show the summaries")
 	sum = clientapi.VoiceRoomSummary{}

@@ -15552,6 +15552,25 @@ components:
             whoever uploaded it; omitted for other kinds, for none, and while the file is processing
             or is not an image.
           $ref: '#/components/schemas/AdminSettingImage'
+    AdminSettingImage:
+      description: |
+        The image of a `media` setting (`preview_image`, `thumbnail`): the large still variant of its
+        media file, as link previews and the about page use it.
+      type: object
+      required:
+        - url
+        - width
+        - height
+      properties:
+        url:
+          type: string
+          format: uri
+        width:
+          type: integer
+          minimum: 1
+        height:
+          type: integer
+          minimum: 1
     AdminSettingList:
       description: Every instance setting, in a fixed order.
       type: object
@@ -24967,22 +24986,3 @@ components:
       properties:
         endpoint_id:
           $ref: '#/components/schemas/Id'
-    AdminSettingImage:
-      description: |
-        The image of a `media` setting (`preview_image`, `thumbnail`): the large still variant of its
-        media file, as link previews and the about page use it.
-      type: object
-      required:
-        - url
-        - width
-        - height
-      properties:
-        url:
-          type: string
-          format: uri
-        width:
-          type: integer
-          minimum: 1
-        height:
-          type: integer
-          minimum: 1

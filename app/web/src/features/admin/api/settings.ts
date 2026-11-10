@@ -30,7 +30,7 @@ export const imageAltLimit = 1500;
 /** The texts of the server settings screen. */
 type SettingsTextKey = Extract<
   Schemas["InstanceTextKey"],
-  "name" | "short_description" | "description" | "thumbnail_alt"
+  "name" | "short_description" | "description" | "thumbnail_alt" | "preview_image_alt"
 >;
 
 /** A new value of a text; an empty `body` clears it. */

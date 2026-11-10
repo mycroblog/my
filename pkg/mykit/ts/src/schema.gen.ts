@@ -10221,6 +10221,16 @@ export interface components {
              */
             image?: components["schemas"]["AdminSettingImage"];
         };
+        /**
+         * @description The image of a `media` setting (`preview_image`, `thumbnail`): the large still variant of its
+         *     media file, as link previews and the about page use it.
+         */
+        AdminSettingImage: {
+            /** Format: uri */
+            url: string;
+            width: number;
+            height: number;
+        };
         /** @description Every instance setting, in a fixed order. */
         AdminSettingList: {
             items: components["schemas"]["AdminSetting"][];
@@ -15983,16 +15993,6 @@ export interface components {
         /** @description The data of a `webhook.test` message. */
         WebhookTest: {
             endpoint_id: components["schemas"]["Id"];
-        };
-        /**
-         * @description The image of a `media` setting (`preview_image`, `thumbnail`): the large still variant of its
-         *     media file, as link previews and the about page use it.
-         */
-        AdminSettingImage: {
-            /** Format: uri */
-            url: string;
-            width: number;
-            height: number;
         };
     };
     responses: {
