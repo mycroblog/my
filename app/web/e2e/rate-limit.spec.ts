@@ -78,6 +78,7 @@ const post: Schemas["Status"] = {
   boosts_count: 0,
   favourites_count: 0,
   reactions: [],
+  filtered: [],
 };
 
 const instance: Schemas["Instance"] = {

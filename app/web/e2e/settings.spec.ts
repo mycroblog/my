@@ -65,6 +65,7 @@ function postOf(account: typeof viewer, n: number, text: string) {
     boosts_count: 0,
     favourites_count: 0,
     reactions: [],
+    filtered: [],
   };
 }
 

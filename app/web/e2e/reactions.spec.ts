@@ -88,6 +88,7 @@ const post: Status = {
   replies_count: 0,
   boosts_count: 0,
   favourites_count: 1,
+  filtered: [],
   reactions: [
     { name: "👍", count: 12, me: false },
     { ...blobcat, count: 3, me: false },

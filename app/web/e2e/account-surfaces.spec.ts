@@ -70,6 +70,7 @@ const post = {
   boosts_count: 0,
   favourites_count: 0,
   reactions: [],
+  filtered: [],
   card: {
     url: "https://cards.example/page",
     title: "A page whose title is long enough to need more than a single line in a small card on a narrow screen",

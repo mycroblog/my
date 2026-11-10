@@ -105,6 +105,7 @@ const post: Schemas["Status"] = {
   boosts_count: 0,
   favourites_count: 0,
   reactions: [],
+  filtered: [],
 };
 
 const reportId = "0192f0c4-7a8e-7000-8000-0000000c0002";

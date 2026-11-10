@@ -109,6 +109,9 @@ func normalizeStatus(st mykit.Status) mykit.Status {
 	if st.Reactions == nil {
 		st.Reactions = []mykit.StatusReaction{}
 	}
+	if st.Filtered == nil {
+		st.Filtered = []mykit.FilterResult{}
+	}
 	if st.Tags == nil {
 		st.Tags = []mykit.StatusTag{}
 	}

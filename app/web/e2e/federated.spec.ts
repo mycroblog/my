@@ -57,6 +57,7 @@ function status(n: number, author: Account): Status {
     boosts_count: 0,
     favourites_count: 0,
     reactions: [],
+    filtered: [],
   };
 }
 

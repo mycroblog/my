@@ -57,6 +57,7 @@ const post = {
   boosts_count: 0,
   favourites_count: 0,
   reactions: [],
+  filtered: [],
 };
 
 /** Newest first: a mention (unread), a boost of a post behind a content warning (unread), a follow (read). */

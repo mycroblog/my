@@ -66,6 +66,7 @@ const post: Status = {
   boosts_count: 0,
   favourites_count: 0,
   reactions: [],
+  filtered: [],
 };
 
 /** The instance's status page, on another site (FR-810), which the offline bar links to. */
