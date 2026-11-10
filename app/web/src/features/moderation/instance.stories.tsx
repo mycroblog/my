@@ -71,7 +71,8 @@ export const DeliveryRevealed: Story = {
 
 /** Nothing was delivered to the server. */
 export const NoDeliveries: Story = {
-  ...answering(...deliveriesApi([])),
+  // A story's handlers replace those of the meta, so the screen's own ones come again before the empty deliveries.
+  ...answering(moderatorViewer, ...instancesApi(storyInstances), ...deliveriesApi([])),
   ...showing("No deliveries to this server"),
 };
 
