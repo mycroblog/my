@@ -618,6 +618,45 @@ func (q *Queries) ListPendingInteractionRequests(ctx context.Context, arg ListPe
 	return items, nil
 }
 
+const listReplyAuthorizationsOf = `-- name: ListReplyAuthorizationsOf :many
+SELECT s.id, CAST(rs.authorization_uri AS TEXT) AS authorization_uri
+FROM statuses s
+JOIN interaction_requests r ON r.kind = 'reply' AND r.interacting_uri = s.uri AND r.target_uri = s.in_reply_to_uri
+JOIN interaction_request_states rs ON rs.request_id = r.id
+WHERE s.id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))) AND rs.state = 'accepted' AND rs.authorization_uri IS NOT NULL
+ORDER BY s.id
+`
+
+type ListReplyAuthorizationsOfRow struct {
+	ID               string
+	AuthorizationUri string
+}
+
+// ListReplyAuthorizationsOf returns the authorizations of the approved reply requests of the
+// statuses among ids, which their Notes name (replyAuthorization).
+func (q *Queries) ListReplyAuthorizationsOf(ctx context.Context, ids string) ([]ListReplyAuthorizationsOfRow, error) {
+	rows, err := q.db.QueryContext(ctx, listReplyAuthorizationsOf, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListReplyAuthorizationsOfRow{}
+	for rows.Next() {
+		var i ListReplyAuthorizationsOfRow
+		if err := rows.Scan(&i.ID, &i.AuthorizationUri); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const purgeInteractionAuthorizationRevocations = `-- name: PurgeInteractionAuthorizationRevocations :exec
 DELETE FROM interaction_authorization_revocations WHERE authorization_id IN (
   SELECT a.id FROM interaction_authorizations a WHERE a.target_status_id IN (SELECT value FROM json_each(CAST(?1 AS TEXT))))

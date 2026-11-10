@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"sync"
 
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/domain/federation"
@@ -87,7 +88,7 @@ func (f *fakeObjects) StatusActivity(_ context.Context, req appfederation.Reques
 	return f.find(req, id, "/activity")
 }
 
-func (f *fakeObjects) QuoteAuthorization(context.Context, string) (appfederation.Object, error) {
+func (f *fakeObjects) Authorization(context.Context, appcontent.InteractionKind, string) (appfederation.Object, error) {
 	return appfederation.Object{}, appfederation.ErrNotFound
 }
 

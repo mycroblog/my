@@ -247,6 +247,7 @@ type interactionHandlers struct{ d InteractionHandlersDeps }
 func interactionError(err error) error {
 	switch {
 	case errors.Is(err, appcontent.ErrNotFound), errors.Is(err, appcontent.ErrNotBoostable), errors.Is(err, appcontent.ErrBoostNotAllowed),
+		errors.Is(err, appcontent.ErrInteractionAwaitsApproval), errors.Is(err, ErrQuoteUnauthorized),
 		errors.Is(err, appcontent.ErrActorUnavailable), errors.Is(err, appcontent.ErrNotAuthor),
 		errors.Is(err, appcontent.ErrInvalidReaction), errors.Is(err, appcontent.ErrInteractionRestricted):
 		return fmt.Errorf("%w: %w", ErrDropActivity, err)
@@ -275,10 +276,18 @@ func (h interactionHandlers) announce(ctx context.Context, in *InboxActivity) er
 	if err != nil {
 		return err
 	}
-	_, err = h.d.Interactions.RecordRemoteBoost(ctx, appcontent.RemoteBoostInput{
+	boost := appcontent.RemoteBoostInput{
 		URI: activityURI(in), BoosterAccountID: in.Actor.Account.ID, StatusID: st.ID,
 		Visibility: appcontent.Visibility(in.Activity.Audience.Visibility(cols.followers)), BoostedAt: in.Activity.Published,
-	})
+	}
+	_, err = h.d.Interactions.RecordRemoteBoost(ctx, boost)
+	if errors.Is(err, appcontent.ErrInteractionAwaitsApproval) && !st.IsLocal && in.Activity.Authorization != "" {
+		// A boost of a remote status that its author's server approved (ADR-0155 §6).
+		if err = h.d.Statuses.verifyAnnounce(ctx, in, st); err == nil {
+			boost.Authorized = true
+			_, err = h.d.Interactions.RecordRemoteBoost(ctx, boost)
+		}
+	}
 	return interactionError(err)
 }
 

@@ -33,10 +33,13 @@ const (
 	// leave it, and the Accept or Reject of a Follow of the instance actor. Its object is the
 	// relay, or the remote actor whose Follow of the instance actor is rejected.
 	OutboundRelay OutboundObjectKind = "relay"
-	// OutboundQuote is an activity of the approval of a quote (FEP-044f, ADR-0069 §3): the
-	// QuoteRequest of a local status's quote of a remote one, the Accept or Reject of a remote
-	// QuoteRequest, and the Delete of a revoked QuoteAuthorization. Its document is stored when
-	// it is recorded, and it goes to one inbox (the payload's).
+	// OutboundQuote is an activity of the approval of an interaction (FEP-044f, ADR-0069 §3,
+	// ADR-0155 §6, §7): the QuoteRequest of a local status's quote of a remote one and the
+	// AnnounceRequest of a local boost of a remote status, the Accept or Reject of a remote
+	// account's request or interaction, and the Delete of a revoked QuoteAuthorization. Its
+	// document is stored when it is recorded, and it goes to one inbox (the payload's), and the
+	// Delete and the Accept of a reply without a request to the actor's followers too. The
+	// ReplyRequest of a local reply is of the status (OutboundStatus), whose Note it embeds.
 	OutboundQuote OutboundObjectKind = "quote"
 	// OutboundRefusal is the Reject of a remote Follow of a local actor that the federation mode
 	// refuses (inbound, ADR-0006), recorded without a follow. Its object is the remote actor; its

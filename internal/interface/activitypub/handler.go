@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	appaccount "github.com/mycroblog/my/internal/app/account"
+	appcontent "github.com/mycroblog/my/internal/app/content"
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -35,7 +36,7 @@ type Objects interface {
 	Authenticate(ctx context.Context, r *appfederation.SignedRequest) (appfederation.Requester, error)
 	Status(ctx context.Context, req appfederation.Requester, statusID string) (appfederation.Object, error)
 	StatusActivity(ctx context.Context, req appfederation.Requester, statusID string) (appfederation.Object, error)
-	QuoteAuthorization(ctx context.Context, id string) (appfederation.Object, error)
+	Authorization(ctx context.Context, kind appcontent.InteractionKind, id string) (appfederation.Object, error)
 	Announce(ctx context.Context, req appfederation.Requester, id string) (appfederation.Object, error)
 	PageStatusURI(ctx context.Context, statusID string) (string, error)
 	OutboxTotal(ctx context.Context, accountID string) (int64, error)
@@ -189,7 +190,9 @@ func (h *Handler) Register(r Router) {
 	r.Handle("GET "+objectsPrefix+"{id}", publish(h.object))
 	r.Handle("GET "+objectsPrefix+"{id}/"+activitySegment, publish(h.object))
 	r.Handle("GET "+emojisPrefix+"{id}", publish(h.emoji))
-	r.Handle("GET "+quoteAuthorizationsPrefix+"{id}", publish(h.quoteAuthorization))
+	for _, kind := range appcontent.InteractionKinds {
+		r.Handle("GET "+authorizationsPrefix(kind)+"{id}", publish(h.authorization(kind)))
+	}
 	r.Handle("GET "+activitiesPrefix+"{id}", publish(h.activity))
 	r.Handle("GET "+contextsPrefix+"{id}", publish(h.conversation))
 	// A wildcard cannot share a path segment with "@", so every single-segment GET that no

@@ -94,13 +94,18 @@ type ActivityDocument struct {
 	Cc        []IRI        `json:"cc"`
 	// Object is an IRI or an embedded document.
 	Object any `json:"object"`
-	// Instrument is the quoting post of a QuoteRequest; Result the QuoteAuthorization of the
-	// Accept of one (FEP-044f). Other activities have neither.
-	Instrument IRI `json:"instrument,omitempty"`
+	// Instrument is the interaction of a QuoteRequest, ReplyRequest, or AnnounceRequest: the
+	// quoting post's IRI, or the reply or the Announce embedded; Result the authorization of the
+	// Accept of one (FEP-044f, ADR-0155 §6). Other activities have neither.
+	Instrument any `json:"instrument,omitempty"`
 	Result     IRI `json:"result,omitempty"`
-	// Target is the actor that a Move moves its object to (ADR-0089); other activities have
-	// none.
+	// Target is the actor that a Move moves its object to (ADR-0089), and the post that the
+	// Accept of a reply without a request approves the reply to (ADR-0155 §6); other activities
+	// have none.
 	Target IRI `json:"target,omitempty"`
+	// AnnounceAuthorization is the AnnounceAuthorization that approves an Announce (ADR-0155
+	// §7); other activities have none.
+	AnnounceAuthorization IRI `json:"announceAuthorization,omitempty"`
 }
 
 // NewActivityDocument returns the top-level document of an activity with its context. A zero
@@ -269,6 +274,9 @@ type NoteDocument struct {
 	QuoteURL           IRI `json:"quoteUrl,omitempty"`
 	QuoteURI           IRI `json:"quoteUri,omitempty"`
 	QuoteAuthorization IRI `json:"quoteAuthorization,omitempty"`
+	// ReplyAuthorization is the ReplyAuthorization that approves a reply that its parent's author
+	// approved (ADR-0155 §7).
+	ReplyAuthorization IRI `json:"replyAuthorization,omitempty"`
 	// InteractionPolicy says who may reply to, boost, and quote the status.
 	InteractionPolicy *InteractionPolicy `json:"interactionPolicy,omitempty"`
 }
@@ -315,8 +323,10 @@ func (n NoteDocument) WithQuote(target, authorization IRI, page string) NoteDocu
 	return n
 }
 
-// QuoteAuthorizationDocument is this server's approval of a quote (FEP-044f), served at its IRI.
-type QuoteAuthorizationDocument struct {
+// AuthorizationDocument is this server's approval of a quote (FEP-044f's QuoteAuthorization), a
+// reply, or a boost (GoToSocial's ReplyAuthorization and AnnounceAuthorization), served at its
+// IRI.
+type AuthorizationDocument struct {
 	Context           []any      `json:"@context"`
 	ID                IRI        `json:"id"`
 	Type              ObjectType `json:"type"`
@@ -325,12 +335,18 @@ type QuoteAuthorizationDocument struct {
 	InteractionTarget IRI        `json:"interactionTarget"`
 }
 
+// NewAuthorizationDocument returns the authorization id of type t by which author approves the
+// interaction interacting with target.
+func NewAuthorizationDocument(t ObjectType, id, author, interacting, target IRI) AuthorizationDocument {
+	return AuthorizationDocument{
+		Context: LDContext(), ID: id, Type: t, AttributedTo: author, InteractingObject: interacting, InteractionTarget: target,
+	}
+}
+
 // NewQuoteAuthorizationDocument returns the QuoteAuthorization id by which author approves the
 // quote quoting of quoted.
-func NewQuoteAuthorizationDocument(id, author, quoting, quoted IRI) QuoteAuthorizationDocument {
-	return QuoteAuthorizationDocument{
-		Context: LDContext(), ID: id, Type: ObjectQuoteAuthorization, AttributedTo: author, InteractingObject: quoting, InteractionTarget: quoted,
-	}
+func NewQuoteAuthorizationDocument(id, author, quoting, quoted IRI) AuthorizationDocument {
+	return NewAuthorizationDocument(ObjectQuoteAuthorization, id, author, quoting, quoted)
 }
 
 // QuestionOption is one choice of a Question: a Note named after it, whose replies count its

@@ -144,3 +144,13 @@ DELETE FROM interaction_authorizations WHERE target_status_id IN (SELECT value F
 
 -- name: PurgeStatusQuoteDetachments :exec
 DELETE FROM status_quote_detachments WHERE status_id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT)));
+
+-- ListReplyAuthorizationsOf returns the authorizations of the approved reply requests of the
+-- statuses among ids, which their Notes name (replyAuthorization).
+-- name: ListReplyAuthorizationsOf :many
+SELECT s.id, CAST(rs.authorization_uri AS TEXT) AS authorization_uri
+FROM statuses s
+JOIN interaction_requests r ON r.kind = 'reply' AND r.interacting_uri = s.uri AND r.target_uri = s.in_reply_to_uri
+JOIN interaction_request_states rs ON rs.request_id = r.id
+WHERE s.id IN (SELECT value FROM json_each(CAST(sqlc.arg(ids) AS TEXT))) AND rs.state = 'accepted' AND rs.authorization_uri IS NOT NULL
+ORDER BY s.id;

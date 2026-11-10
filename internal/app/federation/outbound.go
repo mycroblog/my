@@ -131,7 +131,8 @@ type ActorHiding interface {
 // delivers it, so that an activity is recorded exactly when the command commits.
 //
 //   - content.status_created / status_revised / status_deleted of a local status: Create,
-//     Update, and Delete.
+//     Update, and Delete; a held local reply has neither Create nor Update until
+//     content.status_released, which records its Create (ADR-0155 §7).
 //   - content.boosted / boost_retracted of a boost that federates: Announce and Undo Announce.
 //     A boost of a local status (Boost.Federates is false) is not recorded (ADR-0017).
 //   - account.profile_revised of a local profile (ProfileRevised.Federates): Update of the
@@ -164,20 +165,31 @@ func RegisterOutboundProjectors(r *uow.Projectors, d RecorderDeps) {
 	registerFavouriteProjectors(r, rec)
 	registerReactionProjectors(r, rec)
 	registerPollVoteProjectors(r, rec)
+	recordCreate := func(ctx context.Context, tx uow.Tx, st appcontent.Status, rev appcontent.Revision) error {
+		return rec.record(ctx, tx, federation.OutboundActivity{
+			ActivityURI: federation.IRI(st.URI + "/activity"), Type: federation.ActivityCreate,
+			ActorAccountID: st.AuthorAccountID, ObjectKind: federation.OutboundStatus, ObjectID: st.ID,
+			CreatedAt: rev.RevisedAt,
+		}, rev.ID)
+	}
 	r.Register(appcontent.EventStatusCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.StatusCreated)
-		if !ok || !ev.Status.IsLocal {
+		// A held local reply goes out once it is approved (ADR-0155 §7).
+		if !ok || !ev.Status.IsLocal || ev.Unpublished() {
 			return nil
 		}
-		return rec.record(ctx, tx, federation.OutboundActivity{
-			ActivityURI: federation.IRI(ev.Status.URI + "/activity"), Type: federation.ActivityCreate,
-			ActorAccountID: ev.Status.AuthorAccountID, ObjectKind: federation.OutboundStatus, ObjectID: ev.Status.ID,
-			CreatedAt: ev.Revision.RevisedAt,
-		}, ev.Revision.ID)
+		return recordCreate(ctx, tx, ev.Status, ev.Revision)
+	})
+	r.Register(appcontent.EventStatusReleased, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
+		ev, ok := e.(appcontent.StatusReleased)
+		if !ok || !ev.Published() {
+			return nil
+		}
+		return recordCreate(ctx, tx, ev.Status, ev.Revision)
 	})
 	r.Register(appcontent.EventStatusRevised, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		ev, ok := e.(appcontent.StatusRevised)
-		if !ok || !ev.Status.IsLocal {
+		if !ok || !ev.Status.IsLocal || ev.Unpublished() {
 			return nil
 		}
 		return rec.record(ctx, tx, federation.OutboundActivity{

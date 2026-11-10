@@ -49,6 +49,11 @@ func InteractionAuthorizationURI(host string, kind content.InteractionKind, id s
 	return content.InteractionAuthorizationURI(host, kind, id)
 }
 
+// AuthorizationSegment returns the path segment of the IRIs of the authorizations of kind.
+func AuthorizationSegment(kind content.InteractionKind) string {
+	return content.AuthorizationSegment(kind)
+}
+
 // InteractionRequestURI returns the ActivityPub id of the ReplyRequest or AnnounceRequest of the
 // request id that this server sends.
 func InteractionRequestURI(host, id string) string { return content.InteractionRequestURI(host, id) }
@@ -87,6 +92,10 @@ type ApprovalRepository interface {
 	// ListOwnInteractions returns the requests of the replies of accountID whose URI is among
 	// uris, and of its boosts of the statuses among uris, with their states, with one query.
 	ListOwnInteractions(ctx context.Context, accountID string, uris []string) ([]OwnInteraction, error)
+
+	// ReplyAuthorizationsOf returns, by status, the authorization of the approved reply request of
+	// each of the statuses ids that has one, with one query.
+	ReplyAuthorizationsOf(ctx context.Context, ids []string) (map[string]string, error)
 
 	// InsertInteractionAuthorization records this server's approval of an interaction. It
 	// reports false, writing nothing, when the interaction has one for the target status.

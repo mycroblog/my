@@ -150,6 +150,22 @@ func (r *StatusRepository) ListOwnInteractions(ctx context.Context, accountID st
 	return out, nil
 }
 
+// ReplyAuthorizationsOf implements content.ApprovalRepository.
+func (r *StatusRepository) ReplyAuthorizationsOf(ctx context.Context, ids []string) (map[string]string, error) {
+	out := map[string]string{}
+	if len(ids) == 0 {
+		return out, nil
+	}
+	rows, err := r.db.reader().ListReplyAuthorizationsOf(ctx, ids)
+	if err != nil {
+		return nil, postgres.Wrap(err, "list reply authorizations")
+	}
+	for _, row := range rows {
+		out[row.ID] = row.AuthorizationUri
+	}
+	return out, nil
+}
+
 // IsHeldReply implements content.Repository.
 func (r *StatusRepository) IsHeldReply(ctx context.Context, tx uow.Tx, statusID string) (bool, error) {
 	held, err := r.HeldRepliesAmong(ctx, tx, []string{statusID})

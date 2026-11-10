@@ -580,6 +580,13 @@ func (p *pageNoteQuotes) FindInteractionPolicy(ctx context.Context, statusID str
 	return p.read.Policies[statusID], nil
 }
 
+func (p *pageNoteQuotes) ReplyAuthorization(ctx context.Context, statusID string) (string, error) {
+	if !slices.Contains(p.page, statusID) {
+		return p.NoteQuotes.ReplyAuthorization(ctx, statusID)
+	}
+	return p.read.ReplyAuthorizations[statusID], nil
+}
+
 func (p *pageNoteQuotes) FederatedQuotePage(ctx context.Context, uri string) (string, bool, error) {
 	if l, ok := p.read.Links[uri]; ok {
 		return l.Page, l.OK, nil

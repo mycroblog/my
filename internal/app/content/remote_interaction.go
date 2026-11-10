@@ -31,15 +31,20 @@ type RemoteBoostInput struct {
 	Visibility content.Visibility
 	// BoostedAt is the published time of the Announce; zero, or a time in the future, is now.
 	BoostedAt time.Time
+	// Authorized is whether the federation module verified the announceAuthorization of the
+	// Announce: the approval of a remote status's server, which its boost rules may require
+	// (ADR-0155 §6).
+	Authorized bool
 }
 
 // RecordRemoteBoost records the boost of a remote account (an Announce, federation.md §3.4) and
 // returns it. The account must be remote and able to see the status: a local status as an
 // ActivityPub fetch by that account would see it (content.CanView in ContextObjectFetch). A
 // local-visibility status, a followers-only status of someone else, a direct status, and an
-// Announce addressed to no one fail with content.ErrNotBoostable, and a local status whose boost
-// rules do not admit the account at once with ErrBoostNotAllowed (ADR-0155 §6): such a boost is
-// not recorded, so it is neither counted nor notified. The boost's ID has the time of
+// Announce addressed to no one fail with content.ErrNotBoostable; a boost that waits for an
+// approval with ErrInteractionAwaitsApproval, and one that the boost rules refuse with
+// ErrBoostNotAllowed (remoteBoostApproval, ADR-0155 §6): such a boost is not recorded, so it is
+// neither counted nor notified. The boost's ID has the time of
 // the Announce, its visibility is the narrower of the Announce's and the status's, and it never
 // federates (content.Boost.Federates).
 //
@@ -58,10 +63,8 @@ func (s *Interactions) RecordRemoteBoost(ctx context.Context, in RemoteBoostInpu
 	case !vis.Valid(), vis == content.VisibilityDirect, vis == content.VisibilityLocal:
 		return content.Boost{}, fmt.Errorf("boost %s addressed as %q: %w", st.ID, in.Visibility, content.ErrNotBoostable)
 	}
-	if st.IsLocal {
-		if err := s.remoteMayBoost(ctx, in.BoosterAccountID, st); err != nil {
-			return content.Boost{}, err
-		}
+	if err := s.remoteBoostApproval(ctx, in, st, vis); err != nil {
+		return content.Boost{}, err
 	}
 	at := s.remoteTime(in.BoostedAt)
 	b := content.Boost{
@@ -364,16 +367,69 @@ func (s *Interactions) remoteTime(at time.Time) time.Time {
 	return at
 }
 
-// remoteMayBoost fails with ErrBoostNotAllowed unless the boost rules of the local status st admit
-// a boost by the remote account accountID, which may see it, at once. One that waits for the
-// author's approval is not recorded either: this server does not hold one yet.
-func (s *Interactions) remoteMayBoost(ctx context.Context, accountID string, st content.Status) error {
-	decision, err := s.interactionReaders().mayInteract(ctx, content.InteractionAnnounce, accountID, false, nil, st)
-	if err != nil {
+// remoteBoostApproval fails unless the remote boost in of st, addressed as vis, may be recorded
+// now (ADR-0155 §6): one that a request asked for is recorded once the request is approved; one of
+// a local status as its boost rules decide (content.MayInteract), where a boost that a manual rule
+// includes is recorded as a pending request for the author to answer (ErrInteractionAwaitsApproval)
+// and one outside them as a refused one (ErrBoostNotAllowed), whose Reject goes out; one of a
+// remote status whose boost rules admit no one at once only with an authorization that the
+// federation module verified (RemoteBoostInput.Authorized).
+func (s *Interactions) remoteBoostApproval(ctx context.Context, in RemoteBoostInput, st content.Status, vis content.Visibility) error {
+	if s.d.Quotes == nil {
+		return nil
+	}
+	awaits := fmt.Errorf("boost %s by %s: %w", st.ID, in.BoosterAccountID, ErrInteractionAwaitsApproval)
+	refused := fmt.Errorf("boost %s by %s: %w", st.ID, in.BoosterAccountID, ErrBoostNotAllowed)
+	switch r, err := s.d.Quotes.FindInteractionRequestFor(ctx, nil, content.InteractionAnnounce, in.URI, st.URI); {
+	case err == nil:
+		state, err := s.approvals().state(ctx, nil, r)
+		switch {
+		case err != nil:
+			return err
+		case r.InteractingAccountID != in.BoosterAccountID, state.State == content.InteractionRequestRejected:
+			return refused
+		case state.State != content.InteractionRequestAccepted:
+			return awaits
+		}
+		return nil
+	case !errors.Is(err, ErrNotFound):
 		return err
 	}
-	if decision != content.InteractionAllowed {
-		return fmt.Errorf("boost %s by %s: %w", st.ID, accountID, ErrBoostNotAllowed)
+	if !st.IsLocal {
+		if in.Authorized || in.BoosterAccountID == st.AuthorAccountID {
+			return nil
+		}
+		policy, err := interactionPolicyOf(ctx, s.d.Quotes, st.ID)
+		if err != nil {
+			return err
+		}
+		if !content.AdmitsEveryone(policy, content.InteractionAnnounce, false) {
+			return awaits
+		}
+		return nil
 	}
-	return nil
+	decision, err := s.interactionReaders().mayInteract(ctx, content.InteractionAnnounce, in.BoosterAccountID, false, nil, st)
+	if err != nil || decision == content.InteractionAllowed {
+		return err
+	}
+	r := content.InteractionRequest{
+		Kind: content.InteractionAnnounce, Direction: content.DirectionInbound, TargetURI: st.URI, TargetAccountID: st.AuthorAccountID,
+		InteractingURI: in.URI, InteractingAccountID: in.BoosterAccountID, Visibility: vis,
+	}
+	a := answer{}
+	if decision == content.InteractionDenied {
+		a = answer{kind: content.InteractionEventRejected, deferred: true}
+	}
+	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+		ref := RefOf(st)
+		_, _, _, err := s.approvals().request(ctx, tx, r, a, &ref)
+		return err
+	})
+	switch {
+	case err != nil:
+		return err
+	case decision == content.InteractionPending:
+		return awaits
+	}
+	return refused
 }

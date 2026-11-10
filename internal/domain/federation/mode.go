@@ -105,8 +105,8 @@ func Refuses(mode Mode, flow Flow) bool {
 // profile back, or its movedTo (ADR-0089), which only tells the followers where it went.
 //
 //   - The Create and Update of a status, a boost, a favourite or reaction, a vote, a
-//     QuoteRequest, and the answers to remote QuoteRequests: publish. Their Delete or Undo, and
-//     the Delete of a revoked QuoteAuthorization: retract.
+//     QuoteRequest, ReplyRequest, or AnnounceRequest, and the answers to remote ones: publish.
+//     Their Delete or Undo, and the Delete of a revoked QuoteAuthorization: retract.
 //   - The Update of an actor: publish; of its suspension or with its movedTo, its Delete, and the
 //     Move of the actor: retract (ADR-0089, so that inbound sends them too).
 //   - Follow and Undo Follow: follow_out; Accept and Reject of a follow, and the Reject of a
