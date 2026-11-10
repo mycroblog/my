@@ -422,8 +422,8 @@ test("the income on the costs screen, with its money movements", async ({ page, 
     exact: true,
   });
   const income = totalsRegion.getByRole("region", { name: message("income.title"), exact: true });
-  // The period, the gross, the fees, the income after fees and the balance.
-  await expect(income.getByRole("table").getByRole("columnheader")).toHaveCount(5);
+  // The period, the gross, the fees, the income after fees, its net by source and the balance.
+  await expect(income.getByRole("table").getByRole("columnheader")).toHaveCount(6);
   await expect(
     income.getByText("A plan with a rather long name that has to wrap on the narrowest screens"),
   ).toHaveAttribute("dir", "auto");

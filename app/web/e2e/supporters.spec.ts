@@ -107,6 +107,15 @@ async function serveApi(page: Page) {
   ];
   let subscriptions = [subscription];
   let reconciles = 0;
+  // The tips, disabled, on a provider that takes one-time payments in yen.
+  const supporterTips: Schemas["AdminSupporterTips"] = {
+    enabled: false,
+    accepting: false,
+    one_time_payments: true,
+    amounts: [],
+    limits: [{ minimum: { amount: "100", currency: "JPY" }, maximum: { amount: "100000", currency: "JPY" } }],
+    server_limit_reached: false,
+  };
   const paymentStatus: Schemas["PaymentStatus"] = {
     provider: "stripe",
     mode: "test",
@@ -174,6 +183,7 @@ async function serveApi(page: Page) {
       return json(route, program());
     }
     if (key === "GET /admin/payment_status") return json(route, paymentStatus);
+    if (key === "GET /admin/supporter_tips") return json(route, supporterTips);
     if (key === "POST /admin/payment_reconciliation/runs") {
       reconciles += 1;
       sent.push(`reconcile ${String(reconciles)}`);
