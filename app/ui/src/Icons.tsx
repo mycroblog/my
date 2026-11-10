@@ -34,6 +34,7 @@ import {
   PiHandHeart,
   PiMonitor,
   PiClockCountdown,
+  PiClock,
   PiUserCheck,
   PiProhibit,
   PiSpeakerSimpleSlash,
@@ -319,6 +320,8 @@ export const iconTable = {
   DecreaseIcon: { off: glyph(PiArrowDown, "PiArrowDown") },
   // How long something has waited in a queue (`AgeBadge`); an hourglass has no direction.
   WaitingIcon: { off: glyph(PiHourglassMedium, "PiHourglassMedium") },
+  // When a post is published (the schedule of a draft, ADR-0156); a clock has no direction.
+  ScheduleIcon: { off: glyph(PiClock, "PiClock") },
   // The categories of a report, beside their names (`StatusBadge`): unwanted mail, a gavel for the law.
   SpamIcon: { off: glyph(PiEnvelopeSimple, "PiEnvelopeSimple") },
   LegalIcon: { off: glyph(PiGavel, "PiGavel") },
@@ -938,6 +941,11 @@ export function DecreaseIcon() {
 /** An hourglass, beside how long something has waited in a queue (`AgeBadge`). */
 export function WaitingIcon() {
   return renderIcon(iconTable.WaitingIcon);
+}
+
+/** A clock, for scheduling a post to be published at a chosen time. */
+export function ScheduleIcon() {
+  return renderIcon(iconTable.ScheduleIcon);
 }
 
 /** An envelope, beside the spam category of a report. */
