@@ -2546,6 +2546,24 @@ func (e FollowsVisibility) Valid() bool {
 	}
 }
 
+// Defines values for FundingMeterVisibility.
+const (
+	FundingMeterVisibilityAmounts FundingMeterVisibility = "amounts"
+	FundingMeterVisibilityPercent FundingMeterVisibility = "percent"
+)
+
+// Valid indicates whether the value is a known member of the FundingMeterVisibility enum.
+func (e FundingMeterVisibility) Valid() bool {
+	switch e {
+	case FundingMeterVisibilityAmounts:
+		return true
+	case FundingMeterVisibilityPercent:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HookAppealState.
 const (
 	HookAppealStateOverturned HookAppealState = "overturned"
@@ -2990,6 +3008,10 @@ const (
 	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
 	InstanceSettingKeyFinanceVisibility                  InstanceSettingKey = "finance_visibility"
+	InstanceSettingKeyFundingMeterRail                   InstanceSettingKey = "funding_meter_rail"
+	InstanceSettingKeyFundingMeterTargetAmount           InstanceSettingKey = "funding_meter_target_amount"
+	InstanceSettingKeyFundingMeterTargetCurrency         InstanceSettingKey = "funding_meter_target_currency"
+	InstanceSettingKeyFundingMeterVisibility             InstanceSettingKey = "funding_meter_visibility"
 	InstanceSettingKeyHookDecisionsRetentionDays         InstanceSettingKey = "hook_decisions_retention_days"
 	InstanceSettingKeyHookInboundActorMode               InstanceSettingKey = "hook_inbound_actor_mode"
 	InstanceSettingKeyHookInboundActorOnFailure          InstanceSettingKey = "hook_inbound_actor_on_failure"
@@ -3155,6 +3177,14 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFinanceVisibility:
 		return true
+	case InstanceSettingKeyFundingMeterRail:
+		return true
+	case InstanceSettingKeyFundingMeterTargetAmount:
+		return true
+	case InstanceSettingKeyFundingMeterTargetCurrency:
+		return true
+	case InstanceSettingKeyFundingMeterVisibility:
+		return true
 	case InstanceSettingKeyHookDecisionsRetentionDays:
 		return true
 	case InstanceSettingKeyHookInboundActorMode:
@@ -3302,6 +3332,8 @@ const (
 	InstanceSettingKindAccounts             InstanceSettingKind = "accounts"
 	InstanceSettingKindBool                 InstanceSettingKind = "bool"
 	InstanceSettingKindClientLimits         InstanceSettingKind = "client_limits"
+	InstanceSettingKindCurrency             InstanceSettingKind = "currency"
+	InstanceSettingKindDecimal              InstanceSettingKind = "decimal"
 	InstanceSettingKindEmail                InstanceSettingKind = "email"
 	InstanceSettingKindEnum                 InstanceSettingKind = "enum"
 	InstanceSettingKindInt                  InstanceSettingKind = "int"
@@ -3322,6 +3354,10 @@ func (e InstanceSettingKind) Valid() bool {
 	case InstanceSettingKindBool:
 		return true
 	case InstanceSettingKindClientLimits:
+		return true
+	case InstanceSettingKindCurrency:
+		return true
+	case InstanceSettingKindDecimal:
 		return true
 	case InstanceSettingKindEmail:
 		return true
@@ -7853,7 +7889,9 @@ type AdminSetting struct {
 	// a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
 	// `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
 	// provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-	// comma-separated `provider=visibility|visibility` pairs, or empty for none.
+	// comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+	// decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+	// empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
 	Kind InstanceSettingKind `json:"kind"`
 
 	// Maximum The greatest value of an `int` setting; omitted for other kinds.
@@ -11427,6 +11465,57 @@ type ForwardReportRequest struct {
 	Comment *string `json:"comment,omitempty"`
 }
 
+// FundingMeter How far this month's net income goes toward the instance's monthly target (the instance
+// setting `funding_meter_visibility`): the income and the target are prorated as the totals
+// under the basis `amortized` are, and the month is the calendar month that holds today in UTC.
+// Only the income in the target's currency counts; no amount is converted. The target is the
+// one the operators set, or this month's costs while they are in one currency. `percent` alone
+// is published while the costs and the income are both private, so that no public amount turns
+// it into a private one; `income` and `target` are added only while both are public.
+type FundingMeter struct {
+	// Covered Whether the net income reaches the target, that is, this month is covered.
+	Covered bool `json:"covered"`
+
+	// EndsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
+	// of a payment on a card statement or an invoice.
+	EndsOn CalendarDate `json:"ends_on"`
+
+	// Estimated Whether the target is this month's costs and an imported usage charge of a billing month
+	// that its provider has not closed is among them: the percentage may still change.
+	Estimated bool `json:"estimated"`
+
+	// Income This month's net income in the target's currency; only with `amounts`.
+	Income *Money `json:"income,omitempty"`
+
+	// Label The month, such as `2026-11`.
+	Label string `json:"label"`
+
+	// Percent The net income over the target in whole percent, rounded down to 1%, so that 100 is
+	// reached only when `covered` is true. It goes past 100, and is 0 while the net income is
+	// not positive.
+	Percent int64 `json:"percent"`
+
+	// Rail Whether the web client shows the meter in its right rail as well as on the about page (the
+	// instance setting `funding_meter_rail`).
+	Rail bool `json:"rail"`
+
+	// StartsOn A calendar date `YYYY-MM-DD` without a time or a time zone, such as the day
+	// of a payment on a card statement or an invoice.
+	StartsOn CalendarDate `json:"starts_on"`
+
+	// Target The monthly target; only with `amounts`.
+	Target *Money `json:"target,omitempty"`
+
+	// TargetIsCosts Whether the target is this month's costs; only with `amounts`.
+	TargetIsCosts *bool `json:"target_is_costs,omitempty"`
+
+	// Visibility `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+	Visibility FundingMeterVisibility `json:"visibility"`
+}
+
+// FundingMeterVisibility `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+type FundingMeterVisibility string
+
 // Hashtag A hashtag and whether the user follows it. The posts of the hashtags the user follows appear
 // on the home timeline.
 type Hashtag struct {
@@ -11735,6 +11824,10 @@ type Instance struct {
 	// hashtags, which every server has. Clients read this to know whether to show an entry to it,
 	// without a search that fails.
 	FullTextSearch InstanceFullTextSearch `json:"full_text_search"`
+
+	// FundingMeter The funding meter of this month, which the about page shows; absent while the instance
+	// setting `funding_meter_visibility` is `off` or the month has no target.
+	FundingMeter *FundingMeter `json:"funding_meter,omitempty"`
 
 	// Icon A brand image that the administrators set: the sanitized SVG and its PNG renditions, at URLs
 	// under `/brand/` on the server that name the revision, so their content never changes and
@@ -12202,7 +12295,9 @@ type InstanceSettingKey string
 // a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
 // `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
 // provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-// comma-separated `provider=visibility|visibility` pairs, or empty for none.
+// comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+// decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+// empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
 type InstanceSettingKind string
 
 // InstanceTextKey The key of an instance text: the name (one line), the short and full descriptions,
@@ -23258,7 +23353,13 @@ type ClientInterface interface {
 	// The changes take effect on the next request. An unknown key, or a value its key
 	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+	// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+	// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+	// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+	// while neither is, judged after the whole change, so another value is a 422; a change of
+	// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+	// own. `funding_meter_target_amount` is above zero, with no more digits than
+	// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes any type of body and a specified content type.
@@ -23275,7 +23376,13 @@ type ClientInterface interface {
 	// The changes take effect on the next request. An unknown key, or a value its key
 	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+	// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+	// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+	// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+	// while neither is, judged after the whole change, so another value is a 422; a change of
+	// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+	// own. `funding_meter_target_amount` is above zero, with no more digits than
+	// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes a body of the `application/json` content type.
@@ -32860,7 +32967,13 @@ func (c *Client) ListInstanceSettings(ctx context.Context, reqEditors ...Request
 // The changes take effect on the next request. An unknown key, or a value its key
 // rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 // current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+// while neither is, judged after the whole change, so another value is a 422; a change of
+// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+// own. `funding_meter_target_amount` is above zero, with no more digits than
+// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 // permission.
 //
 // Takes any type of body and a specified content type.
@@ -32887,7 +33000,13 @@ func (c *Client) UpdateInstanceSettingsWithBody(ctx context.Context, contentType
 // The changes take effect on the next request. An unknown key, or a value its key
 // rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 // current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+// while neither is, judged after the whole change, so another value is a 422; a change of
+// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+// own. `funding_meter_target_amount` is above zero, with no more digits than
+// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 // permission.
 //
 // Takes a body of the `application/json` content type.
@@ -62982,7 +63101,13 @@ type ClientWithResponsesInterface interface {
 	// The changes take effect on the next request. An unknown key, or a value its key
 	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+	// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+	// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+	// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+	// while neither is, judged after the whole change, so another value is a 422; a change of
+	// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+	// own. `funding_meter_target_amount` is above zero, with no more digits than
+	// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -62999,7 +63124,13 @@ type ClientWithResponsesInterface interface {
 	// The changes take effect on the next request. An unknown key, or a value its key
 	// rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 	// current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-	// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+	// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+	// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+	// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+	// while neither is, judged after the whole change, so another value is a 422; a change of
+	// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+	// own. `funding_meter_target_amount` is above zero, with no more digits than
+	// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 	// permission.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
@@ -100930,7 +101061,13 @@ func (c *ClientWithResponses) ListInstanceSettingsWithResponse(ctx context.Conte
 // The changes take effect on the next request. An unknown key, or a value its key
 // rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 // current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+// while neither is, judged after the whole change, so another value is a 422; a change of
+// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+// own. `funding_meter_target_amount` is above zero, with no more digits than
+// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 // permission.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
@@ -100953,7 +101090,13 @@ func (c *ClientWithResponses) UpdateInstanceSettingsWithBodyWithResponse(ctx con
 // The changes take effect on the next request. An unknown key, or a value its key
 // rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
 // current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-// through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+// through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+// publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+// while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+// while neither is, judged after the whole change, so another value is a 422; a change of
+// either visibility that leaves the stored value invalid turns it `off` with a revision of its
+// own. `funding_meter_target_amount` is above zero, with no more digits than
+// `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
 // permission.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).

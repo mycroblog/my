@@ -1889,6 +1889,8 @@ components:
       $ref: ./components/schemas/FollowsVisibility.yaml
     ForwardReportRequest:
       $ref: ./components/schemas/ForwardReportRequest.yaml
+    FundingMeter:
+      $ref: ./components/schemas/FundingMeter.yaml
     Id:
       $ref: ./components/schemas/Id.yaml
     ImportDomainBlocksRequest:

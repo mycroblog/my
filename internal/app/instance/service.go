@@ -44,6 +44,17 @@ type Deps struct {
 	// SingleUserAccounts counts the local accounts that a one-person server allows only one of
 	// (ADR-0152 §1); nil refuses to turn the mode on.
 	SingleUserAccounts SingleUserAccounts
+	// FundingTargets checks the currency and the digits of the funding meter's target (ADR-0067
+	// §22); nil checks only their shapes.
+	FundingTargets FundingTargets
+}
+
+// FundingTargets checks the monthly target of the funding meter in the currencies the finance
+// module knows. The finance module implements it, which internal/platform assembles.
+type FundingTargets interface {
+	// CheckFundingTarget fails for a currency that is not an ISO 4217 code with minor units, or an
+	// amount with more digits than it has; an empty currency passes.
+	CheckFundingTarget(amount, currency string) error
 }
 
 // SingleUserAccounts counts the local accounts for the setting single_user (ADR-0152 §1). The
@@ -289,13 +300,25 @@ func (e *SettingError) Unwrap() error { return e.Err }
 //
 // Turning single_user on counts the local accounts again in that transaction and fails with a
 // *SingleUserAccountsError unless exactly one counts (ADR-0152 §1); turning it off always works.
+//
+// The funding meter follows the publication of the costs and the income (ADR-0067 §22): a
+// funding_meter_visibility that the finance_visibility and income_visibility after the change do
+// not allow is rejected when ins sets it, and is turned off, with a revision and an audit entry of
+// its own, when ins changes one of the visibilities instead.
 func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]instance.SettingRevision, error) {
 	now := s.d.Clock.Now()
-	revs := make([]instance.SettingRevision, 0, len(ins))
-	audits := make([]appmoderation.AuditRecorded, 0, len(ins))
+	revs := make([]instance.SettingRevision, 0, len(ins)+1)
+	audits := make([]appmoderation.AuditRecorded, 0, len(ins)+1)
 	current, err := s.Settings(ctx)
 	if err != nil {
 		return nil, err
+	}
+	after := current
+	record := func(key instance.SettingKey, value, byUserID string) {
+		rev := instance.SettingRevision{ID: s.d.IDs.NewID(), Key: key, Value: value, RevisedByUserID: byUserID, RevisedAt: now}
+		revs = append(revs, rev)
+		audits = append(audits, s.audit(appmoderation.AuditSettingChanged, appmoderation.AuditTargetSetting, string(key), string(key), rev.ID, byUserID, now))
+		after = after.With(key, value)
 	}
 	for _, in := range ins {
 		value, err := s.parseSetting(ctx, in)
@@ -305,9 +328,13 @@ func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]ins
 		if err != nil {
 			return nil, &SettingError{Key: in.Key, Err: err}
 		}
-		rev := instance.SettingRevision{ID: s.d.IDs.NewID(), Key: in.Key, Value: value, RevisedByUserID: in.RevisedByUserID, RevisedAt: now}
-		revs = append(revs, rev)
-		audits = append(audits, s.audit(appmoderation.AuditSettingChanged, appmoderation.AuditTargetSetting, string(in.Key), string(in.Key), rev.ID, in.RevisedByUserID, now))
+		record(in.Key, value, in.RevisedByUserID)
+	}
+	if err := s.checkFundingMeter(after, ins); err != nil {
+		return nil, err
+	}
+	if len(ins) > 0 && after.FundingMeterTurnedOff() {
+		record(instance.SettingFundingMeterVisibility, string(instance.FundingMeterOff), ins[len(ins)-1].RevisedByUserID)
 	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := s.checkSingleUser(ctx, tx, revs); err != nil {
@@ -341,6 +368,43 @@ func (s *Service) SetSettings(ctx context.Context, ins []SetSettingInput) ([]ins
 		return nil, err
 	}
 	return revs, nil
+}
+
+// checkFundingMeter checks the funding meter of the settings after ins (ADR-0067 §22): the
+// visibility that ins sets must be allowed by the publication of the costs and the income, and the
+// target must be whole. It returns a *SettingError naming the key of ins at fault.
+func (s *Service) checkFundingMeter(after instance.Settings, ins []SetSettingInput) error {
+	setting := func(keys ...instance.SettingKey) (instance.SettingKey, bool) {
+		for i := len(ins) - 1; i >= 0; i-- {
+			if slices.Contains(keys, ins[i].Key) {
+				return ins[i].Key, true
+			}
+		}
+		return "", false
+	}
+	if _, ok := setting(instance.SettingFundingMeterVisibility); ok {
+		v, _ := after.Value(instance.SettingFundingMeterVisibility)
+		if !after.FundingMeterAllowed(instance.FundingMeterVisibility(v)) {
+			return &SettingError{Key: instance.SettingFundingMeterVisibility, Err: fmt.Errorf(
+				"setting %s: %q is not allowed while finance_visibility is %s and income_visibility is %s: %w",
+				instance.SettingFundingMeterVisibility, v, after.FinanceVisibility(), after.IncomeVisibility(), instance.ErrInvalidValue)}
+		}
+	}
+	key, ok := setting(instance.SettingFundingMeterTargetAmount, instance.SettingFundingMeterTargetCurrency)
+	if !ok {
+		return nil
+	}
+	err := after.CheckFundingMeterTarget()
+	if err == nil && s.d.FundingTargets != nil {
+		t := after.FundingMeterTarget()
+		if err = s.d.FundingTargets.CheckFundingTarget(t.Amount, t.Currency); err != nil {
+			err = fmt.Errorf("setting %s: %w: %w", key, instance.ErrInvalidValue, err)
+		}
+	}
+	if err != nil {
+		return &SettingError{Key: key, Err: err}
+	}
+	return nil
 }
 
 // checkSingleUser fails with a *SingleUserAccountsError when revs turn single_user on while the

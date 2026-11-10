@@ -10,6 +10,7 @@ import (
 
 	"github.com/mycroblog/my/internal/adapter/markdown"
 	"github.com/mycroblog/my/internal/app/blob"
+	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/app/uow"
 	domaininstance "github.com/mycroblog/my/internal/domain/instance"
@@ -31,6 +32,7 @@ func (a *App) setUpInstance(repo instance.Repository) {
 		ClosureCounts: closureCounts{a},
 		// The one-person server counts the local accounts with the identity module (ADR-0152 §1).
 		SingleUserAccounts: singleUserAccounts{a},
+		FundingTargets:     fundingTargets{},
 		// The progress of the closure's Deletes is the federation module's, set up later.
 		ClosureDeliveries: closureDeliveries{a},
 		// The files of the brand images live in the blob store, which setMedia sets up later.
@@ -161,6 +163,13 @@ type singleUserAccounts struct{ a *App }
 
 func (c singleUserAccounts) CountSingleUserAccountsTx(ctx context.Context, tx uow.Tx) (int, error) {
 	return c.a.Identity.CountSingleUserAccountsTx(ctx, tx)
+}
+
+// fundingTargets checks the target of the funding meter with the finance module (ADR-0067 §22).
+type fundingTargets struct{}
+
+func (fundingTargets) CheckFundingTarget(amount, currency string) error {
+	return appfinance.CheckFundingTarget(amount, currency)
 }
 
 // closureCounts counts what the closure of the service ends (ADR-0088 §1) with the account,

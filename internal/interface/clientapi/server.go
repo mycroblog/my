@@ -309,6 +309,9 @@ type Options struct {
 	// Income totals the instance's income and lists its money movements (income.go); nil
 	// answers 404 to their operations.
 	Income Income
+	// FundingMeters measures the funding meter of GET /instance (funding_meter.go); nil shows
+	// none.
+	FundingMeters FundingMeters
 	// Supporters runs the supporter program, its plans, and their subscriptions
 	// (admin_supporters.go); nil answers 404 to their operations and a disabled program.
 	Supporters Supporters

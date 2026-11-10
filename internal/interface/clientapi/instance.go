@@ -165,6 +165,11 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	out.FinanceVisibility = FinanceVisibility(settings.FinanceVisibility())
 	// How much of the income GET /instance/income_totals publishes (FR-917, ADR-0067 §17).
 	out.IncomeVisibility = IncomeVisibility(settings.IncomeVisibility())
+	// This month's net income against the monthly target, as funding_meter_visibility publishes it
+	// (FR-905, ADR-0067 §22).
+	if out.FundingMeter, err = s.instanceFundingMeter(ctx, settings); err != nil {
+		return nil, err
+	}
 	// Who may read the supporter list of GET /instance/supporters (ADR-0070 §13).
 	out.SupporterListVisibility = InstanceAudience(settings.SupporterListVisibility())
 	// Whether the supporter program shows its plans (ADR-0072 §2).

@@ -9,6 +9,8 @@ description: |
   a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
   `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
   provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-  comma-separated `provider=visibility|visibility` pairs, or empty for none.
+  comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+  decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+  empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
 type: string
-enum: [bool, int, enum, locale, media, account, email, uri, accounts, client_limits, provider_list, provider_visibilities]
+enum: [bool, int, enum, locale, media, account, email, uri, accounts, client_limits, provider_list, provider_visibilities, decimal, currency]

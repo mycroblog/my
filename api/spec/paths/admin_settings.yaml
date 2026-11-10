@@ -28,7 +28,13 @@ patch:
     The changes take effect on the next request. An unknown key, or a value its key
     rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
     current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-    through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+    through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+    publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+    while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+    while neither is, judged after the whole change, so another value is a 422; a change of
+    either visibility that leaves the stored value invalid turns it `off` with a revision of its
+    own. `funding_meter_target_amount` is above zero, with no more digits than
+    `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
     permission.
   tags: [admin-server]
   security:

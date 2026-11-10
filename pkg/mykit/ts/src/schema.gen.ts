@@ -8225,7 +8225,13 @@ export interface paths {
          *     The changes take effect on the next request. An unknown key, or a value its key
          *     rejects, is a 422 naming the key, and nothing is changed. A value can also depend on the
          *     current one: the mode of a decision hook (`hook_*_mode`) goes from `off` to `enforce` only
-         *     through `observe`, so `enforce` while it is `off` is a 422. Needs the `manage_settings`
+         *     through `observe`, so `enforce` while it is `off` is a 422. The funding meter follows the
+         *     publication of the costs and the income: `funding_meter_visibility` may be `percent` only
+         *     while `finance_visibility` and `income_visibility` are both `private`, and `amounts` only
+         *     while neither is, judged after the whole change, so another value is a 422; a change of
+         *     either visibility that leaves the stored value invalid turns it `off` with a revision of its
+         *     own. `funding_meter_target_amount` is above zero, with no more digits than
+         *     `funding_meter_target_currency` has, which is an ISO 4217 code. Needs the `manage_settings`
          *     permission.
          */
         patch: operations["updateInstanceSettings"];
@@ -14246,6 +14252,51 @@ export interface components {
             comment?: string;
         };
         /**
+         * @description How far this month's net income goes toward the instance's monthly target (the instance
+         *     setting `funding_meter_visibility`): the income and the target are prorated as the totals
+         *     under the basis `amortized` are, and the month is the calendar month that holds today in UTC.
+         *     Only the income in the target's currency counts; no amount is converted. The target is the
+         *     one the operators set, or this month's costs while they are in one currency. `percent` alone
+         *     is published while the costs and the income are both private, so that no public amount turns
+         *     it into a private one; `income` and `target` are added only while both are public.
+         */
+        FundingMeter: {
+            /**
+             * @description `percent`: only the percentage; `amounts`: also `income`, `target`, and `target_is_costs`.
+             * @enum {string}
+             */
+            visibility: "percent" | "amounts";
+            /** @description The month, such as `2026-11`. */
+            label: string;
+            starts_on: components["schemas"]["CalendarDate"];
+            ends_on: components["schemas"]["CalendarDate"];
+            /**
+             * Format: int64
+             * @description The net income over the target in whole percent, rounded down to 1%, so that 100 is
+             *     reached only when `covered` is true. It goes past 100, and is 0 while the net income is
+             *     not positive.
+             */
+            percent: number;
+            /** @description Whether the net income reaches the target, that is, this month is covered. */
+            covered: boolean;
+            /**
+             * @description Whether the target is this month's costs and an imported usage charge of a billing month
+             *     that its provider has not closed is among them: the percentage may still change.
+             */
+            estimated: boolean;
+            /**
+             * @description Whether the web client shows the meter in its right rail as well as on the about page (the
+             *     instance setting `funding_meter_rail`).
+             */
+            rail: boolean;
+            /** @description This month's net income in the target's currency; only with `amounts`. */
+            income?: components["schemas"]["Money"];
+            /** @description The monthly target; only with `amounts`. */
+            target?: components["schemas"]["Money"];
+            /** @description Whether the target is this month's costs; only with `amounts`. */
+            target_is_costs?: boolean;
+        };
+        /**
          * Format: uuid
          * @description The ID of a resource, a UUIDv7 in its canonical string form.
          * @example 01890a5d-ac96-774b-bcce-b302099a8057
@@ -14513,6 +14564,11 @@ export interface components {
             finance_visibility: components["schemas"]["FinanceVisibility"];
             income_visibility: components["schemas"]["IncomeVisibility"];
             /**
+             * @description The funding meter of this month, which the about page shows; absent while the instance
+             *     setting `funding_meter_visibility` is `off` or the month has no target.
+             */
+            funding_meter?: components["schemas"]["FundingMeter"];
+            /**
              * @description Whether the instance is a one-person server: the home of its operator alone, with nobody else
              *     to join. While it is true, `registrations.mode` is `closed` and both `timelines` are `off`,
              *     whatever the instance settings store. Clients also hide the suggestions of accounts, invites,
@@ -14778,7 +14834,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -14789,10 +14845,12 @@ export interface components {
          *     a leading `@` are accepted), in order, or empty for none. `client_limits`: comma-separated
          *     `client_id=requests` pairs, or empty for none. `provider_list`: comma-separated translation
          *     provider IDs, the first tried first, or empty for none. `provider_visibilities`:
-         *     comma-separated `provider=visibility|visibility` pairs, or empty for none.
+         *     comma-separated `provider=visibility|visibility` pairs, or empty for none. `decimal`: a
+         *     decimal number that is not negative in the major unit of a currency (`1650`, `12.34`), or
+         *     empty for none. `currency`: an ISO 4217 code such as `JPY`, or empty for none.
          * @enum {string}
          */
-        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri" | "accounts" | "client_limits" | "provider_list" | "provider_visibilities";
+        InstanceSettingKind: "bool" | "int" | "enum" | "locale" | "media" | "account" | "email" | "uri" | "accounts" | "client_limits" | "provider_list" | "provider_visibilities" | "decimal" | "currency";
         /**
          * @description The key of an instance text: the name (one line), the short and full descriptions,
          *     the terms of service and the privacy policy (Markdown), the alternative texts of the
