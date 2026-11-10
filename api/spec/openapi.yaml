@@ -560,6 +560,10 @@ paths:
     $ref: ./paths/admin_instances_{domain}_availability_events.yaml
   /admin/instances/{domain}/mark_available:
     $ref: ./paths/admin_instances_{domain}_mark_available.yaml
+  /admin/instances/{domain}/deliveries:
+    $ref: ./paths/admin_instances_{domain}_deliveries.yaml
+  /admin/instances/{domain}/deliveries/{id}/reveal:
+    $ref: ./paths/admin_instances_{domain}_deliveries_{id}_reveal.yaml
   /admin/audit_log:
     $ref: ./paths/admin_audit_log.yaml
   /admin/billing_imports:
@@ -1013,6 +1017,8 @@ components:
       $ref: ./components/parameters/EventId.yaml
     EventVoteFilter:
       $ref: ./components/parameters/EventVoteFilter.yaml
+    DeliveryId:
+      $ref: ./components/parameters/DeliveryId.yaml
     DomainActionId:
       $ref: ./components/parameters/DomainActionId.yaml
     HookDecisionId:
@@ -1371,6 +1377,18 @@ components:
       $ref: ./components/schemas/AdminAvailabilityEvent.yaml
     AdminAvailabilityEventPage:
       $ref: ./components/schemas/AdminAvailabilityEventPage.yaml
+    AdminDelivery:
+      $ref: ./components/schemas/AdminDelivery.yaml
+    AdminDeliveryAttempt:
+      $ref: ./components/schemas/AdminDeliveryAttempt.yaml
+    AdminDeliveryMask:
+      $ref: ./components/schemas/AdminDeliveryMask.yaml
+    AdminDeliveryPage:
+      $ref: ./components/schemas/AdminDeliveryPage.yaml
+    AdminDeliveryReveal:
+      $ref: ./components/schemas/AdminDeliveryReveal.yaml
+    AdminDeliverySender:
+      $ref: ./components/schemas/AdminDeliverySender.yaml
     AdminCounts:
       $ref: ./components/schemas/AdminCounts.yaml
     AdminCustomEmoji:

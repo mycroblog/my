@@ -207,8 +207,11 @@ type Options struct {
 	// rest of the queue dashboard (admin_jobs.go, ADR-0004).
 	Permissions    Permissions
 	InstanceHealth InstanceHealth
-	DeadJobs       queue.DeadJobs
-	Queue          QueueDashboard
+	// DeliveryLog lists the deliveries to a remote server and reveals the masked fields of one
+	// (admin_deliveries.go); nil answers them with 404.
+	DeliveryLog DeliveryLog
+	DeadJobs    queue.DeadJobs
+	Queue       QueueDashboard
 	// Moderation runs the moderators' use cases on domain actions and reports for the admin
 	// operations (admin_moderation.go); UserAccounts presents the moderator of a report by
 	// account, and nil leaves it out.

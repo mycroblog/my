@@ -615,6 +615,14 @@
     "defaultMessage": "サーバーを配送可能に変更",
     "description": "Kind of an audited operation: an operator cleared the delivery failures of a remote server, so that deliveries to it resume."
   },
+  "admin.audit_log.action.delivery_revealed": {
+    "defaultMessage": "配送の詳細を表示",
+    "description": "Kind of an audited operation: a holder of manage_domains was shown the masked sender, activity URI, and inbox of one delivery to a remote server."
+  },
+  "admin.audit_log.action.account_deliveries_viewed": {
+    "defaultMessage": "アカウントの配送を閲覧",
+    "description": "Kind of an audited operation: a holder of manage_domains listed the deliveries of one local account to a remote server."
+  },
   "admin.audit_log.action.link_card_domain_rule_removed": {
     "defaultMessage": "リンクのカードのルールを削除",
     "description": "Kind of an audited operation: an administrator removed the rule of the link card crawler on a domain."

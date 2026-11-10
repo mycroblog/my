@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+  `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+  follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+  the post or the account is gone, so what it was is no longer known.
+type: string
+enum: [private, direct, local, approves_followers, unknown]

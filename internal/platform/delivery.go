@@ -18,6 +18,10 @@ func (a *App) setUpDelivery(repo federation.Repository) error {
 	}
 	federation.RegisterHealthProjectors(a.Projectors, federation.HealthProjectorDeps{Repository: repo, IDs: a.IDs})
 	a.InstanceHealth = federation.NewHealth(federation.HealthDeps{UnitOfWork: a.UnitOfWork, Repository: repo, Clock: a.Clock, IDs: a.IDs})
+	a.DeliveryLog = federation.NewDeliveryLog(federation.DeliveryLogDeps{
+		UnitOfWork: a.UnitOfWork, Repository: repo, Statuses: federation.ContentStatuses{Service: a.Content, Interactions: a.Interactions},
+		Accounts: a.Accounts, SharedInboxes: a.Accounts, Clock: a.Clock, IDs: a.IDs,
+	})
 	a.Deliverer = federation.NewDeliverer(federation.DeliverDeps{
 		UnitOfWork: a.UnitOfWork, Repository: repo,
 		Client: federation.NewSignedHTTPClient(a.HTTPClient, httpsig.New(), a.KV, a.Clock),

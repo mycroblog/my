@@ -8229,6 +8229,93 @@ paths:
           $ref: '#/components/responses/AdminInstanceHealth'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/instances/{domain}/deliveries:
+    get:
+      operationId: listInstanceDeliveries
+      x-permission: manage_domains
+      summary: List the deliveries to a remote server and their attempts
+      description: |
+        What this server sent to the remote server and what it answered, newest first: each
+        delivery of an activity to an inbox of the server, with every attempt (its outcome, the
+        signature scheme, the status code, and the error), the ones that succeeded included.
+        Attempts are kept for 30 days. The body of the activity is never returned.
+
+        The type and the times of every delivery, and every attempt, are always shown. When the
+        activity is about a post whose visibility is `private`, `direct`, or `local`, or is a
+        follow, its undo, an accept, or a reject of a local account that approves its followers, the sender,
+        the activity URI, and a personal inbox are masked: `mask` says why, and `POST
+        /admin/instances/{domain}/deliveries/{id}/reveal` shows them, audited. A shared inbox is
+        never masked, and a masked inbox in an error reads `[masked]`.
+
+        A query with `account_id` is recorded in the audit log as `account_deliveries_viewed`
+        before anything is returned; an account that is not local is a 400 naming `account_id`,
+        an unknown one a 404. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/InstanceDomain'
+        - name: account_id
+          in: query
+          required: false
+          description: Keep only the deliveries of the activities of this local account; audited.
+          schema:
+            $ref: '#/components/schemas/Id'
+        - name: activity_uri
+          in: query
+          required: false
+          description: Keep only the deliveries of the activity with this ID.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 2048
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of deliveries.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDeliveryPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/instances/{domain}/deliveries/{id}/reveal:
+    post:
+      operationId: revealInstanceDelivery
+      x-permission: manage_domains
+      summary: Show the sender, the activity URI, and the inbox of a delivery
+      description: |
+        The fields that the list of deliveries masks, of one delivery to the server: its local
+        sender, the URI of its activity, and its inbox. Each call is recorded in the audit log as
+        `delivery_revealed` before anything is returned, also for a delivery that is not masked;
+        it changes nothing else. The body of the activity is never returned. A delivery that is
+        unknown or went to another server is a 404. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/InstanceDomain'
+        - $ref: '#/components/parameters/DeliveryId'
+      responses:
+        '200':
+          description: The masked fields of the delivery.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDeliveryReveal'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/audit_log:
     get:
       operationId: listAuditLog
@@ -13852,6 +13939,13 @@ components:
       description: Only the answers of this kind; every answer when omitted.
       schema:
         $ref: '#/components/schemas/EventVote'
+    DeliveryId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the delivery.
+      schema:
+        $ref: '#/components/schemas/Id'
     DomainActionId:
       name: id
       in: path
@@ -16542,9 +16636,13 @@ components:
         authentication), `password_reset_link_issued` (an administrator issued a link that sets
         a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
         suppression of the primary email address of the account's user), `account_moved` (a limited
-        local account moved to another local account, which does not inherit the limit). On a `domain`:
+        local account moved to another local account, which does not inherit the limit),
+        `account_deliveries_viewed` (a holder of `manage_domains` listed the deliveries of the
+        account to a remote server; the target name is the handle and the server). On a `domain`:
         `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
-        cleared the failures of the server). On a `report`: `report_assigned`,
+        cleared the failures of the server), `delivery_revealed` (a holder of `manage_domains` was
+        shown the masked sender, activity URI, and inbox of a delivery to the server, whose ID is
+        `source_event_id`). On a `report`: `report_assigned`,
         `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
         `report_forwarded` (a moderator forwarded the report to the target's server). On a
         `user` (a registration):
@@ -16717,6 +16815,8 @@ components:
         - link_card_domain_images_stopped
         - link_card_domain_rule_removed
         - instance_marked_available
+        - delivery_revealed
+        - account_deliveries_viewed
         - domain_allow_added
         - domain_allow_removed
         - domain_list_subscription_created
@@ -16889,6 +16989,142 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/AdminAvailabilityEvent'
+    AdminDelivery:
+      description: |
+        The delivery of an activity to one inbox of a remote server, with its attempts. `sender`,
+        `activity_uri`, and a personal `inbox_url` are absent when `mask` is present.
+      type: object
+      required:
+        - id
+        - domain
+        - activity_type
+        - activity_created_at
+        - created_at
+        - shared_inbox
+        - attempts
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        domain:
+          type: string
+        activity_type:
+          description: The type of the activity, such as `Create`, `Follow`, or `Accept`.
+          type: string
+        activity_created_at:
+          description: When the activity was recorded.
+          type: string
+          format: date-time
+        created_at:
+          description: When the inbox was added to the activity.
+          type: string
+          format: date-time
+        shared_inbox:
+          description: Whether the inbox is a shared inbox of the server, which names no recipient.
+          type: boolean
+        mask:
+          $ref: '#/components/schemas/AdminDeliveryMask'
+        sender:
+          $ref: '#/components/schemas/AdminDeliverySender'
+        activity_uri:
+          type: string
+        inbox_url:
+          type: string
+        attempts:
+          description: The attempts, oldest first.
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminDeliveryAttempt'
+    AdminDeliveryAttempt:
+      description: One attempt of a delivery.
+      type: object
+      required:
+        - id
+        - outcome
+        - attempted_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        outcome:
+          description: |
+            `succeeded`: the server accepted the activity. `retryable_failure`: it failed in a way
+            that is tried again. `permanent_failure`: the server refused it, and it is not sent
+            again. `skipped`: nothing was sent, for the reason in `error`.
+          type: string
+          enum:
+            - succeeded
+            - retryable_failure
+            - permanent_failure
+            - skipped
+        signature_scheme:
+          description: The signature scheme of the request that got the response; absent without a response.
+          type: string
+          enum:
+            - rfc9421
+            - cavage
+        status_code:
+          description: The status code of the response; absent without a response.
+          type: integer
+        error:
+          description: Why the attempt failed without a response, or why nothing was sent.
+          type: string
+        attempted_at:
+          type: string
+          format: date-time
+    AdminDeliveryMask:
+      description: |
+        Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+        `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+        follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+        the post or the account is gone, so what it was is no longer known.
+      type: string
+      enum:
+        - private
+        - direct
+        - local
+        - approves_followers
+        - unknown
+    AdminDeliveryPage:
+      description: A page of the deliveries to a remote server, newest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminDelivery'
+    AdminDeliveryReveal:
+      description: The fields of a delivery that the list masks.
+      type: object
+      required:
+        - id
+        - sender
+        - activity_uri
+        - inbox_url
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        mask:
+          $ref: '#/components/schemas/AdminDeliveryMask'
+        sender:
+          $ref: '#/components/schemas/AdminDeliverySender'
+        activity_uri:
+          type: string
+        inbox_url:
+          type: string
+    AdminDeliverySender:
+      description: The local account that sent the activity.
+      type: object
+      required:
+        - account_id
+      properties:
+        account_id:
+          $ref: '#/components/schemas/Id'
+        username:
+          description: The username of the account; absent for an account that is gone.
+          type: string
     AdminCounts:
       description: What awaits the moderators; a count whose permission the user lacks is omitted.
       type: object

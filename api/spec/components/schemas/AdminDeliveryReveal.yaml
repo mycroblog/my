@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: MIT
+description: The fields of a delivery that the list masks.
+type: object
+required: [id, sender, activity_uri, inbox_url]
+properties:
+  id:
+    $ref: ./Id.yaml
+  mask:
+    $ref: ./AdminDeliveryMask.yaml
+  sender:
+    $ref: ./AdminDeliverySender.yaml
+  activity_uri:
+    type: string
+  inbox_url:
+    type: string

@@ -615,6 +615,14 @@
     "defaultMessage": "Server marked available",
     "description": "Kind of an audited operation: an operator cleared the delivery failures of a remote server, so that deliveries to it resume."
   },
+  "admin.audit_log.action.delivery_revealed": {
+    "defaultMessage": "Delivery details shown",
+    "description": "Kind of an audited operation: a holder of manage_domains was shown the masked sender, activity URI, and inbox of one delivery to a remote server."
+  },
+  "admin.audit_log.action.account_deliveries_viewed": {
+    "defaultMessage": "Deliveries of an account viewed",
+    "description": "Kind of an audited operation: a holder of manage_domains listed the deliveries of one local account to a remote server."
+  },
   "admin.audit_log.action.link_card_domain_rule_removed": {
     "defaultMessage": "Link card rule removed",
     "description": "Kind of an audited operation: an administrator removed the rule of the link card crawler on a domain."

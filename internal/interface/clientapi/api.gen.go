@@ -297,6 +297,7 @@ const (
 	AdminAuditActionAccountActionIssued             AdminAuditAction = "account_action_issued"
 	AdminAuditActionAccountActionLifted             AdminAuditAction = "account_action_lifted"
 	AdminAuditActionAccountDeletionCanceled         AdminAuditAction = "account_deletion_canceled"
+	AdminAuditActionAccountDeliveriesViewed         AdminAuditAction = "account_deliveries_viewed"
 	AdminAuditActionAccountMoved                    AdminAuditAction = "account_moved"
 	AdminAuditActionAccountStatusesRefetchQueued    AdminAuditAction = "account_statuses_refetch_queued"
 	AdminAuditActionAnnouncementCreated             AdminAuditAction = "announcement_created"
@@ -322,6 +323,7 @@ const (
 	AdminAuditActionCustomEmojiRequestSubmitted     AdminAuditAction = "custom_emoji_request_submitted"
 	AdminAuditActionCustomEmojiRequestWithdrawn     AdminAuditAction = "custom_emoji_request_withdrawn"
 	AdminAuditActionCustomEmojiUpdated              AdminAuditAction = "custom_emoji_updated"
+	AdminAuditActionDeliveryRevealed                AdminAuditAction = "delivery_revealed"
 	AdminAuditActionDomainActionIssued              AdminAuditAction = "domain_action_issued"
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
 	AdminAuditActionDomainAllowAdded                AdminAuditAction = "domain_allow_added"
@@ -414,6 +416,8 @@ func (e AdminAuditAction) Valid() bool {
 		return true
 	case AdminAuditActionAccountDeletionCanceled:
 		return true
+	case AdminAuditActionAccountDeliveriesViewed:
+		return true
 	case AdminAuditActionAccountMoved:
 		return true
 	case AdminAuditActionAccountStatusesRefetchQueued:
@@ -463,6 +467,8 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionCustomEmojiRequestWithdrawn:
 		return true
 	case AdminAuditActionCustomEmojiUpdated:
+		return true
+	case AdminAuditActionDeliveryRevealed:
 		return true
 	case AdminAuditActionDomainActionIssued:
 		return true
@@ -802,6 +808,75 @@ func (e AdminAvailabilityEventReason) Valid() bool {
 	case AdminAvailabilityEventReasonOperator:
 		return true
 	case AdminAvailabilityEventReasonProbeSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDeliveryAttemptOutcome.
+const (
+	AdminDeliveryAttemptOutcomePermanentFailure AdminDeliveryAttemptOutcome = "permanent_failure"
+	AdminDeliveryAttemptOutcomeRetryableFailure AdminDeliveryAttemptOutcome = "retryable_failure"
+	AdminDeliveryAttemptOutcomeSkipped          AdminDeliveryAttemptOutcome = "skipped"
+	AdminDeliveryAttemptOutcomeSucceeded        AdminDeliveryAttemptOutcome = "succeeded"
+)
+
+// Valid indicates whether the value is a known member of the AdminDeliveryAttemptOutcome enum.
+func (e AdminDeliveryAttemptOutcome) Valid() bool {
+	switch e {
+	case AdminDeliveryAttemptOutcomePermanentFailure:
+		return true
+	case AdminDeliveryAttemptOutcomeRetryableFailure:
+		return true
+	case AdminDeliveryAttemptOutcomeSkipped:
+		return true
+	case AdminDeliveryAttemptOutcomeSucceeded:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDeliveryAttemptSignatureScheme.
+const (
+	AdminDeliveryAttemptSignatureSchemeCavage  AdminDeliveryAttemptSignatureScheme = "cavage"
+	AdminDeliveryAttemptSignatureSchemeRfc9421 AdminDeliveryAttemptSignatureScheme = "rfc9421"
+)
+
+// Valid indicates whether the value is a known member of the AdminDeliveryAttemptSignatureScheme enum.
+func (e AdminDeliveryAttemptSignatureScheme) Valid() bool {
+	switch e {
+	case AdminDeliveryAttemptSignatureSchemeCavage:
+		return true
+	case AdminDeliveryAttemptSignatureSchemeRfc9421:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDeliveryMask.
+const (
+	AdminDeliveryMaskApprovesFollowers AdminDeliveryMask = "approves_followers"
+	AdminDeliveryMaskDirect            AdminDeliveryMask = "direct"
+	AdminDeliveryMaskLocal             AdminDeliveryMask = "local"
+	AdminDeliveryMaskPrivate           AdminDeliveryMask = "private"
+	AdminDeliveryMaskUnknown           AdminDeliveryMask = "unknown"
+)
+
+// Valid indicates whether the value is a known member of the AdminDeliveryMask enum.
+func (e AdminDeliveryMask) Valid() bool {
+	switch e {
+	case AdminDeliveryMaskApprovesFollowers:
+		return true
+	case AdminDeliveryMaskDirect:
+		return true
+	case AdminDeliveryMaskLocal:
+		return true
+	case AdminDeliveryMaskPrivate:
+		return true
+	case AdminDeliveryMaskUnknown:
 		return true
 	default:
 		return false
@@ -6155,9 +6230,13 @@ type AdminAppealPage struct {
 // authentication), `password_reset_link_issued` (an administrator issued a link that sets
 // a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 // suppression of the primary email address of the account's user), `account_moved` (a limited
-// local account moved to another local account, which does not inherit the limit). On a `domain`:
+// local account moved to another local account, which does not inherit the limit),
+// `account_deliveries_viewed` (a holder of `manage_domains` listed the deliveries of the
+// account to a remote server; the target name is the handle and the server). On a `domain`:
 // `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
-// cleared the failures of the server). On a `report`: `report_assigned`,
+// cleared the failures of the server), `delivery_revealed` (a holder of `manage_domains` was
+// shown the masked sender, activity URI, and inbox of a delivery to the server, whose ID is
+// `source_event_id`). On a `report`: `report_assigned`,
 // `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
 // `report_forwarded` (a moderator forwarded the report to the target's server). On a
 // `user` (a registration):
@@ -6244,9 +6323,13 @@ type AdminAuditEntry struct {
 	// authentication), `password_reset_link_issued` (an administrator issued a link that sets
 	// a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
 	// suppression of the primary email address of the account's user), `account_moved` (a limited
-	// local account moved to another local account, which does not inherit the limit). On a `domain`:
+	// local account moved to another local account, which does not inherit the limit),
+	// `account_deliveries_viewed` (a holder of `manage_domains` listed the deliveries of the
+	// account to a remote server; the target name is the handle and the server). On a `domain`:
 	// `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
-	// cleared the failures of the server). On a `report`: `report_assigned`,
+	// cleared the failures of the server), `delivery_revealed` (a holder of `manage_domains` was
+	// shown the masked sender, activity URI, and inbox of a delivery to the server, whose ID is
+	// `source_event_id`). On a `report`: `report_assigned`,
 	// `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
 	// `report_forwarded` (a moderator forwarded the report to the target's server). On a
 	// `user` (a registration):
@@ -6574,6 +6657,119 @@ type AdminCustomEmojiRequestPage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminDelivery The delivery of an activity to one inbox of a remote server, with its attempts. `sender`,
+// `activity_uri`, and a personal `inbox_url` are absent when `mask` is present.
+type AdminDelivery struct {
+	// ActivityCreatedAt When the activity was recorded.
+	ActivityCreatedAt time.Time `json:"activity_created_at"`
+
+	// ActivityType The type of the activity, such as `Create`, `Follow`, or `Accept`.
+	ActivityType string  `json:"activity_type"`
+	ActivityUri  *string `json:"activity_uri,omitempty"`
+
+	// Attempts The attempts, oldest first.
+	Attempts []AdminDeliveryAttempt `json:"attempts"`
+
+	// CreatedAt When the inbox was added to the activity.
+	CreatedAt time.Time `json:"created_at"`
+	Domain    string    `json:"domain"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id       Id      `json:"id"`
+	InboxUrl *string `json:"inbox_url,omitempty"`
+
+	// Mask Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+	// `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+	// follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+	// the post or the account is gone, so what it was is no longer known.
+	Mask *AdminDeliveryMask `json:"mask,omitempty"`
+
+	// Sender The local account that sent the activity.
+	Sender *AdminDeliverySender `json:"sender,omitempty"`
+
+	// SharedInbox Whether the inbox is a shared inbox of the server, which names no recipient.
+	SharedInbox bool `json:"shared_inbox"`
+}
+
+// AdminDeliveryAttempt One attempt of a delivery.
+type AdminDeliveryAttempt struct {
+	AttemptedAt time.Time `json:"attempted_at"`
+
+	// Error Why the attempt failed without a response, or why nothing was sent.
+	Error *string `json:"error,omitempty"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Outcome `succeeded`: the server accepted the activity. `retryable_failure`: it failed in a way
+	// that is tried again. `permanent_failure`: the server refused it, and it is not sent
+	// again. `skipped`: nothing was sent, for the reason in `error`.
+	Outcome AdminDeliveryAttemptOutcome `json:"outcome"`
+
+	// SignatureScheme The signature scheme of the request that got the response; absent without a response.
+	SignatureScheme *AdminDeliveryAttemptSignatureScheme `json:"signature_scheme,omitempty"`
+
+	// StatusCode The status code of the response; absent without a response.
+	StatusCode *int `json:"status_code,omitempty"`
+}
+
+// AdminDeliveryAttemptOutcome `succeeded`: the server accepted the activity. `retryable_failure`: it failed in a way
+// that is tried again. `permanent_failure`: the server refused it, and it is not sent
+// again. `skipped`: nothing was sent, for the reason in `error`.
+type AdminDeliveryAttemptOutcome string
+
+// AdminDeliveryAttemptSignatureScheme The signature scheme of the request that got the response; absent without a response.
+type AdminDeliveryAttemptSignatureScheme string
+
+// AdminDeliveryMask Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+// `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+// follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+// the post or the account is gone, so what it was is no longer known.
+type AdminDeliveryMask string
+
+// AdminDeliveryPage A page of the deliveries to a remote server, newest first.
+type AdminDeliveryPage struct {
+	Items []AdminDelivery `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminDeliveryReveal The fields of a delivery that the list masks.
+type AdminDeliveryReveal struct {
+	ActivityUri string `json:"activity_uri"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id       Id     `json:"id"`
+	InboxUrl string `json:"inbox_url"`
+
+	// Mask Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+	// `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+	// follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+	// the post or the account is gone, so what it was is no longer known.
+	Mask *AdminDeliveryMask `json:"mask,omitempty"`
+
+	// Sender The local account that sent the activity.
+	Sender AdminDeliverySender `json:"sender"`
+}
+
+// AdminDeliverySender The local account that sent the activity.
+type AdminDeliverySender struct {
+	// AccountId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	AccountId Id `json:"account_id"`
+
+	// Username The username of the account; absent for an account that is gone.
+	Username *string `json:"username,omitempty"`
 }
 
 // AdminDomainAction A moderation action on a remote domain and its subdomains.
@@ -17392,6 +17588,11 @@ type CustomEmojiId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type CustomEmojiRequestId = Id
 
+// DeliveryId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type DeliveryId = Id
+
 // DomainActionId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
@@ -17930,6 +18131,21 @@ type ListInstanceHealthParams struct {
 
 // ListInstanceAvailabilityEventsParams defines parameters for ListInstanceAvailabilityEvents.
 type ListInstanceAvailabilityEventsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListInstanceDeliveriesParams defines parameters for ListInstanceDeliveries.
+type ListInstanceDeliveriesParams struct {
+	// AccountId Keep only the deliveries of the activities of this local account; audited.
+	AccountId *Id `form:"account_id,omitempty" json:"account_id,omitempty"`
+
+	// ActivityUri Keep only the deliveries of the activity with this ID.
+	ActivityUri *string `form:"activity_uri,omitempty" json:"activity_uri,omitempty"`
+
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
 	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
 
@@ -19342,6 +19558,12 @@ type ServerInterface interface {
 	// ListInstanceAvailabilityEvents List the times a remote server was marked unavailable or available
 	// (GET /admin/instances/{domain}/availability_events)
 	ListInstanceAvailabilityEvents(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params ListInstanceAvailabilityEventsParams)
+	// ListInstanceDeliveries List the deliveries to a remote server and their attempts
+	// (GET /admin/instances/{domain}/deliveries)
+	ListInstanceDeliveries(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params ListInstanceDeliveriesParams)
+	// RevealInstanceDelivery Show the sender, the activity URI, and the inbox of a delivery
+	// (POST /admin/instances/{domain}/deliveries/{id}/reveal)
+	RevealInstanceDelivery(w http.ResponseWriter, r *http.Request, domain InstanceDomain, id DeliveryId)
 	// MarkInstanceAvailable Mark a remote server available
 	// (POST /admin/instances/{domain}/mark_available)
 	MarkInstanceAvailable(w http.ResponseWriter, r *http.Request, domain InstanceDomain)
@@ -24462,6 +24684,122 @@ func (siw *ServerInterfaceWrapper) ListInstanceAvailabilityEvents(w http.Respons
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ListInstanceAvailabilityEvents(w, r, domain, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListInstanceDeliveries operation middleware
+func (siw *ServerInterfaceWrapper) ListInstanceDeliveries(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "domain" -------------
+	var domain InstanceDomain
+
+	err = runtime.BindStyledParameterWithOptions("simple", "domain", r.PathValue("domain"), &domain, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domain", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListInstanceDeliveriesParams
+
+	// ------------- Optional query parameter "account_id" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "account_id", r.URL.Query(), &params.AccountId, runtime.BindQueryParameterOptions{Type: "string", Format: "uuid"})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "account_id"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "account_id", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "activity_uri" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "activity_uri", r.URL.Query(), &params.ActivityUri, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "activity_uri"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "activity_uri", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListInstanceDeliveries(w, r, domain, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RevealInstanceDelivery operation middleware
+func (siw *ServerInterfaceWrapper) RevealInstanceDelivery(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "domain" -------------
+	var domain InstanceDomain
+
+	err = runtime.BindStyledParameterWithOptions("simple", "domain", r.PathValue("domain"), &domain, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "domain", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id DeliveryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RevealInstanceDelivery(w, r, domain, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -33908,6 +34246,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instances/{domain}", wrapper.GetInstanceHealth)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instances/{domain}/availability_events", wrapper.ListInstanceAvailabilityEvents)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/instances/{domain}/mark_available", wrapper.MarkInstanceAvailable)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instances/{domain}/deliveries", wrapper.ListInstanceDeliveries)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/instances/{domain}/deliveries/{id}/reveal", wrapper.RevealInstanceDelivery)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/audit_log", wrapper.ListAuditLog)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/billing_imports", wrapper.ListBillingImports)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/billing_imports/{source}/runs", wrapper.RunBillingImport)
@@ -42431,6 +42771,132 @@ type ListInstanceAvailabilityEventsdefaultApplicationProblemPlusJSONResponse str
 }
 
 func (response ListInstanceAvailabilityEventsdefaultApplicationProblemPlusJSONResponse) VisitListInstanceAvailabilityEventsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstanceDeliveriesRequestObject struct {
+	Domain InstanceDomain `json:"domain"`
+	Params ListInstanceDeliveriesParams
+}
+
+type ListInstanceDeliveriesResponseObject interface {
+	VisitListInstanceDeliveriesResponse(w http.ResponseWriter) error
+}
+
+type ListInstanceDeliveries200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListInstanceDeliveries200JSONResponse struct {
+	Body    AdminDeliveryPage
+	Headers ListInstanceDeliveries200ResponseHeaders
+}
+
+func (response ListInstanceDeliveries200JSONResponse) VisitListInstanceDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListInstanceDeliveriesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListInstanceDeliveriesdefaultApplicationProblemPlusJSONResponse) VisitListInstanceDeliveriesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealInstanceDeliveryRequestObject struct {
+	Domain InstanceDomain `json:"domain"`
+	Id     DeliveryId     `json:"id"`
+}
+
+type RevealInstanceDeliveryResponseObject interface {
+	VisitRevealInstanceDeliveryResponse(w http.ResponseWriter) error
+}
+
+type RevealInstanceDelivery200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type RevealInstanceDelivery200JSONResponse struct {
+	Body    AdminDeliveryReveal
+	Headers RevealInstanceDelivery200ResponseHeaders
+}
+
+func (response RevealInstanceDelivery200JSONResponse) VisitRevealInstanceDeliveryResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RevealInstanceDeliverydefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RevealInstanceDeliverydefaultApplicationProblemPlusJSONResponse) VisitRevealInstanceDeliveryResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -62117,6 +62583,12 @@ type StrictServerInterface interface {
 	// ListInstanceAvailabilityEvents List the times a remote server was marked unavailable or available
 	// (GET /admin/instances/{domain}/availability_events)
 	ListInstanceAvailabilityEvents(ctx context.Context, request ListInstanceAvailabilityEventsRequestObject) (ListInstanceAvailabilityEventsResponseObject, error)
+	// ListInstanceDeliveries List the deliveries to a remote server and their attempts
+	// (GET /admin/instances/{domain}/deliveries)
+	ListInstanceDeliveries(ctx context.Context, request ListInstanceDeliveriesRequestObject) (ListInstanceDeliveriesResponseObject, error)
+	// RevealInstanceDelivery Show the sender, the activity URI, and the inbox of a delivery
+	// (POST /admin/instances/{domain}/deliveries/{id}/reveal)
+	RevealInstanceDelivery(ctx context.Context, request RevealInstanceDeliveryRequestObject) (RevealInstanceDeliveryResponseObject, error)
 	// MarkInstanceAvailable Mark a remote server available
 	// (POST /admin/instances/{domain}/mark_available)
 	MarkInstanceAvailable(ctx context.Context, request MarkInstanceAvailableRequestObject) (MarkInstanceAvailableResponseObject, error)
@@ -66825,6 +67297,60 @@ func (sh *strictHandler) ListInstanceAvailabilityEvents(w http.ResponseWriter, r
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListInstanceAvailabilityEventsResponseObject); ok {
 		if err := validResponse.VisitListInstanceAvailabilityEventsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListInstanceDeliveries operation middleware
+func (sh *strictHandler) ListInstanceDeliveries(w http.ResponseWriter, r *http.Request, domain InstanceDomain, params ListInstanceDeliveriesParams) {
+	var request ListInstanceDeliveriesRequestObject
+
+	request.Domain = domain
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListInstanceDeliveries(ctx, request.(ListInstanceDeliveriesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListInstanceDeliveries")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListInstanceDeliveriesResponseObject); ok {
+		if err := validResponse.VisitListInstanceDeliveriesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RevealInstanceDelivery operation middleware
+func (sh *strictHandler) RevealInstanceDelivery(w http.ResponseWriter, r *http.Request, domain InstanceDomain, id DeliveryId) {
+	var request RevealInstanceDeliveryRequestObject
+
+	request.Domain = domain
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RevealInstanceDelivery(ctx, request.(RevealInstanceDeliveryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RevealInstanceDelivery")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RevealInstanceDeliveryResponseObject); ok {
+		if err := validResponse.VisitRevealInstanceDeliveryResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

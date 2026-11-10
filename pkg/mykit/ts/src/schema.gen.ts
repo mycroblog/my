@@ -5896,6 +5896,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/instances/{domain}/deliveries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the deliveries to a remote server and their attempts
+         * @description What this server sent to the remote server and what it answered, newest first: each
+         *     delivery of an activity to an inbox of the server, with every attempt (its outcome, the
+         *     signature scheme, the status code, and the error), the ones that succeeded included.
+         *     Attempts are kept for 30 days. The body of the activity is never returned.
+         *
+         *     The type and the times of every delivery, and every attempt, are always shown. When the
+         *     activity is about a post whose visibility is `private`, `direct`, or `local`, or is a
+         *     follow, its undo, an accept, or a reject of a local account that approves its followers, the sender,
+         *     the activity URI, and a personal inbox are masked: `mask` says why, and `POST
+         *     /admin/instances/{domain}/deliveries/{id}/reveal` shows them, audited. A shared inbox is
+         *     never masked, and a masked inbox in an error reads `[masked]`.
+         *
+         *     A query with `account_id` is recorded in the audit log as `account_deliveries_viewed`
+         *     before anything is returned; an account that is not local is a 400 naming `account_id`,
+         *     an unknown one a 404. Needs the `manage_domains` permission.
+         */
+        get: operations["listInstanceDeliveries"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/instances/{domain}/deliveries/{id}/reveal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Show the sender, the activity URI, and the inbox of a delivery
+         * @description The fields that the list of deliveries masks, of one delivery to the server: its local
+         *     sender, the URI of its activity, and its inbox. Each call is recorded in the audit log as
+         *     `delivery_revealed` before anything is returned, also for a delivery that is not masked;
+         *     it changes nothing else. The body of the activity is never returned. A delivery that is
+         *     unknown or went to another server is a 404. Needs the `manage_domains` permission.
+         */
+        post: operations["revealInstanceDelivery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/audit_log": {
         parameters: {
             query?: never;
@@ -10866,9 +10924,13 @@ export interface components {
          *     authentication), `password_reset_link_issued` (an administrator issued a link that sets
          *     a new password for the account's user), `email_suppression_lifted` (a moderator lifted the
          *     suppression of the primary email address of the account's user), `account_moved` (a limited
-         *     local account moved to another local account, which does not inherit the limit). On a `domain`:
+         *     local account moved to another local account, which does not inherit the limit),
+         *     `account_deliveries_viewed` (a holder of `manage_domains` listed the deliveries of the
+         *     account to a remote server; the target name is the handle and the server). On a `domain`:
          *     `domain_action_issued`, `domain_action_lifted`, `instance_marked_available` (an operator
-         *     cleared the failures of the server). On a `report`: `report_assigned`,
+         *     cleared the failures of the server), `delivery_revealed` (a holder of `manage_domains` was
+         *     shown the masked sender, activity URI, and inbox of a delivery to the server, whose ID is
+         *     `source_event_id`). On a `report`: `report_assigned`,
          *     `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`,
          *     `report_forwarded` (a moderator forwarded the report to the target's server). On a
          *     `user` (a registration):
@@ -10941,7 +11003,7 @@ export interface components {
          *     the event; the ID and the label are the event's ID.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_cancelled";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "delivery_revealed" | "account_deliveries_viewed" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued" | "event_cancelled";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -11019,6 +11081,82 @@ export interface components {
         /** @description A page of availability events, newest first. */
         AdminAvailabilityEventPage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["AdminAvailabilityEvent"][];
+        };
+        /**
+         * @description The delivery of an activity to one inbox of a remote server, with its attempts. `sender`,
+         *     `activity_uri`, and a personal `inbox_url` are absent when `mask` is present.
+         */
+        AdminDelivery: {
+            id: components["schemas"]["Id"];
+            domain: string;
+            /** @description The type of the activity, such as `Create`, `Follow`, or `Accept`. */
+            activity_type: string;
+            /**
+             * Format: date-time
+             * @description When the activity was recorded.
+             */
+            activity_created_at: string;
+            /**
+             * Format: date-time
+             * @description When the inbox was added to the activity.
+             */
+            created_at: string;
+            /** @description Whether the inbox is a shared inbox of the server, which names no recipient. */
+            shared_inbox: boolean;
+            mask?: components["schemas"]["AdminDeliveryMask"];
+            sender?: components["schemas"]["AdminDeliverySender"];
+            activity_uri?: string;
+            inbox_url?: string;
+            /** @description The attempts, oldest first. */
+            attempts: components["schemas"]["AdminDeliveryAttempt"][];
+        };
+        /** @description One attempt of a delivery. */
+        AdminDeliveryAttempt: {
+            id: components["schemas"]["Id"];
+            /**
+             * @description `succeeded`: the server accepted the activity. `retryable_failure`: it failed in a way
+             *     that is tried again. `permanent_failure`: the server refused it, and it is not sent
+             *     again. `skipped`: nothing was sent, for the reason in `error`.
+             * @enum {string}
+             */
+            outcome: "succeeded" | "retryable_failure" | "permanent_failure" | "skipped";
+            /**
+             * @description The signature scheme of the request that got the response; absent without a response.
+             * @enum {string}
+             */
+            signature_scheme?: "rfc9421" | "cavage";
+            /** @description The status code of the response; absent without a response. */
+            status_code?: number;
+            /** @description Why the attempt failed without a response, or why nothing was sent. */
+            error?: string;
+            /** Format: date-time */
+            attempted_at: string;
+        };
+        /**
+         * @description Why the sender, the activity URI, and a personal inbox of a delivery are masked. `private`,
+         *     `direct`, `local`: the activity is about a post of that visibility. `approves_followers`: a
+         *     follow, its undo, an accept, or a reject of a local account that approves its followers. `unknown`:
+         *     the post or the account is gone, so what it was is no longer known.
+         * @enum {string}
+         */
+        AdminDeliveryMask: "private" | "direct" | "local" | "approves_followers" | "unknown";
+        /** @description A page of the deliveries to a remote server, newest first. */
+        AdminDeliveryPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["AdminDelivery"][];
+        };
+        /** @description The fields of a delivery that the list masks. */
+        AdminDeliveryReveal: {
+            id: components["schemas"]["Id"];
+            mask?: components["schemas"]["AdminDeliveryMask"];
+            sender: components["schemas"]["AdminDeliverySender"];
+            activity_uri: string;
+            inbox_url: string;
+        };
+        /** @description The local account that sent the activity. */
+        AdminDeliverySender: {
+            account_id: components["schemas"]["Id"];
+            /** @description The username of the account; absent for an account that is gone. */
+            username?: string;
         };
         /** @description What awaits the moderators; a count whose permission the user lacks is omitted. */
         AdminCounts: {
@@ -19670,6 +19808,8 @@ export interface components {
         EventId: components["schemas"]["Id"];
         /** @description Only the answers of this kind; every answer when omitted. */
         EventVoteFilter: components["schemas"]["EventVote"];
+        /** @description The ID of the delivery. */
+        DeliveryId: components["schemas"]["Id"];
         /** @description The ID of the domain action. */
         DomainActionId: components["schemas"]["Id"];
         /** @description The ID of the decision. */
@@ -26298,6 +26438,73 @@ export interface operations {
         requestBody?: never;
         responses: {
             200: components["responses"]["AdminInstanceHealth"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listInstanceDeliveries: {
+        parameters: {
+            query?: {
+                /** @description Keep only the deliveries of the activities of this local account; audited. */
+                account_id?: components["schemas"]["Id"];
+                /** @description Keep only the deliveries of the activity with this ID. */
+                activity_uri?: string;
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /**
+                 * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+                 *     lower case without a trailing dot. A value that is not a host name is a 400.
+                 */
+                domain: components["parameters"]["InstanceDomain"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of deliveries. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDeliveryPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    revealInstanceDelivery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The domain of the remote server, such as `mastodon.example`, normalized to IDNA A-labels in
+                 *     lower case without a trailing dot. A value that is not a host name is a 400.
+                 */
+                domain: components["parameters"]["InstanceDomain"];
+                /** @description The ID of the delivery. */
+                id: components["parameters"]["DeliveryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The masked fields of the delivery. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDeliveryReveal"];
+                };
+            };
             default: components["responses"]["Problem"];
         };
     };

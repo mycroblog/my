@@ -244,6 +244,9 @@ type App struct {
 	// outside deliveries (docs/architecture/federation.md §7.3).
 	Deliverer      *federation.Deliverer
 	InstanceHealth *federation.Health
+	// DeliveryLog shows the deliveries to a remote server and their attempts to the operators,
+	// masked where the activity is not public (ADR-0058 §9).
+	DeliveryLog *federation.DeliveryLog
 	// ClosureDeletes records and fans out the Delete of every local actor once the service is
 	// closed, and tells when their deliveries end (ADR-0088 §3).
 	ClosureDeletes *federation.ClosureDeletes

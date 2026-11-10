@@ -407,6 +407,8 @@ export const auditActions = [
   "link_card_domain_images_stopped",
   "link_card_domain_rule_removed",
   "instance_marked_available",
+  "delivery_revealed",
+  "account_deliveries_viewed",
   "domain_allow_added",
   "domain_allow_removed",
   "domain_list_subscription_created",

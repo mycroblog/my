@@ -117,6 +117,8 @@ export const auditActionLabels: Readonly<Record<AuditAction, ClientMessageKey>> 
   link_card_domain_images_stopped: "client:admin.audit_log.action.link_card_domain_images_stopped",
   link_card_domain_rule_removed: "client:admin.audit_log.action.link_card_domain_rule_removed",
   instance_marked_available: "client:admin.audit_log.action.instance_marked_available",
+  delivery_revealed: "client:admin.audit_log.action.delivery_revealed",
+  account_deliveries_viewed: "client:admin.audit_log.action.account_deliveries_viewed",
   domain_allow_added: "client:admin.audit_log.action.domain_allow_added",
   domain_allow_removed: "client:admin.audit_log.action.domain_allow_removed",
   domain_list_subscription_created: "client:admin.audit_log.action.domain_list_subscription_created",
