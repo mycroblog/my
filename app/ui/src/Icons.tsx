@@ -117,6 +117,7 @@ import {
   PiPlayFill,
   PiPlus,
   PiPushPinSimple,
+  PiHash,
   PiChatCircle,
   PiQuotes,
   PiRepeat,
@@ -176,6 +177,8 @@ export const iconTable = {
   // A speech bubble: the conversation under a post, which the reader opens to read the replies.
   RepliesIcon: { off: glyph(PiChatCircle, "PiChatCircle") },
   PinIcon: { off: glyph(PiPushPinSimple, "PiPushPinSimple") },
+  // A hashtag: the mark of a post that a followed hashtag brought to the home timeline.
+  HashtagIcon: { off: glyph(PiHash, "PiHash") },
   // Up is where the new items wait (above the feed) in any writing direction, so it does not mirror.
   NewItemsIcon: { off: glyph(PiArrowUp, "PiArrowUp") },
   HideMediaIcon: { off: glyph(PiEyeSlash, "PiEyeSlash") },
@@ -400,6 +403,11 @@ export function RepliesIcon() {
 /** A pin, for a post pinned to the top of a profile. */
 export function PinIcon() {
   return renderIcon(iconTable.PinIcon);
+}
+
+/** A number sign, for a hashtag: a post on the home timeline only for a hashtag the viewer follows. */
+export function HashtagIcon() {
+  return renderIcon(iconTable.HashtagIcon);
 }
 
 /** An arrow up, for the button that shows the new posts waiting above a feed. */

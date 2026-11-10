@@ -203,6 +203,7 @@ export {
   MoveUpIcon,
   NotificationsIcon,
   PinIcon,
+  HashtagIcon,
   PlusIcon,
   PollIcon,
   ProfileIcon,

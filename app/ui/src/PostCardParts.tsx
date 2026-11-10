@@ -4,7 +4,7 @@
 import type { ReactNode } from "react";
 import { tv } from "tailwind-variants";
 import { ExternalLink } from "./ExternalLink";
-import { BoostIcon, LanguageIcon, PinIcon } from "./Icons";
+import { BoostIcon, HashtagIcon, LanguageIcon, PinIcon } from "./Icons";
 import { Link } from "./Link";
 import { PostCardAuthor, type PostCardAuthorProps } from "./PostCard";
 import { Text } from "./Text";
@@ -31,15 +31,16 @@ const parts = tv({
 });
 
 export type PostCardNameLinkProps = {
-  /** The profile. */
+  /** The profile, or the hashtag's page. */
   href: string;
   /** The name, usually an `EmojiText`; the user's text, isolated from the sentence around it (`<bdi>`). */
   children: ReactNode;
 };
 
 /**
- * A link to a profile on a name inside a sentence ("Bob boosted", "Bob followed you"): in the color of the text,
- * underlined on hover. The name is the user's text, so it is isolated from the sentence (`<bdi>`, Y10).
+ * A link to a profile on a name inside a sentence ("Bob boosted", "Bob followed you"), or to a hashtag's page on the
+ * hashtag ("Followed hashtag #cats"): in the color of the text, underlined on hover. The name is the user's text, so
+ * it is isolated from the sentence (`<bdi>`, Y10).
  */
 export function PostCardNameLink({ href, children }: PostCardNameLinkProps) {
   return (
@@ -105,10 +106,13 @@ export function PostCardAvatarLink({ href, children }: PostCardAvatarLinkProps) 
 }
 
 /** The icon of each kind of context line. */
-const contextIcons = { boost: BoostIcon, pin: PinIcon } as const;
+const contextIcons = { boost: BoostIcon, pin: PinIcon, hashtag: HashtagIcon } as const;
 
 export type PostCardContextProps = {
-  /** Why the post is here: boosted by someone (`boost`), or pinned to the top of a profile (`pin`). */
+  /**
+   * Why the post is here: boosted by someone (`boost`), pinned to the top of a profile (`pin`), or on the home timeline
+   * for a hashtag the viewer follows (`hashtag`).
+   */
   kind: keyof typeof contextIcons;
   /** The sentence ("Bob boosted", "Pinned"), which may have a PostCardNameLink in it. */
   children: ReactNode;
@@ -116,7 +120,7 @@ export type PostCardContextProps = {
 
 /**
  * The context line of a post (PostCard's `context`): the icon of its kind and the sentence, the one form of every
- * such line (web-client §21 P4), so that a boost and a pinned post are told apart by shape before they are read.
+ * such line (web-client §21 P4), so that a boost, a pinned post and a post of a followed hashtag are told apart by shape before they are read.
  */
 export function PostCardContext({ kind, children }: PostCardContextProps) {
   const Icon = contextIcons[kind];
