@@ -45,6 +45,7 @@ import {
   ReplyIcon,
   Text,
 } from "@my/ui";
+import type { ReactNode } from "react";
 import { useIntl } from "react-intl";
 import { useT } from "../../../lib/i18n";
 import { useReply } from "../../compose";
@@ -227,30 +228,34 @@ function OtherAvatars({ others }: { others: readonly NotificationActor[] }) {
 /**
  * The post a notification is about, as a quote that links to its page in the app, with its thread and the
  * actions on it (FR-113). The server embeds it in the notification, and leaves it out when the user may not
- * see it. A post behind a content warning shows the warning only.
+ * see it. A post behind a content warning shows the warning only, and one that the viewer's keyword filters fold
+ * only what it matched (ADR-0157 §7).
  */
 function PostQuote({ post }: { post: NonNullable<NotificationView["post"]> }) {
   const t = useT();
   const intl = useIntl();
-  const label =
-    post.contentWarning !== null ? (
-      // The warning is the author's text in the post's language, isolated from the UI's sentence (Y10).
-      intl.formatMessage(
-        { id: "client:notifications.post.content_warning" },
-        {
-          summary: (
-            <bdi key="summary" lang={post.lang}>
-              {post.contentWarning}
-            </bdi>
-          ),
-        },
-      )
-    ) : post.text === "" ? (
-      // A post of pictures only has no text to quote.
-      t("client:notifications.post.open")
-    ) : (
-      <PostExcerptText lang={post.lang}>{post.text}</PostExcerptText>
-    );
+  let label: ReactNode;
+  if (post.filtered !== null) label = post.filtered;
+  else
+    label =
+      post.contentWarning !== null ? (
+        // The warning is the author's text in the post's language, isolated from the UI's sentence (Y10).
+        intl.formatMessage(
+          { id: "client:notifications.post.content_warning" },
+          {
+            summary: (
+              <bdi key="summary" lang={post.lang}>
+                {post.contentWarning}
+              </bdi>
+            ),
+          },
+        )
+      ) : post.text === "" ? (
+        // A post of pictures only has no text to quote.
+        t("client:notifications.post.open")
+      ) : (
+        <PostExcerptText lang={post.lang}>{post.text}</PostExcerptText>
+      );
   return <PostExcerpt href={post.href}>{label}</PostExcerpt>;
 }
 

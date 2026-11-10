@@ -302,7 +302,7 @@ entries:
     docs: ["docs/architecture/data-model/04-tables/03-moderation.md#43-moderation", "docs/operations/moderation.md", "docs/adr/0058-moderation-admin-separation.md"]
     userdocs: ["docs/operations/moderation.md", "docs/guide/safety.md"]
   - name: domain-list-subscriptions
-    paths: ["internal/domain/moderation/domain_list*.go", "internal/app/moderation/domain_list*.go", "internal/adapter/db/*/moderation/domain_list*.go", "queries/*/moderation/domain_list.sql", "internal/interface/clientapi/admin_domain_list_subscriptions*.go", "api/spec/paths/admin_domain_list_subscriptions*.yaml", "cmd/my/domain_subscription*.go", "pkg/testkit/moderationtest/domain_list_*.go"]
+    paths: ["internal/domain/moderation/domain_list*.go", "internal/app/moderation/domain_list*.go", "internal/adapter/db/*/moderation/domain_list*.go", "queries/*/moderation/domain_list.sql", "internal/interface/clientapi/admin_domain_list_subscriptions*.go", "api/spec/paths/admin_domain_list_subscriptions*.yaml", "cmd/my/domain_subscription*.go", "pkg/testkit/moderationtest/domain_list_*.go", "app/web/src/routes/moderation.domain-actions_.subscriptions*.tsx", "app/web/src/features/moderation/components/DomainListSubscription*.tsx", "app/web/src/features/moderation/hooks/useDomainListSubscriptions.ts"]
     docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/data-model/04-tables/03-moderation.md#ドメインのブロックリストの購読"]
     userdocs: ["docs/operations/moderation.md#subscribing-to-blocklists", "docs/reference/jobs.md", "docs/reference/cli.md"]
     notes:
@@ -314,7 +314,7 @@ entries:
     notes:
       - "Visibility checks go through the single domain policy function; never re-implement them."
   - name: federation-allowlist
-    paths: ["internal/domain/moderation/allowlist*.go", "internal/app/moderation/allowlist.go", "internal/adapter/db/*/moderation/allowlist.go", "queries/*/moderation/allowlist.sql", "internal/platform/federation_scope.go", "internal/interface/clientapi/admin_domain_allows*.go", "cmd/my/domain_allow.go", "pkg/testkit/moderationtest/allowlist_*.go", "pkg/testkit/notificationtest/allowlist_severance_flows.go", "api/spec/paths/admin_domain_allows*.yaml", "api/spec/paths/admin_settings_federation_scope_impact.yaml", "api/spec/components/schemas/DomainAllow*.yaml", "api/spec/components/schemas/CreateDomainAllowRequest.yaml", "api/spec/components/schemas/FederationScopeImpact*.yaml"]
+    paths: ["internal/domain/moderation/allowlist*.go", "internal/app/moderation/allowlist.go", "internal/adapter/db/*/moderation/allowlist.go", "queries/*/moderation/allowlist.sql", "internal/platform/federation_scope.go", "internal/interface/clientapi/admin_domain_allows*.go", "cmd/my/domain_allow.go", "pkg/testkit/moderationtest/allowlist_*.go", "pkg/testkit/notificationtest/allowlist_severance_flows.go", "api/spec/paths/admin_domain_allows*.yaml", "api/spec/paths/admin_settings_federation_scope_impact.yaml", "api/spec/components/schemas/DomainAllow*.yaml", "api/spec/components/schemas/CreateDomainAllowRequest.yaml", "api/spec/components/schemas/FederationScopeImpact*.yaml", "app/web/src/routes/moderation.domain-actions_.allowed.tsx", "app/web/src/features/moderation/components/DomainAllows.tsx", "app/web/src/features/moderation/hooks/useDomainAllows.ts"]
     docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/federation.md#11-モデレーションとの連携", "docs/architecture/data-model/04-tables/03-moderation.md#43-moderation"]
     userdocs: ["docs/operations/moderation.md#federating-only-with-allowed-servers", "docs/operations/instance-settings.md", "docs/reference/jobs.md"]
     notes:
@@ -374,7 +374,7 @@ entries:
   - name: keyword-filters
     paths: ["internal/domain/timeline/keyword_filter*.go", "internal/app/timeline/keyword_filters*.go", "internal/adapter/db/*/timeline/keyword_filters.go", "queries/*/timeline/keyword_filters.sql", "internal/interface/clientapi/keyword_filters.go", "internal/app/notification/keyword_filters*.go", "internal/adapter/db/*/notification/unread_statuses.go", "queries/*/notification/unread_statuses.sql", "pkg/testkit/timelinetest/timeline_keyword_filters_*.go", "internal/platform/clientapi_keyword_filters_test.go", "api/spec/paths/filters*.yaml", "api/spec/components/schemas/KeywordFilter*.yaml", "api/spec/components/schemas/FilterResult.yaml", "api/spec/components/schemas/MatchedKeywordFilter.yaml"]
     docs: ["docs/adr/0157-keyword-filters.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#キーワードフィルタ", "docs/architecture/data-model/06-timeline-queries.md#6-タイムラインのクエリ"]
-    userdocs: ["docs/guide/safety.md", "docs/guide/notifications.md", "docs/reference/jobs.md"]
+    userdocs: ["docs/guide/keyword-filters.md", "docs/guide/notifications.md", "docs/reference/jobs.md"]
     notes:
       - "keyword_filters and their settings, contexts, and words are what the owner wrote, never a projection: RebuildProjections keeps them, and the account erasure deletes them. An expired filter is never deleted (ADR-0157 §6): the reads leave it out, the owner sees it as expired, and extending its expiry applies it again."
       - "Matching is one function (timeline.NormalizeFilterText, FilterMatcher: Aho-Corasick over the normalized runes, NFKC given by apptimeline.NFKC) and one use case (StatusFilter.Judge). Every read path builds the viewer's StatusFilter for its context with one query and judges the StatusViews it presents right after CanView (clientapi applyJudgement): hide drops the row and keeps the cursor, warn fills Status.filtered. Nothing of a match is stored."
@@ -387,6 +387,14 @@ entries:
       - "featured_tags is a current value, never a projection: a local account's SetFeaturedTags replaces the list and emits timeline.featured_tags_changed (the Update of the actor) only when it changes; a remote account's rows are the copy of its featuredTags collection, which federation.fetch_featured_tags replaces through ReplaceRemoteFeaturedTags and which sends nothing."
       - "The counts and the last use are never stored: FeaturedTags reads them from feed_tag_entries by the partial index (author_account_id, tag_id, revised_at) over the public and unlisted posts alone, for local and remote accounts alike."
       - "Hashtag items have no id, so Normalize keeps their names in Collection.Hashtags apart from Items; collectionPage takes a collection with either as its page."
+  - name: hashtags-web
+    paths: ["app/web/src/features/hashtags/**", "app/web/src/routes/tags.$tag.tsx", "app/web/src/routes/settings.followed-tags.tsx", "app/web/src/routes/@{$acct}_.tagged.$tag.tsx", "app/web/e2e/hashtags.spec.ts"]
+    docs: ["docs/adr/0013-timeline-strategy.md#28-ハッシュタグから入った投稿の表示", "docs/adr/0006-federation-protocol-scope.md#17-リモートのピン留めfeaturedと注目のハッシュタグfeaturedtags", "docs/architecture/web-client/screens/tag.md", "docs/architecture/web-client/screens/settings-followed-tags.md", "docs/architecture/web-client/screens/profile.md", "docs/architecture/web-client/screens/settings-profile.md"]
+    userdocs: ["docs/guide/following.md"]
+    notes:
+      - "The hashtags feature owns the follow of a hashtag (its page's button, the settings list) and the featured hashtags (the profile's region, the rows of the profile form, whose save button saves them after the profile). Other features use it through index.ts: the profile shows FeaturedTags, the settings' useProfileForm holds useFeaturedTagsDraft, and the status card draws the mark of Status.followed_tags itself (PostCardContext kind hashtag)."
+      - "A follow or unfollow marks the home timeline stale (storeTagFollow), so its posts are on home when it opens again, without a reload. The hashtag goes to the API with its # (`%23search` is not the search of hashtags), and names are compared under NFKC and lowercase (hashtagKey) as the server matches them."
+      - "/@{acct}/tagged/{tag}, the href of a featured hashtag on the wire, replaces itself with /tags/{tag}: the client API lists no account's posts by hashtag."
   - name: direct-messages
     paths: ["internal/app/timeline/conversations.go", "internal/adapter/db/*/timeline/conversations.go", "queries/*/timeline/conversations.sql", "internal/interface/clientapi/conversations.go", "pkg/testkit/timelinetest/conversation_*.go", "api/spec/paths/conversations*.yaml", "api/spec/components/schemas/Conversation*.yaml", "app/web/src/features/direct-messages/**", "app/web/src/routes/direct-messages.tsx", "app/web/e2e/direct-messages.spec.ts"]
     docs: ["docs/adr/0154-conversations.md#decision決定", "docs/architecture/data-model/04-tables/06-timeline.md#ダイレクトメッセージ", "docs/architecture/data-model/06-timeline-queries.md#64-ダイレクトメッセージ", "docs/architecture/visibility.md#3-判定の順序", "docs/architecture/web-client/screens/direct-messages.md"]
@@ -808,13 +816,22 @@ entries:
     paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**", "app/web/src/routes/moderation.domain-actions*.tsx", "app/web/src/routes/moderation.signup-blocks*.tsx", "app/web/src/routes/moderation.invites*.tsx"]
     docs: ["docs/architecture/web-client/14-admin.md#14-管理画面"]
   - name: web-feature-compose
-    paths: ["app/web/src/features/compose/**"]
-    docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0110-web-experience-principles.md"]
+    paths: ["app/web/src/features/compose/**", "app/web/src/features/drafts/**", "app/web/src/routes/drafts.tsx", "app/web/e2e/drafts.spec.ts", "locales/*/client/drafts.json"]
+    docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0110-web-experience-principles.md", "docs/adr/0156-drafts-and-scheduled-posts.md#decision決定", "docs/architecture/web-client/screens/drafts.md"]
     userdocs: ["docs/guide/posting.md"]
+    notes:
+      - "The drafts saved on the server (ADR-0156): their queries and writes are compose's api/drafts.ts, which the form and the drafts page (features/drafts, through compose's index.ts) share; a draft opened from the page carries `saved` (ID, ETag, schedule) in the form's draft, so the next save is a PUT with If-Match, and posting it saves it (If-Match) and publishes it with POST /drafts/{id}/publish, which deletes it in the post's transaction."
   - name: web-feature-status
     paths: ["app/web/src/features/status/**", "app/web/src/features/timeline/**", "app/web/src/features/notifications/**", "app/web/src/features/profile/**", "app/web/src/features/relationship/**"]
     docs: ["docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠"]
-    userdocs: ["docs/guide/posting.md", "docs/guide/following.md", "docs/guide/notifications.md", "docs/guide/safety.md"]
+    userdocs: ["docs/guide/posting.md", "docs/guide/following.md", "docs/guide/notifications.md", "docs/guide/safety.md", "docs/guide/keyword-filters.md"]
+  - name: web-feature-filters
+    paths: ["app/web/src/features/filters/**", "app/web/src/routes/settings.filters.tsx", "app/ui/src/FilteredPost.tsx"]
+    docs: ["docs/architecture/web-client/screens/settings-filters.md", "docs/adr/0157-keyword-filters.md#decision決定", "docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作"]
+    userdocs: ["docs/guide/keyword-filters.md"]
+    notes:
+      - "The client never matches a post: the server marks the posts of `warn` filters in Status.filtered and leaves out the `hide` ones. features/status folds a marked post (StatusCard and @my/ui's FilteredPost, the quote through useQuoteView, the notification row through useFilteredLabel). A save or delete of a filter marks every list of posts, the posts, and the notifications stale (cacheSavedFilter, cacheDeletedFilter)."
+      - "The form links the user manual's page docs/guide/keyword-filters.md#how-words-match on the documentation site at the server's version (wordMatchingManualUrl mirrors internal/platform/docsite): keep the heading and its anchor when the page changes."
   - name: web-feature-onboarding
     paths: ["app/web/src/features/onboarding/**", "app/web/src/routes/welcome.tsx"]
     docs: ["docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]

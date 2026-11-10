@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A profile (FR-204): the header with the account's picture, name, handle, role badges, profile text, metadata fields,
-// follow counts and the relationship buttons, then its posts in tabs (WAI-ARIA APG, tabs pattern) whose
+// follow counts and the relationship buttons, then the hashtags it features and its posts in tabs (WAI-ARIA APG, tabs pattern) whose
 // selection the route keeps in the URL (web-client/README.md S3), the posts tab starting with its pinned posts.
 import {
   Box,
@@ -23,6 +23,7 @@ import {
 import { type ComponentProps, type ReactNode, useId } from "react";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { type AccountTimelineFilter, accountTimelineFilters, TimelineFeed, useRemoteFetch } from "../../timeline";
+import { FeaturedTags } from "../../hashtags";
 import { ProfileVoiceRoom } from "../../voice";
 import { usePinnedStatuses } from "../hooks/usePinnedStatuses";
 import { isolate, type ProfileView as ProfileViewData, useProfile } from "../hooks/useProfile";
@@ -130,6 +131,8 @@ export function ProfileView({ acct, tab, onTabChange, renderHeading }: ProfileVi
       )}
       {/* The open voice chat room where the account hosts or speaks, for a user who sees it (ADR-0100 §8). */}
       <ProfileVoiceRoom accountId={account.id} name={profile.name} />
+      {/* The hashtags the account features, in its order (ADR-0006 §17). */}
+      <FeaturedTags accountId={account.id} />
       <ProfileTabs
         accountId={account.id}
         name={profile.name}

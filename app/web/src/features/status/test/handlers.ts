@@ -3,7 +3,7 @@
 // Bob's post `statusFixture`; the thread around it (GET /statuses/{id}/context): no ancestors and no
 // replies; its source (GET /statuses/{id}/source): the plain text of that post; its history
 // (GET /statuses/{id}/history): the one revision of a post never edited; and the actions on it (boost,
-// favourite, bookmark, pin and their removal; edit; delete; the emoji reaction and its removal). An action answers
+// favourite, bookmark, pin, the thread's mute and their removal; edit; delete; the emoji reaction and its removal). An action answers
 // the post with the viewer's relation set as asked (a reaction: the post with that one reaction, the viewer's); an
 // edit answers it with the new text as its content and `edited_at` set. The accounts that reacted to a post
 // (GET /statuses/{id}/reactions) are Bob with 👍, in one page. A vote in the poll of a post
@@ -97,6 +97,11 @@ export const handlers = [
   ...[true, false].map((on) =>
     (on ? http.post : http.delete)(`${apiBase}/statuses/:id/pin`, ({ params, request }) =>
       withViewer(request, () => HttpResponse.json({ ...statusFixture(String(params["id"])), pinned: on })),
+    ),
+  ),
+  ...[true, false].map((on) =>
+    (on ? http.post : http.delete)(`${apiBase}/statuses/:id/mute`, ({ params, request }) =>
+      withViewer(request, () => HttpResponse.json({ ...statusFixture(String(params["id"])), muted: on })),
     ),
   ),
   http.delete(`${apiBase}/statuses/:id`, ({ request }) =>

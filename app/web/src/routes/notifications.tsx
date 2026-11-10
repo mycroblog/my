@@ -6,6 +6,7 @@ import {
   type NotificationFilter,
   notificationFilters,
   notificationMarkerQueryOptions,
+  notificationRequestSummaryQueryOptions,
   notificationsQueryOptions,
   NotificationsSkeleton,
   NotificationsView,
@@ -32,6 +33,8 @@ export const Route = createFileRoute("/notifications")({
     await Promise.allSettled([
       queryClient.infiniteQuery({ ...notificationsQueryOptions(api, filter), staleTime: Infinity }),
       queryClient.query({ ...notificationMarkerQueryOptions(api), staleTime: Infinity }),
+      // The counts of the notification requests, for the row above the tabs; a failure leaves the row out.
+      queryClient.query({ ...notificationRequestSummaryQueryOptions(api), staleTime: Infinity }),
     ]);
   },
   component: NotificationsPage,

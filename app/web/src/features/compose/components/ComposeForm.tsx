@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import {
+  Box,
   Button,
   Checkbox,
   Dialog,
@@ -8,18 +9,20 @@ import {
   FormActionBar,
   Hint,
   InlineError,
+  Link,
   Spinner,
   Stack,
   Text,
 } from "@my/ui";
 import type { ClipboardEvent, KeyboardEvent, SubmitEvent } from "react";
+import { useIntl } from "react-intl";
 import { useLocale, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
 import { EmojiPickerButton, useCustomEmojiShortcodes } from "../../emoji";
 import { maxAttachments } from "../hooks/policy";
 import { type ComposeController, composeTextId } from "../hooks/useCompose";
-import { type ComposeBlocker, type ReadyComposeForm, useComposeForm } from "../hooks/useComposeForm";
-import type { ClientMessageKey } from "../../../lib/i18n";
+import { blockerMessages } from "../hooks/blockerMessages";
+import { type ReadyComposeForm, useComposeForm } from "../hooks/useComposeForm";
 import { useFormatRemaining } from "../hooks/useFormatRemaining";
 import { AttachmentList } from "./AttachmentList";
 import { CompletionTextArea, CompletionTextField } from "./CompletionFields";
@@ -55,28 +58,35 @@ export function ComposeForm({ controller, labelledBy, autoFocus = false }: Compo
         </Stack>
       );
     case "ready":
-      return <ReadyForm form={form} labelledBy={labelledBy} autoFocus={autoFocus} />;
+      return (
+        <ReadyForm
+          form={form}
+          labelledBy={labelledBy}
+          autoFocus={autoFocus}
+          onLeave={() => {
+            controller.setSheetOpen(false);
+          }}
+        />
+      );
   }
 }
 
-type ReadyFormProps = { form: ReadyComposeForm; labelledBy: string; autoFocus: boolean };
-
-/** What the send bar says while the draft cannot be sent: the reason and what to do about it. */
-const blockerMessages: Readonly<Record<ComposeBlocker, ClientMessageKey>> = {
-  empty: "client:compose.blocked.empty",
-  too_long: "client:compose.blocked.too_long",
-  uploading: "client:compose.blocked.uploading",
-  upload_failed: "client:compose.blocked.upload_failed",
-  poll: "client:compose.blocked.poll",
-  loading_target: "client:compose.blocked.loading_target",
+type ReadyFormProps = {
+  form: ReadyComposeForm;
+  labelledBy: string;
+  autoFocus: boolean;
+  /** Closes the sheet, for the link that leaves it for the drafts page. */
+  onLeave: () => void;
 };
 
-function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
+function ReadyForm({ form, labelledBy, autoFocus, onLeave }: ReadyFormProps) {
   const t = useT();
+  const intl = useIntl();
   const locale = useLocale();
   const formatRemaining = useFormatRemaining();
   const shortcodes = useCustomEmojiShortcodes();
   const { draft, attachments } = form;
+  const barMessage = form.blocked !== null ? t(blockerMessages[form.blocked]) : form.serverDraft.message;
   const onSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     form.submit();
@@ -185,20 +195,35 @@ function ReadyForm({ form, labelledBy, autoFocus }: ReadyFormProps) {
           {form.error !== null && <InlineError size="inherit">{form.error}</InlineError>}
           {/* The effective policy, once it admits less than everyone (ADR-0155 §10): what the post gets before it is sent. */}
           {form.isPolicyRestricted && <Hint>{policySummary(t, form.interactionPolicy, form.visibility)}</Hint>}
+          {/* A draft opened from the drafts page: saving replaces it, posting deletes it (ADR-0156). */}
+          {form.saved !== null && (
+            <Hint>
+              {form.saved.scheduledAt === null
+                ? t("client:drafts.editing")
+                : t("client:drafts.editing.scheduled", {
+                    date: intl.formatDate(form.saved.scheduledAt, { dateStyle: "medium", timeStyle: "short" }),
+                  })}
+            </Hint>
+          )}
           <ComposeTools form={form} />
-          {/* The send bar: the button is never disabled by the input (G23); pressed while the draft cannot be sent, it
-            says why beside it, until the reason is gone. */}
-          <FormActionBar
-            {...(form.blocked !== null && {
-              result: { tone: "danger" as const, message: t(blockerMessages[form.blocked]) },
-            })}
-          >
+          {/* The send bar: the buttons are never disabled by the input (G23); pressed while the draft cannot be sent or
+            saved, it says why beside them, until the reason is gone. */}
+          <FormActionBar {...(barMessage !== null && { result: { tone: "danger" as const, message: barMessage } })}>
             <Button type="submit" variant="primary" aria-keyshortcuts="Control+Enter Meta+Enter">
               {t(form.replyTo.status === "none" ? "client:compose.submit" : "client:compose.submit.reply")}
+            </Button>
+            <Button onPress={form.serverDraft.save} isPending={form.serverDraft.isSaving}>
+              {t("client:drafts.save")}
             </Button>
           </FormActionBar>
         </Stack>
       </FileDropZone>
+      {/* The drafts saved on the server and the scheduled posts, on their own page (web-client/screens/drafts.md). */}
+      <Box self="start">
+        <Link href="/drafts" variant="standalone" onPress={onLeave}>
+          {t("client:drafts.title")}
+        </Link>
+      </Box>
       {/* The result of the last send when the automated review refused it; outside the form (RejectionNotice.tsx). */}
       {form.rejection !== null && (
         // Another refusal is another appeal: its dialog starts afresh.

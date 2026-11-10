@@ -24,7 +24,8 @@ import {
   statusRejection,
   type Visibility,
 } from "../api/compose";
-import { type Draft, isEmptyDraft, type Rejection } from "./draftStore";
+import { cacheDraftChange, isDraftConflict, publishDraft, updateDraft } from "../api/drafts";
+import { type Draft, isEmptyDraft, type Rejection, type SavedDraft } from "./draftStore";
 import {
   type InteractionKind,
   type InteractionPolicy,
@@ -36,8 +37,10 @@ import { newPoll, type PollDraft, pollProblem, pollRequest, withOption, withoutO
 import { type LanguageOption, languageOptions } from "./languages";
 import { countCharacters, chosenVisibility, domainMentions, postedVisibility } from "./policy";
 import { rememberTags } from "./recentTags";
+import { draftRequest, draftRequestOfPost } from "./serverDraft";
 import { type Attachments, descriptionFieldId, useAttachments } from "./useAttachments";
 import { type ComposeController, composeTextId, useComposeState } from "./useCompose";
+import { type ServerDraftForm, useServerDraft } from "./useServerDraft";
 import { useUnreachedMentions } from "./useUnreachedMentions";
 import { offeredVisibilities } from "./useOfferedVisibilities";
 import { visibilityLabel } from "./visibilityMessages";
@@ -132,6 +135,18 @@ export type ReadyComposeForm = {
    * never disabled by the input): shown beside the button until the reason is gone. Null otherwise.
    */
   blocked: ComposeBlocker | null;
+  /**
+   * The draft on the server the form continues (ADR-0156): opened from the drafts page, or kept after a schedule that
+   * failed; null for a draft only in this tab.
+   */
+  saved: SavedDraft | null;
+  /** Saving the draft on the server and scheduling it (useServerDraft). */
+  serverDraft: ServerDraftForm;
+  /**
+   * What keeps the draft from being scheduled, as from being sent, except media still being processed, which the
+   * server publishes once they are ready (ADR-0156 §5); null when it can be scheduled.
+   */
+  scheduleBlocker: ComposeBlocker | null;
   /**
    * Sends the draft, or asks first when images lack a description that the preferences ask for. While the draft cannot
    * be sent it shows why (`blocked`) and moves the focus to the text when the text is the reason.
@@ -267,17 +282,33 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
   const [isConfirming, setIsConfirming] = useState(false);
   // Whether the person pressed the submit button while the draft could not be sent; the reason shows until it is gone.
   const [triedBlocked, setTriedBlocked] = useState(false);
+  // The request is made only once the form is ready, when the visibility and the language are known.
+  const serverDraft = useServerDraft(store, draft, attachments, () =>
+    draftRequest(draft, visibility ?? "public", draft.language ?? preferences.data?.default_post_language ?? "und"),
+  );
 
   const send = useMutation({
     mutationKey: createStatusMutationKey,
-    mutationFn: ({ idempotencyKey, body }: SendVariables) => createStatus(api, body, idempotencyKey),
+    // A draft opened from the server is published by the server (ADR-0156 §9): its content is saved first, over the
+    // version the form opened (If-Match), and the publish deletes it in the same transaction as the post, so it is
+    // posted once and never left behind. The newer ETag is kept with the outbox post, for a retry.
+    mutationFn: async ({ idempotencyKey, body }: SendVariables) => {
+      const saved = store.getSnapshot().outbox.find((o) => o.idempotencyKey === idempotencyKey)?.draft.saved ?? null;
+      if (saved === null) return createStatus(api, body, idempotencyKey);
+      const version = await updateDraft(api, saved.id, saved.etag, draftRequestOfPost(body));
+      store.setOutboxSaved(idempotencyKey, { ...saved, etag: version.etag });
+      return publishDraft(api, saved.id);
+    },
     onSuccess: async (status, { idempotencyKey, body }) => {
       // The post is done once the lists it appears in are fetched again (it stays in the outbox as sending
       // until then), so that a list opened next shows it at once (web-client/README.md S1). A failed refetch does
       // not fail the post: that list fetches again when it is shown.
       const isFirstPost = countPostedStatus(api, queryClient) === 1;
       await cachePostedStatus(api, queryClient, status);
+      const published = store.getSnapshot().outbox.find((o) => o.idempotencyKey === idempotencyKey)?.draft.saved;
       store.remove(idempotencyKey);
+      // A published draft has left the server, with its schedule: the lists of the drafts page lose it.
+      if (published != null) await cacheDraftChange(queryClient);
       // The server narrows the visibility of a restricted account (data-model/05-states-and-policies.md §5.4); say so.
       const narrowed = status.visibility !== body.visibility;
       if (narrowed) {
@@ -308,7 +339,12 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
         notice.inPlace([rejection.title, rejection.detail].filter((part) => part !== null).join(" "), "assertive");
         return;
       }
-      const message = t("client:compose.failed", { reason: errorMessage(error) });
+      // Another device saved the draft since the form opened it: nothing was published or overwritten. The post
+      // leaves the draft, so that sending it again posts this version as a new post.
+      if (isDraftConflict(error)) store.setOutboxSaved(idempotencyKey, null);
+      const message = isDraftConflict(error)
+        ? t("client:drafts.publish.conflict")
+        : t("client:compose.failed", { reason: errorMessage(error) });
       store.restore(idempotencyKey, message);
       notice.inPlace(message, "assertive");
     },
@@ -358,6 +394,16 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     targetsLoading: replyTo.status === "loading" || quoteOf.status === "loading",
   });
   const canSubmit = blocker === null;
+  const scheduleBlocker = blockerOf({
+    text: draft.text,
+    textLimit,
+    attachments: {
+      isBusy: attachments.items.some((item) => item.status === "uploading"),
+      hasFailed: attachments.hasFailed,
+    },
+    pollProblem: problem,
+    targetsLoading: replyTo.status === "loading" || quoteOf.status === "loading",
+  });
   const editPoll = (change: (poll: PollDraft) => PollDraft) => {
     if (draft.poll !== null) store.edit({ poll: change(draft.poll) });
   };
@@ -448,7 +494,17 @@ export function useComposeForm(controller: ComposeController): ComposeForm {
     isDescriptionRequired,
     canSubmit,
     blocked: triedBlocked ? blocker : null,
+    saved: draft.saved,
+    serverDraft: {
+      ...serverDraft,
+      save: () => {
+        setTriedBlocked(false);
+        serverDraft.save();
+      },
+    },
+    scheduleBlocker,
     submit: () => {
+      serverDraft.clearMessage();
       if (blocker !== null) {
         setTriedBlocked(true);
         // The text is what to fix: the focus goes there (G23). The other reasons are fixed elsewhere or pass by themselves.

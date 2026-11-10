@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The compose feature: the new-post form with its draft, visibility, content warning, language, counter,
+// The compose feature: the new-post form with its draft (in the tab, or saved on the server and scheduled), visibility, content warning, language, counter,
 // images with descriptions, replies, and quotes (FR-101 to FR-105, FR-110, FR-114). Other features and routes use it
 // through this file only (web-client/README.md A3): the layout places ComposeProvider and ComposeEntry, the navigation opens the sheet with useOpenCompose, and a
 // reply or quote button calls the function from useReply or useQuote. The form's parts that editing a post reuses (the status
@@ -22,7 +22,22 @@ export {
   type InteractionRule,
   withChange,
 } from "./hooks/interactionPolicy";
-export { useDirectMessage, useQuote, useReply } from "./hooks/useCompose";
+export { useDirectMessage, useOpenDraft, useQuote, useReply } from "./hooks/useCompose";
+/**
+ * The drafts saved on the server and their schedules (ADR-0156), which the drafts page lists and changes: their
+ * queries and writes, and the schedule popover the form uses too.
+ */
+export {
+  cacheDraftChange,
+  deleteDraft,
+  draftsQueryOptions,
+  getDraft,
+  isDraftGone,
+  scheduleDraft,
+  type ServerDraft,
+  unscheduleDraft,
+} from "./api/drafts";
+export { SchedulePicker } from "./components/SchedulePicker";
 export { useFormatRemaining } from "./hooks/useFormatRemaining";
 /** The one definition of the visibilities (ADR-0017) that the preferences and the post cards use too. */
 export { isVisibility, visibilities, visibilityDescription, visibilityLabel } from "./hooks/visibilityMessages";

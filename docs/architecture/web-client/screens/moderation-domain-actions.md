@@ -29,7 +29,7 @@ seed: [{"my": ["admin", "domain", "issue", "-kind", "limit", "-public-comment", 
 
 ### 3. 情報の優先順位とまとまり
 
-`h1` の下に画面のページの `LocalNav`（「処分の一覧」・「Mastodon の CSV」）を置き、その下に「新しい処分」のボタン（`/moderation/domain-actions/new` へのリンク）、
+`h1` の下に画面のページの `LocalNav`（「処分の一覧」・「ブロックリストの購読」・「許可したドメイン」・「Mastodon の CSV」）を置き、その下に「新しい処分」のボタン（`/moderation/domain-actions/new` へのリンク）、
 `?domain=` のときはそのドメインだけを出していることと「すべてのドメインを表示」、ツールバーの絞り込み（「有効」が既定、「すべて」は URL の `filter=all`）、処分の表を並べる。区画の見出し（`h2`）は持たない。
 
 1. 処分の表（`RecordTable`）: 列はドメイン（`DomainName` で U-label と A-label。詳細へのリンク）・種類・状態・終わる日時（なければ「解除するまで」）の 4 つ。公開コメントと非公開メモは一覧に出さない。
@@ -53,4 +53,4 @@ seed: [{"my": ["admin", "domain", "issue", "-kind", "limit", "-public-comment", 
 ### 6. 入口と出口
 
 - 入口: モデレーションのメニュー（`manage_domains`）、連合先の詳細の「モデレーション」の区画のリンク（`?domain=…`）、監査ログの `domain` の項目のリンク（`?filter=all&domain=…`）、詳細と新しい処分のページの「ドメインへの処分に戻る」。
-- 出口: 処分の詳細、新しい処分、CSV のページ。権限がなければ `AdminError` が足りない権限を示す。
+- 出口: 処分の詳細、新しい処分、[ブロックリストの購読](moderation-domain-list-subscriptions.md)、[許可したドメイン](moderation-domain-allows.md)、CSV のページ。権限がなければ `AdminError` が足りない権限を示す。

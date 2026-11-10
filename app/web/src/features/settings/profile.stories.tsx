@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The profile screen (/settings/profile; web-client/screens/settings-profile.md) in the states of ADR-0079 §13
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";
+import type { Schemas } from "../../test/fixtures";
+import { apiBase, withViewer } from "../../test/msw/http";
 import {
   answering,
   failingOn,
@@ -13,6 +16,16 @@ import {
   settled,
   viewerWith,
 } from "../../test/stories";
+
+/** A hashtag the account features, on `count` of its posts, the last one at `lastAt`. */
+function featuredTag(name: string, count = 0, lastAt?: string): Schemas["FeaturedHashtag"] {
+  return {
+    name,
+    url: `https://my.example/tags/${encodeURIComponent(name)}`,
+    statuses_count: count,
+    ...(lastAt !== undefined && { last_status_at: lastAt }),
+  };
+}
 
 /** A filled-in profile: a name, a note, and two fields. */
 const filled = viewerWith({
@@ -50,6 +63,18 @@ export const Normal: Story = {
     await expect(await canvas.findByText("Your profile has been saved.")).toBeInTheDocument();
   },
 };
+
+/** A profile that features three hashtags, in the order of their rows. */
+export const FeaturedHashtags: Story = answering(
+  filled,
+  http.get(`${apiBase}/featured_tags`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json({
+        items: [featuredTag("sourdough", 42), featuredTag("bikes", 3), featuredTag("rye")],
+      }),
+    ),
+  ),
+);
 
 /** A new account's profile: no name, note, or fields yet. */
 export const Empty: Story = answering(viewerWith({}));

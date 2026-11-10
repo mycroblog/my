@@ -310,6 +310,14 @@ In the admin API: `GET` and `POST /api/v1/admin/domain_list_subscriptions`, `GET
 and `POST .../{id}/drafts/accept` and `.../drafts/reject` (the body has `keys`, or nothing for every draft). All of them
 need `manage_domains`.
 
+In the web client, open Moderation → Domain actions and choose "Blocklist subscriptions"
+(`/moderation/domain-actions/subscriptions`). The list shows each subscription's mode and last fetch, with the failures in a
+row; "Add subscription" opens the form of the name, the URL, the format and the settings below, and subscribing opens the
+subscription's page. That page has four sections: the drafts, which you accept or reject one by one or all together (accepting
+drafts that suspend a domain asks first); the fetches, with "Fetch now" and the outcome of each fetch; the settings; and "Stop
+subscribing", which asks whether to lift the actions the subscription issued. The notification `admin_domain_list_failing`
+links to the list.
+
 | Format | What the list is |
 | --- | --- |
 | `mastodon_csv` | Mastodon's domain block CSV, read as an import reads it |
@@ -393,6 +401,12 @@ Switching to `allowlist`, and removing an allow while it is on, ends follows for
 - Removing an allow while `federation_scope` is `allowlist` cuts the follows with the accounts of that domain and of its subdomains that no other allow covers, in the same way. Removing the allow of a subdomain whose parent domain is allowed cuts nothing.
 - Switching back to `open`, or allowing the domain again, does not bring back the cut follows. Users follow again.
 - Setting `allowlist` when it is already `allowlist` cuts nothing more.
+
+In the web client, open Moderation → Domain actions and choose "Allowed domains" (`/moderation/domain-actions/allowed`) to read,
+add and remove allows; removing one asks first, since it cuts the domain off while `federation_scope` is `allowlist`. The
+setting itself is "Federation scope" on the federation page of the server settings (`/admin/settings/federation`, with the
+permission `manage_settings`): choosing "Allowed domains only" and saving shows the follows the switch would end, the local
+users who lose one, and the servers with the most of them, and saves only once you confirm.
 
 Adding and removing an allow are in the audit log (`domain_allow_added` and `domain_allow_removed`), and the switch is the `setting_changed` of `federation_scope`.
 

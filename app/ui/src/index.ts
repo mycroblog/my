@@ -203,6 +203,7 @@ export {
   MoveUpIcon,
   NotificationsIcon,
   PinIcon,
+  HashtagIcon,
   PlusIcon,
   PollIcon,
   ProfileIcon,
@@ -232,6 +233,7 @@ export {
   BlockIcon,
   MuteIcon,
   DomainMuteIcon,
+  FilterIcon,
   PasswordIcon,
   TwoFactorIcon,
   PasskeyIcon,
@@ -267,7 +269,7 @@ export {
   CustomEmojiIcon,
 } from "./Icons";
 // The icons of the states of a queue's items (StatusBadge, AgeBadge).
-export { AssignedIcon, LegalIcon, SpamIcon, UnassignedIcon, WaitingIcon } from "./Icons";
+export { AssignedIcon, LegalIcon, ScheduleIcon, SpamIcon, UnassignedIcon, WaitingIcon } from "./Icons";
 export { type PostVisibility, VisibilityIcon, type VisibilityIconProps } from "./Icons";
 export { StatusBadge, type StatusBadgeProps, VisibilityMark, type VisibilityMarkProps } from "./StatusBadge";
 // The follow button of a profile and of a row of accounts.
@@ -307,6 +309,7 @@ export { MediaGrid, type MediaGridProps, type MediaItem, type MediaPlayback } fr
 export type { MediaViewerLabels } from "./MediaViewer";
 export { MediaLoadFailure, type MediaLoadFailureProps, type MediaLoadLabels } from "./MediaLoadFailure";
 export { NewItemsButton, type NewItemsButtonProps } from "./NewItemsButton";
+export { FilteredPost, type FilteredPostProps } from "./FilteredPost";
 export { PostCard, PostCardAuthor, type PostCardAuthorProps, type PostCardProps } from "./PostCard";
 export {
   PostContent,

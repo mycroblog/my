@@ -3,7 +3,13 @@
 // viewer's own, an account of another server, one that moved, and one that is not there (unknown or suspended).
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse, type RequestHandler } from "msw";
-import { remoteAccountFixture, rtlNameAccountFixture, statusPage, viewerFixture } from "../../test/fixtures";
+import {
+  remoteAccountFixture,
+  rtlNameAccountFixture,
+  type Schemas,
+  statusPage,
+  viewerFixture,
+} from "../../test/fixtures";
 import { apiBase, problem } from "../../test/msw/http";
 import {
   answering,
@@ -18,6 +24,16 @@ import {
   viewerWith,
 } from "../../test/stories";
 import { lookingUp, posting, postsOf, relatedAs, richBob } from "./test/storyFixtures";
+
+/** A hashtag the account features, on `count` of its posts, the last one at `lastAt`. */
+function featuredTag(name: string, count = 0, lastAt?: string): Schemas["FeaturedHashtag"] {
+  return {
+    name,
+    url: `https://my.example/tags/${encodeURIComponent(name)}`,
+    statuses_count: count,
+    ...(lastAt !== undefined && { last_status_at: lastAt }),
+  };
+}
 
 /** Bob's profile and posts; a story's handlers replace the meta's, so a story that adds its own adds these after. */
 const bob = [lookingUp(richBob), posting(postsOf(richBob))];
@@ -40,6 +56,20 @@ type Story = StoryObj<typeof meta>;
 
 /** Another local account with profile text, fields, a badge, a pinned post and a few more. */
 export const Normal: Story = {};
+
+/** An account that features hashtags: they come in its order, with the counts of its posts, above the tabs. */
+export const FeaturedHashtags: Story = answering(
+  http.get(`${apiBase}/accounts/:id/featured_tags`, () =>
+    HttpResponse.json({
+      items: [
+        featuredTag("sourdough", 42, "2026-11-03T09:00:00Z"),
+        featuredTag("週末のパン作り記録", 7, "2026-10-20T09:00:00Z"),
+        featuredTag("bikes"),
+      ],
+    }),
+  ),
+  ...bob,
+);
 
 /** An account that follows the viewer, who has not followed back. */
 export const FollowsYou: Story = answering(relatedAs({ followed_by: true }), ...bob);

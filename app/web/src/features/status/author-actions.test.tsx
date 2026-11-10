@@ -389,7 +389,7 @@ describe("who sees what", () => {
     await openMenu(user);
 
     expect(await screen.findByRole("menuitem", { name: "Delete" })).toBeInTheDocument();
-    for (const name of [/^Follow/, /^Direct message/, /^Mute/, /^Block/, /in moderation$/, /^Report/]) {
+    for (const name of [/^Follow/, /^Direct message/, /^Mute (?!this thread)/, /^Block/, /in moderation$/, /^Report/]) {
       expect(screen.queryByRole("menuitem", { name })).not.toBeInTheDocument();
     }
     expect(requests).toEqual([]);

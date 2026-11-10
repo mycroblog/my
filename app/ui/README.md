@@ -770,8 +770,8 @@ The test procedure is in [web-client/README.md §7](../../docs/architecture/web-
 | `PostCardAuthorLink` | `author` | The profile link around a `PostCardAuthor` (`href`, `name`, `handle`). |
 | `PostCardTimeLink` | `time`, `details` | The muted link on a `<time>` or on the mark of an edited post; `dense` drops the 24 px minimum height (QuoteCard's header). |
 | `PostCardAvatarLink` | `avatar` | The avatar as a second link to the profile: out of the tab order, `aria-hidden`. |
-| `PostCardNameLink` | `context`, a sentence | A name inside a sentence ("Bob boosted"), in a `<bdi>`; notification rows use it too. |
-| `PostCardContext` | `context` | The icon of its kind (`boost`, `pin`) and the sentence; every context line uses it. |
+| `PostCardNameLink` | `context`, a sentence | A name or a hashtag inside a sentence ("Bob boosted", "Followed hashtag #cats"), in a `<bdi>`; notification rows use it too. |
+| `PostCardContext` | `context` | The icon of its kind (`boost`, `pin`, `hashtag`) and the sentence; every context line uses it. |
 | `PostCardOrigin` | `actions` | The link from a post of another server to its own page (`href`, `host`, `label`). |
 
 Counts in `details` are `<Text numeric>`; several parts under a body are a `<Stack gap="3" shrink>`; `PostContent` takes `size="lg"` for the post a page is about.

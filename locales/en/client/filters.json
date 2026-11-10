@@ -1,0 +1,262 @@
+{
+  "filters.title": {
+    "defaultMessage": "Keyword filters",
+    "description": "Heading and document title of the page of the user's keyword filters, and its item in the settings menu."
+  },
+  "filters.list.title": {
+    "defaultMessage": "Your filters",
+    "description": "Heading of the region of the user's keyword filters."
+  },
+  "filters.description": {
+    "defaultMessage": "Fold or hide the posts that contain words you choose, whoever wrote them. Your own posts are never filtered.",
+    "description": "Note under the heading of the user's keyword filters: what a filter does."
+  },
+  "filters.count": {
+    "defaultMessage": "{count, plural, one {# filter} other {# filters}} of {max}",
+    "description": "Read for the count beside the heading of the keyword filters, drawn as '3 / 100'. {count} is the number of filters, {max} the most a user may have."
+  },
+  "filters.empty": {
+    "defaultMessage": "You have no keyword filters",
+    "description": "Heading of the empty state of the keyword filters."
+  },
+  "filters.empty.description": {
+    "defaultMessage": "Add a filter to fold or hide the posts about a topic you would rather not read.",
+    "description": "Sentence of the empty state of the keyword filters, which leads to adding one."
+  },
+  "filters.add": {
+    "defaultMessage": "Add a filter",
+    "description": "Button that opens the form that adds a keyword filter, and the heading of that form."
+  },
+  "filters.limit": {
+    "defaultMessage": "You have {max} filters, the most you can have. Delete one you no longer use to add another.",
+    "description": "Shown in place of the button that adds a keyword filter once the user has the most. {max} is that number."
+  },
+  "filters.added": {
+    "defaultMessage": "You added the filter {title}.",
+    "description": "Result above the list after a keyword filter was added. {title} is its name."
+  },
+  "filters.saved": {
+    "defaultMessage": "You saved the filter {title}.",
+    "description": "Announced after a keyword filter was changed. {title} is its name."
+  },
+  "filters.deleted": {
+    "defaultMessage": "You deleted the filter {title}.",
+    "description": "Announced after a keyword filter was deleted. {title} is its name."
+  },
+  "filters.row_action": {
+    "defaultMessage": "{action}: {title}",
+    "description": "Accessible name of a button of a keyword filter's row. {action} is the button's visible text (for example 'Edit'), {title} the filter's name."
+  },
+  "filters.edit": {
+    "defaultMessage": "Edit",
+    "description": "Button of a keyword filter's row that opens the form that changes it."
+  },
+  "filters.edit.title": {
+    "defaultMessage": "Edit the filter {title}",
+    "description": "Heading of the form that changes a keyword filter. {title} is its name."
+  },
+  "filters.delete": {
+    "defaultMessage": "Delete",
+    "description": "Button of a keyword filter's row, and of its confirmation dialog, that deletes it."
+  },
+  "filters.delete.title": {
+    "defaultMessage": "Delete the filter {title}?",
+    "description": "Title of the dialog that confirms deleting a keyword filter. {title} is its name."
+  },
+  "filters.delete.description": {
+    "defaultMessage": "Its words are deleted with it, and the posts it folds or hides show again.",
+    "description": "Text of the dialog that confirms deleting a keyword filter."
+  },
+  "filters.delete.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the dialog that confirms deleting a keyword filter."
+  },
+  "filters.delete_failed": {
+    "defaultMessage": "Couldn't delete the filter {title}: {reason}",
+    "description": "Toast when deleting a keyword filter failed. {title} is its name, {reason} the server's reason."
+  },
+  "filters.action.warn": {
+    "defaultMessage": "Fold",
+    "description": "Badge of a keyword filter that folds the posts it matches, and the choice of that action in the form."
+  },
+  "filters.action.hide": {
+    "defaultMessage": "Hide",
+    "description": "Badge of a keyword filter that leaves out the posts it matches, and the choice of that action in the form."
+  },
+  "filters.expired": {
+    "defaultMessage": "Expired",
+    "description": "Badge of a keyword filter whose end has passed, so it applies nowhere."
+  },
+  "filters.until": {
+    "defaultMessage": "Until {date}",
+    "description": "When a keyword filter stops applying, in its row. {date} is the date and time."
+  },
+  "filters.contexts": {
+    "defaultMessage": "Applies to: {contexts}",
+    "description": "Where a keyword filter applies, in its row. {contexts} is the list of places (for example 'Home and lists and Notifications')."
+  },
+  "filters.words": {
+    "defaultMessage": "{count, plural, one {# word} other {# words}}: {words}",
+    "description": "The words of a keyword filter, in its row. {count} is how many, {words} the list of them."
+  },
+  "filters.words.more": {
+    "defaultMessage": "{count, plural, one {# word} other {# words}}: {words}, and {rest} more",
+    "description": "The words of a keyword filter with many words, in its row. {count} is how many, {words} the first ones, {rest} how many more there are."
+  },
+  "filters.form.title": {
+    "defaultMessage": "Name",
+    "description": "Label of the field of a keyword filter's name."
+  },
+  "filters.form.title.description": {
+    "defaultMessage": "Shown on the posts it folds. Up to {max} characters.",
+    "description": "Description of the field of a keyword filter's name. {max} is the most characters."
+  },
+  "filters.form.title.required": {
+    "defaultMessage": "Enter a name for the filter.",
+    "description": "Error of the empty name field of a keyword filter."
+  },
+  "filters.form.title.too_long": {
+    "defaultMessage": "Use {max} characters or fewer.",
+    "description": "Error of a keyword filter's name that is too long. {max} is the most characters."
+  },
+  "filters.form.title.invalid": {
+    "defaultMessage": "Write the name on one line.",
+    "description": "Error of a keyword filter's name with a line break or another control character."
+  },
+  "filters.form.words": {
+    "defaultMessage": "Words",
+    "description": "Caption of the group of the words of a keyword filter."
+  },
+  "filters.form.word": {
+    "defaultMessage": "Word {number}",
+    "description": "Label of one word field of a keyword filter. {number} is its position, starting at 1."
+  },
+  "filters.form.word.required": {
+    "defaultMessage": "Enter a word, or remove this one.",
+    "description": "Error of an empty word field of a keyword filter."
+  },
+  "filters.form.word.too_long": {
+    "defaultMessage": "Use {max} characters or fewer.",
+    "description": "Error of a word of a keyword filter that is too long. {max} is the most characters."
+  },
+  "filters.form.whole_word": {
+    "defaultMessage": "Whole word",
+    "description": "Checkbox beside a word of a keyword filter: the word matches only where no letter or digit touches it."
+  },
+  "filters.form.word.remove": {
+    "defaultMessage": "Remove word {number}",
+    "description": "Button that removes one word field from the keyword filter form. {number} is its position, starting at 1."
+  },
+  "filters.form.word.add": {
+    "defaultMessage": "Add a word",
+    "description": "Button that adds an empty word field to the keyword filter form."
+  },
+  "filters.form.words.limit": {
+    "defaultMessage": "A filter has at most {max} words.",
+    "description": "Shown beside the disabled button that adds a word once the filter has the most words. {max} is that number."
+  },
+  "filters.form.whole_word.note": {
+    "defaultMessage": "In Japanese and Chinese, a whole word still matches inside other words.",
+    "description": "One short line under the words of a keyword filter: whole-word matching does not apply to scripts without spaces between words."
+  },
+  "filters.form.whole_word.help": {
+    "defaultMessage": "How words match",
+    "description": "Link to the page of the user manual on the documentation site that explains how the words of keyword filters match."
+  },
+  "filters.form.contexts": {
+    "defaultMessage": "Where it applies",
+    "description": "Caption of the group of the places where a keyword filter applies."
+  },
+  "filters.form.contexts.required": {
+    "defaultMessage": "Choose at least one place.",
+    "description": "Error of a keyword filter with no place chosen."
+  },
+  "filters.context.home": {
+    "defaultMessage": "Home and lists",
+    "description": "A place where a keyword filter applies: the home timeline and the timelines of lists."
+  },
+  "filters.context.notifications": {
+    "defaultMessage": "Notifications",
+    "description": "A place where a keyword filter applies: the notifications."
+  },
+  "filters.context.public": {
+    "defaultMessage": "Local, federated, and hashtag timelines",
+    "description": "A place where a keyword filter applies: the public timelines."
+  },
+  "filters.context.thread": {
+    "defaultMessage": "Threads",
+    "description": "A place where a keyword filter applies: the posts before and after a post."
+  },
+  "filters.context.account": {
+    "defaultMessage": "Profiles",
+    "description": "A place where a keyword filter applies: the posts on a profile."
+  },
+  "filters.form.action": {
+    "defaultMessage": "What it does",
+    "description": "Label of the choice of what a keyword filter does to the posts it matches."
+  },
+  "filters.form.action.warn.description": {
+    "defaultMessage": "Folds the post behind the filter's name, with a button that shows it.",
+    "description": "Description of the action that folds the posts a keyword filter matches."
+  },
+  "filters.form.action.hide.description": {
+    "defaultMessage": "Leaves the post out. A post you open yourself is folded instead.",
+    "description": "Description of the action that leaves out the posts a keyword filter matches."
+  },
+  "filters.form.expiry": {
+    "defaultMessage": "Ends",
+    "description": "Label of the choice of when a keyword filter stops applying."
+  },
+  "filters.form.expiry.never": {
+    "defaultMessage": "Never",
+    "description": "The choice of a keyword filter that applies until it is deleted."
+  },
+  "filters.form.expiry.keep": {
+    "defaultMessage": "Keep: until {date}",
+    "description": "The choice that keeps the end a keyword filter has. {date} is that date and time."
+  },
+  "filters.form.expiry.keep_expired": {
+    "defaultMessage": "Keep: expired",
+    "description": "The choice that keeps the end of a keyword filter that has already expired."
+  },
+  "filters.form.duration.minutes": {
+    "defaultMessage": "In {count, plural, one {# minute} other {# minutes}}",
+    "description": "A choice of when a keyword filter ends. {count} is the number of minutes from now."
+  },
+  "filters.form.duration.hours": {
+    "defaultMessage": "In {count, plural, one {# hour} other {# hours}}",
+    "description": "A choice of when a keyword filter ends. {count} is the number of hours from now."
+  },
+  "filters.form.duration.days": {
+    "defaultMessage": "In {count, plural, one {# day} other {# days}}",
+    "description": "A choice of when a keyword filter ends. {count} is the number of days from now."
+  },
+  "filters.form.add": {
+    "defaultMessage": "Add",
+    "description": "Button that sends the form that adds a keyword filter."
+  },
+  "filters.form.save": {
+    "defaultMessage": "Save",
+    "description": "Button that sends the form that changes a keyword filter."
+  },
+  "filters.form.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button that closes the form of a keyword filter without saving."
+  },
+  "filters.form.failed": {
+    "defaultMessage": "Couldn't save the filter: {reason}",
+    "description": "Error of the keyword filter form when the server refused it. {reason} is the server's reason."
+  },
+  "filters.form.too_many_words": {
+    "defaultMessage": "Your filters have at most {max} words in all. Remove some words to save this filter.",
+    "description": "Error of the keyword filter form when the user's filters would have too many words. {max} is the most words in all."
+  },
+  "filters.folded": {
+    "defaultMessage": "Filtered: {titles}",
+    "description": "In place of a post that matched keyword filters that fold, and the accessible name of the folded post. {titles} is the list of the filters' names."
+  },
+  "filters.folded.show": {
+    "defaultMessage": "Show",
+    "description": "Button of a post folded by a keyword filter that shows the post."
+  }
+}

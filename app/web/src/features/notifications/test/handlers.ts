@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The default MSW handlers of the notifications feature (web-client/README.md §7): everything up to the follow is
-// read, so the mention is unread.
+// read, so the mention is unread. No notification request waits (ADR-0158 §7): the counts are zero, the list is empty,
+// a request is a 404, and an answer is a 204.
 import { http, HttpResponse } from "msw";
 import { otherAccountFixture, type Schemas, statusFixture } from "../../../test/fixtures";
-import { apiBase, withViewer } from "../../../test/msw/http";
+import { apiBase, problem, withViewer } from "../../../test/msw/http";
 
 /** Alice's notifications, newest first, for GET /notifications (operationId listNotifications). */
 export const notificationsFixture: Schemas["Notification"][] = [
@@ -50,5 +51,24 @@ export const handlers = [
   }),
   http.post(`${apiBase}/notifications/:id/dismiss`, ({ request }) =>
     withViewer(request, () => new HttpResponse(null, { status: 204 })),
+  ),
+  http.get(`${apiBase}/notifications/requests/summary`, ({ request }) =>
+    withViewer(request, () =>
+      HttpResponse.json({ accounts_count: 0, notifications_count: 0 } satisfies Schemas["NotificationRequestSummary"]),
+    ),
+  ),
+  http.get(`${apiBase}/notifications/requests`, ({ request }) =>
+    withViewer(request, () => HttpResponse.json({ items: [] } satisfies Schemas["NotificationRequestPage"])),
+  ),
+  http.get(`${apiBase}/notifications/requests/:id`, ({ request }) =>
+    withViewer(request, () => problem(404, "/api/v1/problems/not-found", "Not Found")),
+  ),
+  http.get(`${apiBase}/notifications/requests/:id/notifications`, ({ request }) =>
+    withViewer(request, () => problem(404, "/api/v1/problems/not-found", "Not Found")),
+  ),
+  ...["accept", "dismiss"].map((answer) =>
+    http.post(`${apiBase}/notifications/requests/:id/${answer}`, ({ request }) =>
+      withViewer(request, () => new HttpResponse(null, { status: 204 })),
+    ),
   ),
 ];

@@ -592,7 +592,7 @@ describe("the notifications page", () => {
       );
     });
 
-    test("a scheduled post that could not be published says why and when it was to be", async () => {
+    test("a scheduled post that could not be published says why and when it was to be, and leads to the drafts", async () => {
       server.use(resumableSession());
       markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
       server.use(
@@ -621,6 +621,8 @@ describe("the notifications page", () => {
       expect(row).toHaveTextContent("The post it quotes is no longer available. It was scheduled for");
       expect(row).toHaveTextContent("The draft is kept, so you can fix it and schedule it again.");
       expect(within(row).getByText(/2026/, { selector: "time[datetime='2026-11-20T08:30:00Z']" })).toBeInTheDocument();
+      // The draft stays on the drafts page, with the failure.
+      expect(within(row).getByRole("link", { name: "Open your drafts" })).toHaveAttribute("href", "/drafts");
     });
 
     test("lead nowhere to pay in the Tauri app", async () => {
@@ -708,6 +710,35 @@ describe("the notifications page", () => {
     expect(
       within(within(feed).getByRole("article", { name: /A poll you took part in/ })).queryAllByRole("link"),
     ).toEqual([]);
+  });
+
+  test("shows only what a mention matched of the viewer's keyword filters, not its text", async () => {
+    server.use(resumableSession());
+    markerServer({ last_read_id: "0192f0c4-7a8e-7000-8000-0000000000ff", unread_count: 0 });
+    const items: Notification[] = [
+      {
+        id: "0192f0c4-7a8e-7000-8000-0000000000d1",
+        type: "mention",
+        created_at: "2026-10-16T09:00:00Z",
+        account: otherAccountFixture,
+        status: {
+          ...statusFixture("0192f0c4-7a8e-7000-8000-0000000000b4"),
+          content: "<p>the ending</p>",
+          filtered: [{ filter: { id: "f1", title: "Spoilers" }, keyword_matches: ["ending"] }],
+        },
+      },
+    ];
+    server.use(http.get(`${apiBase}/notifications`, () => HttpResponse.json({ items })));
+
+    await renderApp({ path: "/notifications" });
+
+    const feed = await screen.findByRole("feed", { name: "Notifications" });
+    const [mention] = within(feed).getAllByRole("article");
+    expect(within(mention as HTMLElement).getByRole("link", { name: "Filtered: ⁨Spoilers⁩" })).toHaveAttribute(
+      "href",
+      "/@bob/status/0192f0c4-7a8e-7000-8000-0000000000b4",
+    );
+    expect(within(feed).queryByText("the ending", { exact: false })).not.toBeInTheDocument();
   });
 
   test("says which emoji an account reacted with", async () => {
@@ -870,7 +901,9 @@ describe("the notifications page", () => {
     });
     expect(within(account).getByRole("link", { name: "Bob" })).toHaveAttribute("href", "/@bob");
     expect(
-      within(feed).getByRole("article", { name: /A suspension by the moderators ended some of your follows/ }),
+      within(feed).getByRole("article", {
+        name: /A suspension or a change in the servers this server federates with ended some of your follows/,
+      }),
     ).toBeInTheDocument();
     expect(
       within(feed).getByRole("article", {

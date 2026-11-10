@@ -28,6 +28,7 @@ import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { textHighlights } from "../../../lib/textHighlights";
 import { CompletionTextArea, CompletionTextField } from "../../compose";
 import { EmojiPickerButton, useCustomEmojiImages, useCustomEmojiShortcodes } from "../../emoji";
+import { FeaturedTagsEditor } from "../../hashtags";
 import { acceptedImageTypes } from "../api/media";
 import {
   characterCount,
@@ -41,7 +42,7 @@ import { useUnsavedChangesGuard } from "../hooks/useUnsavedChangesGuard";
 
 /**
  * The profile editor (FR-006) in the sections of its screen requirements (web-client/screens/settings-profile.md): a
- * preview of the profile as it is being edited, then the fields, and the save button with its result in a bar that
+ * preview of the profile as it is being edited, then the fields (the featured hashtags among them), and the save button with its result in a bar that
  * stays at the bottom edge of the screen (`FormActionBar` `sticky`). React Aria's native validation shows each error
  * under its field, links it with aria-describedby and marks the field invalid; the browser then refuses to submit,
  * and focus moves to the first invalid field, so a screen reader reads the error with the field. A text over its
@@ -135,6 +136,7 @@ export function ProfileForm() {
           </Stack>
         </Section>
         <ProfileFields fields={form.fields} lengthCheck={lengthCheck} />
+        <FeaturedTagsEditor draft={form.featuredTags} />
         <Section title={t("client:settings.profile.account_kind")}>
           <Checkbox {...form.locked} description={t("client:settings.profile.locked.description")}>
             {t("client:settings.profile.locked")}

@@ -32,6 +32,7 @@ import { ReportDialog } from "../../report";
 import type { ReactionEmoji, Status } from "../api/status";
 import { useAuthorActions } from "../hooks/useAuthorActions";
 import { type RelationToggle, useStatusActions } from "../hooks/useStatusActions";
+import { useThreadMute } from "../hooks/useThreadMute";
 import type { TranslationAction } from "../hooks/useStatusTranslation";
 import { EditStatusDialog } from "./EditStatusDialog";
 import { InteractionPolicyDialog } from "./InteractionPolicyDialog";
@@ -62,7 +63,7 @@ function reactionEmojiOf(choice: ReactionChoice): ReactionEmoji {
 
 /**
  * The action bar of a post: reply, boost, quote (FR-114), favourite, the picker of emoji reactions (ADR-0051 §10), bookmark, and a menu with
- * the link, the revocation of this post's approved quote of a post of the viewer (ADR-0069 §3), for another account's post what the
+ * the link, the mute of the post's thread (useThreadMute, ADR-0158 §8), the revocation of this post's approved quote of a post of the viewer (ADR-0069 §3), for another account's post what the
  * viewer can do about its author (useAuthorActions) with the report of the post (features/report) and, with the permission, the
  * links to the moderation page (useStatusActions), and, for the viewer's own posts, edit (EditStatusDialog), who may reply to, boost, and quote it (InteractionPolicyDialog), the posts that
  * quote it, pin or unpin, and delete behind a confirmation (WAI-ARIA APG, alert dialog pattern). Nothing while
@@ -87,6 +88,7 @@ export function StatusActions({
   const actions = useStatusActions(status);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const author = useAuthorActions(status.boost ?? status, isMenuOpen);
+  const threadMute = useThreadMute(status.boost ?? status);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isReporting, setIsReporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -197,6 +199,12 @@ export function StatusActions({
             </MenuItem>
           )}
           <MenuItem onAction={actions.copyLink}>{t("client:status.action.copy_link")}</MenuItem>
+          {/* It keeps its id when it flips, as the author's items below do (ADR-0158 §8). */}
+          {threadMute !== null && (
+            <MenuItem id="thread-mute" onAction={threadMute.toggle}>
+              {threadMute.isMuted ? t("client:thread_mute.undo_action") : t("client:thread_mute.action")}
+            </MenuItem>
+          )}
           {actions.canEdit && (
             <MenuItem
               onAction={() => {

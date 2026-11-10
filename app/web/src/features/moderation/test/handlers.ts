@@ -504,6 +504,63 @@ export const moderatorRoleFixture: Schemas["AdminRole"] = {
 };
 export const rolesFixture: Schemas["AdminRole"][] = [adminRoleFixture, moderatorRoleFixture];
 
+/** An allowed domain of the allowlist of federation, allowed on 10 October 2026. */
+export function domainAllowFixture(overrides: Partial<Schemas["DomainAllow"]> = {}): Schemas["DomainAllow"] {
+  return { domain: "friend.example", comment: "", created_at: "2026-10-10T08:00:00Z", ...overrides };
+}
+
+/** A fetch of a subscribed list that applied it, on 16 October 2026. */
+export function domainListFetchFixture(
+  overrides: Partial<Schemas["AdminDomainListFetch"]> = {},
+): Schemas["AdminDomainListFetch"] {
+  return {
+    id: "0192f0c4-7a8e-7000-8000-0000000000f1",
+    outcome: "applied",
+    http_status: 200,
+    entry_count: 3,
+    fetched_at: "2026-10-16T04:00:00Z",
+    ...overrides,
+  };
+}
+
+/** A subscription to a blocklist in the draft mode, with the defaults of a new one and a fetch that applied it. */
+export function domainListSubscriptionFixture(
+  overrides: Partial<Schemas["AdminDomainListSubscription"]> = {},
+): Schemas["AdminDomainListSubscription"] {
+  return {
+    id: "0192f0c4-7a8e-7000-8000-0000000000e1",
+    url: "https://lists.example/blocklist.csv",
+    format: "mastodon_csv",
+    title: "Shared blocklist",
+    mode: "draft",
+    suspend_as: "suspend",
+    silence_as: "limit",
+    apply_reject_media: true,
+    apply_reject_reports: true,
+    public_comment_from_list: false,
+    consecutive_failures: 0,
+    last_fetch: domainListFetchFixture(),
+    created_at: "2026-10-15T08:00:00Z",
+    updated_at: "2026-10-15T08:00:00Z",
+    ...overrides,
+  };
+}
+
+/** A draft of a subscription in the draft mode that issues a limit. */
+export function domainListDraftFixture(
+  overrides: Partial<Schemas["AdminDomainListDraft"]> = {},
+): Schemas["AdminDomainListDraft"] {
+  return {
+    key: "issue:limit:noisy.example",
+    change: "issue",
+    domain: "noisy.example",
+    kind: "limit",
+    held: "draft_mode",
+    severity: "silence",
+    ...overrides,
+  };
+}
+
 /** Whether a path segment is an ID of the API (a UUID), not the name of another operation under the same path. */
 function isId(segment: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(segment);

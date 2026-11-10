@@ -300,6 +300,7 @@ const settingDefaults: readonly Omit<Schemas["AdminSetting"], "value" | "stored"
   { key: "featured_accounts", kind: "accounts", default: "" },
   { key: "login_providers_only", kind: "bool", default: "false" },
   { key: "federation_mode", kind: "enum", default: "both", choices: ["off", "inbound", "outbound", "both"] },
+  { key: "federation_scope", kind: "enum", default: "open", choices: ["open", "allowlist"] },
   { key: "user_app_registration", kind: "bool", default: "true" },
   { key: "oauth_metadata_document_clients", kind: "bool", default: "true" },
   { key: "dynamic_client_registration", kind: "bool", default: "true" },

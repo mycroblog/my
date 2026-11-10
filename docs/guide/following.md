@@ -46,6 +46,27 @@ operators can turn either one off, or show it only to people who are signed in; 
 
 A hashtag page (for example `#cats`) shows the public posts and the posts set to "This server" with that tag.
 
+## Following hashtags
+
+A hashtag page has the button "Follow" when you are signed in. After you follow a hashtag, your home timeline also shows
+the public posts and the posts set to "This server" with it from people you do not follow, the next time you open it.
+Such a post says "Followed hashtag #cats" above it, and the hashtag leads to its page, where "Following" unfollows it.
+Replies come too; boosts do not, and neither do posts of people you block or mute, or of accounts and servers that
+the server keeps off its public timelines. Home shows only the posts this server already has: following a hashtag does
+not fetch posts from other servers.
+
+You can follow up to 100 hashtags. "Followed hashtags" in the settings lists them, the latest first, follows another
+one ("Follow a hashtag", with or without the `#`), and unfollows them.
+
+## Featured hashtags
+
+A profile can feature up to ten hashtags, in the order its owner chose, each with how many of the owner's public and
+unlisted posts carry it and when the last one did. Choose yours under "Featured hashtags" in the profile settings:
+"Add a hashtag" adds a row, the arrows move a row up or down, and "Save profile" saves them with the rest of your
+profile. A hashtag you have not used yet can be featured too. Other servers that show your profile get the same list.
+On a profile of another server, the counts are of the posts this server has received, so they may be lower than on
+that server.
+
 An empty home timeline says "Your home timeline is empty". Follow someone, or "Browse the local timeline"; on a server
 without a local timeline, "Find people to follow" opens the search.
 

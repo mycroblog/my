@@ -14,6 +14,7 @@ import {
   notificationsPanelQueryOptions,
   panelLimit,
 } from "./notifications";
+import { catchUpRequests } from "./requests";
 
 /** The prefix of the keys of every filter of the list (notificationsQueryOptions). */
 const listsKey = ["get", "/notifications"] as const;
@@ -64,11 +65,12 @@ export function receiveNotification(queryClient: QueryClient, api: Api, notifica
 }
 
 /**
- * After the stream reconnected: reads the unread count and the panel on screen again, and the lists as a new
- * notification does.
+ * After the stream reconnected: reads the unread count, the panel on screen, and the counts of the notification
+ * requests again, and marks the lists as a new notification does.
  */
 export function catchUpNotifications(queryClient: QueryClient, api: Api): void {
   void queryClient.invalidateQueries({ queryKey: notificationMarkerQueryOptions(api).queryKey, exact: true });
   void queryClient.invalidateQueries({ queryKey: notificationsPanelQueryOptions(api).queryKey, exact: true });
   void queryClient.invalidateQueries({ queryKey: listsKey, refetchType: "none" });
+  catchUpRequests(queryClient, api);
 }
