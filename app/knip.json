@@ -18,7 +18,7 @@
       "project": ["src/**/*.ts"]
     },
     "docs": {
-      "entry": ["scripts/*.ts", "src/route-middleware.ts", "src/routeData.ts", "src/indexing.ts"],
+      "entry": ["scripts/*.ts", "src/route-middleware.ts", "src/routeData.ts", "src/indexing.ts", "src/api-sidebar.ts"],
       "project": ["*.config.ts", "src/**/*.{ts,astro,mdx}", "scripts/**/*.ts"],
       "ignoreDependencies": ["satteri", "starlight-openapi-sources"]
     },

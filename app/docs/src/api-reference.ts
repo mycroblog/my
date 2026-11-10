@@ -5,11 +5,15 @@
 // other schemas hold link to their own pages instead of being expanded on every operation (src/api-schemas.ts); the
 // schema pages are src/pages/api/schemas/. Its introduction is the document docs/developers/client-api.md: a link of a
 // published document to api/openapi.yaml belongs on this reference (apiReferenceBase), not on the file in GitHub.
+// In the sidebar, the group of the reference lists its overview and one link per tag of the spec, to the tag's page;
+// only the tag of the current page lists its operations (src/api-sidebar.ts, a route middleware that runs after the
+// plugin's), so a page's sidebar does not grow with every operation of the API, on every page and in every locale.
 import { createRequire } from "node:module";
 import { dirname } from "node:path";
 import type { StarlightPlugin, StarlightUserConfig } from "@astrojs/starlight/types";
 import starlightOpenAPI, { createOpenAPISidebarGroup } from "starlight-openapi";
 import { apiReferenceBase, referenceSpecPath } from "./api-schemas";
+import { apiReferenceLabel } from "./api-sidebar";
 
 /**
  * The sources of the pinned starlight-openapi, whose component and example generator the schema pages render a schema
@@ -27,7 +31,7 @@ const openAPI = starlightOpenAPI([
     schema: referenceSpecPath,
     sidebar: {
       group: referenceGroup,
-      label: "Client API reference",
+      label: apiReferenceLabel,
       operations: { badges: true },
     },
   },
@@ -38,6 +42,9 @@ export const apiReferencePlugin: StarlightPlugin = {
   hooks: {
     "config:setup": async (options) => {
       await openAPI.hooks["config:setup"]?.(options);
+      // After the plugin's middleware, which fills the group of the reference, both in the "post" bucket: Starlight
+      // runs the middlewares of one bucket in the order they are added.
+      options.addRouteMiddleware({ entrypoint: "./src/api-sidebar.ts", order: "post" });
       // The plugin renders the descriptions of the spec with satteri, and its pages use Starlight's tabs, which do too,
       // while the pages are prerendered. Bundled into the prerender chunks, satteri cannot find its native binding from
       // dist/ under Bun's isolated installs, so it stays an external import, resolved from this package's dependency.
@@ -61,5 +68,8 @@ export const apiReferencePlugin: StarlightPlugin = {
 
 type SidebarItem = NonNullable<StarlightUserConfig["sidebar"]>[number];
 
-/** The sidebar group of the reference: its overview and one group per tag of the spec, in the order of the spec. */
+/**
+ * The sidebar group of the reference: its overview and one entry per tag of the spec, in the order of the spec, a link
+ * to the tag's page or, for the tag of the current page, a group of its operations (src/api-sidebar.ts).
+ */
 export const apiReferenceSidebar: SidebarItem = referenceGroup;
