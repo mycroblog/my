@@ -365,12 +365,16 @@ func (s *Interactions) AcceptRemoteInteraction(ctx context.Context, kind content
 func (s *Interactions) answerTx(ctx context.Context, tx uow.Tx, r content.InteractionRequest, a answer, target content.Status) (content.InteractionState, error) {
 	ref := RefOf(target)
 	if r.Kind == content.InteractionQuote {
-		if quoting, err := s.d.Statuses.FindStatusByURITx(ctx, tx, r.InteractingURI); err == nil {
-			if _, err := changeQuote(ctx, tx, s.approvals(), s.d.Statuses, quoting, content.QuoteEventKind(a.kind), a.authorization, a.deferred); err != nil {
-				return content.InteractionState{}, err
+		// A quoting status that names no quote yet (Bonfire adds quote with its
+		// quoteAuthorization once approved) is answered as a request alone.
+		quoting, err := s.d.Statuses.FindStatusByURITx(ctx, tx, r.InteractingURI)
+		if err == nil {
+			_, err = changeQuote(ctx, tx, s.approvals(), s.d.Statuses, quoting, content.QuoteEventKind(a.kind), a.authorization, a.deferred)
+			if err == nil {
+				return s.approvals().state(ctx, tx, r)
 			}
-			return s.approvals().state(ctx, tx, r)
-		} else if !errors.Is(err, ErrNotFound) {
+		}
+		if !errors.Is(err, ErrNotFound) {
 			return content.InteractionState{}, err
 		}
 	}

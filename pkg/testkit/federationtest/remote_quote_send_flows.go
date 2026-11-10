@@ -564,6 +564,44 @@ func remoteAnswersQuoteRequests(t *testing.T, e *remoteInteractionEnv) {
 	if sent := e.quoteActivities(t, federation.OutboundQuote, byHand.ID); len(sent) != 0 {
 		t.Errorf("answers about a post approved by hand = %+v, want none yet", sent)
 	}
+	// A quoting post that names no quote until it is approved (Bonfire) is answered all the same.
+	unnamed := bob + "/notes/quote-unnamed"
+	e.expect(t, remoteActivity(t, "Create", unnamed+"/activity", bob, remoteNote(unnamed, bob, remoteNow.Add(-time.Hour), nil)), appfederation.InboxHandled)
+	e.expect(t, mustJSON(t, map[string]any{"@context": "https://www.w3.org/ns/activitystreams", "id": bob + "/quote_requests/6", "type": "QuoteRequest", "actor": bob,
+		"object": byHand.URI, "instrument": unnamed}), appfederation.InboxHandled)
+	page, err := e.interactions.PendingInteractionRequests(ctx, author, []content.InteractionKind{content.InteractionQuote}, "", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range page.Requests {
+		if r.InteractingURI != unnamed {
+			continue
+		}
+		if st, err := e.interactions.AnswerInteractionRequest(ctx, author, r.ID, true); err != nil || st.State != content.InteractionRequestAccepted {
+			t.Errorf("approving the quote of a post that names none = %+v, %v; want accepted", st, err)
+		}
+	}
+	if sent := e.quoteActivities(t, federation.OutboundQuote, byHand.ID); len(sent) != 1 || sent[0].Type != federation.ActivityAccept ||
+		!strings.HasPrefix(string(sent[0].Doc.Result), "https://"+testkit.ContractHost+"/ap/quote_authorizations/") {
+		t.Errorf("answers after approving the quote of a post that names none = %+v, want an Accept with a QuoteAuthorization", sent)
+	} else {
+		// Its Update then names the quote and the approval, which records the quote, accepted.
+		e.expect(t, remoteActivity(t, "Update", unnamed+"/update", bob, remoteNote(unnamed, bob, remoteNow.Add(-time.Hour), map[string]any{
+			"quote": byHand.URI, "quoteAuthorization": string(sent[0].Doc.Result), "updated": remoteNow.Format(time.RFC3339),
+		})), appfederation.InboxHandled)
+		if s := e.quoteState(t, e.post(t, unnamed).Status.ID); s.Approval != content.QuoteApprovalAccepted || s.AuthorizationURI != string(sent[0].Doc.Result) {
+			t.Errorf("state of the quote named after its approval = %+v, want accepted by %s", s, sent[0].Doc.Result)
+		}
+	}
+	// An edit cannot add a quote that was not asked for.
+	edited := bob + "/notes/edited"
+	e.expect(t, remoteActivity(t, "Create", edited+"/activity", bob, remoteNote(edited, bob, remoteNow.Add(-time.Hour), nil)), appfederation.InboxHandled)
+	e.expect(t, remoteActivity(t, "Update", edited+"/update", bob, remoteNote(edited, bob, remoteNow.Add(-time.Hour), map[string]any{
+		"quote": public.URI, "updated": remoteNow.Format(time.RFC3339),
+	})), appfederation.InboxHandled)
+	if _, _, err := e.content.FindQuote(ctx, e.post(t, edited).Status.ID); !errors.Is(err, appcontent.ErrNotFound) {
+		t.Errorf("FindQuote of a post that an edit made quote = %v, want ErrNotFound", err)
+	}
 
 	// The author revokes the approval: the quote shows the post no more, and bob's server and the
 	// author's followers get the Delete of the QuoteAuthorization.
