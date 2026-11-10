@@ -87,12 +87,13 @@ const toast = tv({
     icon: "shrink-0 rounded-full text-toast-muted [&>svg]:size-5",
     message: "flex-1 py-1",
     action: [
-      "shrink-0 rounded-md px-2 py-1.5 font-extrabold text-toast-action outline-none data-focus-visible:focus-ring",
-      "pointer-coarse:min-h-11",
+      "shrink-0 cursor-pointer rounded-md px-2 py-1.5 font-extrabold text-toast-action outline-none data-focus-visible:focus-ring",
+      "data-hovered:underline data-pressed:bg-toast-fg/10 data-pressed:underline pointer-coarse:min-h-11",
     ],
     dismiss: [
-      "grid size-8 shrink-0 place-items-center rounded-md text-toast-muted outline-none data-focus-visible:focus-ring",
-      "data-hovered:bg-toast-fg/10 data-hovered:text-toast-fg pointer-coarse:size-11 [&>svg]:size-4",
+      "grid size-8 shrink-0 cursor-pointer place-items-center rounded-md text-toast-muted outline-none data-focus-visible:focus-ring",
+      "data-hovered:bg-toast-fg/10 data-hovered:text-toast-fg data-pressed:bg-toast-fg/10 data-pressed:text-toast-fg",
+      "pointer-coarse:size-11 [&>svg]:size-4",
     ],
   },
   variants: {

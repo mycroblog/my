@@ -54,7 +54,7 @@ const stageAvatar = tv({
     // The press target of `menu`: the avatar and the name, as one button. It looks operable: a cream surface under the
     // pointer and while pressed, and the caret of a menu after the name (ADR-0110 P1).
     button: [
-      "flex w-full min-w-0 cursor-default flex-col items-center gap-2 rounded-lg p-2 data-focus-visible:focus-ring",
+      "flex w-full min-w-0 cursor-pointer flex-col items-center gap-2 rounded-lg p-2 data-focus-visible:focus-ring",
       "data-hovered:bg-soft data-pressed:bg-surface-sunken motion-safe:transition-colors",
     ],
     nameRow: "flex w-full min-w-0 items-center justify-center gap-0.5",

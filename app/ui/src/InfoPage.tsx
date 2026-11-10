@@ -15,7 +15,7 @@ const infoPage = tv({
     title: "text-xs font-extrabold tracking-widest text-fg-muted uppercase",
     list: "flex flex-col gap-0.5",
     link: "block rounded-full px-3 py-1.5 text-sm text-fg-muted hover:bg-surface-sunken aria-[current=location]:bg-soft aria-[current=location]:font-semibold aria-[current=location]:text-fg",
-    summary: "cursor-pointer rounded-md py-1 text-sm font-semibold text-fg",
+    summary: "cursor-pointer rounded-md py-1 text-sm font-semibold text-fg hover:underline",
   },
 });
 

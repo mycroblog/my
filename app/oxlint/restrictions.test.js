@@ -102,6 +102,12 @@ describe("where the restrictions apply", () => {
     for (const file of [files.story, files.featureComponentTest, files.featureTest])
       assert.equal(ruleValue("restrict/icons", file), undefined);
   });
+  it("gives every pressable control of the kit the hand and a hover state, and leaves stories, tests and the client alone (G26, G27)", () => {
+    for (const file of [files.component, files.shell, files.svgControl])
+      assert.ok(ruleOptions("restrict/pressable", file).length > 0);
+    for (const file of [files.story, files.featureComponent, files.route])
+      assert.equal(ruleValue("restrict/pressable", file), undefined);
+  });
   it("keeps the wording of a region's states to its state components in a feature, and leaves tests alone (G14, G16)", () => {
     for (const file of [files.featureComponent, files.featureHook])
       assert.ok(ruleOptions("restrict/states", file).length > 0);
@@ -312,6 +318,39 @@ ruleTester.run("restrict/icons (G12)", restrict.rules.icons, {
     { ...fails("<AriaButton slot='close' aria-label={label}><CloseIcon /></AriaButton>"), options: icons },
     // A menu's trigger is not a tooltip's.
     { ...fails("<MenuTrigger><Button aria-label={label}><MoreIcon /></Button><Menu /></MenuTrigger>"), options: icons },
+  ],
+});
+
+const pressable = ruleOptions("restrict/pressable", files.component);
+const racButton = 'import { Button } from "react-aria-components";\n';
+ruleTester.run("restrict/pressable (G26, G27)", restrict.rules.pressable, {
+  valid: [
+    // The hand, a hover and a pressed state, and the disabled and pending shapes.
+    {
+      code: `${racButton}const b = tv({ base: ["cursor-pointer data-disabled:cursor-not-allowed data-pending:cursor-wait", "data-hovered:bg-soft data-pressed:bg-soft"] });`,
+      options: pressable,
+    },
+    // The hover state of a control in another slot of the recipe (a checkbox's box), and a list item's focused fill.
+    {
+      code: `const c = tv({ slots: { button: "group/control cursor-pointer", box: "group-data-hovered/control:ring-4" } });`,
+      options: pressable,
+    },
+    { code: `const m = tv({ base: "cursor-pointer data-focused:bg-surface-sunken" });`, options: pressable },
+    // A picture that opens a viewer shows the magnifier.
+    { code: `const o = tv({ base: "cursor-zoom-in data-hovered:brightness-95" });`, options: pressable },
+    // A recipe that restyles the kit's Link or Button, which give the hand themselves.
+    { code: `const l = tv({ base: "text-fg data-hovered:underline" });`, options: pressable },
+  ],
+  invalid: [
+    // The arrow over a control.
+    { ...fails(`const b = tv({ base: "inline-flex cursor-default items-center" });`), options: pressable },
+    // The hand with nothing that answers the pointer.
+    { ...fails(`const b = tv({ base: "cursor-pointer data-focus-visible:focus-ring" });`), options: pressable },
+    // A React Aria button with a hover state and no pointer shape: the arrow of the browser's default.
+    {
+      ...fails(`${racButton}const close = tv({ base: "rounded-full data-hovered:bg-surface-sunken" });`),
+      options: pressable,
+    },
   ],
 });
 

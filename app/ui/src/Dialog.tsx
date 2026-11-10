@@ -31,8 +31,10 @@ const modal = tv({
     header: "flex items-start gap-2 px-4 pt-4 pb-2",
     title: "flex-1 text-xl font-extrabold tracking-tight text-pretty",
     close: [
-      "-me-2 -mt-1 grid size-9 shrink-0 place-items-center rounded-full text-fg-muted outline-none",
-      "data-hovered:bg-surface-sunken data-hovered:text-fg data-focus-visible:focus-ring pointer-coarse:size-11 [&>svg]:size-5",
+      "-me-2 -mt-1 grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-fg-muted outline-none",
+      "data-hovered:bg-surface-sunken data-hovered:text-fg data-pressed:bg-surface-sunken data-pressed:text-fg",
+      "motion-safe:transition-[color,background-color,scale] motion-safe:duration-fast motion-safe:data-pressed:scale-95",
+      "data-focus-visible:focus-ring pointer-coarse:size-11 [&>svg]:size-5",
     ],
     // React Aria cannot set overscroll-behavior on iOS WebKit under the shell's CSP, so each overlay's
     // scrollable surface sets it, and its scroll never chains to the page (web-client/09-app-shell.md §9).

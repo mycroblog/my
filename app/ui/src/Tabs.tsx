@@ -42,9 +42,9 @@ const tabs = tv({
     tab: [
       // relative: the visually hidden text of a badge in the tab (absolutely positioned) stays inside the scrolling
       // list instead of widening the page.
-      "relative flex shrink-0 cursor-default items-center gap-1.5 border-b-3 border-transparent px-4 py-2 text-sm font-bold",
+      "relative flex shrink-0 cursor-pointer items-center gap-1.5 border-b-3 border-transparent px-4 py-2 text-sm font-bold",
       "text-fg-muted outline-none select-none pointer-coarse:min-h-11",
-      "data-hovered:text-fg data-selected:border-accent data-selected:text-accent data-disabled:opacity-60",
+      "data-hovered:text-fg data-selected:border-accent data-selected:text-accent data-disabled:cursor-not-allowed data-disabled:opacity-60",
       // The list scrolls sideways on narrow screens and would clip an outer ring, so the tab's ring is inset.
       "data-focus-visible:rounded-t-md data-focus-visible:outline-2 data-focus-visible:-outline-offset-2 data-focus-visible:outline-focus",
       "motion-safe:transition-colors",

@@ -25,8 +25,10 @@ const linkCard = tv({
     description: "line-clamp-2 min-w-0 text-sm wrap-anywhere text-fg-muted",
     byline: "min-w-0 text-xs wrap-anywhere text-fg-muted",
     // Above the link's hit area, so that it stays its own control.
-    toggle:
-      "absolute z-10 cursor-default rounded-full bg-surface-raised font-extrabold text-fg select-none data-focus-visible:focus-ring data-hovered:bg-surface-sunken motion-safe:transition-colors",
+    toggle: [
+      "absolute z-10 cursor-pointer rounded-full bg-surface-raised font-extrabold text-fg select-none data-focus-visible:focus-ring",
+      "data-hovered:bg-surface-sunken data-pressed:bg-surface-sunken motion-safe:transition-[background-color,scale] motion-safe:data-pressed:scale-95",
+    ],
   },
   variants: {
     size: {

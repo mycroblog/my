@@ -8,7 +8,7 @@ const switchStyles = tv({
   slots: {
     root: "group flex flex-col gap-1",
     button: [
-      "flex min-h-6 cursor-default items-center gap-3 text-base text-fg",
+      "group/control flex min-h-6 cursor-pointer items-center gap-3 text-base text-fg",
       "data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11",
     ],
     // The thumb sits at the start and moves to the end with justify-content, so it follows the direction. The groove is
@@ -16,6 +16,8 @@ const switchStyles = tv({
     // surface and the thumb against the track.
     track: [
       "flex h-6.5 w-11 shrink-0 items-center justify-start rounded-full bg-border-strong px-1 shadow-soft-inset",
+      // Under the pointer and while pressed, a halo of the selection tint rings the track (web-client/16-look-states-and-wording.md G27).
+      "group-data-hovered/control:ring-4 group-data-hovered/control:ring-soft group-data-pressed/control:ring-4 group-data-pressed/control:ring-soft",
       "motion-safe:transition-colors",
     ],
     thumb: "size-4.5 rounded-full bg-surface-raised shadow-soft-raised",

@@ -243,7 +243,7 @@ const picker = tv({
     row: "flex gap-1",
     // As large as a tap target needs (D4); the emoji is as high as the text of the cell.
     item: [
-      "flex size-10 shrink-0 cursor-default items-center justify-center rounded-md text-2xl outline-none pointer-coarse:size-11",
+      "flex size-10 shrink-0 cursor-pointer items-center justify-center rounded-md text-2xl outline-none pointer-coarse:size-11",
       "data-focus-visible:focus-ring data-hovered:bg-surface-sunken data-pressed:bg-surface-sunken",
     ],
     // Copies of a heading and two cells, never seen, that tell the sizes of the rows and the columns (ADR-0091 §14).

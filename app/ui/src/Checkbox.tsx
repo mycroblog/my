@@ -8,11 +8,13 @@ const checkbox = tv({
   slots: {
     root: "group flex flex-col gap-1",
     button: [
-      "flex min-h-6 cursor-default items-center gap-3 text-base text-fg",
+      "group/control flex min-h-6 cursor-pointer items-center gap-3 text-base text-fg",
       "data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11",
     ],
     box: [
       "flex size-5 shrink-0 items-center justify-center rounded-sm border-2 border-border-strong bg-surface-sunken text-accent-fg",
+      // Under the pointer and while pressed, a halo of the selection tint rings the box (web-client/16-look-states-and-wording.md G27).
+      "group-data-hovered/control:ring-4 group-data-hovered/control:ring-soft group-data-pressed/control:ring-4 group-data-pressed/control:ring-soft",
       "group-data-invalid:border-danger motion-safe:transition-colors",
     ],
     icon: "size-4 fill-none stroke-current stroke-3",

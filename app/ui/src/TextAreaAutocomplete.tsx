@@ -73,8 +73,8 @@ const autocomplete = tv({
       "flex w-(--trigger-width) flex-col overflow-hidden rounded-lg border border-border bg-surface-raised text-fg shadow-md outline-hidden",
     list: "max-h-60 min-h-0 overflow-y-auto overscroll-contain p-1 outline-hidden",
     option: [
-      "flex min-h-8.5 cursor-default items-center gap-2 rounded-md px-2 py-1 text-base text-fg outline-hidden",
-      "data-focused:bg-surface-sunken pointer-coarse:min-h-11",
+      "flex min-h-8.5 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-base text-fg outline-hidden",
+      "data-focused:bg-surface-sunken data-hovered:bg-surface-sunken pointer-coarse:min-h-11",
     ],
     // Holds an option's content without a box of its own; it is there to find its option.
     content: "contents",
