@@ -217,7 +217,8 @@ func (s *Service) facts(ctx context.Context, viewer gathering.Viewer, recs []Rec
 	for _, r := range recs {
 		f := gathering.Facts{
 			Coorganizer: r.Coorganizes(viewer.AccountID), Invited: own[r.ID].Invited, Answered: own[r.ID].Answer != "",
-			Approved: own[r.ID].Approved, FollowsOrganizer: following[r.OrganizerAccountID], FollowedByOrganizer: followers[r.OrganizerAccountID],
+			Approved: own[r.ID].Approved, Voted: own[r.ID].Voted, FollowsOrganizer: following[r.OrganizerAccountID],
+			FollowedByOrganizer: followers[r.OrganizerAccountID],
 		}
 		for _, id := range r.organizerIDs() {
 			// The organizers do not block themselves.

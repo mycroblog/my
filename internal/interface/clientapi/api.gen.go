@@ -2427,8 +2427,9 @@ func (e EventPlaceKind) Valid() bool {
 
 // Defines values for EventState.
 const (
-	EventStateCancelled EventState = "cancelled"
-	EventStateScheduled EventState = "scheduled"
+	EventStateCancelled   EventState = "cancelled"
+	EventStateScheduled   EventState = "scheduled"
+	EventStateUnscheduled EventState = "unscheduled"
 )
 
 // Valid indicates whether the value is a known member of the EventState enum.
@@ -2437,6 +2438,8 @@ func (e EventState) Valid() bool {
 	case EventStateCancelled:
 		return true
 	case EventStateScheduled:
+		return true
+	case EventStateUnscheduled:
 		return true
 	default:
 		return false
@@ -2464,6 +2467,27 @@ func (e EventVisibility) Valid() bool {
 	case EventVisibilityMutuals:
 		return true
 	case EventVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventVote.
+const (
+	EventVoteMaybe EventVote = "maybe"
+	EventVoteNo    EventVote = "no"
+	EventVoteYes   EventVote = "yes"
+)
+
+// Valid indicates whether the value is a known member of the EventVote enum.
+func (e EventVote) Valid() bool {
+	switch e {
+	case EventVoteMaybe:
+		return true
+	case EventVoteNo:
+		return true
+	case EventVoteYes:
 		return true
 	default:
 		return false
@@ -10992,8 +11016,10 @@ type Event struct {
 	CreatedAt    time.Time `json:"created_at"`
 
 	// Description Plain text; empty for none.
-	Description string    `json:"description"`
-	EndsAt      time.Time `json:"ends_at"`
+	Description string `json:"description"`
+
+	// EndsAt The end of the event; for an `unscheduled` event, the latest end of its candidate dates.
+	EndsAt time.Time `json:"ends_at"`
 
 	// GoingCount How many attendees answer `going`.
 	GoingCount int `json:"going_count"`
@@ -11020,11 +11046,15 @@ type Event struct {
 	RevisedAt time.Time `json:"revised_at"`
 
 	// RevisionCount How many versions the settings have had, the first included.
-	RevisionCount int       `json:"revision_count"`
-	StartsAt      time.Time `json:"starts_at"`
+	RevisionCount int `json:"revision_count"`
 
-	// State Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
-	// `ends_at` is in the past.
+	// StartsAt The start of the event; for an `unscheduled` event, the earliest start of its candidate
+	// dates (`GET /events/{id}/candidates`).
+	StartsAt time.Time `json:"starts_at"`
+
+	// State Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
+	// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+	// past.
 	State EventState `json:"state"`
 
 	// TimeZone The IANA name of the event's time zone, such as `Asia/Tokyo`.
@@ -11065,6 +11095,23 @@ type EventAttendeePage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// EventBallot The answer of a user to a candidate date.
+type EventBallot struct {
+	// Account An account, as clients show it.
+	Account Account `json:"account"`
+
+	// Vote An answer to a candidate date of an event's date poll.
+	Vote EventVote `json:"vote"`
+}
+
+// EventBallotPage A page of the answers to a candidate date, in the order of the users' IDs.
+type EventBallotPage struct {
+	Items []EventBallot `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
 // EventCancelReason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
 // suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 type EventCancelReason string
@@ -11087,8 +11134,47 @@ type EventCancellation struct {
 	Reason EventCancelReason `json:"reason"`
 }
 
-// EventCreate A new event with a fixed date.
+// EventCandidate A candidate date of an event's date poll, with how many users answered it each way. Times are
+// in UTC.
+type EventCandidate struct {
+	// Confirmed Whether the organizers fixed the event's date to this candidate.
+	Confirmed bool      `json:"confirmed"`
+	EndsAt    time.Time `json:"ends_at"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id         Id        `json:"id"`
+	MaybeCount int       `json:"maybe_count"`
+	NoCount    int       `json:"no_count"`
+	StartsAt   time.Time `json:"starts_at"`
+
+	// Vote The user's own answer; absent before the user answers.
+	Vote     *EventVote `json:"vote,omitempty"`
+	YesCount int        `json:"yes_count"`
+}
+
+// EventCandidateCreate A candidate date of an event's date poll, in UTC.
+type EventCandidateCreate struct {
+	// EndsAt After `starts_at` and at most 7 days later.
+	EndsAt time.Time `json:"ends_at"`
+
+	// StartsAt After now and at most a year ahead.
+	StartsAt time.Time `json:"starts_at"`
+}
+
+// EventCandidateList The candidate dates of an event's date poll, the earliest start first; up to 20.
+type EventCandidateList struct {
+	Items []EventCandidate `json:"items"`
+}
+
+// EventCreate A new event, either with a fixed date (`starts_at` and `ends_at`) or with the candidate dates
+// of a date poll (`candidates`), not both.
 type EventCreate struct {
+	// Candidates 1 to 20 different candidate dates, each checked as a fixed date: the event is
+	// `unscheduled` until the organizers confirm one of them.
+	Candidates *[]EventCandidateCreate `json:"candidates,omitempty"`
+
 	// Capacity How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
 	Capacity *int `json:"capacity,omitempty"`
 
@@ -11096,7 +11182,7 @@ type EventCreate struct {
 	Description *string `json:"description,omitempty"`
 
 	// EndsAt After `starts_at` and at most 7 days later.
-	EndsAt time.Time `json:"ends_at"`
+	EndsAt *time.Time `json:"ends_at,omitempty"`
 
 	// PlaceDisclosure Who sees the `physical` and `url` places; `approved` when omitted.
 	PlaceDisclosure *EventPlaceDisclosure `json:"place_disclosure,omitempty"`
@@ -11105,7 +11191,7 @@ type EventCreate struct {
 	Places *[]EventPlace `json:"places,omitempty"`
 
 	// StartsAt After now and at most a year ahead.
-	StartsAt time.Time `json:"starts_at"`
+	StartsAt *time.Time `json:"starts_at,omitempty"`
 
 	// TimeZone The IANA name of the event's time zone; the user's time zone when omitted.
 	TimeZone *string `json:"time_zone,omitempty"`
@@ -11216,12 +11302,14 @@ type EventRemindersUpdate struct {
 	MinutesBefore *[]int `json:"minutes_before,omitempty"`
 }
 
-// EventState Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
-// `ends_at` is in the past.
+// EventState Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
+// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+// past.
 type EventState string
 
 // EventUpdate Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
-// date (`starts_at` and `ends_at` together) is checked as a new event's.
+// date (`starts_at` and `ends_at` together) is checked as a new event's; on an `unscheduled`
+// event, it fixes the date without a candidate and ends the date poll.
 type EventUpdate struct {
 	Capacity    *int       `json:"capacity,omitempty"`
 	Description *string    `json:"description,omitempty"`
@@ -11269,6 +11357,15 @@ type EventViewer struct {
 // co-organizers, the invited users, and the users who answered always see it, unless a block
 // separates them from the organizer or a co-organizer.
 type EventVisibility string
+
+// EventVote An answer to a candidate date of an event's date poll.
+type EventVote string
+
+// EventVoteUpdate An answer to a candidate date.
+type EventVoteUpdate struct {
+	// Vote An answer to a candidate date of an event's date poll.
+	Vote EventVote `json:"vote"`
+}
 
 // ExternalAuthorizationStart Where the browser goes to sign in at a login provider.
 type ExternalAuthorizationStart struct {
@@ -14786,6 +14883,11 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
 //     it can.
 //   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+//   - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
+//   - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
+//     takes no more candidates, answers, or confirmations.
+//   - `/api/v1/problems/event-last-candidate` (409): the last candidate of a date poll cannot be
+//     withdrawn.
 //   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
 //     be searched (`Instance.full_text_search.available`).
 //   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
@@ -17153,10 +17255,18 @@ type ErrorGroupId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type EventAccountId = Id
 
+// EventCandidateId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type EventCandidateId = Id
+
 // EventId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type EventId = Id
+
+// EventVoteFilter An answer to a candidate date of an event's date poll.
+type EventVoteFilter = EventVote
 
 // HashtagName defines model for HashtagName.
 type HashtagName = string
@@ -17909,6 +18019,18 @@ type ListEventAttendeesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListEventCandidateVotesParams defines parameters for ListEventCandidateVotes.
+type ListEventCandidateVotesParams struct {
+	// Vote Only the answers of this kind; every answer when omitted.
+	Vote *EventVoteFilter `form:"vote,omitempty" json:"vote,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListEventInvitationsParams defines parameters for ListEventInvitations.
 type ListEventInvitationsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -18481,6 +18603,12 @@ type UpdateEventJSONRequestBody = EventUpdate
 
 // CancelEventJSONRequestBody defines body for CancelEvent for application/json ContentType.
 type CancelEventJSONRequestBody = EventCancelRequest
+
+// AddEventCandidateJSONRequestBody defines body for AddEventCandidate for application/json ContentType.
+type AddEventCandidateJSONRequestBody = EventCandidateCreate
+
+// VoteEventCandidateJSONRequestBody defines body for VoteEventCandidate for application/json ContentType.
+type VoteEventCandidateJSONRequestBody = EventVoteUpdate
 
 // InviteToEventJSONRequestBody defines body for InviteToEvent for application/json ContentType.
 type InviteToEventJSONRequestBody = EventInvitationCreate
@@ -19438,6 +19566,24 @@ type ServerInterface interface {
 	// CancelEvent Cancel an event
 	// (POST /events/{id}/cancel)
 	CancelEvent(w http.ResponseWriter, r *http.Request, id EventId)
+	// ListEventCandidates List the candidate dates of an event
+	// (GET /events/{id}/candidates)
+	ListEventCandidates(w http.ResponseWriter, r *http.Request, id EventId)
+	// AddEventCandidate Add a candidate date to an event
+	// (POST /events/{id}/candidates)
+	AddEventCandidate(w http.ResponseWriter, r *http.Request, id EventId)
+	// WithdrawEventCandidate Withdraw a candidate date of an event
+	// (DELETE /events/{id}/candidates/{candidate_id})
+	WithdrawEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId)
+	// ConfirmEventCandidate Confirm a candidate date of an event
+	// (POST /events/{id}/candidates/{candidate_id}/confirm)
+	ConfirmEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId)
+	// VoteEventCandidate Answer a candidate date of an event
+	// (PUT /events/{id}/candidates/{candidate_id}/vote)
+	VoteEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId)
+	// ListEventCandidateVotes List the answers to a candidate date of an event
+	// (GET /events/{id}/candidates/{candidate_id}/votes)
+	ListEventCandidateVotes(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId, params ListEventCandidateVotesParams)
 	// RemoveEventCoorganizer Remove a co-organizer of an event
 	// (DELETE /events/{id}/coorganizers/{account_id})
 	RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request, id EventId, accountId EventAccountId)
@@ -27831,6 +27977,240 @@ func (siw *ServerInterfaceWrapper) CancelEvent(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
+// ListEventCandidates operation middleware
+func (siw *ServerInterfaceWrapper) ListEventCandidates(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEventCandidates(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// AddEventCandidate operation middleware
+func (siw *ServerInterfaceWrapper) AddEventCandidate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.AddEventCandidate(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// WithdrawEventCandidate operation middleware
+func (siw *ServerInterfaceWrapper) WithdrawEventCandidate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "candidate_id" -------------
+	var candidateId EventCandidateId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "candidate_id", r.PathValue("candidate_id"), &candidateId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "candidate_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.WithdrawEventCandidate(w, r, id, candidateId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConfirmEventCandidate operation middleware
+func (siw *ServerInterfaceWrapper) ConfirmEventCandidate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "candidate_id" -------------
+	var candidateId EventCandidateId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "candidate_id", r.PathValue("candidate_id"), &candidateId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "candidate_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConfirmEventCandidate(w, r, id, candidateId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// VoteEventCandidate operation middleware
+func (siw *ServerInterfaceWrapper) VoteEventCandidate(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "candidate_id" -------------
+	var candidateId EventCandidateId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "candidate_id", r.PathValue("candidate_id"), &candidateId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "candidate_id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.VoteEventCandidate(w, r, id, candidateId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListEventCandidateVotes operation middleware
+func (siw *ServerInterfaceWrapper) ListEventCandidateVotes(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id EventId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "candidate_id" -------------
+	var candidateId EventCandidateId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "candidate_id", r.PathValue("candidate_id"), &candidateId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "candidate_id", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListEventCandidateVotesParams
+
+	// ------------- Optional query parameter "vote" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "vote", r.URL.Query(), &params.Vote, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "vote"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "vote", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "cursor" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "cursor", r.URL.Query(), &params.Cursor, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "cursor"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "cursor", Err: err})
+		}
+		return
+	}
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "limit", r.URL.Query(), &params.Limit, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "limit"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListEventCandidateVotes(w, r, id, candidateId, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // RemoveEventCoorganizer operation middleware
 func (siw *ServerInterfaceWrapper) RemoveEventCoorganizer(w http.ResponseWriter, r *http.Request) {
 
@@ -33270,6 +33650,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/invitations/{account_id}", wrapper.RevokeEventInvitation)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/coorganizers/{account_id}", wrapper.RemoveEventCoorganizer)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/coorganizers/{account_id}", wrapper.AssignEventCoorganizer)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/candidates", wrapper.ListEventCandidates)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/candidates", wrapper.AddEventCandidate)
+	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/events/{id}/candidates/{candidate_id}", wrapper.WithdrawEventCandidate)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/events/{id}/candidates/{candidate_id}/vote", wrapper.VoteEventCandidate)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/events/{id}/candidates/{candidate_id}/votes", wrapper.ListEventCandidateVotes)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/events/{id}/candidates/{candidate_id}/confirm", wrapper.ConfirmEventCandidate)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/queue", wrapper.GetAdminQueue)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs", wrapper.ListAdminJobs)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/jobs/{id}", wrapper.GetAdminJob)
@@ -49909,6 +50295,369 @@ func (response CancelEventdefaultApplicationProblemPlusJSONResponse) VisitCancel
 	return err
 }
 
+type ListEventCandidatesRequestObject struct {
+	Id EventId `json:"id"`
+}
+
+type ListEventCandidatesResponseObject interface {
+	VisitListEventCandidatesResponse(w http.ResponseWriter) error
+}
+
+type ListEventCandidates200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListEventCandidates200JSONResponse struct {
+	Body    EventCandidateList
+	Headers ListEventCandidates200ResponseHeaders
+}
+
+func (response ListEventCandidates200JSONResponse) VisitListEventCandidatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventCandidatesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListEventCandidatesdefaultApplicationProblemPlusJSONResponse) VisitListEventCandidatesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddEventCandidateRequestObject struct {
+	Id   EventId `json:"id"`
+	Body *AddEventCandidateJSONRequestBody
+}
+
+type AddEventCandidateResponseObject interface {
+	VisitAddEventCandidateResponse(w http.ResponseWriter) error
+}
+
+type AddEventCandidate201ResponseHeaders struct {
+	CacheControl *string
+}
+
+type AddEventCandidate201JSONResponse struct {
+	Body    EventCandidate
+	Headers AddEventCandidate201ResponseHeaders
+}
+
+func (response AddEventCandidate201JSONResponse) VisitAddEventCandidateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type AddEventCandidatedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response AddEventCandidatedefaultApplicationProblemPlusJSONResponse) VisitAddEventCandidateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type WithdrawEventCandidateRequestObject struct {
+	Id          EventId          `json:"id"`
+	CandidateId EventCandidateId `json:"candidate_id"`
+}
+
+type WithdrawEventCandidateResponseObject interface {
+	VisitWithdrawEventCandidateResponse(w http.ResponseWriter) error
+}
+
+type WithdrawEventCandidate204Response struct {
+}
+
+func (response WithdrawEventCandidate204Response) VisitWithdrawEventCandidateResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type WithdrawEventCandidatedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response WithdrawEventCandidatedefaultApplicationProblemPlusJSONResponse) VisitWithdrawEventCandidateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmEventCandidateRequestObject struct {
+	Id          EventId          `json:"id"`
+	CandidateId EventCandidateId `json:"candidate_id"`
+}
+
+type ConfirmEventCandidateResponseObject interface {
+	VisitConfirmEventCandidateResponse(w http.ResponseWriter) error
+}
+
+type ConfirmEventCandidate200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ConfirmEventCandidate200JSONResponse struct {
+	Body    Event
+	Headers ConfirmEventCandidate200ResponseHeaders
+}
+
+func (response ConfirmEventCandidate200JSONResponse) VisitConfirmEventCandidateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConfirmEventCandidatedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ConfirmEventCandidatedefaultApplicationProblemPlusJSONResponse) VisitConfirmEventCandidateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VoteEventCandidateRequestObject struct {
+	Id          EventId          `json:"id"`
+	CandidateId EventCandidateId `json:"candidate_id"`
+	Body        *VoteEventCandidateJSONRequestBody
+}
+
+type VoteEventCandidateResponseObject interface {
+	VisitVoteEventCandidateResponse(w http.ResponseWriter) error
+}
+
+type VoteEventCandidate200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type VoteEventCandidate200JSONResponse struct {
+	Body    EventCandidate
+	Headers VoteEventCandidate200ResponseHeaders
+}
+
+func (response VoteEventCandidate200JSONResponse) VisitVoteEventCandidateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type VoteEventCandidatedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response VoteEventCandidatedefaultApplicationProblemPlusJSONResponse) VisitVoteEventCandidateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventCandidateVotesRequestObject struct {
+	Id          EventId          `json:"id"`
+	CandidateId EventCandidateId `json:"candidate_id"`
+	Params      ListEventCandidateVotesParams
+}
+
+type ListEventCandidateVotesResponseObject interface {
+	VisitListEventCandidateVotesResponse(w http.ResponseWriter) error
+}
+
+type ListEventCandidateVotes200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListEventCandidateVotes200JSONResponse struct {
+	Body    EventBallotPage
+	Headers ListEventCandidateVotes200ResponseHeaders
+}
+
+func (response ListEventCandidateVotes200JSONResponse) VisitListEventCandidateVotesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListEventCandidateVotesdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListEventCandidateVotesdefaultApplicationProblemPlusJSONResponse) VisitListEventCandidateVotesResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type RemoveEventCoorganizerRequestObject struct {
 	Id        EventId        `json:"id"`
 	AccountId EventAccountId `json:"account_id"`
@@ -61476,6 +62225,24 @@ type StrictServerInterface interface {
 	// CancelEvent Cancel an event
 	// (POST /events/{id}/cancel)
 	CancelEvent(ctx context.Context, request CancelEventRequestObject) (CancelEventResponseObject, error)
+	// ListEventCandidates List the candidate dates of an event
+	// (GET /events/{id}/candidates)
+	ListEventCandidates(ctx context.Context, request ListEventCandidatesRequestObject) (ListEventCandidatesResponseObject, error)
+	// AddEventCandidate Add a candidate date to an event
+	// (POST /events/{id}/candidates)
+	AddEventCandidate(ctx context.Context, request AddEventCandidateRequestObject) (AddEventCandidateResponseObject, error)
+	// WithdrawEventCandidate Withdraw a candidate date of an event
+	// (DELETE /events/{id}/candidates/{candidate_id})
+	WithdrawEventCandidate(ctx context.Context, request WithdrawEventCandidateRequestObject) (WithdrawEventCandidateResponseObject, error)
+	// ConfirmEventCandidate Confirm a candidate date of an event
+	// (POST /events/{id}/candidates/{candidate_id}/confirm)
+	ConfirmEventCandidate(ctx context.Context, request ConfirmEventCandidateRequestObject) (ConfirmEventCandidateResponseObject, error)
+	// VoteEventCandidate Answer a candidate date of an event
+	// (PUT /events/{id}/candidates/{candidate_id}/vote)
+	VoteEventCandidate(ctx context.Context, request VoteEventCandidateRequestObject) (VoteEventCandidateResponseObject, error)
+	// ListEventCandidateVotes List the answers to a candidate date of an event
+	// (GET /events/{id}/candidates/{candidate_id}/votes)
+	ListEventCandidateVotes(ctx context.Context, request ListEventCandidateVotesRequestObject) (ListEventCandidateVotesResponseObject, error)
 	// RemoveEventCoorganizer Remove a co-organizer of an event
 	// (DELETE /events/{id}/coorganizers/{account_id})
 	RemoveEventCoorganizer(ctx context.Context, request RemoveEventCoorganizerRequestObject) (RemoveEventCoorganizerResponseObject, error)
@@ -69455,6 +70222,181 @@ func (sh *strictHandler) CancelEvent(w http.ResponseWriter, r *http.Request, id 
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CancelEventResponseObject); ok {
 		if err := validResponse.VisitCancelEventResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEventCandidates operation middleware
+func (sh *strictHandler) ListEventCandidates(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request ListEventCandidatesRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEventCandidates(ctx, request.(ListEventCandidatesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEventCandidates")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEventCandidatesResponseObject); ok {
+		if err := validResponse.VisitListEventCandidatesResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// AddEventCandidate operation middleware
+func (sh *strictHandler) AddEventCandidate(w http.ResponseWriter, r *http.Request, id EventId) {
+	var request AddEventCandidateRequestObject
+
+	request.Id = id
+
+	var body AddEventCandidateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.AddEventCandidate(ctx, request.(AddEventCandidateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "AddEventCandidate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(AddEventCandidateResponseObject); ok {
+		if err := validResponse.VisitAddEventCandidateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// WithdrawEventCandidate operation middleware
+func (sh *strictHandler) WithdrawEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId) {
+	var request WithdrawEventCandidateRequestObject
+
+	request.Id = id
+	request.CandidateId = candidateId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.WithdrawEventCandidate(ctx, request.(WithdrawEventCandidateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "WithdrawEventCandidate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(WithdrawEventCandidateResponseObject); ok {
+		if err := validResponse.VisitWithdrawEventCandidateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConfirmEventCandidate operation middleware
+func (sh *strictHandler) ConfirmEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId) {
+	var request ConfirmEventCandidateRequestObject
+
+	request.Id = id
+	request.CandidateId = candidateId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConfirmEventCandidate(ctx, request.(ConfirmEventCandidateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConfirmEventCandidate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConfirmEventCandidateResponseObject); ok {
+		if err := validResponse.VisitConfirmEventCandidateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// VoteEventCandidate operation middleware
+func (sh *strictHandler) VoteEventCandidate(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId) {
+	var request VoteEventCandidateRequestObject
+
+	request.Id = id
+	request.CandidateId = candidateId
+
+	var body VoteEventCandidateJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.VoteEventCandidate(ctx, request.(VoteEventCandidateRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VoteEventCandidate")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(VoteEventCandidateResponseObject); ok {
+		if err := validResponse.VisitVoteEventCandidateResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListEventCandidateVotes operation middleware
+func (sh *strictHandler) ListEventCandidateVotes(w http.ResponseWriter, r *http.Request, id EventId, candidateId EventCandidateId, params ListEventCandidateVotesParams) {
+	var request ListEventCandidateVotesRequestObject
+
+	request.Id = id
+	request.CandidateId = candidateId
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListEventCandidateVotes(ctx, request.(ListEventCandidateVotesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListEventCandidateVotes")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListEventCandidateVotesResponseObject); ok {
+		if err := validResponse.VisitListEventCandidateVotesResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

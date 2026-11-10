@@ -119,7 +119,7 @@ tags:
   - name: events
     description: |
       The events of the local users: creating, changing, and cancelling them, answering them,
-      the attendees and their approval, the invitations, and the co-organizers. Nothing of them
+      their date polls, the attendees and their approval, the invitations, and the co-organizers. Nothing of them
       is federated. The operations need a `read:events` or `write:events` scope, and answer 404
       for an event that the user does not see.
   - name: client-errors
@@ -530,6 +530,16 @@ paths:
     $ref: ./paths/events_{id}_invitations_{account_id}.yaml
   /events/{id}/coorganizers/{account_id}:
     $ref: ./paths/events_{id}_coorganizers_{account_id}.yaml
+  /events/{id}/candidates:
+    $ref: ./paths/events_{id}_candidates.yaml
+  /events/{id}/candidates/{candidate_id}:
+    $ref: ./paths/events_{id}_candidates_{candidate_id}.yaml
+  /events/{id}/candidates/{candidate_id}/vote:
+    $ref: ./paths/events_{id}_candidates_{candidate_id}_vote.yaml
+  /events/{id}/candidates/{candidate_id}/votes:
+    $ref: ./paths/events_{id}_candidates_{candidate_id}_votes.yaml
+  /events/{id}/candidates/{candidate_id}/confirm:
+    $ref: ./paths/events_{id}_candidates_{candidate_id}_confirm.yaml
   /client_errors:
     $ref: ./paths/client_errors.yaml
   /admin/queue:
@@ -995,8 +1005,12 @@ components:
       $ref: ./components/parameters/ErrorGroupId.yaml
     EventAccountId:
       $ref: ./components/parameters/EventAccountId.yaml
+    EventCandidateId:
+      $ref: ./components/parameters/EventCandidateId.yaml
     EventId:
       $ref: ./components/parameters/EventId.yaml
+    EventVoteFilter:
+      $ref: ./components/parameters/EventVoteFilter.yaml
     DomainActionId:
       $ref: ./components/parameters/DomainActionId.yaml
     HookDecisionId:
@@ -1833,12 +1847,22 @@ components:
       $ref: ./components/schemas/EventAttendee.yaml
     EventAttendeePage:
       $ref: ./components/schemas/EventAttendeePage.yaml
+    EventBallot:
+      $ref: ./components/schemas/EventBallot.yaml
+    EventBallotPage:
+      $ref: ./components/schemas/EventBallotPage.yaml
     EventCancelReason:
       $ref: ./components/schemas/EventCancelReason.yaml
     EventCancelRequest:
       $ref: ./components/schemas/EventCancelRequest.yaml
     EventCancellation:
       $ref: ./components/schemas/EventCancellation.yaml
+    EventCandidate:
+      $ref: ./components/schemas/EventCandidate.yaml
+    EventCandidateCreate:
+      $ref: ./components/schemas/EventCandidateCreate.yaml
+    EventCandidateList:
+      $ref: ./components/schemas/EventCandidateList.yaml
     EventCreate:
       $ref: ./components/schemas/EventCreate.yaml
     EventInvitation:
@@ -1869,6 +1893,10 @@ components:
       $ref: ./components/schemas/EventViewer.yaml
     EventVisibility:
       $ref: ./components/schemas/EventVisibility.yaml
+    EventVote:
+      $ref: ./components/schemas/EventVote.yaml
+    EventVoteUpdate:
+      $ref: ./components/schemas/EventVoteUpdate.yaml
     ExternalAuthorizationStart:
       $ref: ./components/schemas/ExternalAuthorizationStart.yaml
     ExternalConfirmationRequest:

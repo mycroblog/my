@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/EventId.yaml
+  - $ref: ../components/parameters/EventCandidateId.yaml
+get:
+  operationId: listEventCandidateVotes
+  summary: List the answers to a candidate date of an event
+  description: |
+    Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
+    the event.
+  tags: [events]
+  security:
+    - oauth2: ["read:events"]
+  parameters:
+    - $ref: ../components/parameters/EventVoteFilter.yaml
+    - $ref: ../components/parameters/Cursor.yaml
+    - $ref: ../components/parameters/Limit.yaml
+  responses:
+    "200":
+      description: A page of the answers.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/EventBallotPage.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

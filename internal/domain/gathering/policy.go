@@ -33,6 +33,8 @@ type Facts struct {
 	Invited bool
 	// Answered reports that the viewer answered the event (any answer, declined included).
 	Answered bool
+	// Voted reports that the viewer answered a candidate of the event's date poll (any vote).
+	Voted bool
 	// Approved reports that an organizer approved the viewer's answer of going or maybe and did
 	// not revoke it, and that the viewer has not declined since.
 	Approved bool
@@ -50,7 +52,8 @@ type Facts struct {
 //  2. a viewer with a block, either way, with the organizer or a co-organizer does not see it;
 //  3. the organizer and a co-organizer see it;
 //  4. a viewer invited and not revoked sees it, whatever the answer;
-//  5. a viewer who answered it sees it, so that narrowing the visibility shuts nobody out;
+//  5. a viewer who answered it or its date poll sees it, so that narrowing the visibility shuts
+//     nobody out;
 //  6. by the visibility: public is seen, followers when the viewer follows the organizer,
 //     following when the organizer follows the viewer, mutuals when they follow each other,
 //     and invited is not.
@@ -64,7 +67,7 @@ func CanSee(e Event, viewer Viewer, f Facts) bool {
 		return false
 	case Organizes(e, viewer, f):
 		return true
-	case f.Invited, f.Answered:
+	case f.Invited, f.Answered, f.Voted:
 		return true
 	}
 	switch e.Visibility {

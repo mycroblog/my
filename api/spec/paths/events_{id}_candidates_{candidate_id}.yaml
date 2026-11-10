@@ -1,0 +1,22 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/EventId.yaml
+  - $ref: ../components/parameters/EventCandidateId.yaml
+delete:
+  operationId: withdrawEventCandidate
+  summary: Withdraw a candidate date of an event
+  description: |
+    Withdraws a candidate date of the event's date poll, by the organizer or a co-organizer. The
+    users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
+    `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
+    A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+    the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+    `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+  tags: [events]
+  security:
+    - oauth2: ["write:events"]
+  responses:
+    "204":
+      description: Done.
+    default:
+      $ref: ../components/responses/Problem.yaml

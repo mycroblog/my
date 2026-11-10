@@ -17,7 +17,8 @@ var ErrNotAttending = errors.New("gathering: the account does not attend the eve
 // declined, changed as often as the account likes until the event starts. A new answer of going
 // to an event whose attendees who answer going reached its capacity fails with ErrFull; maybe
 // and declined never do. An answer of declined ends an approval. It fails with ErrNotFound,
-// ErrInvalidAnswer, and ErrClosed for an event that started or was cancelled.
+// ErrInvalidAnswer, ErrClosed for an event that started or was cancelled, and ErrUnscheduled for
+// an event whose date poll was not confirmed yet.
 func (s *Service) Answer(ctx context.Context, accountID, id string, answer gathering.Answer) (View, error) {
 	if !answer.Valid() {
 		return View{}, ErrInvalidAnswer
@@ -35,7 +36,13 @@ func (s *Service) Answer(ctx context.Context, accountID, id string, answer gathe
 		if err != nil {
 			return err
 		}
-		if rec.Cancellation != nil || !now.Before(rec.Head.Schedule.StartsAt) {
+		if rec.Cancellation != nil {
+			return ErrClosed
+		}
+		if !rec.Scheduled() {
+			return ErrUnscheduled
+		}
+		if !now.Before(rec.Head.Schedule.StartsAt) {
 			return ErrClosed
 		}
 		cur, err := s.d.Repository.FindAttendee(ctx, tx, id, accountID)

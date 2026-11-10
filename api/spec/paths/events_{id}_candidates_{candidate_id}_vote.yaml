@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: MIT
+parameters:
+  - $ref: ../components/parameters/EventId.yaml
+  - $ref: ../components/parameters/EventCandidateId.yaml
+put:
+  operationId: voteEventCandidate
+  summary: Answer a candidate date of an event
+  description: |
+    Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+    organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+    name to everyone who sees the event and keeps the event visible to the user. A 409
+    `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+    `/api/v1/problems/event-closed` for a cancelled event.
+  tags: [events]
+  security:
+    - oauth2: ["write:events"]
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas/EventVoteUpdate.yaml
+  responses:
+    "200":
+      description: The candidate.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/EventCandidate.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: MIT
 description: |
   Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
-  date (`starts_at` and `ends_at` together) is checked as a new event's.
+  date (`starts_at` and `ends_at` together) is checked as a new event's; on an `unscheduled`
+  event, it fixes the date without a candidate and ends the date poll.
 type: object
 properties:
   title:

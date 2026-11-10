@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: MIT
+description: A candidate date of an event's date poll, in UTC.
+type: object
+required: [starts_at, ends_at]
+properties:
+  starts_at:
+    description: After now and at most a year ahead.
+    type: string
+    format: date-time
+  ends_at:
+    description: After `starts_at` and at most 7 days later.
+    type: string
+    format: date-time

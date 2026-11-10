@@ -248,13 +248,15 @@ the summary, and the cover; the body shows where the article is opened.
 ### Events
 
 Local users plan events with a date, a time zone, and up to three places: a voice chat room of this server, a place to
-meet in person, and a link. Events are for the users of this server only: they are never federated, and remote users
+meet in person, and a link. Instead of a date, an organizer can offer up to 20 candidate dates: the users who see the
+event answer each one yes, maybe, or no, and the organizer or a co-organizer then confirms one, which fixes the date.
+Until then, nobody answers whether they will come. Events are for the users of this server only: they are never federated, and remote users
 and visitors who are not signed in see none of them.
 
 - Who may create one is `event_creators`. An organizer must also be able to open voice chat rooms (`voice_room_starters`
   and the configuration `voice`) to hold an event in one.
 - The organizer chooses who sees the event: every local user, the organizer's followers, the people the organizer
-  follows, mutual follows, or only the invited. The invited and those who answered always see it, and a block between
+  follows, mutual follows, or only the invited. The invited and those who answered it or its candidate dates always see it, and a block between
   a user and the organizer or a co-organizer hides it from that user.
 - The address and the link of an event are shown only to the attendees that the organizer or a co-organizer approved,
   unless the organizer shows them to everyone who sees the event. Links must be `http` or `https`, and the server never

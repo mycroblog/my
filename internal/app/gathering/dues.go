@@ -98,7 +98,7 @@ func refreshDue(ctx context.Context, tx uow.Tx, repo Repository, id string, now 
 	if err != nil {
 		return err
 	}
-	if rec.Cancellation != nil {
+	if rec.Cancellation != nil || !rec.Scheduled() {
 		return repo.DeleteDue(ctx, tx, id)
 	}
 	if !fresh {
@@ -121,14 +121,14 @@ func refreshDue(ctx context.Context, tx uow.Tx, repo Repository, id string, now 
 	return repo.SetDue(ctx, tx, id, next)
 }
 
-// RegisterDueProjectors registers the projectors that keep gathering_dues: the creation and a new
-// date derive the due time from scratch, an answer derives it again with the attendee's
+// RegisterDueProjectors registers the projectors that keep gathering_dues: the creation, a new
+// date, and the confirmation of a date poll derive the due time from scratch, an answer derives it again with the attendee's
 // reminders, and the cancellation deletes it. They run after RegisterProjectors, whose
 // projections they read.
 func RegisterDueProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventCreated, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
-		c := e.(Created).Confirmation
-		return refreshDue(ctx, tx, repo, c.GatheringID, c.ConfirmedAt, true)
+		g := e.(Created).Gathering
+		return refreshDue(ctx, tx, repo, g.ID, g.CreatedAt, true)
 	})
 	r.Register(EventRescheduled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		c := e.(Rescheduled).Confirmation
@@ -141,6 +141,7 @@ func RegisterDueProjectors(r *uow.Projectors, repo Repository) {
 	r.Register(EventCancelled, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return repo.DeleteDue(ctx, tx, e.(Cancelled).Cancellation.GatheringID)
 	})
+	registerPollDueProjectors(r, repo)
 }
 
 // rebuildBatch is how many events RebuildDues reads at a time.

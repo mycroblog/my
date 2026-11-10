@@ -96,15 +96,15 @@ func (q *Queries) EraseGatheringRevision(ctx context.Context, id string) error {
 
 const getGathering = `-- name: GetGathering :one
 SELECT g.id, g.organizer_account_id, g.created_at,
-  h.revision_id, h.confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
+  h.revision_id, CAST(COALESCE(h.confirmation_id, '') AS TEXT) AS confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
   v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.revised_by_account_id, v.revised_at,
-  c.confirmed_by_account_id, c.confirmed_at,
+  CAST(COALESCE(c.confirmed_by_account_id, '') AS TEXT) AS confirmed_by_account_id, CAST(COALESCE(c.confirmed_at, 0) AS INTEGER) AS confirmed_at,
   x.reason AS cancel_reason, x.cancelled_by_account_id, x.note AS cancel_note, x.cancelled_at,
   (SELECT COUNT(*) FROM gathering_revisions n WHERE n.gathering_id = g.id) AS revision_count
 FROM gatherings g
 JOIN gathering_heads h ON h.gathering_id = g.id
 JOIN gathering_revisions v ON v.id = h.revision_id
-JOIN gathering_schedule_confirmations c ON c.id = h.confirmation_id
+LEFT JOIN gathering_schedule_confirmations c ON c.id = h.confirmation_id
 LEFT JOIN gathering_cancellations x ON x.gathering_id = g.id
 WHERE g.id = ?
 `
@@ -136,8 +136,9 @@ type GetGatheringRow struct {
 	RevisionCount        int64
 }
 
-// GetGathering returns an event with its head, its current revision and date, its cancellation
-// (NULL columns for none), and how many revisions it has.
+// GetGathering returns an event with its head, its current revision and date (” and the zero
+// time, or the creation on PostgreSQL, for an unscheduled event), its cancellation (NULL columns
+// for none), and how many revisions it has.
 func (q *Queries) GetGathering(ctx context.Context, id string) (GetGatheringRow, error) {
 	row := q.db.QueryRowContext(ctx, getGathering, id)
 	var i GetGatheringRow
@@ -349,18 +350,21 @@ INSERT INTO gathering_heads (gathering_id, organizer_account_id, revision_id, co
 SELECT g.id, g.organizer_account_id,
   (SELECT v.id FROM gathering_revisions v WHERE v.gathering_id = g.id ORDER BY v.id DESC LIMIT 1),
   c.id,
-  CASE WHEN EXISTS (SELECT 1 FROM gathering_cancellations x WHERE x.gathering_id = g.id) THEN 'cancelled' ELSE 'scheduled' END,
-  c.starts_at, c.ends_at,
+  CASE WHEN EXISTS (SELECT 1 FROM gathering_cancellations x WHERE x.gathering_id = g.id) THEN 'cancelled'
+    WHEN c.id IS NULL THEN 'unscheduled' ELSE 'scheduled' END,
+  COALESCE(c.starts_at, (SELECT MIN(k.starts_at) FROM gathering_candidates k WHERE k.gathering_id = g.id AND NOT EXISTS (SELECT 1 FROM gathering_candidate_withdrawals w WHERE w.candidate_id = k.id))),
+  COALESCE(c.ends_at, (SELECT MAX(k.ends_at) FROM gathering_candidates k WHERE k.gathering_id = g.id AND NOT EXISTS (SELECT 1 FROM gathering_candidate_withdrawals w WHERE w.candidate_id = k.id))),
   (SELECT COUNT(*) FROM gathering_attendees a WHERE a.gathering_id = g.id AND a.answer = 'going')
 FROM gatherings g
-JOIN gathering_schedule_confirmations c ON c.id = (
+LEFT JOIN gathering_schedule_confirmations c ON c.id = (
   SELECT c2.id FROM gathering_schedule_confirmations c2 WHERE c2.gathering_id = g.id ORDER BY c2.id DESC LIMIT 1
 )
 WHERE g.id = ?
 `
 
 // InsertGatheringHead derives the head of an event: its newest revision and confirmation,
-// cancelled when it has a cancellation, and its attendees who answer going.
+// cancelled when it has a cancellation, unscheduled without a confirmation (its times then span
+// the candidates that were not withdrawn), and its attendees who answer going.
 func (q *Queries) InsertGatheringHead(ctx context.Context, id string) error {
 	_, err := q.db.ExecContext(ctx, insertGatheringHead, id)
 	return err
@@ -749,7 +753,8 @@ SELECT CAST(v.value AS TEXT) AS gathering_id,
   EXISTS (SELECT 1 FROM gathering_invitations i WHERE i.gathering_id = v.value AND i.invitee_account_id = ?1
     AND NOT EXISTS (SELECT 1 FROM gathering_invitation_revocations x WHERE x.invitation_id = i.id)) AS invited,
   CAST(COALESCE((SELECT a.answer FROM gathering_attendees a WHERE a.gathering_id = v.value AND a.account_id = ?1), '') AS TEXT) AS answer,
-  CAST(COALESCE((SELECT a.approved FROM gathering_attendees a WHERE a.gathering_id = v.value AND a.account_id = ?1), 0) AS INTEGER) AS approved
+  CAST(COALESCE((SELECT a.approved FROM gathering_attendees a WHERE a.gathering_id = v.value AND a.account_id = ?1), 0) AS INTEGER) AS approved,
+  EXISTS (SELECT 1 FROM gathering_votes o WHERE o.gathering_id = v.value AND o.account_id = ?1) AS voted
 FROM json_each(CAST(?2 AS TEXT)) v
 `
 
@@ -763,10 +768,12 @@ type ListGatheringViewerFactsRow struct {
 	Invited     bool
 	Answer      string
 	Approved    int64
+	Voted       bool
 }
 
 // ListGatheringViewerFacts returns, for each event of a JSON array, whether the account has an
-// invitation that was not revoked, whether it answered, and whether its answer is approved.
+// invitation that was not revoked, whether it answered, whether its answer is approved, and
+// whether it voted in its date poll.
 func (q *Queries) ListGatheringViewerFacts(ctx context.Context, arg ListGatheringViewerFactsParams) ([]ListGatheringViewerFactsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listGatheringViewerFacts, arg.AccountID, arg.GatheringIds)
 	if err != nil {
@@ -781,6 +788,7 @@ func (q *Queries) ListGatheringViewerFacts(ctx context.Context, arg ListGatherin
 			&i.Invited,
 			&i.Answer,
 			&i.Approved,
+			&i.Voted,
 		); err != nil {
 			return nil, err
 		}
@@ -797,17 +805,17 @@ func (q *Queries) ListGatheringViewerFacts(ctx context.Context, arg ListGatherin
 
 const listUpcomingGatherings = `-- name: ListUpcomingGatherings :many
 SELECT g.id, g.organizer_account_id, g.created_at,
-  h.revision_id, h.confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
+  h.revision_id, CAST(COALESCE(h.confirmation_id, '') AS TEXT) AS confirmation_id, h.state, h.starts_at, h.ends_at, h.going_count,
   v.title, v.description, v.visibility, v.time_zone, v.place_disclosure, v.capacity, v.revised_by_account_id, v.revised_at,
-  c.confirmed_by_account_id, c.confirmed_at,
+  CAST(COALESCE(c.confirmed_by_account_id, '') AS TEXT) AS confirmed_by_account_id, CAST(COALESCE(c.confirmed_at, 0) AS INTEGER) AS confirmed_at,
   x.reason AS cancel_reason, x.cancelled_by_account_id, x.note AS cancel_note, x.cancelled_at,
   (SELECT COUNT(*) FROM gathering_revisions n WHERE n.gathering_id = g.id) AS revision_count
 FROM gathering_heads h
 JOIN gatherings g ON g.id = h.gathering_id
 JOIN gathering_revisions v ON v.id = h.revision_id
-JOIN gathering_schedule_confirmations c ON c.id = h.confirmation_id
+LEFT JOIN gathering_schedule_confirmations c ON c.id = h.confirmation_id
 LEFT JOIN gathering_cancellations x ON x.gathering_id = g.id
-WHERE h.state = 'scheduled' AND h.ends_at > ?1
+WHERE h.state IN ('unscheduled', 'scheduled') AND h.ends_at > ?1
   AND (CAST(?2 AS TEXT) = '' OR h.starts_at > ?3
     OR (h.starts_at = ?3 AND h.gathering_id > CAST(?2 AS TEXT)))
 ORDER BY h.starts_at, h.gathering_id
@@ -848,8 +856,8 @@ type ListUpcomingGatheringsRow struct {
 	RevisionCount        int64
 }
 
-// ListUpcomingGatherings returns at most row_limit events that are scheduled and have not ended at
-// now, by the nearest start first and then by ID, after the position (after_starts_at, after_id)
+// ListUpcomingGatherings returns at most row_limit events that are scheduled or unscheduled and
+// have not ended at now (an unscheduled event by the span of its candidates), by the nearest start first and then by ID, after the position (after_starts_at, after_id)
 // unless after_id is ”; the columns are those of GetGathering.
 func (q *Queries) ListUpcomingGatherings(ctx context.Context, arg ListUpcomingGatheringsParams) ([]ListUpcomingGatheringsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listUpcomingGatherings,
@@ -944,11 +952,13 @@ INSERT INTO gathering_heads (gathering_id, organizer_account_id, revision_id, co
 SELECT g.id, g.organizer_account_id,
   (SELECT v.id FROM gathering_revisions v WHERE v.gathering_id = g.id ORDER BY v.id DESC LIMIT 1),
   c.id,
-  CASE WHEN EXISTS (SELECT 1 FROM gathering_cancellations x WHERE x.gathering_id = g.id) THEN 'cancelled' ELSE 'scheduled' END,
-  c.starts_at, c.ends_at,
+  CASE WHEN EXISTS (SELECT 1 FROM gathering_cancellations x WHERE x.gathering_id = g.id) THEN 'cancelled'
+    WHEN c.id IS NULL THEN 'unscheduled' ELSE 'scheduled' END,
+  COALESCE(c.starts_at, (SELECT MIN(k.starts_at) FROM gathering_candidates k WHERE k.gathering_id = g.id AND NOT EXISTS (SELECT 1 FROM gathering_candidate_withdrawals w WHERE w.candidate_id = k.id))),
+  COALESCE(c.ends_at, (SELECT MAX(k.ends_at) FROM gathering_candidates k WHERE k.gathering_id = g.id AND NOT EXISTS (SELECT 1 FROM gathering_candidate_withdrawals w WHERE w.candidate_id = k.id))),
   (SELECT COUNT(*) FROM gathering_attendees a WHERE a.gathering_id = g.id AND a.answer = 'going')
 FROM gatherings g
-JOIN gathering_schedule_confirmations c ON c.id = (
+LEFT JOIN gathering_schedule_confirmations c ON c.id = (
   SELECT c2.id FROM gathering_schedule_confirmations c2 WHERE c2.gathering_id = g.id ORDER BY c2.id DESC LIMIT 1
 )
 `

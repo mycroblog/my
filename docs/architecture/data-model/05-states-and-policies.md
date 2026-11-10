@@ -113,10 +113,10 @@
 ### 5.7 イベントの判定
 
 イベント（§4.19）が見えるか・その場所が見えるか・主催できるかは、`internal/domain/gathering` の純粋な関数が決めます（[ADR-0161](../../adr/0161-events.md) §3・§9）。
-フォロー（承認済みの `follow_edges`）・ブロック（`block_edges`、どちら向きも）・招待・出欠・承認・アカウントの状態と制限は `internal/app/gathering` が集めて `gathering.Facts` / `gathering.OrganizerFacts` で渡します。
-一覧・イベントのページ・出欠・招待・API のすべてがこれを通り、見えない場所は `internal/app/gathering` の外に出しません（`View.HiddenPlaces` は種類だけ）。
+フォロー（承認済みの `follow_edges`）・ブロック（`block_edges`、どちら向きも）・招待・出欠・日程の候補への答え・承認・アカウントの状態と制限は `internal/app/gathering` が集めて `gathering.Facts` / `gathering.OrganizerFacts` で渡します。
+一覧・イベントのページ・出欠・日程の候補への答え・招待・API のすべてがこれを通り、見えない場所は `internal/app/gathering` の外に出しません（`View.HiddenPlaces` は種類だけ）。
 
-- `CanSee(event, viewer, facts)`: 1. 未ログイン・リモート・凍結・削除の閲覧者は偽、2. 主催者か共同主催者とブロックの関係なら偽、3. 主催者・共同主催者は真、4. 取り消されていない招待があれば真、5. 出欠に答えていれば真（答えは「行かない」を含む）、6. `visibility` が `public` なら真、`followers` は主催者をフォローしていれば真、`following` は主催者にフォローされていれば真、`mutuals` は相互フォローなら真、`invited` は偽。中止したイベントと終わったイベントにも同じ規則を使います。
+- `CanSee(event, viewer, facts)`: 1. 未ログイン・リモート・凍結・削除の閲覧者は偽、2. 主催者か共同主催者とブロックの関係なら偽、3. 主催者・共同主催者は真、4. 取り消されていない招待があれば真、5. 出欠か日程の候補に答えていれば真（答えは「行かない」「行けない」を含む）、6. `visibility` が `public` なら真、`followers` は主催者をフォローしていれば真、`following` は主催者にフォローされていれば真、`mutuals` は相互フォローなら真、`invited` は偽。中止したイベントと終わったイベントにも同じ規則を使います。
 - `CanSeePlace(event, kind, viewer, facts)`: `CanSee` が真で、主催者か共同主催者、場所が通話（`voice`）、`place_disclosure` が `viewers`、承認されている（`gathering_attendees.approved`）のどれか。
 - `CanOrganize(facts)`: ローカルの有効なアカウントで、制限されておらず、`event_creators` が `everyone` か権限 `create_events` を持つ。作るときと主催者が改版するときに検査します。通話の場所を足すときは、主催者が `voice.CanHost` を満たし、通話が `off` でないことも要ります。
 - 「フォロワー」「フォローしている人」「相互フォロー」の基準は主催者です（主催者は変わりません）。

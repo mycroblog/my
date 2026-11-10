@@ -37,3 +37,14 @@ func TestDueContract(t *testing.T) {
 		return gatheringtest.Harness{UnitOfWork: db, Gathering: NewRepository(db)}
 	})
 }
+
+func TestPollContract(t *testing.T) {
+	gatheringtest.PollContract(t, func(t *testing.T, opts uow.Options) gatheringtest.Harness {
+		db, err := postgres.Open(t.Context(), pgtest.NewDatabase(t), opts)
+		if err != nil {
+			t.Fatalf("Open: %v", err)
+		}
+		t.Cleanup(db.Close)
+		return gatheringtest.Harness{UnitOfWork: db, Gathering: NewRepository(db)}
+	})
+}

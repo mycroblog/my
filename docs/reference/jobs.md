@@ -165,7 +165,7 @@ Mail jobs run when `mail` is set to a provider. With `mail = none`, only `identi
 | Job type | What it does | Started by | On failure | Run again |
 | --- | --- | --- | --- | --- |
 | `gathering.tick` | Reads the events whose next reminder or start has come, queues `gathering.notify` for each reminder and start that came since, and sets the time of the next one. Handles up to 1,000 events a run; the rest wait for the next run. | Schedule | Default | Next run |
-| `gathering.notify` | Sends one notification of an event: an invitation, a change of the date or place, a cancellation, a reminder, or the start. It picks the recipients when it runs, and only those who can still see the event. Above 500 of them, the first job only queues jobs of the same type for up to 500 each. A reminder or start of a date that changed since, or of an event cancelled since, sends nothing. | An invitation, a change, or a cancellation; `gathering.tick` | Default | Safe. Each notification is created once. |
+| `gathering.notify` | Sends one notification of an event: an invitation, the date confirmed from its candidate dates, a change of the date or place, a cancellation, a reminder, or the start. It picks the recipients when it runs, and only those who can still see the event. Above 500 of them, the first job only queues jobs of the same type for up to 500 each. A reminder or start of a date that changed since, or of an event cancelled since, sends nothing. | An invitation, a confirmed date, a change, or a cancellation; `gathering.tick` | Default | Safe. Each notification is created once. |
 
 ## Full-text search
 

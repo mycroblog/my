@@ -177,11 +177,13 @@ type ListKey struct {
 }
 
 // ViewerFacts are what the event's own records say of an account: invited by an invitation not
-// revoked, its current answer ("" for none), and whether the answer is approved.
+// revoked, its current answer ("" for none), whether the answer is approved, and whether it voted
+// in the event's date poll.
 type ViewerFacts struct {
 	Invited  bool
 	Answer   gathering.Answer
 	Approved bool
+	Voted    bool
 }
 
 // Repository is the persistence port of the gathering module (data-model §4.19). The writes take
@@ -189,6 +191,7 @@ type ViewerFacts struct {
 type Repository interface {
 	ProjectionRepository
 	DueRepository
+	PollRepository
 
 	// InsertGathering records an event.
 	InsertGathering(ctx context.Context, tx uow.Tx, g Gathering) error

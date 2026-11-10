@@ -67,6 +67,48 @@ CREATE TABLE gathering_schedule_confirmations (
 );
 CREATE INDEX gathering_schedule_confirmations_gathering_id_id ON gathering_schedule_confirmations (gathering_id, id DESC);
 
+-- Resource: a candidate date of an event's date poll (ADR-0161 §7), at most 20 that were not
+-- withdrawn per event (internal/domain/gathering). Its times are in UTC.
+CREATE TABLE gathering_candidates (
+  id uuid NOT NULL PRIMARY KEY,
+  gathering_id uuid NOT NULL,
+  starts_at timestamptz NOT NULL,
+  ends_at timestamptz NOT NULL,
+  added_by_account_id uuid NOT NULL,
+  added_at timestamptz NOT NULL,
+  CONSTRAINT gathering_candidates_check CHECK (ends_at > starts_at)
+);
+CREATE INDEX gathering_candidates_gathering_id_id ON gathering_candidates (gathering_id, id);
+
+-- Event: the withdrawal of a candidate, once.
+CREATE TABLE gathering_candidate_withdrawals (
+  candidate_id uuid NOT NULL PRIMARY KEY,
+  withdrawn_by_account_id uuid NOT NULL,
+  withdrawn_at timestamptz NOT NULL
+);
+
+-- Current value: the answer of an account to a candidate, which it changes until a candidate is
+-- confirmed; its history means nothing (ADR-0020 rule 5). gathering_id, the candidate's event,
+-- finds the voters of an event.
+CREATE TABLE gathering_votes (
+  candidate_id uuid NOT NULL,
+  account_id uuid NOT NULL,
+  gathering_id uuid NOT NULL,
+  vote text NOT NULL CHECK (vote IN ('yes', 'maybe', 'no')),
+  voted_at timestamptz NOT NULL,
+  PRIMARY KEY (candidate_id, account_id)
+);
+-- The voters of an event.
+CREATE INDEX gathering_votes_gathering_account ON gathering_votes (gathering_id, account_id);
+
+-- Resource (child of a confirmation): the candidate that a confirmation fixed, for a confirmation
+-- made from a candidate only. A candidate is confirmed once.
+CREATE TABLE gathering_confirmation_candidates (
+  confirmation_id uuid NOT NULL PRIMARY KEY,
+  candidate_id uuid NOT NULL
+);
+CREATE UNIQUE INDEX gathering_confirmation_candidates_candidate_id ON gathering_confirmation_candidates (candidate_id);
+
 -- Resource: an invitation to an event. An account is invited to an event once.
 CREATE TABLE gathering_invitations (
   id uuid NOT NULL PRIMARY KEY,
@@ -129,13 +171,15 @@ CREATE TABLE gathering_cancellations (
 );
 
 -- Projection: the current revision and date of each event, whether it was cancelled, and how
--- many attendees answer going. The list reads it.
+-- many attendees answer going. The list reads it. An event without a confirmed date is
+-- unscheduled: it has no confirmation_id, and starts_at and ends_at span the candidates of its
+-- date poll that were not withdrawn.
 CREATE TABLE gathering_heads (
   gathering_id uuid NOT NULL PRIMARY KEY,
   organizer_account_id uuid NOT NULL,
   revision_id uuid NOT NULL,
-  confirmation_id uuid NOT NULL,
-  state text NOT NULL CHECK (state IN ('scheduled', 'cancelled')),
+  confirmation_id uuid,
+  state text NOT NULL CHECK (state IN ('unscheduled', 'scheduled', 'cancelled')),
   starts_at timestamptz NOT NULL,
   ends_at timestamptz NOT NULL,
   going_count integer NOT NULL CHECK (going_count >= 0)

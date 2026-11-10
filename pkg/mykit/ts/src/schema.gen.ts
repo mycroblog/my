@@ -5208,7 +5208,9 @@ export interface paths {
         put?: never;
         /**
          * Create an event
-         * @description Creates an event that the user organizes, with a fixed date. The user must be a local,
+         * @description Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+         *     date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+         *     or neither, are a 422. The user must be a local,
          *     unrestricted user who may create events (the instance setting `event_creators`, or the
          *     `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
          *     place needs the voice chat on and a user who may host its rooms: a 422
@@ -5246,7 +5248,8 @@ export interface paths {
         head?: never;
         /**
          * Change an event
-         * @description Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+         * @description Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+         *     on an `unscheduled` event ends its date poll, as a confirmation does. Only the
          *     organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
          *     `voice` place needs the organizer to be able to host rooms (a 422
          *     `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -5272,7 +5275,7 @@ export interface paths {
          *     zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
          *     `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
          *     user sees: a hidden place never appears in the file. A 404 for an event that the user does
-         *     not see.
+         *     not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
          */
         get: operations["getEventCalendar"];
         put?: never;
@@ -5326,7 +5329,8 @@ export interface paths {
          *     reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
          *     answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
          *     `declined` are never refused. `declined` ends an approval. A 409
-         *     `/api/v1/problems/event-closed` for an event that started or was cancelled.
+         *     `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+         *     `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
          */
         put: operations["answerEvent"];
         post?: never;
@@ -5484,6 +5488,156 @@ export interface paths {
          *     `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
          */
         delete: operations["removeEventCoorganizer"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the candidate dates of an event
+         * @description The candidate dates of the event's date poll that were not withdrawn, the earliest start
+         *     first, with how many users answered each `yes`, `maybe`, or `no` and the user's own answer,
+         *     for everyone who sees the event. An event created with a date has none.
+         */
+        get: operations["listEventCandidates"];
+        put?: never;
+        /**
+         * Add a candidate date to an event
+         * @description Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+         *     a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+         *     the past are a 422.
+         *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+         *     the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+         *     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+         */
+        post: operations["addEventCandidate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates/{candidate_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Withdraw a candidate date of an event
+         * @description Withdraws a candidate date of the event's date poll, by the organizer or a co-organizer. The
+         *     users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
+         *     `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
+         *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+         *     the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+         *     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+         */
+        delete: operations["withdrawEventCandidate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates/{candidate_id}/vote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Answer a candidate date of an event
+         * @description Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+         *     organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+         *     name to everyone who sees the event and keeps the event visible to the user. A 409
+         *     `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+         *     `/api/v1/problems/event-closed` for a cancelled event.
+         */
+        put: operations["voteEventCandidate"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates/{candidate_id}/votes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * List the answers to a candidate date of an event
+         * @description Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
+         *     the event.
+         */
+        get: operations["listEventCandidateVotes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/events/{id}/candidates/{candidate_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm a candidate date of an event
+         * @description Fixes the date of the event to a candidate, by the organizer or a co-organizer: the event is
+         *     `scheduled`, its poll takes no more answers, the reminders follow the date, and the users who
+         *     answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
+         *     change of the date is a `PATCH` of the event. A candidate that has started is a 422.
+         *     A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+         *     the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+         *     `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+         */
+        post: operations["confirmEventCandidate"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -13977,9 +14131,16 @@ export interface components {
             places: components["schemas"]["EventPlace"][];
             /** @description The kinds of the places that the user does not see. */
             hidden_places: components["schemas"]["EventPlaceKind"][];
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description The start of the event; for an `unscheduled` event, the earliest start of its candidate
+             *     dates (`GET /events/{id}/candidates`).
+             */
             starts_at: string;
-            /** Format: date-time */
+            /**
+             * Format: date-time
+             * @description The end of the event; for an `unscheduled` event, the latest end of its candidate dates.
+             */
             ends_at: string;
             state: components["schemas"]["EventState"];
             cancellation?: components["schemas"]["EventCancellation"];
@@ -14012,6 +14173,15 @@ export interface components {
         EventAttendeePage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["EventAttendee"][];
         };
+        /** @description The answer of a user to a candidate date. */
+        EventBallot: {
+            account: components["schemas"]["Account"];
+            vote: components["schemas"]["EventVote"];
+        };
+        /** @description A page of the answers to a candidate date, in the order of the users' IDs. */
+        EventBallotPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["EventBallot"][];
+        };
         /**
          * @description Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
          *     suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
@@ -14031,7 +14201,45 @@ export interface components {
             /** Format: date-time */
             cancelled_at: string;
         };
-        /** @description A new event with a fixed date. */
+        /**
+         * @description A candidate date of an event's date poll, with how many users answered it each way. Times are
+         *     in UTC.
+         */
+        EventCandidate: {
+            id: components["schemas"]["Id"];
+            /** Format: date-time */
+            starts_at: string;
+            /** Format: date-time */
+            ends_at: string;
+            yes_count: number;
+            maybe_count: number;
+            no_count: number;
+            /** @description The user's own answer; absent before the user answers. */
+            vote?: components["schemas"]["EventVote"];
+            /** @description Whether the organizers fixed the event's date to this candidate. */
+            confirmed: boolean;
+        };
+        /** @description A candidate date of an event's date poll, in UTC. */
+        EventCandidateCreate: {
+            /**
+             * Format: date-time
+             * @description After now and at most a year ahead.
+             */
+            starts_at: string;
+            /**
+             * Format: date-time
+             * @description After `starts_at` and at most 7 days later.
+             */
+            ends_at: string;
+        };
+        /** @description The candidate dates of an event's date poll, the earliest start first; up to 20. */
+        EventCandidateList: {
+            items: components["schemas"]["EventCandidate"][];
+        };
+        /**
+         * @description A new event, either with a fixed date (`starts_at` and `ends_at`) or with the candidate dates
+         *     of a date poll (`candidates`), not both.
+         */
         EventCreate: {
             /** @description 1 to 100 characters on one line. */
             title: string;
@@ -14051,12 +14259,17 @@ export interface components {
              * Format: date-time
              * @description After now and at most a year ahead.
              */
-            starts_at: string;
+            starts_at?: string;
             /**
              * Format: date-time
              * @description After `starts_at` and at most 7 days later.
              */
-            ends_at: string;
+            ends_at?: string;
+            /**
+             * @description 1 to 20 different candidate dates, each checked as a fixed date: the event is
+             *     `unscheduled` until the organizers confirm one of them.
+             */
+            candidates?: components["schemas"]["EventCandidateCreate"][];
         };
         /**
          * @description An invitation to an event. The invited user sees the event until the invitation is revoked,
@@ -14140,14 +14353,16 @@ export interface components {
             answer: components["schemas"]["EventAnswer"];
         };
         /**
-         * @description Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
-         *     `ends_at` is in the past.
+         * @description Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
+         *     `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+         *     past.
          * @enum {string}
          */
-        EventState: "scheduled" | "cancelled";
+        EventState: "unscheduled" | "scheduled" | "cancelled";
         /**
          * @description Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
-         *     date (`starts_at` and `ends_at` together) is checked as a new event's.
+         *     date (`starts_at` and `ends_at` together) is checked as a new event's; on an `unscheduled`
+         *     event, it fixes the date without a candidate and ends the date poll.
          */
         EventUpdate: {
             title?: string;
@@ -14184,6 +14399,15 @@ export interface components {
          * @enum {string}
          */
         EventVisibility: "public" | "followers" | "following" | "mutuals" | "invited";
+        /**
+         * @description An answer to a candidate date of an event's date poll.
+         * @enum {string}
+         */
+        EventVote: "yes" | "maybe" | "no";
+        /** @description An answer to a candidate date. */
+        EventVoteUpdate: {
+            vote: components["schemas"]["EventVote"];
+        };
         /** @description Where the browser goes to sign in at a login provider. */
         ExternalAuthorizationStart: {
             /** @description The URL on this server that sends the browser on to the provider. */
@@ -16750,6 +16974,11 @@ export interface components {
          *     - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
          *       it can.
          *     - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+         *     - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
+         *     - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
+         *       takes no more candidates, answers, or confirmations.
+         *     - `/api/v1/problems/event-last-candidate` (409): the last candidate of a date poll cannot be
+         *       withdrawn.
          *     - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
          *       be searched (`Instance.full_text_search.available`).
          *     - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
@@ -19310,8 +19539,12 @@ export interface components {
         ErrorGroupId: components["schemas"]["Id"];
         /** @description The ID of the account. */
         EventAccountId: components["schemas"]["Id"];
+        /** @description The ID of the candidate date. */
+        EventCandidateId: components["schemas"]["Id"];
         /** @description The ID of the event. */
         EventId: components["schemas"]["Id"];
+        /** @description Only the answers of this kind; every answer when omitted. */
+        EventVoteFilter: components["schemas"]["EventVote"];
         /** @description The ID of the domain action. */
         DomainActionId: components["schemas"]["Id"];
         /** @description The ID of the decision. */
@@ -25493,6 +25726,176 @@ export interface operations {
                 id: components["parameters"]["EventId"];
                 /** @description The ID of the account. */
                 account_id: components["parameters"]["EventAccountId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The event. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listEventCandidates: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The candidates. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventCandidateList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    addEventCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventCandidateCreate"];
+            };
+        };
+        responses: {
+            /** @description The candidate. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventCandidate"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    withdrawEventCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Done. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    voteEventCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventVoteUpdate"];
+            };
+        };
+        responses: {
+            /** @description The candidate. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventCandidate"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listEventCandidateVotes: {
+        parameters: {
+            query?: {
+                /** @description Only the answers of this kind; every answer when omitted. */
+                vote?: components["parameters"]["EventVoteFilter"];
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of the answers. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventBallotPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    confirmEventCandidate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the event. */
+                id: components["parameters"]["EventId"];
+                /** @description The ID of the candidate date. */
+                candidate_id: components["parameters"]["EventCandidateId"];
             };
             cookie?: never;
         };

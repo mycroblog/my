@@ -12,10 +12,12 @@ import (
 
 // CreateInput is a new event as its organizer gives it. The empty visibility, disclosure, and
 // speakers of a voice place take their defaults, and the empty time zone the organizer's
-// (ADR-0161 §5).
+// (ADR-0161 §5). It has either a fixed date (Schedule) or the candidates of a date poll
+// (Candidates, ADR-0161 §7), not both.
 type CreateInput struct {
-	Settings gathering.Settings
-	Schedule gathering.Schedule
+	Settings   gathering.Settings
+	Schedule   gathering.Schedule
+	Candidates []gathering.Schedule
 }
 
 // Patch changes an event; a nil field keeps its value. Places replaces every place.
@@ -74,9 +76,10 @@ func (s *Service) organizer(ctx context.Context, accountID string, voice bool) (
 	return o, nil
 }
 
-// Create creates an event of accountID with a fixed date (ADR-0161 §5). It fails with
-// ErrNotEligible, ErrVoiceUnavailable, a *gathering.SettingsError, and a *kernel.RateLimitedError
-// past CreationLimit.
+// Create creates an event of accountID with a fixed date (ADR-0161 §5), or unscheduled with the
+// candidates of a date poll (ADR-0161 §7). It fails with ErrNotEligible, ErrVoiceUnavailable, a
+// *gathering.SettingsError (of FieldCandidates for both a date and candidates), and a
+// *kernel.RateLimitedError past CreationLimit.
 func (s *Service) Create(ctx context.Context, accountID string, in CreateInput) (View, error) {
 	settings := withDefaults(in.Settings)
 	_, voice := settings.Place(gathering.PlaceVoice)
@@ -91,15 +94,38 @@ func (s *Service) Create(ctx context.Context, accountID string, in CreateInput) 
 		return View{}, err
 	}
 	now := s.now()
-	if err := in.Schedule.Validate(now); err != nil {
-		return View{}, err
+	poll := in.Candidates != nil
+	var cands []gathering.Schedule
+	switch {
+	case poll && (!in.Schedule.StartsAt.IsZero() || !in.Schedule.EndsAt.IsZero()):
+		return View{}, &gathering.SettingsError{Field: gathering.FieldCandidates}
+	case poll:
+		cands = make([]gathering.Schedule, len(in.Candidates))
+		for i, c := range in.Candidates {
+			cands[i] = utc(c)
+		}
+		if err := gathering.ValidateCandidates(cands, now); err != nil {
+			return View{}, err
+		}
+	default:
+		if err := in.Schedule.Validate(now); err != nil {
+			return View{}, err
+		}
 	}
 	if err := s.take(ctx, CreationLimit, accountID); err != nil {
 		return View{}, err
 	}
 	g := Gathering{ID: s.d.IDs.NewID(), OrganizerAccountID: accountID, CreatedAt: now}
 	rev := Revision{ID: s.d.IDs.NewID(), GatheringID: g.ID, Settings: settings, RevisedByAccountID: accountID, RevisedAt: now}
-	conf := Confirmation{ID: s.d.IDs.NewID(), GatheringID: g.ID, Schedule: utc(in.Schedule), ConfirmedByAccountID: accountID, ConfirmedAt: now}
+	var conf Confirmation
+	var candidates []Candidate
+	if poll {
+		for _, c := range cands {
+			candidates = append(candidates, Candidate{ID: s.d.IDs.NewID(), GatheringID: g.ID, Schedule: c, AddedByAccountID: accountID, AddedAt: now})
+		}
+	} else {
+		conf = Confirmation{ID: s.d.IDs.NewID(), GatheringID: g.ID, Schedule: utc(in.Schedule), ConfirmedByAccountID: accountID, ConfirmedAt: now}
+	}
 	err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
 		if err := s.d.Repository.InsertGathering(ctx, tx, g); err != nil {
 			return err
@@ -107,10 +133,17 @@ func (s *Service) Create(ctx context.Context, accountID string, in CreateInput) 
 		if err := s.d.Repository.InsertRevision(ctx, tx, rev); err != nil {
 			return err
 		}
-		if err := s.d.Repository.InsertConfirmation(ctx, tx, conf); err != nil {
-			return err
+		for _, c := range candidates {
+			if err := s.d.Repository.InsertCandidate(ctx, tx, c); err != nil {
+				return err
+			}
 		}
-		return tx.Emit(ctx, Created{Gathering: g, Revision: rev, Confirmation: conf})
+		if !poll {
+			if err := s.d.Repository.InsertConfirmation(ctx, tx, conf); err != nil {
+				return err
+			}
+		}
+		return tx.Emit(ctx, Created{Gathering: g, Revision: rev, Confirmation: conf, Candidates: candidates})
 	})
 	if err != nil {
 		return View{}, err
@@ -157,7 +190,8 @@ func patched(cur gathering.Settings, p Patch) (gathering.Settings, bool) {
 // (ADR-0161 §4, §5). Only the organizer changes the visibility (ErrOrganizerOnly); the organizer's
 // eligibility is checked when the organizer revises (ErrNotEligible), and the organizer's right to
 // a voice chat room when a voice place is added (ErrVoiceUnavailable). A new date is a new
-// confirmation, checked as a new event's. It fails with ErrNotFound, ErrNotOrganizer, ErrClosed,
+// confirmation, checked as a new event's; on an event that polls its date, it confirms that date
+// without a candidate, as Confirm does. It fails with ErrNotFound, ErrNotOrganizer, ErrClosed,
 // and a *gathering.SettingsError.
 func (s *Service) Update(ctx context.Context, accountID, id string, p Patch) (View, error) {
 	v, err := s.organizing(ctx, accountID, id)
@@ -226,7 +260,11 @@ func (s *Service) Update(ctx context.Context, accountID, id string, p Patch) (Vi
 			if err := s.d.Repository.InsertConfirmation(ctx, tx, conf); err != nil {
 				return err
 			}
-			if err := tx.Emit(ctx, Rescheduled{Confirmation: conf, Previous: rec.Confirmation}); err != nil {
+			var ev uow.Event = Rescheduled{Confirmation: conf, Previous: rec.Confirmation}
+			if !rec.Scheduled() {
+				ev = ScheduleConfirmed{Confirmation: conf}
+			}
+			if err := tx.Emit(ctx, ev); err != nil {
 				return err
 			}
 		}

@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+description: An answer to a candidate date of an event's date poll.
+type: string
+enum: ["yes", "maybe", "no"]

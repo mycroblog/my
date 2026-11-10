@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: A page of the answers to a candidate date, in the order of the users' IDs.
+allOf:
+  - $ref: ./PageInfo.yaml
+  - type: object
+    required: [items]
+    properties:
+      items:
+        type: array
+        items:
+          $ref: ./EventBallot.yaml

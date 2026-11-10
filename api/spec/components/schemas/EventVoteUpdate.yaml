@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+description: An answer to a candidate date.
+type: object
+required: [vote]
+properties:
+  vote:
+    $ref: ./EventVote.yaml

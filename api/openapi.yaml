@@ -116,7 +116,7 @@ tags:
   - name: events
     description: |
       The events of the local users: creating, changing, and cancelling them, answering them,
-      the attendees and their approval, the invitations, and the co-organizers. Nothing of them
+      their date polls, the attendees and their approval, the invitations, and the co-organizers. Nothing of them
       is federated. The operations need a `read:events` or `write:events` scope, and answer 404
       for an event that the user does not see.
   - name: client-errors
@@ -7286,7 +7286,9 @@ paths:
       operationId: createEvent
       summary: Create an event
       description: |
-        Creates an event that the user organizes, with a fixed date. The user must be a local,
+        Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+        date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+        or neither, are a 422. The user must be a local,
         unrestricted user who may create events (the instance setting `event_creators`, or the
         `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
         place needs the voice chat on and a user who may host its rooms: a 422
@@ -7346,7 +7348,8 @@ paths:
       operationId: updateEvent
       summary: Change an event
       description: |
-        Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+        Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+        on an `unscheduled` event ends its date poll, as a confirmation does. Only the
         organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
         `voice` place needs the organizer to be able to host rooms (a 422
         `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -7386,7 +7389,7 @@ paths:
         zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
         `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
         user sees: a hidden place never appears in the file. A 404 for an event that the user does
-        not see.
+        not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
       tags:
         - events
       security:
@@ -7453,7 +7456,8 @@ paths:
         reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
         answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
         `declined` are never refused. `declined` ends an approval. A 409
-        `/api/v1/problems/event-closed` for an event that started or was cancelled.
+        `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+        `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
       tags:
         - events
       security:
@@ -7679,6 +7683,189 @@ paths:
       description: |
         Removes a co-organizer of the event, by its organizer. A 403
         `/api/v1/problems/event-organizer-only` for a co-organizer. A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '200':
+          description: The event.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/candidates:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+    get:
+      operationId: listEventCandidates
+      summary: List the candidate dates of an event
+      description: |
+        The candidate dates of the event's date poll that were not withdrawn, the earliest start
+        first, with how many users answered each `yes`, `maybe`, or `no` and the user's own answer,
+        for everyone who sees the event. An event created with a date has none.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      responses:
+        '200':
+          description: The candidates.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventCandidateList'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: addEventCandidate
+      summary: Add a candidate date to an event
+      description: |
+        Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+        a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+        the past are a 422.
+        A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+        the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+        `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventCandidateCreate'
+      responses:
+        '201':
+          description: The candidate.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventCandidate'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/candidates/{candidate_id}:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventCandidateId'
+    delete:
+      operationId: withdrawEventCandidate
+      summary: Withdraw a candidate date of an event
+      description: |
+        Withdraws a candidate date of the event's date poll, by the organizer or a co-organizer. The
+        users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
+        `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
+        A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+        the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+        `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      responses:
+        '204':
+          description: Done.
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/candidates/{candidate_id}/vote:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventCandidateId'
+    put:
+      operationId: voteEventCandidate
+      summary: Answer a candidate date of an event
+      description: |
+        Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+        organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+        name to everyone who sees the event and keeps the event visible to the user. A 409
+        `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+        `/api/v1/problems/event-closed` for a cancelled event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - write:events
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventVoteUpdate'
+      responses:
+        '200':
+          description: The candidate.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventCandidate'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/candidates/{candidate_id}/votes:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventCandidateId'
+    get:
+      operationId: listEventCandidateVotes
+      summary: List the answers to a candidate date of an event
+      description: |
+        Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
+        the event.
+      tags:
+        - events
+      security:
+        - oauth2:
+            - read:events
+      parameters:
+        - $ref: '#/components/parameters/EventVoteFilter'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of the answers.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventBallotPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /events/{id}/candidates/{candidate_id}/confirm:
+    parameters:
+      - $ref: '#/components/parameters/EventId'
+      - $ref: '#/components/parameters/EventCandidateId'
+    post:
+      operationId: confirmEventCandidate
+      summary: Confirm a candidate date of an event
+      description: |
+        Fixes the date of the event to a candidate, by the organizer or a co-organizer: the event is
+        `scheduled`, its poll takes no more answers, the reminders follow the date, and the users who
+        answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
+        change of the date is a `PATCH` of the event. A candidate that has started is a 422.
+        A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+        the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+        `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
       tags:
         - events
       security:
@@ -13588,6 +13775,13 @@ components:
       description: The ID of the account.
       schema:
         $ref: '#/components/schemas/Id'
+    EventCandidateId:
+      name: candidate_id
+      in: path
+      required: true
+      description: The ID of the candidate date.
+      schema:
+        $ref: '#/components/schemas/Id'
     EventId:
       name: id
       in: path
@@ -13595,6 +13789,13 @@ components:
       description: The ID of the event.
       schema:
         $ref: '#/components/schemas/Id'
+    EventVoteFilter:
+      name: vote
+      in: query
+      required: false
+      description: Only the answers of this kind; every answer when omitted.
+      schema:
+        $ref: '#/components/schemas/EventVote'
     DomainActionId:
       name: id
       in: path
@@ -21938,9 +22139,14 @@ components:
           items:
             $ref: '#/components/schemas/EventPlaceKind'
         starts_at:
+          description: |
+            The start of the event; for an `unscheduled` event, the earliest start of its candidate
+            dates (`GET /events/{id}/candidates`).
           type: string
           format: date-time
         ends_at:
+          description: |
+            The end of the event; for an `unscheduled` event, the latest end of its candidate dates.
           type: string
           format: date-time
         state:
@@ -21996,6 +22202,29 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/EventAttendee'
+    EventBallot:
+      description: The answer of a user to a candidate date.
+      type: object
+      required:
+        - account
+        - vote
+      properties:
+        account:
+          $ref: '#/components/schemas/Account'
+        vote:
+          $ref: '#/components/schemas/EventVote'
+    EventBallotPage:
+      description: A page of the answers to a candidate date, in the order of the users' IDs.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/EventBallot'
     EventCancelReason:
       description: |
         Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
@@ -22028,13 +22257,73 @@ components:
         cancelled_at:
           type: string
           format: date-time
+    EventCandidate:
+      description: |
+        A candidate date of an event's date poll, with how many users answered it each way. Times are
+        in UTC.
+      type: object
+      required:
+        - id
+        - starts_at
+        - ends_at
+        - yes_count
+        - maybe_count
+        - no_count
+        - confirmed
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        starts_at:
+          type: string
+          format: date-time
+        ends_at:
+          type: string
+          format: date-time
+        yes_count:
+          type: integer
+        maybe_count:
+          type: integer
+        no_count:
+          type: integer
+        vote:
+          description: The user's own answer; absent before the user answers.
+          allOf:
+            - $ref: '#/components/schemas/EventVote'
+        confirmed:
+          description: Whether the organizers fixed the event's date to this candidate.
+          type: boolean
+    EventCandidateCreate:
+      description: A candidate date of an event's date poll, in UTC.
+      type: object
+      required:
+        - starts_at
+        - ends_at
+      properties:
+        starts_at:
+          description: After now and at most a year ahead.
+          type: string
+          format: date-time
+        ends_at:
+          description: After `starts_at` and at most 7 days later.
+          type: string
+          format: date-time
+    EventCandidateList:
+      description: The candidate dates of an event's date poll, the earliest start first; up to 20.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventCandidate'
     EventCreate:
-      description: A new event with a fixed date.
+      description: |
+        A new event, either with a fixed date (`starts_at` and `ends_at`) or with the candidate dates
+        of a date poll (`candidates`), not both.
       type: object
       required:
         - title
-        - starts_at
-        - ends_at
       properties:
         title:
           description: 1 to 100 characters on one line.
@@ -22069,6 +22358,13 @@ components:
           description: After `starts_at` and at most 7 days later.
           type: string
           format: date-time
+        candidates:
+          description: |
+            1 to 20 different candidate dates, each checked as a fixed date: the event is
+            `unscheduled` until the organizers confirm one of them.
+          type: array
+          items:
+            $ref: '#/components/schemas/EventCandidateCreate'
     EventInvitation:
       description: |
         An invitation to an event. The invited user sees the event until the invitation is revoked,
@@ -22211,16 +22507,19 @@ components:
           $ref: '#/components/schemas/EventAnswer'
     EventState:
       description: |
-        Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
-        `ends_at` is in the past.
+        Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
+        `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+        past.
       type: string
       enum:
+        - unscheduled
         - scheduled
         - cancelled
     EventUpdate:
       description: |
         Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
-        date (`starts_at` and `ends_at` together) is checked as a new event's.
+        date (`starts_at` and `ends_at` together) is checked as a new event's; on an `unscheduled`
+        event, it fixes the date without a candidate and ends the date poll.
       type: object
       properties:
         title:
@@ -22284,6 +22583,21 @@ components:
         - following
         - mutuals
         - invited
+    EventVote:
+      description: An answer to a candidate date of an event's date poll.
+      type: string
+      enum:
+        - 'yes'
+        - maybe
+        - 'no'
+    EventVoteUpdate:
+      description: An answer to a candidate date.
+      type: object
+      required:
+        - vote
+      properties:
+        vote:
+          $ref: '#/components/schemas/EventVote'
     ExternalAuthorizationStart:
       description: Where the browser goes to sign in at a login provider.
       type: object
@@ -26246,6 +26560,11 @@ components:
         - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
           it can.
         - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+        - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
+        - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
+          takes no more candidates, answers, or confirmations.
+        - `/api/v1/problems/event-last-candidate` (409): the last candidate of a date poll cannot be
+          withdrawn.
         - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
           be searched (`Instance.full_text_search.available`).
         - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of

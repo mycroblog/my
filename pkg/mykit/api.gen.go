@@ -2425,8 +2425,9 @@ func (e EventPlaceKind) Valid() bool {
 
 // Defines values for EventState.
 const (
-	EventStateCancelled EventState = "cancelled"
-	EventStateScheduled EventState = "scheduled"
+	EventStateCancelled   EventState = "cancelled"
+	EventStateScheduled   EventState = "scheduled"
+	EventStateUnscheduled EventState = "unscheduled"
 )
 
 // Valid indicates whether the value is a known member of the EventState enum.
@@ -2435,6 +2436,8 @@ func (e EventState) Valid() bool {
 	case EventStateCancelled:
 		return true
 	case EventStateScheduled:
+		return true
+	case EventStateUnscheduled:
 		return true
 	default:
 		return false
@@ -2462,6 +2465,27 @@ func (e EventVisibility) Valid() bool {
 	case EventVisibilityMutuals:
 		return true
 	case EventVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for EventVote.
+const (
+	EventVoteMaybe EventVote = "maybe"
+	EventVoteNo    EventVote = "no"
+	EventVoteYes   EventVote = "yes"
+)
+
+// Valid indicates whether the value is a known member of the EventVote enum.
+func (e EventVote) Valid() bool {
+	switch e {
+	case EventVoteMaybe:
+		return true
+	case EventVoteNo:
+		return true
+	case EventVoteYes:
 		return true
 	default:
 		return false
@@ -10993,8 +11017,10 @@ type Event struct {
 	CreatedAt    time.Time `json:"created_at"`
 
 	// Description Plain text; empty for none.
-	Description string    `json:"description"`
-	EndsAt      time.Time `json:"ends_at"`
+	Description string `json:"description"`
+
+	// EndsAt The end of the event; for an `unscheduled` event, the latest end of its candidate dates.
+	EndsAt time.Time `json:"ends_at"`
 
 	// GoingCount How many attendees answer `going`.
 	GoingCount int `json:"going_count"`
@@ -11021,11 +11047,15 @@ type Event struct {
 	RevisedAt time.Time `json:"revised_at"`
 
 	// RevisionCount How many versions the settings have had, the first included.
-	RevisionCount int       `json:"revision_count"`
-	StartsAt      time.Time `json:"starts_at"`
+	RevisionCount int `json:"revision_count"`
 
-	// State Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
-	// `ends_at` is in the past.
+	// StartsAt The start of the event; for an `unscheduled` event, the earliest start of its candidate
+	// dates (`GET /events/{id}/candidates`).
+	StartsAt time.Time `json:"starts_at"`
+
+	// State Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
+	// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+	// past.
 	State EventState `json:"state"`
 
 	// TimeZone The IANA name of the event's time zone, such as `Asia/Tokyo`.
@@ -11066,6 +11096,23 @@ type EventAttendeePage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// EventBallot The answer of a user to a candidate date.
+type EventBallot struct {
+	// Account An account, as clients show it.
+	Account Account `json:"account"`
+
+	// Vote An answer to a candidate date of an event's date poll.
+	Vote EventVote `json:"vote"`
+}
+
+// EventBallotPage A page of the answers to a candidate date, in the order of the users' IDs.
+type EventBallotPage struct {
+	Items []EventBallot `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
 // EventCancelReason Why an event was cancelled: by its `organizer`, by a `moderator`, or because the organizer was
 // suspended (`organizer_suspended`) or deleted (`organizer_deleted`) before it started.
 type EventCancelReason string
@@ -11088,8 +11135,47 @@ type EventCancellation struct {
 	Reason EventCancelReason `json:"reason"`
 }
 
-// EventCreate A new event with a fixed date.
+// EventCandidate A candidate date of an event's date poll, with how many users answered it each way. Times are
+// in UTC.
+type EventCandidate struct {
+	// Confirmed Whether the organizers fixed the event's date to this candidate.
+	Confirmed bool      `json:"confirmed"`
+	EndsAt    time.Time `json:"ends_at"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id         Id        `json:"id"`
+	MaybeCount int       `json:"maybe_count"`
+	NoCount    int       `json:"no_count"`
+	StartsAt   time.Time `json:"starts_at"`
+
+	// Vote The user's own answer; absent before the user answers.
+	Vote     *EventVote `json:"vote,omitempty"`
+	YesCount int        `json:"yes_count"`
+}
+
+// EventCandidateCreate A candidate date of an event's date poll, in UTC.
+type EventCandidateCreate struct {
+	// EndsAt After `starts_at` and at most 7 days later.
+	EndsAt time.Time `json:"ends_at"`
+
+	// StartsAt After now and at most a year ahead.
+	StartsAt time.Time `json:"starts_at"`
+}
+
+// EventCandidateList The candidate dates of an event's date poll, the earliest start first; up to 20.
+type EventCandidateList struct {
+	Items []EventCandidate `json:"items"`
+}
+
+// EventCreate A new event, either with a fixed date (`starts_at` and `ends_at`) or with the candidate dates
+// of a date poll (`candidates`), not both.
 type EventCreate struct {
+	// Candidates 1 to 20 different candidate dates, each checked as a fixed date: the event is
+	// `unscheduled` until the organizers confirm one of them.
+	Candidates *[]EventCandidateCreate `json:"candidates,omitempty"`
+
 	// Capacity How many attendees may answer `going`, up to 10,000; 0 (the default) for no limit.
 	Capacity *int `json:"capacity,omitempty"`
 
@@ -11097,7 +11183,7 @@ type EventCreate struct {
 	Description *string `json:"description,omitempty"`
 
 	// EndsAt After `starts_at` and at most 7 days later.
-	EndsAt time.Time `json:"ends_at"`
+	EndsAt *time.Time `json:"ends_at,omitempty"`
 
 	// PlaceDisclosure Who sees the `physical` and `url` places; `approved` when omitted.
 	PlaceDisclosure *EventPlaceDisclosure `json:"place_disclosure,omitempty"`
@@ -11106,7 +11192,7 @@ type EventCreate struct {
 	Places *[]EventPlace `json:"places,omitempty"`
 
 	// StartsAt After now and at most a year ahead.
-	StartsAt time.Time `json:"starts_at"`
+	StartsAt *time.Time `json:"starts_at,omitempty"`
 
 	// TimeZone The IANA name of the event's time zone; the user's time zone when omitted.
 	TimeZone *string `json:"time_zone,omitempty"`
@@ -11217,12 +11303,14 @@ type EventRemindersUpdate struct {
 	MinutesBefore *[]int `json:"minutes_before,omitempty"`
 }
 
-// EventState Whether an event is `scheduled` or `cancelled`. An event that ended is still `scheduled`: its
-// `ends_at` is in the past.
+// EventState Whether an event is `unscheduled` (it polls its date and no candidate was confirmed yet),
+// `scheduled`, or `cancelled`. An event that ended is still `scheduled`: its `ends_at` is in the
+// past.
 type EventState string
 
 // EventUpdate Changes to an event; an omitted field keeps its value, and `places` replaces every place. A new
-// date (`starts_at` and `ends_at` together) is checked as a new event's.
+// date (`starts_at` and `ends_at` together) is checked as a new event's; on an `unscheduled`
+// event, it fixes the date without a candidate and ends the date poll.
 type EventUpdate struct {
 	Capacity    *int       `json:"capacity,omitempty"`
 	Description *string    `json:"description,omitempty"`
@@ -11270,6 +11358,15 @@ type EventViewer struct {
 // co-organizers, the invited users, and the users who answered always see it, unless a block
 // separates them from the organizer or a co-organizer.
 type EventVisibility string
+
+// EventVote An answer to a candidate date of an event's date poll.
+type EventVote string
+
+// EventVoteUpdate An answer to a candidate date.
+type EventVoteUpdate struct {
+	// Vote An answer to a candidate date of an event's date poll.
+	Vote EventVote `json:"vote"`
+}
 
 // ExternalAuthorizationStart Where the browser goes to sign in at a login provider.
 type ExternalAuthorizationStart struct {
@@ -14788,6 +14885,11 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/event-too-many-coorganizers` (409): the event has as many co-organizers as
 //     it can.
 //   - `/api/v1/problems/event-not-attending` (422): the account does not answer `going` or `maybe`.
+//   - `/api/v1/problems/event-unscheduled` (409): the event polls its date and has none yet.
+//   - `/api/v1/problems/event-scheduled` (409): the date of the event was confirmed, so its date poll
+//     takes no more candidates, answers, or confirmations.
+//   - `/api/v1/problems/event-last-candidate` (409): the last candidate of a date poll cannot be
+//     withdrawn.
 //   - `/api/v1/problems/search-unavailable` (404): the server has no search engine, so posts cannot
 //     be searched (`Instance.full_text_search.available`).
 //   - `/api/v1/problems/search-failed` (503): the search engine could not answer. Only the search of
@@ -17162,10 +17264,18 @@ type ErrorGroupId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type EventAccountId = Id
 
+// EventCandidateId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type EventCandidateId = Id
+
 // EventId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type EventId = Id
+
+// EventVoteFilter An answer to a candidate date of an event's date poll.
+type EventVoteFilter = EventVote
 
 // HashtagName defines model for HashtagName.
 type HashtagName = string
@@ -17918,6 +18028,18 @@ type ListEventAttendeesParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListEventCandidateVotesParams defines parameters for ListEventCandidateVotes.
+type ListEventCandidateVotesParams struct {
+	// Vote Only the answers of this kind; every answer when omitted.
+	Vote *EventVoteFilter `form:"vote,omitempty" json:"vote,omitempty"`
+
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListEventInvitationsParams defines parameters for ListEventInvitations.
 type ListEventInvitationsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -18490,6 +18612,12 @@ type UpdateEventJSONRequestBody = EventUpdate
 
 // CancelEventJSONRequestBody defines body for CancelEvent for application/json ContentType.
 type CancelEventJSONRequestBody = EventCancelRequest
+
+// AddEventCandidateJSONRequestBody defines body for AddEventCandidate for application/json ContentType.
+type AddEventCandidateJSONRequestBody = EventCandidateCreate
+
+// VoteEventCandidateJSONRequestBody defines body for VoteEventCandidate for application/json ContentType.
+type VoteEventCandidateJSONRequestBody = EventVoteUpdate
 
 // InviteToEventJSONRequestBody defines body for InviteToEvent for application/json ContentType.
 type InviteToEventJSONRequestBody = EventInvitationCreate
@@ -24538,7 +24666,9 @@ type ClientInterface interface {
 
 	// CreateEventWithBody Create an event
 	//
-	// Creates an event that the user organizes, with a fixed date. The user must be a local,
+	// Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+	// date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+	// or neither, are a 422. The user must be a local,
 	// unrestricted user who may create events (the instance setting `event_creators`, or the
 	// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
 	// place needs the voice chat on and a user who may host its rooms: a 422
@@ -24553,7 +24683,9 @@ type ClientInterface interface {
 
 	// CreateEvent Create an event
 	//
-	// Creates an event that the user organizes, with a fixed date. The user must be a local,
+	// Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+	// date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+	// or neither, are a 422. The user must be a local,
 	// unrestricted user who may create events (the instance setting `event_creators`, or the
 	// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
 	// place needs the voice chat on and a user who may host its rooms: a 422
@@ -24576,7 +24708,8 @@ type ClientInterface interface {
 
 	// UpdateEventWithBody Change an event
 	//
-	// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+	// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
 	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -24588,7 +24721,8 @@ type ClientInterface interface {
 
 	// UpdateEvent Change an event
 	//
-	// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+	// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
 	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -24633,7 +24767,7 @@ type ClientInterface interface {
 	// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
 	// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
 	// user sees: a hidden place never appears in the file. A 404 for an event that the user does
-	// not see.
+	// not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
 	//
 	// Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
 	GetEventCalendar(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -24659,6 +24793,102 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
 	CancelEvent(ctx context.Context, id EventId, body CancelEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListEventCandidates List the candidate dates of an event
+	//
+	// The candidate dates of the event's date poll that were not withdrawn, the earliest start
+	// first, with how many users answered each `yes`, `maybe`, or `no` and the user's own answer,
+	// for everyone who sees the event. An event created with a date has none.
+	//
+	// Corresponds with GET /events/{id}/candidates (the `ListEventCandidates` operationId).
+	ListEventCandidates(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddEventCandidateWithBody Add a candidate date to an event
+	//
+	// Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+	// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+	// the past are a 422.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /events/{id}/candidates (the `AddEventCandidate` operationId).
+	AddEventCandidateWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AddEventCandidate Add a candidate date to an event
+	//
+	// Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+	// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+	// the past are a 422.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /events/{id}/candidates (the `AddEventCandidate` operationId).
+	AddEventCandidate(ctx context.Context, id EventId, body AddEventCandidateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// WithdrawEventCandidate Withdraw a candidate date of an event
+	//
+	// Withdraws a candidate date of the event's date poll, by the organizer or a co-organizer. The
+	// users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
+	// `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+	//
+	// Corresponds with DELETE /events/{id}/candidates/{candidate_id} (the `WithdrawEventCandidate` operationId).
+	WithdrawEventCandidate(ctx context.Context, id EventId, candidateId EventCandidateId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ConfirmEventCandidate Confirm a candidate date of an event
+	//
+	// Fixes the date of the event to a candidate, by the organizer or a co-organizer: the event is
+	// `scheduled`, its poll takes no more answers, the reminders follow the date, and the users who
+	// answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
+	// change of the date is a `PATCH` of the event. A candidate that has started is a 422.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+	//
+	// Corresponds with POST /events/{id}/candidates/{candidate_id}/confirm (the `ConfirmEventCandidate` operationId).
+	ConfirmEventCandidate(ctx context.Context, id EventId, candidateId EventCandidateId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// VoteEventCandidateWithBody Answer a candidate date of an event
+	//
+	// Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+	// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+	// name to everyone who sees the event and keeps the event visible to the user. A 409
+	// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+	// `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /events/{id}/candidates/{candidate_id}/vote (the `VoteEventCandidate` operationId).
+	VoteEventCandidateWithBody(ctx context.Context, id EventId, candidateId EventCandidateId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// VoteEventCandidate Answer a candidate date of an event
+	//
+	// Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+	// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+	// name to everyone who sees the event and keeps the event visible to the user. A 409
+	// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+	// `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /events/{id}/candidates/{candidate_id}/vote (the `VoteEventCandidate` operationId).
+	VoteEventCandidate(ctx context.Context, id EventId, candidateId EventCandidateId, body VoteEventCandidateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListEventCandidateVotes List the answers to a candidate date of an event
+	//
+	// Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
+	// the event.
+	//
+	// Corresponds with GET /events/{id}/candidates/{candidate_id}/votes (the `ListEventCandidateVotes` operationId).
+	ListEventCandidateVotes(ctx context.Context, id EventId, candidateId EventCandidateId, params *ListEventCandidateVotesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// RemoveEventCoorganizer Remove a co-organizer of an event
 	//
@@ -24732,7 +24962,8 @@ type ClientInterface interface {
 	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 	// `declined` are never refused. `declined` ends an approval. A 409
-	// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+	// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+	// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 	//
 	// Takes any type of body and a specified content type.
 	//
@@ -24746,7 +24977,8 @@ type ClientInterface interface {
 	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 	// `declined` are never refused. `declined` ends an approval. A 409
-	// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+	// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+	// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 	//
 	// Takes a body of the `application/json` content type.
 	//
@@ -35076,7 +35308,9 @@ func (c *Client) ListEvents(ctx context.Context, params *ListEventsParams, reqEd
 
 // CreateEventWithBody Create an event
 //
-// Creates an event that the user organizes, with a fixed date. The user must be a local,
+// Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+// date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+// or neither, are a 422. The user must be a local,
 // unrestricted user who may create events (the instance setting `event_creators`, or the
 // `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
 // place needs the voice chat on and a user who may host its rooms: a 422
@@ -35101,7 +35335,9 @@ func (c *Client) CreateEventWithBody(ctx context.Context, contentType string, bo
 
 // CreateEvent Create an event
 //
-// Creates an event that the user organizes, with a fixed date. The user must be a local,
+// Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+// date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+// or neither, are a 422. The user must be a local,
 // unrestricted user who may create events (the instance setting `event_creators`, or the
 // `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
 // place needs the voice chat on and a user who may host its rooms: a 422
@@ -35144,7 +35380,8 @@ func (c *Client) GetEvent(ctx context.Context, id EventId, reqEditors ...Request
 
 // UpdateEventWithBody Change an event
 //
-// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 // organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
 // `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -35166,7 +35403,8 @@ func (c *Client) UpdateEventWithBody(ctx context.Context, id EventId, contentTyp
 
 // UpdateEvent Change an event
 //
-// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 // organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
 // `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -35251,7 +35489,7 @@ func (c *Client) ApproveEventAttendee(ctx context.Context, id EventId, accountId
 // zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
 // `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
 // user sees: a hidden place never appears in the file. A 404 for an event that the user does
-// not see.
+// not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
 //
 // Corresponds with GET /events/{id}/calendar.ics (the `GetEventCalendar` operationId).
 func (c *Client) GetEventCalendar(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -35298,6 +35536,182 @@ func (c *Client) CancelEventWithBody(ctx context.Context, id EventId, contentTyp
 // Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
 func (c *Client) CancelEvent(ctx context.Context, id EventId, body CancelEventJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewCancelEventRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListEventCandidates List the candidate dates of an event
+//
+// The candidate dates of the event's date poll that were not withdrawn, the earliest start
+// first, with how many users answered each `yes`, `maybe`, or `no` and the user's own answer,
+// for everyone who sees the event. An event created with a date has none.
+//
+// Corresponds with GET /events/{id}/candidates (the `ListEventCandidates` operationId).
+func (c *Client) ListEventCandidates(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListEventCandidatesRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddEventCandidateWithBody Add a candidate date to an event
+//
+// Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+// the past are a 422.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /events/{id}/candidates (the `AddEventCandidate` operationId).
+func (c *Client) AddEventCandidateWithBody(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddEventCandidateRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AddEventCandidate Add a candidate date to an event
+//
+// Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+// the past are a 422.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /events/{id}/candidates (the `AddEventCandidate` operationId).
+func (c *Client) AddEventCandidate(ctx context.Context, id EventId, body AddEventCandidateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAddEventCandidateRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// WithdrawEventCandidate Withdraw a candidate date of an event
+//
+// Withdraws a candidate date of the event's date poll, by the organizer or a co-organizer. The
+// users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
+// `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+//
+// Corresponds with DELETE /events/{id}/candidates/{candidate_id} (the `WithdrawEventCandidate` operationId).
+func (c *Client) WithdrawEventCandidate(ctx context.Context, id EventId, candidateId EventCandidateId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewWithdrawEventCandidateRequest(c.Server, id, candidateId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ConfirmEventCandidate Confirm a candidate date of an event
+//
+// Fixes the date of the event to a candidate, by the organizer or a co-organizer: the event is
+// `scheduled`, its poll takes no more answers, the reminders follow the date, and the users who
+// answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
+// change of the date is a `PATCH` of the event. A candidate that has started is a 422.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+//
+// Corresponds with POST /events/{id}/candidates/{candidate_id}/confirm (the `ConfirmEventCandidate` operationId).
+func (c *Client) ConfirmEventCandidate(ctx context.Context, id EventId, candidateId EventCandidateId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewConfirmEventCandidateRequest(c.Server, id, candidateId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// VoteEventCandidateWithBody Answer a candidate date of an event
+//
+// Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+// name to everyone who sees the event and keeps the event visible to the user. A 409
+// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+// `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /events/{id}/candidates/{candidate_id}/vote (the `VoteEventCandidate` operationId).
+func (c *Client) VoteEventCandidateWithBody(ctx context.Context, id EventId, candidateId EventCandidateId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVoteEventCandidateRequestWithBody(c.Server, id, candidateId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// VoteEventCandidate Answer a candidate date of an event
+//
+// Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+// name to everyone who sees the event and keeps the event visible to the user. A 409
+// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+// `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /events/{id}/candidates/{candidate_id}/vote (the `VoteEventCandidate` operationId).
+func (c *Client) VoteEventCandidate(ctx context.Context, id EventId, candidateId EventCandidateId, body VoteEventCandidateJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVoteEventCandidateRequest(c.Server, id, candidateId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListEventCandidateVotes List the answers to a candidate date of an event
+//
+// Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
+// the event.
+//
+// Corresponds with GET /events/{id}/candidates/{candidate_id}/votes (the `ListEventCandidateVotes` operationId).
+func (c *Client) ListEventCandidateVotes(ctx context.Context, id EventId, candidateId EventCandidateId, params *ListEventCandidateVotesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListEventCandidateVotesRequest(c.Server, id, candidateId, params)
 	if err != nil {
 		return nil, err
 	}
@@ -35440,7 +35854,8 @@ func (c *Client) RevokeEventInvitation(ctx context.Context, id EventId, accountI
 // reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 // answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 // `declined` are never refused. `declined` ends an approval. A 409
-// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 //
 // Takes any type of body and a specified content type.
 //
@@ -35464,7 +35879,8 @@ func (c *Client) AnswerEventWithBody(ctx context.Context, id EventId, contentTyp
 // reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 // answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 // `declined` are never refused. `declined` ends an approval. A 409
-// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 //
 // Takes a body of the `application/json` content type.
 //
@@ -52231,6 +52647,315 @@ func NewCancelEventRequestWithBody(server string, id EventId, contentType string
 	return req, nil
 }
 
+// NewListEventCandidatesRequest constructs an http.Request for the ListEventCandidates method
+func NewListEventCandidatesRequest(server string, id EventId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/candidates", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAddEventCandidateRequest calls the generic AddEventCandidate builder with application/json body
+func NewAddEventCandidateRequest(server string, id EventId, body AddEventCandidateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAddEventCandidateRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAddEventCandidateRequestWithBody constructs an http.Request for the AddEventCandidate method, with any body, and a specified content type
+func NewAddEventCandidateRequestWithBody(server string, id EventId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/candidates", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewWithdrawEventCandidateRequest constructs an http.Request for the WithdrawEventCandidate method
+func NewWithdrawEventCandidateRequest(server string, id EventId, candidateId EventCandidateId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "candidate_id", candidateId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/candidates/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewConfirmEventCandidateRequest constructs an http.Request for the ConfirmEventCandidate method
+func NewConfirmEventCandidateRequest(server string, id EventId, candidateId EventCandidateId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "candidate_id", candidateId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/candidates/%s/confirm", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewVoteEventCandidateRequest calls the generic VoteEventCandidate builder with application/json body
+func NewVoteEventCandidateRequest(server string, id EventId, candidateId EventCandidateId, body VoteEventCandidateJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewVoteEventCandidateRequestWithBody(server, id, candidateId, "application/json", bodyReader)
+}
+
+// NewVoteEventCandidateRequestWithBody constructs an http.Request for the VoteEventCandidate method, with any body, and a specified content type
+func NewVoteEventCandidateRequestWithBody(server string, id EventId, candidateId EventCandidateId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "candidate_id", candidateId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/candidates/%s/vote", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListEventCandidateVotesRequest constructs an http.Request for the ListEventCandidateVotes method
+func NewListEventCandidateVotesRequest(server string, id EventId, candidateId EventCandidateId, params *ListEventCandidateVotesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "candidate_id", candidateId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/events/%s/candidates/%s/votes", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Vote != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "vote", *params.Vote, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewRemoveEventCoorganizerRequest constructs an http.Request for the RemoveEventCoorganizer method
 func NewRemoveEventCoorganizerRequest(server string, id EventId, accountId EventAccountId) (*http.Request, error) {
 	var err error
@@ -64649,7 +65374,9 @@ type ClientWithResponsesInterface interface {
 
 	// CreateEventWithBodyWithResponse Create an event
 	//
-	// Creates an event that the user organizes, with a fixed date. The user must be a local,
+	// Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+	// date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+	// or neither, are a 422. The user must be a local,
 	// unrestricted user who may create events (the instance setting `event_creators`, or the
 	// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
 	// place needs the voice chat on and a user who may host its rooms: a 422
@@ -64664,7 +65391,9 @@ type ClientWithResponsesInterface interface {
 
 	// CreateEventWithResponse Create an event
 	//
-	// Creates an event that the user organizes, with a fixed date. The user must be a local,
+	// Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+	// date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+	// or neither, are a 422. The user must be a local,
 	// unrestricted user who may create events (the instance setting `event_creators`, or the
 	// `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
 	// place needs the voice chat on and a user who may host its rooms: a 422
@@ -64689,7 +65418,8 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateEventWithBodyWithResponse Change an event
 	//
-	// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+	// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
 	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -64701,7 +65431,8 @@ type ClientWithResponsesInterface interface {
 
 	// UpdateEventWithResponse Change an event
 	//
-	// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+	// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+	// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 	// organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 	// `voice` place needs the organizer to be able to host rooms (a 422
 	// `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -64752,7 +65483,7 @@ type ClientWithResponsesInterface interface {
 	// zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
 	// `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
 	// user sees: a hidden place never appears in the file. A 404 for an event that the user does
-	// not see.
+	// not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -64780,6 +65511,110 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /events/{id}/cancel (the `CancelEvent` operationId).
 	CancelEventWithResponse(ctx context.Context, id EventId, body CancelEventJSONRequestBody, reqEditors ...RequestEditorFn) (*CancelEventResponse, error)
+
+	// ListEventCandidatesWithResponse List the candidate dates of an event
+	//
+	// The candidate dates of the event's date poll that were not withdrawn, the earliest start
+	// first, with how many users answered each `yes`, `maybe`, or `no` and the user's own answer,
+	// for everyone who sees the event. An event created with a date has none.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /events/{id}/candidates (the `ListEventCandidates` operationId).
+	ListEventCandidatesWithResponse(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*ListEventCandidatesResponse, error)
+
+	// AddEventCandidateWithBodyWithResponse Add a candidate date to an event
+	//
+	// Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+	// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+	// the past are a 422.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events/{id}/candidates (the `AddEventCandidate` operationId).
+	AddEventCandidateWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddEventCandidateResponse, error)
+
+	// AddEventCandidateWithResponse Add a candidate date to an event
+	//
+	// Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+	// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+	// the past are a 422.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events/{id}/candidates (the `AddEventCandidate` operationId).
+	AddEventCandidateWithResponse(ctx context.Context, id EventId, body AddEventCandidateJSONRequestBody, reqEditors ...RequestEditorFn) (*AddEventCandidateResponse, error)
+
+	// WithdrawEventCandidateWithResponse Withdraw a candidate date of an event
+	//
+	// Withdraws a candidate date of the event's date poll, by the organizer or a co-organizer. The
+	// users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
+	// `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /events/{id}/candidates/{candidate_id} (the `WithdrawEventCandidate` operationId).
+	WithdrawEventCandidateWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, reqEditors ...RequestEditorFn) (*WithdrawEventCandidateResponse, error)
+
+	// ConfirmEventCandidateWithResponse Confirm a candidate date of an event
+	//
+	// Fixes the date of the event to a candidate, by the organizer or a co-organizer: the event is
+	// `scheduled`, its poll takes no more answers, the reminders follow the date, and the users who
+	// answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
+	// change of the date is a `PATCH` of the event. A candidate that has started is a 422.
+	// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+	// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+	// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /events/{id}/candidates/{candidate_id}/confirm (the `ConfirmEventCandidate` operationId).
+	ConfirmEventCandidateWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, reqEditors ...RequestEditorFn) (*ConfirmEventCandidateResponse, error)
+
+	// VoteEventCandidateWithBodyWithResponse Answer a candidate date of an event
+	//
+	// Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+	// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+	// name to everyone who sees the event and keeps the event visible to the user. A 409
+	// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+	// `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /events/{id}/candidates/{candidate_id}/vote (the `VoteEventCandidate` operationId).
+	VoteEventCandidateWithBodyWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VoteEventCandidateResponse, error)
+
+	// VoteEventCandidateWithResponse Answer a candidate date of an event
+	//
+	// Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+	// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+	// name to everyone who sees the event and keeps the event visible to the user. A 409
+	// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+	// `/api/v1/problems/event-closed` for a cancelled event.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /events/{id}/candidates/{candidate_id}/vote (the `VoteEventCandidate` operationId).
+	VoteEventCandidateWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, body VoteEventCandidateJSONRequestBody, reqEditors ...RequestEditorFn) (*VoteEventCandidateResponse, error)
+
+	// ListEventCandidateVotesWithResponse List the answers to a candidate date of an event
+	//
+	// Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
+	// the event.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /events/{id}/candidates/{candidate_id}/votes (the `ListEventCandidateVotes` operationId).
+	ListEventCandidateVotesWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, params *ListEventCandidateVotesParams, reqEditors ...RequestEditorFn) (*ListEventCandidateVotesResponse, error)
 
 	// RemoveEventCoorganizerWithResponse Remove a co-organizer of an event
 	//
@@ -64861,7 +65696,8 @@ type ClientWithResponsesInterface interface {
 	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 	// `declined` are never refused. `declined` ends an approval. A 409
-	// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+	// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+	// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 	//
 	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -64875,7 +65711,8 @@ type ClientWithResponsesInterface interface {
 	// reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 	// answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 	// `declined` are never refused. `declined` ends an approval. A 409
-	// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+	// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+	// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 	//
 	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 	//
@@ -85168,6 +86005,382 @@ func (r CancelEventResponse) ContentType() string {
 	return ""
 }
 
+// ListEventCandidatesResponse200Headers the declared response headers of an HTTP 200 response for ListEventCandidates
+type ListEventCandidatesResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListEventCandidatesResponseDefaultHeaders the declared response headers of an HTTP default response for ListEventCandidates
+type ListEventCandidatesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListEventCandidatesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventCandidateList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListEventCandidatesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListEventCandidatesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListEventCandidatesResponse) GetJSON200() *EventCandidateList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListEventCandidatesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListEventCandidatesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListEventCandidatesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListEventCandidatesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListEventCandidatesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// AddEventCandidateResponse201Headers the declared response headers of an HTTP 201 response for AddEventCandidate
+type AddEventCandidateResponse201Headers struct {
+	CacheControl *string
+}
+
+// AddEventCandidateResponseDefaultHeaders the declared response headers of an HTTP default response for AddEventCandidate
+type AddEventCandidateResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type AddEventCandidateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *EventCandidate
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *AddEventCandidateResponse201Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *AddEventCandidateResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r AddEventCandidateResponse) GetJSON201() *EventCandidate {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AddEventCandidateResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AddEventCandidateResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AddEventCandidateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AddEventCandidateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AddEventCandidateResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// WithdrawEventCandidateResponseDefaultHeaders the declared response headers of an HTTP default response for WithdrawEventCandidate
+type WithdrawEventCandidateResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type WithdrawEventCandidateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *WithdrawEventCandidateResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r WithdrawEventCandidateResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r WithdrawEventCandidateResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r WithdrawEventCandidateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r WithdrawEventCandidateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r WithdrawEventCandidateResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ConfirmEventCandidateResponse200Headers the declared response headers of an HTTP 200 response for ConfirmEventCandidate
+type ConfirmEventCandidateResponse200Headers struct {
+	CacheControl *string
+}
+
+// ConfirmEventCandidateResponseDefaultHeaders the declared response headers of an HTTP default response for ConfirmEventCandidate
+type ConfirmEventCandidateResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ConfirmEventCandidateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Event
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ConfirmEventCandidateResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ConfirmEventCandidateResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ConfirmEventCandidateResponse) GetJSON200() *Event {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ConfirmEventCandidateResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ConfirmEventCandidateResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ConfirmEventCandidateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ConfirmEventCandidateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ConfirmEventCandidateResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// VoteEventCandidateResponse200Headers the declared response headers of an HTTP 200 response for VoteEventCandidate
+type VoteEventCandidateResponse200Headers struct {
+	CacheControl *string
+}
+
+// VoteEventCandidateResponseDefaultHeaders the declared response headers of an HTTP default response for VoteEventCandidate
+type VoteEventCandidateResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type VoteEventCandidateResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventCandidate
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *VoteEventCandidateResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *VoteEventCandidateResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r VoteEventCandidateResponse) GetJSON200() *EventCandidate {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r VoteEventCandidateResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r VoteEventCandidateResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r VoteEventCandidateResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r VoteEventCandidateResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r VoteEventCandidateResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListEventCandidateVotesResponse200Headers the declared response headers of an HTTP 200 response for ListEventCandidateVotes
+type ListEventCandidateVotesResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListEventCandidateVotesResponseDefaultHeaders the declared response headers of an HTTP default response for ListEventCandidateVotes
+type ListEventCandidateVotesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListEventCandidateVotesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *EventBallotPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListEventCandidateVotesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListEventCandidateVotesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListEventCandidateVotesResponse) GetJSON200() *EventBallotPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListEventCandidateVotesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListEventCandidateVotesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListEventCandidateVotesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListEventCandidateVotesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListEventCandidateVotesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // RemoveEventCoorganizerResponse200Headers the declared response headers of an HTTP 200 response for RemoveEventCoorganizer
 type RemoveEventCoorganizerResponse200Headers struct {
 	CacheControl *string
@@ -103384,7 +104597,9 @@ func (c *ClientWithResponses) ListEventsWithResponse(ctx context.Context, params
 
 // CreateEventWithBodyWithResponse Create an event
 //
-// Creates an event that the user organizes, with a fixed date. The user must be a local,
+// Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+// date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+// or neither, are a 422. The user must be a local,
 // unrestricted user who may create events (the instance setting `event_creators`, or the
 // `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
 // place needs the voice chat on and a user who may host its rooms: a 422
@@ -103405,7 +104620,9 @@ func (c *ClientWithResponses) CreateEventWithBodyWithResponse(ctx context.Contex
 
 // CreateEventWithResponse Create an event
 //
-// Creates an event that the user organizes, with a fixed date. The user must be a local,
+// Creates an event that the user organizes, with a fixed date or with the candidate dates of a
+// date poll (`candidates`; the event is `unscheduled` until the organizers confirm one). Both,
+// or neither, are a 422. The user must be a local,
 // unrestricted user who may create events (the instance setting `event_creators`, or the
 // `create_events` permission): a 403 `/api/v1/problems/event-not-eligible` otherwise. A `voice`
 // place needs the voice chat on and a user who may host its rooms: a 422
@@ -103442,7 +104659,8 @@ func (c *ClientWithResponses) GetEventWithResponse(ctx context.Context, id Event
 
 // UpdateEventWithBodyWithResponse Change an event
 //
-// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 // organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
 // `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -103460,7 +104678,8 @@ func (c *ClientWithResponses) UpdateEventWithBodyWithResponse(ctx context.Contex
 
 // UpdateEventWithResponse Change an event
 //
-// Changes the settings or the date of the event, by its organizer or a co-organizer. Only the
+// Changes the settings or the date of the event, by its organizer or a co-organizer; a date
+// on an `unscheduled` event ends its date poll, as a confirmation does. Only the
 // organizer changes the visibility (a 403 `/api/v1/problems/event-organizer-only`). Adding a
 // `voice` place needs the organizer to be able to host rooms (a 422
 // `/api/v1/problems/event-voice-unavailable`). A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes the event. A 409 `/api/v1/problems/event-closed` for a cancelled event. Invalid settings are a 422.
@@ -103535,7 +104754,7 @@ func (c *ClientWithResponses) ApproveEventAttendeeWithResponse(ctx context.Conte
 // zone; `SEQUENCE` is the number of revisions of the settings; a cancelled event has
 // `STATUS:CANCELLED`; and `URL` is the event's page. `LOCATION` names only the places that the
 // user sees: a hidden place never appears in the file. A 404 for an event that the user does
-// not see.
+// not see, and a 409 `/api/v1/problems/event-unscheduled` for an event without a date yet.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -103580,6 +104799,158 @@ func (c *ClientWithResponses) CancelEventWithResponse(ctx context.Context, id Ev
 		return nil, err
 	}
 	return ParseCancelEventResponse(rsp)
+}
+
+// ListEventCandidatesWithResponse List the candidate dates of an event
+//
+// The candidate dates of the event's date poll that were not withdrawn, the earliest start
+// first, with how many users answered each `yes`, `maybe`, or `no` and the user's own answer,
+// for everyone who sees the event. An event created with a date has none.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /events/{id}/candidates (the `ListEventCandidates` operationId).
+func (c *ClientWithResponses) ListEventCandidatesWithResponse(ctx context.Context, id EventId, reqEditors ...RequestEditorFn) (*ListEventCandidatesResponse, error) {
+	rsp, err := c.ListEventCandidates(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListEventCandidatesResponse(rsp)
+}
+
+// AddEventCandidateWithBodyWithResponse Add a candidate date to an event
+//
+// Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+// the past are a 422.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events/{id}/candidates (the `AddEventCandidate` operationId).
+func (c *ClientWithResponses) AddEventCandidateWithBodyWithResponse(ctx context.Context, id EventId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AddEventCandidateResponse, error) {
+	rsp, err := c.AddEventCandidateWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddEventCandidateResponse(rsp)
+}
+
+// AddEventCandidateWithResponse Add a candidate date to an event
+//
+// Adds a candidate date to the date poll of an event that has no date yet, by the organizer or
+// a co-organizer. A poll has up to 20 candidates; one more, the same date twice, and a date in
+// the past are a 422.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events/{id}/candidates (the `AddEventCandidate` operationId).
+func (c *ClientWithResponses) AddEventCandidateWithResponse(ctx context.Context, id EventId, body AddEventCandidateJSONRequestBody, reqEditors ...RequestEditorFn) (*AddEventCandidateResponse, error) {
+	rsp, err := c.AddEventCandidate(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAddEventCandidateResponse(rsp)
+}
+
+// WithdrawEventCandidateWithResponse Withdraw a candidate date of an event
+//
+// Withdraws a candidate date of the event's date poll, by the organizer or a co-organizer. The
+// users who answered it still see the event. A 404 for a candidate withdrawn already. A 409
+// `/api/v1/problems/event-last-candidate` for the last candidate of the poll.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /events/{id}/candidates/{candidate_id} (the `WithdrawEventCandidate` operationId).
+func (c *ClientWithResponses) WithdrawEventCandidateWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, reqEditors ...RequestEditorFn) (*WithdrawEventCandidateResponse, error) {
+	rsp, err := c.WithdrawEventCandidate(ctx, id, candidateId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseWithdrawEventCandidateResponse(rsp)
+}
+
+// ConfirmEventCandidateWithResponse Confirm a candidate date of an event
+//
+// Fixes the date of the event to a candidate, by the organizer or a co-organizer: the event is
+// `scheduled`, its poll takes no more answers, the reminders follow the date, and the users who
+// answered the poll and the invited users are notified (`event_schedule_confirmed`). A later
+// change of the date is a `PATCH` of the event. A candidate that has started is a 422.
+// A 403 `/api/v1/problems/event-not-organizer` for a user who neither organizes nor co-organizes
+// the event. A 409 `/api/v1/problems/event-closed` for a cancelled event, and a 409
+// `/api/v1/problems/event-scheduled` for an event whose date was confirmed.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /events/{id}/candidates/{candidate_id}/confirm (the `ConfirmEventCandidate` operationId).
+func (c *ClientWithResponses) ConfirmEventCandidateWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, reqEditors ...RequestEditorFn) (*ConfirmEventCandidateResponse, error) {
+	rsp, err := c.ConfirmEventCandidate(ctx, id, candidateId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseConfirmEventCandidateResponse(rsp)
+}
+
+// VoteEventCandidateWithBodyWithResponse Answer a candidate date of an event
+//
+// Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+// name to everyone who sees the event and keeps the event visible to the user. A 409
+// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+// `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /events/{id}/candidates/{candidate_id}/vote (the `VoteEventCandidate` operationId).
+func (c *ClientWithResponses) VoteEventCandidateWithBodyWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*VoteEventCandidateResponse, error) {
+	rsp, err := c.VoteEventCandidateWithBody(ctx, id, candidateId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseVoteEventCandidateResponse(rsp)
+}
+
+// VoteEventCandidateWithResponse Answer a candidate date of an event
+//
+// Answers a candidate date `yes`, `maybe`, or `no`, as often as the user likes until the
+// organizers confirm a date. Everyone who sees the event may answer; the answer shows the user's
+// name to everyone who sees the event and keeps the event visible to the user. A 409
+// `/api/v1/problems/event-scheduled` once the date was confirmed, and a 409
+// `/api/v1/problems/event-closed` for a cancelled event.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /events/{id}/candidates/{candidate_id}/vote (the `VoteEventCandidate` operationId).
+func (c *ClientWithResponses) VoteEventCandidateWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, body VoteEventCandidateJSONRequestBody, reqEditors ...RequestEditorFn) (*VoteEventCandidateResponse, error) {
+	rsp, err := c.VoteEventCandidate(ctx, id, candidateId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseVoteEventCandidateResponse(rsp)
+}
+
+// ListEventCandidateVotesWithResponse List the answers to a candidate date of an event
+//
+// Who answered a candidate date and how, in the order of the users' IDs, for everyone who sees
+// the event.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /events/{id}/candidates/{candidate_id}/votes (the `ListEventCandidateVotes` operationId).
+func (c *ClientWithResponses) ListEventCandidateVotesWithResponse(ctx context.Context, id EventId, candidateId EventCandidateId, params *ListEventCandidateVotesParams, reqEditors ...RequestEditorFn) (*ListEventCandidateVotesResponse, error) {
+	rsp, err := c.ListEventCandidateVotes(ctx, id, candidateId, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListEventCandidateVotesResponse(rsp)
 }
 
 // RemoveEventCoorganizerWithResponse Remove a co-organizer of an event
@@ -103698,7 +105069,8 @@ func (c *ClientWithResponses) RevokeEventInvitationWithResponse(ctx context.Cont
 // reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 // answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 // `declined` are never refused. `declined` ends an approval. A 409
-// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 //
 // Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
 //
@@ -103718,7 +105090,8 @@ func (c *ClientWithResponses) AnswerEventWithBodyWithResponse(ctx context.Contex
 // reads, and keeps the event visible to the user. A new `going` to an event whose attendees who
 // answer `going` reached its capacity is a 409 `/api/v1/problems/event-full`; `maybe` and
 // `declined` are never refused. `declined` ends an approval. A 409
-// `/api/v1/problems/event-closed` for an event that started or was cancelled.
+// `/api/v1/problems/event-closed` for an event that started or was cancelled, and a 409
+// `/api/v1/problems/event-unscheduled` for an event whose date poll was not confirmed yet.
 //
 // Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
 //
@@ -128824,6 +130197,454 @@ func ParseCancelEventResponse(rsp *http.Response) (*CancelEventResponse, error) 
 		response.Headers200 = &headers
 	case true:
 		var headers CancelEventResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListEventCandidatesResponse parses an HTTP response from a ListEventCandidatesWithResponse call
+func ParseListEventCandidatesResponse(rsp *http.Response) (*ListEventCandidatesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListEventCandidatesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventCandidateList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListEventCandidatesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListEventCandidatesResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseAddEventCandidateResponse parses an HTTP response from a AddEventCandidateWithResponse call
+func ParseAddEventCandidateResponse(rsp *http.Response) (*AddEventCandidateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AddEventCandidateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest EventCandidate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers AddEventCandidateResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case true:
+		var headers AddEventCandidateResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseWithdrawEventCandidateResponse parses an HTTP response from a WithdrawEventCandidateWithResponse call
+func ParseWithdrawEventCandidateResponse(rsp *http.Response) (*WithdrawEventCandidateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &WithdrawEventCandidateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers WithdrawEventCandidateResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseConfirmEventCandidateResponse parses an HTTP response from a ConfirmEventCandidateWithResponse call
+func ParseConfirmEventCandidateResponse(rsp *http.Response) (*ConfirmEventCandidateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ConfirmEventCandidateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Event
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ConfirmEventCandidateResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ConfirmEventCandidateResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseVoteEventCandidateResponse parses an HTTP response from a VoteEventCandidateWithResponse call
+func ParseVoteEventCandidateResponse(rsp *http.Response) (*VoteEventCandidateResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &VoteEventCandidateResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventCandidate
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers VoteEventCandidateResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers VoteEventCandidateResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListEventCandidateVotesResponse parses an HTTP response from a ListEventCandidateVotesWithResponse call
+func ParseListEventCandidateVotesResponse(rsp *http.Response) (*ListEventCandidateVotesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListEventCandidateVotesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest EventBallotPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListEventCandidateVotesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListEventCandidateVotesResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

@@ -33,11 +33,13 @@ const (
 	EventCancelled = "gathering.cancelled"
 )
 
-// Created carries an event that was created.
+// Created carries an event that was created, with its date (Confirmation), or with the
+// candidates of its date poll and the zero Confirmation.
 type Created struct {
 	Gathering    Gathering
 	Revision     Revision
 	Confirmation Confirmation
+	Candidates   []Candidate
 }
 
 // EventType implements uow.Event.
@@ -131,6 +133,7 @@ func RegisterProjectors(r *uow.Projectors, repo ProjectionRepository) {
 	r.Register(EventCoorganizerChanged, func(ctx context.Context, tx uow.Tx, e uow.Event) error {
 		return repo.RefreshCoorganizers(ctx, tx, e.(CoorganizerChanged).Change.GatheringID)
 	})
+	registerPollProjectors(r, repo)
 }
 
 // RebuildProjections derives gathering_attendees, gathering_heads, and gathering_coorganizers
