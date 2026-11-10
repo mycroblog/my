@@ -73,20 +73,21 @@ func (r *Repository) InsertProfileRevision(ctx context.Context, tx uow.Tx, rev a
 		return err
 	}
 	err = q.InsertProfileRevision(ctx, accountgen.InsertProfileRevisionParams{
-		ID:            rev.ID,
-		AccountID:     rev.AccountID,
-		Seq:           seq,
-		DisplayName:   rev.DisplayName,
-		NoteHtml:      rev.NoteHTML,
-		Locked:        rev.Locked,
-		Bot:           rev.Bot,
-		Discoverable:  rev.Discoverable,
-		Indexable:     rev.Indexable,
-		AiOptOut:      rev.AIOptOut,
-		AvatarMediaID: postgres.ToNullString(rev.AvatarMediaID),
-		HeaderMediaID: postgres.ToNullString(rev.HeaderMediaID),
-		RevisedAt:     rev.RevisedAt,
-		Feed:          string(rev.Feed.Normalize()),
+		ID:                rev.ID,
+		AccountID:         rev.AccountID,
+		Seq:               seq,
+		DisplayName:       rev.DisplayName,
+		NoteHtml:          rev.NoteHTML,
+		Locked:            rev.Locked,
+		Bot:               rev.Bot,
+		Discoverable:      rev.Discoverable,
+		Indexable:         rev.Indexable,
+		AiOptOut:          rev.AIOptOut,
+		AvatarMediaID:     postgres.ToNullString(rev.AvatarMediaID),
+		HeaderMediaID:     postgres.ToNullString(rev.HeaderMediaID),
+		RevisedAt:         rev.RevisedAt,
+		Feed:              string(rev.Feed.Normalize()),
+		FollowsVisibility: string(rev.FollowsVisibility.Normalize()),
 	})
 	if postgres.IsUniqueViolation(err, "account_profile_revisions_account_id_seq") {
 		// A concurrent revision took this seq after the command read the head at READ COMMITTED.
@@ -612,20 +613,21 @@ func currentProfile(ctx context.Context, q *accountgen.Queries, accountID string
 // profileRow returns the revision of row, without its fields, custom emoji, and source.
 func profileRow(row accountgen.AccountProfileRevision) account.ProfileRevision {
 	return account.ProfileRevision{
-		ID:            row.ID,
-		AccountID:     row.AccountID,
-		Seq:           int(row.Seq),
-		DisplayName:   row.DisplayName,
-		NoteHTML:      row.NoteHtml,
-		Locked:        row.Locked,
-		Bot:           row.Bot,
-		Discoverable:  row.Discoverable,
-		Indexable:     row.Indexable,
-		AIOptOut:      row.AiOptOut,
-		AvatarMediaID: postgres.FromNullString(row.AvatarMediaID),
-		HeaderMediaID: postgres.FromNullString(row.HeaderMediaID),
-		RevisedAt:     postgres.UTC(row.RevisedAt),
-		Feed:          account.FeedSetting(row.Feed),
+		ID:                row.ID,
+		AccountID:         row.AccountID,
+		Seq:               int(row.Seq),
+		DisplayName:       row.DisplayName,
+		NoteHTML:          row.NoteHtml,
+		Locked:            row.Locked,
+		Bot:               row.Bot,
+		Discoverable:      row.Discoverable,
+		Indexable:         row.Indexable,
+		AIOptOut:          row.AiOptOut,
+		AvatarMediaID:     postgres.FromNullString(row.AvatarMediaID),
+		HeaderMediaID:     postgres.FromNullString(row.HeaderMediaID),
+		RevisedAt:         postgres.UTC(row.RevisedAt),
+		Feed:              account.FeedSetting(row.Feed),
+		FollowsVisibility: account.FollowsVisibility(row.FollowsVisibility),
 	}
 }
 

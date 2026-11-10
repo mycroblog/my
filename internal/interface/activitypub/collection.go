@@ -81,6 +81,11 @@ func (h *Handler) collection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	paged := q.Get(paramPage) != ""
+	if paged && (name == collFollowers || name == collFollowing) && followsHidden(a) {
+		// Mastodon answers the pages of hidden lists with 403 too.
+		h.o.Problem(w, r, http.StatusForbidden)
+		return
+	}
 
 	var c orderedCollection
 	switch name {
@@ -148,8 +153,17 @@ func (h *Handler) outbox(r *http.Request, a appaccount.Actor, id string, paged b
 	return page(id, total, true, before, items, p.Next), nil
 }
 
+// followsHidden reports whether a's follows_visibility keeps its followers and following lists
+// from someone (FR-311). The collections answer every requester alike, so a list that only
+// approved followers may read is hidden from all of them too: the collection holds its total
+// alone, without a first page, as Mastodon's hidden collections do.
+func followsHidden(a appaccount.Actor) bool {
+	return a.Profile != nil && !a.Profile.FollowsVisibility.FollowsReadable(false, false)
+}
+
 // follows returns the followers or following collection of a: the ids of the active accounts
-// that it actively follows or that actively follow it, newest follow first.
+// that it actively follows or that actively follow it, newest follow first. A hidden list
+// (followsHidden) holds its total alone.
 func (h *Handler) follows(r *http.Request, a appaccount.Actor, name, id string, paged bool, before string) (orderedCollection, error) {
 	ctx := r.Context()
 	counters, err := h.o.Graph.Counters(ctx, a.Account.ID)
@@ -159,6 +173,9 @@ func (h *Handler) follows(r *http.Request, a appaccount.Actor, name, id string, 
 	total := counters.FollowingCount
 	if name == collFollowers {
 		total = counters.FollowersCount
+	}
+	if followsHidden(a) {
+		return orderedCollection{ID: id, Type: "OrderedCollection", TotalItems: total}, nil
 	}
 	if !paged {
 		return page(id, total, false, "", nil, ""), nil

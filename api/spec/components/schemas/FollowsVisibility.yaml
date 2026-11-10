@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+  `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+  of it is approved; `private`, nobody. The owner always reads both, and the counts
+  (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+  number of follows and followers alone unless the lists are `public`.
+type: string
+enum: [public, followers, private]

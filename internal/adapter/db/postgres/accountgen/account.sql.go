@@ -257,7 +257,7 @@ func (q *Queries) GetProfileHead(ctx context.Context, accountID string) (GetProf
 
 const getProfileRevision = `-- name: GetProfileRevision :one
 SELECT id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at, feed
+  avatar_media_id, header_media_id, revised_at, feed, follows_visibility
 FROM account_profile_revisions WHERE id = $1
 `
 
@@ -279,6 +279,7 @@ func (q *Queries) GetProfileRevision(ctx context.Context, id string) (AccountPro
 		&i.HeaderMediaID,
 		&i.RevisedAt,
 		&i.Feed,
+		&i.FollowsVisibility,
 	)
 	return i, err
 }
@@ -449,25 +450,26 @@ func (q *Queries) InsertProfileFieldSource(ctx context.Context, arg InsertProfil
 const insertProfileRevision = `-- name: InsertProfileRevision :exec
 INSERT INTO account_profile_revisions (
   id, account_id, seq, display_name, note_html, locked, bot, discoverable, indexable, ai_opt_out,
-  avatar_media_id, header_media_id, revised_at, feed
-) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+  avatar_media_id, header_media_id, revised_at, feed, follows_visibility
+) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
 `
 
 type InsertProfileRevisionParams struct {
-	ID            string
-	AccountID     string
-	Seq           int32
-	DisplayName   string
-	NoteHtml      string
-	Locked        bool
-	Bot           bool
-	Discoverable  bool
-	Indexable     bool
-	AiOptOut      bool
-	AvatarMediaID *string
-	HeaderMediaID *string
-	RevisedAt     time.Time
-	Feed          string
+	ID                string
+	AccountID         string
+	Seq               int32
+	DisplayName       string
+	NoteHtml          string
+	Locked            bool
+	Bot               bool
+	Discoverable      bool
+	Indexable         bool
+	AiOptOut          bool
+	AvatarMediaID     *string
+	HeaderMediaID     *string
+	RevisedAt         time.Time
+	Feed              string
+	FollowsVisibility string
 }
 
 func (q *Queries) InsertProfileRevision(ctx context.Context, arg InsertProfileRevisionParams) error {
@@ -486,6 +488,7 @@ func (q *Queries) InsertProfileRevision(ctx context.Context, arg InsertProfileRe
 		arg.HeaderMediaID,
 		arg.RevisedAt,
 		arg.Feed,
+		arg.FollowsVisibility,
 	)
 	return err
 }

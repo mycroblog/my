@@ -1885,6 +1885,8 @@ components:
       $ref: ./components/schemas/FinanceVisibility.yaml
     FollowAccountRequest:
       $ref: ./components/schemas/FollowAccountRequest.yaml
+    FollowsVisibility:
+      $ref: ./components/schemas/FollowsVisibility.yaml
     ForwardReportRequest:
       $ref: ./components/schemas/ForwardReportRequest.yaml
     Id:

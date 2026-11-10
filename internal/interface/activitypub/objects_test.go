@@ -155,6 +155,22 @@ func TestCollectionPages(t *testing.T) {
 		}
 	})
 
+	t.Run("hidden lists hold their totals alone", func(t *testing.T) {
+		// Botty shows its lists to its approved followers only, so the collections, which answer
+		// everyone alike, hide them from all (FR-311).
+		for _, name := range []string{"followers", "following"} {
+			target := "/ap/actors/" + botID + "/" + name
+			rec := s.get(t, target, acceptMastodon)
+			if rec.Code != http.StatusOK {
+				t.Fatalf("GET %s = %d %s", target, rec.Code, rec.Body)
+			}
+			checkGolden(t, "collection-"+name+"-hidden.json", rec.Body.Bytes())
+			if rec := s.get(t, target+"?page=true", acceptMastodon); rec.Code != http.StatusForbidden {
+				t.Errorf("GET %s?page=true = %d, want 403", target, rec.Code)
+			}
+		}
+	})
+
 	t.Run("malformed cursor", func(t *testing.T) {
 		if rec := s.get(t, "/ap/actors/"+aliceID+"/outbox?page=true&max_id=nope", acceptMastodon); rec.Code != http.StatusNotFound {
 			t.Errorf("GET = %d, want 404", rec.Code)

@@ -1834,6 +1834,9 @@ export interface paths {
          * @description The accounts that actively follow the account, newest follow first. Followers that
          *     block the viewer, are deactivated, or are deleted are left out, so a page may hold
          *     fewer than `limit` accounts before the last.
+         *
+         *     When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+         *     `/api/v1/problems/follows-hidden` (403); the owner always reads them.
          */
         get: operations["listAccountFollowers"];
         put?: never;
@@ -1855,6 +1858,9 @@ export interface paths {
          * List the accounts that an account follows
          * @description The accounts that the account actively follows, newest follow first, leaving out the
          *     same accounts as `listAccountFollowers`.
+         *
+         *     When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+         *     `/api/v1/problems/follows-hidden` (403); the owner always reads them.
          */
         get: operations["listAccountFollowing"];
         put?: never;
@@ -13290,6 +13296,7 @@ export interface components {
              *     leaves it as it is.
              */
             feed_follows_indexable: boolean;
+            follows_visibility: components["schemas"]["FollowsVisibility"];
             source: components["schemas"]["AccountSource"];
             posting: components["schemas"]["PostingLimits"];
             /**
@@ -14220,6 +14227,15 @@ export interface components {
              */
             notify?: boolean;
         };
+        /**
+         * @description Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+         *     `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+         *     of it is approved; `private`, nobody. The owner always reads both, and the counts
+         *     (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+         *     number of follows and followers alone unless the lists are `public`.
+         * @enum {string}
+         */
+        FollowsVisibility: "public" | "followers" | "private";
         /** @description What a moderator sends with a report forwarded to the target's server. */
         ForwardReportRequest: {
             /**
@@ -16431,6 +16447,9 @@ export interface components {
          *       allowed. Remove one first.
          *     - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
          *       follow request was accepted) can be added to a list.
+         *     - `/api/v1/problems/follows-hidden` (403): the account's `follows_visibility` keeps its
+         *       follows and followers lists from the viewer (`/accounts/{id}/following`,
+         *       `/accounts/{id}/followers`). Its counts stay on the account.
          *     - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
          *       hashtags allowed (100). Unfollow one first.
          *     - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
@@ -17836,6 +17855,7 @@ export interface components {
              *     owner's choice, which a later change of `indexable` leaves as it is.
              */
             feed_enabled?: boolean;
+            follows_visibility?: components["schemas"]["FollowsVisibility"];
         };
         /** @description The settings of a custom emoji to change; absent ones stay. */
         UpdateCustomEmojiRequest: {

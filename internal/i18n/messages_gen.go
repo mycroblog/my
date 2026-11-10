@@ -1960,6 +1960,13 @@ func (l *Localizer) ServerErrorsFollowedTagsTooMany() string {
 	return l.format("server:errors.followed_tags.too_many", nil)
 }
 
+// ServerErrorsFollowsHidden formats "server:errors.follows_hidden". API error title for HTTP 403 when the viewer reads the follows or followers list of an account whose owner shows the lists only to approved followers or to nobody (follows_visibility).
+//
+//	en: This account keeps who it follows and who follows it to itself.
+func (l *Localizer) ServerErrorsFollowsHidden() string {
+	return l.format("server:errors.follows_hidden", nil)
+}
+
 // ServerErrorsForbidden formats "server:errors.forbidden". API error title for HTTP 403 when the user may not perform the operation, e.g. edit another account's post.
 //
 //	en: You are not allowed to do this.

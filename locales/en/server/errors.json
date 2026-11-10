@@ -671,6 +671,10 @@
     "defaultMessage": "You already follow the most hashtags allowed. Unfollow one first.",
     "description": "API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags."
   },
+  "errors.follows_hidden": {
+    "defaultMessage": "This account keeps who it follows and who follows it to itself.",
+    "description": "API error title for HTTP 403 when the viewer reads the follows or followers list of an account whose owner shows the lists only to approved followers or to nobody (follows_visibility)."
+  },
   "errors.keyword_filters.too_many": {
     "defaultMessage": "You already have the most keyword filters allowed. Delete one first.",
     "description": "API error title for HTTP 422 when the user creates another keyword filter beyond the limit of filters."

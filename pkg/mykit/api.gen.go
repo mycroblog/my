@@ -2525,6 +2525,27 @@ func (e FinanceVisibility) Valid() bool {
 	}
 }
 
+// Defines values for FollowsVisibility.
+const (
+	FollowsVisibilityFollowers FollowsVisibility = "followers"
+	FollowsVisibilityPrivate   FollowsVisibility = "private"
+	FollowsVisibilityPublic    FollowsVisibility = "public"
+)
+
+// Valid indicates whether the value is a known member of the FollowsVisibility enum.
+func (e FollowsVisibility) Valid() bool {
+	switch e {
+	case FollowsVisibilityFollowers:
+		return true
+	case FollowsVisibilityPrivate:
+		return true
+	case FollowsVisibilityPublic:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HookAppealState.
 const (
 	HookAppealStateOverturned HookAppealState = "overturned"
@@ -9835,6 +9856,13 @@ type CredentialAccount struct {
 	// FollowingCount The number of accounts that the account actively follows; present where `followers_count` is.
 	FollowingCount *int `json:"following_count,omitempty"`
 
+	// FollowsVisibility Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+	// `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+	// of it is approved; `private`, nobody. The owner always reads both, and the counts
+	// (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+	// number of follows and followers alone unless the lists are `public`.
+	FollowsVisibility FollowsVisibility `json:"follows_visibility"`
+
 	// Header The header image; omitted when there is none, as `avatar` is.
 	Header *MediaVariants `json:"header,omitempty"`
 
@@ -11383,6 +11411,13 @@ type FollowedHashtag struct {
 type FollowedHashtagCollection struct {
 	Items []FollowedHashtag `json:"items"`
 }
+
+// FollowsVisibility Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+// `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+// of it is approved; `private`, nobody. The owner always reads both, and the counts
+// (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+// number of follows and followers alone unless the lists are `public`.
+type FollowsVisibility string
 
 // ForwardReportRequest What a moderator sends with a report forwarded to the target's server.
 type ForwardReportRequest struct {
@@ -14441,6 +14476,9 @@ type PreviewDomainBlockImportRequest struct {
 //     allowed. Remove one first.
 //   - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
 //     follow request was accepted) can be added to a list.
+//   - `/api/v1/problems/follows-hidden` (403): the account's `follows_visibility` keeps its
+//     follows and followers lists from the viewer (`/accounts/{id}/following`,
+//     `/accounts/{id}/followers`). Its counts stay on the account.
 //   - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
 //     hashtags allowed (100). Unfollow one first.
 //   - `/api/v1/problems/too-many-featured-tags` (422): the user asked to feature more hashtags
@@ -16032,6 +16070,13 @@ type UpdateCredentialsRequest struct {
 
 	// Fields The metadata fields, replacing the current ones; at most 4.
 	Fields *[]AccountFieldSource `json:"fields,omitempty"`
+
+	// FollowsVisibility Who may read an account's follows and followers lists (`GET /accounts/{id}/following` and
+	// `GET /accounts/{id}/followers`): `public`, everyone; `followers`, the accounts whose follow
+	// of it is approved; `private`, nobody. The owner always reads both, and the counts
+	// (`following_count`, `followers_count`) stay visible to everyone. Other servers see the
+	// number of follows and followers alone unless the lists are `public`.
+	FollowsVisibility *FollowsVisibility `json:"follows_visibility,omitempty"`
 
 	// HeaderMediaId The ID of a processed image that the user uploaded, to become the header image;
 	// empty removes the header image.
@@ -20602,6 +20647,9 @@ type ClientInterface interface {
 	// block the viewer, are deactivated, or are deleted are left out, so a page may hold
 	// fewer than `limit` accounts before the last.
 	//
+	// When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+	// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
+	//
 	// Corresponds with GET /accounts/{id}/followers (the `ListAccountFollowers` operationId).
 	ListAccountFollowers(ctx context.Context, id AccountId, params *ListAccountFollowersParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -20609,6 +20657,9 @@ type ClientInterface interface {
 	//
 	// The accounts that the account actively follows, newest follow first, leaving out the
 	// same accounts as `listAccountFollowers`.
+	//
+	// When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+	// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
 	//
 	// Corresponds with GET /accounts/{id}/following (the `ListAccountFollowing` operationId).
 	ListAccountFollowing(ctx context.Context, id AccountId, params *ListAccountFollowingParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -28078,6 +28129,9 @@ func (c *Client) RemoveFollower(ctx context.Context, id AccountId, reqEditors ..
 // block the viewer, are deactivated, or are deleted are left out, so a page may hold
 // fewer than `limit` accounts before the last.
 //
+// When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
+//
 // Corresponds with GET /accounts/{id}/followers (the `ListAccountFollowers` operationId).
 func (c *Client) ListAccountFollowers(ctx context.Context, id AccountId, params *ListAccountFollowersParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListAccountFollowersRequest(c.Server, id, params)
@@ -28095,6 +28149,9 @@ func (c *Client) ListAccountFollowers(ctx context.Context, id AccountId, params 
 //
 // The accounts that the account actively follows, newest follow first, leaving out the
 // same accounts as `listAccountFollowers`.
+//
+// When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
 //
 // Corresponds with GET /accounts/{id}/following (the `ListAccountFollowing` operationId).
 func (c *Client) ListAccountFollowing(ctx context.Context, id AccountId, params *ListAccountFollowingParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -60082,6 +60139,9 @@ type ClientWithResponsesInterface interface {
 	// block the viewer, are deactivated, or are deleted are left out, so a page may hold
 	// fewer than `limit` accounts before the last.
 	//
+	// When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+	// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
+	//
 	// Returns a wrapper object for the known response body format(s).
 	//
 	// Corresponds with GET /accounts/{id}/followers (the `ListAccountFollowers` operationId).
@@ -60091,6 +60151,9 @@ type ClientWithResponsesInterface interface {
 	//
 	// The accounts that the account actively follows, newest follow first, leaving out the
 	// same accounts as `listAccountFollowers`.
+	//
+	// When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+	// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -96752,6 +96815,9 @@ func (c *ClientWithResponses) RemoveFollowerWithResponse(ctx context.Context, id
 // block the viewer, are deactivated, or are deleted are left out, so a page may hold
 // fewer than `limit` accounts before the last.
 //
+// When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
+//
 // Returns a wrapper object for the known response body format(s).
 //
 // Corresponds with GET /accounts/{id}/followers (the `ListAccountFollowers` operationId).
@@ -96767,6 +96833,9 @@ func (c *ClientWithResponses) ListAccountFollowersWithResponse(ctx context.Conte
 //
 // The accounts that the account actively follows, newest follow first, leaving out the
 // same accounts as `listAccountFollowers`.
+//
+// When the account's `follows_visibility` keeps its follows from the viewer, the answer is
+// `/api/v1/problems/follows-hidden` (403); the owner always reads them.
 //
 // Returns a wrapper object for the known response body format(s).
 //

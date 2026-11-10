@@ -134,7 +134,10 @@ func newAccounts(t *testing.T) *fakeAccounts {
 		DisplayName: "Alice", NoteHTML: "<p>Hello</p>", Discoverable: true, AvatarMediaID: aliceAvatarID, HeaderMediaID: aliceHeaderID,
 		Fields: []account.ProfileField{{Position: 0, Name: "Website", ValueHTML: `<a href="https://example.org" rel="me">example.org</a>`}},
 	})
-	bot := localActor(t, botID, "Botty", account.ProfileRevision{DisplayName: "Botty", Bot: true, Locked: true, Indexable: true})
+	bot := localActor(t, botID, "Botty", account.ProfileRevision{
+		// Botty shows its follows and followers to its approved followers only (FR-311).
+		DisplayName: "Botty", Bot: true, Locked: true, Indexable: true, FollowsVisibility: account.FollowsFollowers,
+	})
 	carol := localActor(t, carolID, "carol", account.ProfileRevision{DisplayName: "Carol"})
 	carolDue := created.Add(30 * 24 * time.Hour)
 	carol.Lifecycle = account.LifecycleState{AccountID: carolID, State: account.StateDeletionScheduled, Since: created, DeletionDueAt: &carolDue}

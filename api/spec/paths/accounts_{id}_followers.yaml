@@ -6,6 +6,9 @@ get:
     The accounts that actively follow the account, newest follow first. Followers that
     block the viewer, are deactivated, or are deleted are left out, so a page may hold
     fewer than `limit` accounts before the last.
+
+    When the account's `follows_visibility` keeps its followers from the viewer, the answer is
+    `/api/v1/problems/follows-hidden` (403); the owner always reads them.
   tags: [accounts]
   security:
     - {}

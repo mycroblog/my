@@ -723,6 +723,8 @@ ADR-0005 の方針（既定はキャッシュしない）に従います。
 - コレクションはだれにも同じ内容を返します。outbox・followers・following は `totalItems` と最初のページ（`?page=true`）へのリンクを持つ `OrderedCollection` で、ページ（`OrderedCollectionPage`）は `partOf` と次のページ（`?max_id={カーソル}&page=true`）を持ちます（Mastodon と同じ形）。
   - outbox は、未ログインの閲覧者がプロフィールで見られる投稿（`public` / `unlisted`）の `Create` を、新しい順に 20 件ずつ返します。ブーストは載せません。`totalItems` は削除されていない投稿の数です（Mastodon と同じ）。
   - followers / following は、承認済みのフォローの相手の Actor の `id` を、新しいフォロー順に 40 件ずつ返します。有効でないアカウントは省き、`totalItems` はフォローの件数です。
+    持ち主が一覧の公開範囲（`follows_visibility`、FR-311）を `public` 以外にしたときは、`first` の無い `totalItems` だけの `OrderedCollection` を返し、ページは `403` です（Mastodon の隠したコレクションと同じ形）。
+    コレクションは要求者で答えを変えないので、承認済みのフォロワーに見せる `followers` も、ここでは `private` と同じに隠します。
   - featured は、ピン留めした投稿のうち未ログインで閲覧できるもの（`public` / `unlisted`）の `Note` を `orderedItems` に並べます。featured-tags は、持ち主が選んだ注目のハッシュタグ（10 件まで、持ち主の順）の `Hashtag`（`name` は `#` 付きの名前、`href` はそのプロフィールのタグの URL）を `items` に並べる `Collection` で、`totalItems` はその数です（ADR-0006 §17。Mastodon と同じ形）。
   - 埋め込む文書は `@context` を持たないので、outbox のページと featured の `@context` は §7.4 の文書と同じもの（`federation.LDContext`）で、埋め込む文書の語を定義します。それ以外は ActivityStreams だけです。
 - 会話のコレクション `GET /ap/contexts/{uuid}`（[ADR-0154](../adr/0154-conversations.md) §9）は、ほかのコレクションと違い、要求した相手によって内容が変わります。

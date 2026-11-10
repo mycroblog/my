@@ -671,6 +671,10 @@
     "defaultMessage": "フォローできるハッシュタグの数が上限に達しています。先にどれかのフォローを解除してください。",
     "description": "API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags."
   },
+  "errors.follows_hidden": {
+    "defaultMessage": "このアカウントは、フォローとフォロワーの一覧を公開していません。",
+    "description": "API error title for HTTP 403 when the viewer reads the follows or followers list of an account whose owner shows the lists only to approved followers or to nobody (follows_visibility)."
+  },
   "errors.keyword_filters.too_many": {
     "defaultMessage": "作れるキーワードフィルタの数の上限に達しています。先にどれかのフィルタを削除してください。",
     "description": "API error title for HTTP 422 when the user creates another keyword filter beyond the limit of filters."

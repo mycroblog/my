@@ -531,8 +531,9 @@ func accountRevisesProfiles(t *testing.T, e *AccountEnv) {
 	reg := e.Register(t, "dave")
 	in := appaccount.ProfileInput{
 		DisplayName: "Dave", NoteHTML: "<p>hi</p>", Locked: true, Bot: true, Discoverable: true, Indexable: true, AIOptOut: true, Feed: account.FeedDisabled,
-		AvatarMediaID: "0192f3a4-0000-7000-8000-000000000001",
-		Fields:        []account.ProfileField{{Name: "web", ValueHTML: "<a>x</a>"}, {Name: "pronouns", ValueHTML: "he/him"}},
+		FollowsVisibility: account.FollowsFollowers,
+		AvatarMediaID:     "0192f3a4-0000-7000-8000-000000000001",
+		Fields:            []account.ProfileField{{Name: "web", ValueHTML: "<a>x</a>"}, {Name: "pronouns", ValueHTML: "he/him"}},
 	}
 	e.Clock.Advance(time.Second)
 	rev, err := e.Accounts.ReviseProfile(ctx, reg.AccountID, in)
@@ -643,7 +644,7 @@ func accountUpdatesLocalProfiles(t *testing.T, e *AccountEnv) {
 	}
 	want := account.ProfileRevision{
 		ID: got.Profile.ID, AccountID: reg.AccountID, Seq: 2, DisplayName: "Fern", NoteHTML: "<p>rendered hello\nworld</p>",
-		Locked: true, Discoverable: true, Feed: account.FeedFollowIndexable, AvatarMediaID: contractProfileImage, RevisedAt: e.Clock.Now(),
+		Locked: true, Discoverable: true, Feed: account.FeedFollowIndexable, FollowsVisibility: account.FollowsPublic, AvatarMediaID: contractProfileImage, RevisedAt: e.Clock.Now(),
 		Fields: []account.ProfileField{
 			{Position: 0, Name: "web", ValueHTML: "<p>rendered https://fern.example</p>"},
 			{Position: 1, Name: "pronouns", ValueHTML: "<p>rendered she/her</p>"},

@@ -263,9 +263,11 @@ type ProfileInput struct {
 	Indexable    bool
 	AIOptOut     bool
 	// Feed is the owner's choice about the Atom feed; the zero value follows Indexable.
-	Feed          account.FeedSetting
-	AvatarMediaID string
-	HeaderMediaID string
+	Feed account.FeedSetting
+	// FollowsVisibility is who may read the follows and followers lists; the zero value is public.
+	FollowsVisibility account.FollowsVisibility
+	AvatarMediaID     string
+	HeaderMediaID     string
 	// Fields are numbered by their order.
 	Fields []account.ProfileField
 	// Source is what the owner typed, nil for none; its FieldValues match Fields.
@@ -315,21 +317,22 @@ func (s *Service) reviseProfile(ctx context.Context, accountID string, in Profil
 		id = s.d.IDs.NewID()
 	}
 	base := account.ProfileRevision{
-		ID:            id,
-		AccountID:     accountID,
-		DisplayName:   in.DisplayName,
-		NoteHTML:      in.NoteHTML,
-		Locked:        in.Locked,
-		Bot:           in.Bot,
-		Discoverable:  in.Discoverable,
-		Indexable:     in.Indexable,
-		AIOptOut:      in.AIOptOut,
-		Feed:          in.Feed.Normalize(),
-		AvatarMediaID: in.AvatarMediaID,
-		HeaderMediaID: in.HeaderMediaID,
-		RevisedAt:     s.d.Clock.Now(),
-		Source:        in.Source,
-		EmojiIDs:      in.EmojiIDs,
+		ID:                id,
+		AccountID:         accountID,
+		DisplayName:       in.DisplayName,
+		NoteHTML:          in.NoteHTML,
+		Locked:            in.Locked,
+		Bot:               in.Bot,
+		Discoverable:      in.Discoverable,
+		Indexable:         in.Indexable,
+		AIOptOut:          in.AIOptOut,
+		Feed:              in.Feed.Normalize(),
+		FollowsVisibility: in.FollowsVisibility.Normalize(),
+		AvatarMediaID:     in.AvatarMediaID,
+		HeaderMediaID:     in.HeaderMediaID,
+		RevisedAt:         s.d.Clock.Now(),
+		Source:            in.Source,
+		EmojiIDs:          in.EmojiIDs,
 	}
 	if in.Source != nil && len(in.Source.FieldValues) != len(in.Fields) {
 		return account.ProfileRevision{}, fmt.Errorf("account: %d field sources for %d fields", len(in.Source.FieldValues), len(in.Fields))

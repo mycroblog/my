@@ -54,7 +54,9 @@ CREATE TABLE account_profile_revisions (
   header_media_id TEXT,
   revised_at INTEGER NOT NULL,
   -- The owner's choice about the Atom feed (FR-213): follow indexable, or enabled / disabled.
-  feed TEXT NOT NULL DEFAULT 'follow_indexable' CHECK (feed IN ('follow_indexable', 'enabled', 'disabled'))
+  feed TEXT NOT NULL DEFAULT 'follow_indexable' CHECK (feed IN ('follow_indexable', 'enabled', 'disabled')),
+  -- Who may read the follows and followers lists (FR-311): everyone, approved followers, or the owner.
+  follows_visibility TEXT NOT NULL DEFAULT 'public' CHECK (follows_visibility IN ('public', 'followers', 'private'))
 ) STRICT;
 CREATE UNIQUE INDEX account_profile_revisions_account_id_seq ON account_profile_revisions (account_id, seq);
 

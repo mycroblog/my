@@ -72,7 +72,7 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 		Source: AccountSource{Fields: []AccountFieldSource{}}, Posting: posting, Permissions: permissions,
 		StatusesCount: statuses, FollowRequestsCount: requests,
 		// Without a profile, the owner has made no choice about the feed.
-		FeedFollowsIndexable: true,
+		FeedFollowsIndexable: true, FollowsVisibility: FollowsVisibilityPublic,
 	}
 	p := a.Profile
 	if p == nil {
@@ -80,6 +80,7 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 	}
 	out.Discoverable, out.Indexable, out.AiOptOut = p.Discoverable, p.Indexable, p.AIOptOut
 	out.FeedEnabled, out.FeedFollowsIndexable = p.FeedEnabled(), p.FeedFollowsIndexable()
+	out.FollowsVisibility = FollowsVisibility(p.FollowsVisibility.Normalize())
 	for i, f := range p.Fields {
 		src := AccountFieldSource{Name: f.Name}
 		if p.Source != nil && i < len(p.Source.FieldValues) {
@@ -149,6 +150,13 @@ func (s *Server) UpdateAccountCredentials(ctx context.Context, req UpdateAccount
 				fields[i] = account.FieldSource{Name: f.Name, Value: f.Value}
 			}
 			in.Fields = &fields
+		}
+		if b.FollowsVisibility != nil {
+			fv, ok := account.ParseFollowsVisibility(string(*b.FollowsVisibility))
+			if !ok {
+				return UpdateAccountCredentialsdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "follows_visibility")), nil
+			}
+			in.FollowsVisibility = &fv
 		}
 	}
 	a, err := s.o.Profiles.UpdateProfile(ctx, v.AccountID, in)
