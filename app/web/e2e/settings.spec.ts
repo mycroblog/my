@@ -147,6 +147,7 @@ async function signedInServer(
     keep_favourited: true,
     keep_media: false,
     keep_polls: false,
+    keep_articles: true,
     keep_visibilities: ["direct"],
     keep_min_boosts: 0,
     keep_min_favourites: 0,
@@ -804,6 +805,7 @@ test("the automatic deletion under the server maximum is brought within it witho
         allow_favourited: false,
         allow_media: false,
         allow_polls: false,
+        allow_articles: false,
         allow_visibilities: false,
         allow_thresholds: false,
       },
@@ -815,6 +817,7 @@ test("the automatic deletion under the server maximum is brought within it witho
         keep_favourited: false,
         keep_media: false,
         keep_polls: false,
+        keep_articles: false,
         keep_visibilities: [],
         keep_min_boosts: 0,
         keep_min_favourites: 0,
@@ -830,12 +833,13 @@ test("the automatic deletion under the server maximum is brought within it witho
   const count = limit.getByRole("status");
   await expect(count).toContainText(message("settings.auto_delete.limit.bound.count"));
   await expect(count).toContainText("4");
-  // The saved policy is off and keeps favourites and direct posts: each is marked, and turned within the maximum.
+  // The saved policy is off and keeps favourites, articles and direct posts: each is marked, and turned within the maximum.
   const enabled = main.getByRole("checkbox", { name: message("settings.auto_delete.enabled") });
   await expect(enabled).toHaveAttribute("aria-invalid", "true");
   for (const name of [
     message("settings.auto_delete.enabled"),
     message("settings.auto_delete.keep.favourited"),
+    message("settings.auto_delete.keep.articles"),
     message("compose.visibility.direct"),
   ]) {
     await main.getByRole("checkbox", { name, exact: true }).focus();

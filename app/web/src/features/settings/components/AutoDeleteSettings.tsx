@@ -37,6 +37,7 @@ const flags: readonly { id: AutoDeleteFlag; label: ClientMessageKey }[] = [
   { id: "keep_favourited", label: "client:settings.auto_delete.keep.favourited" },
   { id: "keep_media", label: "client:settings.auto_delete.keep.media" },
   { id: "keep_polls", label: "client:settings.auto_delete.keep.polls" },
+  { id: "keep_articles", label: "client:settings.auto_delete.keep.articles" },
 ];
 
 /** The words of a threshold of boosts or favourites: a number of times, or none. */
@@ -113,7 +114,7 @@ export function AutoDeleteSettings() {
           items={flags.map((flag) => ({
             id: flag.id,
             label: t(flag.label),
-            selected: form.policy[flag.id],
+            selected: form.policy[flag.id] === true,
             onChange: (selected: boolean) => {
               form.setFlag(flag.id, selected);
             },

@@ -927,6 +927,10 @@
     "defaultMessage": "投票が付いた投稿",
     "description": "Exception of the automatic deletion: posts with a poll."
   },
+  "settings.auto_delete.keep.articles": {
+    "defaultMessage": "記事",
+    "description": "Exception of the automatic deletion: articles, which are long posts with a title."
+  },
   "settings.auto_delete.visibilities": {
     "defaultMessage": "残す公開範囲",
     "description": "Legend of the checkboxes of the visibilities whose posts the automatic deletion keeps."

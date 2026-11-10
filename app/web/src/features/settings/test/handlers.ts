@@ -52,6 +52,7 @@ export const autoDeletePolicyFixture: Schemas["AutoDeletePolicy"] = {
   keep_favourited: true,
   keep_media: false,
   keep_polls: false,
+  keep_articles: true,
   keep_visibilities: ["direct"],
   keep_min_boosts: 0,
   keep_min_favourites: 0,
@@ -69,6 +70,7 @@ export const autoDeleteLimitFixture: Schemas["AutoDeleteLimit"] = {
   allow_favourited: false,
   allow_media: false,
   allow_polls: false,
+  allow_articles: false,
   allow_visibilities: false,
   allow_thresholds: false,
 };
@@ -86,6 +88,7 @@ export function effectiveAutoDeletePolicy(
     keep_favourited: policy.keep_favourited && limit.allow_favourited,
     keep_media: policy.keep_media && limit.allow_media,
     keep_polls: policy.keep_polls && limit.allow_polls,
+    keep_articles: policy.keep_articles === true && limit.allow_articles === true,
     keep_visibilities: limit.allow_visibilities ? policy.keep_visibilities : [],
     keep_min_boosts: limit.allow_thresholds ? policy.keep_min_boosts : 0,
     keep_min_favourites: limit.allow_thresholds ? policy.keep_min_favourites : 0,
