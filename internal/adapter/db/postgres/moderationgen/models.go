@@ -17,6 +17,14 @@ type AccountRestriction struct {
 	EffectiveUntil *time.Time
 }
 
+type AllowlistCutoff struct {
+	ID             string
+	Cause          string
+	Domain         *string
+	IssuedByUserID *string
+	OccurredAt     time.Time
+}
+
 type AuditLogEntry struct {
 	ID            string
 	ActorKind     string
@@ -27,6 +35,46 @@ type AuditLogEntry struct {
 	TargetLabel   string
 	SourceEventID *string
 	OccurredAt    time.Time
+}
+
+type DomainAllow struct {
+	Domain          string
+	Comment         *string
+	CreatedByUserID *string
+	CreatedAt       time.Time
+}
+
+type DomainListDraftRejection struct {
+	ID                string
+	SubscriptionID    string
+	ChangeKind        string
+	Domain            string
+	Kind              string
+	EntrySinceFetchID *string
+	ActionID          *string
+	RejectedByUserID  *string
+	RejectedAt        time.Time
+}
+
+type DomainListEntry struct {
+	SubscriptionID string
+	Domain         string
+	Severity       string
+	RejectMedia    bool
+	RejectReports  bool
+	PublicComment  *string
+	Obfuscate      bool
+	SinceFetchID   string
+}
+
+type DomainListFetch struct {
+	ID             string
+	SubscriptionID string
+	Outcome        string
+	HttpStatus     *int32
+	ErrorCode      *string
+	EntryCount     int32
+	FetchedAt      time.Time
 }
 
 type DomainModerationAction struct {
@@ -159,4 +207,10 @@ type SignupBlock struct {
 	CreatedByUserID    *string
 	ExpiresAt          *time.Time
 	CreatedAt          time.Time
+}
+
+type SubscriptionDomainAction struct {
+	ActionID       string
+	SubscriptionID string
+	FetchID        *string
 }

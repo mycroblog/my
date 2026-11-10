@@ -322,6 +322,14 @@ const (
 	AdminAuditActionCustomEmojiUpdated              AdminAuditAction = "custom_emoji_updated"
 	AdminAuditActionDomainActionIssued              AdminAuditAction = "domain_action_issued"
 	AdminAuditActionDomainActionLifted              AdminAuditAction = "domain_action_lifted"
+	AdminAuditActionDomainAllowAdded                AdminAuditAction = "domain_allow_added"
+	AdminAuditActionDomainAllowRemoved              AdminAuditAction = "domain_allow_removed"
+	AdminAuditActionDomainListDraftAccepted         AdminAuditAction = "domain_list_draft_accepted"
+	AdminAuditActionDomainListDraftRejected         AdminAuditAction = "domain_list_draft_rejected"
+	AdminAuditActionDomainListFetchQueued           AdminAuditAction = "domain_list_fetch_queued"
+	AdminAuditActionDomainListSubscriptionCreated   AdminAuditAction = "domain_list_subscription_created"
+	AdminAuditActionDomainListSubscriptionDeleted   AdminAuditAction = "domain_list_subscription_deleted"
+	AdminAuditActionDomainListSubscriptionUpdated   AdminAuditAction = "domain_list_subscription_updated"
 	AdminAuditActionDomainStatusesRefetchQueued     AdminAuditAction = "domain_statuses_refetch_queued"
 	AdminAuditActionEmailSuppressionLifted          AdminAuditAction = "email_suppression_lifted"
 	AdminAuditActionHookAppealUpheld                AdminAuditAction = "hook_appeal_upheld"
@@ -456,6 +464,22 @@ func (e AdminAuditAction) Valid() bool {
 	case AdminAuditActionDomainActionIssued:
 		return true
 	case AdminAuditActionDomainActionLifted:
+		return true
+	case AdminAuditActionDomainAllowAdded:
+		return true
+	case AdminAuditActionDomainAllowRemoved:
+		return true
+	case AdminAuditActionDomainListDraftAccepted:
+		return true
+	case AdminAuditActionDomainListDraftRejected:
+		return true
+	case AdminAuditActionDomainListFetchQueued:
+		return true
+	case AdminAuditActionDomainListSubscriptionCreated:
+		return true
+	case AdminAuditActionDomainListSubscriptionDeleted:
+		return true
+	case AdminAuditActionDomainListSubscriptionUpdated:
 		return true
 	case AdminAuditActionDomainStatusesRefetchQueued:
 		return true
@@ -628,35 +652,37 @@ func (e AdminAuditActorKind) Valid() bool {
 
 // Defines values for AdminAuditTargetKind.
 const (
-	AdminAuditTargetKindAccount               AdminAuditTargetKind = "account"
-	AdminAuditTargetKindAnnouncement          AdminAuditTargetKind = "announcement"
-	AdminAuditTargetKindAppeal                AdminAuditTargetKind = "appeal"
-	AdminAuditTargetKindBillingSource         AdminAuditTargetKind = "billing_source"
-	AdminAuditTargetKindCostItem              AdminAuditTargetKind = "cost_item"
-	AdminAuditTargetKindCustomEmoji           AdminAuditTargetKind = "custom_emoji"
-	AdminAuditTargetKindCustomEmojiRequest    AdminAuditTargetKind = "custom_emoji_request"
-	AdminAuditTargetKindDomain                AdminAuditTargetKind = "domain"
-	AdminAuditTargetKindHookDecision          AdminAuditTargetKind = "hook_decision"
-	AdminAuditTargetKindInstance              AdminAuditTargetKind = "instance"
-	AdminAuditTargetKindInvite                AdminAuditTargetKind = "invite"
-	AdminAuditTargetKindLinkCardDomain        AdminAuditTargetKind = "link_card_domain"
-	AdminAuditTargetKindLoginProvider         AdminAuditTargetKind = "login_provider"
-	AdminAuditTargetKindOauthClient           AdminAuditTargetKind = "oauth_client"
-	AdminAuditTargetKindOauthClientHost       AdminAuditTargetKind = "oauth_client_host"
-	AdminAuditTargetKindPaymentProvider       AdminAuditTargetKind = "payment_provider"
-	AdminAuditTargetKindRelay                 AdminAuditTargetKind = "relay"
-	AdminAuditTargetKindReport                AdminAuditTargetKind = "report"
-	AdminAuditTargetKindRole                  AdminAuditTargetKind = "role"
-	AdminAuditTargetKindRule                  AdminAuditTargetKind = "rule"
-	AdminAuditTargetKindSetting               AdminAuditTargetKind = "setting"
-	AdminAuditTargetKindSignupBlock           AdminAuditTargetKind = "signup_block"
-	AdminAuditTargetKindStatus                AdminAuditTargetKind = "status"
-	AdminAuditTargetKindSupporterPlan         AdminAuditTargetKind = "supporter_plan"
-	AdminAuditTargetKindSupporterProgram      AdminAuditTargetKind = "supporter_program"
-	AdminAuditTargetKindSupporterSubscription AdminAuditTargetKind = "supporter_subscription"
-	AdminAuditTargetKindUser                  AdminAuditTargetKind = "user"
-	AdminAuditTargetKindVoiceRoom             AdminAuditTargetKind = "voice_room"
-	AdminAuditTargetKindWebhook               AdminAuditTargetKind = "webhook"
+	AdminAuditTargetKindAccount                AdminAuditTargetKind = "account"
+	AdminAuditTargetKindAnnouncement           AdminAuditTargetKind = "announcement"
+	AdminAuditTargetKindAppeal                 AdminAuditTargetKind = "appeal"
+	AdminAuditTargetKindBillingSource          AdminAuditTargetKind = "billing_source"
+	AdminAuditTargetKindCostItem               AdminAuditTargetKind = "cost_item"
+	AdminAuditTargetKindCustomEmoji            AdminAuditTargetKind = "custom_emoji"
+	AdminAuditTargetKindCustomEmojiRequest     AdminAuditTargetKind = "custom_emoji_request"
+	AdminAuditTargetKindDomain                 AdminAuditTargetKind = "domain"
+	AdminAuditTargetKindDomainAllow            AdminAuditTargetKind = "domain_allow"
+	AdminAuditTargetKindDomainListSubscription AdminAuditTargetKind = "domain_list_subscription"
+	AdminAuditTargetKindHookDecision           AdminAuditTargetKind = "hook_decision"
+	AdminAuditTargetKindInstance               AdminAuditTargetKind = "instance"
+	AdminAuditTargetKindInvite                 AdminAuditTargetKind = "invite"
+	AdminAuditTargetKindLinkCardDomain         AdminAuditTargetKind = "link_card_domain"
+	AdminAuditTargetKindLoginProvider          AdminAuditTargetKind = "login_provider"
+	AdminAuditTargetKindOauthClient            AdminAuditTargetKind = "oauth_client"
+	AdminAuditTargetKindOauthClientHost        AdminAuditTargetKind = "oauth_client_host"
+	AdminAuditTargetKindPaymentProvider        AdminAuditTargetKind = "payment_provider"
+	AdminAuditTargetKindRelay                  AdminAuditTargetKind = "relay"
+	AdminAuditTargetKindReport                 AdminAuditTargetKind = "report"
+	AdminAuditTargetKindRole                   AdminAuditTargetKind = "role"
+	AdminAuditTargetKindRule                   AdminAuditTargetKind = "rule"
+	AdminAuditTargetKindSetting                AdminAuditTargetKind = "setting"
+	AdminAuditTargetKindSignupBlock            AdminAuditTargetKind = "signup_block"
+	AdminAuditTargetKindStatus                 AdminAuditTargetKind = "status"
+	AdminAuditTargetKindSupporterPlan          AdminAuditTargetKind = "supporter_plan"
+	AdminAuditTargetKindSupporterProgram       AdminAuditTargetKind = "supporter_program"
+	AdminAuditTargetKindSupporterSubscription  AdminAuditTargetKind = "supporter_subscription"
+	AdminAuditTargetKindUser                   AdminAuditTargetKind = "user"
+	AdminAuditTargetKindVoiceRoom              AdminAuditTargetKind = "voice_room"
+	AdminAuditTargetKindWebhook                AdminAuditTargetKind = "webhook"
 )
 
 // Valid indicates whether the value is a known member of the AdminAuditTargetKind enum.
@@ -677,6 +703,10 @@ func (e AdminAuditTargetKind) Valid() bool {
 	case AdminAuditTargetKindCustomEmojiRequest:
 		return true
 	case AdminAuditTargetKindDomain:
+		return true
+	case AdminAuditTargetKindDomainAllow:
+		return true
+	case AdminAuditTargetKindDomainListSubscription:
 		return true
 	case AdminAuditTargetKindHookDecision:
 		return true
@@ -791,6 +821,174 @@ func (e AdminDomainActionKind) Valid() bool {
 	case AdminDomainActionKindRejectReports:
 		return true
 	case AdminDomainActionKindSuspend:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDomainListChange.
+const (
+	AdminDomainListChangeIssue AdminDomainListChange = "issue"
+	AdminDomainListChangeLift  AdminDomainListChange = "lift"
+)
+
+// Valid indicates whether the value is a known member of the AdminDomainListChange enum.
+func (e AdminDomainListChange) Valid() bool {
+	switch e {
+	case AdminDomainListChangeIssue:
+		return true
+	case AdminDomainListChangeLift:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDomainListFetchError.
+const (
+	AdminDomainListFetchErrorForbiddenDestination AdminDomainListFetchError = "forbidden_destination"
+	AdminDomainListFetchErrorHttpStatus           AdminDomainListFetchError = "http_status"
+	AdminDomainListFetchErrorMalformed            AdminDomainListFetchError = "malformed"
+	AdminDomainListFetchErrorNetwork              AdminDomainListFetchError = "network"
+	AdminDomainListFetchErrorTooLarge             AdminDomainListFetchError = "too_large"
+	AdminDomainListFetchErrorTooManyEntries       AdminDomainListFetchError = "too_many_entries"
+)
+
+// Valid indicates whether the value is a known member of the AdminDomainListFetchError enum.
+func (e AdminDomainListFetchError) Valid() bool {
+	switch e {
+	case AdminDomainListFetchErrorForbiddenDestination:
+		return true
+	case AdminDomainListFetchErrorHttpStatus:
+		return true
+	case AdminDomainListFetchErrorMalformed:
+		return true
+	case AdminDomainListFetchErrorNetwork:
+		return true
+	case AdminDomainListFetchErrorTooLarge:
+		return true
+	case AdminDomainListFetchErrorTooManyEntries:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDomainListFetchOutcome.
+const (
+	AdminDomainListFetchOutcomeApplied     AdminDomainListFetchOutcome = "applied"
+	AdminDomainListFetchOutcomeFailed      AdminDomainListFetchOutcome = "failed"
+	AdminDomainListFetchOutcomeNotModified AdminDomainListFetchOutcome = "not_modified"
+)
+
+// Valid indicates whether the value is a known member of the AdminDomainListFetchOutcome enum.
+func (e AdminDomainListFetchOutcome) Valid() bool {
+	switch e {
+	case AdminDomainListFetchOutcomeApplied:
+		return true
+	case AdminDomainListFetchOutcomeFailed:
+		return true
+	case AdminDomainListFetchOutcomeNotModified:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDomainListFormat.
+const (
+	AdminDomainListFormatMastodonCsv  AdminDomainListFormat = "mastodon_csv"
+	AdminDomainListFormatMastodonJson AdminDomainListFormat = "mastodon_json"
+	AdminDomainListFormatPlainText    AdminDomainListFormat = "plain_text"
+)
+
+// Valid indicates whether the value is a known member of the AdminDomainListFormat enum.
+func (e AdminDomainListFormat) Valid() bool {
+	switch e {
+	case AdminDomainListFormatMastodonCsv:
+		return true
+	case AdminDomainListFormatMastodonJson:
+		return true
+	case AdminDomainListFormatPlainText:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDomainListHold.
+const (
+	AdminDomainListHoldDraftMode       AdminDomainListHold = "draft_mode"
+	AdminDomainListHoldMassLift        AdminDomainListHold = "mass_lift"
+	AdminDomainListHoldUnknownSeverity AdminDomainListHold = "unknown_severity"
+)
+
+// Valid indicates whether the value is a known member of the AdminDomainListHold enum.
+func (e AdminDomainListHold) Valid() bool {
+	switch e {
+	case AdminDomainListHoldDraftMode:
+		return true
+	case AdminDomainListHoldMassLift:
+		return true
+	case AdminDomainListHoldUnknownSeverity:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDomainListMode.
+const (
+	AdminDomainListModeAutomatic AdminDomainListMode = "automatic"
+	AdminDomainListModeDraft     AdminDomainListMode = "draft"
+)
+
+// Valid indicates whether the value is a known member of the AdminDomainListMode enum.
+func (e AdminDomainListMode) Valid() bool {
+	switch e {
+	case AdminDomainListModeAutomatic:
+		return true
+	case AdminDomainListModeDraft:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDomainListSilenceAs.
+const (
+	AdminDomainListSilenceAsIgnore AdminDomainListSilenceAs = "ignore"
+	AdminDomainListSilenceAsLimit  AdminDomainListSilenceAs = "limit"
+)
+
+// Valid indicates whether the value is a known member of the AdminDomainListSilenceAs enum.
+func (e AdminDomainListSilenceAs) Valid() bool {
+	switch e {
+	case AdminDomainListSilenceAsIgnore:
+		return true
+	case AdminDomainListSilenceAsLimit:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AdminDomainListSuspendAs.
+const (
+	AdminDomainListSuspendAsIgnore  AdminDomainListSuspendAs = "ignore"
+	AdminDomainListSuspendAsLimit   AdminDomainListSuspendAs = "limit"
+	AdminDomainListSuspendAsSuspend AdminDomainListSuspendAs = "suspend"
+)
+
+// Valid indicates whether the value is a known member of the AdminDomainListSuspendAs enum.
+func (e AdminDomainListSuspendAs) Valid() bool {
+	switch e {
+	case AdminDomainListSuspendAsIgnore:
+		return true
+	case AdminDomainListSuspendAsLimit:
+		return true
+	case AdminDomainListSuspendAsSuspend:
 		return true
 	default:
 		return false
@@ -1949,6 +2147,54 @@ func (e DomainBlockSeverity) Valid() bool {
 	}
 }
 
+// Defines values for DraftFailureReason.
+const (
+	DraftFailureReasonInvalid          DraftFailureReason = "invalid"
+	DraftFailureReasonMediaUnavailable DraftFailureReason = "media_unavailable"
+	DraftFailureReasonQuoteUnavailable DraftFailureReason = "quote_unavailable"
+	DraftFailureReasonRejected         DraftFailureReason = "rejected"
+	DraftFailureReasonReplyUnavailable DraftFailureReason = "reply_unavailable"
+	DraftFailureReasonRestricted       DraftFailureReason = "restricted"
+)
+
+// Valid indicates whether the value is a known member of the DraftFailureReason enum.
+func (e DraftFailureReason) Valid() bool {
+	switch e {
+	case DraftFailureReasonInvalid:
+		return true
+	case DraftFailureReasonMediaUnavailable:
+		return true
+	case DraftFailureReasonQuoteUnavailable:
+		return true
+	case DraftFailureReasonRejected:
+		return true
+	case DraftFailureReasonReplyUnavailable:
+		return true
+	case DraftFailureReasonRestricted:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DraftScheduleOutcomeOutcome.
+const (
+	DraftScheduleOutcomeOutcomeCancelled DraftScheduleOutcomeOutcome = "cancelled"
+	DraftScheduleOutcomeOutcomeFailed    DraftScheduleOutcomeOutcome = "failed"
+)
+
+// Valid indicates whether the value is a known member of the DraftScheduleOutcomeOutcome enum.
+func (e DraftScheduleOutcomeOutcome) Valid() bool {
+	switch e {
+	case DraftScheduleOutcomeOutcomeCancelled:
+		return true
+	case DraftScheduleOutcomeOutcomeFailed:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for EmailSuppressionKind.
 const (
 	EmailSuppressionKindComplaint  EmailSuppressionKind = "complaint"
@@ -2084,6 +2330,24 @@ func (e ErrorGroupState) Valid() bool {
 	case ErrorGroupStateOpen:
 		return true
 	case ErrorGroupStateResolved:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for FederationScopeImpactScope.
+const (
+	FederationScopeImpactScopeAllowlist FederationScopeImpactScope = "allowlist"
+	FederationScopeImpactScopeOpen      FederationScopeImpactScope = "open"
+)
+
+// Valid indicates whether the value is a known member of the FederationScopeImpactScope enum.
+func (e FederationScopeImpactScope) Valid() bool {
+	switch e {
+	case FederationScopeImpactScopeAllowlist:
+		return true
+	case FederationScopeImpactScopeOpen:
 		return true
 	default:
 		return false
@@ -2546,6 +2810,7 @@ const (
 	InstanceSettingKeyFeaturedAccounts                   InstanceSettingKey = "featured_accounts"
 	InstanceSettingKeyFederatedTimelineVisibility        InstanceSettingKey = "federated_timeline_visibility"
 	InstanceSettingKeyFederationMode                     InstanceSettingKey = "federation_mode"
+	InstanceSettingKeyFederationScope                    InstanceSettingKey = "federation_scope"
 	InstanceSettingKeyFinanceViewerIncome                InstanceSettingKey = "finance_viewer_income"
 	InstanceSettingKeyFinanceViewerItemMemos             InstanceSettingKey = "finance_viewer_item_memos"
 	InstanceSettingKeyFinanceViewerItemNames             InstanceSettingKey = "finance_viewer_item_names"
@@ -2574,6 +2839,9 @@ const (
 	InstanceSettingKeyLinkCardsIgnoreRobotsTxt           InstanceSettingKey = "link_cards_ignore_robots_txt"
 	InstanceSettingKeyLocalTimelineVisibility            InstanceSettingKey = "local_timeline_visibility"
 	InstanceSettingKeyLoginProvidersOnly                 InstanceSettingKey = "login_providers_only"
+	InstanceSettingKeyMaxDrafts                          InstanceSettingKey = "max_drafts"
+	InstanceSettingKeyMaxScheduledPosts                  InstanceSettingKey = "max_scheduled_posts"
+	InstanceSettingKeyMaxScheduledPostsPerDay            InstanceSettingKey = "max_scheduled_posts_per_day"
 	InstanceSettingKeyMaxStatusLength                    InstanceSettingKey = "max_status_length"
 	InstanceSettingKeyMemberInviteMaxActive              InstanceSettingKey = "member_invite_max_active"
 	InstanceSettingKeyMemberInviteMaxLifetimeSeconds     InstanceSettingKey = "member_invite_max_lifetime_seconds"
@@ -2593,6 +2861,8 @@ const (
 	InstanceSettingKeyRemoteStatusRetentionDays          InstanceSettingKey = "remote_status_retention_days"
 	InstanceSettingKeyReportsRetentionDays               InstanceSettingKey = "reports_retention_days"
 	InstanceSettingKeyRequireMediaDescription            InstanceSettingKey = "require_media_description"
+	InstanceSettingKeyScheduledPostMaxLeadDays           InstanceSettingKey = "scheduled_post_max_lead_days"
+	InstanceSettingKeyScheduledPostMinLeadMinutes        InstanceSettingKey = "scheduled_post_min_lead_minutes"
 	InstanceSettingKeySearchIndexing                     InstanceSettingKey = "search_indexing"
 	InstanceSettingKeySearchVisibilities                 InstanceSettingKey = "search_visibilities"
 	InstanceSettingKeySecurityContact                    InstanceSettingKey = "security_contact"
@@ -2690,6 +2960,8 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyFederationMode:
 		return true
+	case InstanceSettingKeyFederationScope:
+		return true
 	case InstanceSettingKeyFinanceViewerIncome:
 		return true
 	case InstanceSettingKeyFinanceViewerItemMemos:
@@ -2746,6 +3018,12 @@ func (e InstanceSettingKey) Valid() bool {
 		return true
 	case InstanceSettingKeyLoginProvidersOnly:
 		return true
+	case InstanceSettingKeyMaxDrafts:
+		return true
+	case InstanceSettingKeyMaxScheduledPosts:
+		return true
+	case InstanceSettingKeyMaxScheduledPostsPerDay:
+		return true
 	case InstanceSettingKeyMaxStatusLength:
 		return true
 	case InstanceSettingKeyMemberInviteMaxActive:
@@ -2783,6 +3061,10 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyReportsRetentionDays:
 		return true
 	case InstanceSettingKeyRequireMediaDescription:
+		return true
+	case InstanceSettingKeyScheduledPostMaxLeadDays:
+		return true
+	case InstanceSettingKeyScheduledPostMinLeadMinutes:
 		return true
 	case InstanceSettingKeySearchIndexing:
 		return true
@@ -3266,6 +3548,7 @@ const (
 	NotificationGroupAdminAccountMoved       NotificationGroup = "admin_account_moved"
 	NotificationGroupAdminAppeal             NotificationGroup = "admin_appeal"
 	NotificationGroupAdminCustomEmojiRequest NotificationGroup = "admin_custom_emoji_request"
+	NotificationGroupAdminDomainListFailing  NotificationGroup = "admin_domain_list_failing"
 	NotificationGroupAdminErrorGroup         NotificationGroup = "admin_error_group"
 	NotificationGroupAdminHookAppeal         NotificationGroup = "admin_hook_appeal"
 	NotificationGroupAdminHookFailing        NotificationGroup = "admin_hook_failing"
@@ -3286,6 +3569,7 @@ const (
 	NotificationGroupPollClosed              NotificationGroup = "poll_closed"
 	NotificationGroupQuote                   NotificationGroup = "quote"
 	NotificationGroupReaction                NotificationGroup = "reaction"
+	NotificationGroupScheduledStatusFailed   NotificationGroup = "scheduled_status_failed"
 	NotificationGroupServiceClosure          NotificationGroup = "service_closure"
 	NotificationGroupStatus                  NotificationGroup = "status"
 	NotificationGroupSupporter               NotificationGroup = "supporter"
@@ -3302,6 +3586,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupAdminAppeal:
 		return true
 	case NotificationGroupAdminCustomEmojiRequest:
+		return true
+	case NotificationGroupAdminDomainListFailing:
 		return true
 	case NotificationGroupAdminErrorGroup:
 		return true
@@ -3342,6 +3628,8 @@ func (e NotificationGroup) Valid() bool {
 	case NotificationGroupQuote:
 		return true
 	case NotificationGroupReaction:
+		return true
+	case NotificationGroupScheduledStatusFailed:
 		return true
 	case NotificationGroupServiceClosure:
 		return true
@@ -3401,6 +3689,7 @@ const (
 	NotificationTypeAdminAccountMoved          NotificationType = "admin_account_moved"
 	NotificationTypeAdminAppeal                NotificationType = "admin_appeal"
 	NotificationTypeAdminCustomEmojiRequest    NotificationType = "admin_custom_emoji_request"
+	NotificationTypeAdminDomainListFailing     NotificationType = "admin_domain_list_failing"
 	NotificationTypeAdminErrorGroup            NotificationType = "admin_error_group"
 	NotificationTypeAdminHookAppeal            NotificationType = "admin_hook_appeal"
 	NotificationTypeAdminHookFailing           NotificationType = "admin_hook_failing"
@@ -3430,6 +3719,7 @@ const (
 	NotificationTypeRelationshipsSevered       NotificationType = "relationships_severed"
 	NotificationTypeReplyRequest               NotificationType = "reply_request"
 	NotificationTypeReportResolved             NotificationType = "report_resolved"
+	NotificationTypeScheduledStatusFailed      NotificationType = "scheduled_status_failed"
 	NotificationTypeServiceClosure             NotificationType = "service_closure"
 	NotificationTypeStatus                     NotificationType = "status"
 	NotificationTypeSupporterPaymentFailed     NotificationType = "supporter_payment_failed"
@@ -3450,6 +3740,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeAdminAppeal:
 		return true
 	case NotificationTypeAdminCustomEmojiRequest:
+		return true
+	case NotificationTypeAdminDomainListFailing:
 		return true
 	case NotificationTypeAdminErrorGroup:
 		return true
@@ -3508,6 +3800,8 @@ func (e NotificationType) Valid() bool {
 	case NotificationTypeReplyRequest:
 		return true
 	case NotificationTypeReportResolved:
+		return true
+	case NotificationTypeScheduledStatusFailed:
 		return true
 	case NotificationTypeServiceClosure:
 		return true
@@ -3842,6 +4136,7 @@ func (e RegistrationState) Valid() bool {
 // Defines values for RelationshipSeveranceKind.
 const (
 	RelationshipSeveranceKindAccountSuspension RelationshipSeveranceKind = "account_suspension"
+	RelationshipSeveranceKindAllowlistCutoff   RelationshipSeveranceKind = "allowlist_cutoff"
 	RelationshipSeveranceKindDomainSuspension  RelationshipSeveranceKind = "domain_suspension"
 )
 
@@ -3849,6 +4144,8 @@ const (
 func (e RelationshipSeveranceKind) Valid() bool {
 	switch e {
 	case RelationshipSeveranceKindAccountSuspension:
+		return true
+	case RelationshipSeveranceKindAllowlistCutoff:
 		return true
 	case RelationshipSeveranceKindDomainSuspension:
 		return true
@@ -5463,7 +5760,9 @@ type AdminAppealPage struct {
 // (an instance setting), `text_changed` (an instance text). On a `rule`:
 // `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
 // `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
-// card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
+// card crawler set on the domain), `link_card_domain_rule_removed`. On a `domain_allow`:
+// `domain_allow_added`, `domain_allow_removed` (a domain added to and removed from the allowlist
+// of federation). On a `role`: `role_granted`,
 // `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
 // `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 // an `appeal`:
@@ -5516,7 +5815,13 @@ type AdminAppealPage struct {
 // `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
 // (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
 // and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
-// name.
+// name. On a `domain_list_subscription`: `domain_list_subscription_created`,
+// `domain_list_subscription_updated` (its settings), `domain_list_subscription_deleted`,
+// `domain_list_draft_accepted` (which also records the `domain_action_issued` or
+// `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
+// `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
+// that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
+// the `system` as the actor.
 type AdminAuditAction string
 
 // AdminAuditActorKind Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -5543,7 +5848,9 @@ type AdminAuditEntry struct {
 	// (an instance setting), `text_changed` (an instance text). On a `rule`:
 	// `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
 	// `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
-	// card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
+	// card crawler set on the domain), `link_card_domain_rule_removed`. On a `domain_allow`:
+	// `domain_allow_added`, `domain_allow_removed` (a domain added to and removed from the allowlist
+	// of federation). On a `role`: `role_granted`,
 	// `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
 	// `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
 	// an `appeal`:
@@ -5596,7 +5903,13 @@ type AdminAuditEntry struct {
 	// `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
 	// (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
 	// and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
-	// name.
+	// name. On a `domain_list_subscription`: `domain_list_subscription_created`,
+	// `domain_list_subscription_updated` (its settings), `domain_list_subscription_deleted`,
+	// `domain_list_draft_accepted` (which also records the `domain_action_issued` or
+	// `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
+	// `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
+	// that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
+	// the `system` as the actor.
 	Action AdminAuditAction `json:"action"`
 
 	// ActorAccount The account of `actor_account_id`; omitted when it is gone.
@@ -5891,6 +6204,10 @@ type AdminDomainAction struct {
 	// State `active`: in effect now. `expired`: it ended at `expires_at`. `lifted`: a moderator
 	// lifted it.
 	State ModerationActionState `json:"state"`
+
+	// SubscriptionId The subscription to a domain block list that issued the action; omitted for an action
+	// a moderator issued.
+	SubscriptionId *Id `json:"subscription_id,omitempty"`
 }
 
 // AdminDomainActionKind `suspend`: no federation with the domain at all. `limit`: its posts stay off the public
@@ -5906,6 +6223,185 @@ type AdminDomainActionPage struct {
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
+
+// AdminDomainListChange `issue`: the list names the domain, and no action of the kind is in effect on it or a
+// parent domain. `lift`: an action that the subscription issued is no longer on the list.
+type AdminDomainListChange string
+
+// AdminDomainListDraft A difference between a subscribed list and the actions the subscription issued, waiting for a moderator.
+type AdminDomainListDraft struct {
+	// ActionId The action that a `lift` lifts; omitted for an `issue`.
+	ActionId *Id `json:"action_id,omitempty"`
+
+	// Change `issue`: the list names the domain, and no action of the kind is in effect on it or a
+	// parent domain. `lift`: an action that the subscription issued is no longer on the list.
+	Change AdminDomainListChange `json:"change"`
+
+	// Domain The domain, in IDNA A-labels.
+	Domain string `json:"domain"`
+
+	// Held Why a difference waits for a moderator. `draft_mode`: the subscription is in the draft
+	// mode. `unknown_severity`: the list gives the domain a severity this server does not know.
+	// `mass_lift`: one fetch would lift more than 10 actions and more than half of the
+	// subscription's actions, which a broken or empty list would do.
+	Held AdminDomainListHold `json:"held"`
+
+	// Key Names the draft to accept or reject.
+	Key string `json:"key"`
+
+	// Kind `suspend`: no federation with the domain at all. `limit`: its posts stay off the public
+	// timelines and its accounts reach only their followers. `reject_media`: its media are
+	// not fetched. `reject_reports`: its reports are dropped. `force_sensitive`: its media
+	// are marked sensitive.
+	Kind AdminDomainActionKind `json:"kind"`
+
+	// Obfuscate Whether the row asks to hide part of the domain, for an `issue`.
+	Obfuscate *bool `json:"obfuscate,omitempty"`
+
+	// PublicComment The public comment of the row, for an `issue`; omitted when there is none.
+	PublicComment *string `json:"public_comment,omitempty"`
+
+	// Severity The severity as the list gives it, for an `issue`.
+	Severity *string `json:"severity,omitempty"`
+}
+
+// AdminDomainListDraftList The drafts of a subscription, the lifts first, each by domain and kind.
+type AdminDomainListDraftList struct {
+	Items []AdminDomainListDraft `json:"items"`
+}
+
+// AdminDomainListDraftResult What accepting or rejecting drafts did.
+type AdminDomainListDraftResult struct {
+	// Done The drafts that were accepted or rejected.
+	Done []AdminDomainListDraft `json:"done"`
+
+	// Missing The keys of the request that name no draft, such as one handled since.
+	Missing []string `json:"missing"`
+}
+
+// AdminDomainListFetch One fetch of a subscribed domain block list.
+type AdminDomainListFetch struct {
+	// EntryCount The domains the subscription holds after the fetch.
+	EntryCount int `json:"entry_count"`
+
+	// ErrorCode Why a fetch failed. `http_status`: the server answered another status than 2xx or 304,
+	// such as 401, 403, or 404 of a server that does not publish its domain blocks. `network`:
+	// the server could not be reached or did not answer in time. `forbidden_destination`: the
+	// URL or a redirect leads to an address the server does not fetch from. `too_large`: the
+	// list is larger than 2 MiB. `too_many_entries`: it has more than 5000 rows. `malformed`: it
+	// cannot be read in the subscription's format.
+	ErrorCode *AdminDomainListFetchError `json:"error_code,omitempty"`
+	FetchedAt time.Time                  `json:"fetched_at"`
+
+	// HttpStatus The status code of the answer; omitted when no answer came.
+	HttpStatus *int `json:"http_status,omitempty"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// Outcome `applied`: the list was read and replaced the domains the subscription holds.
+	// `not_modified`: the list did not change. `failed`: nothing was read and nothing changed.
+	Outcome AdminDomainListFetchOutcome `json:"outcome"`
+}
+
+// AdminDomainListFetchError Why a fetch failed. `http_status`: the server answered another status than 2xx or 304,
+// such as 401, 403, or 404 of a server that does not publish its domain blocks. `network`:
+// the server could not be reached or did not answer in time. `forbidden_destination`: the
+// URL or a redirect leads to an address the server does not fetch from. `too_large`: the
+// list is larger than 2 MiB. `too_many_entries`: it has more than 5000 rows. `malformed`: it
+// cannot be read in the subscription's format.
+type AdminDomainListFetchError string
+
+// AdminDomainListFetchOutcome `applied`: the list was read and replaced the domains the subscription holds.
+// `not_modified`: the list did not change. `failed`: nothing was read and nothing changed.
+type AdminDomainListFetchOutcome string
+
+// AdminDomainListFetchPage A page of the fetches of a subscription, newest first.
+type AdminDomainListFetchPage struct {
+	Items []AdminDomainListFetch `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminDomainListFormat The format of a subscribed list. `mastodon_csv`: Mastodon's domain block CSV, read as the
+// import reads it. `mastodon_json`: the answer of Mastodon's
+// `GET /api/v1/instance/domain_blocks`; obfuscated domains are skipped. `plain_text`: one
+// domain per line, each a suspend.
+type AdminDomainListFormat string
+
+// AdminDomainListHold Why a difference waits for a moderator. `draft_mode`: the subscription is in the draft
+// mode. `unknown_severity`: the list gives the domain a severity this server does not know.
+// `mass_lift`: one fetch would lift more than 10 actions and more than half of the
+// subscription's actions, which a broken or empty list would do.
+type AdminDomainListHold string
+
+// AdminDomainListMode `draft`: every difference waits for a moderator. `automatic`: the differences are applied
+// at each fetch, except those that `AdminDomainListHold` names.
+type AdminDomainListMode string
+
+// AdminDomainListSilenceAs What a `silence` of the list issues on this server; `ignore` issues nothing.
+type AdminDomainListSilenceAs string
+
+// AdminDomainListSubscription A subscription to a domain block list that another server or person publishes.
+type AdminDomainListSubscription struct {
+	// ApplyRejectMedia Whether the `reject_media` of a row issues a `reject_media` action.
+	ApplyRejectMedia bool `json:"apply_reject_media"`
+
+	// ApplyRejectReports Whether the `reject_reports` of a row issues a `reject_reports` action.
+	ApplyRejectReports bool `json:"apply_reject_reports"`
+
+	// ConsecutiveFailures The failed fetches since the last one that did not fail.
+	ConsecutiveFailures int       `json:"consecutive_failures"`
+	CreatedAt           time.Time `json:"created_at"`
+
+	// Format The format of a subscribed list. `mastodon_csv`: Mastodon's domain block CSV, read as the
+	// import reads it. `mastodon_json`: the answer of Mastodon's
+	// `GET /api/v1/instance/domain_blocks`; obfuscated domains are skipped. `plain_text`: one
+	// domain per line, each a suspend.
+	Format AdminDomainListFormat `json:"format"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// LastFetch One fetch of a subscribed domain block list.
+	LastFetch *AdminDomainListFetch `json:"last_fetch,omitempty"`
+
+	// Mode `draft`: every difference waits for a moderator. `automatic`: the differences are applied
+	// at each fetch, except those that `AdminDomainListHold` names.
+	Mode AdminDomainListMode `json:"mode"`
+
+	// PublicCommentFromList Whether the actions copy the public comment of their row.
+	PublicCommentFromList bool `json:"public_comment_from_list"`
+
+	// SilenceAs What a `silence` of the list issues on this server; `ignore` issues nothing.
+	SilenceAs AdminDomainListSilenceAs `json:"silence_as"`
+
+	// SuspendAs What a `suspend` of the list issues on this server; `ignore` issues nothing.
+	SuspendAs AdminDomainListSuspendAs `json:"suspend_as"`
+	Title     string                   `json:"title"`
+
+	// UpdatedAt When the settings last changed; the creation for settings never changed.
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// Url The https URL of the list.
+	Url string `json:"url"`
+}
+
+// AdminDomainListSubscriptionPage A page of subscriptions to domain block lists, newest first.
+type AdminDomainListSubscriptionPage struct {
+	Items []AdminDomainListSubscription `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// AdminDomainListSuspendAs What a `suspend` of the list issues on this server; `ignore` issues nothing.
+type AdminDomainListSuspendAs string
 
 // AdminHook A decision hook with its settings and the decisions of the period.
 type AdminHook struct {
@@ -8600,6 +9096,44 @@ type CreateDomainActionRequest struct {
 	PublicComment *string               `json:"public_comment,omitempty"`
 }
 
+// CreateDomainAllowRequest A domain to allow.
+type CreateDomainAllowRequest struct {
+	// Comment A note for the moderators, never published.
+	Comment *string `json:"comment,omitempty"`
+
+	// Domain The domain, a host without a scheme, path, or port; it also covers its subdomains.
+	Domain string `json:"domain"`
+}
+
+// CreateDomainListSubscriptionRequest A new subscription to a domain block list. The settings that are omitted take their
+// defaults: `draft`, `suspend` as `suspend`, `silence` as `limit`, the rejections applied, and
+// no public comment copied.
+type CreateDomainListSubscriptionRequest struct {
+	ApplyRejectMedia   *bool `json:"apply_reject_media,omitempty"`
+	ApplyRejectReports *bool `json:"apply_reject_reports,omitempty"`
+
+	// Format The format of a subscribed list. `mastodon_csv`: Mastodon's domain block CSV, read as the
+	// import reads it. `mastodon_json`: the answer of Mastodon's
+	// `GET /api/v1/instance/domain_blocks`; obfuscated domains are skipped. `plain_text`: one
+	// domain per line, each a suspend.
+	Format AdminDomainListFormat `json:"format"`
+
+	// Mode `draft`: every difference waits for a moderator. `automatic`: the differences are applied
+	// at each fetch, except those that `AdminDomainListHold` names.
+	Mode                  *AdminDomainListMode `json:"mode,omitempty"`
+	PublicCommentFromList *bool                `json:"public_comment_from_list,omitempty"`
+
+	// SilenceAs What a `silence` of the list issues on this server; `ignore` issues nothing.
+	SilenceAs *AdminDomainListSilenceAs `json:"silence_as,omitempty"`
+
+	// SuspendAs What a `suspend` of the list issues on this server; `ignore` issues nothing.
+	SuspendAs *AdminDomainListSuspendAs `json:"suspend_as,omitempty"`
+	Title     string                    `json:"title"`
+
+	// Url The https URL of the list.
+	Url string `json:"url"`
+}
+
 // CreateInviteRequest A new invite.
 type CreateInviteRequest struct {
 	// ExpiresIn How many seconds the invite works; omitted for an invite that never expires.
@@ -9340,6 +9874,26 @@ type DenyOAuthClientHostRequest struct {
 	Host string `json:"host"`
 }
 
+// DomainAllow A domain of the allowlist of federation, which covers its subdomains. While the instance
+// setting `federation_scope` is `allowlist`, the instance federates only with the allowed
+// domains; the domain actions on an allowed domain still apply. While it is `open`, the
+// allowlist changes nothing.
+type DomainAllow struct {
+	// Comment What the moderators keep about the allow, never published; empty for none.
+	Comment string `json:"comment"`
+
+	// CreatedAt When the domain was allowed.
+	CreatedAt time.Time `json:"created_at"`
+
+	// Domain The domain, in canonical form (lower case, IDNA A-labels); the key of the allow.
+	Domain string `json:"domain"`
+}
+
+// DomainAllowList The allowed domains, by domain.
+type DomainAllowList struct {
+	Items []DomainAllow `json:"items"`
+}
+
 // DomainBlock A row of Mastodon's domain block CSV. The server checks the domain (a U-label spelling
 // such as `例え.jp` is accepted) and the public comment (at most 5,000 characters).
 type DomainBlock struct {
@@ -9411,6 +9965,11 @@ type DomainBlockImportStatus string
 // `silence`: Mastodon's name of the action `limit`. `noop`: no action but the rejections.
 type DomainBlockSeverity string
 
+// DomainListDraftsRequest The drafts to accept or reject, by key; omitted or empty for every draft.
+type DomainListDraftsRequest struct {
+	Keys *[]string `json:"keys,omitempty"`
+}
+
 // DomainMute A domain that the viewer mutes, with its subdomains.
 type DomainMute struct {
 	// CreatedAt When the viewer muted the domain.
@@ -9426,6 +9985,174 @@ type DomainMutePage struct {
 
 	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// Draft A draft of a post, saved on the server so that the user goes on writing it on another device,
+// and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+type Draft struct {
+	CreatedAt time.Time `json:"created_at"`
+
+	// Id The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	Id Id `json:"id"`
+
+	// InReplyToId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
+
+	// InteractionPolicy Who may reply to, boost, and quote the post, of the kinds the user chose.
+	InteractionPolicy *InteractionPolicyChange `json:"interaction_policy,omitempty"`
+
+	// Language A BCP 47 language tag; left out for the user's default post language.
+	Language *string `json:"language,omitempty"`
+
+	// LastSchedule How the newest schedule that is over ended; left out when none ended.
+	LastSchedule *DraftScheduleOutcome `json:"last_schedule,omitempty"`
+
+	// Media The media to attach, in order.
+	Media []StatusMediaItem `json:"media"`
+
+	// Poll The poll of a draft. A draft keeps a poll still being written (fewer than two options, or
+	// blank ones); publishing it checks the limits of `PollInput`. It ends `expires_in` seconds after
+	// the draft is published.
+	Poll *DraftPoll `json:"poll,omitempty"`
+
+	// QuotedStatusId The ID of a resource, a UUIDv7 in its canonical string form.
+	//
+	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+	QuotedStatusId *Id `json:"quoted_status_id,omitempty"`
+
+	// ScheduledAt When the draft is scheduled to be published; left out while it is not scheduled.
+	ScheduledAt *time.Time `json:"scheduled_at,omitempty"`
+	Sensitive   bool       `json:"sensitive"`
+
+	// SpoilerText The content warning; empty for none.
+	SpoilerText string `json:"spoiler_text"`
+
+	// Text The plain text.
+	Text string `json:"text"`
+
+	// UpdatedAt When the draft was last saved.
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// Visibility Who may see a status: `public` everyone, listed on public timelines;
+	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
+	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
+	// accounts.
+	Visibility Visibility `json:"visibility"`
+}
+
+// DraftFailureReason Why a scheduled post was not published at its time; the draft stays, to fix and schedule
+// again. `restricted`: the account may not post (a moderation action, a suspension, or an
+// account that is not active). `reply_unavailable`: the post it replies to is gone, hidden from
+// the user, or does not take the reply. `quote_unavailable`: the post it quotes is gone, hidden
+// from the user, or may not be quoted. `media_unavailable`: an attached file is gone or failed
+// processing. `invalid`: the post does not pass the checks of a post, such as its length.
+// `rejected`: the server's automated review refused the post.
+type DraftFailureReason string
+
+// DraftPage A page of drafts, newest first.
+type DraftPage struct {
+	// Items The drafts of the page.
+	Items []Draft `json:"items"`
+
+	// NextCursor An opaque pagination cursor. Clients pass it back unchanged and never parse it.
+	NextCursor *Cursor `json:"next_cursor,omitempty"`
+}
+
+// DraftPoll The poll of a draft. A draft keeps a poll still being written (fewer than two options, or
+// blank ones); publishing it checks the limits of `PollInput`. It ends `expires_in` seconds after
+// the draft is published.
+type DraftPoll struct {
+	// ExpiresIn How long the poll takes votes, in seconds (5 minutes to 30 days).
+	ExpiresIn int `json:"expires_in"`
+
+	// HideTotals Whether the votes of each option are hidden until the poll ends.
+	HideTotals *bool `json:"hide_totals,omitempty"`
+
+	// Multiple Whether a vote may choose several options.
+	Multiple *bool `json:"multiple,omitempty"`
+
+	// Options The options, in order, as plain text.
+	Options []string `json:"options"`
+}
+
+// DraftRequest The whole content of a draft; a save replaces what the draft had. A draft keeps text that a
+// post would refuse (empty, or longer than `max_post_characters`), up to 100,000 characters, and
+// media that are still being processed; publishing it checks it as a new post.
+type DraftRequest struct {
+	// InReplyToId The post to reply to, checked when the draft is scheduled and published.
+	InReplyToId *Id `json:"in_reply_to_id,omitempty"`
+
+	// InteractionPolicy Who may reply to, boost, and quote the post; the kinds left out take the user's
+	// `default_interaction_policy` when the draft is published.
+	InteractionPolicy *InteractionPolicyChange `json:"interaction_policy,omitempty"`
+
+	// Language A BCP 47 language tag; omitted means the user's default post language.
+	Language *StatusLanguageInput `json:"language,omitempty"`
+
+	// Media The media to attach, in order: the user's own uploads, processed or not. A draft with a
+	// `poll` attaches none.
+	Media *StatusMediaInput `json:"media,omitempty"`
+
+	// Poll The poll of a draft. A draft keeps a poll still being written (fewer than two options, or
+	// blank ones); publishing it checks the limits of `PollInput`. It ends `expires_in` seconds after
+	// the draft is published.
+	Poll *DraftPoll `json:"poll,omitempty"`
+
+	// QuotedStatusId The post to quote, checked when the draft is scheduled and published.
+	QuotedStatusId *Id `json:"quoted_status_id,omitempty"`
+
+	// Sensitive Whether the media are sensitive.
+	Sensitive *bool `json:"sensitive,omitempty"`
+
+	// SpoilerText The content warning; omitted or empty for none. It counts toward `max_post_characters`.
+	SpoilerText *SpoilerText `json:"spoiler_text,omitempty"`
+
+	// Text The plain text; omitted or empty while there is none.
+	Text *string `json:"text,omitempty"`
+
+	// Visibility Who may see a status: `public` everyone, listed on public timelines;
+	// `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
+	// public timelines; `private` followers and mentioned accounts; `direct` mentioned
+	// accounts.
+	Visibility Visibility `json:"visibility"`
+}
+
+// DraftScheduleOutcome How the newest schedule of a draft that is over ended.
+type DraftScheduleOutcome struct {
+	// OccurredAt When the schedule ended.
+	OccurredAt time.Time `json:"occurred_at"`
+
+	// Outcome `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+	// could not be published at its time, for `reason`.
+	Outcome DraftScheduleOutcomeOutcome `json:"outcome"`
+
+	// PublishAt The time the post was scheduled for.
+	PublishAt time.Time `json:"publish_at"`
+
+	// Reason Why a scheduled post was not published at its time; the draft stays, to fix and schedule
+	// again. `restricted`: the account may not post (a moderation action, a suspension, or an
+	// account that is not active). `reply_unavailable`: the post it replies to is gone, hidden from
+	// the user, or does not take the reply. `quote_unavailable`: the post it quotes is gone, hidden
+	// from the user, or may not be quoted. `media_unavailable`: an attached file is gone or failed
+	// processing. `invalid`: the post does not pass the checks of a post, such as its length.
+	// `rejected`: the server's automated review refused the post.
+	Reason *DraftFailureReason `json:"reason,omitempty"`
+}
+
+// DraftScheduleOutcomeOutcome `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+// could not be published at its time, for `reason`.
+type DraftScheduleOutcomeOutcome string
+
+// DraftScheduleRequest When to publish a draft.
+type DraftScheduleRequest struct {
+	// PublishAt The time to publish the draft: at least `scheduled_post_min_lead_minutes` and at most
+	// `scheduled_post_max_lead_days` from now (`limits` of `GET /instance`). The post is
+	// published at that time or soon after.
+	PublishAt time.Time `json:"publish_at"`
 }
 
 // EditStatusRequest The new content of a status.
@@ -9710,6 +10437,40 @@ type ExternalConfirmationRequest struct {
 // (`POST /linked_identities/confirmation`) for this operation, in place of the password.
 type ExternalConfirmationToken = string
 
+// FederationScopeImpact What switching the instance setting `federation_scope` to `allowlist` with the current
+// allowlist would end now: the accepted follows, in both directions, between the local accounts
+// and the accounts of the servers that the allowlist does not allow. The switch ends them for
+// good, and each local user who loses one is notified. While the setting is already
+// `allowlist`, it counts what is left to end, which is nothing once the switch has run.
+type FederationScopeImpact struct {
+	// Domains How many servers those follows are with.
+	Domains int `json:"domains"`
+
+	// Follows How many follows would end.
+	Follows int `json:"follows"`
+
+	// LocalAccounts How many local accounts would lose a follow.
+	LocalAccounts int `json:"local_accounts"`
+
+	// Scope The current value of `federation_scope`.
+	Scope FederationScopeImpactScope `json:"scope"`
+
+	// TopDomains The servers with the most follows that would end, at most 10, the most first.
+	TopDomains []FederationScopeImpactDomain `json:"top_domains"`
+}
+
+// FederationScopeImpactScope The current value of `federation_scope`.
+type FederationScopeImpactScope string
+
+// FederationScopeImpactDomain The follows with one server that switching to the allowlist would end.
+type FederationScopeImpactDomain struct {
+	// Domain The server's domain.
+	Domain string `json:"domain"`
+
+	// Follows How many follows with its accounts would end.
+	Follows int `json:"follows"`
+}
+
 // FinanceCostItemLine The amount of a cost item, or of a service of the imported costs, in a currency over a
 // period, with the provider and the category of its breakdown line. `provider` is the spelling
 // that the period's breakdown lines of the item's grouped provider show (`CostBreakdownLine`).
@@ -9818,12 +10579,43 @@ type FollowAccountRequest struct {
 	ShowBoosts *bool `json:"show_boosts,omitempty"`
 }
 
+// FollowedHashtag A hashtag that the user follows.
+type FollowedHashtag struct {
+	// FollowedAt When the user followed the hashtag.
+	FollowedAt time.Time `json:"followed_at"`
+
+	// Name The hashtag without `#`, as first written on the server.
+	Name string `json:"name"`
+
+	// Url The hashtag's page.
+	Url string `json:"url"`
+}
+
+// FollowedHashtagCollection The hashtags that the user follows, at most 100, the latest followed first.
+type FollowedHashtagCollection struct {
+	Items []FollowedHashtag `json:"items"`
+}
+
 // ForwardReportRequest What a moderator sends with a report forwarded to the target's server.
 type ForwardReportRequest struct {
 	// Comment Text for the moderators of the target's server, as plain text, up to 1,000 characters:
 	// the `content` of the `Flag`. Omitted or empty sends none. The reporter's comment is never
 	// sent by a forward after filing.
 	Comment *string `json:"comment,omitempty"`
+}
+
+// Hashtag A hashtag and whether the user follows it. The posts of the hashtags the user follows appear
+// on the home timeline.
+type Hashtag struct {
+	// Following Whether the user follows the hashtag; false for a visitor who is not logged in.
+	Following bool `json:"following"`
+
+	// Name The hashtag without `#`, as first written on the server, or as the request wrote it when
+	// no post has used it and nobody follows it.
+	Name string `json:"name"`
+
+	// Url The hashtag's page.
+	Url string `json:"url"`
 }
 
 // HookAppealState Where an appeal of a refused post stands: `pending` until a moderator decides it,
@@ -10402,6 +11194,26 @@ type InstanceDomainActionPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// InstanceDraftLimits The limits of drafts and scheduled posts (the instance settings of the same names). A save or a
+// schedule past one is a 422 that names it; lowering a limit deletes no draft and cancels no
+// schedule.
+type InstanceDraftLimits struct {
+	// MaxDrafts How many drafts without a schedule a user may keep.
+	MaxDrafts int `json:"max_drafts"`
+
+	// MaxScheduledPosts How many scheduled posts a user may have waiting.
+	MaxScheduledPosts int `json:"max_scheduled_posts"`
+
+	// MaxScheduledPostsPerDay How many scheduled posts of a user may wait for one UTC day.
+	MaxScheduledPostsPerDay int `json:"max_scheduled_posts_per_day"`
+
+	// ScheduledPostMaxLeadDays How many days ahead, at most, a post may be scheduled.
+	ScheduledPostMaxLeadDays int `json:"scheduled_post_max_lead_days"`
+
+	// ScheduledPostMinLeadMinutes How many minutes ahead, at least, a post may be scheduled.
+	ScheduledPostMinLeadMinutes int `json:"scheduled_post_min_lead_minutes"`
+}
+
 // InstanceExternalReviewScope The settings that narrow what the decision hooks in use send to the external review, which the
 // information page states. Each field is present only while its hook is in use.
 type InstanceExternalReviewScope struct {
@@ -10468,6 +11280,11 @@ type InstanceFullTextSearch struct {
 
 // InstanceLimits Limits that clients check before sending a request.
 type InstanceLimits struct {
+	// Drafts The limits of drafts and scheduled posts (the instance settings of the same names). A save or a
+	// schedule past one is a 422 that names it; lowering a limit deletes no draft and cancels no
+	// schedule.
+	Drafts *InstanceDraftLimits `json:"drafts,omitempty"`
+
 	// MaxPostCharacters The maximum number of characters in the text and content warning of a post.
 	MaxPostCharacters int `json:"max_post_characters"`
 
@@ -11488,6 +12305,10 @@ type Notification struct {
 	// ReportId The report that an `admin_report` is about.
 	ReportId *Id `json:"report_id,omitempty"`
 
+	// ScheduledStatusFailure The scheduled post that a `scheduled_status_failed` tells of, while its draft exists;
+	// omitted otherwise and for the other types.
+	ScheduledStatusFailure *NotificationScheduledStatusFailure `json:"scheduled_status_failure,omitempty"`
+
 	// ServiceClosure What a `service_closure`, an `admin_service_closure_due`, or a `supporter_service_closure`
 	// tells of the closure of the service. `change` is what the event of a
 	// `service_closure` did: `announced` (the closure was announced), `rescheduled` (its dates
@@ -11540,7 +12361,9 @@ type Notification struct {
 	// `admin_hook_appeal` (a user appealed a post that the automated review refused;
 	// `hook_appeal_id` is the appeal) to those with `manage_reports`, and
 	// `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
-	// `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
+	// `custom_emoji_request` is the request) to those with `manage_custom_emojis`, and
+	// `admin_domain_list_failing` (three fetches in a row of a subscribed domain block list
+	// failed; it names none) to those with `manage_domains`.
 	// `custom_emoji_request_decided` also comes from the instance: an administrator approved
 	// or rejected the user's custom emoji request, which `custom_emoji_request` carries with
 	// its state and the reason of a rejection.
@@ -11584,6 +12407,11 @@ type Notification struct {
 	// `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
 	// policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
 	// has no `account`. It is sent once per notice.
+	// `scheduled_status_failed` comes from the instance: a post that the user scheduled could not be
+	// published at its time, and its draft stays to fix and schedule again. Its
+	// `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
+	// draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
+	// sends nothing.
 	Type NotificationType `json:"type"`
 
 	// VoiceRoom The voice chat room that a `voice_room_started` or a `voice_room_invited` is about, while
@@ -11630,13 +12458,16 @@ type NotificationErrorGroupChange string
 // `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 // `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 // `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
+// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`,
+// `admin_domain_list_failing`). The instance's
 // notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 // `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
 // `hook_appeal_decided`),
 // `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
 // turns off in the app (on by default) and which has no `email` channel, and
-// `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
+// `auto_delete_limit`, whose app and email channels the user chooses, both on by default, and
+// `scheduled_status_failed`, which the user turns off in the app (on by default) and which has
+// no `email` channel.
 type NotificationGroup string
 
 // NotificationMarker How far the authenticated user has read the notifications, across all clients.
@@ -11666,6 +12497,25 @@ type NotificationPage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// NotificationScheduledStatusFailure The scheduled post that a `scheduled_status_failed` tells of: its draft, why it was not
+// published, and when it was to be published.
+type NotificationScheduledStatusFailure struct {
+	// DraftId The draft of the scheduled post, which stays to fix and schedule again.
+	DraftId Id `json:"draft_id"`
+
+	// PublishAt When the post was to be published.
+	PublishAt time.Time `json:"publish_at"`
+
+	// Reason Why a scheduled post was not published at its time; the draft stays, to fix and schedule
+	// again. `restricted`: the account may not post (a moderation action, a suspension, or an
+	// account that is not active). `reply_unavailable`: the post it replies to is gone, hidden from
+	// the user, or does not take the reply. `quote_unavailable`: the post it quotes is gone, hidden
+	// from the user, or may not be quoted. `media_unavailable`: an attached file is gone or failed
+	// processing. `invalid`: the post does not pass the checks of a post, such as its length.
+	// `rejected`: the server's automated review refused the post.
+	Reason DraftFailureReason `json:"reason"`
+}
+
 // NotificationSettingCell One channel of one row of the notification settings.
 type NotificationSettingCell struct {
 	// Enabled Whether the user gets the row's notifications through the channel.
@@ -11684,7 +12534,7 @@ type NotificationSettingCell struct {
 // `auto_delete_limit` are emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
 // the read marker and not dismissed); the moderator notifications are emailed at once. Clients
 // offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`,
-// `announcement`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+// `interaction_request`, `announcement`, `scheduled_status_failed`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
 // subscription (`putPushSubscription`).
 type NotificationSettingRow struct {
 	// Email One channel of one row of the notification settings.
@@ -11698,13 +12548,16 @@ type NotificationSettingRow struct {
 	// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 	// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 	// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
+	// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`,
+	// `admin_domain_list_failing`). The instance's
 	// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 	// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
 	// `hook_appeal_decided`),
 	// `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
 	// turns off in the app (on by default) and which has no `email` channel, and
-	// `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
+	// `auto_delete_limit`, whose app and email channels the user chooses, both on by default, and
+	// `scheduled_status_failed`, which the user turns off in the app (on by default) and which has
+	// no `email` channel.
 	Group NotificationGroup `json:"group"`
 
 	// InApp One channel of one row of the notification settings.
@@ -11713,7 +12566,7 @@ type NotificationSettingRow struct {
 	// Section The kind of the row: `ordinary` (what other users did; in the app on and email off by
 	// default), `moderator` (to the holders of the permission it needs; both on by default),
 	// or `instance` (the instance's notices to the user; always in the app, but for
-	// `announcement` and `auto_delete_limit`, which are on by default).
+	// `announcement`, `auto_delete_limit`, and `scheduled_status_failed`, which are on by default).
 	Section NotificationSettingRowSection `json:"section"`
 
 	// Types The notification types of the row.
@@ -11723,7 +12576,7 @@ type NotificationSettingRow struct {
 // NotificationSettingRowSection The kind of the row: `ordinary` (what other users did; in the app on and email off by
 // default), `moderator` (to the holders of the permission it needs; both on by default),
 // or `instance` (the instance's notices to the user; always in the app, but for
-// `announcement` and `auto_delete_limit`, which are on by default).
+// `announcement`, `auto_delete_limit`, and `scheduled_status_failed`, which are on by default).
 type NotificationSettingRowSection string
 
 // NotificationSettings The authenticated user's notification settings: the rows the user gets, in the order to
@@ -11752,13 +12605,16 @@ type NotificationSettingsUpdate struct {
 		// `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
 		// `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
 		// `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
+		// `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`,
+		// `admin_domain_list_failing`). The instance's
 		// notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
 		// `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
 		// `hook_appeal_decided`),
 		// `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
 		// turns off in the app (on by default) and which has no `email` channel, and
-		// `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
+		// `auto_delete_limit`, whose app and email channels the user chooses, both on by default, and
+		// `scheduled_status_failed`, which the user turns off in the app (on by default) and which has
+		// no `email` channel.
 		Group NotificationGroup `json:"group"`
 	} `json:"changes"`
 }
@@ -11801,7 +12657,9 @@ type NotificationSettingsUpdateChangesChannel string
 // `admin_hook_appeal` (a user appealed a post that the automated review refused;
 // `hook_appeal_id` is the appeal) to those with `manage_reports`, and
 // `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
-// `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
+// `custom_emoji_request` is the request) to those with `manage_custom_emojis`, and
+// `admin_domain_list_failing` (three fetches in a row of a subscribed domain block list
+// failed; it names none) to those with `manage_domains`.
 // `custom_emoji_request_decided` also comes from the instance: an administrator approved
 // or rejected the user's custom emoji request, which `custom_emoji_request` carries with
 // its state and the reason of a rejection.
@@ -11845,6 +12703,11 @@ type NotificationSettingsUpdateChangesChannel string
 // `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
 // policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
 // has no `account`. It is sent once per notice.
+// `scheduled_status_failed` comes from the instance: a post that the user scheduled could not be
+// published at its time, and its draft stays to fix and schedule again. Its
+// `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
+// draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
+// sends nothing.
 type NotificationType string
 
 // OAuthApp An OAuth app that the authenticated user registered. Like every third-party app,
@@ -12560,6 +13423,8 @@ type PreviewDomainBlockImportRequest struct {
 //     allowed. Remove one first.
 //   - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
 //     follow request was accepted) can be added to a list.
+//   - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
+//     hashtags allowed (100). Unfollow one first.
 //   - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
 //     account's actor, or to the user itself.
 //   - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
@@ -12883,11 +13748,14 @@ type RelationshipList struct {
 
 // RelationshipSeverance The follows that a `relationships_severed` tells of: the user lost them when the
 // moderators suspended a server (`domain_suspension`, `domain` is the server) or a remote
-// account (`account_suspension`, the notification's `account` is the account). Both
-// directions end, follow requests too, and lifting the suspension does not restore them;
-// the counts are of the accepted follows.
+// account (`account_suspension`, the notification's `account` is the account), or when the
+// server began to federate only with the servers it allows (`allowlist_cutoff`: `domain` is the
+// server whose allow was removed, and is omitted when the server switched to its allowlist).
+// Both directions end, follow requests too, and lifting the suspension or allowing the server
+// again does not restore them; the counts are of the accepted follows.
 type RelationshipSeverance struct {
-	// Domain The suspended server of a `domain_suspension`; omitted otherwise.
+	// Domain The suspended server of a `domain_suspension`, or the server whose allow was removed of an
+	// `allowlist_cutoff`; omitted otherwise.
 	Domain *string `json:"domain,omitempty"`
 
 	// FollowersLost The accounts that followed the user and no longer do.
@@ -13316,6 +14184,11 @@ type Status struct {
 
 	// FavouritesCount The number of favourites.
 	FavouritesCount int `json:"favourites_count"`
+
+	// FollowedTags On the home timeline and its stream, the names (without `#`) of the hashtags that the
+	// user follows and the post carries, when the post is there only for them: its author is
+	// neither the user nor an account the user follows. Omitted everywhere else.
+	FollowedTags *[]string `json:"followed_tags,omitempty"`
 
 	// Id The ID of a resource, a UUIDv7 in its canonical string form.
 	//
@@ -14070,6 +14943,24 @@ type UpdateCustomEmojiRequest struct {
 
 	// VisibleInPicker Whether the picker offers the local emoji.
 	VisibleInPicker *bool `json:"visible_in_picker,omitempty"`
+}
+
+// UpdateDomainListSubscriptionRequest The changes to the settings of a subscription; what is omitted stays.
+type UpdateDomainListSubscriptionRequest struct {
+	ApplyRejectMedia   *bool `json:"apply_reject_media,omitempty"`
+	ApplyRejectReports *bool `json:"apply_reject_reports,omitempty"`
+
+	// Mode `draft`: every difference waits for a moderator. `automatic`: the differences are applied
+	// at each fetch, except those that `AdminDomainListHold` names.
+	Mode                  *AdminDomainListMode `json:"mode,omitempty"`
+	PublicCommentFromList *bool                `json:"public_comment_from_list,omitempty"`
+
+	// SilenceAs What a `silence` of the list issues on this server; `ignore` issues nothing.
+	SilenceAs *AdminDomainListSilenceAs `json:"silence_as,omitempty"`
+
+	// SuspendAs What a `suspend` of the list issues on this server; `ignore` issues nothing.
+	SuspendAs *AdminDomainListSuspendAs `json:"suspend_as,omitempty"`
+	Title     *string                   `json:"title,omitempty"`
 }
 
 // UpdateInstanceSettingsRequest New values of some instance settings, saved together.
@@ -14916,10 +15807,23 @@ type CustomEmojiRequestId = Id
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type DomainActionId = Id
 
+// DomainListSubscriptionId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type DomainListSubscriptionId = Id
+
+// DraftId The ID of a resource, a UUIDv7 in its canonical string form.
+//
+// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
+type DraftId = Id
+
 // ErrorGroupId The ID of a resource, a UUIDv7 in its canonical string form.
 //
 // Examples: 01890a5d-ac96-774b-bcce-b302099a8057
 type ErrorGroupId = Id
+
+// HashtagName defines model for HashtagName.
+type HashtagName = string
 
 // HookDecisionId The ID of a resource, a UUIDv7 in its canonical string form.
 //
@@ -14928,6 +15832,9 @@ type HookDecisionId = Id
 
 // IdempotencyKey defines model for IdempotencyKey.
 type IdempotencyKey = string
+
+// IfMatch defines model for IfMatch.
+type IfMatch = string
 
 // InstanceDomain defines model for InstanceDomain.
 type InstanceDomain = string
@@ -15283,6 +16190,30 @@ type ListDomainActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListDomainListSubscriptionsParams defines parameters for ListDomainListSubscriptions.
+type ListDomainListSubscriptionsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// DeleteDomainListSubscriptionParams defines parameters for DeleteDomainListSubscription.
+type DeleteDomainListSubscriptionParams struct {
+	// LiftActions Lift the actions the subscription issued.
+	LiftActions *bool `form:"lift_actions,omitempty" json:"lift_actions,omitempty"`
+}
+
+// ListDomainListFetchesParams defines parameters for ListDomainListFetches.
+type ListDomainListFetchesParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
 // ListErrorGroupsParams defines parameters for ListErrorGroups.
 type ListErrorGroupsParams struct {
 	// State Keep the groups in this state; every state by default.
@@ -15584,6 +16515,26 @@ type ListDomainMutesParams struct {
 
 	// Limit The maximum number of items in the page.
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+}
+
+// ListDraftsParams defines parameters for ListDrafts.
+type ListDraftsParams struct {
+	// Cursor The `next_cursor` of the previous page; omitted for the first page.
+	Cursor *Cursor `form:"cursor,omitempty" json:"cursor,omitempty"`
+
+	// Limit The maximum number of items in the page.
+	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Scheduled Whether to list only the scheduled drafts (`true`) or only the others (`false`).
+	Scheduled *bool `form:"scheduled,omitempty" json:"scheduled,omitempty"`
+}
+
+// UpdateDraftParams defines parameters for UpdateDraft.
+type UpdateDraftParams struct {
+	// IfMatch The `ETag` of the draft as the client last read it. When another save changed the draft
+	// since, the answer is a 412 and nothing is saved, so that a save on one device never silently
+	// overwrites one made on another; read the draft again and merge. Without it, the save is a 428.
+	IfMatch *IfMatch `json:"If-Match,omitempty"`
 }
 
 // GetFinanceCostTotalsParams defines parameters for GetFinanceCostTotals.
@@ -15976,6 +16927,21 @@ type ImportDomainBlocksJSONRequestBody = ImportDomainBlocksRequest
 // PreviewDomainBlockImportJSONRequestBody defines body for PreviewDomainBlockImport for application/json ContentType.
 type PreviewDomainBlockImportJSONRequestBody = PreviewDomainBlockImportRequest
 
+// CreateDomainAllowJSONRequestBody defines body for CreateDomainAllow for application/json ContentType.
+type CreateDomainAllowJSONRequestBody = CreateDomainAllowRequest
+
+// CreateDomainListSubscriptionJSONRequestBody defines body for CreateDomainListSubscription for application/json ContentType.
+type CreateDomainListSubscriptionJSONRequestBody = CreateDomainListSubscriptionRequest
+
+// UpdateDomainListSubscriptionJSONRequestBody defines body for UpdateDomainListSubscription for application/json ContentType.
+type UpdateDomainListSubscriptionJSONRequestBody = UpdateDomainListSubscriptionRequest
+
+// AcceptDomainListDraftsJSONRequestBody defines body for AcceptDomainListDrafts for application/json ContentType.
+type AcceptDomainListDraftsJSONRequestBody = DomainListDraftsRequest
+
+// RejectDomainListDraftsJSONRequestBody defines body for RejectDomainListDrafts for application/json ContentType.
+type RejectDomainListDraftsJSONRequestBody = DomainListDraftsRequest
+
 // SanitizeAdminBrandMultipartRequestBody defines body for SanitizeAdminBrand for multipart/form-data ContentType.
 type SanitizeAdminBrandMultipartRequestBody = SanitizeBrandRequest
 
@@ -16080,6 +17046,15 @@ type UpdateOwnCustomEmojiJSONRequestBody = UpdateOwnCustomEmojiRequest
 
 // MuteDomainJSONRequestBody defines body for MuteDomain for application/json ContentType.
 type MuteDomainJSONRequestBody = MuteDomainRequest
+
+// CreateDraftJSONRequestBody defines body for CreateDraft for application/json ContentType.
+type CreateDraftJSONRequestBody = DraftRequest
+
+// UpdateDraftJSONRequestBody defines body for UpdateDraft for application/json ContentType.
+type UpdateDraftJSONRequestBody = DraftRequest
+
+// ScheduleDraftJSONRequestBody defines body for ScheduleDraft for application/json ContentType.
+type ScheduleDraftJSONRequestBody = DraftScheduleRequest
 
 // AppealHookDecisionJSONRequestBody defines body for AppealHookDecision for application/json ContentType.
 type AppealHookDecisionJSONRequestBody = AppealHookDecisionRequest
@@ -19520,6 +20495,207 @@ type ClientInterface interface {
 	// Corresponds with POST /admin/domain_actions/{id}/lift (the `LiftDomainAction` operationId).
 	LiftDomainAction(ctx context.Context, id DomainActionId, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListDomainAllows List the allowlist of federation
+	//
+	// Every allowed domain, by domain. The list is not paginated; the allowlist holds at most
+	// 5,000 domains. Needs the `manage_domains` permission.
+	//
+	// Corresponds with GET /admin/domain_allows (the `ListDomainAllows` operationId).
+	ListDomainAllows(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateDomainAllowWithBody Allow a domain to federate
+	//
+	// Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+	// the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+	// follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+	// and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+	// instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+	// is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+	// permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/domain_allows (the `CreateDomainAllow` operationId).
+	CreateDomainAllowWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateDomainAllow Allow a domain to federate
+	//
+	// Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+	// the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+	// follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+	// and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+	// instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+	// is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+	// permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/domain_allows (the `CreateDomainAllow` operationId).
+	CreateDomainAllow(ctx context.Context, body CreateDomainAllowJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RemoveDomainAllow Remove a domain from the allowlist of federation
+	//
+	// Removes the allow of a domain and records it in the audit log. While the instance setting
+	// `federation_scope` is `allowlist` and no parent domain is allowed, the domain and its
+	// subdomains that no other allow covers are cut off at once, as a suspension of the domain
+	// cuts them off: nothing is received from, delivered to, or fetched from them, and the follows
+	// between the local accounts and their accounts end for good, each local user who loses one
+	// being notified. A domain without an allow changes nothing. Needs the `manage_domains`
+	// permission.
+	//
+	// Corresponds with DELETE /admin/domain_allows/{domain} (the `RemoveDomainAllow` operationId).
+	RemoveDomainAllow(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListDomainListSubscriptions List the subscriptions to domain block lists
+	//
+	// The subscriptions that are not deleted, newest first, each with its last fetch. Needs the `manage_domains` permission.
+	//
+	// Corresponds with GET /admin/domain_list_subscriptions (the `ListDomainListSubscriptions` operationId).
+	ListDomainListSubscriptions(ctx context.Context, params *ListDomainListSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateDomainListSubscriptionWithBody Subscribe to a domain block list
+	//
+	// Subscribes to the list at an https URL, which the server fetches at once and then every
+	// day, through the same guard as the fetches of other servers: a URL or a redirect to a
+	// private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+	// `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+	// `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+	// action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+	// The subscription is audited. Needs the `manage_domains` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions (the `CreateDomainListSubscription` operationId).
+	CreateDomainListSubscriptionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateDomainListSubscription Subscribe to a domain block list
+	//
+	// Subscribes to the list at an https URL, which the server fetches at once and then every
+	// day, through the same guard as the fetches of other servers: a URL or a redirect to a
+	// private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+	// `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+	// `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+	// action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+	// The subscription is audited. Needs the `manage_domains` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions (the `CreateDomainListSubscription` operationId).
+	CreateDomainListSubscription(ctx context.Context, body CreateDomainListSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteDomainListSubscription Delete a subscription to a domain block list
+	//
+	// Deletes the subscription: the list is no longer fetched. The actions it issued stay, as
+	// if a moderator had issued them, unless `lift_actions` is set, which lifts them first. The
+	// deletion is audited. An unknown or deleted ID is a 404. Needs the `manage_domains`
+	// permission.
+	//
+	// Corresponds with DELETE /admin/domain_list_subscriptions/{id} (the `DeleteDomainListSubscription` operationId).
+	DeleteDomainListSubscription(ctx context.Context, id DomainListSubscriptionId, params *DeleteDomainListSubscriptionParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetDomainListSubscription Get a subscription to a domain block list
+	//
+	// An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Corresponds with GET /admin/domain_list_subscriptions/{id} (the `GetDomainListSubscription` operationId).
+	GetDomainListSubscription(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateDomainListSubscriptionWithBody Change the settings of a subscription
+	//
+	// Changes the settings the request names and keeps the rest, and queues a fetch that applies
+	// them; the URL and the format do not change. An invalid setting is a 422. A change is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PATCH /admin/domain_list_subscriptions/{id} (the `UpdateDomainListSubscription` operationId).
+	UpdateDomainListSubscriptionWithBody(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateDomainListSubscription Change the settings of a subscription
+	//
+	// Changes the settings the request names and keeps the rest, and queues a fetch that applies
+	// them; the URL and the format do not change. An invalid setting is a 422. A change is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PATCH /admin/domain_list_subscriptions/{id} (the `UpdateDomainListSubscription` operationId).
+	UpdateDomainListSubscription(ctx context.Context, id DomainListSubscriptionId, body UpdateDomainListSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListDomainListDrafts List the drafts of a subscription
+	//
+	// The differences between the list, as last read, and the actions the subscription issued
+	// that wait for a moderator: every difference in the `draft` mode, and in the `automatic`
+	// mode those of an unknown severity and the lifts of a fetch that would lift too many. A
+	// domain that an action in effect covers already, on it or a parent domain, whoever issued
+	// it, is no draft. Rejected drafts are not listed. An unknown or deleted ID is a 404. Needs
+	// the `manage_domains` permission.
+	//
+	// Corresponds with GET /admin/domain_list_subscriptions/{id}/drafts (the `ListDomainListDrafts` operationId).
+	ListDomainListDrafts(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AcceptDomainListDraftsWithBody Accept drafts of a subscription
+	//
+	// Issues the action of each `issue` draft for the subscription, until it is lifted, and
+	// lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+	// draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+	// a 404. Needs the `manage_domains` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/accept (the `AcceptDomainListDrafts` operationId).
+	AcceptDomainListDraftsWithBody(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AcceptDomainListDrafts Accept drafts of a subscription
+	//
+	// Issues the action of each `issue` draft for the subscription, until it is lifted, and
+	// lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+	// draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+	// a 404. Needs the `manage_domains` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/accept (the `AcceptDomainListDrafts` operationId).
+	AcceptDomainListDrafts(ctx context.Context, id DomainListSubscriptionId, body AcceptDomainListDraftsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RejectDomainListDraftsWithBody Reject drafts of a subscription
+	//
+	// Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+	// of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/reject (the `RejectDomainListDrafts` operationId).
+	RejectDomainListDraftsWithBody(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// RejectDomainListDrafts Reject drafts of a subscription
+	//
+	// Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+	// of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/reject (the `RejectDomainListDrafts` operationId).
+	RejectDomainListDrafts(ctx context.Context, id DomainListSubscriptionId, body RejectDomainListDraftsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// FetchDomainListSubscription Fetch a subscribed list now
+	//
+	// Queues a fetch of the list, which then applies it as the daily fetch does. The request is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/fetch (the `FetchDomainListSubscription` operationId).
+	FetchDomainListSubscription(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListDomainListFetches List the fetches of a subscription
+	//
+	// The fetches of the list, newest first, failed ones included with why they failed. An
+	// unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Corresponds with GET /admin/domain_list_subscriptions/{id}/fetches (the `ListDomainListFetches` operationId).
+	ListDomainListFetches(ctx context.Context, id DomainListSubscriptionId, params *ListDomainListFetchesParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListErrorGroups List the error groups
 	//
 	// The groups of the errors that the server and the web client reported, the
@@ -20783,6 +21959,16 @@ type ClientInterface interface {
 	// Corresponds with PATCH /admin/settings (the `UpdateInstanceSettings` operationId).
 	UpdateInstanceSettings(ctx context.Context, body UpdateInstanceSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetFederationScopeImpact Count what switching federation to the allowlist would end
+	//
+	// How many follows switching the instance setting `federation_scope` to `allowlist` with the
+	// current allowlist would end, how many local accounts would lose one, and the servers with the
+	// most of them. Administrators read it before they switch, which ends those follows for good.
+	// Needs the `manage_settings` permission.
+	//
+	// Corresponds with GET /admin/settings/federation_scope/impact (the `GetFederationScopeImpact` operationId).
+	GetFederationScopeImpact(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetLoginProvidersOnlyImpact Count who limiting sign-in to login providers would affect
 	//
 	// How many active local users have no link to a login provider that users can sign in with
@@ -21586,6 +22772,122 @@ type ClientInterface interface {
 	// Corresponds with DELETE /domain_mutes/{domain} (the `UnmuteDomain` operationId).
 	UnmuteDomain(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// ListDrafts List the user's drafts, newest first
+	//
+	// The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
+	// ones (`true`) or the others (`false`).
+	//
+	// Corresponds with GET /drafts (the `ListDrafts` operationId).
+	ListDrafts(ctx context.Context, params *ListDraftsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateDraftWithBody Save a new draft
+	//
+	// Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+	// (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+	// uploads (422 otherwise), processed or not.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with POST /drafts (the `CreateDraft` operationId).
+	CreateDraftWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateDraft Save a new draft
+	//
+	// Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+	// (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+	// uploads (422 otherwise), processed or not.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with POST /drafts (the `CreateDraft` operationId).
+	CreateDraft(ctx context.Context, body CreateDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// DeleteDraft Delete a draft
+	//
+	// Deletes a draft with its schedule (204). The media it attaches, when no post attaches them,
+	// are deleted with the next cleanup of unattached uploads.
+	//
+	// Corresponds with DELETE /drafts/{id} (the `DeleteDraft` operationId).
+	DeleteDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetDraft Get a draft
+	//
+	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+	//
+	// Corresponds with GET /drafts/{id} (the `GetDraft` operationId).
+	GetDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateDraftWithBody Replace the content of a draft
+	//
+	// Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+	// last read it: a draft that another save changed since is a 412, and a request without
+	// `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+	// then.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /drafts/{id} (the `UpdateDraft` operationId).
+	UpdateDraftWithBody(ctx context.Context, id DraftId, params *UpdateDraftParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UpdateDraft Replace the content of a draft
+	//
+	// Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+	// last read it: a draft that another save changed since is a 412, and a request without
+	// `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+	// then.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /drafts/{id} (the `UpdateDraft` operationId).
+	UpdateDraft(ctx context.Context, id DraftId, params *UpdateDraftParams, body UpdateDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// PublishDraft Publish a draft now
+	//
+	// Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
+	// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+	//
+	// Corresponds with POST /drafts/{id}/publish (the `PublishDraft` operationId).
+	PublishDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnscheduleDraft Cancel the schedule of a draft
+	//
+	// The draft stays, without a schedule. A draft that is not scheduled is a 409.
+	//
+	// Corresponds with DELETE /drafts/{id}/schedule (the `UnscheduleDraft` operationId).
+	UnscheduleDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ScheduleDraftWithBody Schedule a draft, or move its schedule
+	//
+	// Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+	// The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+	// being processed pass), and again when it is published, by the user's state and the posts it
+	// replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+	// the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+	// (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+	// than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+	// `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+	//
+	// Takes any type of body and a specified content type.
+	//
+	// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
+	ScheduleDraftWithBody(ctx context.Context, id DraftId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ScheduleDraft Schedule a draft, or move its schedule
+	//
+	// Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+	// The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+	// being processed pass), and again when it is published, by the user's state and the posts it
+	// replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+	// the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+	// (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+	// than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+	// `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+	//
+	// Takes a body of the `application/json` content type.
+	//
+	// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
+	ScheduleDraft(ctx context.Context, id DraftId, body ScheduleDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListDataExports List the authenticated user's data exports
 	//
 	// Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -21672,6 +22974,13 @@ type ClientInterface interface {
 	//
 	// Corresponds with POST /follow_requests/{id}/reject (the `RejectFollowRequest` operationId).
 	RejectFollowRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListFollowedTags List the hashtags the user follows
+	//
+	// Every hashtag that the user follows (at most 100), the latest followed first.
+	//
+	// Corresponds with GET /followed_tags (the `ListFollowedTags` operationId).
+	ListFollowedTags(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// GetOwnHookAppeal Show the user's appeal of a post that the automated review refused
 	//
@@ -22327,7 +23636,7 @@ type ClientInterface interface {
 	// mutes with notifications hidden are left out, also those that came before the block or
 	// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 	// `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
+	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
 	// the user's roles no longer grant the permission they need.
 	//
 	// Corresponds with GET /notifications (the `ListNotifications` operationId).
@@ -23462,6 +24771,34 @@ type ClientInterface interface {
 	// Corresponds with GET /tags/search (the `SearchTags` operationId).
 	SearchTags(ctx context.Context, params *SearchTagsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// GetTag Get a hashtag
+	//
+	// The hashtag and whether the user follows it. A hashtag that no post has used yet is
+	// answered too, so that it can be followed.
+	//
+	// Corresponds with GET /tags/{hashtag} (the `GetTag` operationId).
+	GetTag(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// UnfollowTag Unfollow a hashtag
+	//
+	// Without a follow it changes nothing.
+	//
+	// Corresponds with DELETE /tags/{hashtag}/follow (the `UnfollowTag` operationId).
+	UnfollowTag(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// FollowTag Follow a hashtag
+	//
+	// The home timeline then also shows the `public` and `local` posts with the hashtag that the
+	// server has, from accounts the user does not follow, as the hashtag's timeline shows them:
+	// without boosts, and without the posts of accounts and servers kept from public timelines
+	// or that the user blocks or mutes. Such a post carries `followed_tags`. Following a
+	// hashtag that the user follows changes nothing, and a hashtag that no post has used yet
+	// can be followed. A user follows at most 100 hashtags; one more is a 422
+	// `/api/v1/problems/too-many-followed-tags`.
+	//
+	// Corresponds with POST /tags/{hashtag}/follow (the `FollowTag` operationId).
+	FollowTag(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// GetFederatedTimeline Get the federated timeline
 	//
 	// The public posts of the instance's accounts and of the remote accounts whose posts the
@@ -23478,8 +24815,9 @@ type ClientInterface interface {
 
 	// GetHomeTimeline Get the home timeline
 	//
-	// The viewer's own posts and boosts and those of the accounts the viewer follows, newest
-	// first, in the viewer's timeline languages.
+	// The viewer's own posts and boosts and those of the accounts the viewer follows, and the
+	// `public` and `local` posts of other accounts with a hashtag the viewer follows (which
+	// carry `followed_tags`), newest first, each once, in the viewer's timeline languages.
 	//
 	// Corresponds with GET /timelines/home (the `GetHomeTimeline` operationId).
 	GetHomeTimeline(ctx context.Context, params *GetHomeTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -26911,6 +28249,387 @@ func (c *Client) LiftDomainAction(ctx context.Context, id DomainActionId, reqEdi
 	return c.Client.Do(req)
 }
 
+// ListDomainAllows List the allowlist of federation
+//
+// Every allowed domain, by domain. The list is not paginated; the allowlist holds at most
+// 5,000 domains. Needs the `manage_domains` permission.
+//
+// Corresponds with GET /admin/domain_allows (the `ListDomainAllows` operationId).
+func (c *Client) ListDomainAllows(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDomainAllowsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateDomainAllowWithBody Allow a domain to federate
+//
+// Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+// the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+// follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+// and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+// instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+// is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+// permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/domain_allows (the `CreateDomainAllow` operationId).
+func (c *Client) CreateDomainAllowWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDomainAllowRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateDomainAllow Allow a domain to federate
+//
+// Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+// the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+// follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+// and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+// instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+// is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+// permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/domain_allows (the `CreateDomainAllow` operationId).
+func (c *Client) CreateDomainAllow(ctx context.Context, body CreateDomainAllowJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDomainAllowRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RemoveDomainAllow Remove a domain from the allowlist of federation
+//
+// Removes the allow of a domain and records it in the audit log. While the instance setting
+// `federation_scope` is `allowlist` and no parent domain is allowed, the domain and its
+// subdomains that no other allow covers are cut off at once, as a suspension of the domain
+// cuts them off: nothing is received from, delivered to, or fetched from them, and the follows
+// between the local accounts and their accounts end for good, each local user who loses one
+// being notified. A domain without an allow changes nothing. Needs the `manage_domains`
+// permission.
+//
+// Corresponds with DELETE /admin/domain_allows/{domain} (the `RemoveDomainAllow` operationId).
+func (c *Client) RemoveDomainAllow(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRemoveDomainAllowRequest(c.Server, domain)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListDomainListSubscriptions List the subscriptions to domain block lists
+//
+// The subscriptions that are not deleted, newest first, each with its last fetch. Needs the `manage_domains` permission.
+//
+// Corresponds with GET /admin/domain_list_subscriptions (the `ListDomainListSubscriptions` operationId).
+func (c *Client) ListDomainListSubscriptions(ctx context.Context, params *ListDomainListSubscriptionsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDomainListSubscriptionsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateDomainListSubscriptionWithBody Subscribe to a domain block list
+//
+// Subscribes to the list at an https URL, which the server fetches at once and then every
+// day, through the same guard as the fetches of other servers: a URL or a redirect to a
+// private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+// `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+// `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+// action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+// The subscription is audited. Needs the `manage_domains` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/domain_list_subscriptions (the `CreateDomainListSubscription` operationId).
+func (c *Client) CreateDomainListSubscriptionWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDomainListSubscriptionRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateDomainListSubscription Subscribe to a domain block list
+//
+// Subscribes to the list at an https URL, which the server fetches at once and then every
+// day, through the same guard as the fetches of other servers: a URL or a redirect to a
+// private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+// `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+// `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+// action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+// The subscription is audited. Needs the `manage_domains` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/domain_list_subscriptions (the `CreateDomainListSubscription` operationId).
+func (c *Client) CreateDomainListSubscription(ctx context.Context, body CreateDomainListSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDomainListSubscriptionRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteDomainListSubscription Delete a subscription to a domain block list
+//
+// Deletes the subscription: the list is no longer fetched. The actions it issued stay, as
+// if a moderator had issued them, unless `lift_actions` is set, which lifts them first. The
+// deletion is audited. An unknown or deleted ID is a 404. Needs the `manage_domains`
+// permission.
+//
+// Corresponds with DELETE /admin/domain_list_subscriptions/{id} (the `DeleteDomainListSubscription` operationId).
+func (c *Client) DeleteDomainListSubscription(ctx context.Context, id DomainListSubscriptionId, params *DeleteDomainListSubscriptionParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteDomainListSubscriptionRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetDomainListSubscription Get a subscription to a domain block list
+//
+// An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Corresponds with GET /admin/domain_list_subscriptions/{id} (the `GetDomainListSubscription` operationId).
+func (c *Client) GetDomainListSubscription(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDomainListSubscriptionRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateDomainListSubscriptionWithBody Change the settings of a subscription
+//
+// Changes the settings the request names and keeps the rest, and queues a fetch that applies
+// them; the URL and the format do not change. An invalid setting is a 422. A change is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PATCH /admin/domain_list_subscriptions/{id} (the `UpdateDomainListSubscription` operationId).
+func (c *Client) UpdateDomainListSubscriptionWithBody(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateDomainListSubscriptionRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateDomainListSubscription Change the settings of a subscription
+//
+// Changes the settings the request names and keeps the rest, and queues a fetch that applies
+// them; the URL and the format do not change. An invalid setting is a 422. A change is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PATCH /admin/domain_list_subscriptions/{id} (the `UpdateDomainListSubscription` operationId).
+func (c *Client) UpdateDomainListSubscription(ctx context.Context, id DomainListSubscriptionId, body UpdateDomainListSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateDomainListSubscriptionRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListDomainListDrafts List the drafts of a subscription
+//
+// The differences between the list, as last read, and the actions the subscription issued
+// that wait for a moderator: every difference in the `draft` mode, and in the `automatic`
+// mode those of an unknown severity and the lifts of a fetch that would lift too many. A
+// domain that an action in effect covers already, on it or a parent domain, whoever issued
+// it, is no draft. Rejected drafts are not listed. An unknown or deleted ID is a 404. Needs
+// the `manage_domains` permission.
+//
+// Corresponds with GET /admin/domain_list_subscriptions/{id}/drafts (the `ListDomainListDrafts` operationId).
+func (c *Client) ListDomainListDrafts(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDomainListDraftsRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AcceptDomainListDraftsWithBody Accept drafts of a subscription
+//
+// Issues the action of each `issue` draft for the subscription, until it is lifted, and
+// lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+// draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+// a 404. Needs the `manage_domains` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/accept (the `AcceptDomainListDrafts` operationId).
+func (c *Client) AcceptDomainListDraftsWithBody(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAcceptDomainListDraftsRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// AcceptDomainListDrafts Accept drafts of a subscription
+//
+// Issues the action of each `issue` draft for the subscription, until it is lifted, and
+// lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+// draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+// a 404. Needs the `manage_domains` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/accept (the `AcceptDomainListDrafts` operationId).
+func (c *Client) AcceptDomainListDrafts(ctx context.Context, id DomainListSubscriptionId, body AcceptDomainListDraftsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAcceptDomainListDraftsRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RejectDomainListDraftsWithBody Reject drafts of a subscription
+//
+// Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+// of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/reject (the `RejectDomainListDrafts` operationId).
+func (c *Client) RejectDomainListDraftsWithBody(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRejectDomainListDraftsRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// RejectDomainListDrafts Reject drafts of a subscription
+//
+// Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+// of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/reject (the `RejectDomainListDrafts` operationId).
+func (c *Client) RejectDomainListDrafts(ctx context.Context, id DomainListSubscriptionId, body RejectDomainListDraftsJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewRejectDomainListDraftsRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// FetchDomainListSubscription Fetch a subscribed list now
+//
+// Queues a fetch of the list, which then applies it as the daily fetch does. The request is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/fetch (the `FetchDomainListSubscription` operationId).
+func (c *Client) FetchDomainListSubscription(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFetchDomainListSubscriptionRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListDomainListFetches List the fetches of a subscription
+//
+// The fetches of the list, newest first, failed ones included with why they failed. An
+// unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Corresponds with GET /admin/domain_list_subscriptions/{id}/fetches (the `ListDomainListFetches` operationId).
+func (c *Client) ListDomainListFetches(ctx context.Context, id DomainListSubscriptionId, params *ListDomainListFetchesParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDomainListFetchesRequest(c.Server, id, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListErrorGroups List the error groups
 //
 // The groups of the errors that the server and the web client reported, the
@@ -29214,6 +30933,26 @@ func (c *Client) UpdateInstanceSettings(ctx context.Context, body UpdateInstance
 	return c.Client.Do(req)
 }
 
+// GetFederationScopeImpact Count what switching federation to the allowlist would end
+//
+// How many follows switching the instance setting `federation_scope` to `allowlist` with the
+// current allowlist would end, how many local accounts would lose one, and the servers with the
+// most of them. Administrators read it before they switch, which ends those follows for good.
+// Needs the `manage_settings` permission.
+//
+// Corresponds with GET /admin/settings/federation_scope/impact (the `GetFederationScopeImpact` operationId).
+func (c *Client) GetFederationScopeImpact(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetFederationScopeImpactRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetLoginProvidersOnlyImpact Count who limiting sign-in to login providers would affect
 //
 // How many active local users have no link to a login provider that users can sign in with
@@ -30677,6 +32416,232 @@ func (c *Client) UnmuteDomain(ctx context.Context, domain string, reqEditors ...
 	return c.Client.Do(req)
 }
 
+// ListDrafts List the user's drafts, newest first
+//
+// The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
+// ones (`true`) or the others (`false`).
+//
+// Corresponds with GET /drafts (the `ListDrafts` operationId).
+func (c *Client) ListDrafts(ctx context.Context, params *ListDraftsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDraftsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateDraftWithBody Save a new draft
+//
+// Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+// (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+// uploads (422 otherwise), processed or not.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with POST /drafts (the `CreateDraft` operationId).
+func (c *Client) CreateDraftWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDraftRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// CreateDraft Save a new draft
+//
+// Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+// (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+// uploads (422 otherwise), processed or not.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with POST /drafts (the `CreateDraft` operationId).
+func (c *Client) CreateDraft(ctx context.Context, body CreateDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateDraftRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// DeleteDraft Delete a draft
+//
+// Deletes a draft with its schedule (204). The media it attaches, when no post attaches them,
+// are deleted with the next cleanup of unattached uploads.
+//
+// Corresponds with DELETE /drafts/{id} (the `DeleteDraft` operationId).
+func (c *Client) DeleteDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewDeleteDraftRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetDraft Get a draft
+//
+// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+//
+// Corresponds with GET /drafts/{id} (the `GetDraft` operationId).
+func (c *Client) GetDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDraftRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateDraftWithBody Replace the content of a draft
+//
+// Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+// last read it: a draft that another save changed since is a 412, and a request without
+// `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+// then.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /drafts/{id} (the `UpdateDraft` operationId).
+func (c *Client) UpdateDraftWithBody(ctx context.Context, id DraftId, params *UpdateDraftParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateDraftRequestWithBody(c.Server, id, params, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UpdateDraft Replace the content of a draft
+//
+// Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+// last read it: a draft that another save changed since is a 412, and a request without
+// `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+// then.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /drafts/{id} (the `UpdateDraft` operationId).
+func (c *Client) UpdateDraft(ctx context.Context, id DraftId, params *UpdateDraftParams, body UpdateDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdateDraftRequest(c.Server, id, params, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// PublishDraft Publish a draft now
+//
+// Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
+// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+//
+// Corresponds with POST /drafts/{id}/publish (the `PublishDraft` operationId).
+func (c *Client) PublishDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPublishDraftRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnscheduleDraft Cancel the schedule of a draft
+//
+// The draft stays, without a schedule. A draft that is not scheduled is a 409.
+//
+// Corresponds with DELETE /drafts/{id}/schedule (the `UnscheduleDraft` operationId).
+func (c *Client) UnscheduleDraft(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnscheduleDraftRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ScheduleDraftWithBody Schedule a draft, or move its schedule
+//
+// Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+// The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+// being processed pass), and again when it is published, by the user's state and the posts it
+// replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+// the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+// (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+// than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+// `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+//
+// Takes any type of body and a specified content type.
+//
+// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
+func (c *Client) ScheduleDraftWithBody(ctx context.Context, id DraftId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewScheduleDraftRequestWithBody(c.Server, id, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ScheduleDraft Schedule a draft, or move its schedule
+//
+// Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+// The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+// being processed pass), and again when it is published, by the user's state and the posts it
+// replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+// the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+// (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+// than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+// `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+//
+// Takes a body of the `application/json` content type.
+//
+// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
+func (c *Client) ScheduleDraft(ctx context.Context, id DraftId, body ScheduleDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewScheduleDraftRequest(c.Server, id, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // ListDataExports List the authenticated user's data exports
 //
 // Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -30834,6 +32799,23 @@ func (c *Client) AcceptFollowRequest(ctx context.Context, id AccountId, reqEdito
 // Corresponds with POST /follow_requests/{id}/reject (the `RejectFollowRequest` operationId).
 func (c *Client) RejectFollowRequest(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewRejectFollowRequestRequest(c.Server, id)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// ListFollowedTags List the hashtags the user follows
+//
+// Every hashtag that the user follows (at most 100), the latest followed first.
+//
+// Corresponds with GET /followed_tags (the `ListFollowedTags` operationId).
+func (c *Client) ListFollowedTags(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListFollowedTagsRequest(c.Server)
 	if err != nil {
 		return nil, err
 	}
@@ -31978,7 +33960,7 @@ func (c *Client) ListMutes(ctx context.Context, params *ListMutesParams, reqEdit
 // mutes with notifications hidden are left out, also those that came before the block or
 // mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 // `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
+// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
 // the user's roles no longer grant the permission they need.
 //
 // Corresponds with GET /notifications (the `ListNotifications` operationId).
@@ -34023,6 +36005,64 @@ func (c *Client) SearchTags(ctx context.Context, params *SearchTagsParams, reqEd
 	return c.Client.Do(req)
 }
 
+// GetTag Get a hashtag
+//
+// The hashtag and whether the user follows it. A hashtag that no post has used yet is
+// answered too, so that it can be followed.
+//
+// Corresponds with GET /tags/{hashtag} (the `GetTag` operationId).
+func (c *Client) GetTag(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetTagRequest(c.Server, hashtag)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// UnfollowTag Unfollow a hashtag
+//
+// Without a follow it changes nothing.
+//
+// Corresponds with DELETE /tags/{hashtag}/follow (the `UnfollowTag` operationId).
+func (c *Client) UnfollowTag(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUnfollowTagRequest(c.Server, hashtag)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// FollowTag Follow a hashtag
+//
+// The home timeline then also shows the `public` and `local` posts with the hashtag that the
+// server has, from accounts the user does not follow, as the hashtag's timeline shows them:
+// without boosts, and without the posts of accounts and servers kept from public timelines
+// or that the user blocks or mutes. Such a post carries `followed_tags`. Following a
+// hashtag that the user follows changes nothing, and a hashtag that no post has used yet
+// can be followed. A user follows at most 100 hashtags; one more is a 422
+// `/api/v1/problems/too-many-followed-tags`.
+//
+// Corresponds with POST /tags/{hashtag}/follow (the `FollowTag` operationId).
+func (c *Client) FollowTag(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewFollowTagRequest(c.Server, hashtag)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
 // GetFederatedTimeline Get the federated timeline
 //
 // The public posts of the instance's accounts and of the remote accounts whose posts the
@@ -34049,8 +36089,9 @@ func (c *Client) GetFederatedTimeline(ctx context.Context, params *GetFederatedT
 
 // GetHomeTimeline Get the home timeline
 //
-// The viewer's own posts and boosts and those of the accounts the viewer follows, newest
-// first, in the viewer's timeline languages.
+// The viewer's own posts and boosts and those of the accounts the viewer follows, and the
+// `public` and `local` posts of other accounts with a hashtag the viewer follows (which
+// carry `followed_tags`), newest first, each once, in the viewer's timeline languages.
 //
 // Corresponds with GET /timelines/home (the `GetHomeTimeline` operationId).
 func (c *Client) GetHomeTimeline(ctx context.Context, params *GetHomeTimelineParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -39229,6 +41270,590 @@ func NewLiftDomainActionRequest(server string, id DomainActionId) (*http.Request
 	return req, nil
 }
 
+// NewListDomainAllowsRequest constructs an http.Request for the ListDomainAllows method
+func NewListDomainAllowsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_allows")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateDomainAllowRequest calls the generic CreateDomainAllow builder with application/json body
+func NewCreateDomainAllowRequest(server string, body CreateDomainAllowJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateDomainAllowRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateDomainAllowRequestWithBody constructs an http.Request for the CreateDomainAllow method, with any body, and a specified content type
+func NewCreateDomainAllowRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_allows")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRemoveDomainAllowRequest constructs an http.Request for the RemoveDomainAllow method
+func NewRemoveDomainAllowRequest(server string, domain string) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "domain", domain, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_allows/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListDomainListSubscriptionsRequest constructs an http.Request for the ListDomainListSubscriptions method
+func NewListDomainListSubscriptionsRequest(server string, params *ListDomainListSubscriptionsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateDomainListSubscriptionRequest calls the generic CreateDomainListSubscription builder with application/json body
+func NewCreateDomainListSubscriptionRequest(server string, body CreateDomainListSubscriptionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateDomainListSubscriptionRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateDomainListSubscriptionRequestWithBody constructs an http.Request for the CreateDomainListSubscription method, with any body, and a specified content type
+func NewCreateDomainListSubscriptionRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteDomainListSubscriptionRequest constructs an http.Request for the DeleteDomainListSubscription method
+func NewDeleteDomainListSubscriptionRequest(server string, id DomainListSubscriptionId, params *DeleteDomainListSubscriptionParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.LiftActions != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "lift_actions", *params.LiftActions, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetDomainListSubscriptionRequest constructs an http.Request for the GetDomainListSubscription method
+func NewGetDomainListSubscriptionRequest(server string, id DomainListSubscriptionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateDomainListSubscriptionRequest calls the generic UpdateDomainListSubscription builder with application/json body
+func NewUpdateDomainListSubscriptionRequest(server string, id DomainListSubscriptionId, body UpdateDomainListSubscriptionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateDomainListSubscriptionRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewUpdateDomainListSubscriptionRequestWithBody constructs an http.Request for the UpdateDomainListSubscription method, with any body, and a specified content type
+func NewUpdateDomainListSubscriptionRequestWithBody(server string, id DomainListSubscriptionId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPatch, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewListDomainListDraftsRequest constructs an http.Request for the ListDomainListDrafts method
+func NewListDomainListDraftsRequest(server string, id DomainListSubscriptionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions/%s/drafts", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewAcceptDomainListDraftsRequest calls the generic AcceptDomainListDrafts builder with application/json body
+func NewAcceptDomainListDraftsRequest(server string, id DomainListSubscriptionId, body AcceptDomainListDraftsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewAcceptDomainListDraftsRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewAcceptDomainListDraftsRequestWithBody constructs an http.Request for the AcceptDomainListDrafts method, with any body, and a specified content type
+func NewAcceptDomainListDraftsRequestWithBody(server string, id DomainListSubscriptionId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions/%s/drafts/accept", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewRejectDomainListDraftsRequest calls the generic RejectDomainListDrafts builder with application/json body
+func NewRejectDomainListDraftsRequest(server string, id DomainListSubscriptionId, body RejectDomainListDraftsJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewRejectDomainListDraftsRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewRejectDomainListDraftsRequestWithBody constructs an http.Request for the RejectDomainListDrafts method, with any body, and a specified content type
+func NewRejectDomainListDraftsRequestWithBody(server string, id DomainListSubscriptionId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions/%s/drafts/reject", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewFetchDomainListSubscriptionRequest constructs an http.Request for the FetchDomainListSubscription method
+func NewFetchDomainListSubscriptionRequest(server string, id DomainListSubscriptionId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions/%s/fetch", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListDomainListFetchesRequest constructs an http.Request for the ListDomainListFetches method
+func NewListDomainListFetchesRequest(server string, id DomainListSubscriptionId, params *ListDomainListFetchesParams) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_list_subscriptions/%s/fetches", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListErrorGroupsRequest constructs an http.Request for the ListErrorGroups method
 func NewListErrorGroupsRequest(server string, params *ListErrorGroupsParams) (*http.Request, error) {
 	var err error
@@ -42900,6 +45525,33 @@ func NewUpdateInstanceSettingsRequestWithBody(server string, contentType string,
 	return req, nil
 }
 
+// NewGetFederationScopeImpactRequest constructs an http.Request for the GetFederationScopeImpact method
+func NewGetFederationScopeImpactRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/settings/federation_scope/impact")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetLoginProvidersOnlyImpactRequest constructs an http.Request for the GetLoginProvidersOnlyImpact method
 func NewGetLoginProvidersOnlyImpactRequest(server string, params *GetLoginProvidersOnlyImpactParams) (*http.Request, error) {
 	var err error
@@ -45182,6 +47834,369 @@ func NewUnmuteDomainRequest(server string, domain string) (*http.Request, error)
 	return req, nil
 }
 
+// NewListDraftsRequest constructs an http.Request for the ListDrafts method
+func NewListDraftsRequest(server string, params *ListDraftsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/drafts")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if params.Cursor != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "cursor", *params.Cursor, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Limit != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "limit", *params.Limit, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if params.Scheduled != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "scheduled", *params.Scheduled, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "boolean", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateDraftRequest calls the generic CreateDraft builder with application/json body
+func NewCreateDraftRequest(server string, body CreateDraftJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateDraftRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateDraftRequestWithBody constructs an http.Request for the CreateDraft method, with any body, and a specified content type
+func NewCreateDraftRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/drafts")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewDeleteDraftRequest constructs an http.Request for the DeleteDraft method
+func NewDeleteDraftRequest(server string, id DraftId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/drafts/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetDraftRequest constructs an http.Request for the GetDraft method
+func NewGetDraftRequest(server string, id DraftId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/drafts/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUpdateDraftRequest calls the generic UpdateDraft builder with application/json body
+func NewUpdateDraftRequest(server string, id DraftId, params *UpdateDraftParams, body UpdateDraftJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdateDraftRequestWithBody(server, id, params, "application/json", bodyReader)
+}
+
+// NewUpdateDraftRequestWithBody constructs an http.Request for the UpdateDraft method, with any body, and a specified content type
+func NewUpdateDraftRequestWithBody(server string, id DraftId, params *UpdateDraftParams, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/drafts/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	if params != nil {
+
+		if params.IfMatch != nil {
+			var headerParam0 string
+
+			headerParam0, err = runtime.StyleParamWithOptions("simple", false, "If-Match", *params.IfMatch, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationHeader, Type: "string", Format: ""})
+			if err != nil {
+				return nil, err
+			}
+
+			req.Header.Set("If-Match", headerParam0)
+		}
+
+	}
+
+	return req, nil
+}
+
+// NewPublishDraftRequest constructs an http.Request for the PublishDraft method
+func NewPublishDraftRequest(server string, id DraftId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/drafts/%s/publish", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUnscheduleDraftRequest constructs an http.Request for the UnscheduleDraft method
+func NewUnscheduleDraftRequest(server string, id DraftId) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/drafts/%s/schedule", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewScheduleDraftRequest calls the generic ScheduleDraft builder with application/json body
+func NewScheduleDraftRequest(server string, id DraftId, body ScheduleDraftJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewScheduleDraftRequestWithBody(server, id, "application/json", bodyReader)
+}
+
+// NewScheduleDraftRequestWithBody constructs an http.Request for the ScheduleDraft method, with any body, and a specified content type
+func NewScheduleDraftRequestWithBody(server string, id DraftId, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "id", id, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: "uuid"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/drafts/%s/schedule", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPut, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
 // NewListDataExportsRequest constructs an http.Request for the ListDataExports method
 func NewListDataExportsRequest(server string) (*http.Request, error) {
 	var err error
@@ -45553,6 +48568,33 @@ func NewRejectFollowRequestRequest(server string, id AccountId) (*http.Request, 
 	}
 
 	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListFollowedTagsRequest constructs an http.Request for the ListFollowedTags method
+func NewListFollowedTagsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/followed_tags")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -49944,6 +52986,108 @@ func NewSearchTagsRequest(server string, params *SearchTagsParams) (*http.Reques
 	return req, nil
 }
 
+// NewGetTagRequest constructs an http.Request for the GetTag method
+func NewGetTagRequest(server string, hashtag HashtagName) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "hashtag", hashtag, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/tags/%s", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewUnfollowTagRequest constructs an http.Request for the UnfollowTag method
+func NewUnfollowTagRequest(server string, hashtag HashtagName) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "hashtag", hashtag, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/tags/%s/follow", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodDelete, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewFollowTagRequest constructs an http.Request for the FollowTag method
+func NewFollowTagRequest(server string, hashtag HashtagName) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "hashtag", hashtag, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/tags/%s/follow", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewGetFederatedTimelineRequest constructs an http.Request for the GetFederatedTimeline method
 func NewGetFederatedTimelineRequest(server string, params *GetFederatedTimelineParams) (*http.Request, error) {
 	var err error
@@ -53587,6 +56731,223 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with POST /admin/domain_actions/{id}/lift (the `LiftDomainAction` operationId).
 	LiftDomainActionWithResponse(ctx context.Context, id DomainActionId, reqEditors ...RequestEditorFn) (*LiftDomainActionResponse, error)
 
+	// ListDomainAllowsWithResponse List the allowlist of federation
+	//
+	// Every allowed domain, by domain. The list is not paginated; the allowlist holds at most
+	// 5,000 domains. Needs the `manage_domains` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/domain_allows (the `ListDomainAllows` operationId).
+	ListDomainAllowsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListDomainAllowsResponse, error)
+
+	// CreateDomainAllowWithBodyWithResponse Allow a domain to federate
+	//
+	// Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+	// the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+	// follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+	// and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+	// instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+	// is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+	// permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/domain_allows (the `CreateDomainAllow` operationId).
+	CreateDomainAllowWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainAllowResponse, error)
+
+	// CreateDomainAllowWithResponse Allow a domain to federate
+	//
+	// Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+	// the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+	// follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+	// and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+	// instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+	// is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+	// permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/domain_allows (the `CreateDomainAllow` operationId).
+	CreateDomainAllowWithResponse(ctx context.Context, body CreateDomainAllowJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainAllowResponse, error)
+
+	// RemoveDomainAllowWithResponse Remove a domain from the allowlist of federation
+	//
+	// Removes the allow of a domain and records it in the audit log. While the instance setting
+	// `federation_scope` is `allowlist` and no parent domain is allowed, the domain and its
+	// subdomains that no other allow covers are cut off at once, as a suspension of the domain
+	// cuts them off: nothing is received from, delivered to, or fetched from them, and the follows
+	// between the local accounts and their accounts end for good, each local user who loses one
+	// being notified. A domain without an allow changes nothing. Needs the `manage_domains`
+	// permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /admin/domain_allows/{domain} (the `RemoveDomainAllow` operationId).
+	RemoveDomainAllowWithResponse(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*RemoveDomainAllowResponse, error)
+
+	// ListDomainListSubscriptionsWithResponse List the subscriptions to domain block lists
+	//
+	// The subscriptions that are not deleted, newest first, each with its last fetch. Needs the `manage_domains` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/domain_list_subscriptions (the `ListDomainListSubscriptions` operationId).
+	ListDomainListSubscriptionsWithResponse(ctx context.Context, params *ListDomainListSubscriptionsParams, reqEditors ...RequestEditorFn) (*ListDomainListSubscriptionsResponse, error)
+
+	// CreateDomainListSubscriptionWithBodyWithResponse Subscribe to a domain block list
+	//
+	// Subscribes to the list at an https URL, which the server fetches at once and then every
+	// day, through the same guard as the fetches of other servers: a URL or a redirect to a
+	// private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+	// `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+	// `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+	// action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+	// The subscription is audited. Needs the `manage_domains` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions (the `CreateDomainListSubscription` operationId).
+	CreateDomainListSubscriptionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainListSubscriptionResponse, error)
+
+	// CreateDomainListSubscriptionWithResponse Subscribe to a domain block list
+	//
+	// Subscribes to the list at an https URL, which the server fetches at once and then every
+	// day, through the same guard as the fetches of other servers: a URL or a redirect to a
+	// private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+	// `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+	// `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+	// action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+	// The subscription is audited. Needs the `manage_domains` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions (the `CreateDomainListSubscription` operationId).
+	CreateDomainListSubscriptionWithResponse(ctx context.Context, body CreateDomainListSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainListSubscriptionResponse, error)
+
+	// DeleteDomainListSubscriptionWithResponse Delete a subscription to a domain block list
+	//
+	// Deletes the subscription: the list is no longer fetched. The actions it issued stay, as
+	// if a moderator had issued them, unless `lift_actions` is set, which lifts them first. The
+	// deletion is audited. An unknown or deleted ID is a 404. Needs the `manage_domains`
+	// permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /admin/domain_list_subscriptions/{id} (the `DeleteDomainListSubscription` operationId).
+	DeleteDomainListSubscriptionWithResponse(ctx context.Context, id DomainListSubscriptionId, params *DeleteDomainListSubscriptionParams, reqEditors ...RequestEditorFn) (*DeleteDomainListSubscriptionResponse, error)
+
+	// GetDomainListSubscriptionWithResponse Get a subscription to a domain block list
+	//
+	// An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/domain_list_subscriptions/{id} (the `GetDomainListSubscription` operationId).
+	GetDomainListSubscriptionWithResponse(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*GetDomainListSubscriptionResponse, error)
+
+	// UpdateDomainListSubscriptionWithBodyWithResponse Change the settings of a subscription
+	//
+	// Changes the settings the request names and keeps the rest, and queues a fetch that applies
+	// them; the URL and the format do not change. An invalid setting is a 422. A change is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /admin/domain_list_subscriptions/{id} (the `UpdateDomainListSubscription` operationId).
+	UpdateDomainListSubscriptionWithBodyWithResponse(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateDomainListSubscriptionResponse, error)
+
+	// UpdateDomainListSubscriptionWithResponse Change the settings of a subscription
+	//
+	// Changes the settings the request names and keeps the rest, and queues a fetch that applies
+	// them; the URL and the format do not change. An invalid setting is a 422. A change is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PATCH /admin/domain_list_subscriptions/{id} (the `UpdateDomainListSubscription` operationId).
+	UpdateDomainListSubscriptionWithResponse(ctx context.Context, id DomainListSubscriptionId, body UpdateDomainListSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateDomainListSubscriptionResponse, error)
+
+	// ListDomainListDraftsWithResponse List the drafts of a subscription
+	//
+	// The differences between the list, as last read, and the actions the subscription issued
+	// that wait for a moderator: every difference in the `draft` mode, and in the `automatic`
+	// mode those of an unknown severity and the lifts of a fetch that would lift too many. A
+	// domain that an action in effect covers already, on it or a parent domain, whoever issued
+	// it, is no draft. Rejected drafts are not listed. An unknown or deleted ID is a 404. Needs
+	// the `manage_domains` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/domain_list_subscriptions/{id}/drafts (the `ListDomainListDrafts` operationId).
+	ListDomainListDraftsWithResponse(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*ListDomainListDraftsResponse, error)
+
+	// AcceptDomainListDraftsWithBodyWithResponse Accept drafts of a subscription
+	//
+	// Issues the action of each `issue` draft for the subscription, until it is lifted, and
+	// lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+	// draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+	// a 404. Needs the `manage_domains` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/accept (the `AcceptDomainListDrafts` operationId).
+	AcceptDomainListDraftsWithBodyWithResponse(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AcceptDomainListDraftsResponse, error)
+
+	// AcceptDomainListDraftsWithResponse Accept drafts of a subscription
+	//
+	// Issues the action of each `issue` draft for the subscription, until it is lifted, and
+	// lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+	// draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+	// a 404. Needs the `manage_domains` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/accept (the `AcceptDomainListDrafts` operationId).
+	AcceptDomainListDraftsWithResponse(ctx context.Context, id DomainListSubscriptionId, body AcceptDomainListDraftsJSONRequestBody, reqEditors ...RequestEditorFn) (*AcceptDomainListDraftsResponse, error)
+
+	// RejectDomainListDraftsWithBodyWithResponse Reject drafts of a subscription
+	//
+	// Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+	// of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/reject (the `RejectDomainListDrafts` operationId).
+	RejectDomainListDraftsWithBodyWithResponse(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RejectDomainListDraftsResponse, error)
+
+	// RejectDomainListDraftsWithResponse Reject drafts of a subscription
+	//
+	// Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+	// of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/reject (the `RejectDomainListDrafts` operationId).
+	RejectDomainListDraftsWithResponse(ctx context.Context, id DomainListSubscriptionId, body RejectDomainListDraftsJSONRequestBody, reqEditors ...RequestEditorFn) (*RejectDomainListDraftsResponse, error)
+
+	// FetchDomainListSubscriptionWithResponse Fetch a subscribed list now
+	//
+	// Queues a fetch of the list, which then applies it as the daily fetch does. The request is
+	// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /admin/domain_list_subscriptions/{id}/fetch (the `FetchDomainListSubscription` operationId).
+	FetchDomainListSubscriptionWithResponse(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*FetchDomainListSubscriptionResponse, error)
+
+	// ListDomainListFetchesWithResponse List the fetches of a subscription
+	//
+	// The fetches of the list, newest first, failed ones included with why they failed. An
+	// unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/domain_list_subscriptions/{id}/fetches (the `ListDomainListFetches` operationId).
+	ListDomainListFetchesWithResponse(ctx context.Context, id DomainListSubscriptionId, params *ListDomainListFetchesParams, reqEditors ...RequestEditorFn) (*ListDomainListFetchesResponse, error)
+
 	// ListErrorGroupsWithResponse List the error groups
 	//
 	// The groups of the errors that the server and the web client reported, the
@@ -54970,6 +58331,18 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with PATCH /admin/settings (the `UpdateInstanceSettings` operationId).
 	UpdateInstanceSettingsWithResponse(ctx context.Context, body UpdateInstanceSettingsJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateInstanceSettingsResponse, error)
 
+	// GetFederationScopeImpactWithResponse Count what switching federation to the allowlist would end
+	//
+	// How many follows switching the instance setting `federation_scope` to `allowlist` with the
+	// current allowlist would end, how many local accounts would lose one, and the servers with the
+	// most of them. Administrators read it before they switch, which ends those follows for good.
+	// Needs the `manage_settings` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/settings/federation_scope/impact (the `GetFederationScopeImpact` operationId).
+	GetFederationScopeImpactWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetFederationScopeImpactResponse, error)
+
 	// GetLoginProvidersOnlyImpactWithResponse Count who limiting sign-in to login providers would affect
 	//
 	// How many active local users have no link to a login provider that users can sign in with
@@ -55857,6 +59230,132 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with DELETE /domain_mutes/{domain} (the `UnmuteDomain` operationId).
 	UnmuteDomainWithResponse(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*UnmuteDomainResponse, error)
 
+	// ListDraftsWithResponse List the user's drafts, newest first
+	//
+	// The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
+	// ones (`true`) or the others (`false`).
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /drafts (the `ListDrafts` operationId).
+	ListDraftsWithResponse(ctx context.Context, params *ListDraftsParams, reqEditors ...RequestEditorFn) (*ListDraftsResponse, error)
+
+	// CreateDraftWithBodyWithResponse Save a new draft
+	//
+	// Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+	// (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+	// uploads (422 otherwise), processed or not.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /drafts (the `CreateDraft` operationId).
+	CreateDraftWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDraftResponse, error)
+
+	// CreateDraftWithResponse Save a new draft
+	//
+	// Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+	// (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+	// uploads (422 otherwise), processed or not.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /drafts (the `CreateDraft` operationId).
+	CreateDraftWithResponse(ctx context.Context, body CreateDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDraftResponse, error)
+
+	// DeleteDraftWithResponse Delete a draft
+	//
+	// Deletes a draft with its schedule (204). The media it attaches, when no post attaches them,
+	// are deleted with the next cleanup of unattached uploads.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /drafts/{id} (the `DeleteDraft` operationId).
+	DeleteDraftWithResponse(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*DeleteDraftResponse, error)
+
+	// GetDraftWithResponse Get a draft
+	//
+	// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /drafts/{id} (the `GetDraft` operationId).
+	GetDraftWithResponse(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*GetDraftResponse, error)
+
+	// UpdateDraftWithBodyWithResponse Replace the content of a draft
+	//
+	// Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+	// last read it: a draft that another save changed since is a 412, and a request without
+	// `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+	// then.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /drafts/{id} (the `UpdateDraft` operationId).
+	UpdateDraftWithBodyWithResponse(ctx context.Context, id DraftId, params *UpdateDraftParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateDraftResponse, error)
+
+	// UpdateDraftWithResponse Replace the content of a draft
+	//
+	// Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+	// last read it: a draft that another save changed since is a 412, and a request without
+	// `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+	// then.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /drafts/{id} (the `UpdateDraft` operationId).
+	UpdateDraftWithResponse(ctx context.Context, id DraftId, params *UpdateDraftParams, body UpdateDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateDraftResponse, error)
+
+	// PublishDraftWithResponse Publish a draft now
+	//
+	// Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
+	// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /drafts/{id}/publish (the `PublishDraft` operationId).
+	PublishDraftWithResponse(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*PublishDraftResponse, error)
+
+	// UnscheduleDraftWithResponse Cancel the schedule of a draft
+	//
+	// The draft stays, without a schedule. A draft that is not scheduled is a 409.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /drafts/{id}/schedule (the `UnscheduleDraft` operationId).
+	UnscheduleDraftWithResponse(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*UnscheduleDraftResponse, error)
+
+	// ScheduleDraftWithBodyWithResponse Schedule a draft, or move its schedule
+	//
+	// Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+	// The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+	// being processed pass), and again when it is published, by the user's state and the posts it
+	// replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+	// the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+	// (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+	// than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+	// `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+	//
+	// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
+	ScheduleDraftWithBodyWithResponse(ctx context.Context, id DraftId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScheduleDraftResponse, error)
+
+	// ScheduleDraftWithResponse Schedule a draft, or move its schedule
+	//
+	// Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+	// The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+	// being processed pass), and again when it is published, by the user's state and the posts it
+	// replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+	// the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+	// (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+	// than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+	// `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+	//
+	// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
+	ScheduleDraftWithResponse(ctx context.Context, id DraftId, body ScheduleDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*ScheduleDraftResponse, error)
+
 	// ListDataExportsWithResponse List the authenticated user's data exports
 	//
 	// Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -55959,6 +59458,15 @@ type ClientWithResponsesInterface interface {
 	//
 	// Corresponds with POST /follow_requests/{id}/reject (the `RejectFollowRequest` operationId).
 	RejectFollowRequestWithResponse(ctx context.Context, id AccountId, reqEditors ...RequestEditorFn) (*RejectFollowRequestResponse, error)
+
+	// ListFollowedTagsWithResponse List the hashtags the user follows
+	//
+	// Every hashtag that the user follows (at most 100), the latest followed first.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /followed_tags (the `ListFollowedTags` operationId).
+	ListFollowedTagsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListFollowedTagsResponse, error)
 
 	// GetOwnHookAppealWithResponse Show the user's appeal of a post that the automated review refused
 	//
@@ -56668,7 +60176,7 @@ type ClientWithResponsesInterface interface {
 	// mutes with notifications hidden are left out, also those that came before the block or
 	// mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 	// `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
+	// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
 	// the user's roles no longer grant the permission they need.
 	//
 	// Returns a wrapper object for the known response body format(s).
@@ -57897,6 +61405,40 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /tags/search (the `SearchTags` operationId).
 	SearchTagsWithResponse(ctx context.Context, params *SearchTagsParams, reqEditors ...RequestEditorFn) (*SearchTagsResponse, error)
 
+	// GetTagWithResponse Get a hashtag
+	//
+	// The hashtag and whether the user follows it. A hashtag that no post has used yet is
+	// answered too, so that it can be followed.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /tags/{hashtag} (the `GetTag` operationId).
+	GetTagWithResponse(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*GetTagResponse, error)
+
+	// UnfollowTagWithResponse Unfollow a hashtag
+	//
+	// Without a follow it changes nothing.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with DELETE /tags/{hashtag}/follow (the `UnfollowTag` operationId).
+	UnfollowTagWithResponse(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*UnfollowTagResponse, error)
+
+	// FollowTagWithResponse Follow a hashtag
+	//
+	// The home timeline then also shows the `public` and `local` posts with the hashtag that the
+	// server has, from accounts the user does not follow, as the hashtag's timeline shows them:
+	// without boosts, and without the posts of accounts and servers kept from public timelines
+	// or that the user blocks or mutes. Such a post carries `followed_tags`. Following a
+	// hashtag that the user follows changes nothing, and a hashtag that no post has used yet
+	// can be followed. A user follows at most 100 hashtags; one more is a 422
+	// `/api/v1/problems/too-many-followed-tags`.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with POST /tags/{hashtag}/follow (the `FollowTag` operationId).
+	FollowTagWithResponse(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*FollowTagResponse, error)
+
 	// GetFederatedTimelineWithResponse Get the federated timeline
 	//
 	// The public posts of the instance's accounts and of the remote accounts whose posts the
@@ -57915,8 +61457,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetHomeTimelineWithResponse Get the home timeline
 	//
-	// The viewer's own posts and boosts and those of the accounts the viewer follows, newest
-	// first, in the viewer's timeline languages.
+	// The viewer's own posts and boosts and those of the accounts the viewer follows, and the
+	// `public` and `local` posts of other accounts with a hashtag the viewer follows (which
+	// carry `followed_tags`), newest first, each once, in the viewer's timeline languages.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -64435,6 +67978,823 @@ func (r LiftDomainActionResponse) ContentType() string {
 	return ""
 }
 
+// ListDomainAllowsResponse200Headers the declared response headers of an HTTP 200 response for ListDomainAllows
+type ListDomainAllowsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListDomainAllowsResponseDefaultHeaders the declared response headers of an HTTP default response for ListDomainAllows
+type ListDomainAllowsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListDomainAllowsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DomainAllowList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListDomainAllowsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListDomainAllowsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListDomainAllowsResponse) GetJSON200() *DomainAllowList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListDomainAllowsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListDomainAllowsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListDomainAllowsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListDomainAllowsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListDomainAllowsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CreateDomainAllowResponse200Headers the declared response headers of an HTTP 200 response for CreateDomainAllow
+type CreateDomainAllowResponse200Headers struct {
+	CacheControl *string
+}
+
+// CreateDomainAllowResponse201Headers the declared response headers of an HTTP 201 response for CreateDomainAllow
+type CreateDomainAllowResponse201Headers struct {
+	CacheControl *string
+}
+
+// CreateDomainAllowResponseDefaultHeaders the declared response headers of an HTTP default response for CreateDomainAllow
+type CreateDomainAllowResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateDomainAllowResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DomainAllow
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *DomainAllow
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *CreateDomainAllowResponse200Headers
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateDomainAllowResponse201Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateDomainAllowResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r CreateDomainAllowResponse) GetJSON200() *DomainAllow {
+	return r.JSON200
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateDomainAllowResponse) GetJSON201() *DomainAllow {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateDomainAllowResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateDomainAllowResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateDomainAllowResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateDomainAllowResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateDomainAllowResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RemoveDomainAllowResponseDefaultHeaders the declared response headers of an HTTP default response for RemoveDomainAllow
+type RemoveDomainAllowResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RemoveDomainAllowResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RemoveDomainAllowResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RemoveDomainAllowResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RemoveDomainAllowResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RemoveDomainAllowResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RemoveDomainAllowResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RemoveDomainAllowResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListDomainListSubscriptionsResponse200Headers the declared response headers of an HTTP 200 response for ListDomainListSubscriptions
+type ListDomainListSubscriptionsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListDomainListSubscriptionsResponseDefaultHeaders the declared response headers of an HTTP default response for ListDomainListSubscriptions
+type ListDomainListSubscriptionsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListDomainListSubscriptionsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminDomainListSubscriptionPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListDomainListSubscriptionsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListDomainListSubscriptionsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListDomainListSubscriptionsResponse) GetJSON200() *AdminDomainListSubscriptionPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListDomainListSubscriptionsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListDomainListSubscriptionsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListDomainListSubscriptionsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListDomainListSubscriptionsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListDomainListSubscriptionsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CreateDomainListSubscriptionResponse201Headers the declared response headers of an HTTP 201 response for CreateDomainListSubscription
+type CreateDomainListSubscriptionResponse201Headers struct {
+	CacheControl *string
+}
+
+// CreateDomainListSubscriptionResponseDefaultHeaders the declared response headers of an HTTP default response for CreateDomainListSubscription
+type CreateDomainListSubscriptionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateDomainListSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *AdminDomainListSubscription
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateDomainListSubscriptionResponse201Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateDomainListSubscriptionResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateDomainListSubscriptionResponse) GetJSON201() *AdminDomainListSubscription {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateDomainListSubscriptionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateDomainListSubscriptionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateDomainListSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateDomainListSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateDomainListSubscriptionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeleteDomainListSubscriptionResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteDomainListSubscription
+type DeleteDomainListSubscriptionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeleteDomainListSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeleteDomainListSubscriptionResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeleteDomainListSubscriptionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteDomainListSubscriptionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteDomainListSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteDomainListSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteDomainListSubscriptionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetDomainListSubscriptionResponse200Headers the declared response headers of an HTTP 200 response for GetDomainListSubscription
+type GetDomainListSubscriptionResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetDomainListSubscriptionResponseDefaultHeaders the declared response headers of an HTTP default response for GetDomainListSubscription
+type GetDomainListSubscriptionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetDomainListSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminDomainListSubscription
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetDomainListSubscriptionResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetDomainListSubscriptionResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetDomainListSubscriptionResponse) GetJSON200() *AdminDomainListSubscription {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetDomainListSubscriptionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetDomainListSubscriptionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDomainListSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDomainListSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetDomainListSubscriptionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateDomainListSubscriptionResponse200Headers the declared response headers of an HTTP 200 response for UpdateDomainListSubscription
+type UpdateDomainListSubscriptionResponse200Headers struct {
+	CacheControl *string
+}
+
+// UpdateDomainListSubscriptionResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateDomainListSubscription
+type UpdateDomainListSubscriptionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateDomainListSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminDomainListSubscription
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateDomainListSubscriptionResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateDomainListSubscriptionResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateDomainListSubscriptionResponse) GetJSON200() *AdminDomainListSubscription {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateDomainListSubscriptionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateDomainListSubscriptionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateDomainListSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateDomainListSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateDomainListSubscriptionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListDomainListDraftsResponse200Headers the declared response headers of an HTTP 200 response for ListDomainListDrafts
+type ListDomainListDraftsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListDomainListDraftsResponseDefaultHeaders the declared response headers of an HTTP default response for ListDomainListDrafts
+type ListDomainListDraftsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListDomainListDraftsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminDomainListDraftList
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListDomainListDraftsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListDomainListDraftsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListDomainListDraftsResponse) GetJSON200() *AdminDomainListDraftList {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListDomainListDraftsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListDomainListDraftsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListDomainListDraftsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListDomainListDraftsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListDomainListDraftsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// AcceptDomainListDraftsResponse200Headers the declared response headers of an HTTP 200 response for AcceptDomainListDrafts
+type AcceptDomainListDraftsResponse200Headers struct {
+	CacheControl *string
+}
+
+// AcceptDomainListDraftsResponseDefaultHeaders the declared response headers of an HTTP default response for AcceptDomainListDrafts
+type AcceptDomainListDraftsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type AcceptDomainListDraftsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminDomainListDraftResult
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *AcceptDomainListDraftsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *AcceptDomainListDraftsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r AcceptDomainListDraftsResponse) GetJSON200() *AdminDomainListDraftResult {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r AcceptDomainListDraftsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r AcceptDomainListDraftsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r AcceptDomainListDraftsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AcceptDomainListDraftsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AcceptDomainListDraftsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// RejectDomainListDraftsResponse200Headers the declared response headers of an HTTP 200 response for RejectDomainListDrafts
+type RejectDomainListDraftsResponse200Headers struct {
+	CacheControl *string
+}
+
+// RejectDomainListDraftsResponseDefaultHeaders the declared response headers of an HTTP default response for RejectDomainListDrafts
+type RejectDomainListDraftsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type RejectDomainListDraftsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminDomainListDraftResult
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *RejectDomainListDraftsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *RejectDomainListDraftsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r RejectDomainListDraftsResponse) GetJSON200() *AdminDomainListDraftResult {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r RejectDomainListDraftsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r RejectDomainListDraftsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r RejectDomainListDraftsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r RejectDomainListDraftsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r RejectDomainListDraftsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// FetchDomainListSubscriptionResponseDefaultHeaders the declared response headers of an HTTP default response for FetchDomainListSubscription
+type FetchDomainListSubscriptionResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type FetchDomainListSubscriptionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *FetchDomainListSubscriptionResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r FetchDomainListSubscriptionResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r FetchDomainListSubscriptionResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r FetchDomainListSubscriptionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FetchDomainListSubscriptionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r FetchDomainListSubscriptionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListDomainListFetchesResponse200Headers the declared response headers of an HTTP 200 response for ListDomainListFetches
+type ListDomainListFetchesResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListDomainListFetchesResponseDefaultHeaders the declared response headers of an HTTP default response for ListDomainListFetches
+type ListDomainListFetchesResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListDomainListFetchesResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *AdminDomainListFetchPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListDomainListFetchesResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListDomainListFetchesResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListDomainListFetchesResponse) GetJSON200() *AdminDomainListFetchPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListDomainListFetchesResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListDomainListFetchesResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListDomainListFetchesResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListDomainListFetchesResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListDomainListFetchesResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListErrorGroupsResponse200Headers the declared response headers of an HTTP 200 response for ListErrorGroups
 type ListErrorGroupsResponse200Headers struct {
 	CacheControl *string
@@ -69898,6 +74258,71 @@ func (r UpdateInstanceSettingsResponse) ContentType() string {
 	return ""
 }
 
+// GetFederationScopeImpactResponse200Headers the declared response headers of an HTTP 200 response for GetFederationScopeImpact
+type GetFederationScopeImpactResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetFederationScopeImpactResponseDefaultHeaders the declared response headers of an HTTP default response for GetFederationScopeImpact
+type GetFederationScopeImpactResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetFederationScopeImpactResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *FederationScopeImpact
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetFederationScopeImpactResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetFederationScopeImpactResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetFederationScopeImpactResponse) GetJSON200() *FederationScopeImpact {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetFederationScopeImpactResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetFederationScopeImpactResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetFederationScopeImpactResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetFederationScopeImpactResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetFederationScopeImpactResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetLoginProvidersOnlyImpactResponse200Headers the declared response headers of an HTTP 200 response for GetLoginProvidersOnlyImpact
 type GetLoginProvidersOnlyImpactResponse200Headers struct {
 	CacheControl *string
@@ -73424,6 +77849,520 @@ func (r UnmuteDomainResponse) ContentType() string {
 	return ""
 }
 
+// ListDraftsResponseDefaultHeaders the declared response headers of an HTTP default response for ListDrafts
+type ListDraftsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListDraftsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DraftPage
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListDraftsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListDraftsResponse) GetJSON200() *DraftPage {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListDraftsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListDraftsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListDraftsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListDraftsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListDraftsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// CreateDraftResponse201Headers the declared response headers of an HTTP 201 response for CreateDraft
+type CreateDraftResponse201Headers struct {
+	ETag *string
+}
+
+// CreateDraftResponseDefaultHeaders the declared response headers of an HTTP default response for CreateDraft
+type CreateDraftResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type CreateDraftResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Draft
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *CreateDraftResponse201Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *CreateDraftResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r CreateDraftResponse) GetJSON201() *Draft {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r CreateDraftResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r CreateDraftResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateDraftResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateDraftResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// DeleteDraftResponseDefaultHeaders the declared response headers of an HTTP default response for DeleteDraft
+type DeleteDraftResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type DeleteDraftResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *DeleteDraftResponseDefaultHeaders
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r DeleteDraftResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r DeleteDraftResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r DeleteDraftResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r DeleteDraftResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r DeleteDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetDraftResponse200Headers the declared response headers of an HTTP 200 response for GetDraft
+type GetDraftResponse200Headers struct {
+	ETag *string
+}
+
+// GetDraftResponseDefaultHeaders the declared response headers of an HTTP default response for GetDraft
+type GetDraftResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetDraftResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Draft
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetDraftResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetDraftResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetDraftResponse) GetJSON200() *Draft {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetDraftResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetDraftResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDraftResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDraftResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UpdateDraftResponse200Headers the declared response headers of an HTTP 200 response for UpdateDraft
+type UpdateDraftResponse200Headers struct {
+	ETag *string
+}
+
+// UpdateDraftResponseDefaultHeaders the declared response headers of an HTTP default response for UpdateDraft
+type UpdateDraftResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UpdateDraftResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Draft
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UpdateDraftResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UpdateDraftResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UpdateDraftResponse) GetJSON200() *Draft {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UpdateDraftResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UpdateDraftResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdateDraftResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdateDraftResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UpdateDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// PublishDraftResponse201Headers the declared response headers of an HTTP 201 response for PublishDraft
+type PublishDraftResponse201Headers struct {
+	CacheControl *string
+}
+
+// PublishDraftResponse422Headers the declared response headers of an HTTP 422 response for PublishDraft
+type PublishDraftResponse422Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
+// PublishDraftResponseDefaultHeaders the declared response headers of an HTTP default response for PublishDraft
+type PublishDraftResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type PublishDraftResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON201 the response for an HTTP 201 `application/json` response
+	JSON201 *Status
+	// ApplicationproblemJSON422 the response for an HTTP 422 `application/problem+json` response
+	ApplicationproblemJSON422 *StatusRejectedProblem
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers201 the parsed response headers for an HTTP 201 response
+	Headers201 *PublishDraftResponse201Headers
+	// Headers422 the parsed response headers for an HTTP 422 response
+	Headers422 *PublishDraftResponse422Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *PublishDraftResponseDefaultHeaders
+}
+
+// GetJSON201 returns the response for an HTTP 201 `application/json` response
+func (r PublishDraftResponse) GetJSON201() *Status {
+	return r.JSON201
+}
+
+// GetApplicationproblemJSON422 returns the response for an HTTP 422 `application/problem+json` response
+func (r PublishDraftResponse) GetApplicationproblemJSON422() *StatusRejectedProblem {
+	return r.ApplicationproblemJSON422
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r PublishDraftResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r PublishDraftResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r PublishDraftResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PublishDraftResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r PublishDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UnscheduleDraftResponse200Headers the declared response headers of an HTTP 200 response for UnscheduleDraft
+type UnscheduleDraftResponse200Headers struct {
+	ETag *string
+}
+
+// UnscheduleDraftResponseDefaultHeaders the declared response headers of an HTTP default response for UnscheduleDraft
+type UnscheduleDraftResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UnscheduleDraftResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Draft
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UnscheduleDraftResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UnscheduleDraftResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnscheduleDraftResponse) GetJSON200() *Draft {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UnscheduleDraftResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnscheduleDraftResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnscheduleDraftResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnscheduleDraftResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnscheduleDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ScheduleDraftResponse200Headers the declared response headers of an HTTP 200 response for ScheduleDraft
+type ScheduleDraftResponse200Headers struct {
+	ETag *string
+}
+
+// ScheduleDraftResponseDefaultHeaders the declared response headers of an HTTP default response for ScheduleDraft
+type ScheduleDraftResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ScheduleDraftResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Draft
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ScheduleDraftResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ScheduleDraftResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ScheduleDraftResponse) GetJSON200() *Draft {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ScheduleDraftResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ScheduleDraftResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ScheduleDraftResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ScheduleDraftResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ScheduleDraftResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // ListDataExportsResponse200Headers the declared response headers of an HTTP 200 response for ListDataExports
 type ListDataExportsResponse200Headers struct {
 	CacheControl *string
@@ -73932,6 +78871,71 @@ func (r RejectFollowRequestResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r RejectFollowRequestResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListFollowedTagsResponse200Headers the declared response headers of an HTTP 200 response for ListFollowedTags
+type ListFollowedTagsResponse200Headers struct {
+	CacheControl *string
+}
+
+// ListFollowedTagsResponseDefaultHeaders the declared response headers of an HTTP default response for ListFollowedTags
+type ListFollowedTagsResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type ListFollowedTagsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *FollowedHashtagCollection
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *ListFollowedTagsResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *ListFollowedTagsResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r ListFollowedTagsResponse) GetJSON200() *FollowedHashtagCollection {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r ListFollowedTagsResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r ListFollowedTagsResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r ListFollowedTagsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListFollowedTagsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListFollowedTagsResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -80735,6 +85739,201 @@ func (r SearchTagsResponse) ContentType() string {
 	return ""
 }
 
+// GetTagResponse200Headers the declared response headers of an HTTP 200 response for GetTag
+type GetTagResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetTagResponseDefaultHeaders the declared response headers of an HTTP default response for GetTag
+type GetTagResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetTagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Hashtag
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetTagResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetTagResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetTagResponse) GetJSON200() *Hashtag {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetTagResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetTagResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetTagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetTagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetTagResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// UnfollowTagResponse200Headers the declared response headers of an HTTP 200 response for UnfollowTag
+type UnfollowTagResponse200Headers struct {
+	CacheControl *string
+}
+
+// UnfollowTagResponseDefaultHeaders the declared response headers of an HTTP default response for UnfollowTag
+type UnfollowTagResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type UnfollowTagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Hashtag
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *UnfollowTagResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *UnfollowTagResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r UnfollowTagResponse) GetJSON200() *Hashtag {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r UnfollowTagResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r UnfollowTagResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r UnfollowTagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UnfollowTagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r UnfollowTagResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// FollowTagResponse200Headers the declared response headers of an HTTP 200 response for FollowTag
+type FollowTagResponse200Headers struct {
+	CacheControl *string
+}
+
+// FollowTagResponseDefaultHeaders the declared response headers of an HTTP default response for FollowTag
+type FollowTagResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type FollowTagResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *Hashtag
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *FollowTagResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *FollowTagResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r FollowTagResponse) GetJSON200() *Hashtag {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r FollowTagResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r FollowTagResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r FollowTagResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r FollowTagResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r FollowTagResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 // GetFederatedTimelineResponse200Headers the declared response headers of an HTTP 200 response for GetFederatedTimeline
 type GetFederatedTimelineResponse200Headers struct {
 	CacheControl *string
@@ -85655,6 +90854,331 @@ func (c *ClientWithResponses) LiftDomainActionWithResponse(ctx context.Context, 
 	return ParseLiftDomainActionResponse(rsp)
 }
 
+// ListDomainAllowsWithResponse List the allowlist of federation
+//
+// Every allowed domain, by domain. The list is not paginated; the allowlist holds at most
+// 5,000 domains. Needs the `manage_domains` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/domain_allows (the `ListDomainAllows` operationId).
+func (c *ClientWithResponses) ListDomainAllowsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListDomainAllowsResponse, error) {
+	rsp, err := c.ListDomainAllows(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListDomainAllowsResponse(rsp)
+}
+
+// CreateDomainAllowWithBodyWithResponse Allow a domain to federate
+//
+// Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+// the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+// follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+// and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+// instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+// is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+// permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/domain_allows (the `CreateDomainAllow` operationId).
+func (c *ClientWithResponses) CreateDomainAllowWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainAllowResponse, error) {
+	rsp, err := c.CreateDomainAllowWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateDomainAllowResponse(rsp)
+}
+
+// CreateDomainAllowWithResponse Allow a domain to federate
+//
+// Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+// the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+// follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+// and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+// instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+// is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+// permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/domain_allows (the `CreateDomainAllow` operationId).
+func (c *ClientWithResponses) CreateDomainAllowWithResponse(ctx context.Context, body CreateDomainAllowJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainAllowResponse, error) {
+	rsp, err := c.CreateDomainAllow(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateDomainAllowResponse(rsp)
+}
+
+// RemoveDomainAllowWithResponse Remove a domain from the allowlist of federation
+//
+// Removes the allow of a domain and records it in the audit log. While the instance setting
+// `federation_scope` is `allowlist` and no parent domain is allowed, the domain and its
+// subdomains that no other allow covers are cut off at once, as a suspension of the domain
+// cuts them off: nothing is received from, delivered to, or fetched from them, and the follows
+// between the local accounts and their accounts end for good, each local user who loses one
+// being notified. A domain without an allow changes nothing. Needs the `manage_domains`
+// permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /admin/domain_allows/{domain} (the `RemoveDomainAllow` operationId).
+func (c *ClientWithResponses) RemoveDomainAllowWithResponse(ctx context.Context, domain string, reqEditors ...RequestEditorFn) (*RemoveDomainAllowResponse, error) {
+	rsp, err := c.RemoveDomainAllow(ctx, domain, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRemoveDomainAllowResponse(rsp)
+}
+
+// ListDomainListSubscriptionsWithResponse List the subscriptions to domain block lists
+//
+// The subscriptions that are not deleted, newest first, each with its last fetch. Needs the `manage_domains` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/domain_list_subscriptions (the `ListDomainListSubscriptions` operationId).
+func (c *ClientWithResponses) ListDomainListSubscriptionsWithResponse(ctx context.Context, params *ListDomainListSubscriptionsParams, reqEditors ...RequestEditorFn) (*ListDomainListSubscriptionsResponse, error) {
+	rsp, err := c.ListDomainListSubscriptions(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListDomainListSubscriptionsResponse(rsp)
+}
+
+// CreateDomainListSubscriptionWithBodyWithResponse Subscribe to a domain block list
+//
+// Subscribes to the list at an https URL, which the server fetches at once and then every
+// day, through the same guard as the fetches of other servers: a URL or a redirect to a
+// private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+// `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+// `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+// action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+// The subscription is audited. Needs the `manage_domains` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/domain_list_subscriptions (the `CreateDomainListSubscription` operationId).
+func (c *ClientWithResponses) CreateDomainListSubscriptionWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDomainListSubscriptionResponse, error) {
+	rsp, err := c.CreateDomainListSubscriptionWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateDomainListSubscriptionResponse(rsp)
+}
+
+// CreateDomainListSubscriptionWithResponse Subscribe to a domain block list
+//
+// Subscribes to the list at an https URL, which the server fetches at once and then every
+// day, through the same guard as the fetches of other servers: a URL or a redirect to a
+// private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+// `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+// `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+// action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+// The subscription is audited. Needs the `manage_domains` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/domain_list_subscriptions (the `CreateDomainListSubscription` operationId).
+func (c *ClientWithResponses) CreateDomainListSubscriptionWithResponse(ctx context.Context, body CreateDomainListSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDomainListSubscriptionResponse, error) {
+	rsp, err := c.CreateDomainListSubscription(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateDomainListSubscriptionResponse(rsp)
+}
+
+// DeleteDomainListSubscriptionWithResponse Delete a subscription to a domain block list
+//
+// Deletes the subscription: the list is no longer fetched. The actions it issued stay, as
+// if a moderator had issued them, unless `lift_actions` is set, which lifts them first. The
+// deletion is audited. An unknown or deleted ID is a 404. Needs the `manage_domains`
+// permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /admin/domain_list_subscriptions/{id} (the `DeleteDomainListSubscription` operationId).
+func (c *ClientWithResponses) DeleteDomainListSubscriptionWithResponse(ctx context.Context, id DomainListSubscriptionId, params *DeleteDomainListSubscriptionParams, reqEditors ...RequestEditorFn) (*DeleteDomainListSubscriptionResponse, error) {
+	rsp, err := c.DeleteDomainListSubscription(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteDomainListSubscriptionResponse(rsp)
+}
+
+// GetDomainListSubscriptionWithResponse Get a subscription to a domain block list
+//
+// An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/domain_list_subscriptions/{id} (the `GetDomainListSubscription` operationId).
+func (c *ClientWithResponses) GetDomainListSubscriptionWithResponse(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*GetDomainListSubscriptionResponse, error) {
+	rsp, err := c.GetDomainListSubscription(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDomainListSubscriptionResponse(rsp)
+}
+
+// UpdateDomainListSubscriptionWithBodyWithResponse Change the settings of a subscription
+//
+// Changes the settings the request names and keeps the rest, and queues a fetch that applies
+// them; the URL and the format do not change. An invalid setting is a 422. A change is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /admin/domain_list_subscriptions/{id} (the `UpdateDomainListSubscription` operationId).
+func (c *ClientWithResponses) UpdateDomainListSubscriptionWithBodyWithResponse(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateDomainListSubscriptionResponse, error) {
+	rsp, err := c.UpdateDomainListSubscriptionWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateDomainListSubscriptionResponse(rsp)
+}
+
+// UpdateDomainListSubscriptionWithResponse Change the settings of a subscription
+//
+// Changes the settings the request names and keeps the rest, and queues a fetch that applies
+// them; the URL and the format do not change. An invalid setting is a 422. A change is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PATCH /admin/domain_list_subscriptions/{id} (the `UpdateDomainListSubscription` operationId).
+func (c *ClientWithResponses) UpdateDomainListSubscriptionWithResponse(ctx context.Context, id DomainListSubscriptionId, body UpdateDomainListSubscriptionJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateDomainListSubscriptionResponse, error) {
+	rsp, err := c.UpdateDomainListSubscription(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateDomainListSubscriptionResponse(rsp)
+}
+
+// ListDomainListDraftsWithResponse List the drafts of a subscription
+//
+// The differences between the list, as last read, and the actions the subscription issued
+// that wait for a moderator: every difference in the `draft` mode, and in the `automatic`
+// mode those of an unknown severity and the lifts of a fetch that would lift too many. A
+// domain that an action in effect covers already, on it or a parent domain, whoever issued
+// it, is no draft. Rejected drafts are not listed. An unknown or deleted ID is a 404. Needs
+// the `manage_domains` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/domain_list_subscriptions/{id}/drafts (the `ListDomainListDrafts` operationId).
+func (c *ClientWithResponses) ListDomainListDraftsWithResponse(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*ListDomainListDraftsResponse, error) {
+	rsp, err := c.ListDomainListDrafts(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListDomainListDraftsResponse(rsp)
+}
+
+// AcceptDomainListDraftsWithBodyWithResponse Accept drafts of a subscription
+//
+// Issues the action of each `issue` draft for the subscription, until it is lifted, and
+// lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+// draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+// a 404. Needs the `manage_domains` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/accept (the `AcceptDomainListDrafts` operationId).
+func (c *ClientWithResponses) AcceptDomainListDraftsWithBodyWithResponse(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*AcceptDomainListDraftsResponse, error) {
+	rsp, err := c.AcceptDomainListDraftsWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAcceptDomainListDraftsResponse(rsp)
+}
+
+// AcceptDomainListDraftsWithResponse Accept drafts of a subscription
+//
+// Issues the action of each `issue` draft for the subscription, until it is lifted, and
+// lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+// draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+// a 404. Needs the `manage_domains` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/accept (the `AcceptDomainListDrafts` operationId).
+func (c *ClientWithResponses) AcceptDomainListDraftsWithResponse(ctx context.Context, id DomainListSubscriptionId, body AcceptDomainListDraftsJSONRequestBody, reqEditors ...RequestEditorFn) (*AcceptDomainListDraftsResponse, error) {
+	rsp, err := c.AcceptDomainListDrafts(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAcceptDomainListDraftsResponse(rsp)
+}
+
+// RejectDomainListDraftsWithBodyWithResponse Reject drafts of a subscription
+//
+// Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+// of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/reject (the `RejectDomainListDrafts` operationId).
+func (c *ClientWithResponses) RejectDomainListDraftsWithBodyWithResponse(ctx context.Context, id DomainListSubscriptionId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*RejectDomainListDraftsResponse, error) {
+	rsp, err := c.RejectDomainListDraftsWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRejectDomainListDraftsResponse(rsp)
+}
+
+// RejectDomainListDraftsWithResponse Reject drafts of a subscription
+//
+// Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+// of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/drafts/reject (the `RejectDomainListDrafts` operationId).
+func (c *ClientWithResponses) RejectDomainListDraftsWithResponse(ctx context.Context, id DomainListSubscriptionId, body RejectDomainListDraftsJSONRequestBody, reqEditors ...RequestEditorFn) (*RejectDomainListDraftsResponse, error) {
+	rsp, err := c.RejectDomainListDrafts(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseRejectDomainListDraftsResponse(rsp)
+}
+
+// FetchDomainListSubscriptionWithResponse Fetch a subscribed list now
+//
+// Queues a fetch of the list, which then applies it as the daily fetch does. The request is
+// audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /admin/domain_list_subscriptions/{id}/fetch (the `FetchDomainListSubscription` operationId).
+func (c *ClientWithResponses) FetchDomainListSubscriptionWithResponse(ctx context.Context, id DomainListSubscriptionId, reqEditors ...RequestEditorFn) (*FetchDomainListSubscriptionResponse, error) {
+	rsp, err := c.FetchDomainListSubscription(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFetchDomainListSubscriptionResponse(rsp)
+}
+
+// ListDomainListFetchesWithResponse List the fetches of a subscription
+//
+// The fetches of the list, newest first, failed ones included with why they failed. An
+// unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/domain_list_subscriptions/{id}/fetches (the `ListDomainListFetches` operationId).
+func (c *ClientWithResponses) ListDomainListFetchesWithResponse(ctx context.Context, id DomainListSubscriptionId, params *ListDomainListFetchesParams, reqEditors ...RequestEditorFn) (*ListDomainListFetchesResponse, error) {
+	rsp, err := c.ListDomainListFetches(ctx, id, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListDomainListFetchesResponse(rsp)
+}
+
 // ListErrorGroupsWithResponse List the error groups
 //
 // The groups of the errors that the server and the web client reported, the
@@ -87662,6 +93186,24 @@ func (c *ClientWithResponses) UpdateInstanceSettingsWithResponse(ctx context.Con
 	return ParseUpdateInstanceSettingsResponse(rsp)
 }
 
+// GetFederationScopeImpactWithResponse Count what switching federation to the allowlist would end
+//
+// How many follows switching the instance setting `federation_scope` to `allowlist` with the
+// current allowlist would end, how many local accounts would lose one, and the servers with the
+// most of them. Administrators read it before they switch, which ends those follows for good.
+// Needs the `manage_settings` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/settings/federation_scope/impact (the `GetFederationScopeImpact` operationId).
+func (c *ClientWithResponses) GetFederationScopeImpactWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetFederationScopeImpactResponse, error) {
+	rsp, err := c.GetFederationScopeImpact(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetFederationScopeImpactResponse(rsp)
+}
+
 // GetLoginProvidersOnlyImpactWithResponse Count who limiting sign-in to login providers would affect
 //
 // How many active local users have no link to a login provider that users can sign in with
@@ -88945,6 +94487,198 @@ func (c *ClientWithResponses) UnmuteDomainWithResponse(ctx context.Context, doma
 	return ParseUnmuteDomainResponse(rsp)
 }
 
+// ListDraftsWithResponse List the user's drafts, newest first
+//
+// The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
+// ones (`true`) or the others (`false`).
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /drafts (the `ListDrafts` operationId).
+func (c *ClientWithResponses) ListDraftsWithResponse(ctx context.Context, params *ListDraftsParams, reqEditors ...RequestEditorFn) (*ListDraftsResponse, error) {
+	rsp, err := c.ListDrafts(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListDraftsResponse(rsp)
+}
+
+// CreateDraftWithBodyWithResponse Save a new draft
+//
+// Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+// (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+// uploads (422 otherwise), processed or not.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /drafts (the `CreateDraft` operationId).
+func (c *ClientWithResponses) CreateDraftWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateDraftResponse, error) {
+	rsp, err := c.CreateDraftWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateDraftResponse(rsp)
+}
+
+// CreateDraftWithResponse Save a new draft
+//
+// Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+// (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+// uploads (422 otherwise), processed or not.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /drafts (the `CreateDraft` operationId).
+func (c *ClientWithResponses) CreateDraftWithResponse(ctx context.Context, body CreateDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateDraftResponse, error) {
+	rsp, err := c.CreateDraft(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateDraftResponse(rsp)
+}
+
+// DeleteDraftWithResponse Delete a draft
+//
+// Deletes a draft with its schedule (204). The media it attaches, when no post attaches them,
+// are deleted with the next cleanup of unattached uploads.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /drafts/{id} (the `DeleteDraft` operationId).
+func (c *ClientWithResponses) DeleteDraftWithResponse(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*DeleteDraftResponse, error) {
+	rsp, err := c.DeleteDraft(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseDeleteDraftResponse(rsp)
+}
+
+// GetDraftWithResponse Get a draft
+//
+// A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /drafts/{id} (the `GetDraft` operationId).
+func (c *ClientWithResponses) GetDraftWithResponse(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*GetDraftResponse, error) {
+	rsp, err := c.GetDraft(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDraftResponse(rsp)
+}
+
+// UpdateDraftWithBodyWithResponse Replace the content of a draft
+//
+// Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+// last read it: a draft that another save changed since is a 412, and a request without
+// `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+// then.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /drafts/{id} (the `UpdateDraft` operationId).
+func (c *ClientWithResponses) UpdateDraftWithBodyWithResponse(ctx context.Context, id DraftId, params *UpdateDraftParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdateDraftResponse, error) {
+	rsp, err := c.UpdateDraftWithBody(ctx, id, params, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateDraftResponse(rsp)
+}
+
+// UpdateDraftWithResponse Replace the content of a draft
+//
+// Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+// last read it: a draft that another save changed since is a 412, and a request without
+// `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+// then.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /drafts/{id} (the `UpdateDraft` operationId).
+func (c *ClientWithResponses) UpdateDraftWithResponse(ctx context.Context, id DraftId, params *UpdateDraftParams, body UpdateDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdateDraftResponse, error) {
+	rsp, err := c.UpdateDraft(ctx, id, params, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdateDraftResponse(rsp)
+}
+
+// PublishDraftWithResponse Publish a draft now
+//
+// Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
+// and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /drafts/{id}/publish (the `PublishDraft` operationId).
+func (c *ClientWithResponses) PublishDraftWithResponse(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*PublishDraftResponse, error) {
+	rsp, err := c.PublishDraft(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePublishDraftResponse(rsp)
+}
+
+// UnscheduleDraftWithResponse Cancel the schedule of a draft
+//
+// The draft stays, without a schedule. A draft that is not scheduled is a 409.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /drafts/{id}/schedule (the `UnscheduleDraft` operationId).
+func (c *ClientWithResponses) UnscheduleDraftWithResponse(ctx context.Context, id DraftId, reqEditors ...RequestEditorFn) (*UnscheduleDraftResponse, error) {
+	rsp, err := c.UnscheduleDraft(ctx, id, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnscheduleDraftResponse(rsp)
+}
+
+// ScheduleDraftWithBodyWithResponse Schedule a draft, or move its schedule
+//
+// Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+// The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+// being processed pass), and again when it is published, by the user's state and the posts it
+// replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+// the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+// (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+// than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+// `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+//
+// Takes any type of body and a specified content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
+func (c *ClientWithResponses) ScheduleDraftWithBodyWithResponse(ctx context.Context, id DraftId, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ScheduleDraftResponse, error) {
+	rsp, err := c.ScheduleDraftWithBody(ctx, id, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseScheduleDraftResponse(rsp)
+}
+
+// ScheduleDraftWithResponse Schedule a draft, or move its schedule
+//
+// Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+// The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+// being processed pass), and again when it is published, by the user's state and the posts it
+// replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+// the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+// (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+// than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+// `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+//
+// Takes a body of the `application/json` content type, and returns a wrapper object for the known response body format(s).
+//
+// Corresponds with PUT /drafts/{id}/schedule (the `ScheduleDraft` operationId).
+func (c *ClientWithResponses) ScheduleDraftWithResponse(ctx context.Context, id DraftId, body ScheduleDraftJSONRequestBody, reqEditors ...RequestEditorFn) (*ScheduleDraftResponse, error) {
+	rsp, err := c.ScheduleDraft(ctx, id, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseScheduleDraftResponse(rsp)
+}
+
 // ListDataExportsWithResponse List the authenticated user's data exports
 //
 // Lists the user's latest 10 data exports, newest first. An archive can be downloaded
@@ -89094,6 +94828,21 @@ func (c *ClientWithResponses) RejectFollowRequestWithResponse(ctx context.Contex
 		return nil, err
 	}
 	return ParseRejectFollowRequestResponse(rsp)
+}
+
+// ListFollowedTagsWithResponse List the hashtags the user follows
+//
+// Every hashtag that the user follows (at most 100), the latest followed first.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /followed_tags (the `ListFollowedTags` operationId).
+func (c *ClientWithResponses) ListFollowedTagsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListFollowedTagsResponse, error) {
+	rsp, err := c.ListFollowedTags(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListFollowedTagsResponse(rsp)
 }
 
 // GetOwnHookAppealWithResponse Show the user's appeal of a post that the automated review refused
@@ -90092,7 +95841,7 @@ func (c *ClientWithResponses) ListMutesWithResponse(ctx context.Context, params 
 // mutes with notifications hidden are left out, also those that came before the block or
 // mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
 // `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
+// `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
 // the user's roles no longer grant the permission they need.
 //
 // Returns a wrapper object for the known response body format(s).
@@ -91867,6 +97616,58 @@ func (c *ClientWithResponses) SearchTagsWithResponse(ctx context.Context, params
 	return ParseSearchTagsResponse(rsp)
 }
 
+// GetTagWithResponse Get a hashtag
+//
+// The hashtag and whether the user follows it. A hashtag that no post has used yet is
+// answered too, so that it can be followed.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /tags/{hashtag} (the `GetTag` operationId).
+func (c *ClientWithResponses) GetTagWithResponse(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*GetTagResponse, error) {
+	rsp, err := c.GetTag(ctx, hashtag, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetTagResponse(rsp)
+}
+
+// UnfollowTagWithResponse Unfollow a hashtag
+//
+// Without a follow it changes nothing.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with DELETE /tags/{hashtag}/follow (the `UnfollowTag` operationId).
+func (c *ClientWithResponses) UnfollowTagWithResponse(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*UnfollowTagResponse, error) {
+	rsp, err := c.UnfollowTag(ctx, hashtag, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUnfollowTagResponse(rsp)
+}
+
+// FollowTagWithResponse Follow a hashtag
+//
+// The home timeline then also shows the `public` and `local` posts with the hashtag that the
+// server has, from accounts the user does not follow, as the hashtag's timeline shows them:
+// without boosts, and without the posts of accounts and servers kept from public timelines
+// or that the user blocks or mutes. Such a post carries `followed_tags`. Following a
+// hashtag that the user follows changes nothing, and a hashtag that no post has used yet
+// can be followed. A user follows at most 100 hashtags; one more is a 422
+// `/api/v1/problems/too-many-followed-tags`.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with POST /tags/{hashtag}/follow (the `FollowTag` operationId).
+func (c *ClientWithResponses) FollowTagWithResponse(ctx context.Context, hashtag HashtagName, reqEditors ...RequestEditorFn) (*FollowTagResponse, error) {
+	rsp, err := c.FollowTag(ctx, hashtag, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseFollowTagResponse(rsp)
+}
+
 // GetFederatedTimelineWithResponse Get the federated timeline
 //
 // The public posts of the instance's accounts and of the remote accounts whose posts the
@@ -91891,8 +97692,9 @@ func (c *ClientWithResponses) GetFederatedTimelineWithResponse(ctx context.Conte
 
 // GetHomeTimelineWithResponse Get the home timeline
 //
-// The viewer's own posts and boosts and those of the accounts the viewer follows, newest
-// first, in the viewer's timeline languages.
+// The viewer's own posts and boosts and those of the accounts the viewer follows, and the
+// `public` and `local` posts of other accounts with a hashtag the viewer follows (which
+// carry `followed_tags`), newest first, each once, in the viewer's timeline languages.
 //
 // Returns a wrapper object for the known response body format(s).
 //
@@ -99889,6 +105691,982 @@ func ParseLiftDomainActionResponse(rsp *http.Response) (*LiftDomainActionRespons
 	return response, nil
 }
 
+// ParseListDomainAllowsResponse parses an HTTP response from a ListDomainAllowsWithResponse call
+func ParseListDomainAllowsResponse(rsp *http.Response) (*ListDomainAllowsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListDomainAllowsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DomainAllowList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListDomainAllowsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListDomainAllowsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCreateDomainAllowResponse parses an HTTP response from a CreateDomainAllowWithResponse call
+func ParseCreateDomainAllowResponse(rsp *http.Response) (*CreateDomainAllowResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateDomainAllowResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DomainAllow
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest DomainAllow
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers CreateDomainAllowResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case rsp.StatusCode == 201:
+		var headers CreateDomainAllowResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case true:
+		var headers CreateDomainAllowResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRemoveDomainAllowResponse parses an HTTP response from a RemoveDomainAllowWithResponse call
+func ParseRemoveDomainAllowResponse(rsp *http.Response) (*RemoveDomainAllowResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RemoveDomainAllowResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers RemoveDomainAllowResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListDomainListSubscriptionsResponse parses an HTTP response from a ListDomainListSubscriptionsWithResponse call
+func ParseListDomainListSubscriptionsResponse(rsp *http.Response) (*ListDomainListSubscriptionsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListDomainListSubscriptionsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminDomainListSubscriptionPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListDomainListSubscriptionsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListDomainListSubscriptionsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCreateDomainListSubscriptionResponse parses an HTTP response from a CreateDomainListSubscriptionWithResponse call
+func ParseCreateDomainListSubscriptionResponse(rsp *http.Response) (*CreateDomainListSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateDomainListSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest AdminDomainListSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers CreateDomainListSubscriptionResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case true:
+		var headers CreateDomainListSubscriptionResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeleteDomainListSubscriptionResponse parses an HTTP response from a DeleteDomainListSubscriptionWithResponse call
+func ParseDeleteDomainListSubscriptionResponse(rsp *http.Response) (*DeleteDomainListSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteDomainListSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DeleteDomainListSubscriptionResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetDomainListSubscriptionResponse parses an HTTP response from a GetDomainListSubscriptionWithResponse call
+func ParseGetDomainListSubscriptionResponse(rsp *http.Response) (*GetDomainListSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDomainListSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminDomainListSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetDomainListSubscriptionResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetDomainListSubscriptionResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateDomainListSubscriptionResponse parses an HTTP response from a UpdateDomainListSubscriptionWithResponse call
+func ParseUpdateDomainListSubscriptionResponse(rsp *http.Response) (*UpdateDomainListSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateDomainListSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminDomainListSubscription
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateDomainListSubscriptionResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateDomainListSubscriptionResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListDomainListDraftsResponse parses an HTTP response from a ListDomainListDraftsWithResponse call
+func ParseListDomainListDraftsResponse(rsp *http.Response) (*ListDomainListDraftsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListDomainListDraftsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminDomainListDraftList
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListDomainListDraftsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListDomainListDraftsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseAcceptDomainListDraftsResponse parses an HTTP response from a AcceptDomainListDraftsWithResponse call
+func ParseAcceptDomainListDraftsResponse(rsp *http.Response) (*AcceptDomainListDraftsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AcceptDomainListDraftsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminDomainListDraftResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers AcceptDomainListDraftsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers AcceptDomainListDraftsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseRejectDomainListDraftsResponse parses an HTTP response from a RejectDomainListDraftsWithResponse call
+func ParseRejectDomainListDraftsResponse(rsp *http.Response) (*RejectDomainListDraftsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &RejectDomainListDraftsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminDomainListDraftResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers RejectDomainListDraftsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers RejectDomainListDraftsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseFetchDomainListSubscriptionResponse parses an HTTP response from a FetchDomainListSubscriptionWithResponse call
+func ParseFetchDomainListSubscriptionResponse(rsp *http.Response) (*FetchDomainListSubscriptionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FetchDomainListSubscriptionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 202:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers FetchDomainListSubscriptionResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListDomainListFetchesResponse parses an HTTP response from a ListDomainListFetchesWithResponse call
+func ParseListDomainListFetchesResponse(rsp *http.Response) (*ListDomainListFetchesResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListDomainListFetchesResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest AdminDomainListFetchPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListDomainListFetchesResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListDomainListFetchesResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseListErrorGroupsResponse parses an HTTP response from a ListErrorGroupsWithResponse call
 func ParseListErrorGroupsResponse(rsp *http.Response) (*ListErrorGroupsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -106459,6 +113237,83 @@ func ParseUpdateInstanceSettingsResponse(rsp *http.Response) (*UpdateInstanceSet
 	return response, nil
 }
 
+// ParseGetFederationScopeImpactResponse parses an HTTP response from a GetFederationScopeImpactWithResponse call
+func ParseGetFederationScopeImpactResponse(rsp *http.Response) (*GetFederationScopeImpactResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetFederationScopeImpactResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FederationScopeImpact
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetFederationScopeImpactResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetFederationScopeImpactResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseGetLoginProvidersOnlyImpactResponse parses an HTTP response from a GetLoginProvidersOnlyImpactWithResponse call
 func ParseGetLoginProvidersOnlyImpactResponse(rsp *http.Response) (*GetLoginProvidersOnlyImpactResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -110711,6 +117566,622 @@ func ParseUnmuteDomainResponse(rsp *http.Response) (*UnmuteDomainResponse, error
 	return response, nil
 }
 
+// ParseListDraftsResponse parses an HTTP response from a ListDraftsWithResponse call
+func ParseListDraftsResponse(rsp *http.Response) (*ListDraftsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListDraftsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DraftPage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers ListDraftsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseCreateDraftResponse parses an HTTP response from a CreateDraftWithResponse call
+func ParseCreateDraftResponse(rsp *http.Response) (*CreateDraftResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Draft
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers CreateDraftResponse201Headers
+		if values := rsp.Header.Values("ETag"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ETag = &value
+		}
+		response.Headers201 = &headers
+	case true:
+		var headers CreateDraftResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseDeleteDraftResponse parses an HTTP response from a DeleteDraftWithResponse call
+func ParseDeleteDraftResponse(rsp *http.Response) (*DeleteDraftResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &DeleteDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case rsp.StatusCode == 204:
+		break // No content-type
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case true:
+		var headers DeleteDraftResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetDraftResponse parses an HTTP response from a GetDraftWithResponse call
+func ParseGetDraftResponse(rsp *http.Response) (*GetDraftResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Draft
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetDraftResponse200Headers
+		if values := rsp.Header.Values("ETag"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ETag = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetDraftResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUpdateDraftResponse parses an HTTP response from a UpdateDraftWithResponse call
+func ParseUpdateDraftResponse(rsp *http.Response) (*UpdateDraftResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdateDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Draft
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UpdateDraftResponse200Headers
+		if values := rsp.Header.Values("ETag"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ETag = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UpdateDraftResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParsePublishDraftResponse parses an HTTP response from a PublishDraftWithResponse call
+func ParsePublishDraftResponse(rsp *http.Response) (*PublishDraftResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PublishDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 201:
+		var dest Status
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON201 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 422:
+		var dest StatusRejectedProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON422 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 201:
+		var headers PublishDraftResponse201Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers201 = &headers
+	case rsp.StatusCode == 422:
+		var headers PublishDraftResponse422Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers422 = &headers
+	case true:
+		var headers PublishDraftResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUnscheduleDraftResponse parses an HTTP response from a UnscheduleDraftWithResponse call
+func ParseUnscheduleDraftResponse(rsp *http.Response) (*UnscheduleDraftResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnscheduleDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Draft
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UnscheduleDraftResponse200Headers
+		if values := rsp.Header.Values("ETag"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ETag = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UnscheduleDraftResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseScheduleDraftResponse parses an HTTP response from a ScheduleDraftWithResponse call
+func ParseScheduleDraftResponse(rsp *http.Response) (*ScheduleDraftResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ScheduleDraftResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Draft
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ScheduleDraftResponse200Headers
+		if values := rsp.Header.Values("ETag"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "ETag", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ETag = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ScheduleDraftResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
 // ParseListDataExportsResponse parses an HTTP response from a ListDataExportsWithResponse call
 func ParseListDataExportsResponse(rsp *http.Response) (*ListDataExportsResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
@@ -111293,6 +118764,83 @@ func ParseRejectFollowRequestResponse(rsp *http.Response) (*RejectFollowRequestR
 		response.Headers200 = &headers
 	case true:
 		var headers RejectFollowRequestResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseListFollowedTagsResponse parses an HTTP response from a ListFollowedTagsWithResponse call
+func ParseListFollowedTagsResponse(rsp *http.Response) (*ListFollowedTagsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListFollowedTagsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FollowedHashtagCollection
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers ListFollowedTagsResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers ListFollowedTagsResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
@@ -119389,6 +126937,237 @@ func ParseSearchTagsResponse(rsp *http.Response) (*SearchTagsResponse, error) {
 		response.Headers200 = &headers
 	case true:
 		var headers SearchTagsResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetTagResponse parses an HTTP response from a GetTagWithResponse call
+func ParseGetTagResponse(rsp *http.Response) (*GetTagResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetTagResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Hashtag
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetTagResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetTagResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseUnfollowTagResponse parses an HTTP response from a UnfollowTagWithResponse call
+func ParseUnfollowTagResponse(rsp *http.Response) (*UnfollowTagResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UnfollowTagResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Hashtag
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers UnfollowTagResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers UnfollowTagResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseFollowTagResponse parses an HTTP response from a FollowTagWithResponse call
+func ParseFollowTagResponse(rsp *http.Response) (*FollowTagResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &FollowTagResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest Hashtag
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers FollowTagResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers FollowTagResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

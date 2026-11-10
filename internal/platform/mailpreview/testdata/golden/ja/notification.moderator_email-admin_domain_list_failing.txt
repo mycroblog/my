@@ -1,0 +1,14 @@
+サーバー Example Social が購読しているブロックリストを、3 回続けて取得できませんでした。取得できるようになるまで、このリストはドメインの処分を変えません。リストが下した処分はそのまま残ります。
+
+ブロックリストの購読を開いて、取得に失敗した理由を確認してください。
+
+通知を開く
+https://social.example/notifications
+
+-- 
+Example Social
+https://social.example
+連絡先: admin@social.example
+
+通知の設定で「ブロックリストの購読の失敗」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
+このメールを止める: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

@@ -81,6 +81,12 @@ type FeedTagEntry struct {
 	RevisedAt       int64
 }
 
+type FeedTagFollow struct {
+	AccountID  string
+	TagID      string
+	FollowedAt int64
+}
+
 type ListMember struct {
 	ListID          string
 	MemberAccountID string

@@ -2461,7 +2461,7 @@ export interface paths {
          *     mutes with notifications hidden are left out, also those that came before the block or
          *     mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
          *     `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-         *     `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
+         *     `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
          *     the user's roles no longer grant the permission they need.
          */
         get: operations["listNotifications"];
@@ -2597,6 +2597,117 @@ export interface paths {
          *     `CredentialAccount.posting_limits` leaves it out.
          */
         post: operations["createStatus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the user's drafts, newest first
+         * @description The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
+         *     ones (`true`) or the others (`false`).
+         */
+        get: operations["listDrafts"];
+        put?: never;
+        /**
+         * Save a new draft
+         * @description Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+         *     (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+         *     uploads (422 otherwise), processed or not.
+         */
+        post: operations["createDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/drafts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a draft
+         * @description A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+         */
+        get: operations["getDraft"];
+        /**
+         * Replace the content of a draft
+         * @description Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+         *     last read it: a draft that another save changed since is a 412, and a request without
+         *     `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+         *     then.
+         */
+        put: operations["updateDraft"];
+        post?: never;
+        /**
+         * Delete a draft
+         * @description Deletes a draft with its schedule (204). The media it attaches, when no post attaches them,
+         *     are deleted with the next cleanup of unattached uploads.
+         */
+        delete: operations["deleteDraft"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/drafts/{id}/schedule": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Schedule a draft, or move its schedule
+         * @description Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+         *     The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+         *     being processed pass), and again when it is published, by the user's state and the posts it
+         *     replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+         *     the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+         *     (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+         *     than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+         *     `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+         */
+        put: operations["scheduleDraft"];
+        post?: never;
+        /**
+         * Cancel the schedule of a draft
+         * @description The draft stays, without a schedule. A draft that is not scheduled is a 409.
+         */
+        delete: operations["unscheduleDraft"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/drafts/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish a draft now
+         * @description Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
+         *     and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+         */
+        post: operations["publishDraft"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3147,6 +3258,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tags/{hashtag}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a hashtag
+         * @description The hashtag and whether the user follows it. A hashtag that no post has used yet is
+         *     answered too, so that it can be followed.
+         */
+        get: operations["getTag"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/tags/{hashtag}/follow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Follow a hashtag
+         * @description The home timeline then also shows the `public` and `local` posts with the hashtag that the
+         *     server has, from accounts the user does not follow, as the hashtag's timeline shows them:
+         *     without boosts, and without the posts of accounts and servers kept from public timelines
+         *     or that the user blocks or mutes. Such a post carries `followed_tags`. Following a
+         *     hashtag that the user follows changes nothing, and a hashtag that no post has used yet
+         *     can be followed. A user follows at most 100 hashtags; one more is a 422
+         *     `/api/v1/problems/too-many-followed-tags`.
+         */
+        post: operations["followTag"];
+        /**
+         * Unfollow a hashtag
+         * @description Without a follow it changes nothing.
+         */
+        delete: operations["unfollowTag"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/followed_tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the hashtags the user follows
+         * @description Every hashtag that the user follows (at most 100), the latest followed first.
+         */
+        get: operations["listFollowedTags"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/timelines/home": {
         parameters: {
             query?: never;
@@ -3156,8 +3338,9 @@ export interface paths {
         };
         /**
          * Get the home timeline
-         * @description The viewer's own posts and boosts and those of the accounts the viewer follows, newest
-         *     first, in the viewer's timeline languages.
+         * @description The viewer's own posts and boosts and those of the accounts the viewer follows, and the
+         *     `public` and `local` posts of other accounts with a hashtag the viewer follows (which
+         *     carry `followed_tags`), newest first, each once, in the viewer's timeline languages.
          */
         get: operations["getHomeTimeline"];
         put?: never;
@@ -7093,6 +7276,184 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/domain_list_subscriptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the subscriptions to domain block lists
+         * @description The subscriptions that are not deleted, newest first, each with its last fetch. Needs the `manage_domains` permission.
+         */
+        get: operations["listDomainListSubscriptions"];
+        put?: never;
+        /**
+         * Subscribe to a domain block list
+         * @description Subscribes to the list at an https URL, which the server fetches at once and then every
+         *     day, through the same guard as the fetches of other servers: a URL or a redirect to a
+         *     private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+         *     `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+         *     `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+         *     action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+         *     The subscription is audited. Needs the `manage_domains` permission.
+         */
+        post: operations["createDomainListSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/domain_list_subscriptions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the subscription to a domain block list. */
+                id: components["parameters"]["DomainListSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        /**
+         * Get a subscription to a domain block list
+         * @description An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+         */
+        get: operations["getDomainListSubscription"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a subscription to a domain block list
+         * @description Deletes the subscription: the list is no longer fetched. The actions it issued stay, as
+         *     if a moderator had issued them, unless `lift_actions` is set, which lifts them first. The
+         *     deletion is audited. An unknown or deleted ID is a 404. Needs the `manage_domains`
+         *     permission.
+         */
+        delete: operations["deleteDomainListSubscription"];
+        options?: never;
+        head?: never;
+        /**
+         * Change the settings of a subscription
+         * @description Changes the settings the request names and keeps the rest, and queues a fetch that applies
+         *     them; the URL and the format do not change. An invalid setting is a 422. A change is
+         *     audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+         */
+        patch: operations["updateDomainListSubscription"];
+        trace?: never;
+    };
+    "/admin/domain_list_subscriptions/{id}/fetch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fetch a subscribed list now
+         * @description Queues a fetch of the list, which then applies it as the daily fetch does. The request is
+         *     audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+         */
+        post: operations["fetchDomainListSubscription"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/domain_list_subscriptions/{id}/fetches": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the fetches of a subscription
+         * @description The fetches of the list, newest first, failed ones included with why they failed. An
+         *     unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+         */
+        get: operations["listDomainListFetches"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/domain_list_subscriptions/{id}/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the drafts of a subscription
+         * @description The differences between the list, as last read, and the actions the subscription issued
+         *     that wait for a moderator: every difference in the `draft` mode, and in the `automatic`
+         *     mode those of an unknown severity and the lifts of a fetch that would lift too many. A
+         *     domain that an action in effect covers already, on it or a parent domain, whoever issued
+         *     it, is no draft. Rejected drafts are not listed. An unknown or deleted ID is a 404. Needs
+         *     the `manage_domains` permission.
+         */
+        get: operations["listDomainListDrafts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/domain_list_subscriptions/{id}/drafts/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept drafts of a subscription
+         * @description Issues the action of each `issue` draft for the subscription, until it is lifted, and
+         *     lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+         *     draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+         *     a 404. Needs the `manage_domains` permission.
+         */
+        post: operations["acceptDomainListDrafts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/domain_list_subscriptions/{id}/drafts/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reject drafts of a subscription
+         * @description Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+         *     of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+         *     audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+         */
+        post: operations["rejectDomainListDrafts"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/settings": {
         parameters: {
             query?: never;
@@ -7148,6 +7509,86 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/settings/federation_scope/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count what switching federation to the allowlist would end
+         * @description How many follows switching the instance setting `federation_scope` to `allowlist` with the
+         *     current allowlist would end, how many local accounts would lose one, and the servers with the
+         *     most of them. Administrators read it before they switch, which ends those follows for good.
+         *     Needs the `manage_settings` permission.
+         */
+        get: operations["getFederationScopeImpact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/domain_allows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the allowlist of federation
+         * @description Every allowed domain, by domain. The list is not paginated; the allowlist holds at most
+         *     5,000 domains. Needs the `manage_domains` permission.
+         */
+        get: operations["listDomainAllows"];
+        put?: never;
+        /**
+         * Allow a domain to federate
+         * @description Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+         *     the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+         *     follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+         *     and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+         *     instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+         *     is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+         *     permission.
+         */
+        post: operations["createDomainAllow"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/domain_allows/{domain}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove a domain from the allowlist of federation
+         * @description Removes the allow of a domain and records it in the audit log. While the instance setting
+         *     `federation_scope` is `allowlist` and no parent domain is allowed, the domain and its
+         *     subdomains that no other allow covers are cut off at once, as a suspension of the domain
+         *     cuts them off: nothing is received from, delivered to, or fetched from them, and the follows
+         *     between the local accounts and their accounts end for good, each local user who loses one
+         *     being notified. A domain without an allow changes nothing. Needs the `manage_domains`
+         *     permission.
+         */
+        delete: operations["removeDomainAllow"];
         options?: never;
         head?: never;
         patch?: never;
@@ -8459,6 +8900,297 @@ export interface components {
         AccountSuggestionList: {
             items: components["schemas"]["AccountSuggestion"][];
         };
+        /**
+         * @description `issue`: the list names the domain, and no action of the kind is in effect on it or a
+         *     parent domain. `lift`: an action that the subscription issued is no longer on the list.
+         * @enum {string}
+         */
+        AdminDomainListChange: "issue" | "lift";
+        /** @description A difference between a subscribed list and the actions the subscription issued, waiting for a moderator. */
+        AdminDomainListDraft: {
+            /** @description Names the draft to accept or reject. */
+            key: string;
+            change: components["schemas"]["AdminDomainListChange"];
+            /** @description The domain, in IDNA A-labels. */
+            domain: string;
+            kind: components["schemas"]["AdminDomainActionKind"];
+            held: components["schemas"]["AdminDomainListHold"];
+            /** @description The action that a `lift` lifts; omitted for an `issue`. */
+            action_id?: components["schemas"]["Id"];
+            /** @description The severity as the list gives it, for an `issue`. */
+            severity?: string;
+            /** @description The public comment of the row, for an `issue`; omitted when there is none. */
+            public_comment?: string;
+            /** @description Whether the row asks to hide part of the domain, for an `issue`. */
+            obfuscate?: boolean;
+        };
+        /** @description The drafts of a subscription, the lifts first, each by domain and kind. */
+        AdminDomainListDraftList: {
+            items: components["schemas"]["AdminDomainListDraft"][];
+        };
+        /** @description What accepting or rejecting drafts did. */
+        AdminDomainListDraftResult: {
+            /** @description The drafts that were accepted or rejected. */
+            done: components["schemas"]["AdminDomainListDraft"][];
+            /** @description The keys of the request that name no draft, such as one handled since. */
+            missing: string[];
+        };
+        /** @description One fetch of a subscribed domain block list. */
+        AdminDomainListFetch: {
+            id: components["schemas"]["Id"];
+            outcome: components["schemas"]["AdminDomainListFetchOutcome"];
+            /** @description The status code of the answer; omitted when no answer came. */
+            http_status?: number;
+            error_code?: components["schemas"]["AdminDomainListFetchError"];
+            /** @description The domains the subscription holds after the fetch. */
+            entry_count: number;
+            /** Format: date-time */
+            fetched_at: string;
+        };
+        /**
+         * @description Why a fetch failed. `http_status`: the server answered another status than 2xx or 304,
+         *     such as 401, 403, or 404 of a server that does not publish its domain blocks. `network`:
+         *     the server could not be reached or did not answer in time. `forbidden_destination`: the
+         *     URL or a redirect leads to an address the server does not fetch from. `too_large`: the
+         *     list is larger than 2 MiB. `too_many_entries`: it has more than 5000 rows. `malformed`: it
+         *     cannot be read in the subscription's format.
+         * @enum {string}
+         */
+        AdminDomainListFetchError: "http_status" | "network" | "forbidden_destination" | "too_large" | "too_many_entries" | "malformed";
+        /**
+         * @description `applied`: the list was read and replaced the domains the subscription holds.
+         *     `not_modified`: the list did not change. `failed`: nothing was read and nothing changed.
+         * @enum {string}
+         */
+        AdminDomainListFetchOutcome: "applied" | "not_modified" | "failed";
+        /** @description A page of the fetches of a subscription, newest first. */
+        AdminDomainListFetchPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["AdminDomainListFetch"][];
+        };
+        /**
+         * @description The format of a subscribed list. `mastodon_csv`: Mastodon's domain block CSV, read as the
+         *     import reads it. `mastodon_json`: the answer of Mastodon's
+         *     `GET /api/v1/instance/domain_blocks`; obfuscated domains are skipped. `plain_text`: one
+         *     domain per line, each a suspend.
+         * @enum {string}
+         */
+        AdminDomainListFormat: "mastodon_csv" | "mastodon_json" | "plain_text";
+        /**
+         * @description Why a difference waits for a moderator. `draft_mode`: the subscription is in the draft
+         *     mode. `unknown_severity`: the list gives the domain a severity this server does not know.
+         *     `mass_lift`: one fetch would lift more than 10 actions and more than half of the
+         *     subscription's actions, which a broken or empty list would do.
+         * @enum {string}
+         */
+        AdminDomainListHold: "draft_mode" | "unknown_severity" | "mass_lift";
+        /**
+         * @description `draft`: every difference waits for a moderator. `automatic`: the differences are applied
+         *     at each fetch, except those that `AdminDomainListHold` names.
+         * @enum {string}
+         */
+        AdminDomainListMode: "draft" | "automatic";
+        /**
+         * @description What a `silence` of the list issues on this server; `ignore` issues nothing.
+         * @enum {string}
+         */
+        AdminDomainListSilenceAs: "limit" | "ignore";
+        /** @description A subscription to a domain block list that another server or person publishes. */
+        AdminDomainListSubscription: {
+            id: components["schemas"]["Id"];
+            /** @description The https URL of the list. */
+            url: string;
+            format: components["schemas"]["AdminDomainListFormat"];
+            title: string;
+            mode: components["schemas"]["AdminDomainListMode"];
+            suspend_as: components["schemas"]["AdminDomainListSuspendAs"];
+            silence_as: components["schemas"]["AdminDomainListSilenceAs"];
+            /** @description Whether the `reject_media` of a row issues a `reject_media` action. */
+            apply_reject_media: boolean;
+            /** @description Whether the `reject_reports` of a row issues a `reject_reports` action. */
+            apply_reject_reports: boolean;
+            /** @description Whether the actions copy the public comment of their row. */
+            public_comment_from_list: boolean;
+            /** @description The failed fetches since the last one that did not fail. */
+            consecutive_failures: number;
+            last_fetch?: components["schemas"]["AdminDomainListFetch"];
+            /** Format: date-time */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the settings last changed; the creation for settings never changed.
+             */
+            updated_at: string;
+        };
+        /** @description A page of subscriptions to domain block lists, newest first. */
+        AdminDomainListSubscriptionPage: components["schemas"]["PageInfo"] & {
+            items: components["schemas"]["AdminDomainListSubscription"][];
+        };
+        /**
+         * @description What a `suspend` of the list issues on this server; `ignore` issues nothing.
+         * @enum {string}
+         */
+        AdminDomainListSuspendAs: "suspend" | "limit" | "ignore";
+        /**
+         * @description A new subscription to a domain block list. The settings that are omitted take their
+         *     defaults: `draft`, `suspend` as `suspend`, `silence` as `limit`, the rejections applied, and
+         *     no public comment copied.
+         */
+        CreateDomainListSubscriptionRequest: {
+            /** @description The https URL of the list. */
+            url: string;
+            format: components["schemas"]["AdminDomainListFormat"];
+            title: string;
+            mode?: components["schemas"]["AdminDomainListMode"];
+            suspend_as?: components["schemas"]["AdminDomainListSuspendAs"];
+            silence_as?: components["schemas"]["AdminDomainListSilenceAs"];
+            apply_reject_media?: boolean;
+            apply_reject_reports?: boolean;
+            public_comment_from_list?: boolean;
+        };
+        /** @description The drafts to accept or reject, by key; omitted or empty for every draft. */
+        DomainListDraftsRequest: {
+            keys?: string[];
+        };
+        /**
+         * @description A draft of a post, saved on the server so that the user goes on writing it on another device,
+         *     and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+         */
+        Draft: {
+            id: components["schemas"]["Id"];
+            /** Format: date-time */
+            created_at: string;
+            /**
+             * Format: date-time
+             * @description When the draft was last saved.
+             */
+            updated_at: string;
+            /** @description The plain text. */
+            text: string;
+            /** @description The content warning; empty for none. */
+            spoiler_text: string;
+            sensitive: boolean;
+            /** @description A BCP 47 language tag; left out for the user's default post language. */
+            language?: string;
+            visibility: components["schemas"]["Visibility"];
+            in_reply_to_id?: components["schemas"]["Id"];
+            quoted_status_id?: components["schemas"]["Id"];
+            /** @description Who may reply to, boost, and quote the post, of the kinds the user chose. */
+            interaction_policy?: components["schemas"]["InteractionPolicyChange"];
+            /** @description The media to attach, in order. */
+            media: components["schemas"]["StatusMediaItem"][];
+            poll?: components["schemas"]["DraftPoll"];
+            /**
+             * Format: date-time
+             * @description When the draft is scheduled to be published; left out while it is not scheduled.
+             */
+            scheduled_at?: string;
+            /** @description How the newest schedule that is over ended; left out when none ended. */
+            last_schedule?: components["schemas"]["DraftScheduleOutcome"];
+        };
+        /**
+         * @description Why a scheduled post was not published at its time; the draft stays, to fix and schedule
+         *     again. `restricted`: the account may not post (a moderation action, a suspension, or an
+         *     account that is not active). `reply_unavailable`: the post it replies to is gone, hidden from
+         *     the user, or does not take the reply. `quote_unavailable`: the post it quotes is gone, hidden
+         *     from the user, or may not be quoted. `media_unavailable`: an attached file is gone or failed
+         *     processing. `invalid`: the post does not pass the checks of a post, such as its length.
+         *     `rejected`: the server's automated review refused the post.
+         * @enum {string}
+         */
+        DraftFailureReason: "restricted" | "reply_unavailable" | "quote_unavailable" | "media_unavailable" | "invalid" | "rejected";
+        /** @description A page of drafts, newest first. */
+        DraftPage: components["schemas"]["PageInfo"] & {
+            /** @description The drafts of the page. */
+            items: components["schemas"]["Draft"][];
+        };
+        /**
+         * @description The poll of a draft. A draft keeps a poll still being written (fewer than two options, or
+         *     blank ones); publishing it checks the limits of `PollInput`. It ends `expires_in` seconds after
+         *     the draft is published.
+         */
+        DraftPoll: {
+            /** @description The options, in order, as plain text. */
+            options: string[];
+            /** @description How long the poll takes votes, in seconds (5 minutes to 30 days). */
+            expires_in: number;
+            /** @description Whether a vote may choose several options. */
+            multiple?: boolean;
+            /** @description Whether the votes of each option are hidden until the poll ends. */
+            hide_totals?: boolean;
+        };
+        /**
+         * @description The whole content of a draft; a save replaces what the draft had. A draft keeps text that a
+         *     post would refuse (empty, or longer than `max_post_characters`), up to 100,000 characters, and
+         *     media that are still being processed; publishing it checks it as a new post.
+         */
+        DraftRequest: {
+            /** @description The plain text; omitted or empty while there is none. */
+            text?: string;
+            spoiler_text?: components["schemas"]["SpoilerText"];
+            /** @description Whether the media are sensitive. */
+            sensitive?: boolean;
+            language?: components["schemas"]["StatusLanguageInput"];
+            visibility: components["schemas"]["Visibility"];
+            /** @description The post to reply to, checked when the draft is scheduled and published. */
+            in_reply_to_id?: components["schemas"]["Id"];
+            /** @description The post to quote, checked when the draft is scheduled and published. */
+            quoted_status_id?: components["schemas"]["Id"];
+            /**
+             * @description Who may reply to, boost, and quote the post; the kinds left out take the user's
+             *     `default_interaction_policy` when the draft is published.
+             */
+            interaction_policy?: components["schemas"]["InteractionPolicyChange"];
+            /**
+             * @description The media to attach, in order: the user's own uploads, processed or not. A draft with a
+             *     `poll` attaches none.
+             */
+            media?: components["schemas"]["StatusMediaInput"];
+            poll?: components["schemas"]["DraftPoll"];
+        };
+        /** @description How the newest schedule of a draft that is over ended. */
+        DraftScheduleOutcome: {
+            /**
+             * Format: date-time
+             * @description The time the post was scheduled for.
+             */
+            publish_at: string;
+            /**
+             * @description `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+             *     could not be published at its time, for `reason`.
+             * @enum {string}
+             */
+            outcome: "cancelled" | "failed";
+            reason?: components["schemas"]["DraftFailureReason"];
+            /**
+             * Format: date-time
+             * @description When the schedule ended.
+             */
+            occurred_at: string;
+        };
+        /** @description When to publish a draft. */
+        DraftScheduleRequest: {
+            /**
+             * Format: date-time
+             * @description The time to publish the draft: at least `scheduled_post_min_lead_minutes` and at most
+             *     `scheduled_post_max_lead_days` from now (`limits` of `GET /instance`). The post is
+             *     published at that time or soon after.
+             */
+            publish_at: string;
+        };
+        /**
+         * @description The scheduled post that a `scheduled_status_failed` tells of: its draft, why it was not
+         *     published, and when it was to be published.
+         */
+        NotificationScheduledStatusFailure: {
+            /** @description The draft of the scheduled post, which stays to fix and schedule again. */
+            draft_id: components["schemas"]["Id"];
+            reason: components["schemas"]["DraftFailureReason"];
+            /**
+             * Format: date-time
+             * @description When the post was to be published.
+             */
+            publish_at: string;
+        };
         /** @description The relationships, in the order of the request. */
         RelationshipList: {
             items: components["schemas"]["Relationship"][];
@@ -9102,7 +9834,9 @@ export interface components {
          *     (an instance setting), `text_changed` (an instance text). On a `rule`:
          *     `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
          *     `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
-         *     card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
+         *     card crawler set on the domain), `link_card_domain_rule_removed`. On a `domain_allow`:
+         *     `domain_allow_added`, `domain_allow_removed` (a domain added to and removed from the allowlist
+         *     of federation). On a `role`: `role_granted`,
          *     `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
          *     `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
          *     an `appeal`:
@@ -9155,10 +9889,16 @@ export interface components {
          *     `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
          *     (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
          *     and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
-         *     name.
+         *     name. On a `domain_list_subscription`: `domain_list_subscription_created`,
+         *     `domain_list_subscription_updated` (its settings), `domain_list_subscription_deleted`,
+         *     `domain_list_draft_accepted` (which also records the `domain_action_issued` or
+         *     `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
+         *     `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
+         *     that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
+         *     the `system` as the actor.
          * @enum {string}
          */
-        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available";
+        AdminAuditAction: "account_action_issued" | "account_action_lifted" | "domain_action_issued" | "domain_action_lifted" | "report_assigned" | "report_unassigned" | "report_resolved" | "report_reopened" | "report_note_added" | "report_forwarded" | "registration_approved" | "registration_rejected" | "setting_changed" | "text_changed" | "rule_added" | "rule_revised" | "rule_moved" | "rule_retired" | "role_granted" | "role_revoked" | "role_created" | "role_updated" | "role_deleted" | "appeal_upheld" | "appeal_overturned" | "account_deletion_canceled" | "revealed_private_data" | "signup_block_added" | "signup_block_lifted" | "hook_decision_applied" | "hook_decision_overridden" | "hook_appeal_upheld" | "two_factor_disabled" | "password_reset_link_issued" | "email_suppression_lifted" | "account_moved" | "custom_emoji_created" | "custom_emoji_image_replaced" | "custom_emoji_copied" | "custom_emoji_updated" | "custom_emoji_enabled" | "custom_emoji_disabled" | "custom_emoji_deleted" | "webhook_created" | "webhook_updated" | "webhook_deleted" | "webhook_enabled" | "webhook_disabled" | "webhook_secret_rotated" | "announcement_created" | "announcement_updated" | "announcement_published" | "announcement_withdrawn" | "invite_created" | "invite_revoked" | "relay_added" | "relay_followed" | "relay_unfollowed" | "relay_removed" | "relay_accepted" | "relay_rejected" | "status_refetch_queued" | "account_statuses_refetch_queued" | "domain_statuses_refetch_queued" | "billing_import_queued" | "cost_item_created" | "cost_item_relabeled" | "cost_item_price_revised" | "cost_item_end_changed" | "cost_item_deleted" | "supporter_program_enabled" | "supporter_program_disabled" | "supporter_plan_created" | "supporter_plan_revised" | "supporter_plan_retired" | "supporter_subscription_ended" | "custom_emoji_request_submitted" | "custom_emoji_request_withdrawn" | "custom_emoji_request_approved" | "custom_emoji_request_rejected" | "payment_reconcile_queued" | "oauth_client_disabled" | "oauth_client_enabled" | "oauth_client_host_denied" | "oauth_client_host_allowed" | "service_closure_announced" | "service_closure_withdrawn" | "service_closure_closed" | "service_closure_delivery_completed" | "voice_room_ended" | "login_provider_created" | "login_provider_updated" | "login_provider_deleted" | "login_provider_enabled" | "login_provider_disabled" | "login_provider_secret_rotated" | "link_card_domain_fetch_stopped" | "link_card_domain_images_stopped" | "link_card_domain_rule_removed" | "instance_marked_available" | "domain_allow_added" | "domain_allow_removed" | "domain_list_subscription_created" | "domain_list_subscription_updated" | "domain_list_subscription_deleted" | "domain_list_draft_accepted" | "domain_list_draft_rejected" | "domain_list_fetch_queued";
         /**
          * @description Who performed the operation. `user`: a signed-in moderator or administrator.
          *     `cli`: the `my` command line, which acts as no user. `system`: the server itself.
@@ -9217,7 +9957,7 @@ export interface components {
          * @description The kind of what an audited operation acted on.
          * @enum {string}
          */
-        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider" | "link_card_domain" | "hook_decision";
+        AdminAuditTargetKind: "account" | "status" | "domain" | "report" | "appeal" | "user" | "role" | "setting" | "rule" | "signup_block" | "custom_emoji" | "webhook" | "announcement" | "invite" | "relay" | "billing_source" | "cost_item" | "supporter_program" | "supporter_plan" | "supporter_subscription" | "custom_emoji_request" | "payment_provider" | "oauth_client" | "oauth_client_host" | "instance" | "voice_room" | "login_provider" | "link_card_domain" | "hook_decision" | "domain_allow" | "domain_list_subscription";
         /** @description The time a remote server was marked unavailable or available again, and why. */
         AdminAvailabilityEvent: {
             id: components["schemas"]["Id"];
@@ -9355,6 +10095,11 @@ export interface components {
              * @description When the action was lifted; omitted until it is.
              */
             lifted_at?: string;
+            /**
+             * @description The subscription to a domain block list that issued the action; omitted for an action
+             *     a moderator issued.
+             */
+            subscription_id?: components["schemas"]["Id"];
         };
         /**
          * @description `suspend`: no federation with the domain at all. `limit`: its posts stay off the public
@@ -9892,6 +10637,35 @@ export interface components {
              *     at once: the setting is on, no provider can be signed in with now, and that one could be.
              */
             starts_limit: boolean;
+        };
+        /**
+         * @description What switching the instance setting `federation_scope` to `allowlist` with the current
+         *     allowlist would end now: the accepted follows, in both directions, between the local accounts
+         *     and the accounts of the servers that the allowlist does not allow. The switch ends them for
+         *     good, and each local user who loses one is notified. While the setting is already
+         *     `allowlist`, it counts what is left to end, which is nothing once the switch has run.
+         */
+        FederationScopeImpact: {
+            /**
+             * @description The current value of `federation_scope`.
+             * @enum {string}
+             */
+            scope: "open" | "allowlist";
+            /** @description How many follows would end. */
+            follows: number;
+            /** @description How many local accounts would lose a follow. */
+            local_accounts: number;
+            /** @description How many servers those follows are with. */
+            domains: number;
+            /** @description The servers with the most follows that would end, at most 10, the most first. */
+            top_domains: components["schemas"]["FederationScopeImpactDomain"][];
+        };
+        /** @description The follows with one server that switching to the allowlist would end. */
+        FederationScopeImpactDomain: {
+            /** @description The server's domain. */
+            domain: string;
+            /** @description How many follows with its accounts would end. */
+            follows: number;
         };
         /** @description The state of the job queue. */
         AdminQueue: {
@@ -11538,6 +12312,13 @@ export interface components {
              */
             expires_in?: number;
         };
+        /** @description A domain to allow. */
+        CreateDomainAllowRequest: {
+            /** @description The domain, a host without a scheme, path, or port; it also covers its subdomains. */
+            domain: string;
+            /** @description A note for the moderators, never published. */
+            comment?: string;
+        };
         /** @description A new invite. */
         CreateInviteRequest: {
             /** @description How many sign-ups the invite allows; omitted for no limit. */
@@ -12064,6 +12845,27 @@ export interface components {
             issued: components["schemas"]["AdminDomainAction"][];
             /** @description The blocks that issued nothing, in their order. */
             skipped: components["schemas"]["DomainBlockImportSkipped"][];
+        };
+        /**
+         * @description A domain of the allowlist of federation, which covers its subdomains. While the instance
+         *     setting `federation_scope` is `allowlist`, the instance federates only with the allowed
+         *     domains; the domain actions on an allowed domain still apply. While it is `open`, the
+         *     allowlist changes nothing.
+         */
+        DomainAllow: {
+            /** @description The domain, in canonical form (lower case, IDNA A-labels); the key of the allow. */
+            domain: string;
+            /** @description What the moderators keep about the allow, never published; empty for none. */
+            comment: string;
+            /**
+             * Format: date-time
+             * @description When the domain was allowed.
+             */
+            created_at: string;
+        };
+        /** @description The allowed domains, by domain. */
+        DomainAllowList: {
+            items: components["schemas"]["DomainAllow"][];
         };
         /** @description A row of a domain block CSV and what importing it would do. */
         DomainBlockImportRow: {
@@ -12826,6 +13628,23 @@ export interface components {
             /** @description The operator's message to the users, as plain text; omitted when there is none. */
             message?: string;
         };
+        /**
+         * @description The limits of drafts and scheduled posts (the instance settings of the same names). A save or a
+         *     schedule past one is a 422 that names it; lowering a limit deletes no draft and cancels no
+         *     schedule.
+         */
+        InstanceDraftLimits: {
+            /** @description How many drafts without a schedule a user may keep. */
+            max_drafts: number;
+            /** @description How many scheduled posts a user may have waiting. */
+            max_scheduled_posts: number;
+            /** @description How many scheduled posts of a user may wait for one UTC day. */
+            max_scheduled_posts_per_day: number;
+            /** @description How many minutes ahead, at least, a post may be scheduled. */
+            scheduled_post_min_lead_minutes: number;
+            /** @description How many days ahead, at most, a post may be scheduled. */
+            scheduled_post_max_lead_days: number;
+        };
         /** @description Limits that clients check before sending a request. */
         InstanceLimits: {
             /** @description The maximum number of characters in the text and content warning of a post. */
@@ -12836,6 +13655,7 @@ export interface components {
              *     a media file without one is a 422, so clients ask for it before sending.
              */
             require_media_description: boolean;
+            drafts?: components["schemas"]["InstanceDraftLimits"];
         };
         /** @description How people sign up on the instance. */
         InstanceRegistrations: {
@@ -12924,7 +13744,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -13115,6 +13935,43 @@ export interface components {
         /** @description The user's lists, oldest first. */
         ListCollection: {
             items: components["schemas"]["List"][];
+        };
+        /**
+         * @description A hashtag and whether the user follows it. The posts of the hashtags the user follows appear
+         *     on the home timeline.
+         */
+        Hashtag: {
+            /**
+             * @description The hashtag without `#`, as first written on the server, or as the request wrote it when
+             *     no post has used it and nobody follows it.
+             */
+            name: string;
+            /**
+             * Format: uri
+             * @description The hashtag's page.
+             */
+            url: string;
+            /** @description Whether the user follows the hashtag; false for a visitor who is not logged in. */
+            following: boolean;
+        };
+        /** @description A hashtag that the user follows. */
+        FollowedHashtag: {
+            /** @description The hashtag without `#`, as first written on the server. */
+            name: string;
+            /**
+             * Format: uri
+             * @description The hashtag's page.
+             */
+            url: string;
+            /**
+             * Format: date-time
+             * @description When the user followed the hashtag.
+             */
+            followed_at: string;
+        };
+        /** @description The hashtags that the user follows, at most 100, the latest followed first. */
+        FollowedHashtagCollection: {
+            items: components["schemas"]["FollowedHashtag"][];
         };
         /** @description The name of a list. */
         ListRequest: {
@@ -13480,6 +14337,11 @@ export interface components {
             announcement?: components["schemas"]["Announcement"];
             /** @description What an `auto_delete_limit` tells of; omitted for the other types. */
             auto_delete_limit?: components["schemas"]["NotificationAutoDeleteLimit"];
+            /**
+             * @description The scheduled post that a `scheduled_status_failed` tells of, while its draft exists;
+             *     omitted otherwise and for the other types.
+             */
+            scheduled_status_failure?: components["schemas"]["NotificationScheduledStatusFailure"];
         };
         /**
          * @description A row of the notification settings: one or more notification types that the user turns on
@@ -13490,16 +14352,19 @@ export interface components {
          *     `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
          *     `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
          *     `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-         *     `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
+         *     `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`,
+         *     `admin_domain_list_failing`). The instance's
          *     notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
          *     `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
          *     `hook_appeal_decided`),
          *     `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
          *     turns off in the app (on by default) and which has no `email` channel, and
-         *     `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
+         *     `auto_delete_limit`, whose app and email channels the user chooses, both on by default, and
+         *     `scheduled_status_failed`, which the user turns off in the app (on by default) and which has
+         *     no `email` channel.
          * @enum {string}
          */
-        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "interaction_request" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement" | "auto_delete_limit";
+        NotificationGroup: "mention" | "follow" | "follow_request" | "follow_accepted" | "boost" | "favourite" | "reaction" | "quote" | "interaction_request" | "poll_closed" | "account_moved" | "voice" | "status" | "admin_report" | "admin_sign_up" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_hook_appeal" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "admin_account_moved" | "admin_service_closure_due" | "admin_error_group" | "moderation" | "service_closure" | "supporter" | "announcement" | "auto_delete_limit" | "scheduled_status_failed";
         /** @description How far the authenticated user has read the notifications, across all clients. */
         NotificationMarker: {
             /** @description The newest notification read; omitted when the user has read none. */
@@ -13537,7 +14402,7 @@ export interface components {
          *     `auto_delete_limit` are emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
          *     the read marker and not dismissed); the moderator notifications are emailed at once. Clients
          *     offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`,
-         *     `announcement`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+         *     `interaction_request`, `announcement`, `scheduled_status_failed`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
          *     subscription (`putPushSubscription`).
          */
         NotificationSettingRow: {
@@ -13546,7 +14411,7 @@ export interface components {
              * @description The kind of the row: `ordinary` (what other users did; in the app on and email off by
              *     default), `moderator` (to the holders of the permission it needs; both on by default),
              *     or `instance` (the instance's notices to the user; always in the app, but for
-             *     `announcement` and `auto_delete_limit`, which are on by default).
+             *     `announcement`, `auto_delete_limit`, and `scheduled_status_failed`, which are on by default).
              * @enum {string}
              */
             section: "ordinary" | "moderator" | "instance";
@@ -13616,7 +14481,9 @@ export interface components {
          *     `admin_hook_appeal` (a user appealed a post that the automated review refused;
          *     `hook_appeal_id` is the appeal) to those with `manage_reports`, and
          *     `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
-         *     `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
+         *     `custom_emoji_request` is the request) to those with `manage_custom_emojis`, and
+         *     `admin_domain_list_failing` (three fetches in a row of a subscribed domain block list
+         *     failed; it names none) to those with `manage_domains`.
          *     `custom_emoji_request_decided` also comes from the instance: an administrator approved
          *     or rejected the user's custom emoji request, which `custom_emoji_request` carries with
          *     its state and the reason of a rejection.
@@ -13660,9 +14527,14 @@ export interface components {
          *     `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
          *     policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
          *     has no `account`. It is sent once per notice.
+         *     `scheduled_status_failed` comes from the instance: a post that the user scheduled could not be
+         *     published at its time, and its draft stays to fix and schedule again. Its
+         *     `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
+         *     draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
+         *     sends nothing.
          * @enum {string}
          */
-        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
+        NotificationType: "follow" | "follow_request" | "follow_accepted" | "mention" | "boost" | "favourite" | "reaction" | "quote" | "poll_closed" | "moderation_notice" | "report_resolved" | "admin_report" | "admin_sign_up" | "relationships_severed" | "appeal_decided" | "admin_appeal" | "admin_webhook_disabled" | "admin_hook_failing" | "admin_domain_list_failing" | "admin_custom_emoji_request" | "custom_emoji_request_decided" | "supporter_payment_failed" | "supporter_subscription_ended" | "supporter_plan_retired" | "account_moved" | "admin_account_moved" | "service_closure" | "admin_service_closure_due" | "supporter_service_closure" | "voice_room_started" | "voice_room_invited" | "admin_error_group" | "status" | "announcement" | "admin_hook_appeal" | "hook_appeal_decided" | "auto_delete_limit" | "scheduled_status_failed" | "reply_request" | "boost_request" | "quote_request" | "interaction_accepted" | "interaction_rejected";
         /**
          * @description An OAuth app that the authenticated user registered. Like every third-party app,
          *     it gets no first-party-only scope and calls no account security operation.
@@ -14321,6 +15193,8 @@ export interface components {
          *       allowed. Remove one first.
          *     - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
          *       follow request was accepted) can be added to a list.
+         *     - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
+         *       hashtags allowed (100). Unfollow one first.
          *     - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
          *       account's actor, or to the user itself.
          *     - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
@@ -14730,14 +15604,19 @@ export interface components {
         /**
          * @description The follows that a `relationships_severed` tells of: the user lost them when the
          *     moderators suspended a server (`domain_suspension`, `domain` is the server) or a remote
-         *     account (`account_suspension`, the notification's `account` is the account). Both
-         *     directions end, follow requests too, and lifting the suspension does not restore them;
-         *     the counts are of the accepted follows.
+         *     account (`account_suspension`, the notification's `account` is the account), or when the
+         *     server began to federate only with the servers it allows (`allowlist_cutoff`: `domain` is the
+         *     server whose allow was removed, and is omitted when the server switched to its allowlist).
+         *     Both directions end, follow requests too, and lifting the suspension or allowing the server
+         *     again does not restore them; the counts are of the accepted follows.
          */
         RelationshipSeverance: {
             /** @enum {string} */
-            kind: "domain_suspension" | "account_suspension";
-            /** @description The suspended server of a `domain_suspension`; omitted otherwise. */
+            kind: "domain_suspension" | "account_suspension" | "allowlist_cutoff";
+            /**
+             * @description The suspended server of a `domain_suspension`, or the server whose allow was removed of an
+             *     `allowlist_cutoff`; omitted otherwise.
+             */
             domain?: string;
             /** @description The accounts that followed the user and no longer do. */
             followers_lost: number;
@@ -15045,6 +15924,12 @@ export interface components {
             mentions: components["schemas"]["StatusMention"][];
             /** @description The hashtags of the text. */
             tags: components["schemas"]["StatusTag"][];
+            /**
+             * @description On the home timeline and its stream, the names (without `#`) of the hashtags that the
+             *     user follows and the post carries, when the post is there only for them: its author is
+             *     neither the user nor an account the user follows. Omitted everywhere else.
+             */
+            followed_tags?: string[];
             /**
              * @description The custom emoji of the text, the content warning, and the poll's choices. Clients show each `:shortcode:` of those texts that is in this list as its
              *     image, and the rest as text. Empty for a boost, whose emoji are those of `boost`.
@@ -15552,6 +16437,16 @@ export interface components {
             category?: string;
             /** @description The new aliases, each following the rules of a shortcode; at most 10. */
             aliases?: string[];
+        };
+        /** @description The changes to the settings of a subscription; what is omitted stays. */
+        UpdateDomainListSubscriptionRequest: {
+            title?: string;
+            mode?: components["schemas"]["AdminDomainListMode"];
+            suspend_as?: components["schemas"]["AdminDomainListSuspendAs"];
+            silence_as?: components["schemas"]["AdminDomainListSilenceAs"];
+            apply_reject_media?: boolean;
+            apply_reject_reports?: boolean;
+            public_comment_from_list?: boolean;
         };
         /** @description New values of some instance settings, saved together. */
         UpdateInstanceSettingsRequest: {
@@ -16146,6 +17041,26 @@ export interface components {
         };
     };
     responses: {
+        /** @description The drafts that were accepted or rejected. */
+        AdminDomainListDraftResult: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AdminDomainListDraftResult"];
+            };
+        };
+        /** @description The subscription to a domain block list. */
+        AdminDomainListSubscription: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["AdminDomainListSubscription"];
+            };
+        };
         /** @description The appeal. */
         AdminHookAppeal: {
             headers: {
@@ -16266,6 +17181,16 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["BrandProblem"];
+            };
+        };
+        /** @description The draft. */
+        Draft: {
+            headers: {
+                ETag: components["headers"]["ETag"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Draft"];
             };
         };
         /** @description The error group. */
@@ -16703,6 +17628,26 @@ export interface components {
                 "application/json": components["schemas"]["ListCollection"];
             };
         };
+        /** @description The hashtag. */
+        Hashtag: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["Hashtag"];
+            };
+        };
+        /** @description The hashtags that the user follows, the latest followed first. */
+        FollowedHashtagCollection: {
+            headers: {
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["FollowedHashtagCollection"];
+            };
+        };
     };
     parameters: {
         /** @description The ID of the account action. */
@@ -16732,6 +17677,10 @@ export interface components {
         CustomEmojiId: components["schemas"]["Id"];
         /** @description The ID of the custom emoji request. */
         CustomEmojiRequestId: components["schemas"]["Id"];
+        /** @description The ID of the subscription to a domain block list. */
+        DomainListSubscriptionId: components["schemas"]["Id"];
+        /** @description The ID of the draft. */
+        DraftId: components["schemas"]["Id"];
         /** @description The ID of the error group. */
         ErrorGroupId: components["schemas"]["Id"];
         /** @description The ID of the domain action. */
@@ -16744,6 +17693,12 @@ export interface components {
          *     that is not UTF-8 without U+0000, is a 422.
          */
         IdempotencyKey: string;
+        /**
+         * @description The `ETag` of the draft as the client last read it. When another save changed the draft
+         *     since, the answer is a 412 and nothing is saved, so that a save on one device never silently
+         *     overwrites one made on another; read the draft again and merge. Without it, the save is a 428.
+         */
+        IfMatch: string;
         /** @description The kind of the document. */
         InstanceDocumentKind: components["schemas"]["InstanceDocumentKind"];
         /**
@@ -16769,6 +17724,13 @@ export interface components {
         ListAccountId: components["schemas"]["Id"];
         /** @description The ID of the list. */
         ListId: components["schemas"]["Id"];
+        /**
+         * @description The hashtag, with or without a leading `#` (`%23`), matched under NFKC and lowercase: letters,
+         *     marks, digits, and underscores with at least one letter or mark. Anything else is a 422
+         *     naming `hashtag`. The hashtag `search` is written `%23search`, since `/tags/search` is the
+         *     search of hashtags.
+         */
+        HashtagName: string;
         /** @description The ID of the OAuth app (not its `client_id`). */
         OAuthAppId: components["schemas"]["Id"];
         /** @description The ID of the registration. */
@@ -16802,6 +17764,8 @@ export interface components {
     headers: {
         /** @description The caching policy. Anonymous public GETs are cacheable by shared caches. */
         CacheControl: string;
+        /** @description The version of the draft, for the `If-Match` of its next save. */
+        ETag: string;
         /** @description The statement to search engines of a response that states more than the default `noindex`. */
         XRobotsTag: string;
     };
@@ -19723,6 +20687,178 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    listDrafts: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+                /** @description Whether to list only the scheduled drafts (`true`) or only the others (`false`). */
+                scheduled?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of drafts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["Draft"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the draft. */
+                id: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Draft"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateDraft: {
+        parameters: {
+            query?: never;
+            header?: {
+                /**
+                 * @description The `ETag` of the draft as the client last read it. When another save changed the draft
+                 *     since, the answer is a 412 and nothing is saved, so that a save on one device never silently
+                 *     overwrites one made on another; read the draft again and merge. Without it, the save is a 428.
+                 */
+                "If-Match"?: components["parameters"]["IfMatch"];
+            };
+            path: {
+                /** @description The ID of the draft. */
+                id: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Draft"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the draft. */
+                id: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The draft is deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    scheduleDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the draft. */
+                id: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftScheduleRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["Draft"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    unscheduleDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the draft. */
+                id: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Draft"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    publishDraft: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the draft. */
+                id: components["parameters"]["DraftId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The posted status. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Status"];
+                };
+            };
+            422: components["responses"]["StatusRejectedProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
     searchStatuses: {
         parameters: {
             query: {
@@ -20262,6 +21398,82 @@ export interface operations {
                     "application/json": components["schemas"]["TagSuggestionList"];
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The hashtag, with or without a leading `#` (`%23`), matched under NFKC and lowercase: letters,
+                 *     marks, digits, and underscores with at least one letter or mark. Anything else is a 422
+                 *     naming `hashtag`. The hashtag `search` is written `%23search`, since `/tags/search` is the
+                 *     search of hashtags.
+                 */
+                hashtag: components["parameters"]["HashtagName"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Hashtag"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    followTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The hashtag, with or without a leading `#` (`%23`), matched under NFKC and lowercase: letters,
+                 *     marks, digits, and underscores with at least one letter or mark. Anything else is a 422
+                 *     naming `hashtag`. The hashtag `search` is written `%23search`, since `/tags/search` is the
+                 *     search of hashtags.
+                 */
+                hashtag: components["parameters"]["HashtagName"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Hashtag"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    unfollowTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description The hashtag, with or without a leading `#` (`%23`), matched under NFKC and lowercase: letters,
+                 *     marks, digits, and underscores with at least one letter or mark. Anything else is a 422
+                 *     naming `hashtag`. The hashtag `search` is written `%23search`, since `/tags/search` is the
+                 *     search of hashtags.
+                 */
+                hashtag: components["parameters"]["HashtagName"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["Hashtag"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    listFollowedTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["FollowedHashtagCollection"];
             default: components["responses"]["Problem"];
         };
     };
@@ -24296,6 +25508,228 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    listDomainListSubscriptions: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of subscriptions. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDomainListSubscriptionPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createDomainListSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDomainListSubscriptionRequest"];
+            };
+        };
+        responses: {
+            201: components["responses"]["AdminDomainListSubscription"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getDomainListSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the subscription to a domain block list. */
+                id: components["parameters"]["DomainListSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminDomainListSubscription"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    deleteDomainListSubscription: {
+        parameters: {
+            query?: {
+                /** @description Lift the actions the subscription issued. */
+                lift_actions?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the subscription to a domain block list. */
+                id: components["parameters"]["DomainListSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The subscription is deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    updateDomainListSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the subscription to a domain block list. */
+                id: components["parameters"]["DomainListSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateDomainListSubscriptionRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AdminDomainListSubscription"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    fetchDomainListSubscription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the subscription to a domain block list. */
+                id: components["parameters"]["DomainListSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The fetch is queued. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listDomainListFetches: {
+        parameters: {
+            query?: {
+                /** @description The `next_cursor` of the previous page; omitted for the first page. */
+                cursor?: components["parameters"]["Cursor"];
+                /** @description The maximum number of items in the page. */
+                limit?: components["parameters"]["Limit"];
+            };
+            header?: never;
+            path: {
+                /** @description The ID of the subscription to a domain block list. */
+                id: components["parameters"]["DomainListSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description A page of fetches. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDomainListFetchPage"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listDomainListDrafts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the subscription to a domain block list. */
+                id: components["parameters"]["DomainListSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The drafts. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDomainListDraftList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    acceptDomainListDrafts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the subscription to a domain block list. */
+                id: components["parameters"]["DomainListSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DomainListDraftsRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AdminDomainListDraftResult"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    rejectDomainListDrafts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the subscription to a domain block list. */
+                id: components["parameters"]["DomainListSubscriptionId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["DomainListDraftsRequest"];
+            };
+        };
+        responses: {
+            200: components["responses"]["AdminDomainListDraftResult"];
+            default: components["responses"]["Problem"];
+        };
+    };
     listInstanceSettings: {
         parameters: {
             query?: never;
@@ -24350,6 +25784,108 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["LoginProvidersOnlyImpact"];
                 };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getFederationScopeImpact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The count. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FederationScopeImpact"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    listDomainAllows: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The allowed domains. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainAllowList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    createDomainAllow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDomainAllowRequest"];
+            };
+        };
+        responses: {
+            /** @description The domain was already allowed. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainAllow"];
+                };
+            };
+            /** @description The new allow. */
+            201: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainAllow"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    removeDomainAllow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The canonical domain of the allow. */
+                domain: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The domain has no allow. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             default: components["responses"]["Problem"];
         };

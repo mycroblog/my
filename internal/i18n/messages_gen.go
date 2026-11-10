@@ -1722,6 +1722,69 @@ func (l *Localizer) ServerErrorsDomainMutesTooMany() string {
 	return l.format("server:errors.domain_mutes.too_many", nil)
 }
 
+// ServerErrorsDraftChanged formats "server:errors.draft.changed". Detail of the HTTP 412 API error when a draft was saved on another device or tab after the client read it.
+//
+//	en: The draft was saved elsewhere since you opened it. Open it again to see the latest version.
+func (l *Localizer) ServerErrorsDraftChanged() string {
+	return l.format("server:errors.draft.changed", nil)
+}
+
+// ServerErrorsDraftIfMatchRequired formats "server:errors.draft.if_match_required". Detail of the HTTP 428 API error when a save of a draft has no If-Match header.
+//
+//	en: Send the If-Match header with the ETag of the draft you read.
+func (l *Localizer) ServerErrorsDraftIfMatchRequired() string {
+	return l.format("server:errors.draft.if_match_required", nil)
+}
+
+// ServerErrorsDraftInvalid formats "server:errors.draft.invalid". Detail of the HTTP 422 API error when the content of a draft is too long, attaches too many files or one twice, or has a poll with too many choices or a duration out of range.
+//
+//	en: The draft cannot be saved: the text, a media file, or the poll is outside what a draft keeps.
+func (l *Localizer) ServerErrorsDraftInvalid() string {
+	return l.format("server:errors.draft.invalid", nil)
+}
+
+// ServerErrorsDraftMaxDrafts formats "server:errors.draft.max_drafts". Detail of the HTTP 422 API error when the user saves a new draft while at the limit. {max} is the number of drafts without a schedule a user may keep.
+//
+//	en: {max, plural, one {You can keep at most # draft that is not scheduled. Delete or publish one first.} other {You can keep at most # drafts that are not scheduled. Delete or publish one first.}}
+func (l *Localizer) ServerErrorsDraftMaxDrafts(max int) string {
+	return l.format("server:errors.draft.max_drafts", map[string]any{"max": max})
+}
+
+// ServerErrorsDraftMaxScheduledPosts formats "server:errors.draft.max_scheduled_posts". Detail of the HTTP 422 API error when the user schedules a post while at the limit. {max} is the number of scheduled posts a user may have waiting.
+//
+//	en: {max, plural, one {You can have at most # scheduled post waiting.} other {You can have at most # scheduled posts waiting.}}
+func (l *Localizer) ServerErrorsDraftMaxScheduledPosts(max int) string {
+	return l.format("server:errors.draft.max_scheduled_posts", map[string]any{"max": max})
+}
+
+// ServerErrorsDraftMaxScheduledPostsPerDay formats "server:errors.draft.max_scheduled_posts_per_day". Detail of the HTTP 422 API error when the user schedules a post on a UTC day that already has as many scheduled posts as allowed. {max} is that number.
+//
+//	en: {max, plural, one {You can schedule at most # post for one day (UTC).} other {You can schedule at most # posts for one day (UTC).}}
+func (l *Localizer) ServerErrorsDraftMaxScheduledPostsPerDay(max int) string {
+	return l.format("server:errors.draft.max_scheduled_posts_per_day", map[string]any{"max": max})
+}
+
+// ServerErrorsDraftNotScheduled formats "server:errors.draft.not_scheduled". Detail of the HTTP 409 API error when the user cancels the schedule of a draft that has none.
+//
+//	en: The draft is not scheduled.
+func (l *Localizer) ServerErrorsDraftNotScheduled() string {
+	return l.format("server:errors.draft.not_scheduled", nil)
+}
+
+// ServerErrorsDraftScheduleTooFar formats "server:errors.draft.schedule_too_far". Detail of the HTTP 422 API error when the time of a schedule is too far ahead. {days} is how many days ahead a post may be scheduled at most.
+//
+//	en: {days, plural, one {Schedule the post at most # day from now.} other {Schedule the post at most # days from now.}}
+func (l *Localizer) ServerErrorsDraftScheduleTooFar(days int) string {
+	return l.format("server:errors.draft.schedule_too_far", map[string]any{"days": days})
+}
+
+// ServerErrorsDraftScheduleTooSoon formats "server:errors.draft.schedule_too_soon". Detail of the HTTP 422 API error when the time of a schedule is too soon. {minutes} is how many minutes ahead a post must be scheduled at least.
+//
+//	en: {minutes, plural, one {Schedule the post at least # minute from now.} other {Schedule the post at least # minutes from now.}}
+func (l *Localizer) ServerErrorsDraftScheduleTooSoon(minutes int) string {
+	return l.format("server:errors.draft.schedule_too_soon", map[string]any{"minutes": minutes})
+}
+
 // ServerErrorsEmailAlreadyVerified formats "server:errors.email.already_verified". Title of the HTTP 409 API error when a user asks for the verification email again although their email address is verified and still receives email.
 //
 //	en: The email address is already verified.
@@ -1769,6 +1832,13 @@ func (l *Localizer) ServerErrorsFederationRestricted() string {
 //	en: Only this server's own apps may do this.
 func (l *Localizer) ServerErrorsFirstPartyOnly() string {
 	return l.format("server:errors.first_party_only", nil)
+}
+
+// ServerErrorsFollowedTagsTooMany formats "server:errors.followed_tags.too_many". API error title for HTTP 422 when the user follows another hashtag beyond the limit of followed hashtags.
+//
+//	en: You already follow the most hashtags allowed. Unfollow one first.
+func (l *Localizer) ServerErrorsFollowedTagsTooMany() string {
+	return l.format("server:errors.followed_tags.too_many", nil)
 }
 
 // ServerErrorsForbidden formats "server:errors.forbidden". API error title for HTTP 403 when the user may not perform the operation, e.g. edit another account's post.
@@ -2168,6 +2238,20 @@ func (l *Localizer) ServerErrorsPasskeyRegistrationExpired() string {
 //	en: You have as many passkeys as allowed. Remove one first.
 func (l *Localizer) ServerErrorsPasskeyTooMany() string {
 	return l.format("server:errors.passkey.too_many", nil)
+}
+
+// ServerErrorsPreconditionFailed formats "server:errors.precondition_failed". API error title for HTTP 412 when the If-Match of a request names an older version of the resource.
+//
+//	en: The resource changed since you read it.
+func (l *Localizer) ServerErrorsPreconditionFailed() string {
+	return l.format("server:errors.precondition_failed", nil)
+}
+
+// ServerErrorsPreconditionRequired formats "server:errors.precondition_required". API error title for HTTP 428 when a request that replaces a resource has no If-Match header.
+//
+//	en: This request needs the version you read.
+func (l *Localizer) ServerErrorsPreconditionRequired() string {
+	return l.format("server:errors.precondition_required", nil)
 }
 
 // ServerErrorsProfileRejected formats "server:errors.profile.rejected". API error title for HTTP 422 when the server's automated review of profiles refused a change of the user's profile. Fixed text: it never says why.
@@ -3159,6 +3243,27 @@ func (l *Localizer) ServerMailAdminCustomEmojiRequestSubject(instance string) st
 	return l.format("server:mail.admin_custom_emoji_request.subject", map[string]any{"instance": instance})
 }
 
+// ServerMailAdminDomainListFailingBody formats "server:mail.admin_domain_list_failing.body". First paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: The server {instance} could not fetch a blocklist it subscribes to three times in a row. Until a fetch works again, the list changes no domain actions; the actions it issued stay.
+func (l *Localizer) ServerMailAdminDomainListFailingBody(instance string) string {
+	return l.format("server:mail.admin_domain_list_failing.body", map[string]any{"instance": instance})
+}
+
+// ServerMailAdminDomainListFailingDetail formats "server:mail.admin_domain_list_failing.detail". Second paragraph of the email to a moderator about a subscribed domain block list whose fetches keep failing, before the link.
+//
+//	en: Open the blocklist subscriptions to see why the fetches failed.
+func (l *Localizer) ServerMailAdminDomainListFailingDetail() string {
+	return l.format("server:mail.admin_domain_list_failing.detail", nil)
+}
+
+// ServerMailAdminDomainListFailingSubject formats "server:mail.admin_domain_list_failing.subject". Subject of the email to a moderator who gets moderator notifications by email: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: A blocklist subscription of {instance} keeps failing
+func (l *Localizer) ServerMailAdminDomainListFailingSubject(instance string) string {
+	return l.format("server:mail.admin_domain_list_failing.subject", map[string]any{"instance": instance})
+}
+
 // ServerMailAdminErrorGroupBody formats "server:mail.admin_error_group.body". Paragraph of the email to an administrator who manages the errors. It never names the error or a user. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: The server or the web client of {instance} reported a new error, or an error that was marked resolved happened again. See the errors in the administration screens.
@@ -3304,6 +3409,13 @@ func (l *Localizer) ServerMailGroupAdminAppeal() string {
 //	en: Custom emoji requests
 func (l *Localizer) ServerMailGroupAdminCustomEmojiRequest() string {
 	return l.format("server:mail.group.admin_custom_emoji_request", nil)
+}
+
+// ServerMailGroupAdminDomainListFailing formats "server:mail.group.admin_domain_list_failing". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
+//
+//	en: Failing blocklist subscriptions
+func (l *Localizer) ServerMailGroupAdminDomainListFailing() string {
+	return l.format("server:mail.group.admin_domain_list_failing", nil)
 }
 
 // ServerMailGroupAdminErrorGroup formats "server:mail.group.admin_error_group". Name of a kind of notification, a row of the notification settings, in the sentences of the notification emails and of the unsubscribe page. Matches the row of the web client's notification settings.
@@ -4448,6 +4560,13 @@ func (l *Localizer) ServerPushAdminCustomEmojiRequest(instance string) string {
 	return l.format("server:push.admin_custom_emoji_request", map[string]any{"instance": instance})
 }
 
+// ServerPushAdminDomainListFailing formats "server:push.admin_domain_list_failing". Web Push notification to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: A blocklist subscription of {instance} keeps failing
+func (l *Localizer) ServerPushAdminDomainListFailing(instance string) string {
+	return l.format("server:push.admin_domain_list_failing", map[string]any{"instance": instance})
+}
+
 // ServerPushAdminErrorGroupCreated formats "server:push.admin_error_group.created". Web Push notification to an administrator who manages the errors: the server or the web client reported an error of a new kind. {instance} is the server's display name, or its domain name when it has none.
 //
 //	en: A new error was reported on {instance}
@@ -4670,9 +4789,9 @@ func (l *Localizer) ServerPushReaction(name string) string {
 	return l.format("server:push.reaction", map[string]any{"name": name})
 }
 
-// ServerPushRelationshipsSevered formats "server:push.relationships_severed". Web Push notification: the moderators suspended a server or an account, which ended follows between it and the user. {instance} is the server's display name, or its domain name when it has none.
+// ServerPushRelationshipsSevered formats "server:push.relationships_severed". Web Push notification: follows between the user and accounts of other servers ended, because the moderators suspended a server or an account, or because this server stopped federating with a server (it federates only with the servers it allows). {instance} is the server's display name, or its domain name when it has none.
 //
-//	en: A suspension by the moderators of {instance} ended some of your follows
+//	en: {instance} ended some of your follows with accounts on other servers
 func (l *Localizer) ServerPushRelationshipsSevered(instance string) string {
 	return l.format("server:push.relationships_severed", map[string]any{"instance": instance})
 }
@@ -4689,6 +4808,22 @@ func (l *Localizer) ServerPushReplyRequest(name string) string {
 //	en: A report you filed on {instance} has been resolved
 func (l *Localizer) ServerPushReportResolved(instance string) string {
 	return l.format("server:push.report_resolved", map[string]any{"instance": instance})
+}
+
+// ServerPushScheduledStatusFailedArgs holds the arguments of ServerPushScheduledStatusFailed, passed by name.
+//
+//exhaustruct:enforce
+type ServerPushScheduledStatusFailedArgs struct {
+	_        struct{} // forces keyed fields
+	Instance string
+	Reason   string
+}
+
+// ServerPushScheduledStatusFailed formats "server:push.scheduled_status_failed". Web Push notification telling a local user that a post they scheduled could not be published at its time; the draft stays and can be fixed and scheduled again. {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none.
+//
+//	en: {instance}: your scheduled post could not be published {reason, select, restricted {because your account cannot post now} reply_unavailable {because the post it replies to is no longer available} quote_unavailable {because the post it quotes is no longer available} media_unavailable {because an attached file is no longer available} invalid {because it does not meet the requirements for a post} rejected {because the server's automated review refused it} other {}}
+func (l *Localizer) ServerPushScheduledStatusFailed(args ServerPushScheduledStatusFailedArgs) string {
+	return l.format("server:push.scheduled_status_failed", map[string]any{"instance": args.Instance, "reason": args.Reason})
 }
 
 // ServerPushServiceClosureAnnounced formats "server:push.service_closure_announced". Web Push notification to every user: the administrators announced that the server closes on a date. {instance} is the server's display name, or its domain name when it has none.

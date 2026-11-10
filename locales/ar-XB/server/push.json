@@ -15,6 +15,10 @@
     "defaultMessage": "‮∀ ɔnsʇoɯ ǝɯoɾı ɹǝbnǝsʇ ɐʍɐıʇs ɹǝʌıǝʍ ou {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "push.admin_domain_list_failing": {
+    "defaultMessage": "‮∀ qʅoɔʞʅısʇ snqsɔɹıdʇıou oɟ {instance} ʞǝǝds ɟɐıʅıuƃ‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "push.admin_error_group.created": {
     "defaultMessage": "‮∀ uǝʍ ǝɹɹoɹ ʍɐs ɹǝdoɹʇǝp ou {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -132,7 +136,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.relationships_severed": {
-    "defaultMessage": "‮∀ snsdǝusıou qʎ ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance} ǝupǝp soɯǝ oɟ ʎonɹ ɟoʅʅoʍs‬",
+    "defaultMessage": "‮{instance} ǝupǝp soɯǝ oɟ ʎonɹ ɟoʅʅoʍs ʍıʇɥ ɐɔɔonuʇs ou oʇɥǝɹ sǝɹʌǝɹs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.reply_request": {
@@ -141,6 +145,10 @@
   },
   "push.report_resolved": {
     "defaultMessage": "‮∀ ɹǝdoɹʇ ʎon ɟıʅǝp ou {instance} ɥɐs qǝǝu ɹǝsoʅʌǝp‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
+  "push.scheduled_status_failed": {
+    "defaultMessage": "‮{instance}: ʎonɹ sɔɥǝpnʅǝp dosʇ ɔonʅp uoʇ qǝ dnqʅısɥǝp {reason,select,invalid{qǝɔɐnsǝ ıʇ poǝs uoʇ ɯǝǝʇ ʇɥǝ ɹǝbnıɹǝɯǝuʇs ɟoɹ ɐ dosʇ} media_unavailable{qǝɔɐnsǝ ɐu ɐʇʇɐɔɥǝp ɟıʅǝ ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} other{} quote_unavailable{qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ bnoʇǝs ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} rejected{qǝɔɐnsǝ ʇɥǝ sǝɹʌǝɹ's ɐnʇoɯɐʇǝp ɹǝʌıǝʍ ɹǝɟnsǝp ıʇ} reply_unavailable{qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ ɹǝdʅıǝs ʇo ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} restricted{qǝɔɐnsǝ ʎonɹ ɐɔɔonuʇ ɔɐuuoʇ dosʇ uoʍ}}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.service_closure_announced": {

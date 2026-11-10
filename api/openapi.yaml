@@ -70,6 +70,8 @@ tags:
     description: The Web Push subscription of the access token's grant.
   - name: statuses
     description: Posts, their threads and edit history, and boosts, favourites, bookmarks, and pins of them.
+  - name: drafts
+    description: The drafts of posts that the authenticated user saves on the server, publishing them now or at a chosen time.
   - name: timelines
     description: The home, local, hashtag, list, and account timelines.
   - name: lists
@@ -3581,7 +3583,7 @@ paths:
         mutes with notifications hidden are left out, also those that came before the block or
         mute. The moderator notifications (`admin_report`, `admin_sign_up`, `admin_appeal`,
         `admin_account_moved`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-        `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`) are left out once
+        `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`, `admin_domain_list_failing`) are left out once
         the user's roles no longer grant the permission they need.
       tags:
         - notifications
@@ -3820,6 +3822,196 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateStatusRequest'
+      responses:
+        '201':
+          description: The posted status.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+        '422':
+          $ref: '#/components/responses/StatusRejectedProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+  /drafts:
+    get:
+      operationId: listDrafts
+      summary: List the user's drafts, newest first
+      description: |
+        The drafts the user saved on the server, scheduled or not. `scheduled` keeps the scheduled
+        ones (`true`) or the others (`false`).
+      tags:
+        - drafts
+      security:
+        - oauth2:
+            - read:statuses
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+        - name: scheduled
+          in: query
+          description: Whether to list only the scheduled drafts (`true`) or only the others (`false`).
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: A page of drafts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DraftPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createDraft
+      summary: Save a new draft
+      description: |
+        Saves a new draft of the user (201). A user with `max_drafts` drafts that are not scheduled
+        (`limits` of `GET /instance`) gets a 422 that names the limit. Media must be the user's own
+        uploads (422 otherwise), processed or not.
+      tags:
+        - drafts
+      security:
+        - oauth2:
+            - write:statuses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/Draft'
+        default:
+          $ref: '#/components/responses/Problem'
+  /drafts/{id}:
+    get:
+      operationId: getDraft
+      summary: Get a draft
+      description: A draft of the user, with its `ETag` for the next save. Another user's draft is a 404.
+      tags:
+        - drafts
+      security:
+        - oauth2:
+            - read:statuses
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Draft'
+        default:
+          $ref: '#/components/responses/Problem'
+    put:
+      operationId: updateDraft
+      summary: Replace the content of a draft
+      description: |
+        Replaces the whole content of a draft. `If-Match` must be the `ETag` of the draft as the client
+        last read it: a draft that another save changed since is a 412, and a request without
+        `If-Match` a 428. A scheduled draft stays scheduled and is published with the content it has
+        then.
+      tags:
+        - drafts
+      security:
+        - oauth2:
+            - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
+        - $ref: '#/components/parameters/IfMatch'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Draft'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteDraft
+      summary: Delete a draft
+      description: |
+        Deletes a draft with its schedule (204). The media it attaches, when no post attaches them,
+        are deleted with the next cleanup of unattached uploads.
+      tags:
+        - drafts
+      security:
+        - oauth2:
+            - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
+      responses:
+        '204':
+          description: The draft is deleted.
+        default:
+          $ref: '#/components/responses/Problem'
+  /drafts/{id}/schedule:
+    put:
+      operationId: scheduleDraft
+      summary: Schedule a draft, or move its schedule
+      description: |
+        Schedules the draft to be published at `publish_at`, replacing its schedule if it has one.
+        The draft is checked now as a new post (422 with the problem of `createStatus`; media still
+        being processed pass), and again when it is published, by the user's state and the posts it
+        replies to and quotes at that time: a post that cannot be published then leaves the draft, ends
+        the schedule as `failed` (`last_schedule` of the draft), and notifies the user
+        (`scheduled_status_failed`). A time sooner than `scheduled_post_min_lead_minutes` or further
+        than `scheduled_post_max_lead_days`, and a user at `max_scheduled_posts` or at
+        `max_scheduled_posts_per_day` for the UTC day of the time, get a 422 that names the limit.
+      tags:
+        - drafts
+      security:
+        - oauth2:
+            - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DraftScheduleRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/Draft'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: unscheduleDraft
+      summary: Cancel the schedule of a draft
+      description: The draft stays, without a schedule. A draft that is not scheduled is a 409.
+      tags:
+        - drafts
+      security:
+        - oauth2:
+            - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
+      responses:
+        '200':
+          $ref: '#/components/responses/Draft'
+        default:
+          $ref: '#/components/responses/Problem'
+  /drafts/{id}/publish:
+    post:
+      operationId: publishDraft
+      summary: Publish a draft now
+      description: |
+        Publishes the draft as a new post (201), with the checks and the answers of `createStatus`,
+        and deletes the draft with its schedule. A draft that cannot be published stays as it was.
+      tags:
+        - drafts
+      security:
+        - oauth2:
+            - write:statuses
+      parameters:
+        - $ref: '#/components/parameters/DraftId'
       responses:
         '201':
           description: The posted status.
@@ -4524,13 +4716,89 @@ paths:
                 $ref: '#/components/schemas/TagSuggestionList'
         default:
           $ref: '#/components/responses/Problem'
+  /tags/{hashtag}:
+    get:
+      operationId: getTag
+      summary: Get a hashtag
+      description: |
+        The hashtag and whether the user follows it. A hashtag that no post has used yet is
+        answered too, so that it can be followed.
+      tags:
+        - statuses
+      security:
+        - {}
+        - oauth2:
+            - read:follows
+      parameters:
+        - $ref: '#/components/parameters/HashtagName'
+      responses:
+        '200':
+          $ref: '#/components/responses/Hashtag'
+        default:
+          $ref: '#/components/responses/Problem'
+  /tags/{hashtag}/follow:
+    post:
+      operationId: followTag
+      summary: Follow a hashtag
+      description: |
+        The home timeline then also shows the `public` and `local` posts with the hashtag that the
+        server has, from accounts the user does not follow, as the hashtag's timeline shows them:
+        without boosts, and without the posts of accounts and servers kept from public timelines
+        or that the user blocks or mutes. Such a post carries `followed_tags`. Following a
+        hashtag that the user follows changes nothing, and a hashtag that no post has used yet
+        can be followed. A user follows at most 100 hashtags; one more is a 422
+        `/api/v1/problems/too-many-followed-tags`.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/HashtagName'
+      responses:
+        '200':
+          $ref: '#/components/responses/Hashtag'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: unfollowTag
+      summary: Unfollow a hashtag
+      description: Without a follow it changes nothing.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - write:follows
+      parameters:
+        - $ref: '#/components/parameters/HashtagName'
+      responses:
+        '200':
+          $ref: '#/components/responses/Hashtag'
+        default:
+          $ref: '#/components/responses/Problem'
+  /followed_tags:
+    get:
+      operationId: listFollowedTags
+      summary: List the hashtags the user follows
+      description: Every hashtag that the user follows (at most 100), the latest followed first.
+      tags:
+        - statuses
+      security:
+        - oauth2:
+            - read:follows
+      responses:
+        '200':
+          $ref: '#/components/responses/FollowedHashtagCollection'
+        default:
+          $ref: '#/components/responses/Problem'
   /timelines/home:
     get:
       operationId: getHomeTimeline
       summary: Get the home timeline
       description: |
-        The viewer's own posts and boosts and those of the accounts the viewer follows, newest
-        first, in the viewer's timeline languages.
+        The viewer's own posts and boosts and those of the accounts the viewer follows, and the
+        `public` and `local` posts of other accounts with a hashtag the viewer follows (which
+        carry `followed_tags`), newest first, each once, in the viewer's timeline languages.
       tags:
         - timelines
       security:
@@ -9764,6 +10032,253 @@ paths:
                 $ref: '#/components/schemas/DomainBlockImportResult'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/domain_list_subscriptions:
+    get:
+      operationId: listDomainListSubscriptions
+      summary: List the subscriptions to domain block lists
+      description: The subscriptions that are not deleted, newest first, each with its last fetch. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of subscriptions.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDomainListSubscriptionPage'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createDomainListSubscription
+      summary: Subscribe to a domain block list
+      description: |
+        Subscribes to the list at an https URL, which the server fetches at once and then every
+        day, through the same guard as the fetches of other servers: a URL or a redirect to a
+        private address fails the fetch. A fetch reads at most 2 MiB and 5000 rows. In the
+        `draft` mode, what the list adds, changes, and removes waits for a moderator; in the
+        `automatic` mode, it is applied at each fetch. A subscription never lifts nor replaces an
+        action that it did not issue. A URL that is not https, or an invalid setting, is a 422.
+        The subscription is audited. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDomainListSubscriptionRequest'
+      responses:
+        '201':
+          $ref: '#/components/responses/AdminDomainListSubscription'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/domain_list_subscriptions/{id}:
+    parameters:
+      - $ref: '#/components/parameters/DomainListSubscriptionId'
+    get:
+      operationId: getDomainListSubscription
+      summary: Get a subscription to a domain block list
+      description: An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminDomainListSubscription'
+        default:
+          $ref: '#/components/responses/Problem'
+    patch:
+      operationId: updateDomainListSubscription
+      summary: Change the settings of a subscription
+      description: |
+        Changes the settings the request names and keeps the rest, and queues a fetch that applies
+        them; the URL and the format do not change. An invalid setting is a 422. A change is
+        audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDomainListSubscriptionRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminDomainListSubscription'
+        default:
+          $ref: '#/components/responses/Problem'
+    delete:
+      operationId: deleteDomainListSubscription
+      summary: Delete a subscription to a domain block list
+      description: |
+        Deletes the subscription: the list is no longer fetched. The actions it issued stay, as
+        if a moderator had issued them, unless `lift_actions` is set, which lifts them first. The
+        deletion is audited. An unknown or deleted ID is a 404. Needs the `manage_domains`
+        permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - name: lift_actions
+          in: query
+          required: false
+          description: Lift the actions the subscription issued.
+          schema:
+            type: boolean
+      responses:
+        '204':
+          description: The subscription is deleted.
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/domain_list_subscriptions/{id}/fetch:
+    post:
+      operationId: fetchDomainListSubscription
+      summary: Fetch a subscribed list now
+      description: |
+        Queues a fetch of the list, which then applies it as the daily fetch does. The request is
+        audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/DomainListSubscriptionId'
+      responses:
+        '202':
+          description: The fetch is queued.
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/domain_list_subscriptions/{id}/fetches:
+    get:
+      operationId: listDomainListFetches
+      summary: List the fetches of a subscription
+      description: |
+        The fetches of the list, newest first, failed ones included with why they failed. An
+        unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/DomainListSubscriptionId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: A page of fetches.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDomainListFetchPage'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/domain_list_subscriptions/{id}/drafts:
+    get:
+      operationId: listDomainListDrafts
+      summary: List the drafts of a subscription
+      description: |
+        The differences between the list, as last read, and the actions the subscription issued
+        that wait for a moderator: every difference in the `draft` mode, and in the `automatic`
+        mode those of an unknown severity and the lifts of a fetch that would lift too many. A
+        domain that an action in effect covers already, on it or a parent domain, whoever issued
+        it, is no draft. Rejected drafts are not listed. An unknown or deleted ID is a 404. Needs
+        the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - $ref: '#/components/parameters/DomainListSubscriptionId'
+      responses:
+        '200':
+          description: The drafts.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDomainListDraftList'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/domain_list_subscriptions/{id}/drafts/accept:
+    post:
+      operationId: acceptDomainListDrafts
+      summary: Accept drafts of a subscription
+      description: |
+        Issues the action of each `issue` draft for the subscription, until it is lifted, and
+        lifts the action of each `lift` draft. Each acceptance is audited, besides the action. A
+        draft that an action in effect covers by then issues nothing. An unknown or deleted ID is
+        a 404. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/DomainListSubscriptionId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainListDraftsRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminDomainListDraftResult'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/domain_list_subscriptions/{id}/drafts/reject:
+    post:
+      operationId: rejectDomainListDrafts
+      summary: Reject drafts of a subscription
+      description: |
+        Rejects the drafts: a rejected `issue` does not come back until the list changes the row
+        of its domain, and a rejected `lift` while its action is in effect. Each rejection is
+        audited. An unknown or deleted ID is a 404. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - $ref: '#/components/parameters/DomainListSubscriptionId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DomainListDraftsRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminDomainListDraftResult'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/settings:
     get:
       operationId: listInstanceSettings
@@ -9847,6 +10362,130 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LoginProvidersOnlyImpact'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/settings/federation_scope/impact:
+    get:
+      operationId: getFederationScopeImpact
+      summary: Count what switching federation to the allowlist would end
+      description: |
+        How many follows switching the instance setting `federation_scope` to `allowlist` with the
+        current allowlist would end, how many local accounts would lose one, and the servers with the
+        most of them. Administrators read it before they switch, which ends those follows for good.
+        Needs the `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          description: The count.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FederationScopeImpact'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/domain_allows:
+    get:
+      operationId: listDomainAllows
+      summary: List the allowlist of federation
+      description: |
+        Every allowed domain, by domain. The list is not paginated; the allowlist holds at most
+        5,000 domains. Needs the `manage_domains` permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          description: The allowed domains.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainAllowList'
+        default:
+          $ref: '#/components/responses/Problem'
+    post:
+      operationId: createDomainAllow
+      summary: Allow a domain to federate
+      description: |
+        Adds a domain, and its subdomains, to the allowlist and records it in the audit log. While
+        the instance setting `federation_scope` is `allowlist`, the domain federates at once; the
+        follows that the allowlist ended do not come back. A domain already allowed keeps its allow
+        and its comment, and answers 200 instead of 201. A domain that is not a host is a 400; this
+        instance's own domain, a comment longer than 5,000 characters, or an allow beyond 5,000
+        is a 422 naming the property (`domain`, `comment`, `domains`). Needs the `manage_domains`
+        permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDomainAllowRequest'
+      responses:
+        '200':
+          description: The domain was already allowed.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainAllow'
+        '201':
+          description: The new allow.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DomainAllow'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/domain_allows/{domain}:
+    delete:
+      operationId: removeDomainAllow
+      summary: Remove a domain from the allowlist of federation
+      description: |
+        Removes the allow of a domain and records it in the audit log. While the instance setting
+        `federation_scope` is `allowlist` and no parent domain is allowed, the domain and its
+        subdomains that no other allow covers are cut off at once, as a suspension of the domain
+        cuts them off: nothing is received from, delivered to, or fetched from them, and the follows
+        between the local accounts and their accounts end for good, each local user who loses one
+        being notified. A domain without an allow changes nothing. Needs the `manage_domains`
+        permission.
+      tags:
+        - admin-moderation
+      security:
+        - oauth2:
+            - admin:write
+      parameters:
+        - name: domain
+          in: path
+          required: true
+          description: The canonical domain of the allow.
+          schema:
+            type: string
+            minLength: 1
+            maxLength: 253
+      responses:
+        '204':
+          description: The domain has no allow.
         default:
           $ref: '#/components/responses/Problem'
   /invites:
@@ -11427,7 +12066,7 @@ components:
             read:custom_emojis: Read the custom emoji the user made and their requests for new ones.
             read:direct: Read the direct posts the user sends and receives and their conversations (`read:statuses` does not show them).
             read:finance: Read the totals of the instance's costs and income, as far as the user's roles allow.
-            read:follows: Read follows, follow requests, lists, and the accounts whose new posts notify the user.
+            read:follows: Read follows, follow requests, lists, followed hashtags, and the accounts whose new posts notify the user.
             read:mutes: Read the accounts and domains the user mutes.
             read:notifications: Read the user's notifications.
             read:reports: Read the reports the user filed and whether they are resolved.
@@ -11439,7 +12078,7 @@ components:
             write:bookmarks: Bookmark posts and remove bookmarks.
             write:custom_emojis: Request new custom emoji, and change and delete the ones the user made.
             write:favourites: Favourite posts and react to them with emoji, and take both back.
-            write:follows: Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts.
+            write:follows: Follow and unfollow accounts and hashtags, answer follow requests, change lists, and subscribe to the new posts of accounts.
             write:media: Upload media, read their state while they process, and change their descriptions.
             write:mutes: Mute and unmute accounts and domains.
             write:notifications: Mark notifications read and dismiss them.
@@ -11450,6 +12089,10 @@ components:
   headers:
     CacheControl:
       description: The caching policy. Anonymous public GETs are cacheable by shared caches.
+      schema:
+        type: string
+    ETag:
+      description: The version of the draft, for the `If-Match` of its next save.
       schema:
         type: string
     XRobotsTag:
@@ -11543,6 +12186,20 @@ components:
       description: The ID of the custom emoji request.
       schema:
         $ref: '#/components/schemas/Id'
+    DomainListSubscriptionId:
+      name: id
+      in: path
+      required: true
+      description: The ID of the subscription to a domain block list.
+      schema:
+        $ref: '#/components/schemas/Id'
+    DraftId:
+      name: id
+      in: path
+      description: The ID of the draft.
+      required: true
+      schema:
+        $ref: '#/components/schemas/Id'
     ErrorGroupId:
       name: id
       in: path
@@ -11576,6 +12233,17 @@ components:
         type: string
         minLength: 1
         maxLength: 256
+    IfMatch:
+      name: If-Match
+      in: header
+      description: |
+        The `ETag` of the draft as the client last read it. When another save changed the draft
+        since, the answer is a 412 and nothing is saved, so that a save on one device never silently
+        overwrites one made on another; read the draft again and merge. Without it, the save is a 428.
+      required: false
+      schema:
+        type: string
+        minLength: 1
     InstanceDocumentKind:
       name: kind
       in: path
@@ -11662,6 +12330,19 @@ components:
       description: The ID of the list.
       schema:
         $ref: '#/components/schemas/Id'
+    HashtagName:
+      name: hashtag
+      in: path
+      required: true
+      description: |
+        The hashtag, with or without a leading `#` (`%23`), matched under NFKC and lowercase: letters,
+        marks, digits, and underscores with at least one letter or mark. Anything else is a 422
+        naming `hashtag`. The hashtag `search` is written `%23search`, since `/tags/search` is the
+        search of hashtags.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 257
     OAuthAppId:
       name: id
       in: path
@@ -11766,6 +12447,24 @@ components:
       schema:
         $ref: '#/components/schemas/Id'
   responses:
+    AdminDomainListDraftResult:
+      description: The drafts that were accepted or rejected.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminDomainListDraftResult'
+    AdminDomainListSubscription:
+      description: The subscription to a domain block list.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AdminDomainListSubscription'
     AdminHookAppeal:
       description: The appeal.
       headers:
@@ -11878,6 +12577,15 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/BrandProblem'
+    Draft:
+      description: The draft.
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Draft'
     ErrorGroup:
       description: The error group.
       headers:
@@ -12294,6 +13002,24 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ListCollection'
+    Hashtag:
+      description: The hashtag.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Hashtag'
+    FollowedHashtagCollection:
+      description: The hashtags that the user follows, the latest followed first.
+      headers:
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/FollowedHashtagCollection'
   schemas:
     AdminBrandImage:
       description: |
@@ -12504,6 +13230,511 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AccountSuggestion'
+    AdminDomainListChange:
+      description: |
+        `issue`: the list names the domain, and no action of the kind is in effect on it or a
+        parent domain. `lift`: an action that the subscription issued is no longer on the list.
+      type: string
+      enum:
+        - issue
+        - lift
+    AdminDomainListDraft:
+      description: A difference between a subscribed list and the actions the subscription issued, waiting for a moderator.
+      type: object
+      required:
+        - key
+        - change
+        - domain
+        - kind
+        - held
+      properties:
+        key:
+          description: Names the draft to accept or reject.
+          type: string
+        change:
+          $ref: '#/components/schemas/AdminDomainListChange'
+        domain:
+          description: The domain, in IDNA A-labels.
+          type: string
+        kind:
+          $ref: '#/components/schemas/AdminDomainActionKind'
+        held:
+          $ref: '#/components/schemas/AdminDomainListHold'
+        action_id:
+          description: The action that a `lift` lifts; omitted for an `issue`.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        severity:
+          description: The severity as the list gives it, for an `issue`.
+          type: string
+        public_comment:
+          description: The public comment of the row, for an `issue`; omitted when there is none.
+          type: string
+        obfuscate:
+          description: Whether the row asks to hide part of the domain, for an `issue`.
+          type: boolean
+    AdminDomainListDraftList:
+      description: The drafts of a subscription, the lifts first, each by domain and kind.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminDomainListDraft'
+    AdminDomainListDraftResult:
+      description: What accepting or rejecting drafts did.
+      type: object
+      required:
+        - done
+        - missing
+      properties:
+        done:
+          description: The drafts that were accepted or rejected.
+          type: array
+          items:
+            $ref: '#/components/schemas/AdminDomainListDraft'
+        missing:
+          description: The keys of the request that name no draft, such as one handled since.
+          type: array
+          items:
+            type: string
+    AdminDomainListFetch:
+      description: One fetch of a subscribed domain block list.
+      type: object
+      required:
+        - id
+        - outcome
+        - entry_count
+        - fetched_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        outcome:
+          $ref: '#/components/schemas/AdminDomainListFetchOutcome'
+        http_status:
+          description: The status code of the answer; omitted when no answer came.
+          type: integer
+        error_code:
+          $ref: '#/components/schemas/AdminDomainListFetchError'
+        entry_count:
+          description: The domains the subscription holds after the fetch.
+          type: integer
+        fetched_at:
+          type: string
+          format: date-time
+    AdminDomainListFetchError:
+      description: |
+        Why a fetch failed. `http_status`: the server answered another status than 2xx or 304,
+        such as 401, 403, or 404 of a server that does not publish its domain blocks. `network`:
+        the server could not be reached or did not answer in time. `forbidden_destination`: the
+        URL or a redirect leads to an address the server does not fetch from. `too_large`: the
+        list is larger than 2 MiB. `too_many_entries`: it has more than 5000 rows. `malformed`: it
+        cannot be read in the subscription's format.
+      type: string
+      enum:
+        - http_status
+        - network
+        - forbidden_destination
+        - too_large
+        - too_many_entries
+        - malformed
+    AdminDomainListFetchOutcome:
+      description: |
+        `applied`: the list was read and replaced the domains the subscription holds.
+        `not_modified`: the list did not change. `failed`: nothing was read and nothing changed.
+      type: string
+      enum:
+        - applied
+        - not_modified
+        - failed
+    AdminDomainListFetchPage:
+      description: A page of the fetches of a subscription, newest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminDomainListFetch'
+    AdminDomainListFormat:
+      description: |
+        The format of a subscribed list. `mastodon_csv`: Mastodon's domain block CSV, read as the
+        import reads it. `mastodon_json`: the answer of Mastodon's
+        `GET /api/v1/instance/domain_blocks`; obfuscated domains are skipped. `plain_text`: one
+        domain per line, each a suspend.
+      type: string
+      enum:
+        - mastodon_csv
+        - mastodon_json
+        - plain_text
+    AdminDomainListHold:
+      description: |
+        Why a difference waits for a moderator. `draft_mode`: the subscription is in the draft
+        mode. `unknown_severity`: the list gives the domain a severity this server does not know.
+        `mass_lift`: one fetch would lift more than 10 actions and more than half of the
+        subscription's actions, which a broken or empty list would do.
+      type: string
+      enum:
+        - draft_mode
+        - unknown_severity
+        - mass_lift
+    AdminDomainListMode:
+      description: |
+        `draft`: every difference waits for a moderator. `automatic`: the differences are applied
+        at each fetch, except those that `AdminDomainListHold` names.
+      type: string
+      enum:
+        - draft
+        - automatic
+    AdminDomainListSilenceAs:
+      description: What a `silence` of the list issues on this server; `ignore` issues nothing.
+      type: string
+      enum:
+        - limit
+        - ignore
+    AdminDomainListSubscription:
+      description: A subscription to a domain block list that another server or person publishes.
+      type: object
+      required:
+        - id
+        - url
+        - format
+        - title
+        - mode
+        - suspend_as
+        - silence_as
+        - apply_reject_media
+        - apply_reject_reports
+        - public_comment_from_list
+        - consecutive_failures
+        - created_at
+        - updated_at
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        url:
+          description: The https URL of the list.
+          type: string
+        format:
+          $ref: '#/components/schemas/AdminDomainListFormat'
+        title:
+          type: string
+        mode:
+          $ref: '#/components/schemas/AdminDomainListMode'
+        suspend_as:
+          $ref: '#/components/schemas/AdminDomainListSuspendAs'
+        silence_as:
+          $ref: '#/components/schemas/AdminDomainListSilenceAs'
+        apply_reject_media:
+          description: Whether the `reject_media` of a row issues a `reject_media` action.
+          type: boolean
+        apply_reject_reports:
+          description: Whether the `reject_reports` of a row issues a `reject_reports` action.
+          type: boolean
+        public_comment_from_list:
+          description: Whether the actions copy the public comment of their row.
+          type: boolean
+        consecutive_failures:
+          description: The failed fetches since the last one that did not fail.
+          type: integer
+        last_fetch:
+          $ref: '#/components/schemas/AdminDomainListFetch'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          description: When the settings last changed; the creation for settings never changed.
+          type: string
+          format: date-time
+    AdminDomainListSubscriptionPage:
+      description: A page of subscriptions to domain block lists, newest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AdminDomainListSubscription'
+    AdminDomainListSuspendAs:
+      description: What a `suspend` of the list issues on this server; `ignore` issues nothing.
+      type: string
+      enum:
+        - suspend
+        - limit
+        - ignore
+    CreateDomainListSubscriptionRequest:
+      description: |
+        A new subscription to a domain block list. The settings that are omitted take their
+        defaults: `draft`, `suspend` as `suspend`, `silence` as `limit`, the rejections applied, and
+        no public comment copied.
+      type: object
+      required:
+        - url
+        - format
+        - title
+      properties:
+        url:
+          description: The https URL of the list.
+          type: string
+          minLength: 1
+          maxLength: 2048
+        format:
+          $ref: '#/components/schemas/AdminDomainListFormat'
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        mode:
+          $ref: '#/components/schemas/AdminDomainListMode'
+        suspend_as:
+          $ref: '#/components/schemas/AdminDomainListSuspendAs'
+        silence_as:
+          $ref: '#/components/schemas/AdminDomainListSilenceAs'
+        apply_reject_media:
+          type: boolean
+        apply_reject_reports:
+          type: boolean
+        public_comment_from_list:
+          type: boolean
+    DomainListDraftsRequest:
+      description: The drafts to accept or reject, by key; omitted or empty for every draft.
+      type: object
+      properties:
+        keys:
+          type: array
+          maxItems: 15000
+          items:
+            type: string
+            maxLength: 300
+    Draft:
+      description: |
+        A draft of a post, saved on the server so that the user goes on writing it on another device,
+        and publishes it at once or at a chosen time. Only the user reads it; it is never federated.
+      type: object
+      required:
+        - id
+        - created_at
+        - updated_at
+        - text
+        - spoiler_text
+        - sensitive
+        - visibility
+        - media
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          description: When the draft was last saved.
+          type: string
+          format: date-time
+        text:
+          description: The plain text.
+          type: string
+        spoiler_text:
+          description: The content warning; empty for none.
+          type: string
+        sensitive:
+          type: boolean
+        language:
+          description: A BCP 47 language tag; left out for the user's default post language.
+          type: string
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+        in_reply_to_id:
+          $ref: '#/components/schemas/Id'
+        quoted_status_id:
+          $ref: '#/components/schemas/Id'
+        interaction_policy:
+          description: Who may reply to, boost, and quote the post, of the kinds the user chose.
+          allOf:
+            - $ref: '#/components/schemas/InteractionPolicyChange'
+        media:
+          description: The media to attach, in order.
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusMediaItem'
+        poll:
+          $ref: '#/components/schemas/DraftPoll'
+        scheduled_at:
+          description: When the draft is scheduled to be published; left out while it is not scheduled.
+          type: string
+          format: date-time
+        last_schedule:
+          description: How the newest schedule that is over ended; left out when none ended.
+          allOf:
+            - $ref: '#/components/schemas/DraftScheduleOutcome'
+    DraftFailureReason:
+      description: |
+        Why a scheduled post was not published at its time; the draft stays, to fix and schedule
+        again. `restricted`: the account may not post (a moderation action, a suspension, or an
+        account that is not active). `reply_unavailable`: the post it replies to is gone, hidden from
+        the user, or does not take the reply. `quote_unavailable`: the post it quotes is gone, hidden
+        from the user, or may not be quoted. `media_unavailable`: an attached file is gone or failed
+        processing. `invalid`: the post does not pass the checks of a post, such as its length.
+        `rejected`: the server's automated review refused the post.
+      type: string
+      enum:
+        - restricted
+        - reply_unavailable
+        - quote_unavailable
+        - media_unavailable
+        - invalid
+        - rejected
+    DraftPage:
+      description: A page of drafts, newest first.
+      allOf:
+        - $ref: '#/components/schemas/PageInfo'
+        - type: object
+          required:
+            - items
+          properties:
+            items:
+              description: The drafts of the page.
+              type: array
+              items:
+                $ref: '#/components/schemas/Draft'
+    DraftPoll:
+      description: |
+        The poll of a draft. A draft keeps a poll still being written (fewer than two options, or
+        blank ones); publishing it checks the limits of `PollInput`. It ends `expires_in` seconds after
+        the draft is published.
+      type: object
+      required:
+        - options
+        - expires_in
+      properties:
+        options:
+          description: The options, in order, as plain text.
+          type: array
+          maxItems: 4
+          items:
+            type: string
+            maxLength: 50
+        expires_in:
+          description: How long the poll takes votes, in seconds (5 minutes to 30 days).
+          type: integer
+          minimum: 300
+          maximum: 2592000
+        multiple:
+          description: Whether a vote may choose several options.
+          type: boolean
+        hide_totals:
+          description: Whether the votes of each option are hidden until the poll ends.
+          type: boolean
+    DraftRequest:
+      description: |
+        The whole content of a draft; a save replaces what the draft had. A draft keeps text that a
+        post would refuse (empty, or longer than `max_post_characters`), up to 100,000 characters, and
+        media that are still being processed; publishing it checks it as a new post.
+      type: object
+      required:
+        - visibility
+      properties:
+        text:
+          description: The plain text; omitted or empty while there is none.
+          type: string
+          maxLength: 100000
+        spoiler_text:
+          $ref: '#/components/schemas/SpoilerText'
+        sensitive:
+          description: Whether the media are sensitive.
+          type: boolean
+        language:
+          $ref: '#/components/schemas/StatusLanguageInput'
+        visibility:
+          $ref: '#/components/schemas/Visibility'
+        in_reply_to_id:
+          description: The post to reply to, checked when the draft is scheduled and published.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        quoted_status_id:
+          description: The post to quote, checked when the draft is scheduled and published.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        interaction_policy:
+          description: |
+            Who may reply to, boost, and quote the post; the kinds left out take the user's
+            `default_interaction_policy` when the draft is published.
+          allOf:
+            - $ref: '#/components/schemas/InteractionPolicyChange'
+        media:
+          description: |
+            The media to attach, in order: the user's own uploads, processed or not. A draft with a
+            `poll` attaches none.
+          allOf:
+            - $ref: '#/components/schemas/StatusMediaInput'
+        poll:
+          $ref: '#/components/schemas/DraftPoll'
+    DraftScheduleOutcome:
+      description: How the newest schedule of a draft that is over ended.
+      type: object
+      required:
+        - publish_at
+        - outcome
+        - occurred_at
+      properties:
+        publish_at:
+          description: The time the post was scheduled for.
+          type: string
+          format: date-time
+        outcome:
+          description: |
+            `cancelled`: the user cancelled the schedule or scheduled another time. `failed`: the post
+            could not be published at its time, for `reason`.
+          type: string
+          enum:
+            - cancelled
+            - failed
+        reason:
+          $ref: '#/components/schemas/DraftFailureReason'
+        occurred_at:
+          description: When the schedule ended.
+          type: string
+          format: date-time
+    DraftScheduleRequest:
+      description: When to publish a draft.
+      type: object
+      required:
+        - publish_at
+      properties:
+        publish_at:
+          description: |
+            The time to publish the draft: at least `scheduled_post_min_lead_minutes` and at most
+            `scheduled_post_max_lead_days` from now (`limits` of `GET /instance`). The post is
+            published at that time or soon after.
+          type: string
+          format: date-time
+    NotificationScheduledStatusFailure:
+      description: |
+        The scheduled post that a `scheduled_status_failed` tells of: its draft, why it was not
+        published, and when it was to be published.
+      type: object
+      required:
+        - draft_id
+        - reason
+        - publish_at
+      properties:
+        draft_id:
+          description: The draft of the scheduled post, which stays to fix and schedule again.
+          allOf:
+            - $ref: '#/components/schemas/Id'
+        reason:
+          $ref: '#/components/schemas/DraftFailureReason'
+        publish_at:
+          description: When the post was to be published.
+          type: string
+          format: date-time
     RelationshipList:
       description: The relationships, in the order of the request.
       type: object
@@ -13564,7 +14795,9 @@ components:
         (an instance setting), `text_changed` (an instance text). On a `rule`:
         `rule_added`, `rule_revised`, `rule_moved`, `rule_retired`. On a `link_card_domain`:
         `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped` (the rule of the link
-        card crawler set on the domain), `link_card_domain_rule_removed`. On a `role`: `role_granted`,
+        card crawler set on the domain), `link_card_domain_rule_removed`. On a `domain_allow`:
+        `domain_allow_added`, `domain_allow_removed` (a domain added to and removed from the allowlist
+        of federation). On a `role`: `role_granted`,
         `role_revoked` (a role of a user; the label is the key and the handle), `role_created`,
         `role_updated` (its position or permissions), `role_deleted` (the label is the key). On
         an `appeal`:
@@ -13617,7 +14850,13 @@ components:
         `service_closure`. On a `voice_room`: `voice_room_ended`; the label is the room's name. On a `login_provider`: `login_provider_created`, `login_provider_updated`
         (its settings), `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`,
         and `login_provider_secret_rotated` (a new client secret); the label is the provider's display
-        name.
+        name. On a `domain_list_subscription`: `domain_list_subscription_created`,
+        `domain_list_subscription_updated` (its settings), `domain_list_subscription_deleted`,
+        `domain_list_draft_accepted` (which also records the `domain_action_issued` or
+        `domain_action_lifted` on the `domain`), `domain_list_draft_rejected`, and
+        `domain_list_fetch_queued` (a fetch asked for by hand); the label is its title. The actions
+        that a subscription in the automatic mode issues and lifts are recorded on the `domain` with
+        the `system` as the actor.
       type: string
       enum:
         - account_action_issued
@@ -13720,6 +14959,14 @@ components:
         - link_card_domain_images_stopped
         - link_card_domain_rule_removed
         - instance_marked_available
+        - domain_allow_added
+        - domain_allow_removed
+        - domain_list_subscription_created
+        - domain_list_subscription_updated
+        - domain_list_subscription_deleted
+        - domain_list_draft_accepted
+        - domain_list_draft_rejected
+        - domain_list_fetch_queued
     AdminAuditActorKind:
       description: |
         Who performed the operation. `user`: a signed-in moderator or administrator.
@@ -13837,6 +15084,8 @@ components:
         - login_provider
         - link_card_domain
         - hook_decision
+        - domain_allow
+        - domain_list_subscription
     AdminAvailabilityEvent:
       description: The time a remote server was marked unavailable or available again, and why.
       type: object
@@ -14053,6 +15302,12 @@ components:
           description: When the action was lifted; omitted until it is.
           type: string
           format: date-time
+        subscription_id:
+          description: |
+            The subscription to a domain block list that issued the action; omitted for an action
+            a moderator issued.
+          allOf:
+            - $ref: '#/components/schemas/Id'
     AdminDomainActionKind:
       description: |
         `suspend`: no federation with the domain at all. `limit`: its posts stay off the public
@@ -14968,6 +16223,58 @@ components:
             Whether adding a provider, or enabling the provider `provider_id` named, would start the limit
             at once: the setting is on, no provider can be signed in with now, and that one could be.
           type: boolean
+    FederationScopeImpact:
+      description: |
+        What switching the instance setting `federation_scope` to `allowlist` with the current
+        allowlist would end now: the accepted follows, in both directions, between the local accounts
+        and the accounts of the servers that the allowlist does not allow. The switch ends them for
+        good, and each local user who loses one is notified. While the setting is already
+        `allowlist`, it counts what is left to end, which is nothing once the switch has run.
+      type: object
+      required:
+        - scope
+        - follows
+        - local_accounts
+        - domains
+        - top_domains
+      properties:
+        scope:
+          description: The current value of `federation_scope`.
+          type: string
+          enum:
+            - open
+            - allowlist
+        follows:
+          description: How many follows would end.
+          type: integer
+          minimum: 0
+        local_accounts:
+          description: How many local accounts would lose a follow.
+          type: integer
+          minimum: 0
+        domains:
+          description: How many servers those follows are with.
+          type: integer
+          minimum: 0
+        top_domains:
+          description: The servers with the most follows that would end, at most 10, the most first.
+          type: array
+          items:
+            $ref: '#/components/schemas/FederationScopeImpactDomain'
+    FederationScopeImpactDomain:
+      description: The follows with one server that switching to the allowlist would end.
+      type: object
+      required:
+        - domain
+        - follows
+      properties:
+        domain:
+          description: The server's domain.
+          type: string
+        follows:
+          description: How many follows with its accounts would end.
+          type: integer
+          minimum: 1
     AdminQueue:
       description: The state of the job queue.
       type: object
@@ -17780,6 +19087,21 @@ components:
           type: integer
           minimum: 1
           maximum: 315360000
+    CreateDomainAllowRequest:
+      description: A domain to allow.
+      type: object
+      required:
+        - domain
+      properties:
+        domain:
+          description: The domain, a host without a scheme, path, or port; it also covers its subdomains.
+          type: string
+          minLength: 1
+          maxLength: 253
+        comment:
+          description: A note for the moderators, never published.
+          type: string
+          maxLength: 5000
     CreateInviteRequest:
       description: A new invite.
       type: object
@@ -18637,6 +19959,38 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/DomainBlockImportSkipped'
+    DomainAllow:
+      description: |
+        A domain of the allowlist of federation, which covers its subdomains. While the instance
+        setting `federation_scope` is `allowlist`, the instance federates only with the allowed
+        domains; the domain actions on an allowed domain still apply. While it is `open`, the
+        allowlist changes nothing.
+      type: object
+      required:
+        - domain
+        - comment
+        - created_at
+      properties:
+        domain:
+          description: The domain, in canonical form (lower case, IDNA A-labels); the key of the allow.
+          type: string
+        comment:
+          description: What the moderators keep about the allow, never published; empty for none.
+          type: string
+        created_at:
+          description: When the domain was allowed.
+          type: string
+          format: date-time
+    DomainAllowList:
+      description: The allowed domains, by domain.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DomainAllow'
     DomainBlockImportRow:
       description: A row of a domain block CSV and what importing it would do.
       type: object
@@ -19846,6 +21200,39 @@ components:
         message:
           description: The operator's message to the users, as plain text; omitted when there is none.
           type: string
+    InstanceDraftLimits:
+      description: |
+        The limits of drafts and scheduled posts (the instance settings of the same names). A save or a
+        schedule past one is a 422 that names it; lowering a limit deletes no draft and cancels no
+        schedule.
+      type: object
+      required:
+        - max_drafts
+        - max_scheduled_posts
+        - max_scheduled_posts_per_day
+        - scheduled_post_min_lead_minutes
+        - scheduled_post_max_lead_days
+      properties:
+        max_drafts:
+          description: How many drafts without a schedule a user may keep.
+          type: integer
+          minimum: 1
+        max_scheduled_posts:
+          description: How many scheduled posts a user may have waiting.
+          type: integer
+          minimum: 1
+        max_scheduled_posts_per_day:
+          description: How many scheduled posts of a user may wait for one UTC day.
+          type: integer
+          minimum: 1
+        scheduled_post_min_lead_minutes:
+          description: How many minutes ahead, at least, a post may be scheduled.
+          type: integer
+          minimum: 1
+        scheduled_post_max_lead_days:
+          description: How many days ahead, at most, a post may be scheduled.
+          type: integer
+          minimum: 1
     InstanceLimits:
       description: Limits that clients check before sending a request.
       type: object
@@ -19863,6 +21250,8 @@ components:
             setting `require_media_description`). While it is on, a post or an edit with
             a media file without one is a 422, so clients ask for it before sending.
           type: boolean
+        drafts:
+          $ref: '#/components/schemas/InstanceDraftLimits'
     InstanceRegistrations:
       description: How people sign up on the instance.
       type: object
@@ -20022,6 +21411,7 @@ components:
         - supporter_list_visibility
         - income_visibility
         - federation_mode
+        - federation_scope
         - user_app_registration
         - dynamic_client_registration
         - oauth_metadata_document_clients
@@ -20089,6 +21479,11 @@ components:
         - auto_delete_max_allow_thresholds
         - auto_delete_grace_days
         - single_user
+        - max_drafts
+        - max_scheduled_posts
+        - max_scheduled_posts_per_day
+        - scheduled_post_min_lead_minutes
+        - scheduled_post_max_lead_days
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -20402,6 +21797,57 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/List'
+    Hashtag:
+      description: |
+        A hashtag and whether the user follows it. The posts of the hashtags the user follows appear
+        on the home timeline.
+      type: object
+      required:
+        - name
+        - url
+        - following
+      properties:
+        name:
+          description: |
+            The hashtag without `#`, as first written on the server, or as the request wrote it when
+            no post has used it and nobody follows it.
+          type: string
+        url:
+          description: The hashtag's page.
+          type: string
+          format: uri
+        following:
+          description: Whether the user follows the hashtag; false for a visitor who is not logged in.
+          type: boolean
+    FollowedHashtag:
+      description: A hashtag that the user follows.
+      type: object
+      required:
+        - name
+        - url
+        - followed_at
+      properties:
+        name:
+          description: The hashtag without `#`, as first written on the server.
+          type: string
+        url:
+          description: The hashtag's page.
+          type: string
+          format: uri
+        followed_at:
+          description: When the user followed the hashtag.
+          type: string
+          format: date-time
+    FollowedHashtagCollection:
+      description: The hashtags that the user follows, at most 100, the latest followed first.
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FollowedHashtag'
     ListRequest:
       description: The name of a list.
       type: object
@@ -20947,6 +22393,11 @@ components:
         auto_delete_limit:
           description: What an `auto_delete_limit` tells of; omitted for the other types.
           $ref: '#/components/schemas/NotificationAutoDeleteLimit'
+        scheduled_status_failure:
+          description: |
+            The scheduled post that a `scheduled_status_failed` tells of, while its draft exists;
+            omitted otherwise and for the other types.
+          $ref: '#/components/schemas/NotificationScheduledStatusFailure'
     NotificationGroup:
       description: |
         A row of the notification settings: one or more notification types that the user turns on
@@ -20957,13 +22408,16 @@ components:
         `quote_request`, `interaction_accepted`, and `interaction_rejected`. `status` and
         `interaction_request` have no `email` channel. The moderator notifications are one row per type (`admin_report`,
         `admin_sign_up`, `admin_appeal`, `admin_webhook_disabled`, `admin_custom_emoji_request`,
-        `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`). The instance's
+        `admin_account_moved`, `admin_service_closure_due`, `admin_error_group`, `admin_hook_failing`, `admin_hook_appeal`,
+        `admin_domain_list_failing`). The instance's
         notices to the user are `moderation` (`moderation_notice`, `report_resolved`,
         `appeal_decided`, `relationships_severed`, `custom_emoji_request_decided`,
         `hook_appeal_decided`),
         `service_closure`, `supporter` (the `supporter_*` types), `announcement`, which the user
         turns off in the app (on by default) and which has no `email` channel, and
-        `auto_delete_limit`, whose app and email channels the user chooses, both on by default.
+        `auto_delete_limit`, whose app and email channels the user chooses, both on by default, and
+        `scheduled_status_failed`, which the user turns off in the app (on by default) and which has
+        no `email` channel.
       type: string
       enum:
         - mention
@@ -20985,6 +22439,7 @@ components:
         - admin_webhook_disabled
         - admin_hook_failing
         - admin_hook_appeal
+        - admin_domain_list_failing
         - admin_custom_emoji_request
         - admin_account_moved
         - admin_service_closure_due
@@ -20994,6 +22449,7 @@ components:
         - supporter
         - announcement
         - auto_delete_limit
+        - scheduled_status_failed
     NotificationMarker:
       description: How far the authenticated user has read the notifications, across all clients.
       type: object
@@ -21053,7 +22509,7 @@ components:
         `auto_delete_limit` are emailed one by one 15 minutes after they arrive, and only while they stay unread (newer than
         the read marker and not dismissed); the moderator notifications are emailed at once. Clients
         offer the email column only when `Instance.sends_email` is true. A row without `email` (`status`,
-        `announcement`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
+        `interaction_request`, `announcement`, `scheduled_status_failed`) is never emailed, and clients show no email cell for it. Web Push stays the choice of each
         subscription (`putPushSubscription`).
       type: object
       required:
@@ -21069,7 +22525,7 @@ components:
             The kind of the row: `ordinary` (what other users did; in the app on and email off by
             default), `moderator` (to the holders of the permission it needs; both on by default),
             or `instance` (the instance's notices to the user; always in the app, but for
-            `announcement` and `auto_delete_limit`, which are on by default).
+            `announcement`, `auto_delete_limit`, and `scheduled_status_failed`, which are on by default).
           type: string
           enum:
             - ordinary
@@ -21164,7 +22620,9 @@ components:
         `admin_hook_appeal` (a user appealed a post that the automated review refused;
         `hook_appeal_id` is the appeal) to those with `manage_reports`, and
         `admin_custom_emoji_request` (a user requested a custom emoji or a new image of one;
-        `custom_emoji_request` is the request) to those with `manage_custom_emojis`.
+        `custom_emoji_request` is the request) to those with `manage_custom_emojis`, and
+        `admin_domain_list_failing` (three fetches in a row of a subscribed domain block list
+        failed; it names none) to those with `manage_domains`.
         `custom_emoji_request_decided` also comes from the instance: an administrator approved
         or rejected the user's custom emoji request, which `custom_emoji_request` carries with
         its state and the reason of a rejection.
@@ -21208,6 +22666,11 @@ components:
         `keep_posts_longer`), and after a grace period it deletes the user's posts that their own
         policy keeps. Its `auto_delete_limit` carries the maximum and when it starts to apply, and it
         has no `account`. It is sent once per notice.
+        `scheduled_status_failed` comes from the instance: a post that the user scheduled could not be
+        published at its time, and its draft stays to fix and schedule again. Its
+        `scheduled_status_failure` carries the draft, why, and when it was to be published, while the
+        draft exists, and it has no `account`. It is sent once per schedule; a published scheduled post
+        sends nothing.
       type: string
       enum:
         - follow
@@ -21228,6 +22691,7 @@ components:
         - admin_appeal
         - admin_webhook_disabled
         - admin_hook_failing
+        - admin_domain_list_failing
         - admin_custom_emoji_request
         - custom_emoji_request_decided
         - supporter_payment_failed
@@ -21246,6 +22710,7 @@ components:
         - admin_hook_appeal
         - hook_appeal_decided
         - auto_delete_limit
+        - scheduled_status_failed
         - reply_request
         - boost_request
         - quote_request
@@ -22225,6 +23690,8 @@ components:
           allowed. Remove one first.
         - `/api/v1/problems/not-followed` (422): only an account that the user follows (whose
           follow request was accepted) can be added to a list.
+        - `/api/v1/problems/too-many-followed-tags` (422): the user already follows the most
+          hashtags allowed (100). Unfollow one first.
         - `/api/v1/problems/invalid-alias` (422): the handle or URL of an alias leads to no
           account's actor, or to the user itself.
         - `/api/v1/problems/too-many-aliases` (422): the user already has the most aliases
@@ -22794,9 +24261,11 @@ components:
       description: |
         The follows that a `relationships_severed` tells of: the user lost them when the
         moderators suspended a server (`domain_suspension`, `domain` is the server) or a remote
-        account (`account_suspension`, the notification's `account` is the account). Both
-        directions end, follow requests too, and lifting the suspension does not restore them;
-        the counts are of the accepted follows.
+        account (`account_suspension`, the notification's `account` is the account), or when the
+        server began to federate only with the servers it allows (`allowlist_cutoff`: `domain` is the
+        server whose allow was removed, and is omitted when the server switched to its allowlist).
+        Both directions end, follow requests too, and lifting the suspension or allowing the server
+        again does not restore them; the counts are of the accepted follows.
       type: object
       required:
         - kind
@@ -22808,8 +24277,11 @@ components:
           enum:
             - domain_suspension
             - account_suspension
+            - allowlist_cutoff
         domain:
-          description: The suspended server of a `domain_suspension`; omitted otherwise.
+          description: |
+            The suspended server of a `domain_suspension`, or the server whose allow was removed of an
+            `allowlist_cutoff`; omitted otherwise.
           type: string
         followers_lost:
           description: The accounts that followed the user and no longer do.
@@ -23310,6 +24782,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StatusTag'
+        followed_tags:
+          description: |
+            On the home timeline and its stream, the names (without `#`) of the hashtags that the
+            user follows and the post carries, when the post is there only for them: its author is
+            neither the user nor an account the user follows. Omitted everywhere else.
+          type: array
+          items:
+            type: string
         emojis:
           description: |
             The custom emoji of the text, the content warning, and the poll's choices. Clients show each `:shortcode:` of those texts that is in this list as its
@@ -24184,6 +25664,26 @@ components:
             type: string
             minLength: 2
             maxLength: 30
+    UpdateDomainListSubscriptionRequest:
+      description: The changes to the settings of a subscription; what is omitted stays.
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        mode:
+          $ref: '#/components/schemas/AdminDomainListMode'
+        suspend_as:
+          $ref: '#/components/schemas/AdminDomainListSuspendAs'
+        silence_as:
+          $ref: '#/components/schemas/AdminDomainListSilenceAs'
+        apply_reject_media:
+          type: boolean
+        apply_reject_reports:
+          type: boolean
+        public_comment_from_list:
+          type: boolean
     UpdateInstanceSettingsRequest:
       description: New values of some instance settings, saved together.
       type: object

@@ -159,11 +159,12 @@ func (q *Queries) ListModerationAppealsByIDs(ctx context.Context, ids []string) 
 }
 
 const listRelationshipSeverancesOf = `-- name: ListRelationshipSeverancesOf :many
-SELECT s.id, s.domain_action_id, s.action_id, s.account_id, s.followers_lost, s.following_lost, s.occurred_at,
-  d.domain AS target_domain, a.target_account_id
+SELECT s.id, s.domain_action_id, s.action_id, s.allowlist_cutoff_id, s.account_id, s.followers_lost, s.following_lost, s.occurred_at,
+  COALESCE(d.domain, c.domain, '') AS target_domain, a.target_account_id
 FROM relationship_severances s
 LEFT JOIN domain_moderation_actions d ON d.id = s.domain_action_id
 LEFT JOIN moderation_actions a ON a.id = s.action_id
+LEFT JOIN allowlist_cutoffs c ON c.id = s.allowlist_cutoff_id
 WHERE s.account_id = $1::uuid AND s.id = ANY($2::uuid[]) ORDER BY s.id
 `
 
@@ -173,15 +174,16 @@ type ListRelationshipSeverancesOfParams struct {
 }
 
 type ListRelationshipSeverancesOfRow struct {
-	ID              string
-	DomainActionID  *string
-	ActionID        *string
-	AccountID       string
-	FollowersLost   int32
-	FollowingLost   int32
-	OccurredAt      time.Time
-	TargetDomain    *string
-	TargetAccountID *string
+	ID                string
+	DomainActionID    *string
+	ActionID          *string
+	AllowlistCutoffID *string
+	AccountID         string
+	FollowersLost     int32
+	FollowingLost     int32
+	OccurredAt        time.Time
+	TargetDomain      string
+	TargetAccountID   *string
 }
 
 func (q *Queries) ListRelationshipSeverancesOf(ctx context.Context, arg ListRelationshipSeverancesOfParams) ([]ListRelationshipSeverancesOfRow, error) {
@@ -197,6 +199,7 @@ func (q *Queries) ListRelationshipSeverancesOf(ctx context.Context, arg ListRela
 			&i.ID,
 			&i.DomainActionID,
 			&i.ActionID,
+			&i.AllowlistCutoffID,
 			&i.AccountID,
 			&i.FollowersLost,
 			&i.FollowingLost,

@@ -69,7 +69,7 @@ Usage: my admin create -username <name> -email <address> [-password-link] [-conf
        my admin account password-reset-link <account>   (my admin account password-reset-link -help)
        my admin appeal list|uphold|overturn ...   (my admin appeal -help)
        my admin closure announce|withdraw|status|check|close|export-html ...   (my admin closure -help)
-       my admin domain list|issue|lift|export|import ...   (my admin domain -help)
+       my admin domain list|issue|lift|export|import|allow|subscription ...   (my admin domain -help)
        my admin emoji create|list|update|replace-image|enable|disable|copy|delete|requests ...   (my admin emoji -help)
        my admin federation sever ...   (my admin federation -help)
        my admin media reprocess ...   (my admin media -help)
@@ -373,7 +373,8 @@ report_assigned, report_unassigned, report_resolved, report_reopened,
 report_note_added (report); registration_approved, registration_rejected
 (user); setting_changed, text_changed (setting); rule_added, rule_revised,
 rule_moved, rule_retired (rule); link_card_domain_fetch_stopped,
-link_card_domain_images_stopped, link_card_domain_rule_removed (link_card_domain); role_granted, role_revoked, role_created,
+link_card_domain_images_stopped, link_card_domain_rule_removed (link_card_domain);
+domain_allow_added, domain_allow_removed (domain_allow); role_granted, role_revoked, role_created,
 role_updated, role_deleted (role); appeal_upheld, appeal_overturned (appeal);
 signup_block_added, signup_block_lifted (signup_block);
 hook_decision_applied, hook_decision_overridden, hook_appeal_upheld (hook_decision);
@@ -382,7 +383,10 @@ custom_emoji_updated, custom_emoji_enabled, custom_emoji_disabled,
 custom_emoji_deleted (custom_emoji); webhook_created, webhook_updated, webhook_deleted,
 webhook_enabled, webhook_disabled, webhook_secret_rotated (webhook);
 announcement_created, announcement_updated, announcement_published,
-announcement_withdrawn (announcement); invite_created, invite_revoked (invite).
+announcement_withdrawn (announcement); invite_created, invite_revoked (invite);
+domain_list_subscription_created, domain_list_subscription_updated,
+domain_list_subscription_deleted, domain_list_draft_accepted,
+domain_list_draft_rejected, domain_list_fetch_queued (domain_list_subscription).
 ```
 
 ### `my admin audit list`
@@ -554,7 +558,7 @@ Its help is the help of [`my admin`](#my-admin).
 
 ### `my admin domain`
 
-Subcommands: [`export`](#my-admin-domain-export), [`import`](#my-admin-domain-import), [`issue`](#my-admin-domain-issue), [`lift`](#my-admin-domain-lift), [`list`](#my-admin-domain-list).
+Subcommands: [`allow`](#my-admin-domain-allow), [`export`](#my-admin-domain-export), [`import`](#my-admin-domain-import), [`issue`](#my-admin-domain-issue), [`lift`](#my-admin-domain-lift), [`list`](#my-admin-domain-list), [`subscription`](#my-admin-domain-subscription).
 
 ```text
 Usage:
@@ -565,6 +569,9 @@ Usage:
   my admin domain export [-config <file>]
   my admin domain import [-apply] [-only <domains>] [-private-note <text>]
                          [-config <file>] <file | ->
+  my admin domain allow list|add|remove ...
+  my admin domain subscription list|add|update|remove|fetch|fetches|drafts|accept|reject ...
+                         (my admin domain subscription -help)
 
 Moderation actions on remote domains and their subdomains, in effect at
 once for federation and the timelines:
@@ -595,7 +602,73 @@ noop, plus reject_media and reject_reports. Rows whose actions are already in
 effect on the domain or a parent domain, duplicates, and invalid rows issue
 nothing. Nothing changes without -apply; -only keeps the rows of the listed
 domains. Imported actions last until lifted and are audited like any other.
+
+allow manages the allowlist of federation, the only domains the server
+federates with while the instance setting federation_scope is allowlist (see
+my admin domain allow -help).
 ```
+
+### `my admin domain allow`
+
+Subcommands: [`add`](#my-admin-domain-allow-add), [`list`](#my-admin-domain-allow-list), [`remove`](#my-admin-domain-allow-remove).
+
+```text
+Usage:
+  my admin domain allow list [-config <file>]
+  my admin domain allow add [-comment <text>] [-config <file>] <domain>
+  my admin domain allow remove [-config <file>] <domain>
+
+The allowlist of federation: while the instance setting federation_scope is
+allowlist, the server federates only with the allowed domains and their
+subdomains, and treats every other server as suspended. The domain actions on
+an allowed domain still apply. While federation_scope is open, the allowlist
+changes nothing, and it is kept for the next switch.
+
+add allows a domain and its subdomains; a domain already allowed keeps its
+allow. remove takes a domain off the list; while federation_scope is allowlist
+and no parent domain is allowed, the domain is cut off at once and the follows
+between the local accounts and its accounts end for good, each local user who
+loses one being notified. The domain may be given in U-labels (例え.jp); it is
+stored in IDNA A-labels. The allowlist holds at most 5000 domains. Every
+change is recorded in the audit log.
+```
+
+### `my admin domain allow add`
+
+```text
+my admin domain allow add [-comment <text>] [-config <file>] <domain>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-comment <string>` |  | a note for the moderators, never published |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+
+Its help is the help of [`my admin domain allow`](#my-admin-domain-allow).
+
+### `my admin domain allow list`
+
+```text
+my admin domain allow list [-config <file>]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+
+Its help is the help of [`my admin domain allow`](#my-admin-domain-allow).
+
+### `my admin domain allow remove`
+
+```text
+my admin domain allow remove [-config <file>] <domain>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+
+Its help is the help of [`my admin domain allow`](#my-admin-domain-allow).
 
 ### `my admin domain export`
 
@@ -670,6 +743,188 @@ my admin domain list [-domain <domain>] [-active] [-before <id>] [-limit <n>] [-
 | `-limit <int>` | `50` | number of actions to show, newest first |
 
 Its help is the help of [`my admin domain`](#my-admin-domain).
+
+### `my admin domain subscription`
+
+Subcommands: [`accept`](#my-admin-domain-subscription-accept), [`add`](#my-admin-domain-subscription-add), [`drafts`](#my-admin-domain-subscription-drafts), [`fetch`](#my-admin-domain-subscription-fetch), [`fetches`](#my-admin-domain-subscription-fetches), [`list`](#my-admin-domain-subscription-list), [`reject`](#my-admin-domain-subscription-reject), [`remove`](#my-admin-domain-subscription-remove), [`update`](#my-admin-domain-subscription-update).
+
+```text
+Usage:
+  my admin domain subscription list [-config <file>]
+  my admin domain subscription add -format <format> -title <title> [-mode <mode>]
+                                   [-suspend-as <kind>] [-silence-as <kind>]
+                                   [-reject-media=<bool>] [-reject-reports=<bool>]
+                                   [-public-comment=<bool>] [-config <file>] <url>
+  my admin domain subscription update [-title <title>] [-mode <mode>] [-suspend-as <kind>]
+                                      [-silence-as <kind>] [-reject-media=<bool>]
+                                      [-reject-reports=<bool>] [-public-comment=<bool>]
+                                      [-config <file>] <id>
+  my admin domain subscription remove [-lift-actions] [-config <file>] <id>
+  my admin domain subscription fetch [-config <file>] <id>
+  my admin domain subscription fetches [-limit <n>] [-config <file>] <id>
+  my admin domain subscription drafts [-config <file>] <id>
+  my admin domain subscription accept -all | -keys <keys> [-config <file>] <id>
+  my admin domain subscription reject -all | -keys <keys> [-config <file>] <id>
+
+Subscriptions to domain block lists that others publish, at an https URL. The
+worker fetches each list every day, and at once after add and update; a fetch
+reads at most 2 MiB and 5000 rows. Formats:
+
+  mastodon_csv   Mastodon's domain block CSV, as import reads it
+  mastodon_json  the answer of GET /api/v1/instance/domain_blocks of a Mastodon
+                 server that publishes its domain blocks; obfuscated domains are
+                 skipped
+  plain_text     one domain per line, each a suspend
+
+In the draft mode, what the list adds, changes, and removes waits as drafts:
+drafts lists them with their keys, accept issues or lifts them, and reject
+keeps them out until the list changes the domain's row. In the automatic mode,
+each fetch applies them, except a severity the server does not know and a fetch
+that would lift more than 10 actions and more than half of the subscription's,
+which stay drafts. A subscription never lifts nor replaces an action that it did
+not issue, and issues nothing on a domain that an action of the same kind
+already covers. If a person lifts an action of a subscription, the subscription
+does not issue it again until the list changes the domain's row.
+
+fetch fetches the list now and prints the outcome. A failed fetch changes
+nothing. remove keeps the actions the subscription issued unless -lift-actions
+is given; the kept actions are then like those a moderator issued.
+```
+
+### `my admin domain subscription accept`
+
+```text
+my admin domain subscription accept -all | -keys <keys> [-config <file>] <id>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-all` | `false` | every draft of the subscription |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-keys <string>` |  | the keys of the drafts, separated by commas, as drafts shows them |
+
+Its help is the help of [`my admin domain subscription`](#my-admin-domain-subscription).
+
+### `my admin domain subscription add`
+
+```text
+my admin domain subscription add -format <format> -title <title> [-mode <mode>]
+                                 [-suspend-as <kind>] [-silence-as <kind>]
+                                 [-reject-media=<bool>] [-reject-reports=<bool>]
+                                 [-public-comment=<bool>] [-config <file>] <url>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-format <string>` |  | mastodon_csv, mastodon_json, or plain_text (required) |
+| `-mode <string>` |  | draft (the default for add) or automatic |
+| `-public-comment` |  | copy the public comment of the list's rows to the actions (false for add) |
+| `-reject-media` |  | issue the reject_media of the list's rows (true for add) |
+| `-reject-reports` |  | issue the reject_reports of the list's rows (true for add) |
+| `-silence-as <string>` |  | what a silence of the list issues: limit (the default for add) or ignore |
+| `-suspend-as <string>` |  | what a suspend of the list issues: suspend (the default for add), limit, or ignore |
+| `-title <string>` |  | the name of the subscription (required for add) |
+
+Its help is the help of [`my admin domain subscription`](#my-admin-domain-subscription).
+
+### `my admin domain subscription drafts`
+
+```text
+my admin domain subscription drafts [-config <file>] <id>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+
+Its help is the help of [`my admin domain subscription`](#my-admin-domain-subscription).
+
+### `my admin domain subscription fetch`
+
+```text
+my admin domain subscription fetch [-config <file>] <id>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+
+Its help is the help of [`my admin domain subscription`](#my-admin-domain-subscription).
+
+### `my admin domain subscription fetches`
+
+```text
+my admin domain subscription fetches [-limit <n>] [-config <file>] <id>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-limit <int>` | `20` | number of fetches to show, newest first |
+
+Its help is the help of [`my admin domain subscription`](#my-admin-domain-subscription).
+
+### `my admin domain subscription list`
+
+```text
+my admin domain subscription list [-config <file>]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+
+Its help is the help of [`my admin domain subscription`](#my-admin-domain-subscription).
+
+### `my admin domain subscription reject`
+
+```text
+my admin domain subscription reject -all | -keys <keys> [-config <file>] <id>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-all` | `false` | every draft of the subscription |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-keys <string>` |  | the keys of the drafts, separated by commas, as drafts shows them |
+
+Its help is the help of [`my admin domain subscription`](#my-admin-domain-subscription).
+
+### `my admin domain subscription remove`
+
+```text
+my admin domain subscription remove [-lift-actions] [-config <file>] <id>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-lift-actions` | `false` | lift the actions the subscription issued; without it, they stay |
+
+Its help is the help of [`my admin domain subscription`](#my-admin-domain-subscription).
+
+### `my admin domain subscription update`
+
+```text
+my admin domain subscription update [-title <title>] [-mode <mode>] [-suspend-as <kind>]
+                                    [-silence-as <kind>] [-reject-media=<bool>]
+                                    [-reject-reports=<bool>] [-public-comment=<bool>]
+                                    [-config <file>] <id>
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+| `-mode <string>` |  | draft (the default for add) or automatic |
+| `-public-comment` |  | copy the public comment of the list's rows to the actions (false for add) |
+| `-reject-media` |  | issue the reject_media of the list's rows (true for add) |
+| `-reject-reports` |  | issue the reject_reports of the list's rows (true for add) |
+| `-silence-as <string>` |  | what a silence of the list issues: limit (the default for add) or ignore |
+| `-suspend-as <string>` |  | what a suspend of the list issues: suspend (the default for add), limit, or ignore |
+| `-title <string>` |  | the name of the subscription (required for add) |
+
+Its help is the help of [`my admin domain subscription`](#my-admin-domain-subscription).
 
 ### `my admin emoji`
 
@@ -900,11 +1155,12 @@ Its help is the help of [`my admin emoji`](#my-admin-emoji).
 
 ### `my admin federation`
 
-Subcommands: [`sever`](#my-admin-federation-sever).
+Subcommands: [`scope`](#my-admin-federation-scope), [`sever`](#my-admin-federation-sever).
 
 ```text
 Usage:
   my admin federation sever -direction in|out|both [-config <file>]
+  my admin federation scope [-apply] [-config <file>] [open|allowlist]
 
 The follows between the local accounts and the remote ones.
 
@@ -916,6 +1172,38 @@ federation is widened again. Where the federation mode sends them, the remote
 side gets a Reject of its Follow (in) or an Undo of the local account's Follow
 (out); in a mode that does not, nothing is sent. Changing the federation mode
 never severs anything by itself.
+
+scope shows the instance setting federation_scope and, given open or
+allowlist, changes it (see my admin federation scope -help).
+```
+
+### `my admin federation scope`
+
+```text
+my admin federation scope [-apply] [-config <file>] [open|allowlist]
+```
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `-apply` | `false` | switch to allowlist after showing what it ends |
+| `-config <string>` |  | TOML config file (default: $MY_CONFIG) |
+
+```text
+Usage:
+  my admin federation scope [-apply] [-config <file>] [open|allowlist]
+
+The instance setting federation_scope: open federates with every server that no
+domain action suspends, allowlist only with the domains of the allowlist (my
+admin domain allow) and their subdomains, whose domain actions still apply.
+While it is allowlist, ActivityPub GETs need a signature from an allowed
+server, whatever authorized_fetch says.
+
+Without a value, scope prints the setting. Switching to allowlist first prints
+how many follows between the local accounts and the servers that the allowlist
+does not allow it would end, and the servers with the most; nothing changes
+without -apply. The switch ends those follows for good, notifying each local
+user who loses one; switching back to open restores none of them. Switching to
+open needs no -apply. The change is recorded in the audit log.
 ```
 
 ### `my admin federation sever`

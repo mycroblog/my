@@ -185,6 +185,27 @@ func (q *Queries) EraseFeedTagEntriesOfEntries(ctx context.Context, ids []string
 	return err
 }
 
+const eraseFeedTagFollowsOf = `-- name: EraseFeedTagFollowsOf :execrows
+
+DELETE FROM feed_tag_follows WHERE feed_tag_follows.account_id = $1 AND feed_tag_follows.tag_id IN (
+  SELECT f.tag_id FROM feed_tag_follows f WHERE f.account_id = $1
+  ORDER BY f.tag_id LIMIT $2)
+`
+
+type EraseFeedTagFollowsOfParams struct {
+	AccountID string
+	Lim       int32
+}
+
+// The hashtags that an account follows (data-model 4.6).
+func (q *Queries) EraseFeedTagFollowsOf(ctx context.Context, arg EraseFeedTagFollowsOfParams) (int64, error) {
+	result, err := q.db.Exec(ctx, eraseFeedTagFollowsOf, arg.AccountID, arg.Lim)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const eraseListMembersAsMember = `-- name: EraseListMembersAsMember :execrows
 DELETE FROM list_members WHERE list_members.member_account_id = $1 AND list_members.list_id IN (
   SELECT m.list_id FROM list_members m WHERE m.member_account_id = $1

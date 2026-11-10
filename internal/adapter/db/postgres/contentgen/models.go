@@ -86,6 +86,52 @@ type CustomEmojiSetting struct {
 	Category        *string
 }
 
+type Draft struct {
+	ID        string
+	AccountID string
+	CreatedAt time.Time
+}
+
+type DraftAttachment struct {
+	DraftID     string
+	Position    int32
+	MediaID     string
+	Description *string
+}
+
+type DraftContent struct {
+	DraftID           string
+	SourceText        string
+	SpoilerText       string
+	Sensitive         bool
+	Language          *string
+	Visibility        string
+	InReplyToStatusID *string
+	QuotedStatusID    *string
+	UpdatedAt         time.Time
+}
+
+type DraftInteractionPolicy struct {
+	DraftID  string
+	Kind     string
+	Approval string
+	Audience string
+}
+
+type DraftPoll struct {
+	DraftID         string
+	Multiple        bool
+	HideTotals      bool
+	DurationSeconds int32
+}
+
+type DraftSchedule struct {
+	ID        string
+	DraftID   string
+	PublishAt time.Time
+	CreatedAt time.Time
+}
+
 type Favourite struct {
 	AccountID string
 	StatusID  string
@@ -284,6 +330,13 @@ type RemoteStatusRevision struct {
 	ActivityUri            *string
 	HtmlPolicyVersion      int32
 	OmittedAttachmentCount int32
+}
+
+type ScheduledDraft struct {
+	DraftID    string
+	ScheduleID string
+	AccountID  string
+	PublishAt  time.Time
 }
 
 type Status struct {

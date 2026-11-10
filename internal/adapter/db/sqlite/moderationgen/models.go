@@ -17,6 +17,14 @@ type AccountRestriction struct {
 	EffectiveUntil sql.NullInt64
 }
 
+type AllowlistCutoff struct {
+	ID             string
+	Cause          string
+	Domain         sql.NullString
+	IssuedByUserID sql.NullString
+	OccurredAt     int64
+}
+
 type AuditLogEntry struct {
 	ID            string
 	ActorKind     string
@@ -27,6 +35,46 @@ type AuditLogEntry struct {
 	TargetLabel   string
 	SourceEventID sql.NullString
 	OccurredAt    int64
+}
+
+type DomainAllow struct {
+	Domain          string
+	Comment         sql.NullString
+	CreatedByUserID sql.NullString
+	CreatedAt       int64
+}
+
+type DomainListDraftRejection struct {
+	ID                string
+	SubscriptionID    string
+	ChangeKind        string
+	Domain            string
+	Kind              string
+	EntrySinceFetchID sql.NullString
+	ActionID          sql.NullString
+	RejectedByUserID  sql.NullString
+	RejectedAt        int64
+}
+
+type DomainListEntry struct {
+	SubscriptionID string
+	Domain         string
+	Severity       string
+	RejectMedia    int64
+	RejectReports  int64
+	PublicComment  sql.NullString
+	Obfuscate      int64
+	SinceFetchID   string
+}
+
+type DomainListFetch struct {
+	ID             string
+	SubscriptionID string
+	Outcome        string
+	HttpStatus     sql.NullInt64
+	ErrorCode      sql.NullString
+	EntryCount     int64
+	FetchedAt      int64
 }
 
 type DomainModerationAction struct {
@@ -159,4 +207,10 @@ type SignupBlock struct {
 	CreatedByUserID    sql.NullString
 	ExpiresAt          sql.NullInt64
 	CreatedAt          int64
+}
+
+type SubscriptionDomainAction struct {
+	ActionID       string
+	SubscriptionID string
+	FetchID        sql.NullString
 }
