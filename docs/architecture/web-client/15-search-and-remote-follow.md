@@ -18,6 +18,10 @@
   見つからない（404）・制限された（429）ときはクライアントのカタログの文言、それ以外はサーバーの理由を、入力欄のエラー（`aria-invalid` と `aria-describedby`）に出し、`useNotice` の `inPlace` で読み上げる。フォーカスは入力欄に残る。エラーは、それを起こした検索語のあいだだけ出し、入力を変えると消える。
 - **フォローの承認待ち**: ほかのサーバーのアカウントのフォローは、相手のサーバーが `Accept` を返すまで `requested` のままになる（[federation.md](../federation.md)）。
   フォローのボタンは「リクエスト中」になり、その下に、承認を待っているサーバー（`Account.domain`）を示す文を出して、ボタンの説明（`aria-describedby`）にする。押すと、ローカルのリクエストと同じく取り消しを確かめる。
+- **ほかのサーバーのボタンから来る画面**（`/intent`、[screens/intent.md](screens/intent.md)）: WebFinger の Activity Intents（FEP-3b86、[federation.md §6.5](../federation.md#65-webfinger-の拡張)）が開く。`?follow=` はアカウント、`?reply=` は投稿のアドレスで、ルートの `validateSearch` が 2048 文字までの空でない文字列だけを残す（S3）。
+  ルートは `requireSignIn` でサインインを求める。部品は `features/search` の `ActivityIntent`（ロジックは `useActivityIntent`）で、開いただけでは何も探さず、ボタンを押すと mutation で `GET /accounts/lookup?resolve=true` か `GET /statuses/lookup`（`api/statusLookup.ts`）を呼ぶ（R7、FEP-3b86 §6.1）。
+  見つけたアカウントか投稿をプロフィールか投稿の query のキャッシュに入れ、ルートが履歴を置き換えてプロフィール（`/@{acct}`）か投稿の画面に移る。投稿なら移った後に `features/compose` の `useReply` で返信を始める。失敗は 404・429・取り込まない連合の向きをクライアントのカタログの文言、それ以外をサーバーの理由で、ボタンの下に出して `useNotice` の `inPlace` で読み上げる。
+  テストは `features/search/intent.test.tsx`（サインインへの移動、押すまで探さないこと、プロフィールと返信のフォーム、404・429、アドレスの無いリンク）と E2E（`e2e/intent.spec.ts`。幅ごとの axe・横スクロール・プロフィールへの移動）。
 - **フォローの一覧**: ほかのサーバーのアカウントも、ローカルのアカウントと同じ行に `@username@domain` のハンドルで並び、そのプロフィール（`/@username@domain`）へリンクする。
 - **テスト**: `features/search/search.test.tsx` が、キーボードでの検索からプロフィールへの移動、URL での検索、404・429・その他の失敗、サインインしていないときの検索、承認待ちのフォローと取り消し、フォローの一覧のリモートのアカウントを MSW で検査する。
   `features/search/statusSearch.test.tsx` が、全文検索のないサーバーとサインインしていない人の画面、送ったときだけの検索、IME の変換中、短いページと空のページの続き、空の説明、503・429・404 を MSW で検査する。

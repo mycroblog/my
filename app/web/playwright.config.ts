@@ -31,6 +31,7 @@ const widthSpecs = [
   "bookmarks",
   "emoji-picker",
   "federated",
+  "intent",
   "lists",
   "profile-save",
   "reactions",
