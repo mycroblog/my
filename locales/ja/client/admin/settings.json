@@ -1294,5 +1294,85 @@
   "admin.settings.auto_delete.confirm.confirm": {
     "defaultMessage": "保存して通知する",
     "description": "Button that saves the stricter maximum, which notifies the bound accounts."
+  },
+  "admin.settings.federation.scope": {
+    "defaultMessage": "連合の範囲",
+    "description": "Label of the radio buttons of the federation scope setting (federation_scope): which servers this server federates with."
+  },
+  "admin.settings.federation.scope.description": {
+    "defaultMessage": "このサーバーがどのサーバーと連合するか。",
+    "description": "Description of the federation scope setting."
+  },
+  "admin.settings.federation.scope.open": {
+    "defaultMessage": "すべてのサーバー",
+    "description": "Choice of the federation scope: every server that no domain action suspends."
+  },
+  "admin.settings.federation.scope.open.description": {
+    "defaultMessage": "ドメインへの処分で凍結していない、すべてのサーバーと連合します。",
+    "description": "Description of the federation scope All servers."
+  },
+  "admin.settings.federation.scope.allowlist": {
+    "defaultMessage": "許可したドメインだけ",
+    "description": "Choice of the federation scope: only the domains on the allowlist."
+  },
+  "admin.settings.federation.scope.allowlist.description": {
+    "defaultMessage": "許可したドメインとそのサブドメインとだけ連合します。ほかのサーバーは凍結したものとして扱い、ActivityPub の取得には許可したサーバーの署名を求めます。",
+    "description": "Description of the federation scope Allowed domains only."
+  },
+  "admin.settings.federation.scope.allowlist_link": {
+    "defaultMessage": "許可したドメイン",
+    "description": "Link from the federation scope to the allowlist; shown to people who manage domain actions."
+  },
+  "admin.settings.federation.scope.confirm.title": {
+    "defaultMessage": "許可したドメインとだけ連合しますか？",
+    "description": "Title of the confirmation before limiting the federation to the allowlist."
+  },
+  "admin.settings.federation.scope.confirm.loading": {
+    "defaultMessage": "切れるフォローを数えています…",
+    "description": "Shown in the confirmation of limiting the federation while the count loads."
+  },
+  "admin.settings.federation.scope.confirm.failed": {
+    "defaultMessage": "切れるフォローを数えられませんでした。",
+    "description": "Shown in the confirmation of limiting the federation when the count failed."
+  },
+  "admin.settings.federation.scope.confirm.count_again": {
+    "defaultMessage": "もう一度数える",
+    "description": "Button that counts again the follows the switch would end after a failure."
+  },
+  "admin.settings.federation.scope.confirm.none": {
+    "defaultMessage": "切れるフォローはありません。ここの人がフォローしている、またはフォローされているサーバーは、どれも許可されています。",
+    "description": "Shown in the confirmation of limiting the federation when no follow ends."
+  },
+  "admin.settings.federation.scope.confirm.count": {
+    "defaultMessage": "{follows, number} 件のフォローが切れます。ここの {accounts, number} 個のアカウントと、{servers, number} のサーバーのあいだのフォローです。",
+    "description": "How many follows the switch to the allowlist ends, how many local accounts lose one, and with how many servers."
+  },
+  "admin.settings.federation.scope.confirm.top": {
+    "defaultMessage": "切れるフォローの多いサーバー:",
+    "description": "Heading of the list of the servers with the most follows the switch ends."
+  },
+  "admin.settings.federation.scope.confirm.domain": {
+    "defaultMessage": "{domain}: {count, number} 件",
+    "description": "One server of the list of the servers with the most follows the switch ends. {domain} is the domain; {count} how many."
+  },
+  "admin.settings.federation.scope.confirm.permanent": {
+    "defaultMessage": "フォローは切れたまま戻りません。「すべてのサーバー」に戻しても、あとでサーバーを許可しても戻りません。",
+    "description": "Bullet of the confirmation of limiting the federation: the follows do not come back."
+  },
+  "admin.settings.federation.scope.confirm.notified": {
+    "defaultMessage": "フォローを失ったここの人には、その件数を通知します。",
+    "description": "Bullet of the confirmation of limiting the federation: the users are notified."
+  },
+  "admin.settings.federation.scope.confirm.signatures": {
+    "defaultMessage": "許可したサーバーの署名の無い ActivityPub の取得を断るので、署名しないサーバーやクローラーからは公開の投稿が見えなくなります。",
+    "description": "Bullet of the confirmation of limiting the federation: unsigned fetches are refused."
+  },
+  "admin.settings.federation.scope.confirm.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button of the confirmation of limiting the federation that closes it without saving."
+  },
+  "admin.settings.federation.scope.confirm.confirm": {
+    "defaultMessage": "切り替えて保存",
+    "description": "Button of the confirmation of limiting the federation that saves the settings."
   }
 }

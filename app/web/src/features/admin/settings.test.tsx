@@ -8,7 +8,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { beforeEach, describe, expect, test } from "vitest";
 import { instanceFixture, mediaFixture, type Schemas } from "../../test/fixtures";
-import { apiBase, operatorHandler, signedInHandler } from "../../test/msw/http";
+import { apiBase, operatorHandler, problem, signedInHandler } from "../../test/msw/http";
 import { nodeUploadFile } from "../../test/multipart";
 import { server } from "../../test/msw/server";
 import { renderApp } from "../../test/render";
@@ -643,6 +643,122 @@ describe("the server's policies", () => {
     ).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     expect(settings.patches).toEqual([{ values: { federation_mode: "both" } }]);
+  });
+
+  describe("limiting the federation to the allowlist", () => {
+    /** Plays GET /admin/settings/federation_scope/impact, answering `impact` once `ready` resolves; counts the reads. */
+    function impactServer(
+      impact: Partial<Schemas["FederationScopeImpact"]>,
+      ready: Promise<unknown> = Promise.resolve(),
+    ) {
+      const reads = { count: 0 };
+      server.use(
+        http.get(`${apiBase}/admin/settings/federation_scope/impact`, async () => {
+          reads.count++;
+          await ready;
+          return HttpResponse.json({
+            scope: "open",
+            follows: 42,
+            local_accounts: 7,
+            domains: 3,
+            top_domains: [
+              { domain: "xn--r8jz45g.jp", follows: 30 },
+              { domain: "other.example", follows: 10 },
+            ],
+            ...impact,
+          } satisfies Schemas["FederationScopeImpact"]);
+        }),
+      );
+      return reads;
+    }
+
+    test("shows the follows the switch ends, which must arrive before it can be confirmed, and saves once confirmed", async () => {
+      const settings = settingsServer();
+      let answer: () => void = () => undefined;
+      const ready = new Promise<unknown>((resolve) => {
+        answer = () => {
+          resolve(undefined);
+        };
+      });
+      const reads = impactServer({}, ready);
+      const { user } = await renderApp({ path: "/admin/settings/federation" });
+      const scope = await screen.findByRole("radiogroup", { name: "Federation scope" });
+      expect(within(scope).getByRole("radio", { name: "All servers" })).toBeChecked();
+      await user.click(within(scope).getByRole("radio", { name: "Allowed domains only" }));
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+      const dialog = await screen.findByRole("alertdialog", { name: "Federate with allowed domains only?" });
+      expect(within(dialog).getByText("Counting the follows the switch would end…")).toBeInTheDocument();
+      expect(within(dialog).getByRole("button", { name: "Switch and save" })).toBeDisabled();
+      expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveFocus();
+      answer();
+      expect(
+        await within(dialog).findByText("42 follows end, of 7 local accounts with 3 servers."),
+      ).toBeInTheDocument();
+      expect(within(dialog).getByText("⁦例え.jp (xn--r8jz45g.jp)⁩: 30 follows")).toBeInTheDocument();
+      expect(reads.count).toBeGreaterThan(0);
+      expect(settings.patches).toEqual([]);
+
+      await user.click(within(dialog).getByRole("button", { name: "Switch and save" }));
+      expect(
+        await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+      ).toBeInTheDocument();
+      expect(settings.patches).toEqual([{ values: { federation_scope: "allowlist" } }]);
+    });
+
+    test("a count that fails can be tried again, and cancelling saves nothing", async () => {
+      const settings = settingsServer();
+      let failing = true;
+      server.use(
+        http.get(`${apiBase}/admin/settings/federation_scope/impact`, () =>
+          failing
+            ? problem(500, "about:blank", "Internal Server Error")
+            : HttpResponse.json({
+                scope: "open",
+                follows: 0,
+                local_accounts: 0,
+                domains: 0,
+                top_domains: [],
+              } satisfies Schemas["FederationScopeImpact"]),
+        ),
+      );
+      const { user } = await renderApp({ path: "/admin/settings/federation" });
+      const scope = await screen.findByRole("radiogroup", { name: "Federation scope" });
+      await user.click(within(scope).getByRole("radio", { name: "Allowed domains only" }));
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+
+      const dialog = await screen.findByRole("alertdialog", { name: "Federate with allowed domains only?" });
+      expect(
+        await within(dialog).findByText("The follows the switch would end could not be counted."),
+      ).toBeInTheDocument();
+      expect(within(dialog).getByRole("button", { name: "Switch and save" })).toBeDisabled();
+      failing = false;
+      await user.click(within(dialog).getByRole("button", { name: "Count again" }));
+      expect(await within(dialog).findByText(/^No follow ends/)).toBeInTheDocument();
+      await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+      await waitFor(() => {
+        expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      });
+      expect(settings.patches).toEqual([]);
+    });
+
+    test("going back to all servers saves without asking", async () => {
+      server.use(
+        http.get(`${apiBase}/admin/settings`, () =>
+          HttpResponse.json(instanceSettingsFixture({ federation_scope: "allowlist" })),
+        ),
+      );
+      const settings = settingsServer();
+      const { user } = await renderApp({ path: "/admin/settings/federation" });
+      const scope = await screen.findByRole("radiogroup", { name: "Federation scope" });
+      await user.click(within(scope).getByRole("radio", { name: "All servers" }));
+      await user.click(screen.getByRole("button", { name: "Save the settings" }));
+      expect(
+        await screen.findByText("Saved the settings. They take effect at once, and the audit log records each change."),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+      expect(settings.patches).toEqual([{ values: { federation_scope: "open" } }]);
+    });
   });
 
   describe("the one-person server", () => {

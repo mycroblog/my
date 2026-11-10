@@ -77,6 +77,14 @@ export function loginProvidersOnlyImpactQueryOptions(api: Api) {
 }
 
 /**
+ * What switching federation_scope to `allowlist` with the allowlist as it is would end (ADR-0159 §3): the follows, the
+ * local accounts that lose one, and the servers with the most of them.
+ */
+export function federationScopeImpactQueryOptions(api: Api) {
+  return api.query.queryOptions("get", "/admin/settings/federation_scope/impact");
+}
+
+/**
  * Sets some instance settings together, all or none (PATCH /admin/settings, one audited change each), as the
  * options of useMutation. Returns every setting as it is now.
  */

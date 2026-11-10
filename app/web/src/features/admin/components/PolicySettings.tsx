@@ -8,7 +8,8 @@
 //   featured accounts;
 // a one-person server, as saved, leaves out who may sign up, the invites, the public timelines, the landing page and the
 // featured accounts, which make no sense for one person (ADR-0152 §8).
-// - federation: its direction (which asks before it narrows, ADR-0006), remote media and link cards, who may read the
+// - federation: its direction (which asks before it narrows, ADR-0006), its scope (which shows what limiting it to the
+//   allowlist ends and asks first, ADR-0159 §3), remote media and link cards, who may read the
 //   list of the domain actions, and the decision hooks (ADR-0147);
 // - discovery: what the server states to search engines and AI crawlers, and which posts the post search covers while
 //   the server has one (ADR-0149 §5);
@@ -24,6 +25,7 @@ import {
   type FormActionResult,
   Hint,
   InlineError,
+  Link,
   Radio,
   RadioGroup,
   Select,
@@ -36,7 +38,7 @@ import { type ReactNode, useId } from "react";
 import { usePostSearchAvailable } from "../../../lib/fullTextSearch";
 import { type ClientMessageKey, useT } from "../../../lib/i18n";
 import { visibilities, visibilityLabel } from "../../compose";
-import { Section } from "../../moderation";
+import { domainInText, Section, useHasPermission } from "../../moderation";
 import { useVoiceAvailable } from "../../voice";
 import {
   type FederationNarrowing,
@@ -151,6 +153,18 @@ const choices = {
       value: "off",
       label: "client:admin.settings.federation.mode.off",
       description: "client:admin.settings.federation.mode.off.description",
+    },
+  ],
+  federation_scope: [
+    {
+      value: "open",
+      label: "client:admin.settings.federation.scope.open",
+      description: "client:admin.settings.federation.scope.open.description",
+    },
+    {
+      value: "allowlist",
+      label: "client:admin.settings.federation.scope.allowlist",
+      description: "client:admin.settings.federation.scope.allowlist.description",
     },
   ],
   remote_media_policy: [
@@ -405,6 +419,7 @@ function PolicyFormFrame({ form, children }: { form: PolicyForm; children: React
         </Button>
       </FormActionBar>
       <LoginProvidersOnlyDialog confirmation={form.limitConfirmation} />
+      <FederationScopeDialog confirmation={form.scopeConfirmation} />
       {form.retentionConfirmation.tightening !== null && (
         <RetentionDialog
           tightening={form.retentionConfirmation.tightening}
@@ -883,6 +898,7 @@ function ContentSections({ form }: { form: PolicyForm }) {
 
 function FederationSections({ form }: { form: PolicyForm }) {
   const t = useT();
+  const canManageDomains = useHasPermission("manage_domains");
   return (
     <>
       <Section surface="card" title={t("client:admin.settings.federation.title")}>
@@ -892,6 +908,21 @@ function FederationSections({ form }: { form: PolicyForm }) {
           label={t("client:admin.settings.federation.mode")}
           description={t("client:admin.settings.federation.mode.description")}
         />
+        <Stack gap="2">
+          <PolicyRadios
+            form={form}
+            setting="federation_scope"
+            label={t("client:admin.settings.federation.scope")}
+            description={t("client:admin.settings.federation.scope.description")}
+          />
+          {canManageDomains && (
+            <div>
+              <Link href="/moderation/domain-actions/allowed" variant="standalone">
+                {t("client:admin.settings.federation.scope.allowlist_link")}
+              </Link>
+            </div>
+          )}
+        </Stack>
         <PolicyCheckbox
           form={form}
           setting="authorized_fetch"
@@ -1155,6 +1186,87 @@ function LoginProvidersOnlyDialog({ confirmation }: { confirmation: PolicyForm["
           </Button>
           <Button variant="danger" onPress={confirmation.confirm}>
             {t("client:admin.settings.login_providers_only.confirm.confirm")}
+          </Button>
+        </DialogActions>
+      </Stack>
+    </Dialog>
+  );
+}
+
+/**
+ * Asks before the federation is limited to the allowlist (ADR-0159 §3): an alert dialog (WAI-ARIA APG) that says how
+ * many follows the switch ends for good, how many local accounts lose one and with how many servers, the servers with
+ * the most of them, and what else changes. The switch cannot be confirmed before the count has arrived; a failed count
+ * can be tried again. The cancel button has the focus first.
+ */
+function FederationScopeDialog({ confirmation }: { confirmation: PolicyForm["scopeConfirmation"] }) {
+  const t = useT();
+  const { impact } = confirmation;
+  return (
+    <Dialog
+      role="alertdialog"
+      closeLabel={null}
+      size="md"
+      title={t("client:admin.settings.federation.scope.confirm.title")}
+      isOpen={confirmation.isOpen}
+      onOpenChange={(open) => {
+        if (!open) confirmation.cancel();
+      }}
+    >
+      <Stack gap="4">
+        {impact === undefined ? (
+          confirmation.isFailed ? (
+            <Stack gap="2" align="start">
+              <InlineError size="inherit">{t("client:admin.settings.federation.scope.confirm.failed")}</InlineError>
+              <Button size="sm" onPress={confirmation.retry}>
+                {t("client:admin.settings.federation.scope.confirm.count_again")}
+              </Button>
+            </Stack>
+          ) : (
+            <p>{t("client:admin.settings.federation.scope.confirm.loading")}</p>
+          )
+        ) : impact.follows === 0 ? (
+          <p>{t("client:admin.settings.federation.scope.confirm.none")}</p>
+        ) : (
+          <>
+            <p>
+              {t("client:admin.settings.federation.scope.confirm.count", {
+                follows: impact.follows,
+                accounts: impact.local_accounts,
+                servers: impact.domains,
+              })}
+            </p>
+            {impact.top_domains.length > 0 && (
+              <Stack gap="2">
+                <Text as="p" weight="semibold">
+                  {t("client:admin.settings.federation.scope.confirm.top")}
+                </Text>
+                <Stack as="ul" marker="disc" gap="1">
+                  {impact.top_domains.map((item) => (
+                    <li key={item.domain}>
+                      {t("client:admin.settings.federation.scope.confirm.domain", {
+                        domain: domainInText(t, item.domain),
+                        count: item.follows,
+                      })}
+                    </li>
+                  ))}
+                </Stack>
+              </Stack>
+            )}
+          </>
+        )}
+        <Stack as="ul" marker="disc" gap="2">
+          <li>{t("client:admin.settings.federation.scope.confirm.permanent")}</li>
+          <li>{t("client:admin.settings.federation.scope.confirm.notified")}</li>
+          <li>{t("client:admin.settings.federation.scope.confirm.signatures")}</li>
+        </Stack>
+        <DialogActions>
+          {/* The least destructive choice has the focus first (APG, alert dialog pattern). */}
+          <Button autoFocus onPress={confirmation.cancel}>
+            {t("client:admin.settings.federation.scope.confirm.cancel")}
+          </Button>
+          <Button variant="danger" isDisabled={impact === undefined} onPress={confirmation.confirm}>
+            {t("client:admin.settings.federation.scope.confirm.confirm")}
           </Button>
         </DialogActions>
       </Stack>
