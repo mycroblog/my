@@ -14,12 +14,9 @@ export const repoRoot = fileURLToPath(new URL("../../../", import.meta.url));
  */
 export const publishedDirs = ["operations", "reference", "guide", "developers", "plugins"] as const;
 
-/** The documents of a published directory that are for contributors, read on GitHub. */
-const unpublishedFiles = new Set(["docs/reference/commands.md"]);
-
 /** Whether a repository path (docs/operations/running.md) is a published document. */
 export function isPublished(path: string): boolean {
-  if (!path.endsWith(".md") || unpublishedFiles.has(path)) {
+  if (!path.endsWith(".md")) {
     return false;
   }
   return publishedDirs.some((dir) => path.startsWith(`docs/${dir}/`));

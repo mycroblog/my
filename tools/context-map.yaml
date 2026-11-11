@@ -1,3 +1,2 @@
 # SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/reference/commands.md"]
 checks: [go]

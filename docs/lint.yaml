@@ -55,8 +55,6 @@ operator:
   - "docs/reference/**"
   - "docs/developers/**"
   - "docs/plugins/**"
-  # The development tasks, for contributors: it may cite the ADR a task's rule comes from.
-  - "!docs/reference/commands.md"
 
 # Written for people who run an instance, so they use none of these words of the project's own development, in
 # prose or in code; HTML comments do not count. A passage that needs one belongs in a contributor document.
@@ -69,8 +67,6 @@ maintainer-terms:
     - "docs/reference/**"
     - "docs/developers/**"
     - "docs/plugins/**"
-    # The development tasks, for contributors.
-    - "!docs/reference/commands.md"
     # SECURITY.md tells a reporter not to open a public pull request, which is the word it needs; it is not in the
     # list above for that reason.
   terms:
@@ -201,8 +197,7 @@ adrs:
 
 # The names users and operators see, which the code defines and a document must mention (agentkit docs inventory):
 # the commands of `my` (README.md, docs/operations/, docs/reference/), the metrics (docs/operations/running.md), the
-# webhook event types (docs/reference/webhooks.md), the build tags (docs/reference/build-tags.md), the tasks that
-# `scripts/task.sh --list` lists (docs/reference/commands.md), and the job types and periodic jobs
+# webhook event types (docs/reference/webhooks.md), the build tags (docs/reference/build-tags.md), and the job types and periodic jobs
 # (docs/reference/jobs.md). Exclude a name here only with the reason in a comment;
 # the check fails when an excluded name is mentioned after all or no longer defined.
 inventory:
@@ -211,6 +206,5 @@ inventory:
     metrics: []
     webhook-events: []
     build-tags: []
-    tasks: []
     job-types: []
     job-schedules: []

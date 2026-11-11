@@ -40,7 +40,6 @@ userdocs:
 entries:
   - paths: ["Taskfile.yml", ".github/**", ".claude/**"]
     docs: ["docs/adr/0079-ci-single-gate-merge-queue.md", "docs/adr/0081-generated-files-policy.md", "docs/agents/releasing.md"]
-    userdocs: ["docs/reference/commands.md"]
     checks: [docs, go, i18n, api, ui, web, docker, agentkit, mykit]
     shared: true
   - paths: ["go.mod", "go.sum", "go.work", ".golangci.yml"]

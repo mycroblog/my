@@ -137,7 +137,6 @@ func (d *D) RegisterJobs(r *queue.Registry, p *Projectors, s *queue.Scheduler, s
 	"docs/operations/running.md":              "| `my.queue.ready` | Gauge |\n\nThe job `my.queue.lost.count` is something else.\n",
 	"docs/reference/webhooks.md":              "| `report.created` | ... |\n",
 	"docs/reference/build-tags.md":            "| `no_sqlite` | ... |\n",
-	"docs/reference/commands.md":              "| `check` [`CHECKS=...`] | ... |\n| `go:test` / `db:up DB=x` | ... |\n",
 }
 
 func writeRepo(t *testing.T, files map[string]string) (string, []string) {
@@ -174,7 +173,6 @@ func TestInventoryCollects(t *testing.T) {
 		"metrics":        {"my.queue.ready", "my.queue.lost"},
 		"webhook-events": {"report.created", "status.created"},
 		"build-tags":     {"no_sqlite", "no_valkey"},
-		"tasks":          {"check", "db:up", "go:test"},
 		"job-types": {"federation.deliver", "federation.unlisted", "instance.closure", "queue.purge",
 			"<unresolved someVariable>"},
 		"job-schedules": {"federation.deliver", "federation.sourceless", "queue.purge"},
