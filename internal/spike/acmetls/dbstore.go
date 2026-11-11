@@ -211,18 +211,23 @@ func (s *DBStore) Load(ctx context.Context, id string) (*tls.Certificate, error)
 	return &c, nil
 }
 
-// Backoff is the wait after the n-th consecutive failure: 15 minutes doubled each time, at most a
-// day. It keeps one identifier under Let's Encrypt's 5 failed authorizations per hour, and once
-// at the cap, at one failure a day, it never drains the 1,152 consecutive failures that pause an account.
+// Backoff is the wait after the n-th consecutive failure: 1 minute, 10 minutes, 100 minutes, then
+// a day, the schedule of Let's Encrypt's integration guide (checked 2026-11-11). Three attempts in
+// the first hour stay under the 5 failed authorizations per identifier per hour, and once a day
+// never drains the 1,152 consecutive failures that pause an account.
 func Backoff(n int) time.Duration {
-	if n <= 0 {
+	switch {
+	case n <= 0:
 		return 0
+	case n == 1:
+		return time.Minute
+	case n == 2:
+		return 10 * time.Minute
+	case n == 3:
+		return 100 * time.Minute
+	default:
+		return 24 * time.Hour
 	}
-	d := 15 * time.Minute
-	for i := 1; i < n && d < 24*time.Hour; i++ {
-		d *= 2
-	}
-	return min(d, 24*time.Hour)
 }
 
 // NextAttempt returns the earliest time an order for host may be placed, and the number of

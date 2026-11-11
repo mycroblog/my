@@ -212,8 +212,14 @@ func (m *Manager) renewAt(ctx context.Context, e *entry) time.Time {
 		}
 		return e.at
 	}
+	// Without ARI: when a third of the lifetime is left, or half of it for one under 10 days
+	// (Let's Encrypt's integration guide).
 	life := e.leaf.NotAfter.Sub(e.leaf.NotBefore)
-	return e.leaf.NotBefore.Add(time.Duration(float64(life) * m.RenewRatio))
+	ratio := m.RenewRatio
+	if life < 10*24*time.Hour {
+		ratio = 0.5
+	}
+	return e.leaf.NotBefore.Add(time.Duration(float64(life) * ratio))
 }
 
 // Maintain runs one round for every host: pick up a newer certificate, and order one where

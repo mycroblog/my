@@ -169,8 +169,8 @@ func TestDBStoreBackoffFromEvents(t *testing.T) {
 	s := &DBStore{DB: openSpikeDB(t), Sealer: kernel.NewSealer(km), Clock: clock, NewID: testkit.NewIDGenerator(clock).NewID}
 	const dir = "https://ca.example/dir"
 
-	// Failures back off 15m, 30m, 1h, ... from the last attempt.
-	for i, want := range []time.Duration{15 * time.Minute, 30 * time.Minute, time.Hour} {
+	// Failures back off 1m, 10m, 100m, then a day, from the last attempt.
+	for i, want := range []time.Duration{time.Minute, 10 * time.Minute, 100 * time.Minute, 24 * time.Hour} {
 		a, _ := s.RecordAttempt(ctx, "example.com", dir, "")
 		if err := s.RecordFailure(ctx, a, "urn:ietf:params:acme:error:connection", "refused"); err != nil {
 			t.Fatal(err)
@@ -183,7 +183,7 @@ func TestDBStoreBackoffFromEvents(t *testing.T) {
 	}
 	// An abandoned attempt (the process died, no outcome) counts too.
 	_, _ = s.RecordAttempt(ctx, "example.com", dir, "")
-	if _, n, _ := s.NextAttempt(ctx, "example.com"); n != 4 {
+	if _, n, _ := s.NextAttempt(ctx, "example.com"); n != 5 {
 		t.Fatalf("abandoned attempt not counted: %d", n)
 	}
 	// A certificate resets the count.
@@ -215,7 +215,7 @@ func TestDBStoreBackoffFromEvents(t *testing.T) {
 }
 
 func TestBackoffCap(t *testing.T) {
-	if Backoff(1) != 15*time.Minute || Backoff(7) != 16*time.Hour || Backoff(8) != 24*time.Hour || Backoff(100) != 24*time.Hour {
-		t.Fatalf("%v %v %v", Backoff(1), Backoff(7), Backoff(8))
+	if Backoff(1) != time.Minute || Backoff(3) != 100*time.Minute || Backoff(4) != 24*time.Hour || Backoff(100) != 24*time.Hour {
+		t.Fatalf("%v %v %v", Backoff(1), Backoff(3), Backoff(4))
 	}
 }

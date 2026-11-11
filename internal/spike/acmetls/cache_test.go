@@ -86,10 +86,12 @@ func TestMemoryCacheAndBusNotice(t *testing.T) {
 		t.Fatal("a stale notice installed the older certificate")
 	}
 
-	// A notice lost while the listener is broken is caught up when it listens again.
-	broker.Break()
+	// A notice that never arrived (sent while the listener was down) is caught up when the
+	// listener breaks and listens again. Without a break, only the periodic check (LoadAll on a
+	// timer) would catch it: the Bus is best effort.
 	clock.Advance(30 * 24 * time.Hour)
 	issue(clock.Now()) // nobody notifies
+	broker.Break()
 	waitFor(t, "m2 to reload after the break", func() bool { return m2.Leaf("example.com").NotBefore.Equal(clock.Now().Truncate(time.Second)) })
 	t.Logf("reloads: m1 %d, m2 %d; DEK unwraps in all: %d", m1.Reloads.Load(), m2.Reloads.Load(), km.unwraps.Load())
 }
