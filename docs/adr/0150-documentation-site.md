@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-11-06
 - Deciders: @rosylilly
-- Issue: #2321, #2331, #2417, #2535
+- Issue: #2321, #2331, #2417, #2535, #2863
 
 ## Decision（決定）
 
@@ -153,6 +153,13 @@
 - サイトは `mycroblog.dev` の根に置く。トップページがプロジェクトの紹介を兼ね、版は `https://mycroblog.dev/latest/`・`/v0.1/`・`/next/` のように道の先頭で分ける
 - このサイトの作業はすべて `v0.1.0` のタグの前提条件とする。運営者が v0.1.0 で実運用を始めるとき（`00-vision.md` の M5）、版の合った文書を公開の場で読めるようにするためである
 
+### 12. リリースノートと配信の上限
+
+- サイトはリリースノートを載せる。リリースノートは GitHub Releases から、ページを開いたときに GitHub API で読み、ビルドには入れない。どのビルドも、どの版のサイトも、全リリースのノートを抱えないためである
+- サイトの Worker が API を呼んで答えをキャッシュし、ブラウザーは GitHub を呼ばない。認証なしの API の上限（IP アドレスごとに 1 時間 60 回。GitHub REST API のドキュメント、要検証）に読み手が達せず、
+  サイトの CSP に `api.github.com` を足さずに済む
+- 制約として、サイトは、サポートする版をすべて、配信先の上限に達せずに公開できなければならない。現在の 1 ビルドは約 3,700 ファイルで、Workers の静的アセットは無料枠で 20,000 ファイルまでなので、置ける版は 5 つほどである（要検証）。方法は決めない（Open Questions）
+
 ## 経緯
 
 v0.1.0 の公開（M5、`00-vision.md`）に向けて、運営者向けの文書（`docs/operations/`・`docs/reference/`）は揃いつつあるが、読む場所は GitHub の Markdown しかない。
@@ -192,7 +199,8 @@ API の仕様は `api/openapi.yaml` として公開できる形にあるが、�
 - `starlight-versions`: Starlight の中で版を扱える。しかし古い版の文書をリポジトリに写して残す形であり、「ファイルは現在を書く」原則に反する。開発も 1.0 前である（要検証）
 - GitHub Pages: シークレットが要らず最も手軽である。しかし PR ごとの Preview がなく、UI Preview と別の配信の仕組みをもうひとつ持つことになる。§10 の退路とする
 - 各サーバーが自分の文書を `my` から配信する: 運営者の手元の版と一致する。しかし利用者向け以外は運営者がサーバーを立てる前に読むものであり、公開のサイトが要る
-
+- リリースノートを各ビルドに入れる（§12）: 配信が静的なファイルだけで済む。しかしサイトのどの版も全リリースのノートを抱える
+- リリースノートをブラウザーから GitHub API で読む（§12）: Worker の処理が要らない。しかし認証なしの上限に読み手が達し、サイトの CSP に `api.github.com` を許す必要がある
 - 解析を置かない: 読み手の端末から第三者へ何も送らず、お知らせも要らない。しかし何が読まれているかが分からず、書くものと訳すものの優先を決められない（§7）
 - Google Analytics 4 を Consent Mode v2 の同意のバナーの後ろに置く: 集計と分析の機能が多い。しかしすべての訪問者にバナーを出し、Cookie のお知らせと GA のプロパティの管理が要り、ページとロケールの数を知るには重すぎる
 - Cloudflare Web Analytics をダッシュボードの自動挿入で置く: リポジトリに何も足さずに済む。しかしビーコンの有無がリポジトリの外で決まり、Preview と本番を分けられず、手動のスニペットと併せると二度数える
@@ -227,4 +235,4 @@ API の仕様は `api/openapi.yaml` として公開できる形にあるが、�
 - Starlight の `docsLoader` が `src/content/docs/` の外を読めるか、Astro の `glob()` ローダーで Starlight のルーティングとサイドバーが動くか
   （[Starlight Manual Setup](https://starlight.astro.build/manual-setup/)、[Astro Content Loader API](https://docs.astro.build/en/reference/content-loader-reference/)。2026-11-06 時点で未確認）。動くなら §4 の写しの手順を省ける
 - `starlight-openapi` が、`api/openapi.yaml` の OpenAPI 3.1 の部分集合（`api/redocly.yaml`）を崩れずに描画できるか（[starlight-openapi](https://github.com/HiDeoo/starlight-openapi)。OpenAPI 3.1 に対応とあるが、この仕様では未確認）
-- Cloudflare Workers の静的アセットの無料枠のファイル数とサイズの上限が、サポートを終えた版も残すサイトに足りるか（要検証）
+- §12 の制約を満たす方法。サポートを終えた版も残す（§6）と 1 配信のファイル数が上限に近づく。方法は未定である。無料枠のファイル数とサイズの上限は要検証
