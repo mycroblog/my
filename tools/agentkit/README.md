@@ -70,32 +70,24 @@ than a document that every change of a wide area flags.
 ## Documentation rules
 
 `docs lint` (`scripts/task.sh docs:rules`, part of `docs:check`) checks the rules of
-[AGENTS.md "Documentation"](../../AGENTS.md#documentation) that a machine can check:
+[AGENTS.md "Documentation"](../../AGENTS.md#documentation) that a machine can check; each finding says the fix.
+[docs/lint.yaml](../../docs/lint.yaml) names the files each rule covers and, under `pending`, the files that do not
+follow a rule yet: a pending entry fails once its file follows the rule, so the lists only shrink.
 
-- every relative link of a Markdown file (inline, reference, `href`/`src`) points at a file or directory of the
-  repository, and its `#anchor` at a heading (GitHub's slugs, Japanese headings and repeated headings included) or an
-  `<a id>` of a Markdown target;
-- the English-only files have no Japanese (kana, kanji, CJK punctuation, full-width forms) outside code spans, code
-  blocks, and link destinations; a line with `docs-lint: allow-japanese` in a comment, or the line after one, may;
-- the files for users and operators neither link to `docs/adr/`, `docs/requirements/`, `docs/architecture/`, or the
-  repository's issues and pull requests, nor cite `ADR-NNNN`, `FR-NNN`, or `#NNN` outside code;
-- the files of `maintainer-terms.files` use none of its `terms`, the words of the development of the project, in prose or
-  in code;
-- the opening of each file of `openings.files`, its first line below the title outside code and HTML, matches none of
-  the `openings.reject` patterns, the sentences that only say whom the document is for ("A guide for operators.");
-- the index (`index.file`, `docs/README.md`) links every file of `index.files` (`docs/operations/`, `docs/reference/`);
-- each `ADR-NNNN` and `ADR-NNNN §k` of the repository resolves and is not a number retired in `docs/adr/aliases.yaml`, a
-  `§k` inside an ADR that names no other document is a heading of that ADR, and an ADR has the sections of the template
-  and no quotations. These print as warnings until `adrs.enforce` is set; `adrs.exclude` names the files where
-  `ADR-NNNN` means something else.
+- Links: every relative link and `#anchor` of a Markdown file resolves.
+- Language: the English-only files have no Japanese outside code (`docs-lint: allow-japanese` on the line or the one
+  before allows it).
+- Operator documents: no link to or citation of design records, issues, or pull requests; none of the
+  `maintainer-terms`; no opening that only names the audience; the index links each of them.
+- ADR citations: each `ADR-NNNN` and `§k` resolves, and is not a number that `docs/adr/aliases.yaml` retired into
+  another ADR (`show`, `find`, `refs`, `ctx`, and `issue claim` follow that file).
+- ADR shape: an ADR has a Decision section, no quotations, at most 6,000 characters (4,000 in Decision), no table of
+  more than 8 rows, and no code span that names a path of three segments or more, a source or YAML file, a namespaced
+  task, a `pkg.Exported` of a package of the repository, or an `Err...` value. `docs adr-shape` prints the measures of
+  each ADR.
 
-`docs/adr/aliases.yaml` maps the number of an ADR merged into another to the ADR that holds it and how its sections
-moved (`to`, and `sections`, `section`, `offset`, `anchors`). `show`, `find`, `refs`, `ctx`, and `issue claim` follow it,
-so an old issue that cites a retired number still reads; a repository without the file has no retired numbers.
-
-[docs/lint.yaml](../../docs/lint.yaml) lists the files each rule covers and, under `pending`, the files that do not
-follow a rule yet. A pending entry fails the check once its file follows the rule (or is gone), so the lists only
-shrink.
+`scripts/task.sh docs:growth` (`scripts/docs-growth.sh`, a step of the pull request's preflight) fails when a group of
+the prose agents maintain is larger than at the merge base, unless the pull request has the `docs:grow` label.
 
 `docs inventory` (`scripts/task.sh agentkit:inventory`, part of `agentkit:check`) checks the other direction: every
 name that users and operators see and the code defines is mentioned in the document they look it up in.

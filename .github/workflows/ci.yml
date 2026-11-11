@@ -186,6 +186,12 @@ jobs:
             run: scripts/task.sh web:tokens
           - name: web:lint-css
             run: scripts/task.sh web:lint-css
+          # The prose agents maintain is no larger than at the base, the first parent of the merge commit, unless the
+          # owner approved the growth with the docs:grow label (labelling reruns the checks).
+          - name: docs:growth
+            env:
+              APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'docs:grow') }}
+            run: scripts/task.sh docs:growth BASE=HEAD^1 ALLOW_GROWTH="$APPROVED"
           # Each user or operator document that describes the changed paths (the userdocs of
           # tools/agentkit/context-map.yaml) is changed or explained in the description. It reads the description now,
           # not the event's copy, so rerunning the job after editing the description checks the new text. A Dependabot

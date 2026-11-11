@@ -48,6 +48,8 @@ Maintenance:
   docs lint                                            links and anchors resolve, English-only documents have no
                                                        Japanese, operator documents cite no design records,
                                                        docs/README.md links them all (docs/lint.yaml)
+  docs adr-shape                                       the size, the implementation names, and the longest table
+                                                       of each ADR, which docs lint limits
   docs inventory                                       every command of my, metric, webhook event type, build tag,
                                                        and listed task is mentioned in its document
   docs impact [--base origin/main] [--pr-body f]       the user and operator documents (userdocs) of the changed

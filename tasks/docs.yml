@@ -18,7 +18,7 @@ tasks:
       - "{{.MARKDOWNLINT}}"
 
   rules:
-    desc: Fail when a relative link or its anchor does not resolve, an English-only document has Japanese, or an operator document points at design records (docs/lint.yaml)
+    desc: Fail when a relative link or its anchor does not resolve, an English-only document has Japanese, an operator document points at design records, or an ADR transcribes the implementation (docs/lint.yaml)
     deps: [":agentkit:build"]
     cmds:
       - bin/agentkit docs lint
@@ -32,6 +32,13 @@ tasks:
       BASE: '{{.BASE | default "origin/main"}}'
     cmds:
       - bin/agentkit docs impact --base {{shellQuote .BASE}} --pr-body {{shellQuote .BODY}}
+
+  growth:
+    desc: "Fail when the prose agents maintain (ADRs, architecture, requirements, docs/agents, AGENTS.md / CLAUDE.md, the context maps, .claude) is larger than at the merge base with BASE (default origin/main); ALLOW_GROWTH=true, the docs:grow label in CI, only reports"
+    vars:
+      BASE: '{{.BASE | default "origin/main"}}'
+    cmds:
+      - scripts/docs-growth.sh --base {{shellQuote .BASE}}{{if eq (.ALLOW_GROWTH | default "") "true"}} --allow-growth{{end}}
 
   adr-numbers:
     desc: Fail if two files in docs/adr share a number

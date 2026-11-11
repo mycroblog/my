@@ -118,13 +118,79 @@ index:
 pending:
   japanese: []
   design-links: []
+  # ADRs that transcribe the implementation: longer than an ADR may be, a table of more rows than one may have, or a
+  # code span that names a path, a file, a task, or a Go identifier. `bin/agentkit docs adr-shape` lists them.
+  adr-shape:
+    - docs/adr/0000-record-architecture-decisions.md
+    - docs/adr/0003-database-abstraction.md
+    - docs/adr/0004-job-queue-abstraction.md
+    - docs/adr/0005-blob-storage-and-media.md
+    - docs/adr/0006-federation-protocol-scope.md
+    - docs/adr/0009-internationalization.md
+    - docs/adr/0010-configuration-and-packaging.md
+    - docs/adr/0011-license.md
+    - docs/adr/0013-timeline-strategy.md
+    - docs/adr/0015-testing-strategy.md
+    - docs/adr/0016-client-api-style.md
+    - docs/adr/0017-visibility-local.md
+    - docs/adr/0018-federated-uris.md
+    - docs/adr/0019-security-baseline.md
+    - docs/adr/0023-declarative-schema-management.md
+    - docs/adr/0025-web-client-stack.md
+    - docs/adr/0028-html-shell-link-previews-and-pwa.md
+    - docs/adr/0050-stream-pubsub-across-processes.md
+    - docs/adr/0051-custom-emoji.md
+    - docs/adr/0055-service-observability.md
+    - docs/adr/0057-crawler-opt-out.md
+    - docs/adr/0058-moderation-admin-separation.md
+    - docs/adr/0059-design-tokens-and-instance-theme.md
+    - docs/adr/0060-instance-webhooks.md
+    - docs/adr/0062-link-preview-cards.md
+    - docs/adr/0067-finance-cost-records.md
+    - docs/adr/0068-billing-import.md
+    - docs/adr/0069-quote-posts.md
+    - docs/adr/0070-permission-split-emoji-finance.md
+    - docs/adr/0072-supporter-plans-and-roles.md
+    - docs/adr/0074-payment-provider-port.md
+    - docs/adr/0079-ci-single-gate-merge-queue.md
+    - docs/adr/0081-generated-files-policy.md
+    - docs/adr/0086-email-delivery.md
+    - docs/adr/0088-service-shutdown-modes.md
+    - docs/adr/0089-account-migration-move.md
+    - docs/adr/0090-third-party-oauth-apps.md
+    - docs/adr/0091-composer-emoji-picker.md
+    - docs/adr/0092-composer-autocomplete-highlight.md
+    - docs/adr/0093-api-client-library-mykit.md
+    - docs/adr/0100-voice-chat-rooms.md
+    - docs/adr/0101-voice-chat-transport.md
+    - docs/adr/0103-error-reporting.md
+    - docs/adr/0106-external-login-providers.md
+    - docs/adr/0110-web-experience-principles.md
+    - docs/adr/0125-announcement-title-notification-list.md
+    - docs/adr/0146-plugin-protocol.md
+    - docs/adr/0147-decision-hooks.md
+    - docs/adr/0148-post-translation.md
+    - docs/adr/0149-full-text-search.md
+    - docs/adr/0150-documentation-site.md
+    - docs/adr/0151-auto-delete-server-default-and-maximum.md
+    - docs/adr/0152-single-user-mode.md
+    - docs/adr/0153-test-boundaries.md
+    - docs/adr/0154-conversations.md
+    - docs/adr/0155-interaction-policy.md
+    - docs/adr/0156-drafts-and-scheduled-posts.md
+    - docs/adr/0157-keyword-filters.md
+    - docs/adr/0158-notification-policy.md
+    - docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md
+    - docs/adr/0160-articles.md
+    - docs/adr/0161-events.md
+    - docs/adr/0162-one-time-tips.md
+    - docs/adr/0163-acme-tls.md
+    - docs/adr/0164-opentofu-platform-modules.md
 
 # The ADRs and the citations of them: every ADR-NNNN and ADR-NNNN §k resolves and is not a retired number, a bare §k
-# inside an ADR is a heading of that ADR, and an ADR has the sections of docs/adr/template.md and no quoted answers.
-# Until `enforce` is set, `agentkit docs lint` prints the findings as warnings. The excluded files write ADR-NNNN for
-# something else: agentkit's own records, and the examples of its tests and comments.
+# inside an ADR is a heading of that ADR, and an ADR has a Decision section and no quoted answers. The excluded files
+# write ADR-NNNN for something else: agentkit's own records, and the examples of its tests and comments.
 adrs:
-  enforce: true
   exclude:
     - "tools/agentkit/docs/adr/**"
     - "tools/agentkit/README.md"

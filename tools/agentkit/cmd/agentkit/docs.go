@@ -13,7 +13,7 @@ import (
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-const docsUsage = "usage: agentkit docs lint | docs inventory | docs impact [--base origin/main] [--pr-body file]"
+const docsUsage = "usage: agentkit docs lint | docs inventory | docs adr-shape | docs impact [--base origin/main] [--pr-body file]"
 
 func runDocs(r *repo.Repo, args []string) error {
 	if len(args) == 0 {
@@ -25,10 +25,41 @@ func runDocs(r *repo.Repo, args []string) error {
 			return errors.New(docsUsage)
 		}
 		return runDocsRules(r, args[0])
+	case "adr-shape":
+		if len(args) != 1 {
+			return errors.New(docsUsage)
+		}
+		return runDocsADRShape(r)
 	case "impact":
 		return runDocsImpact(r, args[1:])
 	}
 	return errors.New(docsUsage)
+}
+
+// runDocsADRShape prints the measures of each ADR that the shape rule of docs lint reads, with the ADRs that break
+// it marked: those are what pending.adr-shape may list.
+func runDocsADRShape(r *repo.Repo) error {
+	files, err := r.Files()
+	if err != nil {
+		return err
+	}
+	paths := make([]string, len(files))
+	for i, f := range files {
+		paths[i] = f.Path
+	}
+	shapes, err := docslint.ADRShapes(r.Root, paths)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%7s %8s %9s %5s  %s\n", "chars", "decision", "artifacts", "table", fmt.Sprintf("(limits: %d, %d, 0, %d)", docslint.ADRMaxChars, docslint.ADRMaxDecisionChars, docslint.ADRMaxTableRows))
+	for _, s := range shapes {
+		mark := ""
+		if s.Breaks {
+			mark = "  breaks"
+		}
+		fmt.Printf("%7d %8d %9d %5d  %s%s\n", s.Chars, s.DecisionChars, s.Artifacts, s.TableRows, s.Path, mark)
+	}
+	return nil
 }
 
 func runDocsRules(r *repo.Repo, cmd string) error {
@@ -57,11 +88,7 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 		if err != nil {
 			return err
 		}
-		if c.ADRs.Enforce {
-			findings = append(findings, adrs...)
-		} else {
-			printADRWarnings(adrs)
-		}
+		findings = append(findings, adrs...)
 	}
 	for _, f := range findings {
 		fmt.Println("error: " + f.String())
@@ -71,17 +98,6 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 	}
 	fmt.Printf("agentkit docs %s: no problems\n", cmd)
 	return nil
-}
-
-// printADRWarnings shows the ADR findings that do not fail the lint yet: the first few, and how many there are.
-func printADRWarnings(fs []docslint.Finding) {
-	const shown = 20
-	for _, f := range fs[:min(len(fs), shown)] {
-		fmt.Println("warning: " + f.String())
-	}
-	if len(fs) > 0 {
-		fmt.Printf("agentkit docs lint: %d ADR warnings (they fail once adrs.enforce is set in %s)\n", len(fs), docslint.File)
-	}
 }
 
 // runDocsImpact prints the user and operator documents that describe the paths changed since the base; with
