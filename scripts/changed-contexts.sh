@@ -314,7 +314,8 @@ classify() {
   esac
   case "$path" in
     # tofu:env-check reads the configuration reference and names the guide, and tofu-workers-check.sh keeps the lists of
-    # modules/workers in step with the server's job types and the table of what stays together.
+    # modules/workers in step with the server's job types and the table of what stays together. A change to the
+    # configuration schema changes the reference and the settings list (under deploy/opentofu), so tofu:coverage runs.
     scripts/tofu-* | docs/reference/configuration.md | docs/operations/deploy-cloud-run.md | internal/platform/job_types.go | docs/operations/running.md)
       select_contexts tofu
       known=1

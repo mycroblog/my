@@ -25,6 +25,7 @@ tasks:
       - task: fmt-check
       - task: env-check
       - task: backend-fields
+      - task: coverage
       - task: sources
       - task: validate
       - task: test
@@ -49,6 +50,11 @@ tasks:
     cmds:
       - scripts/tofu-backend-fields-check.sh
       - scripts/tofu-workers-check.sh
+
+  coverage:
+    desc: Fail unless the coverage.json of each public module classifies every configuration key once, by entries that each match a key, and the module's tests/coverage.tftest.hcl names the MY_ variable of each key that a section sets or the module fixes
+    cmds:
+      - scripts/tofu-coverage.sh
 
   init:
     internal: true
@@ -82,7 +88,7 @@ tasks:
       - scripts/tofu-db-state-test.sh
 
   aws-plan-test:
-    desc: Prove with a plan that makes no call that the AWS modules hold no generated value in the plan
+    desc: Prove with plans of the AWS example that make no call to AWS that the plan holds no generated value
     cmds:
       - mkdir -p "$TF_PLUGIN_CACHE_DIR"
       - scripts/tofu-aws-plan-test.sh
