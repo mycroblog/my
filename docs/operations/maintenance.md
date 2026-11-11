@@ -112,6 +112,9 @@ gcloud run services update my --region=asia-northeast1 \
 gcloud run services update my --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE,MY_MAINTENANCE_UNTIL
 ```
 
+With the OpenTofu module, set it in the block instead, as `settings = { maintenance = "true" }`, and apply, since the next apply puts back
+what the block says: [Deploying on Cloud Run](deploy-cloud-run.md#the-maintenance-mode) has it around an upgrade.
+
 When Cloud Run is exposed directly, without a load balancer, there is nothing in front of it, so the maintenance mode is the only tool.
 
 **When `my serve` cannot run** behind a global external Application Load Balancer: upload the exported `index.html` to a Cloud Storage bucket

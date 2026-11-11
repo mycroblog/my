@@ -62,7 +62,6 @@ mock_provider "cloudflare" {
 
 variables {
   host  = "social.example.org"
-  image = "ghcr.io/mycroblog/my:0.1.0"
   media = { bucket_name = "my-project-my-media" }
   mail  = { from = "noreply@social.example.org", smtp = { host = "smtp.example.org", username = "my-smtp-user" } }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh,
+# Tests deploy/opentofu/upgrade.sh, deploy/opentofu/migrate.sh, deploy/opentofu/console.sh, scripts/tofu-examples.sh, scripts/tofu-env-check.sh,
 # scripts/tofu-backend-fields-check.sh, scripts/tofu-workers-check.sh, and scripts/tofu-coverage.sh, the first ones against a gcloud
 # and an aws that record their calls: the order of the steps, stopping at a failure, and passing on an exit code. It shows
 # nothing about Google Cloud or AWS themselves.
@@ -29,6 +29,12 @@ case "$*" in
   "run services describe"*) echo "${SERVICE_IMAGE:-image:new}" ;;
   "run services list"*) echo "${WORKER_SERVICES:-}" ;;
   "run jobs describe"*) echo "${JOB_IMAGE:-image:new}" ;;
+  # The executions still running: exec-0 for the first $RUNNING_POLLS reads, then none.
+  "run jobs executions list"*"completionTime"*)
+    polls="$(cat "$CALLS.polls" 2> /dev/null || echo 0)"
+    if [ "$polls" -lt "${RUNNING_POLLS:-0}" ]; then echo exec-0; fi
+    echo "$((polls + 1))" > "$CALLS.polls"
+    ;;
   "run jobs executions list"*) echo "${EXECUTION-exec-1}" ;;
   "run jobs executions tasks list"*) echo "${TASK_EXIT_CODE:-}" ;;
   "logging read"*) echo "${LOG_ENTRIES:-[]}" ;;
@@ -71,7 +77,8 @@ esac
 exit 0
 EOF
 chmod +x "$tmp/bin/aws"
-export PATH="$tmp/bin:$PATH" CALLS="$tmp/calls" CONSOLE_LOG_WAIT_SECONDS=0 CONSOLE_POLL_SECONDS=0 UPGRADE_POLL_SECONDS=0
+export PATH="$tmp/bin:$PATH" CALLS="$tmp/calls" CONSOLE_LOG_WAIT_SECONDS=0 CONSOLE_POLL_SECONDS=0 UPGRADE_POLL_SECONDS=0 \
+  MIGRATE_POLL_SECONDS=0
 
 upgrade() {
   : > "$CALLS"
@@ -184,6 +191,59 @@ code=0
 code=0
 "$root/deploy/opentofu/console.sh" <<< "$CONSOLE" > /dev/null 2>&1 || code=$?
 [ "$code" = 2 ] || fail "console without a command exited $code"
+
+# migrate: what an apply runs before the services move. The migration job already has the new image.
+MIGRATION='{"platform":"gcp-cloud-run","project":"p","region":"r","job":"my-migrate"}'
+
+migrate() {
+  : > "$CALLS"
+  rm -f "$CALLS.polls"
+  local code=0
+  "$root/deploy/opentofu/migrate.sh" "$@" <<< "$MIGRATION" > "$tmp/out" 2>&1 || code=$?
+  return "$code"
+}
+
+# migrate: my upgrade as one execution of the job, which keeps its image, and no service is read or touched.
+migrate --version 0.2.0 --allow-destructive-for '' || fail "migrate failed: $(cat "$tmp/out")"
+grep -qxF -- 'run jobs execute my-migrate --project=p --region=r --args=^@@@^upgrade --wait --quiet' "$CALLS" || fail "migrate did not run my upgrade: $(cat "$CALLS")"
+if grep -q 'run jobs update\|run services' "$CALLS"; then fail "migrate changed the job's image or read a service: $(cat "$CALLS")"; fi
+grep -q 'run jobs executions list --job=my-migrate --project=p --region=r --filter=NOT status.completionTime:\*' "$CALLS" || fail "migrate did not look for a running execution: $(cat "$CALLS")"
+
+# migrate: it waits for an execution that an interrupted apply left running, and only then starts its own.
+RUNNING_POLLS=2 migrate --version 0.2.0 || fail "migrate failed after waiting: $(cat "$tmp/out")"
+[ "$(grep -c 'completionTime' "$CALLS")" = 3 ] || fail "migrate did not wait until no execution ran: $(cat "$CALLS")"
+first_execute="$(grep -n 'run jobs execute ' "$CALLS" | head -n 1 | cut -d: -f1)"
+last_wait="$(grep -n 'completionTime' "$CALLS" | tail -n 1 | cut -d: -f1)"
+[ "$last_wait" -lt "$first_execute" ] || fail "migrate started an execution while another ran: $(cat "$CALLS")"
+grep -q 'waiting for exec-0 of my-migrate' "$tmp/out" || fail "migrate did not say what it waits for: $(cat "$tmp/out")"
+if FAIL_ON='completionTime' migrate --version 0.2.0; then fail "migrate went on although it could not see the running executions"; fi
+if grep -q 'run jobs execute ' "$CALLS"; then fail "migrate started an execution without knowing what runs"; fi
+
+# migrate: -allow-destructive only for the version that upgrade.allow_destructive_for names.
+migrate --version 0.3.0 --allow-destructive-for 0.3.0 || fail "migrate failed: $(cat "$tmp/out")"
+grep -qF -- '--args=^@@@^upgrade@@@-allow-destructive ' "$CALLS" || fail "migrate did not pass -allow-destructive for the named version: $(cat "$CALLS")"
+for args in '--version 0.4.0 --allow-destructive-for 0.3.0' '--version 0.3.0' '--allow-destructive-for 0.3.0'; do
+  # shellcheck disable=SC2086 # the words of $args are the arguments
+  migrate $args || fail "migrate $args failed: $(cat "$tmp/out")"
+  if grep -q -- '-allow-destructive' "$CALLS"; then fail "migrate $args passed -allow-destructive: $(cat "$CALLS")"; fi
+done
+
+# migrate: a failed execution fails it, with the command's exit code, so that the apply stops before the services.
+code=0
+FAIL_ON='run jobs execute' TASK_EXIT_CODE=3 migrate --version 0.2.0 || code=$?
+[ "$code" = 3 ] || fail "migrate exited $code on a failed migration, want the command's 3"
+grep -q 'apply again with the same version' "$tmp/out" || fail "migrate did not say what to do: $(cat "$tmp/out")"
+code=0
+FAIL_ON='run jobs execute' migrate --version 0.2.0 || code=$?
+[ "$code" = 1 ] || fail "migrate exited $code on an execution with no exit code, want 1"
+
+# migrate: refusals.
+code=0
+"$root/deploy/opentofu/migrate.sh" --version 0.2.0 <<< '{"platform":"elsewhere"}' > /dev/null 2>&1 || code=$?
+[ "$code" = 1 ] || fail "migrate on an unknown platform exited $code"
+code=0
+"$root/deploy/opentofu/migrate.sh" --image i <<< "$MIGRATION" > /dev/null 2>&1 || code=$?
+[ "$code" = 2 ] || fail "migrate with an unknown option exited $code"
 
 # console on ECS: a one-off task with the command as its override, its exit code, and its output from the logs.
 ECS_CONSOLE='{"platform":"aws-ecs","region":"r","cluster":"my","task_definition":"my-console","container":"my","service":"my","network":"{\"awsvpcConfiguration\":{\"subnets\":[\"s\"]}}","log_group":"/ecs/my","log_prefix":"console"}'

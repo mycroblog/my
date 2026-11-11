@@ -28,16 +28,19 @@ run_gcp_cloud_run() {
   project="$(jq -er .project <<< "$console")" || return 1
   region="$(jq -er .region <<< "$console")" || return 1
   job="$(jq -er .job <<< "$console")" || return 1
-  service="$(jq -er .service <<< "$console")" || return 1
+  service="$(jq -r '.service // empty' <<< "$console")"
   local where=(--project="$project" --region="$region")
 
-  # The upgrade script changes the service's image and apply does not, so the job may have been created with an older
-  # one, and a command of another release must not touch the database.
-  local running current
-  running="$(gcloud run services describe "$service" "${where[@]}" --format='value(spec.template.spec.containers[0].image)')" || return 1
-  current="$(gcloud run jobs describe "$job" "${where[@]}" --format='value(spec.template.spec.template.spec.containers[0].image)')" || return 1
-  if [ "$running" != "$current" ]; then
-    gcloud run jobs update "$job" "${where[@]}" --image="$running" --quiet >&2 || return 1
+  # A command of another release than the service's must not touch the database: after an apply that stopped at a failed
+  # migration, the job has the new image and the service the old one. Absent when the caller has already chosen the image,
+  # as migrate.sh has.
+  if [ -n "$service" ]; then
+    local running current
+    running="$(gcloud run services describe "$service" "${where[@]}" --format='value(spec.template.spec.containers[0].image)')" || return 1
+    current="$(gcloud run jobs describe "$job" "${where[@]}" --format='value(spec.template.spec.template.spec.containers[0].image)')" || return 1
+    if [ "$running" != "$current" ]; then
+      gcloud run jobs update "$job" "${where[@]}" --image="$running" --quiet >&2 || return 1
+    fi
   fi
 
   # gcloud splits --args at commas unless given another delimiter (gcloud topic escaping).
@@ -109,8 +112,8 @@ run_aws_ecs() {
   log_prefix="$(jq -er .log_prefix <<< "$console")" || return 1
   service="$(jq -r '.service // empty' <<< "$console")"
 
-  # As on the other platforms: apply follows the upgrade script only through what it reads, and a command of another release must
-  # not touch the database. Absent when the caller has already chosen the image.
+  # A command of another release than the service's must not touch the database: apply follows the upgrade script only through
+  # what it reads. Absent when the caller has already chosen the image.
   if [ -n "$service" ]; then
     local running_definition running current
     running_definition="$(aws ecs describe-services --cluster "$cluster" --services "$service" --region "$region" --query 'services[0].taskDefinition' --output text)" || return 1

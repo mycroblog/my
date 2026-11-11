@@ -24,7 +24,6 @@ module "mycroblog" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-gcp?ref=v0.1.0&depth=1"
 
   host  = var.host
-  image = var.image
   media = { bucket_name = var.bucket_name }
   mail = {
     from = var.mail_from
@@ -35,6 +34,11 @@ module "mycroblog" {
 
   console_enabled = var.console_enabled
 
+  # The image is the release in ref, so raising ref upgrades: the apply runs the migration, then moves the services. To pin
+  # the image by its digest, from the release notes:
+  #
+  #   image = { digest = "sha256:..." }
+  #
   # The recommended setup is the default of every section. To try a deployment cheaply, without the load balancer's monthly
   # fee, and with the run.app URL open:
   #

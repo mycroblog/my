@@ -21,7 +21,8 @@ module "app" {
 | Input | Default | Meaning |
 | --- | --- | --- |
 | `project_id`, `region` | required | Where everything goes |
-| `image` | required | The image at creation, as `ghcr.io/mycroblog/my:<version>` or with a digest. `latest` is refused |
+| `image` | required | The image of the service, the workers, and the jobs, as `ghcr.io/mycroblog/my:<version>` or with a digest. `latest` is refused |
+| `migration` | `null` | `script` (the path of `migrate.sh`), `version`, and `allow_destructive_for`: a new image runs the migration first, on the machine that applies. Null runs none, and every resource takes a new image at once |
 | `host` | required | `host` of the server |
 | `backends` | `[]` | What each backend module returns |
 | `env`, `secret_env` | `{}` | Every other setting: by value, or by secret ID |
@@ -46,6 +47,8 @@ module "app" {
 | --- | --- |
 | `console` | For `console.sh`, or null while the console is off |
 | `service_name`, `service_uri`, `service_account_email`, `service_account_unique_id`, `migration_job` | What was created |
+| `images` | The image of the `service`, of each of the `workers`, and of the `migration` job |
+| `migration_id` | The run of the migration for the current image, which a new image replaces, or null without `migration` |
 | `service_ingress` | Who may reach the service, as the input says |
 | `origin_host` | Host name of the URL Cloud Run gave the service |
 | `env`, `secret_env` | The merged settings of the service |
@@ -80,6 +83,9 @@ On the rows that say yes, nothing closes `run.app`. For the header, the value is
 - The service account can read every secret in `secret_env`, `direct_secret_env`, and `secret_files`, and holds each permission of the backends on
   the resource it names. Each `invokers` entry gets `roles/run.invoker`, and so does `allUsers`, because federation needs
   public paths. The server checks the tokens of `/_internal/*` itself.
-- `apply` never changes the image of what exists: it would skip the migration. [`upgrade.sh`](../../../upgrade.sh) does.
+- **An apply of another image is an upgrade.** With `migration`, the jobs take the image, a `terraform_data` runs
+  [`migrate.sh`](../../../migrate.sh) and waits for `my upgrade`, and only then do the workers, and after them the service,
+  take it. A migration that fails stops the apply there and runs again on the next apply of the same image. The machine that
+  applies needs `gcloud` and `jq`, and credentials that may execute the job and read its logs.
 - The migration and console jobs share one resource (`google_cloud_run_v2_job.one_off`), so they cannot drift from each
   other. Each has no retries, since `my` steps are for an operator to look at when they fail.

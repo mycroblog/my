@@ -35,7 +35,6 @@ mock_provider "random" {}
 variables {
   project_id  = "my-project"
   host        = "social.example.org"
-  image       = "ghcr.io/mycroblog/my:0.1.0"
   bucket_name = "my-project-my-media"
 
   mail_from          = "noreply@social.example.org"
@@ -48,8 +47,8 @@ run "plans_the_recommended_setup" {
   command = plan
 
   assert {
-    condition     = module.mycroblog.upgrade.service_name == "my" && module.mycroblog.upgrade.migration_job == "my-migrate"
-    error_message = "the example must deploy the service and its migration job"
+    condition     = output.version.image == "ghcr.io/mycroblog/my:${trimprefix(trimspace(file("../../MODULE_REF")), "v")}"
+    error_message = "the example must run the image of its release: ${jsonencode(output.version)}"
   }
 
   assert {

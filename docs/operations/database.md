@@ -231,7 +231,8 @@ With SQLite on a volume, mount the same volume in the Job and stop the Deploymen
 
 ### Cloud Run
 
-With the OpenTofu modules, the script of [Deploying on Cloud Run](deploy-cloud-run.md#upgrading) runs these steps. By hand:
+With the OpenTofu module, an upgrade is an apply of the new release, which runs `my upgrade` in the migration job before the services take
+the new image, and stops there when it fails: see [Deploying on Cloud Run](deploy-cloud-run.md#upgrading). By hand:
 
 Cloud Run jobs run one container each, so create one job per step and execute them in order with `--wait`, which fails when the job fails.
 Give the jobs the same environment variables and secrets as the service.

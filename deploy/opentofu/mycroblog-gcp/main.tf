@@ -43,6 +43,12 @@ locals {
   # Known before the service exists, so the ingress, the queue, and the monitoring take it from here rather than from the app.
   service_name = var.name
 
+  # The release of this module, which MODULE_REF beside it names at the tag of a stable release, as v0.2.0, and the image of
+  # the same version by default.
+  module_release = trimprefix(trimspace(file("${path.module}/../MODULE_REF")), "v")
+  version        = coalesce(var.image.version, local.module_release)
+  image          = "${var.image.repository}:${local.version}${var.image.digest == null ? "" : "@${var.image.digest}"}"
+
   # What the ingress decides of the service: a load balancer closes the run.app URL, the others come from the internet.
   service_ingress = var.ingress.kind == "load-balancer" ? "internal-and-load-balancer" : "all"
 
@@ -557,10 +563,16 @@ locals {
 module "app" {
   source = "../modules/internal/app-gcp-cloud-run"
 
-  project_id      = local.project_id
-  region          = local.region
-  name            = local.service_name
-  image           = var.image
+  project_id = local.project_id
+  region     = local.region
+  name       = local.service_name
+  image      = local.image
+  # migrate.sh at the same release, which runs my upgrade with a new image before the workers and the service take it.
+  migration = {
+    script                = abspath("${path.module}/../migrate.sh")
+    version               = local.version
+    allow_destructive_for = var.upgrade.allow_destructive_for
+  }
   host            = var.host
   service_ingress = local.service_ingress
   network         = local.network

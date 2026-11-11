@@ -78,7 +78,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # A stable release must name itself in the sources of the OpenTofu examples; a prerelease is not checked.
+      # A stable release must name itself in the sources of the OpenTofu examples and in deploy/opentofu/MODULE_REF, which the
+      # public modules read as the default version of the image; a prerelease is not checked.
       - name: Check the module ref of the examples
         env:
           VERSION: ${{ inputs.version }}
