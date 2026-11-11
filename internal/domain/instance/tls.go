@@ -43,6 +43,17 @@ type TLSOrderFailure struct {
 	OccurredAt  time.Time
 }
 
+// The classes of the failures of an order on the client's side, recorded as the ProblemType of a
+// TLSOrderFailure when the CA sent no problem document.
+const (
+	// TLSOrderFailureClient is a failure without a problem from the CA: the CA could not be
+	// reached, or its answer could not be used.
+	TLSOrderFailureClient = "client"
+	// TLSOrderFailureCanceled is an order stopped before its end: the process shut down, or it
+	// lost the lease of the order.
+	TLSOrderFailureCanceled = "canceled"
+)
+
 // TruncateTLSOrderFailureDetail returns detail cut to MaxTLSOrderFailureDetail characters, with
 // invalid UTF-8 replaced.
 func TruncateTLSOrderFailureDetail(detail string) string {
