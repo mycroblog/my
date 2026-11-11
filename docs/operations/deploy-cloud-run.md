@@ -24,7 +24,7 @@ Secret values never reach the OpenTofu plan or state: you add the ones that come
 
 ## Before you start
 
-- `tofu` 1.11 or later, `gcloud`, and `jq`.
+- `tofu` 1.11 or later, `gcloud`, and `jq`, where you apply: an apply that changes the version runs the migration from there, through `gcloud`.
 - A Google Cloud project with billing, used for this instance alone, and an account on it with the Owner role.
 - A domain for [`host`](../reference/configuration.md#host). It cannot change later: read [Settings you cannot change later](production-checklist.md#settings-you-cannot-change-later).
 - A version of `my` from the [releases](running.md#get-the-image). There is no `latest` tag.
@@ -67,7 +67,7 @@ cd my-deployment
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-`main.tf` is the `google` provider and one block, `module "mycroblog"`. **Set `ref` to that release.** The block names a release with `?ref=`, which a stable release's copy already has right. For a prerelease, set it yourself: `sed -i "s/?ref=[^&]*/?ref=$VERSION/" main.tf`. The module exists only from the first release that contains it, so an earlier tag has no example to copy. Keep the same release in `ref` and in `image`, and keep this directory: it holds your state and your settings.
+`main.tf` is the `google` provider and one block, `module "mycroblog"`. **Set `ref` to that release.** The block names a release with `?ref=`, which a stable release's copy already has right. The server image is the same release, so `ref` alone names what runs. For a prerelease, set both yourself: `sed -i "s/?ref=[^&]*/?ref=$VERSION/" main.tf`, and `image = { version = "0.1.0-rc.4" }` in the block, the version without its `v`, since the module of a prerelease does not default to its own image. The module exists only from the first release that contains it, so an earlier tag has no example to copy. Keep this directory: it holds your state and your settings.
 
 Fill in `terraform.tfvars`. `mail_from`, `mail_smtp_host`, and `mail_smtp_username` configure [email](email.md); the port is 587, since Google Cloud blocks outbound port 25. To change anything else, add the section to the block in `main.tf`, such as `ingress = { kind = "domain-mapping" }`: every section and what it refuses is in [the module's README](../../deploy/opentofu/README.md#sections).
 
@@ -84,7 +84,7 @@ tofu init
 tofu apply -target=module.mycroblog.module.secrets -target=module.mycroblog.module.kek_secret_manager
 ```
 
-`tofu init` also fetches `upgrade.sh` and `console.sh` at that release, which the next steps use:
+`tofu init` also fetches the scripts of that release: `migrate.sh`, which an apply runs, and `console.sh`, which a later step uses:
 
 ```sh
 SCRIPTS=.terraform/modules/mycroblog/deploy/opentofu
@@ -110,29 +110,17 @@ The KEK reaches the server as a mounted file, named by `MY_KEK_FILE`. The others
 
 To keep the KEK in Cloud KMS from the start, set `kek = { kind = "kms" }` before this step, target `module.mycroblog.module.kek_kms` in place of `kek_secret_manager`, and enable `cloudkms.googleapis.com`.
 
-### 5. Create what the migration needs
-
-The service's startup probe waits for `/health/ready`, which answers `503` until the schema exists, so the schema has to come first. Create the migration job and what it depends on, which includes the load balancer's address, since the server's settings name it:
-
-```sh
-tofu apply -target='module.mycroblog.module.app.google_cloud_run_v2_job.one_off["migrate"]'
-```
-
-### 6. Apply the schema
-
-```sh
-"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.1.0 --migrate-only
-```
-
-It runs `my config check`, `my db upgrade -check`, `my schema apply`, and `my db upgrade`, each as an execution of the job, and stops at the first that fails. The first command that uses the database records `host` and `account_domain` in it. `tofu output upgrade` has the project, the region, and the name the script takes.
-
-### 7. Create the rest
+### 5. Apply
 
 ```sh
 tofu apply
 ```
 
-### 8. Point the domain at the load balancer
+This creates everything else, in an order that the service's startup probe needs: the probe waits for `/health/ready`, which answers `503` until the schema exists. The migration job comes first, with what it depends on, which includes the load balancer's address, since the server's settings name it. Then the apply runs `my upgrade` as an execution of the job, from your machine through `gcloud`, and waits for it: `my config check`, `my db upgrade -check`, `my schema apply`, and `my db upgrade`, which stops at the first that fails. Its output appears in the apply's. The first command that uses the database records `host` and `account_domain` in it. Only then does the apply create the services.
+
+If the migration fails, the apply stops before the services. Fix the cause, often a secret without a value, and run `tofu apply` again: it runs the migration again.
+
+### 6. Point the domain at the load balancer
 
 `tofu output dns_records` lists one `A` record, of `host` to the load balancer's address. Add it at your DNS provider. If that provider has a proxy of its own, leave it off for this record.
 
@@ -140,7 +128,7 @@ The certificate is Google-managed and becomes active only once DNS points at the
 
 See [How traffic reaches the service](#how-traffic-reaches-the-service) for what else you can choose.
 
-### 9. Create the first administrator
+### 7. Create the first administrator
 
 Cloud Run jobs have no terminal and no standard input, so `my admin create` prints a link that sets the password instead of reading one. Turn the [console](#the-console) on, and run:
 
@@ -152,7 +140,7 @@ tofu apply -var console_enabled=false
 
 Open the link right away and set the password. It works once, for one hour. **It stays in Cloud Logging until then**, where anyone who can read the project's logs can use it. If it expires, run `my admin account password-reset-link @alice` through the console. Then turn on two-factor authentication.
 
-### 10. Go through the checklist
+### 8. Go through the checklist
 
 Go through the [production checklist](production-checklist.md), starting with [email](production-checklist.md#email): SPF, DKIM, and DMARC on the domain of `mail_from`.
 
@@ -166,44 +154,82 @@ tofu output -json console | "$SCRIPTS/console.sh" instance set registration_mode
 tofu apply -var console_enabled=false
 ```
 
-`console.sh` waits for the command, prints its output and exit code, and exits with that code. It needs `roles/logging.viewer`, because a job's output goes to Cloud Logging. It uses the image the service runs, whatever `image` says.
+`console.sh` waits for the command, prints its output and exit code, and exits with that code. It needs `roles/logging.viewer`, because a job's output goes to Cloud Logging. It uses the image the service runs: after an upgrade that stopped at the migration, that is the previous release, which the database still fits.
 
 The command has no standard input and no terminal, so a command that reads a password or a file from them cannot run this way. What it prints stays in the logs, so do not run a command whose output you would not write there.
 
 ## Upgrading
 
-Read [Upgrading](database.md#upgrading) and the release notes first, and go one minor version at a time.
+Read [Upgrading](database.md#upgrading) and the release notes first, and go one minor version at a time. An upgrade is an apply of the new release: the plan shows every service and job taking its image, and the apply runs the migration before any of them serves it.
 
 ```sh
-# 1. Back up the database while nothing writes. Use pg_dump or a Neon branch (see Backup and restore).
-gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --update-env-vars=MY_MAINTENANCE=true
+# 1. Back up the database while nothing writes: see "The maintenance mode" below, and Backup and restore.
 pg_dump --format=custom --file=my-before-upgrade.dump "$DATABASE_URL"
 
-# 2. Read the SQL it would run. This changes nothing but the image of the migration job.
-"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --plan
+# 2. Name the new release in main.tf, as ?ref=v0.2.0, and fetch it.
+tofu init
 
-# 3. Upgrade. These scripts are of the release your module names, which is enough: they only run gcloud and my.
-"$SCRIPTS/upgrade.sh" --project "$PROJECT" --region asia-northeast1 --image ghcr.io/mycroblog/my:0.2.0 --maintenance
+# 3. Read the plan, then apply it.
+tofu plan
+tofu apply
 ```
 
-The script does this, and stops at the first step that fails:
+The image is the release that `ref` names, so changing `ref` is the whole upgrade. Read the plan before you apply it: a new release's module may change resources too. The apply does this, and stops at the first step that fails:
 
-1. Switches the service to the [maintenance mode](maintenance.md) with `--maintenance`.
-2. Gives the migration job the new image.
-3. Runs `my config check`, `my db upgrade -check`, `my schema apply`, and `my db upgrade`, each waiting for the one before.
-4. Deploys the new revision of each worker, then of the service, without the maintenance mode. A revision takes traffic only when its startup probe passes on `/health/ready`.
+1. Gives the migration and console jobs the new image, with the rest of the plan that the services do not depend on.
+2. Runs `my upgrade` as an execution of the migration job, from where you apply, and waits for it: `my config check`, `my db upgrade -check`, `my schema apply`, and `my db upgrade`. Its output appears in the apply's.
+3. Deploys the new revision of each worker, then of the service. A revision takes traffic only when its startup probe passes on `/health/ready`.
 
-Without `--maintenance`, the old revision keeps serving during steps 2 and 3, which [is not guaranteed to work](database.md#the-server-during-an-upgrade). Add `--allow-destructive` when the release notes call for it. Pin a digest with `--image ghcr.io/mycroblog/my:0.2.0@sha256:...`, which the [production checklist](production-checklist.md#operations) recommends.
+**Where you apply** needs `gcloud` and `jq`, and credentials that may execute the job and read its logs (`roles/run.developer` and `roles/logging.viewer`, which Owner includes). The same holds for a CI job that applies.
 
-Then set `image` in `terraform.tfvars` to the same value, and `ref` in `main.tf` to the same release, followed by `tofu init` and `tofu plan`. Read that plan before you apply it: a new release's module may change resources. `tofu apply` never changes the image of a service or job that exists, so a forgotten `image` does no harm, but the value is what a new job or a recreated service would start from.
+**When a step fails**, the services stay on their revisions, and the release notes or the migration's output say why. Fix the cause and run `tofu apply` again, with the same version: it runs the migration again, and the steps that completed find nothing left to do. An apply that was interrupted, or that lost its connection, leaves the execution running on Cloud Run; the next apply waits for it to end before it starts its own. To go back after the schema changed, restore the backup: see [Rolling back](database.md#rolling-back). An apply with an earlier version stops at the migration, since that release refuses a newer schema, and changes no service.
 
-**When a step fails**, the service stays on its revision, in the maintenance mode if you asked for it. Fix the cause and run the script again: the steps are safe to repeat. To leave the maintenance mode without upgrading, when `my schema apply` has not run:
+To try a release candidate, or to keep the image of an earlier release under a newer module, set the version yourself; it is the image tag, without the `v` of the release:
+
+```hcl
+  image = { version = "0.2.0-rc.1" }
+```
+
+### Checking the SQL first
+
+The plan does not show the SQL of the migration. To read it before the apply, give the migration job the new image alone, and run `my upgrade -dry-run` in it, which changes nothing:
 
 ```sh
-gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --remove-env-vars=MY_MAINTENANCE
+tofu apply -target='module.mycroblog.module.app.google_cloud_run_v2_job.one_off["migrate"]'
+gcloud run jobs execute my-migrate --project="$PROJECT" --region=asia-northeast1 --args=upgrade,-dry-run --wait
+gcloud logging read 'resource.type="cloud_run_job" AND resource.labels.job_name="my-migrate"' --project="$PROJECT" \
+  --freshness=1h --format='value(textPayload)' --order=asc
 ```
 
-To go back after the schema changed, restore the backup: see [Rolling back](database.md#rolling-back).
+### Destructive changes
+
+When the release notes call for `-allow-destructive`, name that version in the block:
+
+```hcl
+  upgrade = { allow_destructive_for = "0.3.0" }
+```
+
+`my upgrade` gets `-allow-destructive` only on the apply of that version, so a value left in place lets no later release drop data.
+
+### Pinning the image by digest
+
+The [production checklist](production-checklist.md#operations) recommends a digest, from the release notes:
+
+```hcl
+  image = { digest = "sha256:..." }
+```
+
+A digest names one image, whatever the tag beside it says, so change it in the same edit as `ref`: a digest left from the previous release keeps that release's image under the new version.
+
+### The maintenance mode
+
+The [maintenance mode](maintenance.md) takes three applies, since the services change before the upgrade and after it. Add it to the settings of the block and apply, take the backup, raise `ref` and apply, then remove it and apply:
+
+```hcl
+  settings = { maintenance = "true" }
+```
+
+Without it, the old revision keeps serving during the migration, which [is not guaranteed to work](database.md#the-server-during-an-upgrade). Settings changed by hand with `gcloud` do not last: the next apply puts back what the block says.
 
 ## Monitoring and alerts
 
@@ -267,7 +293,7 @@ The two common layouts of that page look like this. To keep deliveries from dela
 
 Leave out the types of settings you have not set, as that page says: a type the server has not registered stops the start, and the plan cannot see which those are. With `workers`, the default service does not help with these types when it is free, since their tasks go to their own queue.
 
-Each worker takes `job_types`, and `min_instances`, `max_instances`, `cpu`, `memory_mib`, `concurrency`, `max_concurrent_dispatches`, and `max_dispatches_per_second`, each the service's or the queue's where it is not named. A worker's service takes no traffic from outside. `upgrade.sh` moves each after the migration and before the default service, and with nothing to tell it: only a step that fails stops it. Each worker can bring what the service costs, and the connections of its instances count against the database's limit.
+Each worker takes `job_types`, and `min_instances`, `max_instances`, `cpu`, `memory_mib`, `concurrency`, `max_concurrent_dispatches`, and `max_dispatches_per_second`, each the service's or the queue's where it is not named. A worker's service takes no traffic from outside. An upgrade moves each after the migration and before the default service, and with nothing to tell it: only a step that fails stops it. Each worker can bring what the service costs, and the connections of its instances count against the database's limit.
 
 ## How traffic reaches the service
 

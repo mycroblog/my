@@ -20,7 +20,7 @@ my admin create -username alice -email alice@example.com
 - 端末から実行すると、コマンドはパスワードを 2 回、画面に表示せずに尋ねます。
 - 標準入力が端末でないときは、標準入力の 1 行目がパスワードになります（たとえば `my admin create ... < password.txt`）。
   パスワードはコマンドライン引数や環境変数では渡せません。これらはプロセス一覧やシェルの履歴に残るためです。
-- [Cloud Run ジョブ](deploy-cloud-run.md#9-create-the-first-administrator)のように、単発のコマンドに端末も標準入力もない環境では、`-password-link` を付けます。このときコマンドはパスワードを読まず、誰も知らないランダムなパスワードを設定し、`created admin` の行のあとにリンクを出力します。このリンクは `my admin account password-reset-link` と同じように、1 時間のあいだ 1 回だけパスワードを設定できます（監査ログには `password_reset_link_issued` として記録されます）。
+- [Cloud Run ジョブ](deploy-cloud-run.md#7-create-the-first-administrator)のように、単発のコマンドに端末も標準入力もない環境では、`-password-link` を付けます。このときコマンドはパスワードを読まず、誰も知らないランダムなパスワードを設定し、`created admin` の行のあとにリンクを出力します。このリンクは `my admin account password-reset-link` と同じように、1 時間のあいだ 1 回だけパスワードを設定できます（監査ログには `password_reset_link_issued` として記録されます）。
   コマンドの出力を読める人なら誰でもこのリンクを使えます。そうしたプラットフォームでは、リンクが使われるか期限が切れるまで、その出力がプラットフォームのログに残ります。リンクはすぐに開いてください。期限が切れたら、`my admin account password-reset-link @alice` でもう一度発行します。リンクの発行に失敗した場合、管理者はすでに作られています。コマンドはそのことを伝えて終了コード 1 で終了し、同じコマンドで新しいリンクを得られます。
 - パスワードは 8 文字以上 128 文字以下です。出力、ログ、エラーメッセージには決して表示されません。
 - 1 つのトランザクションで、ユーザー、パスワード、メインのメールアドレス、ローカルアカウント（鍵を含む）、そして `admin` ロールの付与（付与者なし。これは CLI を意味します）を作ります。

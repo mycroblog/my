@@ -9,8 +9,9 @@ and needs version 1.11 or later. Terraform is not supported. To deploy, follow
 deploy/opentofu/
   mycroblog-gcp/                 the public module for Google Cloud
   examples/gcp-cloud-run-neon/   the google provider and one block of mycroblog-gcp, to copy
-  upgrade.sh                     migration job first, then the workers, then the service
+  migrate.sh                     the migration of an upgrade, which an apply of mycroblog-gcp runs
   console.sh                     runs one my command through the console job
+  upgrade.sh                     the upgrade of the AWS example: migration job first, then the workers, then the service
   modules/internal/              the modules mycroblog-gcp composes, with no promise of compatibility
   examples/aws-ecs-neon/         AWS, composed from the internal modules, never applied: see "AWS" below
 ```
@@ -31,7 +32,6 @@ module "mycroblog" {
   source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-gcp?ref=v0.1.0&depth=1"
 
   host  = "social.example.org"
-  image = "ghcr.io/mycroblog/my:0.1.0"
   media = { bucket_name = "my-project-my-media" }
   mail = {
     from = "noreply@social.example.org"
@@ -40,9 +40,11 @@ module "mycroblog" {
 }
 ```
 
-Keep `ref` at the release you deploy, whether stable or a prerelease such as `v0.1.0-rc.4`, and `image` at the same version.
-The module exists only from the first release that contains it. After `tofu init`, `.terraform/modules/mycroblog/deploy/opentofu`
-holds `upgrade.sh` and `console.sh` at that release, under the name of your block. `examples/gcp-cloud-run-neon` works when
+Keep `ref` at the release you deploy. The server image defaults to the same release, so `ref` alone names what runs, and
+raising it is an upgrade: see [Upgrading](#upgrading). A prerelease, such as `v0.1.0-rc.4`, names its image itself, as
+`image = { version = "0.1.0-rc.4" }`, since the module of a prerelease does not default to its own image. The module exists
+only from the first release that contains it. After `tofu init`, `.terraform/modules/mycroblog/deploy/opentofu` holds
+`migrate.sh` and `console.sh` at that release, under the name of your block. `examples/gcp-cloud-run-neon` works when
 copied to an empty directory with its lock file, which is where [the guide](../../docs/operations/deploy-cloud-run.md#3-copy-the-example-and-set-the-variables)
 starts.
 
@@ -66,6 +68,8 @@ default.
 | `kek` | `secret-manager`, `kms` | The key that encrypts the secrets in the database: a generated secret, mounted as a file, or a key in Cloud KMS that never leaves it |
 | `network` | `none`, `vpc`, `existing` | The VPC the service attaches to. `vpc` creates one, and `nat = true` sends all egress through Cloud NAT for a static source address. `existing` takes yours: `network`, `subnetwork`, `private_services_range`, and `memorystore_connection_policy`. With a VPC, `cloud-sql` takes a private address on it |
 | `cloudflare` | | `zone_id` and `account_id`, for the Cloudflare kinds. `host_header_override = true`, on the Enterprise plan only, lets Cloudflare connect to the `run.app` URL; otherwise a domain mapping of each host is its origin. `proxied = false` leaves the records unproxied, which a domain mapping may need until its certificate is issued |
+| `image` | | The server image: `repository` (`ghcr.io/mycroblog/my`), `version`, the image tag, which defaults to the release of the module, and `digest`, `sha256:...`, which pins it. `latest` is refused |
+| `upgrade` | | `allow_destructive_for`: the one version whose migration runs with `-allow-destructive`, as its release notes call for |
 | `service` | | The Cloud Run service: `min_instances` (0, which scales to zero), `max_instances` (3), `cpu`, `memory_mib`, `concurrency`, `cpu_always_allocated`, `request_timeout_seconds` |
 | `jobs` | | The migration and console jobs: `memory_mib`, `timeout_seconds` |
 | `workers` | | Services that run some job types apart from the default service, by a key that names each: [Workers](#workers) |
@@ -128,7 +132,7 @@ The output `kek` says where it is and how to copy it.
 | `kek` | Where the KEK is, and with `secret-manager` the command that copies it |
 | `service_uri` | The URL Cloud Run gave the service |
 | `console` | What `console.sh` reads, or null while `console_enabled` is off |
-| `upgrade` | The `project`, `region`, and `name` that `upgrade.sh` takes, and the services it moves |
+| `version` | The `version` applied, and the `image` the service, the workers, and the jobs run |
 
 ## Workers
 
@@ -147,11 +151,27 @@ Each worker is a Cloud Run service `<name>-<key>`, which takes no traffic from o
 `max_dispatches_per_second`. Whatever no worker names runs on the default service. [Splitting jobs into workers](../../docs/operations/deploy-cloud-run.md#splitting-jobs-into-workers)
 has what to split.
 
+## Upgrading
+
+An apply of another image is an upgrade, and runs it in the order the database needs, stopping at the first step that fails:
+
+1. The migration and console jobs take the image.
+2. [`migrate.sh`](migrate.sh), at the same release as the module, runs `my upgrade` as an execution of the migration job
+   and waits for it: `my config check`, `my db upgrade -check`, `my schema apply`, and `my db upgrade`. It first waits for any
+   execution that an interrupted apply left running, and passes `-allow-destructive` only when `upgrade.allow_destructive_for`
+   names the version being applied.
+3. Each worker takes the image, then the service.
+
+A migration that fails, or an apply that stops during it, leaves the services on their revisions, and the next apply of the
+same image runs the migration again: there is nothing to reset. An apply of the same image runs nothing. The script runs where
+you apply, through `gcloud`, so that machine, or the CI job that applies, needs `gcloud`, `jq`, and credentials that may
+execute the job and read its logs. The first apply runs the migration too, before the services exist. The guide has
+[the whole procedure](../../docs/operations/deploy-cloud-run.md#upgrading), with a backup and the maintenance mode.
+
 ## The scripts
 
-[`upgrade.sh`](upgrade.sh) moves a deployment to another image: the migration job first, which runs `my config check`,
-`my db upgrade -check`, `my schema apply`, and `my db upgrade`, then each worker, then the service, and it stops at the first
-step that fails. An apply never changes the image of a service or job that exists: `image` is what a new one starts from.
+[`upgrade.sh`](upgrade.sh) upgrades the AWS example, whose modules leave the image to it: the migration job first, then each
+worker, then the service, and it stops at the first step that fails.
 
 [`console.sh`](console.sh) runs one `my` command through the console job. It reads the output `console` on standard input and
 takes the command as its arguments, waits for it, prints its output, and exits with its exit code:

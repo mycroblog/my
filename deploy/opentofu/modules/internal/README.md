@@ -391,7 +391,7 @@ What a worker has of the app: the image, the settings, the secrets with `direct_
 
 **One audience, and one account, across the services of Cloud Tasks.** A process checks a token against `queue_cloudtasks_url` plus the path, unless `queue_cloudtasks_audience` is set. That same URL is where the process sends the tasks of the default queue, so a worker cannot name its own URL there without taking those tasks. So with workers the queue module sets one audience, the default service's URL, for every process and for the tick, and a worker's service accepts it as a custom audience, which Cloud Run's own check of the token needs. There is one invoker account rather than one per service, because the server creates every task with the one `queue_cloudtasks_service_account` and accepts only that, and a route cannot name another.
 
-`upgrade.sh` finds the workers on the platform and moves each after the migration and before the default: by a label on Cloud Run, and by being in the cluster on ECS. `--maintenance` puts them in the mode as well. `monitoring-gcp` takes the same `workers`, so that the lines of a job count wherever it ran.
+An upgrade moves each worker after the migration and before the default: on Cloud Run through the dependencies of the apply, and on ECS through `upgrade.sh`, which finds them by being in the cluster. `--maintenance` puts them in the mode as well. `monitoring-gcp` takes the same `workers`, so that the lines of a job count wherever it ran.
 
 Never applied, like everything here. Unverified: that Cloud Run accepts a token whose audience is a custom one on a service that shares it with no other, on the URL that Cloud Tasks counts as internal, and that the same value of audience on several services is allowed, which Google's page does not say; that `gcloud`'s filter finds a service by that label; and that `role = worker` answers Cloud Run's probes as the configuration reference says it does.
 
@@ -417,10 +417,18 @@ tofu output -json console | deploy/opentofu/console.sh admin create -username al
 
 ### Upgrading
 
-[`upgrade.sh`](../../upgrade.sh) runs the same steps in the same order on every platform: the one-off migration takes the new image, then
-`config check`, `db upgrade -check`, `schema apply`, `db upgrade`, and only then the service. Each platform is a few functions there,
-chosen by `--platform`, which is `gcp-cloud-run` unless you say otherwise. What holds a bad image back is the platform's: Cloud Run
-gives a revision no traffic until `/readyz` answers, and ECS goes back when a new task fails its load balancer's check.
+An upgrade runs the same steps in the same order on every platform: the one-off migration takes the new image and runs `my upgrade`
+(`config check`, `db upgrade -check`, `schema apply`, `db upgrade`), then the workers move, and only then the service.
+
+- **`app-gcp-cloud-run`** does it in the apply. With `migration`, a `terraform_data` replaced by each new image runs
+  [`migrate.sh`](../../migrate.sh) through `local-exec`, and the workers depend on it, the service on the workers. A failed or
+  interrupted migration fails the provisioner and taints it, so the next apply of the same image runs it again. `migrate.sh`
+  first waits for an execution of the job still running, and reads a JSON in the shape of `console` without its `service`,
+  which it hands to `console.sh`; a new platform adds one function that waits.
+- **`app-aws-ecs`** leaves the image to [`upgrade.sh`](../../upgrade.sh), whose functions run the steps on ECS.
+
+What holds a bad image back is the platform's: Cloud Run gives a revision no traffic until `/readyz` answers, and ECS goes back
+when a new task fails its load balancer's check.
 
 ## AWS: unverified
 
