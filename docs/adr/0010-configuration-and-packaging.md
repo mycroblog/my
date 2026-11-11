@@ -32,8 +32,8 @@
 | --- | --- |
 | Docker | `deploy/docker/compose.yaml`（SQLite 最小構成）に `compose.postgres.yaml`・`compose.s3.yaml`・`compose.caddy.yaml` を重ねる |
 | microk8s / k8s | Kustomize（base + overlays）。Helm chart は需要次第 |
-| Google Cloud | OpenTofu モジュール（Cloud Run, Cloud Tasks, GCS, Scheduler） |
-| AWS | OpenTofu モジュール（ECS Fargate, ALB, S3, CloudFront） |
+| Google Cloud | OpenTofu の公開モジュール `mycroblog-gcp`（Cloud Run。構成は ADR-0164） |
+| AWS | OpenTofu の公開モジュール `mycroblog-aws`（ECS Fargate。構成は ADR-0164） |
 
 IaC は OSS ライセンスの OpenTofu だけを使う。プロプライエタリなソフトウェアに依存しないため、Terraform には対応しない。モジュールは OpenTofu の機能（`lifecycle` の `enabled` など）を使ってよく、Terraform で動くことを確かめない。
 
