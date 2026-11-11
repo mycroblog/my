@@ -63,7 +63,8 @@ client API, and media work over plain HTTP at `http://localhost:8080` (ActivityP
 
 - Set `MY_HOST` in `.env` to your real domain, remove `MY_WEB_ORIGIN` (it defaults to `https://{MY_HOST}`), and terminate
   TLS in front of the server: the layer `compose.caddy.yaml` runs Caddy for that
-  ([Docker Compose files](running.md#docker-compose-files)). `MY_HOST` is stored in the database on first
+  ([Docker Compose files](running.md#docker-compose-files)), or let the server serve HTTPS itself
+  ([serving HTTPS from the server](running.md#serving-https-from-the-server)). `MY_HOST` is stored in the database on first
   start and cannot be changed later.
 - Behind a reverse proxy of your own, set `MY_TRUSTED_PROXIES` in `.env` so that rate limits such as the one on sign-in
   apply per client IP rather than to the proxy ([`trusted_proxies`](../reference/configuration.md#trusted_proxies)).

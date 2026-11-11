@@ -14,7 +14,8 @@ From the top of the diagram down:
 - **Who connects.** People use the web client in their browser (it can be installed as an app), apps and bots use the
   client API, and other fediverse servers deliver and fetch posts over ActivityPub. All of them reach the server over
   HTTPS.
-- **In front of the server.** `my` speaks plain HTTP, so a reverse proxy or load balancer terminates HTTPS in front of it.
+- **In front of the server.** By default `my` speaks plain HTTP, so a reverse proxy or load balancer terminates HTTPS in front of it.
+  On a single machine, `my` can serve HTTPS itself instead ([serving HTTPS from the server](running.md#serving-https-from-the-server)).
   A CDN in front of the media files is optional.
 - **The `my` processes.** Each process runs `my serve`, and its [`role`](../reference/configuration.md#role) says what it
   runs: `web` the HTTP server, `worker` the job worker, which delivers posts, fetches from other servers, sends email,
