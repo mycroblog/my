@@ -106,6 +106,7 @@
     "billing_aws_role_arn": "the tasks' own role reads Cost Explorer",
     "billing_gcp_*": "Google Cloud costs, for mycroblog-gcp",
     "blob_fs_dir": "no disk on Fargate",
+    "tls*": "the platform terminates TLS",
     "blob_gcs_bucket": "Cloud Storage, on Google Cloud",
     "http_allow_private_networks": "the SSRF guard stays on",
     "listen": "the container port is fixed",
