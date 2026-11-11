@@ -122,10 +122,10 @@ A KEK chega ao servidor como um arquivo montado, nomeado por `MY_KEK_FILE`. Os o
 
 Para manter a KEK no Cloud KMS desde o início, substitua o bloco `kek` em `main.tf` como o comentário dele mostra e ative `cloudkms.googleapis.com`. Para trazer uma KEK ou uma chave VAPID próprias, defina `create = false` no módulo `kek`, ou remova a chave de `generate_p256_keys`, antes deste passo. Um segredo criado em outro lugar só precisa do seu ID: passe-o para `secret_env` do módulo app, ou para o módulo que o usa.
 
-<!-- source: 5-create-what-the-migration-needs eab1bb33867c -->
+<!-- source: 5-create-what-the-migration-needs 006a5b44f702 -->
 ### 5. Crie o que a migração precisa
 
-O startup probe do serviço espera por `/readyz`, que responde `503` até o schema existir, então o schema precisa vir primeiro. Crie o job de migração e o que ele exige, o que inclui o endereço do load balancer, já que as configurações do servidor o citam:
+O startup probe do serviço espera por `/health/ready`, que responde `503` até o schema existir, então o schema precisa vir primeiro. Crie o job de migração e o que ele exige, o que inclui o endereço do load balancer, já que as configurações do servidor o citam:
 
 ```sh
 tofu apply -target='module.app.google_cloud_run_v2_job.one_off["migrate"]'
@@ -189,7 +189,7 @@ tofu apply -var console_enabled=false
 
 O comando não tem entrada padrão nem terminal, então um comando que leia uma senha ou um arquivo deles não pode ser executado assim. O que ele imprime fica nos logs, então não execute um comando cuja saída você não escreveria ali.
 
-<!-- source: upgrading 1a1e204c5173 -->
+<!-- source: upgrading 31acbd137681 -->
 ## Atualização
 
 Leia antes [Atualização](database.md#upgrading) e as notas de versão, e avance uma versão menor por vez.
@@ -211,7 +211,7 @@ O script faz o seguinte e para no primeiro passo que falhar:
 1. Coloca o serviço no [modo de manutenção](maintenance.md) com `--maintenance`.
 2. Dá ao job de migração a nova imagem.
 3. Executa `my config check`, `my db upgrade -check`, `my schema apply` e `my db upgrade`, cada um esperando o anterior.
-4. Implanta a nova revisão, sem o modo de manutenção. Ela só recebe tráfego quando o startup probe passa em `/readyz`.
+4. Implanta a nova revisão, sem o modo de manutenção. Ela só recebe tráfego quando o startup probe passa em `/health/ready`.
 
 Sem `--maintenance`, a revisão antiga continua atendendo durante os passos 2 e 3, o que [não tem garantia de funcionar](database.md#the-server-during-an-upgrade). Adicione `--allow-destructive` quando as notas de versão pedirem. Fixe um digest com `--image ghcr.io/mycroblog/my:0.2.0@sha256:...`, o que a [checklist de produção](production-checklist.md#operations) recomenda.
 
@@ -225,10 +225,10 @@ gcloud run services update my --project="$PROJECT" --region=asia-northeast1 --re
 
 Para voltar depois que o schema mudou, restaure o backup: veja [Reversão](database.md#rolling-back).
 
-<!-- source: monitoring-and-alerts 67bc34d23fdf -->
+<!-- source: monitoring-and-alerts 771c3c53cc30 -->
 ## Monitoramento e alertas
 
-O módulo [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) adiciona uma verificação de disponibilidade de `/readyz`, políticas de alerta com os nomes do [runbook](alerts.md) e notificações por e-mail. Ele nunca foi aplicado, então teste-o uma vez fazendo uma verificação falhar. Ative `monitoring.googleapis.com` antes e leia no README dele quanto a verificação custa: cada execução acorda uma instância e, por meio de `/readyz`, o banco de dados, o que se soma ao [compromisso do tick](#costs).
+O módulo [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) adiciona uma verificação de disponibilidade de `/health/live`, políticas de alerta com os nomes do [runbook](alerts.md) e notificações por e-mail. Ele nunca foi aplicado, então teste-o uma vez fazendo uma verificação falhar. Ative `monitoring.googleapis.com` antes e leia no README dele quanto a verificação custa: cada execução acorda uma instância e também o banco de dados, se você a apontar para `/health/ready`, o que se soma ao [compromisso do tick](#costs).
 
 <!-- source: changing-a-backend ef4660f60191 -->
 ## Trocar um backend
@@ -334,7 +334,7 @@ O Cloud Tasks e o Cloud Scheduler não chegam por nenhum dos dois: eles chamam d
 
 Para usar a URL do próprio serviço ou outra coisa na frente, como uma CDN, remova o bloco `ingress` e a sua linha em `backends`, e mantenha `service_ingress` no que você precisar: ele é sempre uma escolha explícita sua, e `all` deixa a URL `run.app` aberta a qualquer pessoa. Defina `MY_TRUSTED_PROXIES` em `env` com o que se conecta ao servidor. O que você puser na frente ainda deve responder em `https://{host}`.
 
-<!-- source: cloudflare 95b7a9baaff1 -->
+<!-- source: cloudflare eac845a03464 -->
 ### Cloudflare
 
 `ingress-cloudflare-app` coloca o Cloudflare na frente de `host`, com o cache ignorado para tudo, e `ingress-cloudflare-media` adiciona um host de mídia com cache ao lado de qualquer ingress. Leia antes o README de cada módulo ([app](../../deploy/opentofu/modules/ingress-cloudflare-app/README.md), [media](../../deploy/opentofu/modules/ingress-cloudflare-media/README.md)). O token vai em `CLOUDFLARE_API_TOKEN`. Esses módulos só foram executados com providers simulados.
@@ -344,6 +344,7 @@ Para usar a URL do próprio serviço ou outra coisa na frente, como uma CDN, rem
 - **O valor fica no estado.** O provider do Cloudflare não tem uma forma somente de escrita para o valor de cabeçalho de uma regra. Gere um com `openssl rand -hex 32`, adicione-o a um segredo com `gcloud secrets versions add`, passe o mesmo valor com `TF_VAR_origin_secret` e mantenha o estado privado. [O guia da CDN](cdn.md#rotate-the-value) explica como rotacioná-lo.
 - **Nada adiciona o cabeçalho enquanto um registro não passa pelo proxy**, então o servidor recusa tudo, exceto as verificações de integridade: com `proxied = false` para o certificado de um mapeamento de domínio, configure o segredo depois disso.
 - **Desative o Bot Fight Mode** no painel. Ele cobre a zona inteira e nenhuma regra pode ignorá-lo, e um desafio em `/ap/`, `/.well-known/` ou `/api/` quebra a federação, porque os outros servidores não são navegadores. Os jobs não passam pelo Cloudflare. Os módulos não adicionam nenhum desafio e desativam a Browser Integrity Check, mas não gerenciam o Bot Fight Mode. Pelo mesmo motivo, não ative “I'm Under Attack”.
+- **O Email Address Obfuscation pode continuar ativado.** Ele reescreve os endereços de e-mail em HTML como `[email protected]` e adiciona um script para restaurá-los, o que a Content-Security-Policy do servidor recusa. As páginas do próprio servidor, como a que diz para onde foi o e-mail de confirmação, marcam o conteúdo para que ele deixe os endereços em paz.
 - **Ative Always Use HTTPS** no painel se quiser que `http://` seja redirecionado. Ele cobre a zona inteira, então os módulos deixam isso com você.
 - **Timeouts**: o Cloudflare responde `524` quando a origem não envia nada por 125 segundos. Os jobs não são afetados, já que chamam diretamente a URL `run.app`. Os streams enviam um heartbeat a cada 30 segundos, abaixo do limite de ociosidade de 900 segundos. Não foi verificado se ele armazena streams em buffer em um host comum com proxy.
 - **Uploads**: 100 MB nos planos Free e Pro, acima dos 32 MiB do Cloud Run, que continua sendo o limite.

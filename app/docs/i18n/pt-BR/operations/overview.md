@@ -19,7 +19,7 @@ De cima para baixo no diagrama:
 - **As partes que você escolhe.** Cada parte no meio do diagrama tem uma configuração que escolhe o seu adaptador, listada na [próxima seção](#parts-you-choose-by-configuration).
 - **Serviços fora do servidor.** CAPTCHA, chat de voz, pagamentos, plugins e a importação de custos de nuvem ficam desligados até você configurá-los, e então o servidor chama o serviço que você indicar.
 
-<!-- source: parts-you-choose-by-configuration f7dbfce7a91c -->
+<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
 ## Partes que você escolhe por configuração
 
 Cada parte é uma configuração da [referência de configuração](../reference/configuration.md), definida em um arquivo TOML
@@ -44,7 +44,7 @@ configuração muda.
 | Tradução de publicações | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | nenhum (somente a tradução do próprio navegador); `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate), ou um plugin seu na frente do serviço que você escolher | [Traduzindo publicações](translation.md), [um plugin de tradução](plugins.md#translating-posts) |
 | Busca de texto completo nas publicações | [`search`](../reference/configuration.md#search) | `none`; ou `elasticsearch`, `opensearch` ou `meilisearch` ([mecanismos de busca](search-engines.md)); ou `plugin`, um plugin seu na frente de outro mecanismo | [Busca de texto completo](search.md), [um plugin de busca](plugins.md#searching-posts) |
 | CDN para mídia | [`media_origin`](../reference/configuration.md#media_origin) | não definido (o servidor entrega a mídia pela própria origem), ou a origem do seu CDN | [Servindo mídia por um CDN](cdn.md) |
-| Custos de nuvem | [`billing_sources`](../reference/configuration.md#billing_sources) | none, ou qualquer um de `aws` (AWS Cost Explorer), `gcp` (exportação ou orçamento de faturamento do Google Cloud), `plugin` | [Importando custos de nuvem](billing-import.md) |
+| Custos de nuvem | [`billing_sources`](../reference/configuration.md#billing_sources) | none, ou qualquer um de `aws` (AWS Cost Explorer), `gcp` (exportação ou orçamento de faturamento do Google Cloud), `cloudflare` (cobranças de uso da Cloudflare), `plugin` | [Importando custos de nuvem](billing-import.md) |
 | Métricas | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`, `prometheus`, `otlp` (OpenTelemetry), `emf` (CloudWatch) | [Métricas](running.md#metrics), [alertas](alerts.md) |
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
 | Relatórios de erro | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (somente a linha de log e os grupos de erro), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Relatórios de erro](error-reporting.md) |

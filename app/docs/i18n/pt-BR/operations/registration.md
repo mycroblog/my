@@ -127,7 +127,7 @@ Enquanto a configuração de instância `login_providers_only` se aplicar, os li
   Um login que aguarda o código de dois fatores e uma autorização de app ainda não concluída também deixam de funcionar: o usuário os inicia de novo.
   Com `mail = smtp`, o servidor também envia um e-mail ao usuário avisando que a senha mudou.
 
-<!-- source: invite-codes 5f98f9eb7d6f -->
+<!-- source: invite-codes 441b486504dd -->
 ## Códigos de convite
 
 Os convites funcionam nos modos `open`, `approval` e `invite`. Os convites da equipe são criados com a CLI, as telas de moderação e a API de administração abaixo; os membros também podem criar os próprios convites ([convites dos membros](#member-invites)).
@@ -148,6 +148,7 @@ my invite revoke <code>
 - Além da CLI, você pode criar, listar e revogar convites nas telas de Moderação do cliente web (“Convites”, `/moderation/invites`) e pela API de cliente
   (`GET` / `POST /api/v1/admin/invites` e `POST /api/v1/admin/invites/{id}/revoke`). Ambos exigem a permissão de função `manage_invites`
   (a função integrada `moderator` não a tem; para delegar isso, crie uma função com essa permissão e conceda-a).
+  Um serviço que distribui convites por conta própria chama a mesma API com um token do escopo `admin:manage_invites` ([deixar outro serviço usar a API de administração](moderation.md#letting-another-service-use-the-admin-api)).
   “Criar um convite” na lista abre o formulário (`/moderation/invites/new`), que mostra o código e o link de cadastro do novo convite.
   A lista permite copiar o link de um convite utilizável e revogá-lo.
 - A lista mostra todos os convites, os da equipe e os dos membros, com quem os criou (`created_by`) e como (`creator_kind`: `staff` ou `member`). Quem tem `manage_invites` pode revogar qualquer um deles.

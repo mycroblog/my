@@ -63,22 +63,22 @@ por exemplo como um passo da implantação, antes que a nova versão receba trá
 - **Detalhes**: [executando o servidor](running.md) (os endpoints de federação e a entrega dos identificadores a partir de outro domínio),
   [`host`](../reference/configuration.md#host) e [`account_domain`](../reference/configuration.md#account_domain).
 
-<!-- source: reachable-over-https 1cf53c613f7b -->
+<!-- source: reachable-over-https b7513cc3534f -->
 ### Acessível por `https`
 
 - **Por quê**: outros servidores buscam os ids em `https://<host>/` na porta 443, e os navegadores enviam os cookies de login apenas por `https`.
-- **Verifique**: `curl -sI https://<host>/healthz` responde `200` de fora da sua rede, com um certificado válido para `host`,
+- **Verifique**: `curl -sI https://<host>/health/live` responde `200` de fora da sua rede, com um certificado válido para `host`,
   e `my config check` não informa nenhum erro sobre `web_origin`. `http://<host>/` redireciona para `https`, o que o proxy reverso, o balanceador de carga ou a CDN na frente do servidor faz (com o Docker Compose, a camada `compose.caddy.yaml` é esse proxy).
 - **Detalhes**: [executando o servidor](running.md), [`web_origin`](../reference/configuration.md#web_origin).
 
-<!-- source: not-reachable-past-the-cdn 58310b9f29d7 -->
+<!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### Não acessível por trás da CDN
 
 - **Por quê**: com uma CDN na frente, e com o endereço próprio do servidor ainda público (`*.run.app` no Cloud Run), qualquer pessoa pode chamar o servidor passando pelo WAF e pelo cache,
   e quem chama a partir da própria plataforma da CDN pode escolher o IP do cliente que os limites de requisições enxergam. Isso só é necessário nesse caso: não quando um firewall ou a plataforma já limita quem pode se conectar,
   e sem CDN não há o que contornar.
 - **Verifique**: `origin_secret` e `origin_secret_header` estão definidos e a CDN define o cabeçalho em todos os nomes de host. `curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/`
-  responde `403`, o `/healthz` dele responde `200`, e `https://<host>/` responde `200`.
+  responde `403`, o `/health/live` dele responde `200`, e `https://<host>/` responde `200`.
 - **Detalhes**: [Recuse requisições que não passaram pela CDN](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), incluindo como se recuperar quando isso bloqueia todo mundo.
 
 <!-- source: secrets ec71f1f20574 -->
@@ -153,12 +153,12 @@ ou com `my instance set`. `my config check -instance` avisa sobre os textos, con
     Liste-os com `my admin role` e revise-os nas telas de administração.
 - **Detalhes**: [administradores e papéis](admin-cli.md), [moderação](moderation.md) (permissões e recuperação de login).
 
-<!-- source: operations 56bd643c2241 -->
+<!-- source: operations aac00b13fc38 -->
 ## Operação
 
 - **Backups e recuperação**: o banco de dados, o armazenamento de blobs (`blob_fs_dir` ou o bucket) e a KEK têm backup agendado, em um lugar separado do servidor, e uma restauração para um servidor novo foi ensaiada: o servidor restaurado inicia e as contas conseguem entrar e publicar. Um backup que nunca foi restaurado não se sabe se funciona. O banco de dados e a mídia não podem estar em um diretório temporário; `my config check` avisa quando estão.
   Veja [gerenciamento de chaves](key-management.md) (backup da KEK) e [banco de dados](database.md).
-- **Monitoramento e alertas**: um monitor externo verifica `/healthz` e avisa alguém que possa agir, e os jobs mortos da fila de jobs são observados. Veja [monitoramento](monitoring.md) e [executando o servidor](running.md) (verificações de saúde, métricas e a fila de jobs).
+- **Monitoramento e alertas**: um monitor externo verifica `/health/live` e avisa alguém que possa agir, e os jobs mortos da fila de jobs são observados. Veja [monitoramento](monitoring.md) e [executando o servidor](running.md) (verificações de saúde, métricas e a fila de jobs).
 - **A imagem**: a instância executa uma imagem lançada e fixada por digest (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, das notas da versão), e não uma que muda a cada reinício, e [a sua proveniência foi verificada](running.md#verify-an-image). Não existe tag `latest`.
   Uma atualização muda essa versão de propósito e segue [Atualizando](database.md#upgrading), uma versão menor de cada vez.
 - **Código-fonte (AGPL-3.0)**: o servidor precisa oferecer o seu código-fonte a todos que o usam. Deixe [`source_url`](../reference/configuration.md#source_url) no padrão para uma versão lançada sem modificações; aponte-o para o seu próprio código-fonte quando executar um fork ou uma versão modificada. Verifique o link em `/about`.

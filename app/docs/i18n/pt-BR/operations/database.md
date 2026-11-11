@@ -87,7 +87,7 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 4996c9dc9019 -->
+<!-- source: upgrading 3882f4bb0751 -->
 ## Atualizar
 
 Uma atualização para uma nova versão sempre executa estes passos, nesta ordem, com a imagem do servidor da **nova** versão:
@@ -104,8 +104,10 @@ Uma atualização para uma nova versão sempre executa estes passos, nesta ordem
 
 `my serve` nunca executa `my db upgrade -check`, `my schema apply` nem `my db upgrade`; eles são jobs avulsos. Execute apenas um deles por vez contra um banco de dados.
 
-A maioria das versões não tem passo de atualização de dados: `my db upgrade -check` imprime `ok: the database can be upgraded to this release` e
-`my db upgrade` imprime `ok: no data upgrade step to run`. Execute os dois mesmo assim, para que o procedimento não dependa de ler todas as notas de versão.
+A maioria das versões não acrescenta nenhum passo de atualização de dados: `my db upgrade -check` imprime `ok: the database can be upgraded to this release` e, em um
+banco de dados que registrou os passos das versões anteriores, `my db upgrade` imprime `ok: no data upgrade step to run`. Um banco de dados novo registra
+todos os passos da versão no seu primeiro `my db upgrade`, sem nada para reescrever. Execute os dois mesmo assim, para que o procedimento não dependa de ler
+todas as notas de versão.
 A seção **Upgrading** das notas de versão lista os passos de cada versão.
 
 <!-- source: the-server-during-an-upgrade ef479675745b -->

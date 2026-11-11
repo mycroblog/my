@@ -5,16 +5,16 @@ Como apontar um monitor de disponibilidade para o servidor, como evitar que o mo
 
 Os fatos de terceiros abaixo trazem a data em que foram confirmados e a fonte. Os serviços mudam seus planos e suas telas; confira a página vinculada antes de confiar em um limite.
 
-<!-- source: which-url-to-monitor 50bdaa5c9f31 -->
+<!-- source: which-url-to-monitor 1c5761757c52 -->
 ## Qual URL monitorar
 
 | Caminho | Para | Acessa o banco de dados | No modo de manutenção |
 | --- | --- | --- | --- |
 | `GET /api/v1/instance/health` | Monitores de disponibilidade, páginas de status, o cliente web | No máximo uma vez a cada 60 s por processo | `503` com `Retry-After` e `{"status":"maintenance"}` |
-| `GET /healthz` | A sonda de liveness da plataforma | Nunca | `200` `{"status":"maintenance"}` |
-| `GET /readyz` | A sonda de readiness do load balancer ou do Kubernetes | A cada requisição (requisições concorrentes compartilham uma verificação) | `200` `{"status":"maintenance"}` |
+| `GET /healthz`, `GET /health/live` | A sonda de liveness da plataforma | Nunca | `200` `{"status":"maintenance"}` |
+| `GET /readyz`, `GET /health/ready` | A sonda de readiness do load balancer ou do Kubernetes | A cada requisição (requisições concorrentes compartilham uma verificação) | `200` `{"status":"maintenance"}` |
 
-Aponte o monitor externo para **`/api/v1/instance/health`**, não para `/readyz`: `/readyz` consulta o banco de dados a cada requisição, então um monitor com intervalo curto mantém acordado um banco de dados que para quando fica ocioso. As sondas são para a sua plataforma. Os módulos [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) e [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) verificam `/readyz` a partir do monitor próprio da plataforma, em um intervalo longo, e os READMEs deles dizem o que isso custa.
+Aponte o monitor externo para **`/api/v1/instance/health`**, não para `/readyz` (`/health/ready`): ele consulta o banco de dados a cada requisição, então um monitor com intervalo curto mantém acordado um banco de dados que para quando fica ocioso. As sondas são para a sua plataforma. Os módulos [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) e [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) verificam `/health/live` (`monitoring-gcp`) ou `/readyz` (`monitoring-aws`) a partir do monitor próprio da plataforma, em um intervalo longo, e os READMEs deles dizem o que isso custa.
 
 Respostas de `/api/v1/instance/health` (sem autenticação, `Cache-Control: no-store`):
 
@@ -24,21 +24,23 @@ Respostas de `/api/v1/instance/health` (sem autenticação, `Cache-Control: no-s
 | Indisponível (o banco de dados está inacessível ou o schema não foi aplicado) | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
 | Modo de manutenção | `503` com `Retry-After` | `{"status":"maintenance"}` |
 
-`/healthz` e `/readyz` respondem `200` com `{"status":"ok"}` quando saudáveis, e `/readyz` responde `503` com um documento de problema quando o banco de dados não está pronto.
+`/healthz` e `/readyz` respondem `200` com `{"status":"ok"}` quando saudáveis, e `/readyz` responde `503` com um documento de problema quando o banco de dados não está pronto. `/health/live` e `/health/ready` são as mesmas verificações com outros nomes.
+
+**No Cloud Run, chame os caminhos que não terminam em `z`.** O Cloud Run reserva alguns caminhos que terminam em `z` e os responde com um `404` próprio antes que uma requisição chegue ao contêiner: `/healthz` é um deles, e nada promete que `/readyz` continue respondendo. De fora de uma implantação no Cloud Run (um monitor de disponibilidade, `curl`), use `/health/live`, `/health/ready` ou `/api/v1/instance/health`. As sondas do próprio contêiner não são afetadas.
 O corpo nunca traz motivo, nome de host ou versão. A causa está no log do servidor.
 
 `checked_at` é o horário da verificação em que a resposta se baseia. O servidor executa a verificação do banco de dados no máximo uma vez por minuto por processo e reutiliza o resultado, então um monitor que consulta com mais frequência que a cada 60 s vê o mesmo `checked_at` e não ganha nada. Com vários processos, cada um executa a sua própria verificação.
 
 Com [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) definido, esses três caminhos continuam respondendo sem o cabeçalho, então não mostram se o CDN perdeu o cabeçalho. Monitore uma página também pelo CDN, como `https://<host>/about`, se um monitor for o seu primeiro sinal de problema.
 
-<!-- source: keep-the-monitoring-cheap 29d1da3d6dc2 -->
+<!-- source: keep-the-monitoring-cheap d7956dee97ca -->
 ## Mantenha o monitoramento barato
 
 - **Bancos de dados que param quando ociosos.** Se o intervalo do monitor for menor que o tempo que o banco de dados espera antes de parar, o banco nunca para.
   O Neon suspende um compute após 5 minutos sem atividade; o plano Free não permite desativar isso (confirmado em 2026-10-25, [Neon: Scale to zero](https://neon.com/docs/introduction/scale-to-zero)).
   Como regra prática, um intervalo de 5 minutos ou mais permite que um banco ocioso pare entre as verificações, e cada verificação o acorda pelo tempo da verificação mais o tempo ocioso.
   Um servidor federado recebe entregas de outros servidores o tempo todo, então o banco fica acordado grande parte do dia de qualquer forma; o custo extra se limita às horas silenciosas.
-- **Uma divisão mais barata se o custo ocioso importar mais.** Monitore `/healthz` (ele nunca acessa o banco de dados) em um intervalo curto, e `/api/v1/instance/health`, que acessa o banco, em um intervalo longo (15 minutos ou mais). `/healthz` responde `200` também no modo de manutenção, então verifique `"status":"ok"` no corpo.
+- **Uma divisão mais barata se o custo ocioso importar mais.** Monitore `/health/live` (ele nunca acessa o banco de dados) em um intervalo curto, e `/api/v1/instance/health`, que acessa o banco, em um intervalo longo (15 minutos ou mais). `/health/live` responde `200` também no modo de manutenção, então verifique `"status":"ok"` no corpo.
 - **As requisições em si são pequenas.** Uma verificação a cada 5 minutos são cerca de 8.640 requisições por mês, e uma a cada minuto cerca de 43.200. Isso cabe no nível gratuito do Cloud Run (2 milhões de requisições, 180.000 vCPU-segundos e 360.000 GiB-segundos por mês; tempo arredondado para cima em 100 ms; confirmado em 2026-10-23, [preços do Cloud Run](https://cloud.google.com/run/pricing)).
 
 <!-- source: telling-the-maintenance-mode-from-an-outage 15833e5da3fc -->

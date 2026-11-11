@@ -28,7 +28,7 @@ Uma falha de um serviço externo (e-mail, armazenamento, pagamentos, voz) só é
 
 Um panic em uma tarefa em segundo plano para o processo depois de reportado, para que o servidor nunca continue rodando em estado quebrado. A sua plataforma o reinicia.
 
-<!-- source: the-log-line 6b570d0bfd09 -->
+<!-- source: the-log-line ef6f03400831 -->
 ## A linha de log
 
 A linha tem `msg` = `error report` e `level` `ERROR` (`severity` é `CRITICAL` quando a falha para o processo).
@@ -37,7 +37,9 @@ Os seus campos, e o que a sanitização faz com eles, estão em [Executando o se
 - `my.error.fingerprint` é o mesmo para toda ocorrência do mesmo erro. Pesquise ou agrupe por ele.
 - `my.error.where` indica onde aconteceu, por exemplo `client_api GET /api/v1/statuses/{id}`.
 - `request_id`, `job_id`, `trace_id` e `span_id` encontram as outras linhas da mesma requisição ou do mesmo job.
+- A linha de um erro de requisição tem `context.httpRequest`: o método, a rota como URL (`/api/v1/statuses/{id}`, nunca o caminho que o cliente pediu) e o status respondido. O Error Reporting os mostra no grupo e pode filtrar por eles.
 - `message` fica por último na linha: o tipo e a mensagem do erro, uma quebra de linha e a pilha do Go.
+- A pilha começa onde o erro se originou, não onde foi reportado: para um erro de banco de dados, a função do servidor que executou a consulta. Erros de lugares diferentes caem, portanto, em grupos diferentes, tanto no Error Reporting quanto na tela de administração.
 
 Nenhuma outra linha traz uma pilha.
 

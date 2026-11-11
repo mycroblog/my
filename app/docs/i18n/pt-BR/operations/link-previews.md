@@ -4,7 +4,7 @@
 As prévias que outros serviços mostram das páginas deste servidor, o que o servidor retorna para elas e os passos para verificá-las manualmente. Os cartões que este servidor mostra para os links nas próprias publicações
 estão em [Cartões de links em publicações](#cards-of-links-in-posts) abaixo; como parar de buscá-los de um domínio está nas [configurações da instância](instance-settings.md#link-card-domains).
 
-<!-- source: what-the-server-returns bb9326f9729a -->
+<!-- source: what-the-server-returns fe60560f1b91 -->
 ## O que o servidor retorna
 
 `my serve` retorna o HTML da página inicial (`https://<host>/`), da página de informações da instância (`https://<host>/about`),
@@ -22,6 +22,8 @@ Uma requisição de HTML é sempre tratada como sem login, então uma prévia mo
 | Uma publicação `unlisted` | 200. O shell com meta tags, mais `<meta name="robots" content="noindex, noarchive">` e `X-Robots-Tag: noindex, noarchive` |
 | Uma publicação `local`, `private`, `direct`, excluída ou inexistente, e o perfil e as publicações de uma conta suspensa, desativada, excluída ou limitada | 404. O shell genérico e `X-Robots-Tag: noindex, noarchive`. O corpo e os cabeçalhos são iguais seja qual for o motivo |
 | `/@<old username>/status/<post ID>` | 301, para a URL com o nome de usuário atual |
+| A página de uma hashtag (`/tags/<tag>`) | 200. O shell genérico, com o link para o feed Atom da hashtag (veja "O shell genérico" abaixo) |
+| Qualquer outra página do cliente web (explorar, as páginas públicas de custos e de apoiadores, login e assim por diante) | 200. O shell genérico, com as meta tags da instância (veja "O shell genérico" abaixo) |
 
 Toda página também leva as declarações para mecanismos de busca e rastreadores de IA (meta tags como `noindex` e `noai`, e
 `X-Robots-Tag`, `Content-Usage` e `tdm-reservation`), conforme as configurações da instância e as do dono
@@ -31,23 +33,24 @@ Toda página também leva as declarações para mecanismos de busca e rastreador
 Uma requisição com um `Accept` do ActivityPub não recebe o shell; o lado ActivityPub a responde (um perfil responde com o
 `id` do ator, e uma publicação que um visitante sem login pode ver responde com um 302 para o seu `id`). Toda resposta leva `Vary: Accept`.
 
-<!-- source: meta-tags 00a4a8115b9e -->
+<!-- source: meta-tags 1a514282794e -->
 ### Meta tags
 
 | Tag | Conteúdo |
 | --- | --- |
-| `og:title`, `<title>` | "Nome de exibição (@nome de usuário@domínio da conta)". O nome de usuário se o nome de exibição estiver vazio |
-| `og:type` | `profile` para um perfil, `article` para uma publicação |
+| `og:title`, `<title>` | "Nome de exibição (@nome de usuário@domínio da conta)". O nome de usuário se o nome de exibição estiver vazio. Para um artigo, o título dele |
+| `og:type` | `profile` para um perfil, `article` para uma publicação e um artigo |
 | `og:url`, `<link rel="canonical">` | A URL canônica (a URL com o nome de usuário atual) |
-| `og:description` | O texto simples do corpo da publicação (a bio, para um perfil) sem tags, cortado em 200 grafemas. Para uma publicação com aviso de conteúdo, apenas o texto do aviso de conteúdo |
+| `og:description` | O texto simples do corpo da publicação (a bio, para um perfil) sem tags, cortado em 200 grafemas. Para uma publicação com aviso de conteúdo, apenas o texto do aviso de conteúdo. Para um artigo, o resumo dele, também quando está marcado como sensível; o corpo de um artigo nunca está na página |
 | `og:image`, `og:image:alt` / `width` / `height` | A imagem escolhida na ordem abaixo |
 | `og:site_name` | O nome da instância (o texto `name`, igual em todos os idiomas; `host` quando não há; [nome e domínio](instance-settings.md#name-and-domain)) |
-| `og:locale`, `<html lang dir>` | O idioma da publicação. Quando não está definido (`und`), o idioma padrão de publicação do autor e, na falta dele, o `default_locale` da instância. Não muda com `Accept-Language` |
+| `og:locale`, `<html lang dir>` | O idioma da publicação. Quando não está definido (`und`), o idioma padrão de publicação do autor e, na falta dele, o `default_locale` da instância. Não muda com `Accept-Language`. `og:locale` tem a forma `language_TERRITORY`: um idioma sem região recebe a região usual dele (`ja` → `ja_JP`, `en` → `en_US`, `pt` → `pt_BR`), e `<html lang>` mantém a tag de idioma como está |
 | `article:published_time`, `article:author` | Apenas publicações. O horário da publicação (UTC) e a URL do perfil do autor |
 | `profile:username` | Apenas perfis. `username@account domain` |
 | `twitter:card` | `summary_large_image` quando a imagem é mais larga que cerca de 2:1 (largura / altura >= 1,7) e tem pelo menos 300x157, caso contrário `summary` |
 | `fediverse:creator` | `@username@account domain`. O Mastodon o mostra como "autor" |
 | `<link rel="alternate" type="application/activity+json">` | O `id` do AP (o ator ou o objeto da publicação) |
+| `<link rel="alternate" type="application/atom+xml">` | Apenas perfis que têm um feed Atom: o endereço do feed (`https://<host>/@<username>.atom`), com o título igual ao de `og:title`. Um perfil cujo dono desativou o feed, e uma conta limitada ou que se mudou, não têm nenhum |
 
 As meta tags da página inicial apresentam a própria instância.
 
@@ -56,7 +59,7 @@ As meta tags da página inicial apresentam a própria instância.
 - `og:description` é o texto da instância `short_description` cortado em 200 grafemas. É omitido quando não há.
 - O idioma (`og:locale`, `<html lang dir>`) é o `default_locale` da instância. O nome e a descrição são o mesmo valor
   em todos os idiomas.
-- `og:image` é o número 3 abaixo (a imagem de prévia da instância) ou o número 4 ou 5 se não houver.
+- `og:image` é a imagem da instância: o número 3 abaixo, ou o número 4, 5 ou 6 se não houver.
 - Ela não pertence a uma conta, então `fediverse:creator` e o `alternate` do ActivityPub não são gerados.
 - A página de informações da instância (`/about`) tem as mesmas meta tags. `og:title` e `<title>` são "Sobre {nome da instância}"
   (`server:preview.about_title`), e `og:url` e `<link rel="canonical">` são `https://<host>/about`.
@@ -65,35 +68,42 @@ As meta tags da página inicial apresentam a própria instância.
   `<link rel="canonical">` são o endereço dessa página. A página de um documento que não está publicado recebe o shell genérico.
 - A página sobre o rastreador de cartões de link (`/about/crawler`) tem as mesmas meta tags, com a mesma forma de título e de endereço.
 
+O shell genérico, que toda outra página e o 404 de uma publicação oculta retornam, leva as mesmas tags da página inicial sem um endereço próprio: `og:type` `website`, o nome da instância como `og:site_name` e `og:title`, `short_description` como `og:description`, `og:locale`, a imagem da instância e `twitter:card`. Ele não tem `og:url` nem `<link rel="canonical">`, então uma única cópia serve todos os caminhos, e o 404 de uma publicação oculta continua idêntico ao de qualquer outra página.
+A página de uma hashtag acrescenta apenas `<link rel="alternate" type="application/atom+xml">` para o feed da hashtag (`https://<host>/tags/<tag>.atom`), com o título "#tag em nome da instância" (`server:feed.tag_title`), tenha ou não uma publicação usado a hashtag ainda. Um link compartilhado para uma hashtag ou para a página pública de custos mostra o cartão da instância.
+
+Os próprios feeds são documentos Atom 1.0 com as 20 publicações públicas locais mais recentes que não são respostas nem impulsos, com `ETag`, `Last-Modified` e `Cache-Control: public, max-age=60`. A entrada de um artigo é o título e o resumo dele, com o link para o artigo; o corpo fica na página do artigo. Cada perfil com feed também tem um feed apenas de artigos, `https://<host>/@<username>/articles.atom`, com o título "Artigos de nome (@handle)" (`server:feed.articles_title`), que segue as mesmas regras; a página do perfil aponta apenas para o feed principal. O servidor guarda cada feed renderizado no seu armazenamento chave-valor por um minuto, então uma mudança chega a um feed em cerca de um minuto. Um feed leva o mesmo `X-Robots-Tag` e as mesmas declarações de IA do perfil dele; o feed de uma hashtag é sempre `noindex` e declara a recusa de IA de qualquer um dos autores. Um perfil sem feed, e uma hashtag que nenhuma publicação usou, respondem 404.
+
 `og:image` é escolhida nesta ordem.
 
-1. A primeira imagem anexada à publicação (o texto alternativo dela vai para `og:image:alt`). Não é usada para uma publicação marcada como sensível ou
-   com aviso de conteúdo.
+1. A primeira imagem anexada à publicação, ou a capa de um artigo (o texto alternativo dela vai para `og:image:alt`). Não é usada para uma
+   publicação ou um artigo marcado como sensível, nem para uma publicação com aviso de conteúdo.
 2. A imagem de cabeçalho do perfil ou, na falta dela, o avatar (`og:image:alt` é "Imagem de cabeçalho de {name}" ou "Avatar de {name}").
-3. A imagem de prévia da instância (a configuração da instância `preview_image`; `og:image:alt` é o texto `preview_image_alt`, ou "Imagem
-   de {nome da instância}" se não houver).
-4. A versão de prévia de link do logotipo da própria instância ([logotipo e ícone](instance-settings.md#logo-and-icon)), um PNG de 1200x630
+3. A imagem de prévia da instância (a configuração da instância `preview_image`, em "Pré-visualizações de links" em Configurações → Geral da
+   administração; `og:image:alt` é o texto `preview_image_alt`, ou "Imagem de {nome da instância}" se não houver).
+4. A miniatura da instância (a configuração da instância `thumbnail`, a imagem da página Configurações → Geral; `og:image:alt` é o
+   texto `thumbnail_alt`, ou "Imagem de {nome da instância}" se não houver).
+5. A versão de prévia de link do logotipo da própria instância ([logotipo e ícone](instance-settings.md#logo-and-icon)), um PNG de 1200x630
    em `https://<host>/brand/<revision>/preview-1200x630.png` (`og:image:alt` é "Imagem de {nome da instância}").
-5. A imagem padrão incluída (`https://<host>/preview-image.png`, um PNG de 1200x630. É uma imagem genérica sem o nome da
-   instância, e `og:image:alt` descreve a imagem).
+6. A imagem padrão incluída (`https://<host>/preview-image.png`, um PNG de 1200x630 do logotipo do mycroblog sobre branco, sem o nome da
+   instância; `og:image:alt` é "O logotipo do mycroblog").
 
-Assim, uma página que mostra uma prévia sempre tem `og:image` e `og:image:alt`.
-As imagens de 1 a 3 são a variante `full` da mídia processada, e a largura e a altura são os valores do processamento.
-Se `preview_image` ainda está sendo processada, falhou no processamento ou não é uma imagem, usa-se o número 4 (ou o 5 sem um logotipo).
-As configurações da instância são lidas a cada requisição, então `my instance set preview_image ...` entra em vigor sem reiniciar (para o
-procedimento, veja as [configurações da instância](instance-settings.md)).
+Os números 3 a 6 são a imagem da instância. Assim, uma página que mostra uma prévia sempre tem `og:image` e `og:image:alt`.
+As imagens de 1 a 4 são a variante `large` da mídia processada, e a largura e a altura são os valores do processamento.
+Se `preview_image` não está definida, ainda está sendo processada, falhou no processamento ou não é uma imagem, usa-se a miniatura, depois o logotipo
+e depois a imagem incluída. As configurações da instância são lidas a cada requisição, então `my instance set preview_image ...` entra em vigor
+sem reiniciar (para o procedimento, veja as [configurações da instância](instance-settings.md)).
 
-A imagem padrão é desenhada com a biblioteca padrão na primeira requisição após a inicialização e mantida no processo (cerca de 10 KB).
-Ela é servida com `Cache-Control: no-cache` e um ETag.
+A imagem incluída faz parte do binário (cerca de 20 KB). Ela é servida com `Cache-Control: no-cache` e um ETag.
 
-<!-- source: caching 5bc906452b10 -->
+<!-- source: caching e6ace7ad3fd0 -->
 ### Cache
 
 - A resposta leva `Cache-Control: public, max-age=60, stale-while-revalidate=300`. Uma exclusão, uma mudança de visibilidade ou a
   publicação ou despublicação de um documento permanece nos caches compartilhados por no máximo esse tempo.
 - O ETag é montado a partir das versões do template, dos assets e das configurações da instância, do idioma, da versão
   (revisão) da publicação, da visibilidade efetiva, da versão do perfil e da imagem escolhida (para a página inicial, a página de
-  informações, as páginas de documentos e a página sobre o rastreador: o endereço da página, o título, a descrição da instância e a imagem escolhida).
+  informações, as páginas de documentos e a página sobre o rastreador: o endereço da página, o título, a descrição da instância e a imagem escolhida;
+  para o shell genérico: o nome da instância, a descrição dela e a imagem da instância).
   `If-None-Match` recebe `304`.
 - Se você colocar uma CDN na frente, inclua `Accept` na chave de cache (para que o JSON do AP e o HTML não se misturem).
 

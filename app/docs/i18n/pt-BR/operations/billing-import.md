@@ -1,4 +1,4 @@
-<!-- source: importing-cloud-usage-costs db52fcd17ff9 -->
+<!-- source: importing-cloud-usage-costs 401e74fb1de0 -->
 # Importação dos custos de uso de nuvem
 
 O servidor importa a cada 24 horas as cobranças de uso dos provedores listados na configuração [`billing_sources`](../reference/configuration.md#billing_sources), ou de [um plugin](#a-plugin-billing_sources--plugin) para um provedor do qual ele não tem adaptador, e as soma aos custos da instância. O padrão é vazio, o que não importa nada.
@@ -8,9 +8,10 @@ O estado das importações (o último sucesso, o tipo da última falha e o núme
 As métricas contam cada tentativa por origem, resultado e tipo de falha (`my.billing.imports`) e informam as origens cuja tentativa mais recente falhou (`my.billing.import.failing`);
 [Alertas e runbook](alerts.md#mybillingimportfailing) traz o alerta sobre elas.
 
-Nenhuma credencial é mantida na configuração deste servidor. Dê ao ambiente de execução o que a cadeia de credenciais padrão do SDK de cada provedor lê (na AWS, a função de execução, variáveis de ambiente ou arquivos de credenciais compartilhados; no Google Cloud, as Application Default Credentials).
+Na AWS e no Google Cloud, nenhuma credencial é mantida na configuração deste servidor. Dê ao ambiente de execução o que a cadeia de credenciais padrão do SDK de cada provedor lê (na AWS, a função de execução, variáveis de ambiente ou arquivos de credenciais compartilhados; no Google Cloud, as Application Default Credentials).
+A Cloudflare não tem uma cadeia assim, então a importação dela lê um token de API de [`billing_cloudflare_api_token`](#cloudflare-billing_sources--cloudflare).
 
-<!-- source: with-the-opentofu-modules 51ec4f78f058 -->
+<!-- source: with-the-opentofu-modules 56be0b668f32 -->
 ## Com os módulos do OpenTofu
 
 Os módulos [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) e [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) definem `billing_sources` e fazem as partes deste guia que a API de um provedor permite. `billing-gcp` funciona apenas com o módulo de aplicação do Google Cloud, então na AWS os módulos importam somente os custos da AWS. `billing-aws` funciona com os módulos de aplicação da AWS e com o do Cloud Run, em que ambos podem estar em `backends`. Nenhum dos dois foi aplicado em uma conta real ainda.
@@ -24,6 +25,7 @@ Os módulos [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md)
 | O tópico e a assinatura pull de um orçamento, e a função de assinante | `billing-gcp` com `method = "budget"` |
 | Criar o orçamento e conectá-lo ao tópico | Manualmente, no console do Google Cloud, com uma função na conta de faturamento |
 | Ativar a API do BigQuery ou do Pub/Sub | Manualmente, como em [Implantação no Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
+| Cloudflare | Não por estes módulos. Defina `MY_BILLING_SOURCES`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID` e `MY_BILLING_CLOUDFLARE_API_TOKEN` (a partir de um segredo) como para um plugin |
 | Um plugin | Não por estes módulos. Sem nenhum módulo de cobrança em `backends`, defina `MY_BILLING_SOURCES = plugin` e as configurações do [plugin](#a-plugin-billing_sources--plugin) no `env` do módulo de aplicação; ao lado de um módulo de cobrança, o módulo de aplicação recusa `MY_BILLING_SOURCES` em `env`, então adicione um backend seu que retorne `billing_sources = ["plugin"]` ([os campos de um backend](../../deploy/opentofu/README.md)) |
 
 <!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
@@ -304,6 +306,56 @@ A build tag `no_billing_gcp` remove também este método. A biblioteca cliente d
 | `unavailable` | `UNAVAILABLE`, `INTERNAL` e similares, falha de rede | O job tenta de novo após uma pausa |
 | `invalid_response` | Uma mensagem que não pode ser lida como notificação de orçamento, um orçamento que não é mensal, dois orçamentos com o mesmo nome de exibição | Torne o orçamento mensal, dê nomes de exibição distintos aos orçamentos e não envie outras mensagens ao tópico |
 
+<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+## Cloudflare (`billing_sources = cloudflare`)
+
+O servidor lê o uso faturável de uma conta da Cloudflare: as cobranças de uso dos produtos pay-as-you-go, como R2, Workers e D1, um registro por métrica e dia.
+Ele as soma por produto (`R2`, `Workers`, `D1`) em meses de calendário UTC, então cada produto é uma linha de uso por mês. O uso dentro de uma franquia gratuita também é importado, com valor 0.
+Somente uma conta cobrada em pay-as-you-go tem esses dados; uma conta de contrato Enterprise falha com `not_enabled`.
+Um binário compilado com a build tag `no_billing_cloudflare` recusa `cloudflare` (veja [build-tags.md](../reference/build-tags.md)).
+
+<!-- source: what-it-does-not-import 2028c00feb4d -->
+### O que não é importado
+
+O uso faturável da Cloudflare contém apenas cobranças de uso. Planos e complementos com taxa fixa (Pro, Business, Workers Paid e semelhantes), impostos e créditos não estão nele, então os custos mostram apenas a parte de uso da fatura.
+Adicione as taxas fixas como custos seus na página de custos, ou importe-as de [um plugin](#a-plugin-billing_sources--plugin).
+
+<!-- source: billing-cycles-and-final-months 155b8bff8c5f -->
+### Ciclos de cobrança e meses definitivos
+
+A Cloudflare cobra em ciclos que começam no mesmo dia de todo mês, o dia da primeira compra da conta, em UTC (um ciclo que começaria no dia 31 começa no último dia de um mês mais curto).
+A fatura de um ciclo chega quando o ciclo termina, então um mês de calendário abrange partes de dois ciclos. O servidor lê cada ciclo que se sobrepõe aos meses que importa e coloca cada registro diário no mês de calendário do seu dia, então as linhas de um mês são as cobranças dos próprios dias dele, não de uma fatura.
+Um mês é definitivo quando o ciclo que contém o último dia dele terminou há dois dias, ou quando o mês seguinte acabou, o que vier primeiro. Até lá, ele é uma estimativa do primeiro dia do mês até o último dia com dados. Os dados da Cloudflare ficam um ou dois dias atrasados.
+
+<!-- source: cost-and-limits-2 085888f73215 -->
+### Custo e limites
+
+A Cloudflare não cobra pela API dela, então o servidor não define nenhum limite de requisições. Uma importação faz uma requisição para as assinaturas da conta e uma para cada ciclo de cobrança que lê: até quatro para dois meses.
+A API permite 1.200 requisições a cada cinco minutos por usuário, compartilhadas com o painel e com os seus outros usos do dono do token.
+
+<!-- source: create-the-api-token 343e937f28d4 -->
+### Criar o token de API
+
+1. No painel da Cloudflare, abra a conta e anote o ID dela na visão geral da conta (32 dígitos hexadecimais).
+2. Em “Manage Account” → “Account API Tokens” (ou “My Profile” → “API Tokens”), crie um token personalizado com a única permissão **Account** → **Billing** → **Read**, apenas para esta conta.
+3. Defina `MY_BILLING_SOURCES=cloudflare`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID=<account ID>` e `MY_BILLING_CLOUDFLARE_API_TOKEN=<token>`, com o token vindo de um armazenamento de segredos (ou `MY_BILLING_CLOUDFLARE_API_TOKEN_FILE`).
+
+Dê à importação um token só dela. O servidor nunca lê `CLOUDFLARE_API_TOKEN`, que o Wrangler e o provedor do OpenTofu usam, então um token que pode editar DNS ou Workers não é usado por engano.
+
+<!-- source: kinds-of-failure-2 b0cd3fd7b5c3 -->
+### Tipos de falha
+
+| Tipo | Resposta da Cloudflare | Como corrigir |
+| --- | --- | --- |
+| `permission` | `400` com o código 9106 (um token inválido), `401`, `403` (o token não tem Billing Read, ou o ID da conta está errado: a Cloudflare responde aos dois com o código 10000) | Verifique a permissão do token e `billing_cloudflare_account_id` |
+| `not_enabled` | O uso faturável da conta não é coberto | A conta não é cobrada em pay-as-you-go (um contrato Enterprise), então não há nada para importar |
+| `not_found` | `404` | Verifique `billing_cloudflare_account_id` |
+| `throttled` | `429` | O job tenta de novo depois de uma pausa |
+| `unavailable` | 5xx, falha de rede | O job tenta de novo depois de uma pausa |
+| `invalid_response` | Uma resposta ilegível, um registro que abrange mais de um dia, duas moedas em um mês | A Cloudflare mudou a resposta dela; relate o problema |
+
+Uma nova tentativa não corrige uma falha diferente de `throttled` e `unavailable`, então o servidor a registra e para, e a importação agendada do dia seguinte tenta de novo.
+
 <!-- source: a-plugin-billing_sources--plugin 7589c3333153 -->
 ## Um plugin (`billing_sources = plugin`)
 
@@ -371,7 +423,7 @@ Content-Type: application/json
 
 `maxRequests` 0 proíbe qualquer requisição cobrada. O servidor não faz chamada quando enviaria 0, mas `my plugin test --kind billing` faz, com o campo omitido como o mapeamento do proto3 permite, e espera `OUTCOME_REQUEST_CAP` sem linhas e sem requisições.
 
-<!-- source: kinds-of-failure-2 205a6c0ecdd9 -->
+<!-- source: kinds-of-failure-3 205a6c0ecdd9 -->
 ### Tipos de falha
 
 Um plugin informa uma falha em `outcome`. O servidor mantém as `requests` de uma falha, ignora as linhas dela e deixa as importações anteriores como estão, como nas outras origens.

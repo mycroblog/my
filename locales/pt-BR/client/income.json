@@ -78,5 +78,37 @@
   "income.rules.balance": {
     "defaultMessage": "O saldo é a receita menos os custos de cada moeda, ambos contados do mesmo jeito. As moedas nunca são convertidas.",
     "description": "Rule of the income totals: what the balance is."
+  },
+  "income.totals.by_source": {
+    "defaultMessage": "Por origem",
+    "description": "Column header of the administrators' income totals: the income after fees of the subscriptions, of the tips, and of the other money of the provider's account."
+  },
+  "income.source.subscription": {
+    "defaultMessage": "Assinaturas",
+    "description": "Source of the income: the subscriptions to the supporter plans."
+  },
+  "income.source.one_time": {
+    "defaultMessage": "Gorjetas",
+    "description": "Source of the income: the tips, one-time payments to the server's operation with nothing in return."
+  },
+  "income.source.unknown": {
+    "defaultMessage": "Outras",
+    "description": "Source of the income: money of the payment provider's account that is neither a subscription nor a tip, such as a payment taken outside this server or a fee of no subscription."
+  },
+  "income.source.net": {
+    "defaultMessage": "{source}: {net}",
+    "description": "A line of the income of one source in a period. source is the source, such as Tips; net is the formatted income after fees of each currency."
+  },
+  "income.plans.tips": {
+    "defaultMessage": "Gorjetas",
+    "description": "The last row of the members of each plan while the server takes tips: the totals include them."
+  },
+  "income.plans.tips.note": {
+    "defaultMessage": "Incluídas nos totais, sem o número delas",
+    "description": "Beside the row of the tips in the members of each plan: their number and amount are never shown."
+  },
+  "income.rules.tips": {
+    "defaultMessage": "Uma gorjeta conta integralmente na data em que é paga. O reembolso ou a contestação é descontado no período em que ocorre.",
+    "description": "Rule of the income totals while the server takes tips."
   }
 }

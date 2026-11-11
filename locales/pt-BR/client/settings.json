@@ -339,6 +339,10 @@
     "defaultMessage": "Itens salvos",
     "description": "Name of the list of posts the user bookmarked, as one kind of CSV file to export or import."
   },
+  "settings.import_export.kind.followed_tags": {
+    "defaultMessage": "Hashtags seguidas",
+    "description": "Name of the list of hashtags the user follows, as one kind of CSV file to export or import."
+  },
   "settings.import_export.kind.following": {
     "defaultMessage": "Seguindo",
     "description": "Name of the list of accounts the user follows, as one kind of CSV file to export or import."
@@ -554,6 +558,62 @@
   "settings.profile.ai_opt_out.server_denies": {
     "defaultMessage": "{usage, select, deny_training {Este servidor já nega o treinamento de IA em todas as páginas; isto também nega o uso por buscas e assistentes de IA.} other {Este servidor já nega o treinamento e o uso por IA em todas as páginas.}}",
     "description": "Note shown when the server already denies AI training (deny_training) or both training and use (deny)."
+  },
+  "settings.profile.feeds": {
+    "defaultMessage": "Feeds",
+    "description": "Heading of the part of the profile form about the Atom feed of the user's public posts."
+  },
+  "settings.profile.feed_enabled": {
+    "defaultMessage": "Publicar um feed das minhas publicações públicas",
+    "description": "Label of the checkbox that lets feed readers follow the user's public posts in an Atom feed, and lets them appear in the feeds of hashtags."
+  },
+  "settings.profile.feed_enabled.description": {
+    "defaultMessage": "Pessoas sem uma conta no fediverso podem seguir suas publicações públicas em um leitor de feeds. Respostas, impulsos e publicações de outras visibilidades nunca aparecem nele. Suas publicações públicas também aparecem nos feeds das hashtags delas.",
+    "description": "Help text of the feed checkbox."
+  },
+  "settings.profile.feed_enabled.follows_indexable": {
+    "defaultMessage": "Até você alterar, isto segue a sua escolha sobre a busca acima.",
+    "description": "Note shown while the user has not chosen about the feed, which then follows the indexable checkbox."
+  },
+  "settings.profile.feed_enabled.address": {
+    "defaultMessage": "Endereço do feed: {url}",
+    "description": "The address of the user's Atom feed, shown while the feed is on. {url} is the address, which reads left to right."
+  },
+  "settings.profile.follows": {
+    "defaultMessage": "Seguindo e seguidores",
+    "description": "Heading of the part of the profile form about who may read the lists of the accounts the user follows and of their followers."
+  },
+  "settings.profile.follows_visibility": {
+    "defaultMessage": "Quem pode ver quem você segue e seus seguidores",
+    "description": "Label of the radio group that chooses who may read the user's follows and followers lists."
+  },
+  "settings.profile.follows_visibility.description": {
+    "defaultMessage": "Todos ainda podem ver quantos são, e você sempre vê as duas listas.",
+    "description": "Help text of the radio group of who may read the follows and followers lists."
+  },
+  "settings.profile.follows_visibility.public": {
+    "defaultMessage": "Todos",
+    "description": "Option of who may read the follows and followers lists: everyone."
+  },
+  "settings.profile.follows_visibility.public.description": {
+    "defaultMessage": "Qualquer pessoa pode ver quem você segue e quem segue você, neste servidor e em outros.",
+    "description": "Help text of the option that shows the follows and followers lists to everyone."
+  },
+  "settings.profile.follows_visibility.followers": {
+    "defaultMessage": "Seus seguidores",
+    "description": "Option of who may read the follows and followers lists: the user's approved followers on this server."
+  },
+  "settings.profile.follows_visibility.followers.description": {
+    "defaultMessage": "Somente as pessoas deste servidor que seguem você, depois de você as aceitar, veem as listas. Os outros servidores veem apenas quantos são.",
+    "description": "Help text of the option that shows the follows and followers lists to the user's approved followers only."
+  },
+  "settings.profile.follows_visibility.private": {
+    "defaultMessage": "Somente você",
+    "description": "Option of who may read the follows and followers lists: the user alone."
+  },
+  "settings.profile.follows_visibility.private.description": {
+    "defaultMessage": "Ninguém mais vê as listas, apenas quantos são.",
+    "description": "Help text of the option that keeps the follows and followers lists to the user."
   },
   "settings.profile.characters_left": {
     "defaultMessage": "{count, plural, one {# caractere restante} other {# caracteres restantes}}",
@@ -866,6 +926,10 @@
   "settings.auto_delete.keep.polls": {
     "defaultMessage": "Com uma enquete",
     "description": "Exception of the automatic deletion: posts with a poll."
+  },
+  "settings.auto_delete.keep.articles": {
+    "defaultMessage": "Artigos",
+    "description": "Exception of the automatic deletion: articles, which are long posts with a title."
   },
   "settings.auto_delete.visibilities": {
     "defaultMessage": "Manter publicações com estas visibilidades",
@@ -2331,6 +2395,10 @@
     "defaultMessage": "Chats de voz",
     "description": "Row of the notification settings table: an account the user follows opened a voice chat room, or the user was invited to one."
   },
+  "settings.notifications.group.event": {
+    "defaultMessage": "Eventos",
+    "description": "Row of the notification settings table: the invitations, changes of date or place, cancellations, reminders, and starts of the events of the server."
+  },
   "settings.notifications.group.admin_report": {
     "defaultMessage": "Denúncias",
     "description": "Row of the notification settings table: (moderators) an account was reported."
@@ -2382,6 +2450,10 @@
   "settings.notifications.group.auto_delete_limit": {
     "defaultMessage": "Exclusão automática de publicações",
     "description": "Row of the notification settings table: the notices that the server's maximum of the automatic deletion of old posts will apply to the user's posts."
+  },
+  "settings.notifications.group.scheduled_status_failed": {
+    "defaultMessage": "Publicações agendadas que não puderam ser publicadas",
+    "description": "Row of the notification settings table: the notices that a post the user scheduled could not be published at its time."
   },
   "settings.notifications.sound.title": {
     "defaultMessage": "Som de notificação",
@@ -2699,6 +2771,10 @@
     "defaultMessage": "Análises externas com falha",
     "description": "Row of the notification settings table: (moderators) calls of an external review keep failing."
   },
+  "settings.notifications.group.admin_domain_list_failing": {
+    "defaultMessage": "Assinaturas de listas de bloqueio com falha",
+    "description": "Row of the notification settings table: (moderators) the fetches of a subscribed domain block list keep failing."
+  },
   "settings.notifications.group.admin_hook_appeal": {
     "defaultMessage": "Recursos de publicações recusadas",
     "description": "Row of the notification settings table: (moderators) a user appealed a post that the automated review refused."
@@ -2798,5 +2874,17 @@
   "settings.auto_delete.limit.pins.note": {
     "defaultMessage": "Este servidor mantém só {count, plural, one {a sua publicação fixada mais recentemente} other {as suas # publicações fixadas mais recentemente}}.",
     "description": "Note under the exception of pinned posts when the server's maximum keeps only the newest pins. {count} is how many."
+  },
+  "settings.notifications.group.interaction_request": {
+    "defaultMessage": "Solicitações de aprovação",
+    "description": "Row of the notification settings table: someone's reply, boost, or quote of the user's post that waits for the user's approval, and the answers to the user's own."
+  },
+  "settings.default_interaction_policy.label": {
+    "defaultMessage": "Quem pode responder, impulsionar e citar suas novas publicações",
+    "description": "Label of the group of settings of who may reply to, boost, and quote the user's new posts by default."
+  },
+  "settings.default_interaction_policy.description": {
+    "defaultMessage": "Você também pode escolher isso para cada publicação. As respostas, os impulsos e as citações que aguardam a sua aprovação ficam nas suas solicitações de aprovação.",
+    "description": "Description of the settings of who may reply to, boost, and quote the user's new posts."
   }
 }

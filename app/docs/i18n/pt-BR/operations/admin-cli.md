@@ -37,7 +37,7 @@ my admin create -username alice -email alice@example.com
 - Uma execução que falha não grava nada, então você pode corrigir a causa e executar o mesmo comando de novo.
 - O código de saída 2 significa erro de uso.
 
-<!-- source: granting-and-revoking-roles b87e1adb131e -->
+<!-- source: granting-and-revoking-roles a8783994c097 -->
 ## Concedendo e revogando funções
 
 Funções guardam permissões. As funções integradas são `admin` (`position` 1000, com todas as permissões) e
@@ -56,7 +56,7 @@ my admin role revoke alice moderator
 - As permissões pertencem a um de três grupos.
   - Moderação: `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit`.
   - Administração do servidor: `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers`.
-  - Recursos para membros: `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`.
+  - Recursos para membros: `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`, `create_articles`, `create_events`.
 
   `list` imprime uma coluna por grupo (`MODERATION`, `SERVER`, `MEMBER`). A interface web mostra “Moderação” e “Administração” para os dois primeiros grupos e não conta os recursos para membros em nenhum deles (veja [moderation.md](moderation.md)).
 - Uma mudança entra em vigor na próxima requisição do usuário. As notificações para moderadores vão para as pessoas que têm a permissão no momento em que a notificação é criada.

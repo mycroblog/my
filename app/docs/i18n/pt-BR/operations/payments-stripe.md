@@ -1,13 +1,13 @@
-<!-- source: supporter-payments-with-stripe f12ff4a0af71 -->
+<!-- source: supporter-payments-with-stripe e517db9d077d -->
 # Pagamentos de apoiadores com o Stripe
 
-Com `payments = stripe`, os usuários locais assinam planos mensais ou anuais na página de pagamento hospedada do Stripe (Checkout), e a função do plano é concedida e removida conforme o estado do pagamento muda.
+Com `payments = stripe`, os usuários locais assinam planos mensais ou anuais na página de pagamento hospedada do Stripe (Checkout), e a função do plano é concedida e removida conforme o estado do pagamento muda. Quando um administrador as ativa, os usuários também podem enviar [gorjetas](#tips) únicas na mesma página.
 As chaves de implantação estão descritas na [referência de configuração](../reference/configuration.md#payments). Para o programa como um todo (planos, funções, a lista de membros), veja [supporters.md](supporters.md).
 Um administrador ativa o programa e cria os planos na administração. Esta configuração apenas permite que o servidor se comunique com o Stripe.
 
 Um servidor só pode usar um provedor. Para trocar de provedor depois, peça aos assinantes existentes que assinem de novo com o novo.
 
-<!-- source: what-the-server-does-at-stripe ca3e0d4f59f3 -->
+<!-- source: what-the-server-does-at-stripe 17a592e3f643 -->
 ## O que o servidor faz no Stripe
 
 [Como funciona uma assinatura](supporters.md#how-a-subscription-works) mostra em um diagrama como a página de pagamento, o webhook, a reconciliação, a função do plano e a receita se encaixam.
@@ -33,6 +33,7 @@ Um servidor só pode usar um provedor. Para trocar de provedor depois, peça aos
   Além disso, uma reconciliação a cada `payments_reconcile_interval` (padrão 6 horas) lê a lista de eventos, as sessões do Checkout não concluídas, as balance transactions e uma varredura de todas as assinaturas, e repara qualquer webhook que o servidor tenha perdido.
 - **Receita**: o servidor registra o valor bruto, a taxa e o líquido de cada balance transaction. Taxas como os 0,7% do Billing aparecem como transações `stripe_fee` separadas e são subtraídas da receita.
   `stripe_fee` cobre as taxas da conta inteira, então **use uma conta do Stripe dedicada a este servidor**. Em uma conta usada para outras vendas, essas taxas também são subtraídas da receita.
+- **Gorjetas**: veja [Gorjetas](#tips).
 - **Datas**: as datas da receita são contadas no fuso horário da conta do Stripe (o fuso em “Settings > Business > Account details” no painel, `settings.dashboard.timezone` na API). Quando ele não pode ser lido, o servidor conta em UTC e o lê de novo a cada hora.
 
 Cada processo do servidor envia no máximo 20 requisições por segundo (10 no modo de teste). Os [limites do Stripe](https://docs.stripe.com/rate-limits) são por conta: 100 requisições por segundo no modo live, 25 em um sandbox, e 25 por segundo para cada endpoint. Os processos de um servidor os compartilham, assim como qualquer outra coisa que use a conta.
@@ -41,11 +42,25 @@ Quando o Stripe retorna `429`, o servidor espera o tempo que `Retry-After` indic
 O Stripe também aloca requisições de leitura por conta: uma média de 500 por transação em 30 dias, e pelo menos 10.000 por mês, seja qual for o número de transações. No intervalo padrão, a reconciliação fica muito abaixo disso em um servidor pequeno. Uma reconciliação que não encontra nada ainda lê algumas páginas, então o intervalo mínimo de 15 minutos (2.880 execuções em 30 dias) chega perto de 10.000 em uma conta com poucas transações.
 O Stripe limita cada assinatura a 10 faturas novas por minuto e 20 por dia, e uma mudança de plano cobrada na hora gera uma fatura nova.
 
-<!-- source: card-data-and-pci-dss f45a3c7d1846 -->
+<!-- source: tips 5c0435583f71 -->
+## Gorjetas
+
+Uma gorjeta (veja [gorjetas](supporters.md#tips) para saber o que são e como ativá-las) é uma sessão do Checkout com `mode=payment` que o servidor cria para o pagamento único:
+
+- **A página**: um item de linha com preço definido na requisição, chamado "Gorjeta para <nome do servidor>" no idioma do usuário, com o valor e a moeda que o usuário escolheu. O servidor não cria Product, Price nem cliente para ela: o endereço de e-mail do usuário apenas preenche a página previamente. A página aceita apenas cartões, para que toda página concluída esteja paga; ela não usa o Adaptive Pricing, então o usuário paga na moeda dos seus valores; e o botão dela diz "Pay", não "Donate". A página expira após uma hora, como a de uma assinatura.
+- **Nossos IDs**: o ID da gorjeta no servidor vai em `client_reference_id`, em `metadata.my_tip_id` e em `metadata.my_tip_id` do PaymentIntent do pagamento, que você pode pesquisar no painel.
+- **Valores**: uma gorjeta pode usar as moedas e os mínimos dos planos (veja [O que o servidor faz no Stripe](#what-the-server-does-at-stripe)), até a maior cobrança do Stripe, de oito dígitos (999.999,99 dólares americanos ou 99.999.999 ienes).
+- **O resultado**: o servidor lê a sessão de volta quando o evento `checkout.session.completed` ou `checkout.session.expired` dela chega, quando o usuário volta da página e na reconciliação. Uma sessão concluída e cujo `payment_status` é `paid` é uma gorjeta paga, com o PaymentIntent dela e o valor que cobrou.
+- **Reembolsos e disputas**: reembolse uma gorjeta no painel. O reembolso, uma disputa e uma disputa ganha chegam pelos eventos e pelas balance transactions que as assinaturas usam, e nomeiam o PaymentIntent da gorjeta, o que leva o servidor até ela.
+- **Testes**: no modo de teste, pague a página de uma gorjeta com os cartões de teste de [Experimente no modo de teste](#5-try-it-in-test-mode); `4000 0000 0000 0259` gera uma disputa nela.
+
+A chave restrita de [Crie uma chave de API](#2-create-an-api-key) não precisa de nenhuma outra permissão para as gorjetas. Elas ainda não foram executadas em um sandbox.
+
+<!-- source: card-data-and-pci-dss 5fd1cd5551e0 -->
 ## Dados de cartão e PCI DSS
 
 Os métodos de pagamento são informados apenas no Checkout e no portal do cliente do Stripe, e o cliente web deste servidor não carrega nem o script do Stripe nem um iframe.
-O servidor guarda apenas IDs de objetos do Stripe (`cus_`, `sub_`, `price_`, `prod_`, `cs_`, `txn_`), valores, períodos e estados. Ele não guarda números de cartão, últimos quatro dígitos, datas de validade nem endereços de cobrança. Os corpos de webhook e as respostas do Stripe não são mantidos nem nos logs nem no banco de dados.
+O servidor guarda apenas IDs de objetos do Stripe (`cus_`, `sub_`, `price_`, `prod_`, `cs_`, `pi_`, `txn_`), valores, períodos e estados. Ele não guarda números de cartão, últimos quatro dígitos, datas de validade nem endereços de cobrança. Os corpos de webhook e as respostas do Stripe não são mantidos nem nos logs nem no banco de dados.
 Por isso, espera-se que o escopo de PCI DSS do operador seja o de um comerciante que usa uma página de pagamento hospedada (SAQ A). Confira o escopo aplicável e o tipo de questionário de autoavaliação na orientação do painel do Stripe (“Settings > Compliance”).
 
 <!-- source: 1-prepare-the-stripe-account 06eefed5779b -->
@@ -85,7 +100,7 @@ Sem a permissão de escrita de reembolsos, o servidor ainda cancela uma segunda 
 Passe a chave na variável de ambiente `MY_PAYMENTS_STRIPE_SECRET_KEY` (ou o caminho de um arquivo em `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE`). Ela não pode ser escrita no arquivo de configuração.
 Se a chave vazar, rotacione-a no painel e reimplante com a nova chave.
 
-<!-- source: 3-register-the-webhook-endpoint 1cbc2cf9ace3 -->
+<!-- source: 3-register-the-webhook-endpoint bf645f89a942 -->
 ## 3. Registre o endpoint do webhook
 
 Em “Developers > Webhooks > Add endpoint”, registre o seguinte. O servidor não cria o endpoint pela API.
@@ -93,7 +108,7 @@ Em “Developers > Webhooks > Add endpoint”, registre o seguinte. O servidor n
 - URL: `https://<server domain>/payments/webhooks/stripe`
 - Eventos de: “Sua conta” (não de contas conectadas)
 - Estilo do payload: snapshot. O servidor lê apenas `id`, `type`, `livemode`, `created`, `data.object.id` e `data.object.object` do corpo, então a versão da API do endpoint não importa.
-- Eventos a enviar (16 tipos):
+- Eventos a enviar (16 tipos; as gorjetas não precisam de nenhum outro tipo):
 
   - `checkout.session.completed`, `checkout.session.expired`
   - `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed`
@@ -151,7 +166,7 @@ Um relógio não consegue mostrar tudo:
 - **O fim do período de carência**: o servidor compara o tempo real com o tempo que o Stripe informa para a falha (`finalized_at`), que é simulado e está à frente do tempo real. A assinatura entra no período de carência, e avançar mais o relógio não o encerra. A função permanece até que o tempo real passe 7 dias após a falha simulada, ou até que o Stripe cancele a assinatura quando as suas tentativas se esgotarem, se a conta estiver configurada para isso.
 - **A varredura de todas as assinaturas**: a lista de assinaturas do Stripe deixa de fora as assinaturas em um relógio, a menos que a requisição nomeie o relógio ou o cliente, e a varredura do servidor não nomeia nenhum dos dois. Apenas os webhooks e a lista de eventos levam as mudanças delas ao servidor.
 
-<!-- source: 6-try-it-locally-stripe-cli 8a3e87b02ce0 -->
+<!-- source: 6-try-it-locally-stripe-cli 115b10f5518c -->
 ## 6. Experimente localmente (Stripe CLI)
 
 O [Stripe CLI](https://docs.stripe.com/stripe-cli) (Apache-2.0) encaminha eventos do Stripe para um servidor na sua máquina. Nenhuma URL pública é necessária.
@@ -176,7 +191,7 @@ stripe trigger charge.dispute.created
 stripe events resend evt_...   # send an event you missed again (up to 30 days)
 ```
 
-Os objetos que `stripe trigger` cria não carregam nenhum ID de assinatura deste servidor, então nenhuma assinatura muda de estado (o servidor os lê de volta e ignora o que não é uma assinatura sua). Para verificar o fluxo completo da assinatura, assine pelo cliente web e pague com um cartão de teste.
+Os objetos que `stripe trigger` cria não carregam nenhum ID de assinatura ou de gorjeta deste servidor, então nada muda de estado (o servidor os lê de volta e ignora o que não é uma assinatura ou gorjeta sua). Para verificar o fluxo completo da assinatura, ou de uma gorjeta, assine ou dê uma gorjeta pelo cliente web e pague com um cartão de teste.
 
 <!-- source: 7-operation f70cd2967b9f -->
 ## 7. Operação
@@ -187,7 +202,7 @@ Os objetos que `stripe trigger` cria não carregam nenhum ID de assinatura deste
 - `duplicate_charge` nos avisos significa que um usuário pagou duas vezes e o servidor não conseguiu terminar de cancelar e reembolsar a segunda assinatura. A linha de log `a second subscription could not be canceled and refunded` nomeia as duas assinaturas e o tipo de falha, e aparece de novo a cada reconciliação, que tenta outra vez. Com o tipo `permission`, adicione a permissão de escrita de reembolsos. Caso contrário, reembolse a cobrança no painel: a próxima tentativa não encontra mais nada a reembolsar e limpa o aviso. “Reconciliar agora” tenta na hora.
 - Outros reembolsos e chargebacks são tratados no painel do Stripe. Um reembolso integral e um chargeback removem a função e cancelam a assinatura na hora, e um reembolso parcial não remove a função. Ganhar uma disputa não restaura a função automaticamente.
 
-<!-- source: items-to-verify 8960333fa514 -->
+<!-- source: items-to-verify 19584d53548f -->
 ## Itens a verificar
 
 Estes não foram testados no Stripe, nem em sandbox nem em live, e se apoiam na documentação do Stripe.
@@ -206,3 +221,5 @@ Estes não foram testados no Stripe, nem em sandbox nem em live, e se apoiam na 
 - Que uma sessão não pode ser paga duas vezes a partir de duas abas. Uma sessão contém uma assinatura e é concluída uma vez, mas a documentação não afirma isso para dois envios no mesmo instante.
 - Se uma autenticação com falha na página de pagamento deixa uma assinatura `incomplete` que nomeia a assinatura do servidor. O servidor a vincularia e manteria o usuário pendente, e um pagamento em outra página seria reembolsado como o segundo.
 - Um reembolso de uma segunda assinatura, com uma chave restrita cujas permissões “Cobranças” e “Reembolsos” sejam as da tabela, e as movimentações de dinheiro que o seguem.
+- Uma gorjeta da página dela até o reembolso e a disputa, com uma chave restrita. Em especial: que `allowed_payment_method_types=["card"]` mantém todos os outros métodos fora da página, que uma sessão criada com o Adaptive Pricing desativado cobra a moeda pedida, e que o Stripe aceita uma cobrança única de oito dígitos em todas as moedas da tabela.
+- Se o Stripe aceita gorjetas para manter um serviço, e para um empresário individual no Japão. Pergunte ao Stripe antes de ativá-las.

@@ -1,0 +1,206 @@
+{
+  "drafts.title": {
+    "defaultMessage": "Rascunhos e publicações agendadas",
+    "description": "Heading and document title of the page that lists the user's drafts saved on the server and their scheduled posts; also the link to it under the new-post form."
+  },
+  "drafts.save": {
+    "defaultMessage": "Salvar rascunho",
+    "description": "Button beside the submit button of the new-post form: saves what is written as a draft on the server, which opens on any device, and empties the form."
+  },
+  "drafts.saved": {
+    "defaultMessage": "Rascunho salvo",
+    "description": "Toast after the new-post form saved a draft on the server; the form is empty again."
+  },
+  "drafts.save.blocked.empty": {
+    "defaultMessage": "Ainda não há nada para salvar.",
+    "description": "Beside the save-draft button of the new-post form, after it was pressed with no text, content warning, attachment, or poll: why nothing was saved."
+  },
+  "drafts.save.blocked.uploading": {
+    "defaultMessage": "Aguarde o envio dos anexos terminar e salve.",
+    "description": "Beside the save-draft button of the new-post form, after it was pressed while a file is still uploading: why nothing was saved."
+  },
+  "drafts.save.blocked.upload_failed": {
+    "defaultMessage": "Remova o anexo que falhou ao ser enviado e salve.",
+    "description": "Beside the save-draft button of the new-post form, after it was pressed while an attachment failed to upload: why nothing was saved."
+  },
+  "drafts.save.conflict": {
+    "defaultMessage": "Este rascunho foi alterado em outro dispositivo. Salve novamente para manter este como um novo rascunho.",
+    "description": "Beside the save-draft button of the new-post form: the draft being edited was saved on another device since it was opened, so it was not overwritten. Saving again makes a new draft."
+  },
+  "drafts.save.failed": {
+    "defaultMessage": "Não foi possível salvar o rascunho: {reason}",
+    "description": "Beside the save-draft button of the new-post form when saving failed. {reason} is the server's or the network's localized reason."
+  },
+  "drafts.editing": {
+    "defaultMessage": "Você está editando um rascunho salvo.",
+    "description": "Line above the tools of the new-post form while it holds a draft opened from the drafts page: saving replaces that draft, and posting deletes it."
+  },
+  "drafts.editing.scheduled": {
+    "defaultMessage": "Este rascunho está agendado para ser publicado {date}.",
+    "description": "Line above the tools of the new-post form while it holds a scheduled draft. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.schedule.label": {
+    "defaultMessage": "Agendar a publicação",
+    "description": "Accessible name and tooltip of the tool button of the new-post form that opens the date and time to publish the post at; also the title of that popover."
+  },
+  "drafts.schedule.label.scheduled": {
+    "defaultMessage": "Agendar a publicação: {date}",
+    "description": "Tooltip and accessible name of the schedule button of the new-post form while the draft is scheduled. {date} is the formatted date and time it is scheduled for."
+  },
+  "drafts.schedule.date": {
+    "defaultMessage": "Data",
+    "description": "Label of the date field of the schedule popover."
+  },
+  "drafts.schedule.time": {
+    "defaultMessage": "Hora",
+    "description": "Label of the time field of the schedule popover."
+  },
+  "drafts.schedule.time_zone": {
+    "defaultMessage": "A data e a hora seguem o seu fuso horário, {zone}.",
+    "description": "Description of the schedule popover's fields. {zone} is the name of the user's time zone (for example 'Japan Standard Time'), which the settings choose."
+  },
+  "drafts.schedule.submit": {
+    "defaultMessage": "Agendar",
+    "description": "Button of the schedule popover: saves the draft and schedules it for the chosen date and time."
+  },
+  "drafts.schedule.invalid": {
+    "defaultMessage": "Informe uma data e uma hora.",
+    "description": "Error under the fields of the schedule popover when the date or the time is missing or not a valid one."
+  },
+  "drafts.schedule.too_soon": {
+    "defaultMessage": "Escolha um horário com pelo menos {minutes, plural, one {# minuto} other {# minutos}} de antecedência.",
+    "description": "Error under the fields of the schedule popover: the time is in the past or sooner than the server allows. {minutes} is the server's least lead time."
+  },
+  "drafts.schedule.too_far": {
+    "defaultMessage": "Escolha um horário dentro de {days, plural, one {# dia} other {# dias}} a partir de agora.",
+    "description": "Error under the fields of the schedule popover: the time is further ahead than the server allows. {days} is the server's most lead time."
+  },
+  "drafts.schedule.scheduled": {
+    "defaultMessage": "Agendado para {date}",
+    "description": "Toast and announcement after a post was scheduled. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.schedule.failed": {
+    "defaultMessage": "Não foi possível agendar a publicação: {reason}",
+    "description": "Error in the schedule popover when the server refused or the network failed. {reason} is the localized reason."
+  },
+  "drafts.scheduled.heading": {
+    "defaultMessage": "Publicações agendadas",
+    "description": "Heading of the section of the drafts page that lists the drafts scheduled to be published; also the name of its list."
+  },
+  "drafts.scheduled.empty": {
+    "defaultMessage": "Nenhuma publicação agendada",
+    "description": "Empty state of the scheduled posts of the drafts page."
+  },
+  "drafts.scheduled.empty.description": {
+    "defaultMessage": "Agende uma publicação no formulário de nova publicação para que ela seja publicada no horário que você escolher.",
+    "description": "Description of the empty state of the scheduled posts of the drafts page."
+  },
+  "drafts.unscheduled.heading": {
+    "defaultMessage": "Rascunhos",
+    "description": "Heading of the section of the drafts page that lists the drafts without a schedule; also the name of its list."
+  },
+  "drafts.unscheduled.empty": {
+    "defaultMessage": "Nenhum rascunho",
+    "description": "Empty state of the drafts of the drafts page."
+  },
+  "drafts.unscheduled.empty.description": {
+    "defaultMessage": "Escolha “Salvar rascunho” no formulário de nova publicação para guardar uma publicação e terminá-la depois, em qualquer dispositivo.",
+    "description": "Description of the empty state of the drafts of the drafts page. The quoted words are the label of the save-draft button."
+  },
+  "drafts.row.no_text": {
+    "defaultMessage": "(Sem texto)",
+    "description": "In a row of the drafts page, in place of the text of a draft that has no text and no content warning."
+  },
+  "drafts.row.publish_at": {
+    "defaultMessage": "Será publicada {date}",
+    "description": "In a row of the scheduled posts: when it is published. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.row.updated_at": {
+    "defaultMessage": "Salvo {date}",
+    "description": "In a row of the drafts: when the draft was last saved. {date} is the formatted date and time in the user's time zone."
+  },
+  "drafts.row.media": {
+    "defaultMessage": "{count, plural, one {# anexo} other {# anexos}}",
+    "description": "In a row of the drafts page: how many files the draft attaches."
+  },
+  "drafts.row.poll": {
+    "defaultMessage": "Enquete",
+    "description": "In a row of the drafts page: the draft has a poll."
+  },
+  "drafts.row.reply": {
+    "defaultMessage": "Resposta",
+    "description": "In a row of the drafts page: the draft replies to a post."
+  },
+  "drafts.row.quote": {
+    "defaultMessage": "Citação",
+    "description": "In a row of the drafts page: the draft quotes a post."
+  },
+  "drafts.row.article": {
+    "defaultMessage": "Artigo",
+    "description": "In a row of the drafts page: the draft is of an article, whose title the row shows; editing it opens the article editor."
+  },
+  "drafts.action": {
+    "defaultMessage": "{action}: {excerpt}",
+    "description": "Accessible name of a button of a row of the drafts page. {action} is the button's visible text (for example 'Edit'), {excerpt} the start of the draft's text."
+  },
+  "drafts.edit": {
+    "defaultMessage": "Editar",
+    "description": "Button of a row of the drafts page: opens the draft in the new-post form."
+  },
+  "drafts.reschedule": {
+    "defaultMessage": "Alterar horário",
+    "description": "Button of a row of the scheduled posts: opens the popover that moves the schedule to another date and time."
+  },
+  "drafts.unschedule": {
+    "defaultMessage": "Cancelar agendamento",
+    "description": "Button of a row of the scheduled posts: cancels the schedule; the draft stays, among the drafts."
+  },
+  "drafts.unscheduled": {
+    "defaultMessage": "Agendamento cancelado",
+    "description": "Announcement after a schedule was cancelled; the draft moved to the drafts."
+  },
+  "drafts.delete": {
+    "defaultMessage": "Excluir",
+    "description": "Button of a row of the drafts page, and the confirm button of its dialog: deletes the draft and its schedule."
+  },
+  "drafts.delete.title": {
+    "defaultMessage": "Excluir este rascunho?",
+    "description": "Title of the dialog that confirms deleting a draft."
+  },
+  "drafts.delete.body": {
+    "defaultMessage": "O rascunho é excluído em todos os dispositivos, junto com o agendamento. Esta ação não pode ser desfeita.",
+    "description": "Body of the dialog that confirms deleting a draft."
+  },
+  "drafts.deleted": {
+    "defaultMessage": "Rascunho excluído",
+    "description": "Announcement after a draft was deleted."
+  },
+  "drafts.cancel": {
+    "defaultMessage": "Cancelar",
+    "description": "The way out of the dialogs of the drafts page (delete, replace)."
+  },
+  "drafts.replace.title": {
+    "defaultMessage": "Substituir o que você está escrevendo?",
+    "description": "Title of the dialog shown when a draft is opened while the new-post form holds something else."
+  },
+  "drafts.replace.body": {
+    "defaultMessage": "O formulário de nova publicação contém uma publicação que você está escrevendo. Abrir este rascunho a substitui.",
+    "description": "Body of the dialog shown when a draft is opened while the new-post form holds something else."
+  },
+  "drafts.replace.confirm": {
+    "defaultMessage": "Substituir",
+    "description": "Confirm button of the dialog that replaces what the new-post form holds with the opened draft."
+  },
+  "drafts.gone": {
+    "defaultMessage": "Este rascunho não existe mais. Ele pode ter sido publicado ou excluído em outro dispositivo.",
+    "description": "Announcement when a draft to open, schedule, or delete is gone from the server."
+  },
+  "drafts.notification_link": {
+    "defaultMessage": "Abrir seus rascunhos",
+    "description": "Link in the notification that a scheduled post could not be published, to the drafts page where the draft is kept."
+  },
+  "drafts.publish.conflict": {
+    "defaultMessage": "Este rascunho foi alterado em outro dispositivo, então nada foi publicado. Publique novamente para publicar esta versão como uma nova publicação.",
+    "description": "Under the new-post form when posting a draft opened from the drafts page failed because the draft was saved on another device since it was opened: nothing was posted or overwritten. Posting again posts this version as a new post."
+  }
+}

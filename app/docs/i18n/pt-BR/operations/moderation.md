@@ -1,8 +1,8 @@
-<!-- source: account-and-domain-actions-and-handling-reports 59d39b2e3f37 -->
+<!-- source: account-and-domain-actions-and-handling-reports 7f21d5c6c925 -->
 # Ações sobre contas e domínios, e tratamento de denúncias
 
-Como operadores e moderadores agem sobre contas e domínios, decidem recursos, tratam denúncias e leem o registro de auditoria.
-Tudo aqui, exceto o gerenciamento de contas (apenas pela API de administração), pode ser feito pela API de administração (`/api/v1/admin/...`, escopos `admin:read` / `admin:write`) e pela CLI (`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`).
+Como operadores e moderadores agem sobre contas e domínios, decidem recursos, tratam denúncias, verificam o que chegou a um servidor remoto e leem o registro de auditoria.
+Tudo aqui, exceto o gerenciamento de contas e a verificação de entregas (apenas pela API de administração), pode ser feito pela API de administração (`/api/v1/admin/...`, escopos `admin:read` / `admin:write`) e pela CLI (`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`).
 A API de administração exige permissões de função: o gerenciamento de contas, as ações e os recursos precisam de `manage_accounts`, as ações sobre domínios precisam de `manage_domains` e as denúncias precisam de `manage_reports`.
 A CLI se conecta diretamente ao banco de dados com a mesma configuração do servidor (`-config` ou variáveis de ambiente) e não registra qual usuário a operou (`issued_by_user_id` e campos semelhantes ficam NULL, e o autor no [registro de auditoria](#audit-log) é `cli`).
 
@@ -34,7 +34,7 @@ Do topo do diagrama para baixo:
 
 Atribuições, notas, avisos e recursos ficam neste servidor; somente as atividades da coluna da direita saem dele.
 
-<!-- source: moderation-and-server-administration-in-the-web-client 3beb1c9760a0 -->
+<!-- source: moderation-and-server-administration-in-the-web-client d7c65fc5b3d0 -->
 ## Moderação e administração do servidor no cliente web
 
 O cliente web divide as telas da equipe em duas.
@@ -52,9 +52,24 @@ A navegação mostra “Moderação” e “Administração” apenas para pesso
 - O `moderator` embutido tem apenas `manage_reports`, `manage_accounts` e `view_audit`, e não vê “Administração”. Ele também não vê as telas Ações de domínio e Servidores remotos (`manage_domains`),
   portanto, para delegá-las, crie uma função com essa permissão e conceda-a ([conceder e revogar funções](admin-cli.md#granting-and-revoking-roles)).
 - Os caminhos da API de administração continuam `/api/v1/admin/...` seja qual for o grupo, e os escopos são o mesmo par `admin:read` / `admin:write`. Os grupos são separados por tags na referência da API (`admin-moderation`, `admin-server`).
-- Há um terceiro grupo de permissões, os “recursos de usuário” (`view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`), que fica fora das telas da equipe. Quem tem apenas essas permissões não vê nem “Moderação” nem “Administração”,
+  Um serviço fora do servidor pode chamar as operações de uma permissão com um escopo de permissão no lugar ([deixar outro serviço usar a API de administração](#letting-another-service-use-the-admin-api)).
+- Há um terceiro grupo de permissões, os “recursos de usuário” (`view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`, `create_articles`, `create_events`), que fica fora das telas da equipe. Quem tem apenas essas permissões não vê nem “Moderação” nem “Administração”,
   e para quem tem `view_finance` a navegação mostra “Finanças” (`/finance`) depois de Configurações.
   Sua API fica no namespace do usuário (`GET /api/v1/finance/cost_totals` e `GET /api/v1/finance/income_totals`, escopo `read:finance`) e não exige nenhum escopo `admin:*`. O que ela mostra é definido por `finance_viewer_*` nas [configurações da instância](instance-settings.md).
+
+<!-- source: letting-another-service-use-the-admin-api 6c266c1e1111 -->
+### Deixar outro serviço usar a API de administração
+
+Um serviço que você executa ao lado do servidor, um que distribui convites ou registra custos, por exemplo, pode chamar a API de administração para uma permissão sem um plugin.
+
+1. Cadastre uma conta para o serviço e conceda a ela uma função apenas com as permissões de que o serviço precisa (para convites, uma função com `manage_invites`; [conceder e revogar funções](admin-cli.md#granting-and-revoking-roles)).
+2. Com a sessão iniciada nessa conta, registre um app em **Configurações → Seus apps** cujos escopos incluam o escopo da permissão, `admin:` e a permissão: `admin:manage_invites`.
+3. Emita um token para a conta a partir do app, com esse escopo, e entregue ao serviço o token de acesso e o token de renovação.
+
+- O token alcança apenas as operações das permissões que os escopos dele nomeiam, e só enquanto as funções da conta as mantiverem; o registro de auditoria grava o que ele faz como ações da conta.
+- O token de acesso dura uma hora. O serviço o renova com o token de renovação e guarda o novo token de renovação a cada vez: um antigo usado de novo revoga o token.
+- `manage_roles`, `manage_oauth_apps`, `manage_login_recovery`, `manage_login_providers` e `manage_service_closure` não têm escopo de permissão, e nenhum app pode pedi-lo a um membro da equipe na tela de consentimento.
+- Para parar o serviço, revogue os tokens do app ou exclua o app, retire a função da conta, ou desative o app em Administração → Apps OAuth.
 
 <!-- source: account-actions a61dac7c5921 -->
 ## Ações sobre contas
@@ -282,6 +297,75 @@ No cliente web, abra Moderação → Ações de domínio e escolha “CSV do Mas
 - As ações importadas duram “até serem revogadas” e carregam o comentário público e a ofuscação da linha e a nota privada que você informou. Elas aparecem no registro de auditoria como as ações emitidas uma a uma (o autor é a pessoa, no caso da API, e `cli`, no caso da CLI).
 - Uma exportação grava uma linha por domínio para as ações em vigor. Um domínio com um `suspend` recebe `suspend`, um com um `limit` recebe `silence`, e um com nenhum dos dois recebe `noop`. Um domínio com apenas `force_sensitive`, que os bloqueios de domínio do Mastodon não têm, não é exportado. As notas privadas e os horários de término não são exportados.
 
+<!-- source: subscribing-to-blocklists d49a93c3c44f -->
+### Assinar listas de bloqueio
+
+Em vez de importar um CSV manualmente, você pode assinar uma lista de bloqueio de domínios que outro servidor ou pessoa publica em uma
+URL `https`. O servidor busca a lista logo depois que você assina, todos os dias depois disso e quando você pedir, e transforma
+as linhas dela em ações de domínio: como rascunhos que um moderador aceita ou rejeita (o modo `draft`, o padrão), ou diretamente
+a cada busca (o modo `automatic`).
+
+```sh
+my admin domain subscription add -format mastodon_csv -title "Shared blocklist" https://lists.example/blocklist.csv
+my admin domain subscription list
+my admin domain subscription drafts <subscription id>
+my admin domain subscription accept -keys issue:suspend:spam.example <subscription id>
+my admin domain subscription reject -all <subscription id>
+my admin domain subscription update -mode automatic <subscription id>
+my admin domain subscription fetch <subscription id>               # fetch now and print the outcome
+my admin domain subscription fetches <subscription id>
+my admin domain subscription remove [-lift-actions] <subscription id>
+```
+
+Na API de administração: `GET` e `POST /api/v1/admin/domain_list_subscriptions`, `GET`, `PATCH` e `DELETE .../{id}`
+(`lift_actions=true` revoga as ações da assinatura), `POST .../{id}/fetch`, `GET .../{id}/fetches`, `GET .../{id}/drafts`
+e `POST .../{id}/drafts/accept` e `.../drafts/reject` (o corpo tem `keys`, ou nada para todos os rascunhos). Todos eles
+exigem `manage_domains`.
+
+No cliente web, abra Moderação → Ações de domínio e escolha “Assinaturas de listas de bloqueio”
+(`/moderation/domain-actions/subscriptions`). A lista mostra o modo e a última busca de cada assinatura, com as falhas
+seguidas; “Adicionar assinatura” abre o formulário com o nome, a URL, o formato e as configurações abaixo, e assinar abre a
+página da assinatura. Essa página tem quatro seções: os rascunhos, que você aceita ou rejeita um a um ou todos juntos (aceitar
+rascunhos que suspendem um domínio pede confirmação antes); as buscas, com “Buscar agora” e o resultado de cada busca; as configurações; e “Cancelar
+assinatura”, que pergunta se as ações que a assinatura emitiu devem ser revogadas. A notificação `admin_domain_list_failing`
+leva à lista.
+
+| Formato | O que a lista é |
+| --- | --- |
+| `mastodon_csv` | O CSV de bloqueios de domínio do Mastodon, lido como uma importação o lê |
+| `mastodon_json` | A resposta de `GET /api/v1/instance/domain_blocks` de um servidor Mastodon que publica os bloqueios de domínio dele. Os domínios que ele ofusca (com `*`) são ignorados, e um servidor que não publica a lista (`401`, `403`, `404`) faz a busca falhar |
+| `plain_text` | Um domínio por linha, cada um um `suspend` |
+
+O que uma linha emite segue a mesma tabela de uma importação, alterada pelas configurações da assinatura: `suspend_as` (`suspend`,
+`limit` ou `ignore`; padrão `suspend`), `silence_as` (`limit` ou `ignore`; padrão `limit`), se os `reject_media` e `reject_reports` da linha
+se aplicam (ambos por padrão) e se as ações copiam o comentário público da linha (por padrão, não).
+
+- Uma busca passa pela mesma proteção das buscas em outros servidores: uma URL, ou um redirecionamento, que leva a um endereço privado
+  falha. Ela lê no máximo 2 MiB e 5.000 linhas; uma lista maior faz a busca falhar. O servidor devolve o `ETag` e o
+  `Last-Modified` da lista, então uma lista sem mudanças custa pouco, e uma lista idêntica à última lida não altera nada.
+- Uma busca que falha não altera nenhuma ação. Ela é registrada com o motivo da falha (`http_status`, `network`,
+  `forbidden_destination`, `too_large`, `too_many_entries` ou `malformed`) e mostrada na lista de assinaturas e nas buscas
+  delas. Depois de 3 falhas seguidas, as pessoas cuja função tem `manage_domains` recebem a notificação
+  `admin_domain_list_failing`.
+- Uma assinatura nunca revoga nem substitui uma ação que ela não emitiu. Se uma ação do mesmo tipo já cobre o domínio,
+  nele ou em um domínio pai, seja quem for que a emitiu, a assinatura não emite nada ali. Quando duas assinaturas listam o mesmo
+  domínio, vale a ação da que a emitiu primeiro; se essa a revoga, a seguinte emite a sua.
+- Quando a lista deixa de trazer um domínio, o modo automático revoga, na busca seguinte, a ação que a assinatura emitiu nele. Se uma
+  busca revogasse mais de 10 ações e mais da metade das da assinatura, as revogações esperam como rascunhos, já que uma
+  lista quebrada ou vazia se parece com isso.
+- Uma gravidade que o servidor não conhece (nem `suspend`, nem `silence`, nem `noop`) sempre espera como rascunho, como um `suspend`
+  sob as configurações da assinatura.
+- Os rascunhos listam o que a lista acrescentaria (`issue`) e removeria (`lift`), cada um com uma chave como `issue:suspend:spam.example`.
+  Um rascunho rejeitado não volta até que a lista altere a linha do domínio (um `issue`) ou a ação termine (um `lift`).
+- Se um moderador revoga uma ação que uma assinatura emitiu, a assinatura não a emite de novo até que a lista altere
+  a linha do domínio.
+- Alterar as configurações as aplica na busca que a alteração inicia. A URL e o formato não mudam; assine
+  de novo para alterá-los.
+- Remover uma assinatura mantém as ações que ela emitiu, que então contam como de um moderador, a menos que você as revogue junto.
+- O registro de auditoria grava assinar, alterar, remover, os rascunhos aceitos e rejeitados e as buscas pedidas manualmente.
+  As ações do modo automático são gravadas como as outras ações de domínio, com `system` como autor, e são enviadas aos
+  webhooks como `domain_moderation_action.created` e `.lifted`, cujo `data` tem o `subscription_id`.
+
 <!-- source: severed-follows 51be435d8635 -->
 ### Follows cortados
 
@@ -292,6 +376,52 @@ Um `suspend` de domínio e um `suspend` de conta remota cortam os follows entre 
 - Cada usuário que perdeu follows aprovados recebe uma notificação (`relationships_severed`) que informa quantos seguidores e follows foram perdidos. Um usuário que perdeu apenas pedidos de follow não recebe nenhuma.
 - Revogar a ação não traz de volta os follows cortados. Os usuários seguem de novo.
 - Processar a mesma ação de novo (por exemplo, quando um job roda outra vez) não adiciona mais registros de relações cortadas nem notificações.
+
+<!-- source: federating-only-with-allowed-servers 042f518cd527 -->
+### Federar somente com servidores permitidos
+
+A configuração da instância `federation_scope` decide com quais servidores este servidor federa: `open` (o padrão) federa com todos os servidores que nenhuma ação de domínio suspende,
+e `allowlist` somente com os domínios da lista de permitidos e seus subdomínios, para uma organização ou um servidor pessoal que conversa apenas com servidores que conhece.
+
+Enquanto `federation_scope` é `allowlist`:
+
+- Um servidor sem permissão é tratado como um domínio suspenso: as entregas dele recebem `403` antes de as assinaturas serem verificadas, nada é entregue a ele nem buscado nele, e os relays não trazem nada dele.
+- Uma permissão cobre os subdomínios dela: permitir `friend.example` também permite `social.friend.example`.
+- As ações de domínio continuam valendo para os servidores permitidos: um domínio permitido com um `suspend` continua suspenso, e um com `limit` ou `reject_media` continua limitado.
+- Os GETs de ActivityPub exigem uma assinatura de um servidor permitido, seja qual for o valor de `authorized_fetch`, para que um servidor sem permissão não possa ler as publicações públicas. Servidores e rastreadores que não assinam os GETs recebem `401`.
+- O NodeInfo informa `metadata.federationScope`, para que os outros servidores saibam.
+
+Enquanto é `open`, a lista de permitidos não muda nada, e ela é mantida para a próxima vez que você mudar.
+
+```sh
+my admin domain allow add -comment "partner" friend.example
+my admin domain allow list
+my admin domain allow remove friend.example
+my admin federation scope                   # prints the setting
+my admin federation scope allowlist         # shows what the switch would end, and changes nothing
+my admin federation scope -apply allowlist  # switches
+my admin federation scope open
+```
+
+Na API de administração: `GET /api/v1/admin/domain_allows`, `POST /api/v1/admin/domain_allows` (o corpo tem `domain` e `comment`; um domínio já permitido responde `200` e mantém a permissão dele) e `DELETE /api/v1/admin/domain_allows/{domain}`, com a permissão `manage_domains`.
+`GET /api/v1/admin/settings/federation_scope/impact` conta o que a mudança encerraria, com a permissão `manage_settings`, e `PATCH /api/v1/admin/settings` altera `federation_scope` como qualquer outra configuração.
+A lista de permitidos tem no máximo 5.000 domínios, e um comentário, que nunca é publicado, no máximo 5.000 caracteres. O domínio deste próprio servidor não pode ser permitido.
+
+Mudar para `allowlist`, e remover uma permissão enquanto ela está ativa, encerra seguimentos de vez:
+
+- Antes de mudar, leia quantos seguimentos aprovados entre usuários locais e os servidores sem permissão a mudança encerraria, quantos usuários locais perdem um e os servidores com mais deles (o impacto acima, ou `my admin federation scope allowlist` sem `-apply`).
+- A mudança corta os seguimentos com todo servidor que a lista de permitidos não permite, nos dois sentidos e sem avisar esses servidores, como um `suspend` de domínio faz: um job (`moderation.sever_allowlist`) os corta um usuário local por vez, e cada usuário que perdeu seguimentos aprovados recebe uma notificação (`relationships_severed`) com as contagens.
+- Remover uma permissão enquanto `federation_scope` é `allowlist` corta os seguimentos com as contas desse domínio e dos subdomínios dele que nenhuma outra permissão cobre, do mesmo modo. Remover a permissão de um subdomínio cujo domínio pai é permitido não corta nada.
+- Voltar para `open`, ou permitir o domínio de novo, não traz de volta os seguimentos cortados. Os usuários seguem de novo.
+- Definir `allowlist` quando já é `allowlist` não corta mais nada.
+
+No cliente web, abra Moderação → Ações de domínio e escolha “Domínios permitidos” (`/moderation/domain-actions/allowed`) para ler,
+adicionar e remover permissões; remover uma pede confirmação antes, já que isso isola o domínio enquanto `federation_scope` é `allowlist`. A
+configuração em si é “Escopo de federação” na página de federação das configurações do servidor (`/admin/settings/federation`, com a
+permissão `manage_settings`): escolher “Somente domínios permitidos” e salvar mostra os seguimentos que a mudança encerraria, os usuários
+locais que perdem um e os servidores com mais deles, e só salva depois que você confirma.
+
+Adicionar e remover uma permissão estão no registro de auditoria (`domain_allow_added` e `domain_allow_removed`), e a mudança é o `setting_changed` de `federation_scope`.
 
 <!-- source: publishing-the-domains-you-act-on b647d2c8c84c -->
 ### Publicar os domínios sobre os quais você age
@@ -333,7 +463,40 @@ No cliente web, use “Buscar publicações novamente” na página Análise da 
 - Ele não busca em um domínio com `suspend`, nem em um domínio `unavailable` porque as entregas falharam. Uma busca com falha do mesmo URI é lembrada por 1 hora, e uma nova busca nesse intervalo não o busca.
 - Sua requisição é gravada no registro de auditoria como `status_refetch_queued`, `account_statuses_refetch_queued` ou `domain_statuses_refetch_queued`.
 
-<!-- source: reports e8a3f112b323 -->
+<!-- source: checking-what-reached-a-remote-server b659a7421ff9 -->
+## Verificar o que chegou a um servidor remoto
+
+Quando um usuário pergunta se uma publicação, um seguimento ou um aceite chegou a outro servidor, liste as entregas a esse servidor com a API de administração.
+Ela mostra cada entrega de uma atividade a uma caixa de entrada do servidor, a mais nova primeiro, com cada tentativa e o que o servidor respondeu, inclusive as entregas que deram certo.
+Ela exige a permissão `manage_domains`.
+No cliente web, a seção **Entregas** da tela do servidor remoto (`/moderation/instances/{domain}`) mostra a mesma lista, com os filtros por **ID da atividade** e **Conta local**, e **Mostrar campos ocultos** em cada entrega oculta; a tela diz quais delas são gravadas no registro de auditoria antes de executá-las.
+
+```sh
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://example.com/api/v1/admin/instances/misskey.io/deliveries"
+```
+
+- Cada entrega tem o tipo da atividade (`Create`, `Follow`, `Accept` e assim por diante), quando a atividade foi registrada e quando a caixa de entrada foi adicionada, e as suas `attempts`, da mais antiga para a mais nova.
+  Cada tentativa tem o seu `outcome` (`succeeded`, `retryable_failure`, `permanent_failure`, `skipped`), o `signature_scheme` e o `status_code` da resposta, o `error` de uma falha sem resposta ou o motivo de nada ter sido enviado, e o horário.
+  Uma tentativa `succeeded` com `202` significa que o outro servidor aceitou a atividade; se ele a mostra depois disso, cabe a ele.
+- As tentativas são mantidas por 30 dias, então o histórico volta 30 dias.
+- Para restringir a lista, acrescente `activity_uri=<the activity's ID>`, ou `account_id=<a local account's ID>` para as entregas de uma conta.
+  Uma consulta com `account_id` é gravada no registro de auditoria como `account_deliveries_viewed`, com a conta e o servidor; as outras consultas não são gravadas.
+- O corpo da atividade nunca é mostrado.
+
+Algumas entregas são ocultas: o remetente, o URI da atividade e a caixa de entrada delas ficam de fora, e `mask` diz o motivo.
+
+| `mask` | A atividade trata de |
+| --- | --- |
+| `private`, `direct`, `local` | uma publicação com essa visibilidade |
+| `approves_followers` | um seguimento, o desfazer dele, um aceite ou uma rejeição de uma conta local que aprova seus seguidores |
+| `unknown` | uma publicação ou uma conta que sumiu, então o que era não é mais conhecido |
+
+Uma caixa de entrada compartilhada não nomeia nenhum destinatário e é sempre mostrada; uma caixa de entrada pessoal oculta no erro de uma tentativa aparece como `[masked]`.
+O tipo, os horários e todas as tentativas de uma entrega oculta são mostrados, então você ainda pode ver se ela chegou ao servidor.
+Para ver os campos ocultos de uma entrega, use `POST /api/v1/admin/instances/{domain}/deliveries/{id}/reveal`; cada chamada é gravada no registro de auditoria como `delivery_revealed` antes de qualquer coisa ser mostrada.
+
+<!-- source: reports 8b0684a0561c -->
 ## Denúncias
 
 As denúncias (`Flag`) recebidas de outros servidores entram na lista de denúncias como abertas (`open`).
@@ -357,7 +520,7 @@ Na API de administração: `GET /api/v1/admin/reports` (filtre com `state`, `cat
 - Quando você emite uma ação a partir de uma denúncia (`report_id` / `-report` da ação), a denúncia é resolvida como `actioned` na mesma operação.
 - Uma nota (`note`) é uma nota interna que só os moderadores veem, de até 2.000 caracteres. Ela não é mostrada nem ao alvo nem ao denunciante. Não pode ser editada nem excluída.
 - Reabrir (`reopen`) devolve uma denúncia resolvida a `open` (a atribuição permanece). Uma denúncia aberta não pode ser reaberta (`409` na API de administração).
-- Encaminhar (`forward`, o botão **Encaminhar ao servidor deles** nos detalhes da denúncia) envia uma denúncia sobre uma conta de outro servidor a esse servidor, como um `Flag` do ator da sua instância com a conta e as publicações denunciadas que ainda existem. O único texto que ele leva é o que você escreve para os moderadores desse servidor ao encaminhar (`-comment`, `comment` na API de administração, ou **Texto para os moderadores deles** na página da denúncia; até 1.000 caracteres, nenhum por padrão). O comentário do denunciante e a nota de uma [análise externa](#reports-that-an-external-review-filed) nunca saem do seu servidor desse modo, e nada do denunciante é enviado. Uma denúncia que o denunciante escolheu encaminhar ao registrá-la saiu imediatamente, com o comentário do denunciante. Encaminhar funciona para uma denúncia registrada neste servidor, por uma pessoa ou por uma [análise externa](#reports-that-an-external-review-filed), aberta ou resolvida, que ainda não foi encaminhada; uma denúncia recebida de outro servidor ou sobre uma sala de chat de voz não pode ser encaminhada (`409` `report-not-forwardable` na API de administração, e os detalhes da denúncia não mostram botão). Uma denúncia é enviada uma vez: encaminhá-la de novo, com qualquer texto, ou encaminhar uma que o denunciante tinha encaminhado ao registrá-la não altera nada. `forwarded` na API de administração diz se ela foi enviada, e `forwardable` diz se você pode enviá-la agora.
+- Encaminhar (`forward`, o botão **Encaminhar ao servidor deles** nos detalhes da denúncia) envia uma denúncia sobre uma conta de outro servidor a esse servidor, como um `Flag` do ator da sua instância com a conta e as publicações denunciadas que ainda existem. O único texto que ele leva é o que você escreve para os moderadores desse servidor ao encaminhar (`-comment`, `comment` na API de administração, ou **Texto para os moderadores deles** na página da denúncia; até 1.000 caracteres, nenhum por padrão). O comentário do denunciante e a nota de uma [análise externa](#reports-that-an-external-review-filed) nunca saem do seu servidor desse modo, e nada do denunciante é enviado. Uma denúncia que o denunciante escolheu encaminhar ao registrá-la saiu imediatamente, com o comentário do denunciante. Encaminhar funciona para uma denúncia registrada neste servidor, por uma pessoa ou por uma [análise externa](#reports-that-an-external-review-filed), aberta ou resolvida, que ainda não foi encaminhada; uma denúncia recebida de outro servidor ou sobre uma sala de chat de voz ou um evento não pode ser encaminhada (`409` `report-not-forwardable` na API de administração, e os detalhes da denúncia não mostram botão). Uma denúncia é enviada uma vez: encaminhá-la de novo, com qualquer texto, ou encaminhar uma que o denunciante tinha encaminhado ao registrá-la não altera nada. `forwarded` na API de administração diz se ela foi enviada, e `forwardable` diz se você pode enviá-la agora.
 - Os detalhes da denúncia (`show`, `GET .../{id}`) retornam as notas, das mais antigas para as mais novas, com o número de outras denúncias sobre o alvo e o número de ações contra o alvo (inclusive as revogadas e expiradas). A lista não retorna notas.
 - Atribuições, resoluções, reaberturas, notas e encaminhamentos são mantidos como eventos (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `report_forwards`), e `report_states` guarda o estado atual.
 - Os moderadores podem traduzir as publicações denunciadas e o comentário do denunciante na página da denúncia, ou com `POST .../{id}/statuses/{status_id}/translation` e `POST .../{id}/comment/translation` (corpo `{"target_language": "en"}`).
@@ -388,7 +551,19 @@ deixa a denúncia como está.
 - Quem tem `manage_reports` pode encerrar uma sala aberta para todos os participantes com `POST /api/v1/admin/voice_rooms/{id}/end` (corpo `{"reason": "..."}`, opcional, até 500 caracteres).
   O motivo é apenas para os moderadores; os participantes veem somente que a sala terminou. Funciona também com o chat de voz desativado, e o registro de auditoria grava `voice_room_ended`.
 
-<!-- source: notifications-for-moderators-and-the-pending-counts 7b83fa4097b2 -->
+<!-- source: events d37a09a66811 -->
+### Eventos
+
+- Um usuário local pode denunciar um evento que ele consegue ver, inclusive um cancelado (`POST /api/v1/reports` com `event_id`, e `account_id` definido como o organizador do evento).
+  A denúncia tem o organizador como alvo e aponta para as configurações do evento (título, descrição e lugares) como o denunciante as viu. Um evento que ainda faz enquete de data pode ser denunciado e cancelado como qualquer outro. Ela não aponta para nenhuma publicação e nunca é encaminhada a outro servidor.
+- Os detalhes da denúncia (`GET /api/v1/admin/reports/{id}`) mostram o evento (`event`): a data dele, se e como foi cancelado, e cada alteração das configurações dele, da mais antiga para a mais nova, com todos os lugares dele, também aqueles que só os participantes aprovados viam.
+  `reported_revision_id` é a versão que o denunciante viu, então um título ou um endereço alterado depois da denúncia continua à sua frente.
+- Quem tem `manage_reports` pode cancelar um evento com `POST /api/v1/admin/events/{id}/cancel` (corpo `{"reason": "..."}`, opcional, até 500 caracteres).
+  O motivo é mostrado com o cancelamento a todos que veem o evento. Os usuários que responderam que vão ou talvez vão e os usuários convidados são notificados, como no cancelamento do próprio organizador, e o registro de auditoria grava `event_cancelled`.
+  Um evento já cancelado responde `409` `event-closed`.
+- Suspender ou excluir o organizador cancela os eventos dele que ainda não começaram, inclusive os que ainda fazem enquete de data (`gathering.cancel_organized`), e notifica os participantes deles. Esses cancelamentos não nomeiam ninguém como quem os cancelou, e revogar a suspensão não os restaura. Os eventos que já começaram não são cancelados.
+
+<!-- source: notifications-for-moderators-and-the-pending-counts a9a32ea8cccb -->
 ## Notificações para moderadores e as contagens pendentes
 
 Novas denúncias, cadastros aguardando aprovação e recursos chegam às pessoas com a permissão como notificações no app.
@@ -400,6 +575,7 @@ Novas denúncias, cadastros aguardando aprovação e recursos chegam às pessoas
 | `admin_appeal` | Quando um recurso é feito contra uma ação | Pessoas cuja função tem `manage_accounts`, exceto quem recorreu |
 | `admin_custom_emoji_request` | Quando se pede a criação de um emoji personalizado ou a troca de sua imagem | Pessoas cuja função tem `manage_custom_emojis`, exceto quem pediu |
 | `admin_error_group` | Quando o servidor ou o cliente web relata um erro de um tipo novo, ou um grupo de erros que foi resolvido acontece de novo em outra versão do servidor | Pessoas cuja função tem `manage_errors` |
+| `admin_domain_list_failing` | Quando a busca de uma lista de bloqueio assinada falha pela terceira vez seguida | Pessoas cuja função tem `manage_domains` |
 
 - `admin_error_group` chega no máximo 10 vezes por hora para o servidor inteiro. O restante da hora é reunido em uma notificação
   que diz quantos grupos de erros a mais houve. Um grupo silenciado nunca notifica. Um erro que o cliente web relata para um
@@ -421,7 +597,7 @@ Novas denúncias, cadastros aguardando aprovação e recursos chegam às pessoas
 `GET /api/v1/admin/counts` retorna o número de denúncias abertas (`open_reports`, exige `manage_reports`), o número de cadastros aguardando aprovação (`pending_registrations`) e o número de recursos aguardando análise (`pending_appeals`) (os dois exigem `manage_accounts`).
 Os itens para os quais você não tem permissão não são retornados.
 
-<!-- source: audit-log 86955f4182c0 -->
+<!-- source: audit-log e8f33b4d2da4 -->
 ## Registro de auditoria
 
 As operações de moderadores e administradores são gravadas, uma linha cada, no registro de auditoria (`audit_log_entries`) na mesma transação da operação.
@@ -429,9 +605,9 @@ Operações com falha e operações que não alteraram nada não são gravadas: 
 
 | Tipo de alvo | Operações |
 | --- | --- |
-| `account` | `account_action_issued` e `account_action_lifted` (emissão e revogação de uma ação contra uma conta), `account_deletion_canceled` (a exclusão cancelada porque um recurso contra um `ban` foi revertido), `revealed_private_data` (endereços IP e endereços de e-mail revelados), `two_factor_disabled` (autenticação em dois fatores removida), `password_reset_link_issued` (um link de redefinição de senha emitido), `email_suppression_lifted` (supressão de e-mail revogada), `account_moved` (uma conta local restrita movida para uma conta local; as restrições não são levadas ao destino, então você decide se as aplica lá), `account_statuses_refetch_queued` (nova busca das publicações de uma conta remota) |
+| `account` | `account_action_issued` e `account_action_lifted` (emissão e revogação de uma ação contra uma conta), `account_deletion_canceled` (a exclusão cancelada porque um recurso contra um `ban` foi revertido), `revealed_private_data` (endereços IP e endereços de e-mail revelados), `two_factor_disabled` (autenticação em dois fatores removida), `password_reset_link_issued` (um link de redefinição de senha emitido), `email_suppression_lifted` (supressão de e-mail revogada), `account_moved` (uma conta local restrita movida para uma conta local; as restrições não são levadas ao destino, então você decide se as aplica lá), `account_statuses_refetch_queued` (nova busca das publicações de uma conta remota), `account_deliveries_viewed` (listadas as entregas de uma conta local a um servidor; o nome do alvo é o identificador e o servidor) |
 | `status` | `status_refetch_queued` (nova busca de uma publicação remota; o nome do alvo é o URI da publicação) |
-| `domain` | `domain_action_issued` e `domain_action_lifted` (emissão e revogação de uma ação sobre domínio), `domain_statuses_refetch_queued` (nova busca das publicações das contas do domínio), `instance_marked_available` (limpeza das falhas de um servidor) |
+| `domain` | `domain_action_issued` e `domain_action_lifted` (emissão e revogação de uma ação sobre domínio), `domain_statuses_refetch_queued` (nova busca das publicações das contas do domínio), `instance_marked_available` (limpeza das falhas de um servidor), `delivery_revealed` (mostrados o remetente, o URI da atividade e a caixa de entrada ocultos de uma entrega ao servidor) |
 | `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`, `report_forwarded` (atribuir, desatribuir, resolver e reabrir uma denúncia, adicionar uma nota e encaminhá-la) |
 | `user` | `registration_approved`, `registration_rejected` (análise de cadastro) |
 | `setting` | `setting_changed` (configurações da instância), `text_changed` (textos da instância) |
@@ -446,7 +622,7 @@ Operações com falha e operações que não alteraram nada não são gravadas: 
 | `invite` | `invite_created`, `invite_revoked` (criar e revogar um convite; o nome do alvo são os 4 primeiros caracteres do código) |
 | `billing_source` | `billing_import_queued` (uma importação de cobrança foi iniciada manualmente; o nome do alvo é o nome do provedor) |
 | `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_deleted` (registrar um custo, alterar seu nome e similares, revisar seu valor, alterar sua data de término e excluí-lo; o nome do alvo é o nome do item) |
-| `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (ativar e desativar a cobrança; o nome do alvo é o nome do provedor de pagamento) |
+| `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (ativar e desativar a cobrança; o nome do alvo é o nome do provedor de pagamento) e `supporter_tips_enabled`, `supporter_tips_revised`, `supporter_tips_disabled` (ativar as gorjetas, alterar os valores delas e desativá-las; o nome do alvo é a moeda e os valores em unidades menores) |
 | `supporter_plan` | `supporter_plan_created`, `supporter_plan_revised`, `supporter_plan_retired` (criar, alterar e retirar um plano de apoiador; o nome do alvo é o nome do plano) |
 | `supporter_subscription` | `supporter_subscription_ended` (um administrador encerrou uma assinatura imediatamente; o nome do alvo é o nome do plano e o identificador do usuário) |
 | `custom_emoji_request` | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` (enviar, retirar, aprovar e rejeitar um pedido de emoji personalizado; o nome do alvo é o `:shortcode:`) |
@@ -455,10 +631,13 @@ Operações com falha e operações que não alteraram nada não são gravadas: 
 | `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (negar e revogar a negação de um host de Client ID Metadata Document; negar revoga os tokens dos clientes desse host; o nome do alvo é o host) |
 | `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (anunciar o encerramento do serviço ou alterar a data, retirar o anúncio, encerrar e concluir a entrega do encerramento; o nome do alvo é `service_closure`) |
 | `voice_room` | `voice_room_ended` (um moderador encerrou uma sala de chat de voz aberta; o nome do alvo é o ID da sala, já que o nome some quando a conta que o escreveu é apagada; os detalhes da denúncia mostram o nome) |
+| `event` | `event_cancelled` (um moderador cancelou um evento; o nome do alvo é o ID do evento, já que o título some quando a conta que o escreveu é apagada; os detalhes da denúncia mostram o título) |
+| `domain_allow` | `domain_allow_added`, `domain_allow_removed` (adicionar um domínio à lista de permitidos da federação e removê-lo; veja [federar somente com servidores permitidos](#federating-only-with-allowed-servers); o nome do alvo é o domínio) |
 | `link_card_domain` | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` (definir uma regra do rastreador de cartões de link em um domínio e removê-la; veja [domínios de cartões de link](instance-settings.md#link-card-domains)) |
 | `login_provider` | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` (adicionar, alterar, excluir, ativar e desativar um provedor de login externo, e trocar seu segredo de cliente; o nome do alvo é o nome de exibição do provedor) |
+| `domain_list_subscription` | `domain_list_subscription_created`, `domain_list_subscription_updated`, `domain_list_subscription_deleted` (assinar uma lista de bloqueio, alterar as configurações dela e removê-la), `domain_list_draft_accepted` e `domain_list_draft_rejected` (aceitar um rascunho, o que também grava a ação de domínio, e rejeitar um), `domain_list_fetch_queued` (uma busca pedida manualmente); o nome do alvo é o título da assinatura; veja [assinar listas de bloqueio](#subscribing-to-blocklists) |
 
-A lista mostra se o alvo ainda existe. Contas, denúncias, recursos e bloqueios de cadastro que sumiram após o período de retenção, e funções, emojis personalizados e webhooks excluídos, mostram apenas o nome no momento do registro e nenhum link para uma tela.
+A lista mostra se o alvo ainda existe. Contas, denúncias, recursos e bloqueios de cadastro que sumiram após o período de retenção, permissões removidas, e funções, emojis personalizados e webhooks excluídos, mostram apenas o nome no momento do registro e nenhum link para uma tela.
 
 ```sh
 my admin audit list
@@ -476,10 +655,10 @@ Na API de administração: `GET /api/v1/admin/audit_log` (filtre com `actor_acco
 - A lista vai das mais novas para as mais antigas, com paginação por keyset (`-before <entry id>` na CLI).
 - Não há API nem CLI para atualizar ou excluir o registro de auditoria. As linhas antigas são removidas após o [período de retenção](#record-retention-and-holds).
 
-<!-- source: record-retention-and-holds bd806b3bbda7 -->
+<!-- source: record-retention-and-holds 9861d8570a91 -->
 ## Retenção de registros e retenções legais
 
-Depois do período de retenção de cada tipo de registro, jobs horários (`moderation.purge_records`, `identity.purge_origins` e `voice.purge_records`) removem os registros de moderação.
+Depois do período de retenção de cada tipo de registro, jobs horários (`moderation.purge_records`, `identity.purge_origins`, `voice.purge_records` e `gathering.purge_records`) removem os registros de moderação.
 Você pode alterar os períodos nas configurações da instância, mas não abaixo do limite inferior ([configurações da instância](instance-settings.md)). Um período alterado passa a valer a partir da próxima execução. Uma retenção legal liberada, com seu motivo, é removida quando o período de retenção das ações de moderação passa a contar desde a sua liberação.
 
 | Registro | Configuração | Padrão | Limite inferior | Conta a partir de |
@@ -492,6 +671,7 @@ Você pode alterar os períodos nas configurações da instância, mas não abai
 | Bloqueios de cadastro | Nenhuma (não pode ser alterada) | 30 dias | n/d | O que vier primeiro entre a revogação e a expiração |
 | Quem participou de uma sala de chat de voz (participações, oradores e ouvintes, mãos levantadas, convites, remoções) | `voice_participants_retention_days` | 90 dias | 30 dias | O fim da sala |
 | As decisões dos [hooks de decisão](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 dias | 30 dias | A decisão |
+| As respostas, aprovações, convites e votos nas datas candidatas de um evento | `event_records_retention_days` | 90 dias | 30 dias | O que vier primeiro entre o fim do evento (para um evento cuja data nunca foi fixada, o fim da última data candidata) e o cancelamento dele |
 
 - As denúncias abertas nunca são removidas. Uma denúncia a que uma ação se refere (`report_id` da ação) permanece até essa ação ser removida.
 - O fim de uma ação é o que vier primeiro entre a revogação e a expiração. Para uma ação que foi contestada, se a análise vier depois disso, o fim é o momento da análise, e a ação é mantida enquanto o recurso aguarda análise.
@@ -499,6 +679,7 @@ Você pode alterar os períodos nas configurações da instância, mas não abai
 - As publicações para as quais uma denúncia ou uma ação aponta não são excluídas fisicamente pelo job de limpeza, junto com sua mídia anexada, até essa denúncia ou ação ser removida, mesmo que o autor as tenha excluído (elas somem da vista). As publicações remotas também permanecem além do período de retenção (inclusive a configuração da instância `remote_status_max_retention_days`).
 - Um bloqueio de cadastro que não tem nem revogação nem horário de término permanece enquanto estiver em vigor.
 - Os registros de quem participou de uma sala de chat de voz para a qual uma denúncia aponta permanecem até essa denúncia ser removida. A sala em si (seu nome, descrição, anfitriões e como terminou) nunca é removida.
+- As respostas, os votos e os convites de um evento para o qual uma denúncia aponta permanecem até essa denúncia ser removida, e também os que nomeiam uma conta sob retenção legal. O evento em si (suas configurações e lugares, sua data e datas candidatas, seus coorganizadores e seu cancelamento) nunca é removido; depois que as respostas somem, ele não conta ninguém como participante.
 - Uma execução do job remove apenas um número limitado de linhas por tipo (100 por vez, 20 vezes, para ações, denúncias e bloqueios de cadastro; 1.000 linhas por vez, 20 vezes, para o registro de auditoria). A execução seguinte remove o resto.
 
 <!-- source: holds f3bf57c2c258 -->
