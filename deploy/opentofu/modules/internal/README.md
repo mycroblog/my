@@ -40,7 +40,7 @@ deploy/opentofu/modules/internal/
   billing-aws/                 the usage cost import from AWS, never applied
   monitoring-gcp/              uptime check, log-based metrics, and alert policies
   observability-gcp/           the APIs of Cloud Monitoring, Cloud Trace, and Error Reporting, and the exporters
-  observability-aws/           the exporters to CloudWatch: settings only
+  observability-aws/           the exporters to CloudWatch, and the collector that sends the traces to X-Ray
   translation-gcp-cloud-translation/  Cloud Translation's API and role, for the provider google
   translation-aws-translate/   Amazon Translate's IAM actions, for the provider aws: settings and permissions only
   search-aws-opensearch/       an Amazon OpenSearch Service domain of yours, with signed requests, never applied
@@ -129,6 +129,7 @@ changing one module block:
 | `workers` (optional) | `map(list(string))` | The job types of each worker that a queue module was given. The app must have been given the same, and a plan fails otherwise. Read [Workers](#workers) |
 | `pool_max_conns` (optional) | `number` | `pool_max_conns` of the database URL, or `0` for the server's default, where a `db-*` module knows it: what the `concurrency` of a worker must stay below |
 | `billing_sources` (optional) | `list(string)` | What this module adds to the one setting `MY_BILLING_SOURCES`, which the app sets from all of them |
+| `sidecars` (optional) | `list(object({ name, image, cpu, memory_mib, env }))` | Containers that every task runs beside the server, on AWS: the collector of `observability-aws`. The image names a version or a digest, never `latest`; the CPU units and the MiB of memory come out of the task's, and the app gives the server the rest. Google Cloud's app refuses it |
 
 A permission means what the platform's IAM means: what the identity is permitted, which on Google Cloud is a role, so its shape is the platform's:
 
@@ -342,8 +343,10 @@ public module and has no module here.
 - `observability-gcp` and `observability-aws` set the exporter of each signal, so that one module owns each of
   `metrics_exporter`, `traces_exporter`, and `errors_exporter` (and `metrics_emf_namespace` on AWS). A signal set to
   `settings` sets nothing, so that the public module lets `settings` name it. Google Cloud's destinations read what Cloud Run
-  sends them, so `observability-gcp` exports nothing to them and only enables their APIs; on AWS everything rides on the log
-  lines that the log driver sends with the execution role. Neither asks for a permission.
+  sends them, so `observability-gcp` exports nothing to them, only enables their APIs, and asks for no permission. On AWS the
+  metrics and the error reports ride on the log lines that the log driver sends with the execution role, and the traces go
+  to X-Ray through a collector: `observability-aws` returns it in `sidecars`, which `app-aws-ecs` runs in every task, and asks
+  for `xray:PutTraceSegments`, which the collector writes with.
 
 ## The monitoring contract
 

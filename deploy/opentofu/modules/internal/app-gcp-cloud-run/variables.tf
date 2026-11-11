@@ -170,6 +170,13 @@ variable "backends" {
       target_group_arn  = string
       security_group_id = string
     }))
+    sidecars = optional(list(object({
+      name       = string
+      image      = string
+      cpu        = number
+      memory_mib = number
+      env        = optional(map(string), {})
+    })), [])
   }))
   default  = []
   nullable = false
@@ -209,6 +216,11 @@ variable "backends" {
   validation {
     condition     = alltrue([for b in var.backends : length(b.security_group_ids) == 0 && b.load_balancer == null])
     error_message = "security_group_ids and load_balancer belong to AWS. A backend on private addresses here returns private_network."
+  }
+
+  validation {
+    condition     = alltrue([for b in var.backends : length(b.sidecars) == 0])
+    error_message = "sidecars belong to AWS, whose traces go through a collector beside the server. Google Cloud's destinations read what Cloud Run sends: use observability-gcp."
   }
 
   validation {

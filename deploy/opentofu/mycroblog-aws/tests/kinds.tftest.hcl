@@ -514,10 +514,58 @@ run "observability_to_cloudwatch" {
   assert {
     condition = (
       module.app.env["MY_METRICS_EXPORTER"] == "emf" && module.app.env["MY_METRICS_EMF_NAMESPACE"] == "social" &&
-      module.app.env["MY_TRACES_EXPORTER"] == "none" && module.app.env["MY_ERRORS_EXPORTER"] == "none" &&
-      length(module.observability.permissions) == 0
+      module.app.env["MY_ERRORS_EXPORTER"] == "none"
     )
     error_message = "the metrics must go to CloudWatch in the deployment's namespace, which the alarms read: ${jsonencode(module.app.env)}"
+  }
+}
+
+run "traces_to_x_ray_from_every_task" {
+  command = plan
+
+  variables {
+    observability   = { traces = "x-ray" }
+    console_enabled = true
+    workers         = { delivery = { job_types = ["federation.*"] } }
+  }
+
+  assert {
+    condition = (
+      toset(keys(module.app.containers)) == toset(["server", "worker-delivery", "migrate", "console"]) &&
+      alltrue([for key, containers in module.app.containers : containers == ["my", "otel-collector"]])
+    )
+    error_message = "the service, the worker, the migration, and the console each run the collector: ${jsonencode(module.app.containers)}"
+  }
+
+  assert {
+    condition = (
+      module.app.env["MY_TRACES_EXPORTER"] == "otlp" &&
+      module.app.env["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] == "http://127.0.0.1:4318/v1/traces" &&
+      yamldecode(module.observability.sidecars[0].env["AOT_CONFIG_CONTENT"]).receivers.otlp.protocols.http.endpoint == "127.0.0.1:4318"
+    )
+    error_message = "the server sends the spans to where the collector listens: ${jsonencode(module.app.env)}"
+  }
+
+  assert {
+    condition     = contains(module.app.task_permissions, { permission = "xray:PutTraceSegments", resource = "*" })
+    error_message = "the task role, which the collector runs as, can write to X-Ray: ${jsonencode(module.app.task_permissions)}"
+  }
+}
+
+run "traces_to_none" {
+  command = plan
+
+  variables {
+    observability = { traces = "none" }
+  }
+
+  assert {
+    condition = (
+      module.app.env["MY_TRACES_EXPORTER"] == "none" && !contains(keys(module.app.env), "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT") &&
+      alltrue([for key, containers in module.app.containers : containers == ["my"]]) &&
+      length(module.observability.permissions) == 0
+    )
+    error_message = "traces = none records no spans and runs no collector: ${jsonencode(module.app.containers)}"
   }
 }
 

@@ -245,7 +245,7 @@ names who the alarms notify. Every other field has a default. The first kind of 
 | `workers` | | Services that run some job types apart from the default service, by a key that names each: `job_types`, `instances`, `cpu`, `memory_mib`, and `concurrency` |
 | `translation` | | Null by default. `{}` turns on Amazon Translate, the translation provider `aws`: the module allows the tasks' role `translate:TranslateText` and `comprehend:DetectDominantLanguage`, and sets the provider's `region`, the deployment's by default. The instance setting `translation_providers` then enables it |
 | `search` | | Null by default. `domain_name` names a domain of Amazon OpenSearch Service that you created in the region: the module reads it, allows the tasks' role the HTTP methods the server sends to it, and sets `search = opensearch` with signed requests, and the alias `index`. A domain in the VPC takes `security_group_ids` for the tasks to join. The module never creates the domain. Elasticsearch, Meilisearch, and OpenSearch with a user go through `settings` and `secrets` |
-| `observability` | | Where the metrics, the traces, and the error reports go: `metrics = cloudwatch`, in Embedded Metric Format in the namespace `name`, `errors = cloudwatch`, the error report line in CloudWatch Logs, and `traces = none`, since X-Ray needs a collector beside the server, which the tasks do not run. Nothing needs a grant. `settings` leaves a signal to `settings` and `secrets`, such as `errors = "settings"` for Sentry |
+| `observability` | | Where the metrics, the traces, and the error reports go: `metrics = cloudwatch`, in Embedded Metric Format in the namespace `name`, `errors = cloudwatch`, the error report line in CloudWatch Logs, and `traces = x-ray`, through the AWS Distro for OpenTelemetry collector, which runs beside the server in every task and writes to X-Ray with the tasks' role (`xray:PutTraceSegments`). `traces = none` records no spans and runs no collector. `settings` leaves a signal to `settings` and `secrets`, such as `errors = "settings"` for Sentry. Read [Traces to X-Ray](#traces-to-x-ray) |
 | `monitoring` | | Required: a CloudWatch Synthetics canary, metrics in CloudWatch, and alarms, which notify at least one of `notification_emails` and `notification_topic_arns`. Null creates none. Also `page_notification_topic_arns`, `uptime_period_minutes` (15), `disabled_alerts`, and size limits. It reads the metrics of `observability.metrics = cloudwatch`. Each run of the canary is billed |
 | `billing` | | Null by default. `{}` imports the usage cost from Cost Explorer into the server's dashboard, with the tasks' own role |
 
@@ -262,7 +262,23 @@ There is no `queue` section: the tasks stay up, so they take the jobs from the d
 - `database.pooled` with `rds`; `media.kind = s3-compatible` without `endpoint`; `r2` without `cloudflare.account_id`;
 - `kv.tls_ca` or `kv.key_prefix` without `kv.kind = external`; `stream.kind = valkey` with `kv.kind = db`;
 - `mail.kind = smtp` without `mail.smtp`, `mail.smtp` with `ses`, and `mail.configuration_set` with `smtp`;
-- `monitoring` that names nobody to notify, or with `observability.metrics = settings`.
+- `monitoring` that names nobody to notify, or with `observability.metrics = settings`;
+- `observability.traces = x-ray` with a size of `service` or `jobs` that leaves the server less than 128 CPU units or 512 MiB
+  beside the collector.
+
+### Traces to X-Ray
+
+`observability.traces = "x-ray"` is the default, because the collector fits the recommended setup at no extra charge for its
+size: it takes 32 CPU units and 128 MiB out of each task, which AWS bills by the size of the task alone, so the default service
+task of 256 CPU units and 1,024 MiB costs the same and gives the server 224 CPU units and 896 MiB, with `GOMEMLIMIT` at 806 MiB
+in place of 921 MiB. The default `traces_sample_ratio` records about 30,000 traces a month for 100,000 requests a day, under
+the 100,000 traces a month that X-Ray records for free. What it does cost is the collector's image, pulled at each start of a
+task, and the server's memory: set `traces = "none"` for a task too small to spare 128 MiB, which the module refuses, or when
+you do not read the traces. A worker of its own size must leave the server the same, and the plan fails otherwise.
+
+The collector listens on the task's loopback alone, has no metrics pipeline (the metrics go in EMF), and is not essential: if
+it stops, the server goes on without traces. Its image is pinned by version and digest. Nothing of it has been applied on AWS
+either, so that X-Ray takes the spans is unverified.
 
 ### Outputs of mycroblog-aws
 

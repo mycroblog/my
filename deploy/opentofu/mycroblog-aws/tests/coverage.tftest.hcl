@@ -391,7 +391,7 @@ run "settings_may_set_a_signal_that_observability_leaves_to_them" {
   assert {
     condition = (
       module.app.env["MY_METRICS_EXPORTER"] == "otlp" && module.app.env["MY_ERRORS_EXPORTER"] == "sentry" &&
-      module.app.env["MY_TRACES_EXPORTER"] == "none" && !contains(keys(module.app.env), "MY_METRICS_EMF_NAMESPACE") &&
+      module.app.env["MY_TRACES_EXPORTER"] == "otlp" && !contains(keys(module.app.env), "MY_METRICS_EMF_NAMESPACE") &&
       contains(keys(module.app.secret_env), "MY_ERRORS_SENTRY_DSN")
     )
     error_message = "a signal left to the settings takes them, and the others stay the section's: ${jsonencode(module.app.env)}"

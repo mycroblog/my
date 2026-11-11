@@ -40,6 +40,16 @@ output "task_role_arn" {
   value       = aws_iam_role.task.arn
 }
 
+output "task_permissions" {
+  description = "What the task role is allowed, as the backends asked: one IAM action on a resource each."
+  value       = [for p in local.permissions : { permission = p.permission, resource = p.resource }]
+}
+
+output "containers" {
+  description = "The containers of each task definition, by its key (server, worker-<key>, migrate, console): the server's first, then the sidecars of the backends."
+  value       = { for key, t in local.tasks : key => concat([local.container_name], [for s in local.sidecars : s.name]) }
+}
+
 output "log_group" {
   description = "CloudWatch Logs group of every task."
   value       = aws_cloudwatch_log_group.tasks.name

@@ -141,6 +141,14 @@ variable "backends" {
     }))
     # What the backend adds to the one setting MY_BILLING_SOURCES.
     billing_sources = optional(list(string), [])
+    # Containers that every task runs beside the server, with the CPU units and the memory they take from the task.
+    sidecars = optional(list(object({
+      name       = string
+      image      = string
+      cpu        = number
+      memory_mib = number
+      env        = optional(map(string), {})
+    })), [])
     # Accepted so that it cannot vanish, and refused below: nothing calls or invokes this service that way.
     invokers = optional(list(string), [])
     # Accepted so that they cannot vanish, and refused below: they belong to Google Cloud.
@@ -189,6 +197,23 @@ variable "backends" {
       for b in var.backends : [for name in keys(b.secret_files) : endswith(name, "_FILE")]
     ]))
     error_message = "The names of secret_files end in _FILE."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for b in var.backends : [
+        for s in b.sidecars : (
+          s.name != "my" && can(regex("^[a-zA-Z0-9][a-zA-Z0-9_-]{0,254}$", s.name)) && s.cpu > 0 && s.memory_mib > 0 &&
+          can(regex("(:[^/:@]+|@sha256:[0-9a-f]{64})$", s.image)) && !can(regex(":latest(@|$)", s.image))
+        )
+      ]
+    ]))
+    error_message = "A sidecar has a name other than my, an image that names a version or a digest and not latest, and CPU units and memory above 0."
+  }
+
+  validation {
+    condition     = length(flatten([for b in var.backends : [for s in b.sidecars : s.name]])) == length(distinct(flatten([for b in var.backends : [for s in b.sidecars : s.name]])))
+    error_message = "Two sidecars have the same name."
   }
 }
 

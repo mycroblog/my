@@ -168,8 +168,18 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
       "MY_TRACES_EXPORTER",
       "MY_TRUSTED_PROXIES",
       "MY_TRUSTED_PROXY_HEADER",
+      "OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
     ])
     error_message = "the recommended setup does not compose the settings it should: ${jsonencode(keys(module.app.env))}"
+  }
+
+  assert {
+    condition = (
+      module.app.env["MY_TRACES_EXPORTER"] == "otlp" && module.app.env["OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"] == "http://127.0.0.1:4318/v1/traces" &&
+      alltrue([for key, containers in module.app.containers : containers == ["my", "otel-collector"]]) &&
+      contains(module.app.task_permissions, { permission = "xray:PutTraceSegments", resource = "*" })
+    )
+    error_message = "the recommended setup sends the traces to X-Ray, through the collector in every task, which the task role lets write: ${jsonencode(module.app.containers)}"
   }
 
   assert {
