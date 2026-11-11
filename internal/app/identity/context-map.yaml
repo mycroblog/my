@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["mail_drafts.go"]
+    docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠"]
+    userdocs: ["docs/reference/commands.md"]
+    checks: [go]
+  - paths: ["login_provider_admin.go"]
+    userdocs: ["docs/operations/login-providers.md"]
+  - paths: ["**"]
+    docs: ["docs/architecture/data-model/04-tables/01-identity.md#41-identity", "docs/operations/registration.md"]
+    userdocs: ["docs/operations/registration.md", "docs/guide/signing-in.md"]
+  - paths: ["closure.go", "closure_mail.go", "data_import.go", "export.go", "mail_jobs.go", "oauth_dynamic.go", "origin.go"]
+    docs: ["docs/adr/0004-job-queue-abstraction.md"]
+    userdocs: ["docs/reference/jobs.md"]
+  - paths: ["oidc.go"]
+    docs: ["docs/adr/0106-external-login-providers.md#5-idp-への-http", "docs/adr/0019-security-baseline.md"]

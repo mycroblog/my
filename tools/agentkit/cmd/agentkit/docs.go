@@ -6,14 +6,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
 
 	"github.com/mycroblog/my/tools/agentkit/internal/docslint"
 	"github.com/mycroblog/my/tools/agentkit/internal/docsync"
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-const docsUsage = "usage: agentkit docs lint | docs inventory | docs adr-shape | docs impact [--base origin/main] [--pr-body file]"
+const docsUsage = "usage: agentkit docs lint | docs inventory | docs adr-shape | docs impact [--base origin/main]"
 
 func runDocs(r *repo.Repo, args []string) error {
 	if len(args) == 0 {
@@ -100,13 +99,10 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 	return nil
 }
 
-// runDocsImpact prints the user and operator documents that describe the paths changed since the base; with
-// --pr-body it fails when the pull request's description neither changes nor explains one of them (the preflight
-// of CI).
+// runDocsImpact prints the user and operator documents that describe the paths changed since the base.
 func runDocsImpact(r *repo.Repo, args []string) error {
 	fs := flag.NewFlagSet("docs impact", flag.ContinueOnError)
 	base := fs.String("base", "origin/main", "compare with the merge base of this revision")
-	body := fs.String("pr-body", "", "the pull request's description, to check its "+docsync.Heading+" section")
 	if pos, err := parse(fs, args); err != nil || len(pos) > 0 {
 		return errors.New(docsUsage)
 	}
@@ -122,20 +118,5 @@ func runDocsImpact(r *repo.Repo, args []string) error {
 	for _, l := range docsync.Lines(ims) {
 		fmt.Println(l)
 	}
-	if *body == "" {
-		return nil
-	}
-	b, err := os.ReadFile(*body)
-	if err != nil {
-		return err
-	}
-	problems := docsync.Verify(ims, docsync.Reasons(string(b)))
-	for _, p := range problems {
-		fmt.Println("error: " + p)
-	}
-	if len(problems) > 0 {
-		return exitError{1, fmt.Sprintf("agentkit docs impact: %d documents neither changed nor explained (AGENTS.md#documentation); after editing the description, rerun the failed job", len(problems))}
-	}
-	fmt.Println("each is changed or explained in the description")
 	return nil
 }

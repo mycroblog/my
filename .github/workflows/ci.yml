@@ -129,16 +129,9 @@ jobs:
     # that each format their own lines can meet in one statement.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    # docs:pr-impact reads the pull request's description.
-    permissions:
-      contents: read
-      pull-requests: read
     steps:
-      # docs:pr-impact compares the merge commit with its first parent, the base branch.
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Go
@@ -178,6 +171,12 @@ jobs:
             run: scripts/task.sh mykit:mybot-ts-licenses
           - name: mail:typecheck
             run: scripts/task.sh mail:typecheck
+          # The prose agents maintain is no larger than at the base, the first parent of the merge commit, unless the
+          # owner approved the growth with the docs:grow label (labelling reruns the checks).
+          - name: docs:growth
+            env:
+              APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'docs:grow') }}
+            run: scripts/task.sh docs:growth BASE=HEAD^1 ALLOW_GROWTH="$APPROVED"
           - name: docker:dockerfile-check
             run: scripts/task.sh docker:dockerfile-check
           - name: web:playwright-image-check
@@ -186,28 +185,6 @@ jobs:
             run: scripts/task.sh web:tokens
           - name: web:lint-css
             run: scripts/task.sh web:lint-css
-          # The prose agents maintain is no larger than at the base, the first parent of the merge commit, unless the
-          # owner approved the growth with the docs:grow label (labelling reruns the checks).
-          - name: docs:growth
-            env:
-              APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'docs:grow') }}
-            run: scripts/task.sh docs:growth BASE=HEAD^1 ALLOW_GROWTH="$APPROVED"
-          # Each user or operator document that describes the changed paths (the userdocs of
-          # tools/agentkit/context-map.yaml) is changed or explained in the description. It reads the description now,
-          # not the event's copy, so rerunning the job after editing the description checks the new text. A Dependabot
-          # update bumps a version or digest and writes no Documentation section, so it has nothing to explain.
-          - name: docs:pr-impact
-            env:
-              GH_TOKEN: ${{ github.token }}
-              PR: ${{ github.event.pull_request.number }}
-              AUTHOR: ${{ github.event.pull_request.user.login }}
-            run: |
-              if [ "$AUTHOR" = "dependabot[bot]" ]; then
-                echo "A Dependabot update: skipped."
-                exit 0
-              fi
-              gh pr view "$PR" -R "$GITHUB_REPOSITORY" --json body --jq .body > "$RUNNER_TEMP/pr-body.md"
-              scripts/task.sh docs:pr-impact BASE=HEAD^1 BODY="$RUNNER_TEMP/pr-body.md"
 
   ui-test:
     # The @my/ui story tests (ADR-0110), on pull requests alone: a pull request that changes a screenshot fixes its

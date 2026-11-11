@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/adr/0051-custom-emoji.md", "docs/adr/0070-permission-split-emoji-finance.md", "docs/adr/0091-composer-emoji-picker.md"]

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["text/**"]
+    docs: ["docs/adr/0092-composer-autocomplete-highlight.md#decision決定"]
+    checks: [go, web]
+  - paths: ["**"]
+    docs: ["docs/adr/0015-testing-strategy.md"]

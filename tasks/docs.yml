@@ -23,18 +23,8 @@ tasks:
     cmds:
       - bin/agentkit docs lint
 
-  pr-impact:
-    desc: 'Fail when a user or operator document that describes the paths changed since BASE is neither changed nor explained in the Documentation section of the pull request description in BODY: scripts/task.sh docs:pr-impact BODY=<file> [BASE=origin/main]'
-    deps: [":agentkit:build"]
-    requires:
-      vars: [BODY]
-    vars:
-      BASE: '{{.BASE | default "origin/main"}}'
-    cmds:
-      - bin/agentkit docs impact --base {{shellQuote .BASE}} --pr-body {{shellQuote .BODY}}
-
   growth:
-    desc: "Fail when the prose agents maintain (ADRs, architecture, requirements, docs/agents, AGENTS.md / CLAUDE.md, the context maps, .claude) is larger than at the merge base with BASE (default origin/main); ALLOW_GROWTH=true, the docs:grow label in CI, only reports"
+    desc: "Fail when the prose agents maintain (ADRs, architecture, requirements, docs/agents, AGENTS.md / CLAUDE.md, the context maps, .claude) is larger than at the merge base with BASE (default origin/main); ALLOW_GROWTH=true, the docs:grow label in CI, reports without failing"
     vars:
       BASE: '{{.BASE | default "origin/main"}}'
     cmds:

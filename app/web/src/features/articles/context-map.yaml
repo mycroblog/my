@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/architecture/web-client/screens/article-editor.md", "docs/adr/0160-articles.md", "docs/adr/0156-drafts-and-scheduled-posts.md#decision決定", "docs/architecture/web-client/12-compose.md#12-投稿フォーム"]
+    userdocs: ["docs/guide/posting.md"]

@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/adr/0103-error-reporting.md", "docs/architecture/overview.md#3-ポート一覧"]
+    userdocs: ["docs/reference/configuration.md", "docs/operations/running.md#metrics", "docs/operations/running.md#error-reports", "docs/operations/alerts.md#myerrorreportsincreasing", "docs/operations/error-reporting.md"]

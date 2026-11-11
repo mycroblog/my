@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/architecture/web-client/09-app-shell.md#9-アプリの外枠", "docs/adr/0067-finance-cost-records.md"]

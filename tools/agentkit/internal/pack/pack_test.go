@@ -51,7 +51,7 @@ func TestBuild(t *testing.T) {
 	m := &ctxmap.Map{Entries: []ctxmap.Entry{{
 		Name: "schema", Paths: []string{"schema/**"}, Docs: []string{"docs/architecture/data-model/04-tables/04-content.md#44-content"},
 		Userdocs: []string{"docs/operations/database.md#upgrading"},
-		Checks:   []string{"schema", "go"}, Shared: true, Notes: []string{"Edit every dialect together."},
+		Checks:   []string{"schema", "go"}, Shared: true,
 	}}}
 	is := &gh.Issue{
 		Number: 916, Title: "[Task] create_custom_emojis", State: "OPEN",
@@ -70,7 +70,6 @@ func TestBuild(t *testing.T) {
 		"```text untrusted",
 		"###### 申請", // headings of included text sit below the pack's own
 		"**schema** [shared",
-		"Edit every dialect together.",
 		"User and operator documents that describe these areas",
 		"- `docs/operations/database.md#upgrading`",
 		"table:custom_emoji_requests",

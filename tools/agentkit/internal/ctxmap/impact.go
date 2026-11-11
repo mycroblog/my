@@ -3,6 +3,7 @@
 package ctxmap
 
 import (
+	"path"
 	"sort"
 	"strings"
 )
@@ -15,8 +16,9 @@ type Impact struct {
 	Changed bool     // the change touches the document itself
 }
 
-// Impact returns the userdocs of the entries of the changed paths, one per document in path order. Paths that
-// match Ignore or Userdocs.Skip (generated files, tests) describe nothing a document says, and are passed over.
+// Impact returns the userdocs of the entries of the changed paths, one per document in path order. Map files and
+// paths that match Ignore or Userdocs.Skip (generated files, tests) describe nothing a document says, and are
+// passed over.
 func (m *Map) Impact(changed []string) []Impact {
 	touched := map[string]bool{}
 	for _, p := range changed {
@@ -24,7 +26,7 @@ func (m *Map) Impact(changed []string) []Impact {
 	}
 	byDoc := map[string]*Impact{}
 	for _, p := range changed {
-		if m.ignored(p) || matchAny(m.Userdocs.Skip, p) {
+		if path.Base(p) == File || m.ignored(p) || matchAny(m.Userdocs.Skip, p) {
 			continue
 		}
 		for _, e := range m.For(p) {

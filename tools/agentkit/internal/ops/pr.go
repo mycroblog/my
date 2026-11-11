@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mycroblog/my/tools/agentkit/internal/docsync"
 	"github.com/mycroblog/my/tools/agentkit/internal/gh"
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
@@ -27,12 +26,9 @@ type OpenOptions struct {
 	Summary   string
 	Decisions string
 	Footer    string // e.g. the attribution line the agent's harness asks for
-	// DocReasons says, by document path, why a user or operator document that describes the changed paths needs
-	// no change (the Documentation section, docsync).
-	DocReasons map[string]string
-	Confirm    bool // the agent confirms the docs and no-secrets items of the checklist
-	Draft      bool
-	NoPush     bool
+	Confirm   bool   // the agent confirms the docs and no-secrets items of the checklist
+	Draft     bool
+	NoPush    bool
 }
 
 var reCheckbox = regexp.MustCompile(`^\s*- \[([ xX])\]\s+(.*)$`)
@@ -62,8 +58,8 @@ func acceptanceCriteria(body string) []criterion {
 
 // Open pushes the branch and opens its pull request from .github/pull_request_template.md's sections: the
 // summary, Closes #N (or Stacked on #M first), the commit subjects as the changes, the issue's acceptance
-// criteria with the checked state they have in the issue, the decisions, the documentation (docsync.Section: it refuses to open the PR while a document
-// that describes the changed paths is neither changed nor given a reason), and the checklist. It comments the PR on the issue and returns the PR URL.
+// criteria with the checked state they have in the issue, the decisions, and the checklist. It prints the documents that describe the changed
+// paths and are not changed (docImpact), and opens the PR either way. It comments the PR on the issue and returns the PR URL.
 func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	branch, err := r.Branch()
 	if err != nil {
@@ -78,13 +74,8 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if o.Base == "" {
 		o.Base = "main"
 	}
-	ims, err := docsync.Of(r, "origin/"+o.Base)
-	if err != nil {
-		return "", err
-	}
-	docSection, problems := docsync.Section(ims, o.DocReasons)
-	if len(problems) > 0 {
-		return "", fmt.Errorf("the Documentation section is incomplete; update each document, or pass --doc-reason '<path>=<reason>' (AGENTS.md#documentation):\n%s", strings.Join(problems, "\n"))
+	for _, l := range docImpact(r, "origin/"+o.Base) {
+		fmt.Fprintln(os.Stderr, l)
 	}
 	var is *gh.Issue
 	if o.Issue > 0 {
@@ -148,7 +139,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if decisions == "" {
 		decisions = "None"
 	}
-	fmt.Fprintf(&b, "\n## Decisions and assumptions\n\n%s\n\n%s\n## Checklist\n\n", decisions, docSection)
+	fmt.Fprintf(&b, "\n## Decisions and assumptions\n\n%s\n\n## Checklist\n\n", decisions)
 	fmt.Fprintf(&b, "- [%s] Docs / i18n catalogs updated where needed\n", mark(o.Confirm))
 	fmt.Fprintf(&b, "- [%s] No secrets, no unrelated changes\n", mark(o.Confirm))
 	if o.Footer != "" {

@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["src/fonts/emoji/**", "src/emoji.css"]
+    docs: ["docs/adr/0091-composer-emoji-picker.md", "app/ui/README.md#typography"]
+    checks: [ui, web]
+  - paths: ["**"]
+    docs: ["app/ui/README.md", "docs/architecture/web-client/16-look-states-and-wording.md#16-見た目状態文言", "docs/architecture/web-client/README.md#5-アクセシビリティ", "docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]
+    checks: [ui, web]
+  - paths: ["src/FilteredPost.tsx"]
+    docs: ["docs/architecture/web-client/screens/settings-filters.md", "docs/adr/0157-keyword-filters.md#decision決定", "docs/architecture/web-client/13-status-detail-and-actions.md#13-投稿の詳細と投稿への操作"]
+    userdocs: ["docs/guide/keyword-filters.md"]

@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/architecture/federation.md#2-署名", "docs/architecture/federation.md#4-as2-の正規化", "docs/architecture/federation.md#5-リモート-html-のサニタイズ", "docs/operations/key-management.md"]

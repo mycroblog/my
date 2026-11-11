@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/architecture/data-model/01-conventions.md#1-共通規約", "docs/architecture/data-model/02-consistency.md#2-整合性モデル", "docs/adr/0003-database-abstraction.md", "docs/operations/database.md"]
+    checks: [go, schema]

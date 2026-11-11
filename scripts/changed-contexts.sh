@@ -21,7 +21,7 @@
 #   docker  the Dockerfile and the deployments                   (docker:check, the Docker smoke test)
 #   shell   the shell scripts                                    (shell:check)
 #   schema  the desired-state schema files                       (db:check-all)
-#   agentkit tools/agentkit and its context map, which covers every path (agentkit:check)
+#   agentkit tools/agentkit and the context map (the context-map.yaml files), which covers every path (agentkit:check)
 #   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own, and their integration tests (mykit:check)
 #   tofu the OpenTofu modules of deploy/opentofu          (tofu:check)
 #   site    the documentation site app/docs and what it publishes: docs/operations, docs/reference, docs/guide,
@@ -104,9 +104,13 @@ select_task_area() {
 # classify PATH selects the contexts of one changed path. Rules add up: app/ui/README.md is docs, ui, and web.
 classify() {
   local path="$1" known=0
-  # tools/agentkit/context-map.yaml must cover every path, so any change can break `agentkit map check`.
+  # The context-map.yaml files must cover every path, so any change can break `agentkit map check`.
   select_contexts agentkit
   case "$path" in
+    # A map file, which `agentkit map check` alone reads.
+    context-map.yaml | */context-map.yaml)
+      return
+      ;;
     # Shared configuration, which every check runs through: the task runner and its tasks, the tool versions (go-task,
     # sqlc, oapi-codegen, and go-licenses are pinned in tools/go.mod), and the workflows. Everything.
     Taskfile.yml | scripts/task.sh | .tool-versions | .github/workflows/ci.yml | .github/workflows/ui-test.yml | \

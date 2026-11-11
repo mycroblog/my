@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/architecture/web-client/21-experience-principles.md#21-体験の原則"]
+    userdocs: ["docs/guide/signing-in.md"]

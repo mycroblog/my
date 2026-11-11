@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["compose.yaml", "compose.build.yaml", "compose.postgres.yaml", "compose.s3.yaml", "compose.caddy.yaml", "example.env"]
+    userdocs: ["docs/operations/deploy-docker-compose.md", "docs/operations/running.md#docker-compose-files", "docs/operations/running.md#get-the-image", "docs/operations/database.md#docker-compose", "docs/operations/maintenance.md#docker-compose"]

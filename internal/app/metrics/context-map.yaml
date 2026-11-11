@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/operations/running.md#metrics"]
+    userdocs: ["docs/operations/running.md#metrics", "docs/operations/alerts.md"]
+  - paths: ["**"]
+    docs: ["docs/architecture/job-system.md", "docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]
+  - paths: ["gauges.go"]
+    docs: ["docs/adr/0004-job-queue-abstraction.md"]
+    userdocs: ["docs/reference/jobs.md"]

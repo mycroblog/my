@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["domain_list_*.go"]
+    docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/data-model/04-tables/03-moderation.md#ドメインのブロックリストの購読"]
+    userdocs: ["docs/operations/moderation.md#subscribing-to-blocklists", "docs/reference/jobs.md", "docs/reference/cli.md"]
+  - paths: ["allowlist_*.go"]
+    docs: ["docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md#decision決定", "docs/architecture/federation.md#11-モデレーションとの連携", "docs/architecture/data-model/04-tables/03-moderation.md#43-moderation"]
+    userdocs: ["docs/operations/moderation.md#federating-only-with-allowed-servers", "docs/operations/instance-settings.md", "docs/reference/jobs.md"]
+  - paths: ["**"]
+    docs: ["docs/adr/0153-test-boundaries.md#3-db-の集約点をモジュールで分ける", "docs/adr/0015-testing-strategy.md"]

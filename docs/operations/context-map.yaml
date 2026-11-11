@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    checks: [docs]
+  - paths: ["deploy-cloud-run.md"]
+    docs: ["deploy/opentofu/README.md", "deploy/opentofu/modules/internal/README.md", "docs/operations/deploy-cloud-run.md", "docs/architecture/deployment-targets.md#google-cloud", "docs/adr/0164-opentofu-platform-modules.md"]
+    userdocs: ["docs/operations/deploy-cloud-run.md", "docs/operations/email-ses.md"]
+    checks: [tofu, shell, docs]
+  - paths: ["alerts.md"]
+    docs: ["docs/operations/alerts.md", "docs/operations/monitoring.md", "deploy/opentofu/modules/internal/monitoring-gcp/README.md", "deploy/opentofu/modules/internal/monitoring-aws/README.md"]
+    userdocs: ["docs/operations/alerts.md"]
+    checks: [docker, docs]

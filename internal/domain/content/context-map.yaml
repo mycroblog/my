@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/architecture/data-model/04-tables/04-content.md#44-content", "docs/architecture/visibility.md"]
+    userdocs: ["docs/guide/posting.md"]
+  - paths: ["draft.go"]
+    docs: ["docs/adr/0156-drafts-and-scheduled-posts.md#decision決定", "docs/architecture/data-model/04-tables/04-content.md#下書きと予約投稿"]
+    userdocs: ["docs/operations/instance-settings.md#drafts-and-scheduled-posts", "docs/reference/jobs.md"]
+    checks: [go, schema, api]
+  - paths: ["link_card*.go", "robots*.go"]
+    docs: ["docs/adr/0062-link-preview-cards.md#decision決定", "docs/architecture/web-client/screens/about-crawler.md"]
+    userdocs: ["docs/operations/link-previews.md#cards-of-links-in-posts", "docs/operations/crawlers.md#this-servers-own-fetching"]
+  - paths: ["custom_emoji.go"]
+    docs: ["docs/adr/0092-composer-autocomplete-highlight.md#decision決定"]
+    checks: [go, web]

@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["*"]
+    docs: ["docs/adr/0025-web-client-stack.md", "docs/adr/0081-generated-files-policy.md"]
+    checks: [web]
+    shared: true

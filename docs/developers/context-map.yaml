@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/adr/0150-documentation-site.md#5-api-を使う開発者向けの文書"]
+    checks: [docs]

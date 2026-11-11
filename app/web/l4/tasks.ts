@@ -68,7 +68,7 @@ export function parseTasks(screen: string, markdown: string): Task[] {
 
 /**
  * Converts a path pattern to a regular expression: `*` matches within one path segment, `**` any number of
- * segments (as the patterns of tools/agentkit/context-map.yaml).
+ * segments (as the patterns of the context-map.yaml files).
  */
 export function globToRegExp(pattern: string): RegExp {
   let source = "";

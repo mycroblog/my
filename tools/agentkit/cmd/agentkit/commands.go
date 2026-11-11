@@ -30,10 +30,9 @@ Read (instead of grep / cat over the repository):
 Workflow (instead of gh / scripts/task.sh loops):
   issue claim <n> [--plan text]                        check agent:ready, no assignee, Accepted ADRs; assign; comment
   issue block <n> --reason text|--reason-file f        comment and add agent:blocked
-  pr open [--issue n] [--base b] [--summary-file f] [--decisions text] [--doc-reason 'path=reason']... [--draft]
+  pr open [--issue n] [--base b] [--summary-file f] [--decisions text] [--draft]
                                                        push, open the PR from the template, link it on the issue;
-                                                       refuses while a document of docs impact is neither
-                                                       changed nor given a --doc-reason
+                                                       prints the unchanged documents of docs impact
   pr wait <pr> [--timeout 50m] [--all]                 block until CI ends; print one line, or the failing lines
                                                        (run it in the background; exit 3 on a conflict,
                                                        4 when cancelled with no newer run)
@@ -52,11 +51,10 @@ Maintenance:
                                                        of each ADR, which docs lint limits
   docs inventory                                       every command of my, metric, webhook event type, build tag,
                                                        and listed task is mentioned in its document
-  docs impact [--base origin/main] [--pr-body f]       the user and operator documents (userdocs) of the changed
-                                                       paths; with --pr-body, fail on one neither changed nor
-                                                       explained in its Documentation section
-  map check                                            every path is covered by tools/agentkit/context-map.yaml,
-                                                       every operations/reference document is some entry's userdocs
+  docs impact [--base origin/main]                     the user and operator documents (userdocs) of the changed
+                                                       paths
+  map check                                            every path is covered by a context-map.yaml, every strict
+                                                       directory holds one, every user document is some entry's userdocs
   map show <path>                                      the context-map entries, docs and checks of a path
   stats [--since 2026-10-01] [--top 20]                token use of past Claude Code sessions in this repository
   hook pre|post                                        Claude Code hooks (reads the hook JSON on stdin)

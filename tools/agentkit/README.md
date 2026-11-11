@@ -32,7 +32,7 @@ prints the directory's `README.md`.
 | --- | --- |
 | Take an issue (§1) | `issue claim <n> --plan "<one line>"`: refuses when the issue is not `agent:ready`, needs a decision, is assigned to someone else, depends on a non-Accepted ADR, waits for an open issue, or has a dependency whose state cannot be read |
 | Verify (§5, optional) | `check`: `scripts/task.sh check:changed` with the contexts it checks, only the failing lines, the workers check (`scripts/tofu-workers-check.sh`: `job_types.json` against `internal/platform/job_types.go`, which needs no `tofu`), and the documents of `docs impact` the change does not touch |
-| Open the PR (§6) | `pr open [--summary-file f] [--decisions text] [--doc-reason '<path>=<reason>']... [--confirm] [--footer text] [--base <branch>]`: refuses while a document of `docs impact` is neither changed nor given a reason; copies the issue's acceptance criteria with their checked state |
+| Open the PR (§6) | `pr open [--summary-file f] [--decisions text] [--confirm] [--footer text] [--base <branch>]`: prints the documents of `docs impact` the change does not touch; copies the issue's acceptance criteria with their checked state |
 | Wait for CI (§6) | `pr wait <pr>` **in the background**: one line when CI passes; the failing lines of the failed jobs otherwise; exit 3 on a conflict; exit 4 when checks were cancelled and no newer run replaced them. Only the newest run of each workflow counts (the checks of an older run on the same head, such as the failed `check` of a run cancelled by a newer one, are ignored while the newer run runs), and of it the latest attempt of each check; and CI passes only when the required `check` gate of the CI workflow has reported and succeeded |
 | Resolve a conflict (§7) | `git merge origin/main`, `regen` (runs the generators of the changed sources, including `scripts/tofu-workers-check.sh --write` for `internal/platform/job_types.go`), `check`, push |
 | Watch many PRs (§9) | `pr watch [<pr>...]` with the Monitor tool: one line per opened, merged, closed, conflicting, ci-failed, ci-cancelled, ci-green, dequeued |
@@ -40,32 +40,20 @@ prints the directory's `README.md`.
 
 ## The context map
 
-[context-map.yaml](context-map.yaml) maps paths to the document sections that govern them (`docs`), the user and
-operator documents that describe them (`userdocs`), their check contexts, whether parallel work treats them as shared
-files, and short notes. `ctx` uses it to pick the rules and the user and operator documents of the areas an issue
-touches. When you add a directory, module, adapter, or feature, add or extend its entry in the same change:
-`scripts/task.sh agentkit:check` (and CI, on every change) fails when a file is not covered, when a directory under a `strict`
-pattern has no entry naming it, when a `docs` or `userdocs` reference does not resolve, or when a file of
-`userdocs.cover` (`docs/operations/`, `docs/reference/`) is the `userdocs` of no entry ([ADR-0003](docs/adr/0003-context-map.md)).
-`map show <path>` prints the entries of a path.
+Each `context-map.yaml` maps the paths of its directory (patterns relative to it) to the document sections that govern
+them (`docs`), the user and operator documents that describe them (`userdocs`), their check contexts, and whether
+parallel work treats them as shared files; the [root file](../../context-map.yaml) also holds `ignore`, `strict`, and
+`userdocs.cover` / `skip`. A new module, adapter, or feature adds a file in its own directory.
+`scripts/task.sh agentkit:check` (`map check`) fails when a file is not covered, when a directory under a `strict`
+pattern holds no `context-map.yaml`, when a `docs` or `userdocs` reference does not resolve, or when a file of
+`userdocs.cover` is the `userdocs` of no entry ([ADR-0003](docs/adr/0003-context-map.md)). `ctx` uses the map to pick
+the documents of the areas an issue touches; `map show <path>` prints the entries of a path.
 
 ## Documentation that changes with the code
 
 `docs impact [--base origin/main]` lists the `userdocs` of the entries of the paths changed since the merge base,
 passing over the paths of `userdocs.skip` (tests, fixtures) and the map's `ignore` (generated files), and says whether
-the change touches each. A pull request changes each such document or explains it in the **Documentation** section of
-its description, one line each:
-
-```markdown
-- docs/operations/email.md: changed
-- docs/operations/running.md: no change — only the wording of a log line changed, which it does not quote
-```
-
-A reason has three words or more after `no change` and a dash or a colon; text in HTML comments does not count.
-`pr open` writes the section (`--doc-reason '<path>=<reason>'`, repeatable) and refuses while a document has neither;
-`docs impact --pr-body <file>` (`scripts/task.sh docs:pr-impact`, the step `docs:pr-impact` of the pull request's
-preflight) fails on it. Give a document to the paths whose change can make it wrong: an entry for a few files is better
-than a document that every change of a wide area flags.
+the change touches each. `check` and `pr open` print the ones it does not touch; nothing fails on them.
 
 ## Documentation rules
 

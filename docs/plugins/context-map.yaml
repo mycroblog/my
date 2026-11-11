@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/adr/0150-documentation-site.md#3-原稿の範囲", "docs/adr/0146-plugin-protocol.md"]
+    userdocs: ["docs/plugins/overview.md"]
+    checks: [docs, api]

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["service.go"]
+    docs: ["docs/adr/0004-job-queue-abstraction.md"]
+    userdocs: ["docs/operations/running.md#the-job-queue-and-failed-dead-jobs", "docs/operations/maintenance.md#push-queues", "docs/reference/build-tags.md"]
+  - paths: ["**"]
+    docs: ["docs/adr/0106-external-login-providers.md#5-idp-への-http", "docs/adr/0019-security-baseline.md"]

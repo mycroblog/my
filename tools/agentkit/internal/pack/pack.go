@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -316,7 +317,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		}
 	}
 	for _, e := range m.Entries {
-		if (o.Layer == "web" && e.Name == "web-client") || (o.Layer == "server" && e.Name == "go-server") {
+		if (o.Layer == "web" && slices.Contains(e.Paths, "app/web/**")) || (o.Layer == "server" && slices.Contains(e.Paths, "internal/**")) {
 			areaScore[e.Name] += 100
 			areas[e.Name] = e
 		}
@@ -328,7 +329,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	}
 	checks := map[string]bool{}
 	if len(names) > 0 {
-		w.add("## Areas and their rules (tools/agentkit/context-map.yaml)\n\n")
+		w.add("## Areas (the context-map.yaml of each directory)\n\n")
 		var docs, userdocs []string
 		for _, name := range names {
 			e := areas[name]
@@ -337,9 +338,6 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 				flag = " [shared: never edited by two parallel agents]"
 			}
 			w.addf("- **%s**%s\n", e.Name, flag)
-			for _, n := range e.Notes {
-				w.add("  - " + n + "\n")
-			}
 			for _, c := range e.Checks {
 				checks[c] = true
 			}
@@ -359,8 +357,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		}
 		if us := text.Uniq(userdocs); len(us) > 0 {
 			w.add("\nUser and operator documents that describe these areas: keep them true. Update each one the change makes " +
-				"wrong in the same pull request, in English and without citing ADRs or issues; `agentkit pr open --doc-reason " +
-				"'<path>=<reason>'` explains one that needs no change (AGENTS.md#documentation):\n\n")
+				"wrong in the same pull request, in English and without citing ADRs or issues:\n\n")
 			for _, d := range us {
 				w.addf("- `%s`\n", d)
 			}

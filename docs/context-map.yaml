@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["README.md"]
+    checks: [docs]
+    shared: true
+  - paths: ["lint.yaml"]
+    docs: ["tools/agentkit/README.md#documentation-rules"]
+    checks: [docs, agentkit]

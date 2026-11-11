@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["mail_composer.go", "mail_frame.gen.html"]
+    docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠", "docs/adr/0081-generated-files-policy.md"]
+    userdocs: ["docs/operations/email.md#the-html-version"]
+    checks: [mail, web, go]
+  - paths: ["errorreport.go", "errorreport_test.go", "errorscrub.go", "errorscrub_test.go"]
+    docs: ["docs/adr/0103-error-reporting.md", "docs/architecture/overview.md#3-ポート一覧"]
+    userdocs: ["docs/reference/configuration.md", "docs/operations/running.md#metrics", "docs/operations/running.md#error-reports", "docs/operations/alerts.md#myerrorreportsincreasing", "docs/operations/error-reporting.md"]
+  - paths: ["**"]
+    docs: ["docs/architecture/job-system.md", "docs/architecture/overview.md#3-ポート一覧", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]

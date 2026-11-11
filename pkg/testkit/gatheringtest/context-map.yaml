@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/architecture/data-model/04-tables/19-gathering.md#419-gathering", "docs/architecture/data-model/05-states-and-policies.md#57-イベントの判定", "docs/adr/0161-events.md"]
+    userdocs: ["docs/operations/instance-settings.md#events", "docs/reference/jobs.md#events", "docs/operations/running.md#how-late-periodic-jobs-run", "docs/operations/email.md"]
+  - paths: ["**"]
+    docs: ["docs/adr/0153-test-boundaries.md#3-db-の集約点をモジュールで分ける", "docs/adr/0015-testing-strategy.md"]

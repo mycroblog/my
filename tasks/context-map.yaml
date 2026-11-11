@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+entries:
+  - paths: ["**"]
+    docs: ["docs/adr/0079-ci-single-gate-merge-queue.md", "docs/adr/0081-generated-files-policy.md", "docs/agents/releasing.md"]
+    checks: [docs, go, i18n, api, ui, web, docker, agentkit, mykit]
+    shared: true
+  - paths: ["**"]
+    userdocs: ["docs/reference/commands.md"]
+  - paths: ["tofu.yml"]
+    docs: ["deploy/opentofu/README.md", "deploy/opentofu/modules/internal/README.md", "docs/operations/deploy-cloud-run.md", "docs/architecture/deployment-targets.md#google-cloud", "docs/adr/0164-opentofu-platform-modules.md"]
+    userdocs: ["docs/operations/deploy-cloud-run.md", "docs/operations/email-ses.md"]
+    checks: [tofu, shell, docs]
