@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/architecture/data-model/04-tables/03-moderation.md#43-moderation", "docs/operations/moderation.md", "docs/adr/0058-moderation-admin-separation.md"]
+userdocs: ["docs/operations/moderation.md", "docs/guide/safety.md"]

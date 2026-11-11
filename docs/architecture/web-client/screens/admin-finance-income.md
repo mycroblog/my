@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.finance_.income.tsx", "app/web/src/features/admin/components/FinanceIncome.tsx", "app/web/src/features/admin/components/FinanceParts.tsx", "app/web/src/features/admin/hooks/useFinance.ts", "app/web/src/features/admin/api/finance.ts"]
+budget: {"controls": 6, "helpers": 1, "words": 81}
 ---
 
 ## 支払いと返金（`/admin/finance/income`）

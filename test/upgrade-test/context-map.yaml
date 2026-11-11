@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/agents/releasing.md#the-upgrade-test", "docs/operations/database.md#upgrading"]
+checks: [docker, shell]

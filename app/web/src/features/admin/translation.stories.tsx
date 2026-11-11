@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The translation settings (/admin/translation; web-client/screens/admin-translation.md) in the states of ADR-0079 §13
+// The translation settings (/admin/translation; web-client/screens/admin-translation.md) in the states of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { apiBase, withViewer } from "../../test/msw/http";

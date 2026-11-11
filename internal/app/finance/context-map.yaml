@@ -1,0 +1,2 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/architecture/data-model/04-tables/12-finance.md#412-finance", "docs/adr/0067-finance-cost-records.md", "docs/adr/0068-billing-import.md"]

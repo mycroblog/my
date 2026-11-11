@@ -3,6 +3,7 @@ start: "/moderation/domain-actions"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.domain-actions_.import.tsx", "app/web/src/features/moderation/components/DomainBlockCsv.tsx", "app/web/src/features/moderation/hooks/useDomainBlockCsv.ts", "app/web/src/features/moderation/api/domainBlocks.ts"]
 unavailable: {"ファイルを選んでインポートをプレビューする": "the agent has no file to choose: the browser tools give it none"}
+budget: {"controls": 5, "helpers": 3, "words": 92}
 ---
 
 ## ドメインへの処分の CSV（`/moderation/domain-actions/import`）

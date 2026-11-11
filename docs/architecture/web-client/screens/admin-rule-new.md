@@ -2,6 +2,7 @@
 start: "/admin/rules"
 persona: "hana"
 paths: ["app/web/src/routes/admin.rules_.new.tsx", "app/web/src/features/admin/components/NewRule.tsx", "app/web/src/features/admin/hooks/useRules.ts", "app/web/src/features/admin/api/rules.ts", "app/web/src/features/admin/components/ruleParts.tsx"]
+budget: {"controls": 4, "helpers": 2, "words": 36}
 ---
 
 ## ルールを追加する（`/admin/rules/new`）

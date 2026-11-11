@@ -3,6 +3,7 @@ start: "/"
 persona: null
 paths: ["app/web/src/features/about/**", "app/web/src/features/landing/**", "app/web/src/features/costs/**"]
 mail: {"パスワードを忘れた利用者が、再設定のメールのリンクから新しいパスワードを設定する": "marco"}
+budget: {"controls": 11, "helpers": 1, "words": 150}
 ---
 
 ## ランディングページ（`/`、ログインしていない人）

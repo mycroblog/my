@@ -64,11 +64,6 @@ var inventories = []inventory{
 		collect: buildTags, mentions: codeSpanMentions,
 	},
 	{
-		name: "tasks", what: "the task",
-		docs:    []string{"docs/reference/commands.md"},
-		collect: tasks, mentions: taskMentions,
-	},
-	{
 		name: "job-types", what: "the job type",
 		docs:    []string{jobsDocument},
 		count:   regexp.MustCompile(`The server has (\d+) job types`),
@@ -814,15 +809,4 @@ func sectionMentions(heading string) func(docs []string) func(string) bool {
 		}
 		return codeSpanMentions([]string{strings.Join(sections, "\n")})
 	}
-}
-
-// taskMentions returns whether the text has a code span that starts with the task's name (`docs:adr-new TITLE=...`).
-func taskMentions(docs []string) func(string) bool {
-	set := map[string]bool{}
-	for _, m := range reCodeSpan.FindAllStringSubmatch(strings.Join(docs, "\n"), -1) {
-		if f := strings.Fields(m[1]); len(f) > 0 {
-			set[f[0]] = true
-		}
-	}
-	return func(name string) bool { return set[name] }
 }

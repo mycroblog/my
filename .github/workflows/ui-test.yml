@@ -2,7 +2,7 @@ name: UI story tests
 
 # The story tests in the pinned Playwright image, called by ci.yml on pull requests (ADR-0079): the @my/ui stories
 # (ui:test, ADR-0110: axe on every story and the screenshots at 3 container widths × light / dark × LTR / RTL) when the
-# ui context changes, and the app/web screen stories (web:story-test, ADR-0079 §13: their play functions and axe, no
+# ui context changes, and the app/web screen stories (web:story-test, ADR-0165 §1: their play functions and axe, no
 # screenshots) when the client changes. Each runs as two Vitest shards in two jobs, which halves the wait of a pull
 # request.
 
@@ -34,13 +34,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up go-task
         uses: ./.github/actions/setup-task
-      # The image lacks the unzip that setup-bun extracts Bun with.
-      - name: Install unzip
-        run: apt-get update && apt-get install -y --no-install-recommends unzip
+      # The image lacks the unzip that setup-bun extracts Bun with, and has npm.
       - name: Set up Bun
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-        with:
-          bun-version-file: .tool-versions
+        run: scripts/ci-bun-npm.sh
       # Use the Node.js from .tool-versions rather than the image's (ADR-0025).
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0

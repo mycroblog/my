@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["deploy/opentofu/README.md", "deploy/opentofu/modules/internal/README.md", "docs/operations/deploy-cloud-run.md", "docs/architecture/deployment-targets.md#google-cloud", "docs/adr/0164-opentofu-platform-modules.md"]
+userdocs: ["docs/operations/deploy-cloud-run.md", "docs/operations/email-ses.md"]
+checks: [docs, shell, tofu]

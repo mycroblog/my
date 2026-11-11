@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The first page of the automated reviews (/moderation/hook-decisions; web-client/screens/moderation-hook-decisions.md):
-// each external review with its counts and what they stopped, in the states of ADR-0079 §13.
+// each external review with its counts and what they stopped, in the states of ADR-0165 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { apiBase, problem } from "../../test/msw/http";

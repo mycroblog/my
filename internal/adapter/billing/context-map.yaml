@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0068-billing-import.md", "docs/operations/billing-import.md"]
+userdocs: ["docs/operations/billing-import.md"]

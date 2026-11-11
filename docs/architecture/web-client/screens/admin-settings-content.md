@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.settings_.content.tsx", "app/web/src/features/admin/components/PolicySettings.tsx", "app/web/src/features/admin/hooks/useServerPolicies.ts", "app/web/src/features/admin/api/settings.ts", "app/web/src/features/admin/components/ServerSettings.tsx", "app/ui/src/LocalNav.tsx"]
+budget: {"controls": 8, "helpers": 14, "words": 321}
 ---
 
 ## サーバーの設定: コンテンツ（`/admin/settings/content`）

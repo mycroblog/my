@@ -12,6 +12,8 @@
 version: 2
 updates:
   - package-ecosystem: gomod
+    # Setting labels replaces Dependabot's defaults, so the generic `dependencies` label is not applied.
+    labels: ["deps:go"]
     # `/` has go.work, so its update covers the modules listed there: Dependabot runs `go get` in each, `go work sync`,
     # and `go mod tidy` in each, and one pull request carries them, so the integration modules that `replace` the root
     # stay tidy. Direct dependencies only, the default: updating indirect ones breaks builds that a direct dependency
@@ -38,6 +40,7 @@ updates:
         patterns: ["*"]
   # Bun workspaces with a text bun.lock.
   - package-ecosystem: bun
+    labels: ["deps:javascript"]
     directories:
       - /app
       - /tools/i18n
@@ -62,6 +65,7 @@ updates:
   # trailing comment (`uses: owner/repo@<sha> # vX.Y.Z`): a moving major tag can point at a release younger
   # than three days, and Dependabot updates the SHA and the comment together.
   - package-ecosystem: github-actions
+    labels: ["deps:actions"]
     directory: /
     schedule:
       interval: weekly
@@ -78,6 +82,7 @@ updates:
   # The Go, Node.js, and Bun image tags in the Dockerfile must match .tool-versions (scripts/task.sh docker:dockerfile-check),
   # so they are raised by hand and their versions are ignored below; Dependabot raises the digests of the FROM lines.
   - package-ecosystem: docker
+    labels: ["deps:docker"]
     directories:
       - /
       - /pkg/mybot/examples

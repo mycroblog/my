@@ -30,6 +30,7 @@ expect() {
 
 # Shared configuration selects everything; the tasks of one area select that area and the areas that call its tasks;
 # the workflows that run no check of a pull request or a merge group select nothing but agentkit (its context map).
+expect "the map files" "agentkit" context-map.yaml internal/app/content/context-map.yaml tasks/context-map.yaml tools/agentkit/context-map.yaml
 expect "the mtimes of the Go test cache" "go agentkit" scripts/stable-mtime.py
 expect "the root Taskfile" "docs go i18n mail api ui web docker shell schema agentkit mykit tofu site" Taskfile.yml
 expect "the workflow of the checks" "docs go i18n mail api ui web docker shell schema agentkit mykit tofu site" .github/workflows/ci.yml

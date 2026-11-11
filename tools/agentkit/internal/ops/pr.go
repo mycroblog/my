@@ -14,25 +14,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mycroblog/my/tools/agentkit/internal/docsync"
 	"github.com/mycroblog/my/tools/agentkit/internal/gh"
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
 // OpenOptions are the parts of a pull request the agent writes; the rest comes from the issue and the commits.
 type OpenOptions struct {
-	Issue     int
+	// Issues are the issues the pull request closes; empty takes the issue of the branch name and those the
+	// commit subjects name as "(#N)".
+	Issues    []int
 	Base      string
 	Title     string
 	Summary   string
 	Decisions string
 	Footer    string // e.g. the attribution line the agent's harness asks for
-	// DocReasons says, by document path, why a user or operator document that describes the changed paths needs
-	// no change (the Documentation section, docsync).
-	DocReasons map[string]string
-	Confirm    bool // the agent confirms the docs and no-secrets items of the checklist
-	Draft      bool
-	NoPush     bool
+	Confirm   bool   // the agent confirms the docs and no-secrets items of the checklist
+	Draft     bool
+	NoPush    bool
 }
 
 var reCheckbox = regexp.MustCompile(`^\s*- \[([ xX])\]\s+(.*)$`)
@@ -60,10 +58,11 @@ func acceptanceCriteria(body string) []criterion {
 	return out
 }
 
-// Open pushes the branch and opens its pull request from .github/pull_request_template.md's sections: the
-// summary, Closes #N (or Stacked on #M first), the commit subjects as the changes, the issue's acceptance
-// criteria with the checked state they have in the issue, the decisions, the documentation (docsync.Section: it refuses to open the PR while a document
-// that describes the changed paths is neither changed nor given a reason), and the checklist. It comments the PR on the issue and returns the PR URL.
+// Open passes the branch through the gate (gate.go: a worktree, a linear history, the quick checks, the screens
+// looked at), pushes it, and opens its pull request from .github/pull_request_template.md's sections: the
+// summary, Closes #N for each issue (or Stacked on #M first), the commit subjects as the changes, the screenshots
+// that were looked at, the issues' acceptance criteria with the checked state they have in the issue, the decisions, and the checklist. It prints the documents that describe the changed paths and are not
+// changed (docImpact), and opens the PR either way. It comments the PR on each issue and returns the PR URL.
 func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	branch, err := r.Branch()
 	if err != nil {
@@ -72,30 +71,15 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if branch == "main" || branch == "HEAD" {
 		return "", fmt.Errorf("on %s: work on a <type>/<issue>-<slug> branch (workflow.md §3)", branch)
 	}
-	if o.Issue == 0 {
-		o.Issue, _ = strconv.Atoi(gh.BranchIssue(branch))
-	}
 	if o.Base == "" {
 		o.Base = "main"
 	}
-	ims, err := docsync.Of(r, "origin/"+o.Base)
+	looked, err := gate(r, branch, "origin/"+o.Base)
 	if err != nil {
 		return "", err
 	}
-	docSection, problems := docsync.Section(ims, o.DocReasons)
-	if len(problems) > 0 {
-		return "", fmt.Errorf("the Documentation section is incomplete; update each document, or pass --doc-reason '<path>=<reason>' (AGENTS.md#documentation):\n%s", strings.Join(problems, "\n"))
-	}
-	var is *gh.Issue
-	if o.Issue > 0 {
-		if is, err = gh.GetIssue(o.Issue); err != nil {
-			return "", err
-		}
-	}
-	if !o.NoPush {
-		if out, err := exec.Command("git", "-C", r.Root, "push", "-u", "origin", "HEAD").CombinedOutput(); err != nil {
-			return "", fmt.Errorf("git push: %w: %s", err, strings.TrimSpace(string(out)))
-		}
+	for _, l := range docImpact(r, "origin/"+o.Base) {
+		fmt.Fprintln(os.Stderr, l)
 	}
 	logOut, err := repo.Git(r.Root, "log", "--reverse", "--no-merges", "--format=%s", "origin/"+o.Base+"..HEAD")
 	if err != nil {
@@ -104,6 +88,16 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	subjects := strings.Split(strings.TrimSpace(logOut), "\n")
 	if len(subjects) == 0 || subjects[0] == "" {
 		return "", fmt.Errorf("no commits on %s since origin/%s", branch, o.Base)
+	}
+	issues, err := closing(o.Issues, branch, subjects)
+	if err != nil {
+		return "", err
+	}
+	if !o.NoPush {
+		// A rebased branch replaces what was pushed; the lease refuses when someone else pushed meanwhile.
+		if out, err := exec.Command("git", "-C", r.Root, "push", "--force-with-lease", "-u", "origin", "HEAD").CombinedOutput(); err != nil {
+			return "", fmt.Errorf("git push: %w: %s", err, strings.TrimSpace(string(out)))
+		}
 	}
 	if o.Title == "" {
 		o.Title = subjects[0]
@@ -119,36 +113,50 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		}
 	}
 	summary := strings.TrimSpace(o.Summary)
-	if summary == "" && is != nil {
-		summary = is.Title
+	if summary == "" && len(issues) > 0 {
+		summary = issues[0].Title
 	}
 	fmt.Fprintf(&b, "## Summary\n\n%s\n\n", summary)
-	if o.Issue > 0 {
-		fmt.Fprintf(&b, "Closes #%d\n\n", o.Issue)
+	for _, is := range issues {
+		fmt.Fprintf(&b, "Closes #%d\n", is.Number)
+	}
+	if len(issues) > 0 {
+		b.WriteString("\n")
 	}
 	b.WriteString("## Changes\n\n")
 	for _, s := range subjects {
 		fmt.Fprintf(&b, "- %s\n", s)
 	}
+	if len(looked) > 0 {
+		b.WriteString("\n## Screens\n\n")
+		for _, s := range looked {
+			fmt.Fprintf(&b, "- `%s`\n", s)
+		}
+	}
 	b.WriteString("\n## Acceptance criteria\n\n")
-	var ac []criterion
-	if is != nil {
-		ac = acceptanceCriteria(is.Body)
-	}
-	switch {
-	case is == nil:
+	if len(issues) == 0 {
 		b.WriteString("No issue: nothing to check.\n")
-	case len(ac) == 0:
-		b.WriteString("- [ ] (the issue has no checklist)\n")
 	}
-	for _, a := range ac {
-		fmt.Fprintf(&b, "- [%s] %s\n", mark(a.Checked), a.Text)
+	for i, is := range issues {
+		if len(issues) > 1 {
+			if i > 0 {
+				b.WriteString("\n")
+			}
+			fmt.Fprintf(&b, "#%d %s\n\n", is.Number, is.Title)
+		}
+		ac := acceptanceCriteria(is.Body)
+		if len(ac) == 0 {
+			b.WriteString("- [ ] (the issue has no checklist)\n")
+		}
+		for _, a := range ac {
+			fmt.Fprintf(&b, "- [%s] %s\n", mark(a.Checked), a.Text)
+		}
 	}
 	decisions := strings.TrimSpace(o.Decisions)
 	if decisions == "" {
 		decisions = "None"
 	}
-	fmt.Fprintf(&b, "\n## Decisions and assumptions\n\n%s\n\n%s\n## Checklist\n\n", decisions, docSection)
+	fmt.Fprintf(&b, "\n## Decisions and assumptions\n\n%s\n\n## Checklist\n\n", decisions)
 	fmt.Fprintf(&b, "- [%s] Docs / i18n catalogs updated where needed\n", mark(o.Confirm))
 	fmt.Fprintf(&b, "- [%s] No secrets, no unrelated changes\n", mark(o.Confirm))
 	if o.Footer != "" {
@@ -170,8 +178,8 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if i := strings.LastIndex(url, "\n"); i >= 0 {
 		url = url[i+1:]
 	}
-	if o.Issue > 0 {
-		if _, err := gh.Run("issue", "comment", strconv.Itoa(o.Issue), "-R", gh.Repo(), "--body", "PR: "+url); err != nil {
+	for _, is := range issues {
+		if _, err := gh.Run("issue", "comment", strconv.Itoa(is.Number), "-R", gh.Repo(), "--body", "PR: "+url); err != nil {
 			return url, err
 		}
 	}
@@ -359,10 +367,59 @@ func gatePassed(cs []check) bool {
 	return false
 }
 
-// WaitResult is how Wait ended: the exit status and the lines to print.
-type WaitResult struct {
-	Code  int
-	Lines []string
+// The exit statuses of Wait when the pull request's head moves while it waits, and when the timeout passes
+// before CI ends.
+const (
+	WaitMoved   = 6
+	WaitTimeout = 124
+)
+
+// headFollow tells a pull request whose head GitHub has not caught up with from one whose head moved away.
+type headFollow struct {
+	at    string          // the head that is followed; "" until the pull request is read at one
+	been  map[string]bool // the heads the pull request was read at, and the pushes it went past
+	stale string          // the pull request's head while it is behind a push
+}
+
+// observe takes the pull request's head of one poll and the commit the local branch pushed ("" when unknown).
+// behind: GitHub has not seen that push yet, so the checks are an older commit's. from is the head that was
+// followed when the pull request has moved to another one, which is followed from now on.
+func (h *headFollow) observe(cur, pushed string) (behind bool, from string) {
+	if h.been == nil {
+		h.been = map[string]bool{}
+	}
+	if pushed != "" && cur != pushed && !h.been[pushed] {
+		if h.stale == "" || h.stale == cur {
+			h.stale = cur
+			return true, ""
+		}
+		// The head changed and is still not the push: a later push went past it.
+		h.been[pushed] = true
+		if h.at == "" {
+			h.at = pushed
+		}
+	}
+	h.stale = ""
+	h.been[cur] = true
+	if h.at == "" || h.at == cur {
+		h.at = cur
+		return false, ""
+	}
+	from, h.at = h.at, cur
+	return false, from
+}
+
+// WaitOptions are the waits of Wait and what it compares the pull request with.
+type WaitOptions struct {
+	// Branch and Head are the local branch and its commit: when the pull request's branch is Branch, the checks
+	// count only once its head is Head, so that a wait right after a push does not read the previous commit's
+	// results. Once the pull request was read at the head the wait is for, another head ends the wait.
+	Branch, Head string
+	Timeout      time.Duration
+	Interval     time.Duration
+	Heartbeat    time.Duration // how often a line says that the wait goes on; 0 is every 5 minutes
+	All          bool          // wait for every check instead of returning at the first failure
+	LogDir       string        // where the logs of failed jobs are saved
 }
 
 var (
@@ -370,87 +427,305 @@ var (
 	reRun = regexp.MustCompile(`/actions/runs/(\d+)`)
 )
 
-// Wait polls a pull request until its CI ends, it conflicts, it merges, or the timeout passes. With all false
-// it returns at the first failed check instead of waiting for the others. A failure comes with the failing
-// lines of the failed jobs' logs, which are saved under logDir. When the pull request's branch is branch, the
-// checks count only once its head is head, so that a wait right after a push does not read the previous
-// commit's results.
-func Wait(n int, branch, head string, timeout, interval time.Duration, all bool, logDir string) WaitResult {
-	deadline := time.Now().Add(timeout)
+// sayTo returns the function that prints one line to w at once, so that a wait that is killed leaves what it
+// printed.
+func sayTo(w io.Writer) func(format string, args ...any) {
+	return func(format string, args ...any) {
+		fmt.Fprintf(w, format+"\n", args...)
+		if f, ok := w.(*os.File); ok {
+			_ = f.Sync()
+		}
+	}
+}
+
+// tally is the names of the pending and the failed checks of the latest runs, sorted, and the number that passed.
+func tally(cs []check) (pending, failed []string, passed int) {
+	for _, c := range latest(cs) {
+		switch c.result() {
+		case "pending":
+			pending = append(pending, c.name())
+		case "failed":
+			failed = append(failed, c.name())
+		case "passed":
+			passed++
+		}
+	}
+	sort.Strings(pending)
+	sort.Strings(failed)
+	return pending, failed, passed
+}
+
+// shortSHA is the first characters of a commit.
+func shortSHA(sha string) string {
+	if len(sha) > 9 {
+		return sha[:9]
+	}
+	return sha
+}
+
+// firstLine is the first line of an error's text.
+func firstLine(err error) string {
+	s, _, _ := strings.Cut(strings.TrimSpace(err.Error()), "\n")
+	return s
+}
+
+// waitingLine is the line a wait prints when it starts.
+func waitingLine(n int, p prState) string {
+	if len(p.StatusCheckRollup) == 0 {
+		return fmt.Sprintf("waiting for CI of #%d at %s: no check has started yet", n, shortSHA(p.HeadRefOid))
+	}
+	pending, _, _ := tally(p.StatusCheckRollup)
+	return fmt.Sprintf("waiting for CI of #%d at %s: %d checks pending", n, shortSHA(p.HeadRefOid), len(pending))
+}
+
+// stillWaiting is the line a wait prints at each heartbeat.
+func stillWaiting(p prState) string {
+	pending, failed, passed := tally(p.StatusCheckRollup)
+	line := fmt.Sprintf("still waiting: %d pending, %d passed", len(pending), passed)
+	if len(failed) > 0 {
+		line += fmt.Sprintf(", %d failed", len(failed))
+	}
+	return line
+}
+
+// stillPending names what a wait that reached its timeout was waiting for.
+func stillPending(p prState) string {
+	pending, failed, _ := tally(p.StatusCheckRollup)
+	var out string
+	switch {
+	case len(p.StatusCheckRollup) == 0:
+		out = "no check has started"
+	case len(pending) > 0:
+		out = "still pending: " + short(pending, 8)
+	case !gatePassed(p.StatusCheckRollup):
+		out = "the required check `" + gateName + "` has not reported"
+	default:
+		out = "no check is pending"
+	}
+	if len(failed) > 0 {
+		out += "; failed: " + short(failed, 8)
+	}
+	return out
+}
+
+// defaultHeartbeat is how often a wait says that it goes on.
+const defaultHeartbeat = 5 * time.Minute
+
+// Wait polls a pull request until its CI ends, it conflicts, it merges, its head moves, or the timeout passes,
+// and returns the exit status. It prints to w a line when it starts, a line at each heartbeat, and how it ended, each at once, so
+// that no output means it never started. Without All it returns at the first failed check instead of waiting for
+// the others. A failure comes with the failing lines of the failed jobs' logs, which are saved under LogDir.
+func Wait(w io.Writer, n int, o WaitOptions) int {
+	say := sayTo(w)
+	if o.Heartbeat <= 0 {
+		o.Heartbeat = defaultHeartbeat
+	}
 	started := time.Now()
+	deadline := started.Add(o.Timeout)
+	beat := started.Add(o.Heartbeat)
+	var last *prState // the newest state of the pull request's own head
+	var follow headFollow
+	first := true
 	for {
 		p, err := viewPR(n)
+		behind, from := false, ""
+		if err == nil && p.State != "MERGED" && p.State != "CLOSED" {
+			pushed := ""
+			if p.HeadRefName == o.Branch {
+				pushed = o.Head
+			}
+			behind, from = follow.observe(p.HeadRefOid, pushed)
+		}
 		switch {
 		case err != nil:
 			// gh and the API fail now and then; give up only at the deadline.
 		case p.State == "MERGED":
-			return WaitResult{0, []string{fmt.Sprintf("PR #%d is merged", n)}}
+			say("PR #%d is merged", n)
+			return 0
 		case p.State == "CLOSED":
-			return WaitResult{1, []string{fmt.Sprintf("PR #%d is closed", n)}}
-		case p.HeadRefName == branch && head != "" && p.HeadRefOid != head:
+			say("PR #%d is closed", n)
+			return 1
+		case from != "":
+			// The checks of the head the wait is for are cancelled or replaced: its CI can no longer end.
+			say("PR #%d: the head moved from %s to %s while waiting; run pr wait again for the new head", n, shortSHA(from), shortSHA(p.HeadRefOid))
+			return WaitMoved
+		case behind:
 			// GitHub has not seen the push yet.
 		case p.Mergeable == "CONFLICTING":
-			return WaitResult{3, []string{fmt.Sprintf("PR #%d conflicts with its base: CI does not run. Merge origin/main, regenerate generated files (agentkit regen), push (workflow.md §7)", n)}}
+			say("PR #%d conflicts with its base: CI does not run. Merge origin/main, regenerate generated files (agentkit regen), push (workflow.md §7)", n)
+			return 3
 		default:
+			last = &p
 			res, failed, pending := summarize(p.StatusCheckRollup)
-			if res == "failed" && (!all || !pending) {
-				return WaitResult{1, failureReport(n, p, failed, logDir)}
+			if res == "failed" && (!o.All || !pending) {
+				lines, _ := failureReport(n, p, failed, o.LogDir)
+				say("%s", strings.Join(lines, "\n"))
+				return 1
 			}
 			if res == "cancelled" {
-				return WaitResult{4, []string{fmt.Sprintf("PR #%d: CI cancelled, not failed: %s; no newer run replaced them. Rerun the workflow (gh run rerun) or push", n, strings.Join(failed, ", "))}}
+				say("PR #%d: CI cancelled, not failed: %s; no newer run replaced them. Rerun the workflow (gh run rerun) or push", n, strings.Join(failed, ", "))
+				return 4
 			}
 			if res == "passed" {
-				return WaitResult{0, []string{fmt.Sprintf("PR #%d: CI passed (%d checks, mergeable %s)", n, len(latest(p.StatusCheckRollup)), strings.ToLower(p.Mergeable))}}
+				say("PR #%d: CI passed (%d checks, mergeable %s)", n, len(latest(p.StatusCheckRollup)), strings.ToLower(p.Mergeable))
+				return 0
 			}
 			if res == "none" && time.Since(started) > 10*time.Minute {
-				return WaitResult{2, []string{fmt.Sprintf("PR #%d: no check started in 10 minutes (mergeable %s); check the PR page %s", n, strings.ToLower(p.Mergeable), p.URL)}}
+				say("PR #%d: no check started in 10 minutes (mergeable %s); check the PR page %s", n, strings.ToLower(p.Mergeable), p.URL)
+				return 2
 			}
 		}
-		if time.Now().After(deadline) {
-			return WaitResult{124, []string{fmt.Sprintf("PR #%d: CI still running after %s", n, timeout)}}
+		now := time.Now()
+		switch {
+		case first && err != nil:
+			say("waiting for CI of #%d: gh could not read it yet (%s)", n, firstLine(err))
+		case first && behind:
+			say("waiting for CI of #%d at %s: GitHub has not seen the push yet", n, shortSHA(o.Head))
+		case first:
+			say("%s", waitingLine(n, p))
+		case now.After(beat) && last != nil:
+			say("%s", stillWaiting(*last))
+		case now.After(beat):
+			say("still waiting: the checks of the pull request's head could not be read yet")
 		}
-		time.Sleep(interval)
+		if first || now.After(beat) {
+			first, beat = false, now.Add(o.Heartbeat)
+		}
+		if now.After(deadline) {
+			what := "the pull request was never read at its head"
+			if last != nil {
+				what = stillPending(*last)
+			}
+			say("PR #%d: timed out after %s, CI has not ended: %s", n, o.Timeout, what)
+			return WaitTimeout
+		}
+		time.Sleep(o.Interval)
 	}
 }
 
-func failureReport(n int, p prState, failed []string, logDir string) []string {
-	lines := []string{fmt.Sprintf("PR #%d: CI failed: %s", n, strings.Join(failed, ", "))}
-	shown := 0
+// maxFailureLogs is how many failed jobs' logs failureReport reads to tell whether each failed in the same way;
+// it prints the failing lines of the first shownFailures.
+const (
+	maxFailureLogs = 12
+	shownFailures  = 3
+)
+
+// failureReport returns the lines that say which checks of p failed and why — the failing lines of the failed
+// jobs' logs, which it saves under logDir — and the command that runs the failed jobs again when the logs show
+// that every failed job stopped on the same unreachable host before any test ran (the first line says so),
+// or "" when they do not.
+func failureReport(n int, p prState, failed []string, logDir string) (lines []string, rerun string) {
+	shown, read := 0, 0
+	infra := true
+	var hosts map[string]int // the hosts every failed job read so far could not reach
+	runs := map[int64]bool{}
 	for _, c := range latest(p.StatusCheckRollup) {
 		// `check` only collects the other jobs' results; its log says nothing new.
-		if c.result() != "failed" || c.name() == "check" || shown == 3 {
+		if c.result() != "failed" || c.name() == gateName {
+			continue
+		}
+		show := shown < shownFailures
+		if !show && (!infra || read == maxFailureLogs) {
+			infra = false
 			continue
 		}
 		m := reJob.FindStringSubmatch(c.DetailsURL + c.TargetURL)
 		if m == nil {
-			lines = append(lines, fmt.Sprintf("== %s: %s", c.name(), c.DetailsURL+c.TargetURL))
+			infra = false
+			if show {
+				lines = append(lines, fmt.Sprintf("== %s: %s", c.name(), c.DetailsURL+c.TargetURL))
+			}
 			continue
 		}
-		shown++
+		if show {
+			shown++
+		}
+		read++
 		// The job's own log is readable as soon as the job ends; `gh run view --log` waits for the whole run.
 		out, err := gh.Run("api", "repos/"+gh.Repo()+"/actions/jobs/"+m[1]+"/logs")
 		if err != nil {
-			lines = append(lines, fmt.Sprintf("== %s: could not read the log: %v", c.name(), err))
+			infra = false
+			if show {
+				lines = append(lines, fmt.Sprintf("== %s: could not read the log: %v", c.name(), err))
+			}
 			continue
 		}
 		file := filepath.Join(logDir, fmt.Sprintf("pr-%d-%s.log", n, m[1]))
 		_ = os.WriteFile(file, out, 0o600)
-		lines = append(lines, fmt.Sprintf("== %s (full log: %s)", c.name(), file))
-		lines = append(lines, Failures(string(out), 40)...)
+		if show {
+			lines = append(lines, fmt.Sprintf("== %s (full log: %s)", c.name(), file))
+			lines = append(lines, JobFailures(string(out), 40)...)
+		}
+		hosts = common(hosts, Unreachable(string(out)))
+		infra = infra && len(hosts) > 0
+		runs[c.runID()] = true
 	}
-	return lines
+	head := fmt.Sprintf("PR #%d: CI failed: %s", n, strings.Join(failed, ", "))
+	if infra && len(hosts) > 0 {
+		rerun = rerunCommand(runs)
+		head += fmt.Sprintf("; failed before any test ran: the runner could not reach %s (rerun: %s)", most(hosts), rerun)
+	}
+	return append([]string{head}, lines...), rerun
+}
+
+// common adds the counts of next to those of the hosts that are in both; a nil all takes next as it is.
+func common(all, next map[string]int) map[string]int {
+	if all == nil {
+		return next
+	}
+	out := map[string]int{}
+	for h, c := range all {
+		if next[h] > 0 {
+			out[h] = c + next[h]
+		}
+	}
+	return out
+}
+
+// most returns the host with the highest count, the first by name among equals.
+func most(hosts map[string]int) string {
+	best := ""
+	for h, c := range hosts {
+		if best == "" || c > hosts[best] || (c == hosts[best] && h < best) {
+			best = h
+		}
+	}
+	return best
+}
+
+// rerunCommand is the command that runs the failed jobs of the Actions runs again.
+func rerunCommand(runs map[int64]bool) string {
+	ids := make([]int64, 0, len(runs))
+	for id := range runs {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+	cmds := make([]string, len(ids))
+	for i, id := range ids {
+		cmds[i] = fmt.Sprintf("gh run rerun %d --failed", id)
+	}
+	return strings.Join(cmds, " && ")
 }
 
 // prSnapshot is what Watch compares between polls.
 type prSnapshot struct {
 	ci, mergeable string
 	failed        []string
-	queued        bool // auto-merge on, or in the merge queue
+	queued        bool   // auto-merge on, or in the merge queue
+	head          string // the commit the checks are of
 }
 
 // transitions returns the events between two snapshots of an open pull request; had is false on its first poll.
+// A new head is an event, and what the previous head's CI was says nothing about it: the state of the new
+// head's CI is reported again even when it is the same.
 func transitions(old prSnapshot, had bool, cur prSnapshot) []string {
 	var out []string
+	dequeued := "dequeued (out of the merge queue without merging: a conflict or a failed merge group)"
+	if had && old.head != cur.head {
+		out = append(out, "head-moved "+shortSHA(cur.head))
+		old = prSnapshot{queued: old.queued}
+		dequeued = "dequeued (the push took it out of the merge queue; queue it again)"
+	}
 	switch {
 	case cur.mergeable == "CONFLICTING" && (!had || old.mergeable != "CONFLICTING"):
 		out = append(out, "conflicting")
@@ -465,7 +740,7 @@ func transitions(old prSnapshot, had bool, cur prSnapshot) []string {
 	case had && !old.queued && cur.queued:
 		out = append(out, "queued")
 	case had && old.queued && !cur.queued:
-		out = append(out, "dequeued (out of the merge queue without merging: a conflict or a failed merge group)")
+		out = append(out, dequeued)
 	}
 	return out
 }
@@ -539,7 +814,7 @@ func queuedPRs() (map[int]bool, error) {
 // openLimit is how many open pull requests Watch lists; a repository with more is reported, not silently cut.
 const openLimit = 1000
 
-// Watch prints one line per event of the watched pull requests — opened, merged, closed, conflicting,
+// Watch prints one line per event of the watched pull requests — opened, merged, closed, head-moved, conflicting,
 // ci-failed, ci-cancelled, ci-green, queued, dequeued (out of the merge queue, or auto-merge off, while open) — until every
 // watched pull request is merged or closed. With no numbers it watches every open pull request, including
 // new ones, forever.
@@ -585,7 +860,7 @@ func Watch(w io.Writer, nums []int, interval time.Duration) error {
 				continue
 			}
 			ci, failed, _ := summarize(p.StatusCheckRollup)
-			cur := prSnapshot{ci, p.Mergeable, failed, p.AutoMergeRequest != nil || queue[p.Number]}
+			cur := prSnapshot{ci, p.Mergeable, failed, p.AutoMergeRequest != nil || queue[p.Number], p.HeadRefOid}
 			old, had := prev[p.Number]
 			for _, e := range transitions(old, had, cur) {
 				emit(p.Number, p.Title, e)

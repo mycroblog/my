@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.settings_.branding.tsx", "app/web/src/features/admin/components/BrandSettings.tsx", "app/web/src/features/admin/hooks/useBrandImage.ts", "app/web/src/features/admin/hooks/brandRenditions.ts", "app/web/src/features/admin/api/brand.ts", "app/web/src/features/admin/components/ServerSettings.tsx", "app/ui/src/LocalNav.tsx"]
 unavailable: {"アイコンを設定する（SVG を選び、プレビューを見て保存する）": "the agent has no file to choose: the browser tools give it none", "ロゴを設定する": "the agent has no file to choose: the browser tools give it none", "アイコンを組み込みのものに戻す": "the demo scenario sets no icon of its own, and setting one needs the PNG renditions that the web client draws from a chosen file"}
+budget: {"controls": 8, "helpers": 4, "words": 179}
 ---
 
 ## サーバーの設定: アイコンとロゴ（`/admin/settings/branding`）

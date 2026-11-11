@@ -2,7 +2,7 @@
 // An account's pages (/moderation/accounts/{id}, …/actions, …/actions/{actionId}, …/manage;
 // web-client/screens/moderation-account*.md): the account with its state and registration, the actions on it, the
 // reports about it, and the action form; every action as a table, one action; and the account management, in the
-// states of ADR-0079 §13
+// states of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { otherAccountFixture, rtlNameAccountFixture, type Schemas, statusFixture } from "../../test/fixtures";

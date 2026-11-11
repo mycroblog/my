@@ -4,15 +4,6 @@ package gh
 
 import "testing"
 
-func TestNotTruncated(t *testing.T) {
-	if err := notTruncated("issues", 4999, 5000); err != nil {
-		t.Errorf("a list under the limit is complete: %v", err)
-	}
-	if err := notTruncated("issues", 5000, 5000); err == nil {
-		t.Error("a list at the limit may be cut and must be an error")
-	}
-}
-
 func TestMoreFilesReadsEveryPage(t *testing.T) {
 	pages := map[string]struct {
 		files []File

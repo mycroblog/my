@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# The context map: a context-map.yaml describes its directory as a whole, and what is below it down to the next
+# context-map.yaml: the document sections to read before changing it (docs) and the user and operator documents
+# that describe it (userdocs), as <path> or <path>#<anchor> from the repository root, the `scripts/task.sh check`
+# contexts it needs (checks), and whether parallel work treats it as shared files (shared). This file holds the
+# settings of the whole map and, alone, patterns: the entries of the root's files and dot-directories, of which
+# the first that matches a path describes it. `agentkit map check` verifies the map.
+
+# Tracked files the index and search pass over.
+generated:
+  - "**/*.gen.go"
+  - "**/*.gen.ts"
+  - "**/testdata/**"
+  - "**/__screenshots__/**"
+  - "internal/adapter/db/*/*gen/**"
+  - "internal/adapter/queue/db/internal/**"
+  - "api/openapi.yaml"
+
+userdocs:
+  # The user and operator documents: each is the userdocs of some map.
+  cover:
+    - "docs/operations/*.md"
+    - "docs/reference/*.md"
+    - "docs/guide/*.md"
+    - "docs/developers/*.md"
+    - "docs/plugins/*.md"
+  # Changed paths that no document describes, which `agentkit docs impact` passes over.
+  skip:
+    - "**/*_test.go"
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.stories.tsx"
+    - "**/AGENTS.md"
+    - "**/context-map.yaml"
+    - "**/testdata/**"
+    - "**/e2e/**"
+    - "pkg/testkit/**"
+    - "test/federation-live/**"
+
+entries:
+  - paths: ["Taskfile.yml", ".github/**", ".claude/**"]
+    docs: ["docs/adr/0079-ci-single-gate-merge-queue.md", "docs/adr/0081-generated-files-policy.md", "docs/agents/releasing.md"]
+    checks: [docs, go, i18n, api, ui, web, docker, agentkit, mykit]
+    shared: true
+  - paths: ["go.mod", "go.sum", "go.work", ".golangci.yml"]
+    docs: ["docs/architecture/overview.md#依存ルール"]
+    checks: [go]
+  - paths: ["sqlc.yaml"]
+    docs: ["docs/architecture/data-model/01-conventions.md#1-共通規約", "docs/adr/0023-declarative-schema-management.md"]
+    checks: [go, schema]
+    shared: true
+  - paths: ["bunfig.toml", ".prettierignore"]
+    docs: ["docs/adr/0025-web-client-stack.md"]
+    checks: [web]
+    shared: true
+  - paths: ["Dockerfile", "compose.yaml"]
+    docs: ["docs/architecture/deployment-targets.md#self-hosteddocker--microk8s", "CONTRIBUTING.md#local-development"]
+    userdocs: ["docs/operations/deploy-docker-compose.md"]
+    checks: [docker, shell]
+  - paths: ["*.md", "LICENSE", ".*"]
+    checks: [docs]

@@ -2,8 +2,7 @@
 
 How the decider cuts a release. Only `release.yml` creates releases. It runs the slow suite (`slow-suite.yml`) on the chosen commit and,
 only when every job passes, tags that commit, drafts a GitHub Release, publishes the client libraries under the same version
-([Libraries](#libraries-mykit-and-mybot)), and pushes the [container image](#the-container-image) by digest. Publishing the draft gives the image its tags. What the slow suite contains, and where else it runs, is in
-[What CI runs where](workflow.md#what-ci-runs-where).
+([Libraries](#libraries-mykit-and-mybot)), and pushes the [container image](#the-container-image) by digest. Publishing the draft gives the image its tags. `slow-suite.yml` lists what the slow suite contains.
 
 ## Versions
 
@@ -16,7 +15,7 @@ only when every job passes, tags that commit, drafts a GitHub Release, publishes
 
 ## Steps
 
-1. Check that the latest full Nightly on `main` passed: the newest run titled exactly `Nightly`. If it failed, fix it first ([Failures on main](workflow.md#failures-on-main-orchestrator)).
+1. Check that the latest full Nightly on `main` passed: the newest run titled exactly `Nightly`. If it failed, fix it first ([workflow.md](workflow.md#orchestrating)).
 
    ```sh
    gh run list -R mycroblog/my --workflow nightly.yml --branch main --limit 10

@@ -3,6 +3,7 @@ start: "/moderation/instances/remote.example"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.instances_.$domain.tsx", "app/web/src/features/moderation/components/InstanceDetail.tsx", "app/web/src/features/moderation/components/InstanceDeliveries.tsx", "app/web/src/features/moderation/hooks/useInstances.ts", "app/web/src/features/moderation/hooks/useDeliveries.ts", "app/web/src/features/moderation/api/deliveries.ts"]
 unavailable: {"アクティビティがサーバーに届いたかを確かめる": "the demo server federates with no remote server, so nothing is delivered", "伏せた配送の送信者・アクティビティの ID・受信箱を表示する": "the demo server federates with no remote server, so nothing is delivered", "このサーバーのアカウントの配送に絞り込む": "the demo server federates with no remote server, so nothing is delivered"}
+budget: {"controls": 8, "helpers": 7, "words": 233}
 ---
 
 ## 連合先のサーバー（`/moderation/instances/{domain}`）

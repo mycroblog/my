@@ -72,7 +72,7 @@ func Check(r *repo.Repo, base string) (bool, []string, error) {
 }
 
 // docImpact returns the summary lines of the user and operator documents that describe the changed paths and that
-// the change does not touch: each needs a change, or a reason in the pull request (`pr open --doc-reason`).
+// the change does not touch, for the author to judge.
 func docImpact(r *repo.Repo, base string) []string {
 	ims, err := docsync.Of(r, base)
 	if err != nil {
@@ -87,7 +87,7 @@ func docImpact(r *repo.Repo, base string) []string {
 	if len(open) == 0 {
 		return nil
 	}
-	lines := []string{"documents that describe the changed paths and are not changed (update each, or give `pr open --doc-reason '<path>=<reason>'`):"}
+	lines := []string{"documents that describe the changed paths and are not changed (update the ones the change makes wrong):"}
 	return append(lines, docsync.Lines(open)...)
 }
 

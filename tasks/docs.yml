@@ -18,25 +18,37 @@ tasks:
       - "{{.MARKDOWNLINT}}"
 
   rules:
-    desc: Fail when a relative link or its anchor does not resolve, an English-only document has Japanese, or an operator document points at design records (AGENTS.md "Documentation", docs/lint.yaml)
+    desc: Fail when a relative link or its anchor does not resolve, an English-only document has Japanese, an operator document points at design records, or an ADR transcribes the implementation (docs/lint.yaml)
     deps: [":agentkit:build"]
     cmds:
       - bin/agentkit docs lint
 
-  pr-impact:
-    desc: 'Fail when a user or operator document that describes the paths changed since BASE is neither changed nor explained in the Documentation section of the pull request description in BODY: scripts/task.sh docs:pr-impact BODY=<file> [BASE=origin/main]'
-    deps: [":agentkit:build"]
-    requires:
-      vars: [BODY]
+  growth:
+    desc: "Fail when the prose agents maintain (ADRs, architecture, requirements, docs/agents, AGENTS.md / CLAUDE.md, the context maps, .claude) is larger than at the merge base with BASE (default origin/main); ALLOW_GROWTH=true, the allow:docs-growth label in CI, reports without failing"
     vars:
       BASE: '{{.BASE | default "origin/main"}}'
     cmds:
-      - bin/agentkit docs impact --base {{shellQuote .BASE}} --pr-body {{shellQuote .BODY}}
+      - scripts/docs-growth.sh --base {{shellQuote .BASE}}{{if eq (.ALLOW_GROWTH | default "") "true"}} --allow-growth{{end}}
 
   adr-numbers:
     desc: Fail if two files in docs/adr share a number
     cmds:
       - scripts/adr-numbers.sh
+
+  # A branch is rebased onto its base, never merged into (agentkit pr open refuses the same commits). The merge
+  # queue's own merge commits are on main, outside BASE..HEAD of a pull request.
+  pr-commits:
+    desc: 'Fail when BASE..HEAD holds a merge commit: scripts/task.sh docs:pr-commits [BASE=origin/main] [HEAD=HEAD]'
+    vars:
+      BASE: '{{.BASE | default "origin/main"}}'
+      HEAD: '{{.HEAD | default "HEAD"}}'
+    cmds:
+      - |
+        merges="$(git log --min-parents=2 --format='%h %s' {{shellQuote .BASE}}..{{shellQuote .HEAD}})"
+        if [ -n "$merges" ]; then
+          printf '%s..%s has merge commits; a branch is rebased, never merged into:\n%s\nfix: git rebase origin/main && scripts/agentkit.sh regen && git push --force-with-lease\n' {{shellQuote .BASE}} {{shellQuote .HEAD}} "$merges" >&2
+          exit 1
+        fi
 
   ci-coverage:
     desc: Fail when a check of `check` runs in no step of .github/workflows and is not excluded with a reason (ADR-0079)

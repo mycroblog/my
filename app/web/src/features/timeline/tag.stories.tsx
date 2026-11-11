@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The timeline of a hashtag (/tags/{tag}; FR-203; web-client/screens/tag.md) in the states of ADR-0079 §13, with the
+// The timeline of a hashtag (/tags/{tag}; FR-203; web-client/screens/tag.md) in the states of ADR-0165 §1, with the
 // button that follows it (the viewer follows #sourdough in the default handlers)
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

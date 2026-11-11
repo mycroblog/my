@@ -3,6 +3,7 @@ start: "/moderation"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.domain-actions.tsx", "app/web/src/features/moderation/components/DomainActions.tsx", "app/web/src/features/moderation/hooks/useDomainActions.ts", "app/web/src/features/moderation/api/staff.ts"]
 seed: [{"my": ["admin", "domain", "issue", "-kind", "limit", "-public-comment", "Unsolicited replies to many people here.", "noisy.example"]}]
+budget: {"controls": 4, "helpers": 0, "words": 25}
 ---
 
 ## ドメインへの処分の一覧（`/moderation/domain-actions`）

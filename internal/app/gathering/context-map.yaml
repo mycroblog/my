@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/architecture/data-model/04-tables/19-gathering.md#419-gathering", "docs/architecture/data-model/05-states-and-policies.md#57-イベントの判定", "docs/adr/0161-events.md"]
+userdocs: ["docs/operations/instance-settings.md#events", "docs/reference/jobs.md#events", "docs/operations/running.md#how-late-periodic-jobs-run", "docs/operations/email.md"]

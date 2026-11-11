@@ -206,7 +206,7 @@ tasks:
   # install the browser once with web:e2e-install. Both servers listen on free ports picked per run
   # (E2E_PREVIEW_PORT / E2E_SERVER_PORT fix them), so parallel runs in several worktrees stay apart;
   # E2E_BASE_URL / E2E_SERVER_URL test servers started elsewhere instead.
-  # The screen stories (ADR-0079 §13): each renders the whole app at a route, with MSW in the browser playing the server
+  # The screen stories (ADR-0165 §1): each renders the whole app at a route, with MSW in the browser playing the server
   # with the features' default handlers. The Storybook composes the @my/ui Storybook: ui:storybook on port 6006 in
   # development, and the static build of web:storybook-build carries the kit's build under ui/.
   storybook:
@@ -230,6 +230,32 @@ tasks:
     dir: app/web
     cmds:
       - bun run test:stories{{if .SHARD}} --shard={{.SHARD}}{{end}}
+
+  # The look of a change before its pull request (app/web/scripts/shot.ts): no Docker and no Storybook build. It
+  # starts the Storybook dev server of app/web or app/ui on a free port and leaves it for the next call (it stops
+  # after 30 minutes without one; `-- --stop` stops it). Standard output is the PNG paths, one a line, each followed
+  # by an `overflow: <selector>` line for whatever reaches past the viewport or scrolls sideways at that width;
+  # .tmp/agentkit/shots/manifest.json lists the shots for `agentkit pr open`. interactive, so that the lines carry
+  # no task prefix.
+  shot:
+    desc: Render stories to PNGs in .tmp/agentkit/shots and flag sideways overflow (`-- <story id | story file | route | L1 file> ... [--width 390,1440] [--theme light,dark] [--locale en,ja]`, or `-- --changed`)
+    deps: [generate]
+    dir: app/web
+    silent: true
+    interactive: true
+    cmds:
+      - node scripts/shot.ts {{.CLI_ARGS}}
+
+  # web:story-test holds every story to the budget of its screen's L1 file (app/web/l4/budget.ts). This fills in what
+  # is missing and never changes a budget or a baseline that exists: those are edited by hand, for the owner to review.
+  budget-init:
+    desc: Write a budget into the L1 files of the screens that have none, from what their stories show now (and app/web/l4/screenBaseline.json when missing)
+    deps: [generate]
+    dir: app/web
+    env:
+      BUDGET: init
+    cmds:
+      - bun run test:stories
 
   e2e:
     desc: Run the web E2E tests with Playwright (E2E_MATRIX=full adds the width and locale projects)

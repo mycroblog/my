@@ -26,19 +26,25 @@
 
 ## Decision（決定）
 
-選択肢 2。`.claude/settings.json` に次を置く。実体は `scripts/agentkit-hook.sh` を通して `bin/agentkit hook <event>` が処理する。
+選択肢 2。
 
-- SessionStart: `bin/agentkit` をビルドし、索引を最新にする（出力しない）
-- PreToolUse（Bash・Read）
-  - 拒否: 40KB 以上の Markdown（コードは 80KB 以上）を、範囲を指定せずに Read または `cat` すること。理由に `outline` と `show` の使い方を返す
-  - 拒否: `gh pr checks --watch` と `gh run watch`。理由に、バックグラウンドで動かす `agentkit pr wait` を返す
-  - 助言（`additionalContext`、拒否はしない）: 出力を絞らない再帰的な grep / rg に、`agentkit find` と `refs` を勧める
-- PostToolUse（Bash）: 標準出力と標準エラーの合計が 2 万文字を超える出力を、先頭と末尾だけに切り詰めて `updatedToolOutput` で返し、全体は `.tmp/agentkit/out/` に保存する。agentkit 自身の出力（予算内に収めている）は切り詰めない
-- しきい値は環境変数 `AGENTKIT_BIG_FILE`・`AGENTKIT_MAX_OUTPUT` で変えられる
-- `bin/agentkit` が無いとき、入力が読めないとき、想定外の入力のときは何もしない。`allow` は返さない
+- フックは拒否する。助言はしない。拒否の理由には、拒否したコマンドの引数を入れた、そのまま実行できる代わりのコマンドを書く。
+- 拒否するのは、より楽な代わりの道具があるものだけにする: リポジトリの検索、ファイルの刻み読み、シェルからのファイルの書き換え、main のマージ、CI のポーリング、待つためのループ、大きな文書の全読み。
+- ほかのコマンドの出力へのフィルタと、リポジトリの外のファイルは対象にしない。判定に迷う形は通す。
+- 規則はエージェントの種類を問わない。
+- 長い出力は先頭と末尾に切り詰め、全体をファイルに残す。
+- 道具が無いとき、入力が想定外のときは何もしない。フックが作業を止める原因にならないようにする。
+
+## 経緯
+
+- 再帰的な grep への助言（`additionalContext` で `agentkit find` を勧める）は、681 回出て効果がなかった（エージェントは `| head` を足した）ので、拒否と `agentkit grep` に置き換えた。順位付きの全文検索では、エージェントが要る正確な文字列・正規表現の一致、テストと生成物の除外、出力の上限が得られなかった
+- 拒否は、その形を 100% 止めたが、理由がより楽な代わりを名指ししないと、エージェントは同じ働きの別の形に移った。そこで理由に、そのまま実行できるコマンドを入れる
+- 大きなファイルの拒否は、`ctx` のパック（`.tmp/agentkit/ctx/*.md`）とハーネスの出力ファイルも止めていたので、リポジトリのファイルだけに絞った
+- `gh pr checks --watch` と `gh run watch` だけの拒否は、`gh pr checks` の繰り返しや `gh run view` に移られたので、CI のポーリング全体に広げた。sleep するループの拒否は `timeout N bash -c "until …"` で抜けられたので、`bash -c` の中も見る
 
 ## Consequences（影響）
 
+- リポジトリの検索・部分読み・書き換えは、agentkit と Read / Edit を通る。agentkit にない grep の機能（`-v`、`-L`）は、`git ls-files` やファイルをパイプで grep に渡して使う
 - 大きな文書を Edit する前の Read も、範囲の指定が必要になる
 - 切り詰めた出力の続きは、保存したファイルを grep するか範囲を指定して読む必要がある
 - Claude Code 以外のエージェントには効かない。それらには AGENTS.md の規則と `scripts/agentkit.sh` だけが届く

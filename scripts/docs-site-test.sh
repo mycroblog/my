@@ -98,7 +98,7 @@ expect_stage no-index "next/index.html" "rm next/index.html"
 
 # pages: the published documents among the changed files that the build has, and nothing else.
 preview "$tmp/pages"
-printf '%s\n' docs/operations/running.md docs/guide/README.md docs/reference/commands.md docs/adr/0150-x.md \
+printf '%s\n' docs/operations/running.md docs/guide/README.md docs/adr/0150-x.md \
   docs/operations/gone.md 'docs/guide/../../etc/passwd.md' app/docs/astro.config.ts >"$tmp/changed"
 got="$("$script" pages "$tmp/pages" https://pr-1-my-docs.example.workers.dev "$tmp/changed")"
 want="$(printf '%s\n' 'The pages this pull request changes:' '' \

@@ -2,6 +2,7 @@
 start: "/about"
 persona: null
 paths: ["app/web/src/features/about/**", "app/web/src/routes/about.tsx", "app/web/src/routes/-layout/InfoLayout.tsx", "app/web/src/features/costs/components/FundingMeter.tsx", "app/web/src/features/supporters/components/Tips.tsx"]
+budget: {"controls": 10, "helpers": 5, "words": 395}
 ---
 
 ## このサーバーについて（`/about`）

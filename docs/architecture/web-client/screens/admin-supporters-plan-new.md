@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.supporters_.plans_.new.tsx", "app/web/src/features/admin/components/SupporterPlanForm.tsx", "app/web/src/features/admin/hooks/useSupporters.ts", "app/web/src/features/admin/api/supporters.ts", "app/web/src/features/admin/components/supporterParts.tsx"]
 unavailable: {"プランを作成する": "a new plan needs a role that nobody holds, and the demo scenario has none"}
+budget: {"controls": 12, "helpers": 8, "words": 170}
 ---
 
 ## サポーター: プランの作成（`/admin/supporters/plans/new`）

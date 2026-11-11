@@ -2,6 +2,7 @@
 start: "/moderation/signup-blocks"
 persona: "marco"
 paths: ["app/web/src/routes/moderation.signup-blocks_.new.tsx", "app/web/src/features/moderation/components/NewSignupBlock.tsx", "app/web/src/features/moderation/components/signupBlockFields.ts", "app/web/src/features/moderation/hooks/useSignupBlocks.ts", "app/web/src/features/moderation/api/signupBlocks.ts"]
+budget: {"controls": 7, "helpers": 8, "words": 128}
 ---
 
 ## 新しい登録の拒否（`/moderation/signup-blocks/new`）

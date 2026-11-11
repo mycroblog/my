@@ -10,7 +10,11 @@ export type CalloutProps = Omit<ComponentPropsWithRef<"div">, "className" | "sty
  */
 export function Callout({ children, ...props }: CalloutProps) {
   return (
-    <div {...props} className="flex items-start gap-3 rounded-lg bg-surface-sunken px-4 py-3 text-fg">
+    <div
+      data-helper="callout"
+      {...props}
+      className="flex items-start gap-3 rounded-lg bg-surface-sunken px-4 py-3 text-fg"
+    >
       <span className="mt-px shrink-0 text-fg-muted [&>svg]:size-5">
         <AboutIcon />
       </span>

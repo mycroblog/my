@@ -2,6 +2,7 @@
 start: "/home"
 persona: "hana"
 paths: ["app/web/src/features/admin/**", "app/web/src/features/moderation/**", "app/web/src/features/announcements/**", "app/web/src/features/closure/**", "app/web/src/features/documents/**"]
+budget: {"controls": 1, "helpers": 0, "words": 26}
 ---
 
 ## 管理のトップ（`/admin`）

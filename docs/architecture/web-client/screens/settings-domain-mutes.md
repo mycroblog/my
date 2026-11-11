@@ -2,6 +2,7 @@
 start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**", "app/ui/src/ListSection.tsx"]
+budget: {"controls": 5, "helpers": 3, "words": 89}
 ---
 
 ## ミュートしたドメイン（`/settings/domain-mutes`）

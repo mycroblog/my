@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The instance's costs and income (/admin/finance and its pages; web-client/screens/admin-finance*.md) in the states of
-// ADR-0079 §13: the overview (the totals of the costs and the income by week, month or year as charts), the payments
+// ADR-0165 §1: the overview (the totals of the costs and the income by week, month or year as charts), the payments
 // and refunds, the recorded costs with the page of a new one and of one item, the billing imports, and what the
 // instance publishes of them.
 import type { Meta, StoryObj } from "@storybook/react-vite";

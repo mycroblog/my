@@ -5,14 +5,14 @@ name: CI
 #
 # - pull_request: `preflight`, the checks a pull request's own files decide; the @my/ui story tests (ui-test.yml) when
 #   the ui context changes; the app/web screen stories (ui-test.yml with web:story-test) when the client changes; golangci-lint (`lint`) when Go changes; the Docker Compose smoke test (`docker-smoke`) when
-#   the docker context changes; the OpenTofu modules (`tofu`) when the tofu context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
+#   the docker context changes; the formatting of the OpenTofu modules (`tofu-fmt`) when the tofu context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
 #   changes.
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
 #   server-test, client-static, client-test (2 shards), and repo, the container contracts of the adapters it changes
 #   (scripts/changed-contracts.sh), and the web E2E of the primary project (e2e, a build, 3 shards, and a report,
-#   web-e2e.yml) when the client changes; repo also checks the documentation
+#   web-e2e.yml) when the client changes, and the OpenTofu modules (`tofu`) when the tofu context changes; repo also checks the documentation
 #   site (app/docs) when the site context changes.
-# - pull_request labelled `ci:full`: both.
+# - pull_request labelled `allow:full-ci`: both.
 #
 # Each job sets up its tools and generates what its checks read, then runs the checks as parallel steps (ADR-0079),
 # each named after the one task it runs (`scripts/task.sh go:vet`), so that each check keeps its own log and time.
@@ -21,7 +21,7 @@ name: CI
 # reports. Pushes to main run main.yml instead.
 
 on:
-  # labeled / unlabeled rerun the checks when `ci:full` is added or removed, and the concurrency group cancels the
+  # labeled / unlabeled rerun the checks when `allow:full-ci` is added or removed, and the concurrency group cancels the
   # older run, so no result of the other set of jobs is left on the pull request.
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
@@ -71,8 +71,8 @@ jobs:
         id: select
         env:
           EVENT: ${{ github.event_name }}
-          # The merge queue, or a pull request labelled `ci:full`.
-          FULL: ${{ github.event_name == 'merge_group' || contains(github.event.pull_request.labels.*.name, 'ci:full') }}
+          # The merge queue, or a pull request labelled `allow:full-ci`.
+          FULL: ${{ github.event_name == 'merge_group' || contains(github.event.pull_request.labels.*.name, 'allow:full-ci') }}
           MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
           MERGE_GROUP_HEAD_SHA: ${{ github.event.merge_group.head_sha }}
         run: |
@@ -129,15 +129,11 @@ jobs:
     # that each format their own lines can meet in one statement.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    # docs:pr-impact reads the pull request's description.
-    permissions:
-      contents: read
-      pull-requests: read
     steps:
-      # docs:pr-impact compares the merge commit with its first parent, the base branch.
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # docs:growth compares with the base, the first parent of the merge commit.
           fetch-depth: 2
       - name: Set up go-task
         uses: ./.github/actions/setup-task
@@ -178,6 +174,12 @@ jobs:
             run: scripts/task.sh mykit:mybot-ts-licenses
           - name: mail:typecheck
             run: scripts/task.sh mail:typecheck
+          # The prose agents maintain is no larger than at the base, the first parent of the merge commit, unless the
+          # owner approved the growth with the allow:docs-growth label (labelling reruns the checks).
+          - name: docs:growth
+            env:
+              APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'allow:docs-growth') }}
+            run: scripts/task.sh docs:growth BASE=HEAD^1 ALLOW_GROWTH="$APPROVED"
           - name: docker:dockerfile-check
             run: scripts/task.sh docker:dockerfile-check
           - name: web:playwright-image-check
@@ -186,22 +188,23 @@ jobs:
             run: scripts/task.sh web:tokens
           - name: web:lint-css
             run: scripts/task.sh web:lint-css
-          # Each user or operator document that describes the changed paths (the userdocs of
-          # tools/agentkit/context-map.yaml) is changed or explained in the description. It reads the description now,
-          # not the event's copy, so rerunning the job after editing the description checks the new text. A Dependabot
-          # update bumps a version or digest and writes no Documentation section, so it has nothing to explain.
-          - name: docs:pr-impact
+          # The pull request's own commits hold no merge commit: a branch is rebased onto main, never merged into.
+          # The checkout is the merge of the two with a depth of 2, so the commits are fetched first, one deeper
+          # than the pull request has, which leaves the commit it branched from without parents. Dependabot rebases
+          # its branches itself.
+          - name: docs:pr-commits
             env:
-              GH_TOKEN: ${{ github.token }}
-              PR: ${{ github.event.pull_request.number }}
               AUTHOR: ${{ github.event.pull_request.user.login }}
+              COMMITS: ${{ github.event.pull_request.commits }}
+              BASE_SHA: ${{ github.event.pull_request.base.sha }}
+              HEAD_SHA: ${{ github.event.pull_request.head.sha }}
             run: |
               if [ "$AUTHOR" = "dependabot[bot]" ]; then
                 echo "A Dependabot update: skipped."
                 exit 0
               fi
-              gh pr view "$PR" -R "$GITHUB_REPOSITORY" --json body --jq .body > "$RUNNER_TEMP/pr-body.md"
-              scripts/task.sh docs:pr-impact BASE=HEAD^1 BODY="$RUNNER_TEMP/pr-body.md"
+              git fetch --no-tags --quiet --depth="$((COMMITS + 1))" origin "$HEAD_SHA"
+              scripts/task.sh docs:pr-commits BASE="$BASE_SHA" HEAD="$HEAD_SHA"
 
   ui-test:
     # The @my/ui story tests (ADR-0110), on pull requests alone: a pull request that changes a screenshot fixes its
@@ -211,7 +214,7 @@ jobs:
     uses: ./.github/workflows/ui-test.yml
 
   web-story-test:
-    # The app/web screen stories (ADR-0079 §13): their play functions and axe, on pull requests alone, like ui-test. They
+    # The app/web screen stories (ADR-0165 §1): their play functions and axe, on pull requests alone, like ui-test. They
     # render the whole app with the features' MSW handlers, so any change to the client can break them.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.client == 'true'
@@ -282,9 +285,9 @@ jobs:
       - name: docker:web-reproducible
         run: scripts/task.sh docker:web-reproducible
 
-  tofu:
-    # The OpenTofu modules of deploy/opentofu (ADR-0010). A pull request's own files decide it, so the merge queue does
-    # not run it again. Nothing reaches a cloud: the tests mock the providers.
+  tofu-fmt:
+    # The formatting of deploy/opentofu (ADR-0010), which each file decides alone, so the merge queue does not run it
+    # again. The checks that read several modules run in the merge queue's `tofu` job.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.tofu == 'true'
     runs-on: ubuntu-latest
@@ -301,19 +304,19 @@ jobs:
         with:
           tofu_version: ${{ steps.tofu.outputs.version }}
           tofu_wrapper: false
-      - name: tofu:check
-        run: scripts/task.sh tofu:check
+      - name: tofu:fmt-check
+        run: scripts/task.sh tofu:fmt-check
 
   db-lint:
     # The schema change of a pull request against its base, the first parent of its merge commit (ADR-0023 §6): it
     # fails on a change that can lose or rewrite data of an existing database, unless the decider approved it with the
-    # db:destructive label (labelling reruns the checks). The merge queue cannot read labels and checks only that the
+    # allow:db-destructive label (labelling reruns the checks). The merge queue cannot read labels and checks only that the
     # change applies on top of its base (server-static). db:lint-test runs the lint on its fixtures.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.schema == 'true'
     runs-on: ubuntu-latest
     env:
-      APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'db:destructive') }}
+      APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'allow:db-destructive') }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -334,7 +337,7 @@ jobs:
       - name: db:lint-test (postgres)
         run: scripts/task.sh db:lint-test DB_DIALECT=postgres
 
-  # --- The full check: merge groups, and pull requests labelled ci:full -------------------------------------------
+  # --- The full check: merge groups, and pull requests labelled allow:full-ci -------------------------------------------
   # A job whose `if` is false is skipped, and `check` counts a skipped job as passed.
 
   server-static:
@@ -447,7 +450,7 @@ jobs:
   e2e:
     # The web E2E of the primary project (ADR-0079 §5, ADR-0015 §1: every spec, en at 1440 px; the width and locale
     # projects stay in the Nightly) when the group changes the client, on 3 shards of one build. Pull requests do not
-    # run it; with `ci:full` they do.
+    # run it; with `allow:full-ci` they do.
     needs: changes
     if: needs.changes.outputs.full == 'true' && needs.changes.outputs.client == 'true'
     uses: ./.github/workflows/web-e2e.yml
@@ -493,6 +496,52 @@ jobs:
       - name: go:test-acme
         if: contains(env.CONTRACTS, ' acme ')
         run: scripts/task.sh go:test-acme
+
+  tofu:
+    # The checks of deploy/opentofu (ADR-0010) that read more than one file, when the group changes the tofu context:
+    # the modules call each other and the examples call the modules, and the scripts compare the modules with the
+    # configuration reference, the server's job types, and the guides, so two pull requests can break them together.
+    # The steps are those of tofu:check after its formatting check (the pull request's `tofu-fmt`), in its order and
+    # one after another: validate and the tests already run 4 modules at a time, and each init writes the plugin
+    # cache the others read. Nothing reaches a cloud: the tests mock the providers or call a local stub.
+    needs: changes
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.tofu == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Read the OpenTofu version
+        id: tofu
+        run: echo "version=$(awk '$1 == "opentofu" { print $2 }' .tool-versions)" >> "$GITHUB_OUTPUT"
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_version: ${{ steps.tofu.outputs.version }}
+          tofu_wrapper: false
+      - name: tofu:env-check
+        run: scripts/task.sh tofu:env-check
+      - name: tofu:backend-fields
+        run: scripts/task.sh tofu:backend-fields
+      - name: tofu:coverage
+        run: scripts/task.sh tofu:coverage
+      - name: tofu:sources
+        run: scripts/task.sh tofu:sources
+      - name: tofu:validate
+        run: scripts/task.sh tofu:validate
+      - name: tofu:test
+        run: scripts/task.sh tofu:test
+      - name: tofu:example-test
+        run: scripts/task.sh tofu:example-test
+      - name: tofu:git-source-test
+        run: scripts/task.sh tofu:git-source-test
+      - name: tofu:state-test
+        run: scripts/task.sh tofu:state-test
+      - name: tofu:db-state-test
+        run: scripts/task.sh tofu:db-state-test
+      - name: tofu:aws-plan-test
+        run: scripts/task.sh tofu:aws-plan-test
 
   client-static:
     needs: changes
@@ -743,7 +792,7 @@ jobs:
     # reusable workflow fails when a called job fails, so a failed story test fails `check`. `always()` makes it report
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it.
     if: always()
-    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, tofu, db-lint, server-static, server-test, contracts, e2e, client-static, client-test, repo]
+    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, e2e, tofu, client-static, client-test, repo]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled

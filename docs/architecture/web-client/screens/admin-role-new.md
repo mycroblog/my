@@ -2,6 +2,7 @@
 start: "/admin/roles"
 persona: "hana"
 paths: ["app/web/src/routes/admin.roles_.new.tsx", "app/web/src/features/admin/components/NewRole.tsx", "app/web/src/features/admin/hooks/useRoleSettings.ts", "app/web/src/features/admin/api/roles.ts", "app/web/src/features/admin/components/roleParts.tsx"]
+budget: {"controls": 31, "helpers": 4, "words": 143}
 ---
 
 ## ロールを作成する（`/admin/roles/new`）

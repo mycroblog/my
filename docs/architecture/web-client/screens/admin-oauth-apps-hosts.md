@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.oauth-apps_.hosts.tsx", "app/web/src/features/admin/components/OAuthAppSettings.tsx", "app/web/src/features/admin/hooks/useOAuthApps.ts", "app/web/src/features/admin/api/oauthApps.ts"]
+budget: {"controls": 3, "helpers": 1, "words": 37}
 ---
 
 ## OAuth のアプリの拒否したホスト（`/admin/oauth-apps/hosts`）

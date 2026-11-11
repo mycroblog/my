@@ -2,6 +2,7 @@
 start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
+budget: {"controls": 10, "helpers": 11, "words": 388}
 ---
 
 ## 古い投稿の自動削除（`/settings/auto-delete`）

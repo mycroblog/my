@@ -259,10 +259,11 @@ func TestStripCode(t *testing.T) {
 
 func TestADRs(t *testing.T) {
 	root := t.TempDir()
-	good := "# ADR-0070: x\n\n- Status: Accepted\n\n## Decision（決定）\n\n### 1. a\n\n### 2. b\n\n§1 and §2. ADR-0003 §9. RFC 9421 §7. RFC 9421 の §8, §9.\n\n```\n> code\n§99\n```\n\n## 経緯\n\n## 採らなかった案\n\n## Consequences（影響）\n"
+	good := "# ADR-0070: x\n\n- Status: Accepted\n\n## Decision（決定）\n\n### 1. a\n\n### 2. b\n\n§1 and §2. ADR-0003 §9. RFC 9421 §7. RFC 9421 の §8, §9.\n\n```\n> code\n§99\n```\n\n## 採らなかった案\n"
 	files := map[string]string{
 		"docs/adr/0003-x.md":    "# ADR-0003: y\n\n## Decision（決定）\n\n### 9. z\n\n§5.\n\n> 決定者の回答\n\n決定者の回答は残さない。\n",
 		"docs/adr/0070-x.md":    good,
+		"docs/adr/0071-x.md":    "# ADR-0071: z\n\n## 決定\n",
 		"docs/adr/aliases.yaml": "aliases:\n  ADR-0099: {to: ADR-0070}\n  ADR-0098: {to: ADR-0097}\n",
 		"internal/a.go":         "// ADR-0070 §2, ADR-0003 §9 and §8; ADR-0099; ADR-0001; ADR-0003 §C; ADR-0003 §Context.\n",
 		"tools/agentkit/docs/x": "ADR-0001\n",
@@ -290,12 +291,10 @@ func TestADRs(t *testing.T) {
 		got[i] = f.String()
 	}
 	want := []string{
-		"docs/adr/0003-x.md: adr-format: lacks the section ## 経緯",
-		"docs/adr/0003-x.md: adr-format: lacks the section ## 採らなかった案",
-		"docs/adr/0003-x.md: adr-format: lacks the section ## Consequences（影響）",
 		"docs/adr/0003-x.md:7: adr-section: this ADR has no §5",
 		"docs/adr/0003-x.md:9: adr-format: a quotation: state the decision itself",
 		"docs/adr/0003-x.md:11: adr-format: the decider's answers do not belong in an ADR",
+		"docs/adr/0071-x.md: adr-format: lacks the section ## Decision（決定）",
 		"docs/adr/aliases.yaml: adr-citation: ADR-0098 -> ADR-0097: no such ADR",
 		"internal/a.go:1: adr-citation: ADR-0003 has no §8",
 		"internal/a.go:1: adr-citation: ADR-0099 is retired: cite ADR-0070",

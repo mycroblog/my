@@ -57,6 +57,14 @@ func (s *Store) ByIDPrefix(prefix string, limit int) ([]Node, error) {
 	return scanNodes(s.DB.Query(`SELECT `+nodeCols+nodeFrom+` AND n.nid >= ? AND n.nid < ? ORDER BY n.nid LIMIT ?`, prefix, prefix+"￿", limit))
 }
 
+// Qualified returns the Go declarations whose id ends with the qualified name q: a method by its receiver
+// (Service.Create), a declaration by its package (content.NewService), or both (content.Service.Create).
+func (s *Store) Qualified(q string) ([]Node, error) {
+	esc := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(q)
+	return scanNodes(s.DB.Query(`SELECT `+nodeCols+nodeFrom+` AND n.nid LIKE 'sym:%' AND (n.nid LIKE ? ESCAPE '\' OR n.nid LIKE ? ESCAPE '\' OR n.nid = ?) ORDER BY f.path, n.start LIMIT 50`,
+		"%."+esc, "%/"+esc, "sym:"+q))
+}
+
 // FileNodes returns the nodes of the file at p in line order.
 func (s *Store) FileNodes(p string) ([]Node, error) {
 	return scanNodes(s.DB.Query(`SELECT `+nodeCols+nodeFrom+` AND f.path = ? ORDER BY n.start, n.end_line DESC`, p))

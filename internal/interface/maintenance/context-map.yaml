@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0088-service-shutdown-modes.md#8-メンテナンスモードの切り替え", "docs/adr/0088-service-shutdown-modes.md#18-メンテナンスモードとの関係", "docs/adr/0088-service-shutdown-modes.md#6-停止の後", "docs/operations/maintenance.md", "docs/operations/service-closure.md"]
+userdocs: ["docs/operations/maintenance.md", "docs/operations/service-closure.md#6-switching-to-the-static-page", "docs/operations/monitoring.md#telling-the-maintenance-mode-from-an-outage", "docs/operations/admin-cli.md#exporting-the-maintenance-page"]

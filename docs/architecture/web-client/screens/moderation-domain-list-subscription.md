@@ -3,6 +3,7 @@ start: "/moderation/domain-actions/subscriptions"
 persona: "hana"
 paths: ["app/web/src/routes/moderation.domain-actions_.subscriptions_.$id.tsx", "app/web/src/features/moderation/components/DomainListSubscriptionDetail.tsx", "app/web/src/features/moderation/components/domainListParts.tsx", "app/web/src/features/moderation/hooks/useDomainListSubscriptions.ts", "app/web/src/features/moderation/api/domainLists.ts"]
 unavailable: {"下書きをまとめて受け入れる": "The demo server has no subscription whose list it can fetch, so there are no drafts.", "下書きを 1 件退ける": "The demo server has no subscription whose list it can fetch, so there are no drafts.", "今すぐ取得する": "The demo server has no subscription whose list it can fetch.", "モードを自動にする": "The demo server has no subscription.", "購読をやめる": "The demo server has no subscription."}
+budget: {"controls": 15, "helpers": 11, "words": 323}
 ---
 
 ## ブロックリストの購読のページ（`/moderation/domain-actions/subscriptions/{id}`）

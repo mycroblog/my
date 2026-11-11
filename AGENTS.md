@@ -1,203 +1,57 @@
 # AGENTS.md
 
-Instructions for coding agents (Claude Code, Codex, Copilot, Gemini, etc.) working in this repository.
-Human contributors should read [CONTRIBUTING.md](CONTRIBUTING.md); the rules are the same.
+For coding agents working in this repository. This file is an index and a list of traps: it holds only what no
+check, tool, or code can tell you. The rules of an area reach you from the check that enforces them, when you break
+them ([ADR-0000](docs/adr/0000-record-architecture-decisions.md) §6).
 
-## Project in one paragraph
+**mycroblog** is the project and the service, a microblog for the fediverse that starts small and grows with its
+community. This repository builds **`my`**, its ActivityPub server in Go, with a TypeScript web client under `app/`.
+Prose says mycroblog for the project and the service and `my` for the server software; technical names keep `my`.
 
-**mycroblog** is the brand of the project, the service, and the set of related software: a microblog for the fediverse
-that starts small and grows with your community — a small, cheap start *and* real scalability, not cheapness alone.
-This repository builds **`my`**, its ActivityPub-compatible server written in Go, which can run cheaply with care on Google Cloud, AWS,
-or a self-hosted VM (Docker / microk8s) and grow to PostgreSQL, a job queue, and separate web and worker processes,
-with swappable RDB / queue / storage adapters, its own client API (no Mastodon client API compatibility),
-a PWA web client (no mobile app in v0), and i18n from day one. Distributed as OSS.
-Prose that people read says mycroblog for the project and the service, and `my` for the server software; the technical names
-keep `my` (the command, the repository `mycroblog/my`, the image `ghcr.io/mycroblog/my`, the `MY_` environment variables,
-NodeInfo's software name and every name on the federation wire, Go module paths, the `@my/*` packages, the Worker `my-docs`).
-
-## Current phase: M5 — v0 Release
-
-- Goal: publish v0.x and start running the maintainer's instance — moderation essentials, i18n (en / ja and more),
-  documentation, the release (tags, the container image on `ghcr.io/mycroblog/my`, release notes), and the API client
-  library `pkg/mykit` and the bot library `pkg/mybot` (epic [#30](https://github.com/mycroblog/my/issues/30),
-  [vision](docs/requirements/00-vision.md)). The mobile app is outside v0. M4.3 — Voice Chat (epic [#1345](https://github.com/mycroblog/my/issues/1345))
-  is a precondition of v0.1.0, and External Plugins and the core of Translation and Full-text Search are built before it (their tasks are in M5; provider adapters and search backends come after the tag). The OpenTofu modules for Cloud Run (`deploy/opentofu`) are in M5; Cloud SQL and the deployment templates for AWS / microk8s belong to M6.
-- The server is Go ([ADR-0002](docs/adr/0002-modular-monolith-hexagonal.md)); clients are TypeScript under `app/` with Bun.
-  Cloudflare Workers is **not** a target.
-- **Web client work must follow [docs/architecture/web-client/](docs/architecture/web-client/README.md).** Do not write React from memory or
-  from typical online examples; when unsure, check react.dev, the WAI-ARIA APG and the official docs of the library in use.
-- The web-client stack and libraries are fixed by Accepted ADRs (from ADR-0025; see [docs/adr/README.md](docs/adr/README.md));
-  do not pick libraries outside them without a new ADR.
-- The Go package layout follows [overview §6](docs/architecture/overview.md#6-リポジトリ構成); `cmd/my` is the single binary.
-  Build only what an issue asks for.
-- Spike reports go in the spike issue as a comment and spike code stays on an unmerged `spike/<issue>-<slug>` branch;
-  only the resulting ADR / doc updates are merged ([ADR-0000](docs/adr/0000-record-architecture-decisions.md)).
-
-## Source of truth
+## Where the truth is
 
 | What | Where |
 | --- | --- |
-| Vision, scope, milestones | [docs/requirements/00-vision.md](docs/requirements/00-vision.md) |
-| Functional requirements (`FR-xxx`) | [docs/requirements/01-functional.md](docs/requirements/01-functional.md) |
-| Non-functional requirements (`NFR-xxx`) | [docs/requirements/02-non-functional.md](docs/requirements/02-non-functional.md) |
-| Architecture overview, ports, flows | [docs/architecture/overview.md](docs/architecture/overview.md) |
-| Hosting targets & cost notes | [docs/architecture/deployment-targets.md](docs/architecture/deployment-targets.md) |
-| Federation design (inbox, delivery, fetch, sanitizing) | [docs/architecture/federation.md](docs/architecture/federation.md) |
-| Decisions | [docs/adr/README.md](docs/adr/README.md) — **Accepted ADRs are binding; Proposed ADRs are not yet decisions** |
-| Tasks | GitHub Issues / Milestones of `mycroblog/my` |
-| Agent playbooks | [docs/agents/](docs/agents/) |
-| Commands, agent tools | [docs/reference/commands.md](docs/reference/commands.md), [tools/agentkit/README.md](tools/agentkit/README.md) |
+| Decisions | [docs/adr/](docs/adr/README.md): Accepted ADRs are binding, Proposed ADRs are not yet decisions |
+| Scope, requirements (`FR-xxx`, `NFR-xxx`) | [docs/requirements/](docs/requirements/00-vision.md) |
+| Architecture | [docs/architecture/](docs/architecture/overview.md) |
+| Tasks | GitHub issues and milestones of `mycroblog/my` |
+| The procedure | [docs/agents/workflow.md](docs/agents/workflow.md) |
 
-## How to pick and do work
+## The path
 
-Follow [docs/agents/workflow.md](docs/agents/workflow.md). Summary:
+One path takes a change from an issue to `main`; each step is a command that refuses what must not pass and says the fix.
 
-1. Only take issues labeled **`agent:ready`** with no assignee. Never take `status:needs-decision`.
-2. Branch `<type>/<issue>-<slug>`; never push to `main`.
-3. No local `check` run is required before a commit, a push, or a PR ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)): the merge
-   queue's full check is the only gate, and the PR's CI runs only a preflight. Run `scripts/task.sh check:changed`, `go:check`, `web:check`, ...
-   to reproduce a CI failure or to iterate on what you are writing. When the change touches TypeScript or JavaScript, run
-   `scripts/task.sh web:fmt` (`bun fmt`) first, since the preflight checks it; after resolving a conflict in such a file, run it again.
-4. Open a PR using the template, with `Closes #N` and the acceptance criteria checked, and wait for its CI to pass.
-   Pull requests run the `check` gate as a preflight of under 2 minutes ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md);
-   the label `ci:full` runs the merge queue's full check on the PR too) but not the web E2E, which the merge queue runs when the client changes: in single-issue work, to see a failure
-   earlier, run `scripts/task.sh web:e2e` or `gh workflow run web-e2e.yml --ref <branch>`. In a parallel batch run by an orchestrator,
-   follow [workflow.md §9](docs/agents/workflow.md#9-parallel-batches) instead (no per-PR web E2E; a failure of the nightly is fixed as soon as it appears, before more issues).
-   Do not merge or queue the PR yourself: the orchestrator or the decider queues it with `gh pr merge --auto`, and the merge queue
-   runs the full `check` of the changed contexts on top of the latest `main` before merging. Merge `main` into the branch only when the PR conflicts or the
-   queue drops it. Pushes to `main` check nothing and only build the caches that PRs and the queue restore. The slower
-   suites and CodeQL (`slow-suite.yml`) run as the release gate (`release.yml`), nightly, and by hand, never on PRs
-   ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)); the table of what runs where is in the workflow.
-5. If you need a decision that no Accepted ADR covers: small → state the assumption in the PR; large → draft a *Proposed* ADR
-   (`scripts/task.sh docs:adr-new TITLE=... SLUG=...`), comment on the issue, add `agent:blocked`, and stop.
+1. `scripts/agentkit.sh ctx <issue>` gives the issue, its decisions, and the code to start from. Read more with
+   `agentkit grep`, `show`, `outline`, `refs`, `trace`; a hook refuses the shell forms they replace.
+2. Work in a worktree, on one branch per goal (an epic, a phase, a milestone), one commit per issue.
+3. Change messages with `scripts/i18n.sh`; look at a changed screen with `scripts/task.sh web:shot`.
+4. `scripts/agentkit.sh pr open` runs the fast checks and opens the pull request.
+5. `scripts/agentkit.sh pr land <pr>` queues it, follows it to the merge, cleans up, and closes what it completes.
 
-## Hard rules
+## Traps
 
-- **Boy scout rule** ([ADR-0000](docs/adr/0000-record-architecture-decisions.md)): never ignore something broken because it is outside your issue.
-  Fix small things in a separate commit and list them in the PR; file an issue for anything larger and link it.
-- **Never change an ADR's status to `Accepted`/`Rejected`, or the conclusion of an Accepted ADR, on your own judgment.** Only the human decider
-  decides. You may record a decision the decider has explicitly stated (state the conclusion in the PR description; no verbatim quotes).
-  You may create and edit *Proposed* ADRs.
-- ADRs are organized by topic: when a decision changes, edit the ADR that owns the topic, moving what it replaces to `経緯` or `採らなかった案`.
-  Add a new ADR only for a topic no ADR owns ([writing-adrs.md](docs/agents/writing-adrs.md)).
-- **Every file in the repo describes the present, never its history** ([ADR-0000](docs/adr/0000-record-architecture-decisions.md)).
-  No changelog sections, no "previously / in the first draft / old proposal" wording, no `[x]` resolved items in Open Questions —
-  fold resolved answers into the body. Explain *why it changed* in the commit message and PR description instead.
-  The one exception is the `経緯` and `採らなかった案` sections of an ADR, which say why the decision has its present form.
-- Create ADRs with `scripts/task.sh docs:adr-new`, which picks a number no open PR uses; list them with `scripts/agentkit.sh adr list`.
-- Breaking changes ([ADR-0023](docs/adr/0023-declarative-schema-management.md)): before `v0.1.0` the DB may be recreated and nothing keeps compat shims.
-  From `v0.1.0`, every schema change must upgrade the previous `main` without losing data (drop in a later minor release, rewrite data with `my db upgrade`);
-  config keys and internal interfaces may still change in v0.x with release notes, and the client API follows [ADR-0090](docs/adr/0090-third-party-oauth-apps.md) §8.
-  ActivityPub wire formats and federated URIs must always stay spec-compliant.
-- Do not add Mastodon *client* API compatibility code ([ADR-0016](docs/adr/0016-client-api-style.md)). Federation with Mastodon servers is still required.
-- Language: design docs in Japanese during v0, every other document in English ([Documentation](#documentation));
-  code, identifiers, code comments, commit messages, and PR titles in English.
-- Commits follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`; `!` for breaking).
-- License is AGPL-3.0-only ([ADR-0011](docs/adr/0011-license.md)). New source files start with `SPDX-License-Identifier: AGPL-3.0-only`;
-  only add dependencies with AGPL-compatible licenses.
-  The exception is MIT ([ADR-0093](docs/adr/0093-api-client-library-mykit.md) §2): `api/spec/`, `api/openapi.yaml`, `api/plugin/`, `pkg/mykit/` and `pkg/mybot/`
-  start with `SPDX-License-Identifier: MIT` (`# ...` in YAML) and depend only on permissive licenses (MIT, Apache-2.0, BSD, ISC and the like), never GPL-family ones.
-  The generated code of the server and the web client, including the plugin stubs under `internal/`, stays `AGPL-3.0-only`. `scripts/task.sh api:license-scope` checks the identifiers.
-- Links from issues and comments to repository files use `blob/main/...` or a commit permalink, never a feature branch
-  (branches are deleted on merge). Before merge, link the PR instead.
-- Do not commit secrets, `.env` files, or credentials. Do not run destructive commands against remote resources.
+- **Never weaken a check to make a change pass** (a lint rule, a test, a budget, a baseline). Change the code.
+- **Build only what was asked.** No document, ADR, screen, setting, or option because it might be useful. Design
+  documents may not grow without the decider's `allow:docs-growth` label: say it in fewer words, or delete what the change
+  makes obsolete.
+- **Decide what is cheap to undo, and say so in the pull request. Ask only for what is expensive to undo** and that no
+  Accepted ADR covers ([workflow.md](docs/agents/workflow.md#when-a-decision-is-needed)). Silence is not approval.
+- **Only the decider sets an ADR to `Accepted` or `Rejected`, or changes an Accepted conclusion.** Record a decision
+  the decider has stated in the ADR that owns the topic, as the decision, its reasons, and when to revisit it.
+- **Every file describes the present.** Why something changed goes in the commit message and the pull request.
+- **Boy scout rule**: never leave something broken because it is outside your issue. Fix it in a commit of its own,
+  or file an issue.
+- **A failure that repeats without new evidence means the approach is wrong.** Change the approach instead of
+  retrying. A flaky test has a cause: find it by reading the code, not by rerunning the test under load.
+- No Mastodon *client* API compatibility; federation with Mastodon servers is required.
+- Code, comments, commit messages, and pull request titles are in English; commits follow Conventional Commits and
+  name their issue (`feat(db): add sqlite adapter (#42)`).
+- Links from issues and comments to repository files use `blob/main/...` or a commit permalink, never a branch.
+- Never commit secrets or credentials. Never run a destructive command against a remote resource.
 
-## Documentation
+## Changing these instructions
 
-- **English only, no Japanese copy**: documents for users, operators, and contributors — `README.md`, `CONTRIBUTING.md`,
-  `docs/README.md`, `docs/operations/`, `docs/reference/`, `docs/agents/`, `schema/README.md`, the comments of `deploy/`,
-  and the issue and PR templates. Write English prose, not a translation; UI terms match `locales/en`.
-  Japanese is fine inside code (an example of a `ja` string).
-- **Japanese during v0**: design documents — `docs/adr/`, `docs/requirements/`, `docs/architecture/`.
-- **Translations of the documentation site** live in `app/docs/i18n/<locale>/`, outside `docs/`: an agent writes them from the
-  English of `docs/guide/`, `docs/operations/`, and the site's landing page, section by section, following
-  [docs/agents/translating-docs.md](docs/agents/translating-docs.md) ([ADR-0150](docs/adr/0150-documentation-site.md) §9).
-  The English is authoritative: fix a fact in the English document, never only in a translation. A change to the English
-  needs no translation in the same PR; the page shows the sections that are stale.
-- **User and operator documents explain the behaviour themselves** (`README.md`, `docs/operations/`, `docs/reference/`
-  except the contributor document `commands.md`, and user-facing text such as CLI help): no links to or citations of ADRs, `docs/requirements/`, `docs/architecture/`, or
-  GitHub issues and PRs (`ADR-0002`, `FR-101`, `#123`). Link only the other user and operator documents a reader needs.
-  Contributor documents may cite the ADR a rule comes from.
-- **User and operator documents hold nothing only a developer of `my` needs**: how the project releases, CI jobs, pull
-  requests, repository tasks, and how to add to the code go in a contributor document (`CONTRIBUTING.md`, `docs/agents/`,
-  `docs/reference/commands.md`). `maintainer-terms` in [docs/lint.yaml](docs/lint.yaml) lists the words that give it away.
-- **A published document opens with what it is about**: what the feature does or what the reader will do, never a
-  sentence that only names its audience ("A guide for operators.", "This page is for operators."), which the section
-  it sits in already says. State a reader the section does not imply (moderators who do not run the server) inside that
-  first sentence. `openings` in [docs/lint.yaml](docs/lint.yaml) rejects the audience-only forms.
-- `scripts/task.sh docs:rules` (`agentkit docs lint`, part of `docs:check`) enforces these rules, that relative links and
-  their `#anchors` resolve, and that `docs/README.md` links every file of `docs/operations/` and `docs/reference/`.
-  [docs/lint.yaml](docs/lint.yaml) names the files each rule covers and the files not yet converted; that list only
-  shrinks — when you add or rewrite a section of a listed file, convert the whole file and remove it from the list.
-- **User and operator documents stay true to the code.** The `userdocs` of each entry of
-  [tools/agentkit/context-map.yaml](tools/agentkit/context-map.yaml) name the documents that describe its paths; every
-  file of `docs/operations/` and `docs/reference/` is the `userdocs` of some entry (`agentkit map check`).
-  A change to those paths updates each document it makes wrong, in the same PR. `agentkit docs impact` (also printed by
-  `agentkit check`) lists the documents of the change; the PR's **Documentation** section lists each one as changed, or as
-  `- <path>: no change — <reason>` with a reason of three words or more. `agentkit pr open --doc-reason '<path>=<reason>'`
-  writes the section, and the PR's preflight (`docs:pr-impact`) fails while a document is neither.
-- **Every user-visible name is documented**: each command of `my`, metric, webhook event type, build tag, listed task, job type, and
-  periodic job appears in its document (`agentkit docs inventory`, part of `agentkit:check`), or under `inventory.exclude` of
-  `docs/lint.yaml` with the reason. `docs/reference/configuration.md` is generated (`scripts/task.sh go:config-docs`).
-
-## Design rules
-
-These come from Accepted ADRs and are binding.
-
-- Dependency direction ([ADR-0002](docs/adr/0002-modular-monolith-hexagonal.md)) is enforced by depguard rules in `.golangci.yml` (part of `scripts/task.sh check`):
-  `internal/domain/<module>` imports only the standard library and its own module's domain;
-  `internal/app/<module>` adds its own module's domain and other modules' `internal/app` packages (the only cross-module path)
-  and the leaf library `internal/i18n`;
-  `internal/interface/*` and `internal/adapter/*` never import each other or `internal/platform`;
-  `internal/platform` and `cmd/` assemble everything, and nothing imports `cmd/`.
-  Never weaken a rule to make an import pass; restructure the code instead.
-- Core (domain + application) must not import cloud SDKs or drivers; those live in adapters and `cmd/` entrypoints.
-- Keep the server buildable with `CGO_ENABLED=0`; a cgo dependency needs an ADR.
-- Every external resource goes through a port; every adapter must pass that port's contract test suite.
-- Data modeling follows [ADR-0020](docs/adr/0020-data-modeling-principles.md): classify every table as resource / event / projection / current-value;
-  never encode state as nullable timestamp columns; record state changes as events and derive current state in projections owned by one module;
-  no JSON for queried or constrained data. Read [docs/architecture/data-model/](docs/architecture/data-model/README.md) before touching persistence.
-- Schema changes: edit only the desired-state files `schema/<dialect>/<NN>-<module>.sql` (the owning module's file, all dialects together;
-  [schema/README.md](schema/README.md)) and apply them with Atlas
-  Community Edition; never hand-write migration SQL or rely on Atlas features that need `atlas login` ([ADR-0023](docs/adr/0023-declarative-schema-management.md)).
-- Keep DB transactions short, retryable, and free of external I/O (HTTP, queue, blob); enqueue jobs via the outbox. Make writes safe to repeat with unique constraints, upserts, idempotency keys ([ADR-0003](docs/adr/0003-database-abstraction.md)).
-- Job handlers must be idempotent; delivery is at-least-once ([ADR-0004](docs/adr/0004-job-queue-abstraction.md)).
-- Outbound HTTP to destinations that remote servers or users can influence (federation fetch and delivery, WebFinger,
-  media proxy, link previews, Web Push, ADR-0019 §1) goes through the SSRF-guarded `kernel.HTTPClient` port;
-  `http.DefaultClient` is banned by lint. Destinations only the operator configures do not: cloud SDK clients that call the provider APIs
-  (AWS, Google Cloud) live in adapters and use the SDK's own HTTP client, and adapters that call a configured address (LiveKit, plugins, translation
-  providers, search backends) take a dedicated `*http.Client` from `internal/platform` that follows no redirects, as `internal/adapter/voice/livekit` does
-  ([ADR-0146](docs/adr/0146-plugin-protocol.md) §7). A URL such a service returns is not operator-configured, and fetching one goes through `kernel.HTTPClient`.
-  A list the operator configures by URL but a third party hosts (a subscribed blocklist, [ADR-0159](docs/adr/0159-federation-allowlist-and-blocklist-subscriptions.md) §4)
-  goes through `kernel.HTTPClient` too: the third party decides what the URL serves and where it redirects.
-- Visibility checks go through the single domain policy function; never re-implement them in API or federation code.
-  Levels are `public` / `local` / `unlisted` / `private` / `direct`; `local` is never federated beyond the author's followers ([ADR-0017](docs/adr/0017-visibility-local.md)).
-- **i18n**: never hard-code user-facing strings or date/number formats. Add ICU messages to `locales/en` *and* `locales/ja`,
-  run `scripts/task.sh i18n:gen`, and format them through the generated typed accessors (`internal/i18n` in Go);
-  use CSS logical properties; render user content with `dir="auto"` ([ADR-0009](docs/adr/0009-internationalization.md)).
-  Namespaces other than `client*` are formatted by Go too and must avoid rich-text tags, number skeletons, and `date` / `time` arguments.
-
-## Context and commands
-
-Use agentkit (`scripts/agentkit.sh <command>`, [tools/agentkit/README.md](tools/agentkit/README.md)) before reading files:
-
-- Start an issue with `scripts/agentkit.sh ctx <n>`: the issue, its requirements, the Decision of its ADRs, the sections it
-  names, the rules of the areas it touches, and the code to start from, in one pack within a token budget.
-  Hand subagents the pack's file (`.tmp/agentkit/ctx/<n>.md`) instead of letting them explore again.
-- Locate before you read: `find <words>`, `outline <path>`, `show <ref>` (`ADR-0070#decision`, `data-model§4.4`, `FR-915`,
-  `op:<id>`, a Go name, `path:10-40`), `refs <name>`, `trace op:<id>`. Read documents by section, never whole:
-  `docs/architecture/web-client/` and `docs/architecture/data-model/` hold one file per section, listed in their `README.md`;
-  `show web-client§14` and `show data-model§4.4` find the file by the section number.
-- Run the workflow steps through it: `issue claim <n>`, `check`, `pr open`, `pr wait <pr>` in the background (instead of
-  watching CI), `regen` after merging `main`, `issue block <n>`; orchestrators watch every PR with `pr watch`.
-- When you add a directory, module, adapter, or feature, add or extend its entry in `tools/agentkit/context-map.yaml` in
-  the same change; `scripts/task.sh agentkit:check` (every PR) fails otherwise.
-
-`go.work` exists for Dependabot alone: tasks and CI run with `GOWORK=off`, so set it for a bare `go` command outside the root
-(`pkg/mykit`, `pkg/mybot`, `tools`) and for `-modfile`.
-
-Tasks run with go-task through `scripts/task.sh <task>` ([ADR-0081](docs/adr/0081-generated-files-policy.md)), never a `task` on PATH;
-the task names are `<area>:<task>` from `tasks/<area>.yml`. Every task and the pinned toolchain:
-[docs/reference/commands.md](docs/reference/commands.md). The common ones (each prefixed with `scripts/task.sh`):
-`check:changed`, `check`, `go:check`, `web:check`, `generate`, `api:generate`, `go:sqlc`, `i18n:gen`,
-`docs:adr-new TITLE=... SLUG=...`, `db:check`, `web:e2e`.
+Do not edit this file to record a lesson. Propose the line in the pull request under "Suggested AGENTS.md additions";
+the decider adds it when it is non-obvious, has happened repeatedly, and is specific enough to act on. Anything a
+check can enforce becomes a check instead.

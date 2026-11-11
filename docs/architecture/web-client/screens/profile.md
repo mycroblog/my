@@ -4,6 +4,7 @@ persona: "yuki"
 paths: ["app/web/src/features/profile/**", "app/web/src/features/relationship/**", "app/web/src/features/report/**", "app/web/src/features/lists/components/AddToListDialog.tsx", "app/web/src/features/hashtags/components/FeaturedTags.tsx", "app/web/src/features/events/components/EventList.tsx", "app/web/src/routes/@{$acct}.tsx"]
 starts: {"フォローをやめる": "/@sam", "フォロー中の人をリストに入れる": "/@sam"}
 unavailable: {"一人のサーバーの最初のページからログインの画面へ進む": "The demo server is not a one-person server.", "一人のサーバーの最初のページから紹介・規約・ポリシーのどれかへ移る": "The demo server is not a one-person server."}
+budget: {"controls": 22, "helpers": 3, "words": 174}
 ---
 
 ## プロフィール（`/@{acct}`）

@@ -3,6 +3,7 @@ start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**", "app/ui/src/ListSection.tsx"]
 unavailable: {"設定のメニューから来て、Lab ID のアカウントを連携する（サービスでのログインは数えない）": "the demo server has no login provider", "Lab ID の連携を解除する": "the demo server has no login provider, so yuki links no account"}
+budget: {"controls": 4, "helpers": 3, "words": 78}
 ---
 
 ## 連携したアカウント（`/settings/linked-accounts`）

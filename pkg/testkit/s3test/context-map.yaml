@@ -1,0 +1,2 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0005-blob-storage-and-media.md", "docs/operations/cdn.md", "docs/operations/backup.md#media-in-a-bucket", "docs/adr/0146-plugin-protocol.md#13-メディアの本体"]

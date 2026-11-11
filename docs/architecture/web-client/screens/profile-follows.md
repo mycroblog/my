@@ -2,6 +2,7 @@
 start: "/@yuki/followers"
 persona: "yuki"
 paths: ["app/web/src/features/profile/**", "app/web/src/routes/@{$acct}_.followers.tsx", "app/web/src/routes/@{$acct}_.following.tsx"]
+budget: {"controls": 5, "helpers": 0, "words": 40}
 ---
 
 ## フォローとフォロワーの一覧（`/@{acct}/followers`・`/@{acct}/following`）

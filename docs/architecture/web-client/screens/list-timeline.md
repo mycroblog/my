@@ -2,6 +2,7 @@
 start: "/lists"
 persona: "yuki"
 paths: ["app/web/src/features/lists/**", "app/web/src/features/timeline/**", "app/web/src/routes/lists_.$id.tsx"]
+budget: {"controls": 24, "helpers": 2, "words": 87}
 ---
 
 ## リストのタイムライン（`/lists/$id`）

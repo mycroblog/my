@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // An appeal's page of the automated reviews (/moderation/hook-decisions/appeals/{id};
 // web-client/screens/moderation-hook-appeal.md): the appeal, its decision and the review, in the states of
-// ADR-0079 §13.
+// ADR-0165 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
 import { hookReviewsApi, storyHookAppeals, storyHookDecisions } from "./test/hookStories";

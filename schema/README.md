@@ -98,7 +98,7 @@ scripts/task.sh db:lint-test DB_DIALECT=sqlite # the lint itself, on the fixture
 CI runs it for both dialects:
 
 - **Pull requests** that change the schema (the `db-lint` job) compare with the base branch. A destructive change fails
-  unless the pull request has the label **`db:destructive`**, which only the decider adds, for a class B change or a
+  unless the pull request has the label **`allow:db-destructive`**, which only the decider adds, for a class B change or a
   contract. Adding or removing the label reruns the checks.
 - **The merge queue** compares with the base of the merge group and does not check the label again (a merge group
   carries no labels): it reports destructive changes and fails only when the schema does not apply on top of that base.

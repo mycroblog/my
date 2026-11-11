@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0019-security-baseline.md", "docs/architecture/data-model/02-consistency.md#2-整合性モデル"]
+userdocs: ["docs/operations/key-management.md#rotate-the-kek"]

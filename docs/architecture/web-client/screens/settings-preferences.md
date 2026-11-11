@@ -2,6 +2,7 @@
 start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
+budget: {"controls": 1000, "helpers": 1000, "words": 1000}
 ---
 
 ## 表示・投稿・タイムライン（`/settings/preferences`）

@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.finance_.publication.tsx", "app/web/src/features/admin/components/FinancePublication.tsx", "app/web/src/features/admin/components/PublicationSettings.tsx", "app/web/src/features/admin/hooks/usePublicationSettings.ts", "app/web/src/features/admin/components/FinanceParts.tsx"]
+budget: {"controls": 11, "helpers": 21, "words": 490}
 ---
 
 ## 費用の公開範囲（`/admin/finance/publication`）

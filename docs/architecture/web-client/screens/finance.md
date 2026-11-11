@@ -2,6 +2,7 @@
 start: "/home"
 persona: "hana"
 paths: ["app/web/src/routes/finance.tsx", "app/web/src/features/costs/**"]
+budget: {"controls": 5, "helpers": 5, "words": 286}
 ---
 
 ## 会計（`/finance`）

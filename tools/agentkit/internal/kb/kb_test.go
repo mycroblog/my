@@ -33,6 +33,8 @@ func fixture(t *testing.T) *KB {
 		"internal/app/content/requests.go":                       "package content\n\n// SubmitRequest files a request.\nfunc (s *Service) SubmitRequest() error {\n\ts.now = s.clock.Now()\n\treturn s.repo.InsertCustomEmojiRequest()\n}\n",
 		"internal/adapter/db/sqlite/requests.go":                 "package sqlite\n\nfunc (r *Repo) InsertCustomEmojiRequest() error {\n\treturn r.q.InsertCustomEmojiRequest()\n}\n",
 		"internal/adapter/system/clock.go":                       "package system\n\nfunc (Clock) Now() int { return 0 }\n",
+		"internal/adapter/system/fake.go":                        "package system\n\nfunc (Fake) Now() int {\n\treturn 1\n}\n",
+		"internal/app/content/requests_test.go":                  "package content\n\nfunc SubmitRequest() {}\n",
 		"queries/sqlite/requests.sql":                            "-- name: InsertCustomEmojiRequest :exec\nINSERT INTO custom_emoji_requests (id) VALUES (?);\n",
 		"schema/04-content/sqlite.sql":                           "CREATE TABLE custom_emoji_requests (\n  id TEXT PRIMARY KEY\n);\n",
 	}
@@ -99,6 +101,66 @@ func TestResolveAndShow(t *testing.T) {
 	var b bytes.Buffer
 	if err := k.Show(&b, "data-model§4.4", 5); err != nil || !strings.Contains(b.String(), "too big to print") {
 		t.Errorf("a section over the limit should print its outline: %q %v", b.String(), err)
+	}
+}
+
+// A declaration is found the ways an agent names it: by receiver, by package, by file, as the source writes it;
+// a line range by any ending of the path that names one file.
+func TestShowDeclarationsAndRanges(t *testing.T) {
+	k := fixture(t)
+	submit := "== internal/app/content/requests.go:3-7  sym:internal/app/content.Service.SubmitRequest"
+	cases := map[string]string{
+		"Service.SubmitRequest":                          submit,
+		"content.Service.SubmitRequest":                  submit,
+		"func (s *Service) SubmitRequest(":               submit,
+		"func SubmitRequest":                             submit,
+		"requests.go:SubmitRequest":                      submit,
+		"internal/app/content/requests.go#SubmitRequest": submit,
+		"content/requests.go:Service.SubmitRequest":      submit,
+		"sqlite.Repo.InsertCustomEmojiRequest":           "sym:internal/adapter/db/sqlite.Repo.InsertCustomEmojiRequest",
+		"system.Clock.Now":                               "func (Clock) Now() int",
+		"content/requests.go:3-4":                        "// SubmitRequest files a request.\nfunc (s *Service) SubmitRequest() error {\n",
+		"clock.go:3":                                     "func (Clock) Now() int { return 0 }\n",
+		"clock.go":                                       "package system",
+	}
+	for ref, want := range cases {
+		var b bytes.Buffer
+		if err := k.Show(&b, ref, 12000); err != nil {
+			t.Errorf("Show(%q): %v", ref, err)
+			continue
+		}
+		if !strings.Contains(b.String(), want) {
+			t.Errorf("Show(%q) = %q, want it to contain %q", ref, b.String(), want)
+		}
+	}
+	// One name in several places lists them, briefly.
+	var b bytes.Buffer
+	if err := k.Show(&b, "Now", 12000); err != nil ||
+		!strings.Contains(b.String(), "2 matches") || !strings.Contains(b.String(), "sym:internal/adapter/system.Fake.Now") || strings.Contains(b.String(), "return 1") {
+		t.Errorf("an ambiguous name should list its candidates: %q %v", b.String(), err)
+	}
+	// The one declaration outside the tests is shown, the test helpers of the same name counted.
+	b.Reset()
+	if err := k.Show(&b, "SubmitRequest", 12000); err != nil ||
+		!strings.Contains(b.String(), submit) || !strings.Contains(b.String(), "(1 more named SubmitRequest in tests") {
+		t.Errorf("a name with one declaration outside the tests should show it: %q %v", b.String(), err)
+	}
+	errs := map[string]string{
+		"requests.go:1-2":                         `3 files end with "requests.go"`,
+		"internal/app/content/requests.go:99":     "internal/app/content/requests.go has 7 lines",
+		"Service.submitRequest":                   "nothing matches",
+		"internal/app/content/requests.go:Absent": "nothing matches",
+	}
+	for ref, want := range errs {
+		if err := k.Show(&b, ref, 12000); err == nil || !strings.Contains(err.Error(), want) {
+			t.Errorf("Show(%q): error %v, want %q", ref, err, want)
+		}
+	}
+	b.Reset()
+	if err := k.Show(&b, "internal/app/content/requests.go:1-7", 12); err != nil ||
+		!strings.Contains(b.String(), "package content") || !strings.Contains(b.String(), "… cut at line") ||
+		!strings.Contains(b.String(), "show internal/app/content/requests.go:") || strings.Contains(b.String(), "return s.repo") {
+		t.Errorf("a range over the limit should be cut: %q %v", b.String(), err)
 	}
 }
 

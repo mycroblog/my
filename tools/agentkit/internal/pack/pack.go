@@ -80,10 +80,6 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	}
 
 	// Header and the issue itself: always in full, it is the task.
-	var labels []string
-	for _, l := range is.Labels {
-		labels = append(labels, l.Name)
-	}
 	var assignees []string
 	for _, a := range is.Assignees {
 		assignees = append(assignees, "@"+a.Login)
@@ -92,8 +88,8 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	if is.Milestone != nil {
 		milestone = is.Milestone.Title
 	}
-	w.addf("# #%d %s\n\n%s · labels: %s · milestone: %s · assignees: %s\n%s\n\n",
-		is.Number, is.Title, is.State, orNone(labels), milestone, orNone(assignees), is.URL)
+	w.addf("# #%d %s\n\n%s · type: %s · priority: %s · areas: %s · milestone: %s · assignees: %s\n%s\n\n",
+		is.Number, is.Title, is.State, orNone(strings.Fields(is.Type)), orNone(strings.Fields(is.Priority())), orNone(is.Areas()), milestone, orNone(assignees), is.URL)
 	w.addf("## Issue\n\n%s\n\n%s\n\n", untrustedNote, untrusted(strings.TrimSpace(is.Body)))
 	var comments []gh.Comment
 	for _, c := range is.Comments {
@@ -110,14 +106,11 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 
 	// Warnings: the workflow's stop conditions, checked here so that the agent does not have to.
 	var warn []string
-	if is.HasLabel("status:needs-decision") {
-		warn = append(warn, "labeled status:needs-decision: do not take it (workflow.md §1)")
+	if why := is.Unclaimable(); why != "" {
+		warn = append(warn, why)
 	}
-	if is.HasLabel("agent:blocked") {
-		warn = append(warn, "labeled agent:blocked: read the last comments before doing anything")
-	}
-	if !is.HasLabel("agent:ready") {
-		warn = append(warn, "not labeled agent:ready")
+	for _, b := range is.OpenBlockers() {
+		warn = append(warn, b.Waits()+": do not take it (workflow.md §1)")
 	}
 	aliases, err := k.Aliases()
 	if err != nil {
@@ -297,7 +290,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		files := prFiles(p.Data)
 		var kept []string
 		for _, f := range files {
-			if m.For(f) == nil || ignoredForPrecedent(f) || !layerOK(f, o.Layer) {
+			if _, ok := m.For(f); !ok || ignoredForPrecedent(f) || !layerOK(f, o.Layer) {
 				continue
 			}
 			kept = append(kept, f)
@@ -306,20 +299,18 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		prec = append(prec, fmt.Sprintf("- #%d %s (%d files; shares %d refs): %s", p.Number, p.Title, len(files), p.Score, summarizeFiles(kept, 12)))
 	}
 
-	// Areas: the context-map entries of the paths above, most-referenced first.
+	// Areas: the context maps of the paths above, most-referenced first.
 	areaScore := map[string]int{}
 	areas := map[string]ctxmap.Entry{}
 	for p, n := range paths {
-		for _, e := range m.For(p) {
+		if e, ok := m.For(p); ok {
 			areaScore[e.Name] += n
 			areas[e.Name] = e
 		}
 	}
-	for _, e := range m.Entries {
-		if (o.Layer == "web" && e.Name == "web-client") || (o.Layer == "server" && e.Name == "go-server") {
-			areaScore[e.Name] += 100
-			areas[e.Name] = e
-		}
+	if e, ok := m.For(map[string]string{"web": "app/web", "server": "internal"}[o.Layer]); ok && o.Layer != "" {
+		areaScore[e.Name] += 100
+		areas[e.Name] = e
 	}
 	names := text.SortedKeys(areas)
 	sort.SliceStable(names, func(i, j int) bool { return areaScore[names[i]] > areaScore[names[j]] })
@@ -328,7 +319,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	}
 	checks := map[string]bool{}
 	if len(names) > 0 {
-		w.add("## Areas and their rules (tools/agentkit/context-map.yaml)\n\n")
+		w.add("## Areas (the context-map.yaml of each directory)\n\n")
 		var docs, userdocs []string
 		for _, name := range names {
 			e := areas[name]
@@ -337,9 +328,6 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 				flag = " [shared: never edited by two parallel agents]"
 			}
 			w.addf("- **%s**%s\n", e.Name, flag)
-			for _, n := range e.Notes {
-				w.add("  - " + n + "\n")
-			}
 			for _, c := range e.Checks {
 				checks[c] = true
 			}
@@ -359,8 +347,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 		}
 		if us := text.Uniq(userdocs); len(us) > 0 {
 			w.add("\nUser and operator documents that describe these areas: keep them true. Update each one the change makes " +
-				"wrong in the same pull request, in English and without citing ADRs or issues; `agentkit pr open --doc-reason " +
-				"'<path>=<reason>'` explains one that needs no change (AGENTS.md#documentation):\n\n")
+				"wrong in the same pull request, in English and without citing ADRs or issues:\n\n")
 			for _, d := range us {
 				w.addf("- `%s`\n", d)
 			}

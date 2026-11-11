@@ -1,0 +1,2 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/architecture/web-client/10-api-client-and-auth.md#10-api-クライアントと認証", "docs/adr/0090-third-party-oauth-apps.md", "docs/adr/0028-html-shell-link-previews-and-pwa.md", "docs/adr/0093-api-client-library-mykit.md"]

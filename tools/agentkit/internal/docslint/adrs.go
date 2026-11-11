@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 
@@ -36,17 +37,13 @@ var (
 	reQuote   = regexp.MustCompile(`^\s*>`)
 )
 
-// adrRequired lists the sections every ADR has, by the start of their anchors and as the template writes them.
-var adrRequired = []struct{ anchor, heading string }{
-	{"decision", "## Decision（決定）"},
-	{"経緯", "## 経緯"},
-	{"採らなかった案", "## 採らなかった案"},
-	{"consequences", "## Consequences（影響）"},
-}
+// adrShapeScope is the files the shape rule reads, as the patterns of docs/lint.yaml.
+var adrShapeScope = []string{"docs/adr/*.md"}
 
 // ADRs checks the ADRs and the citations of them, in path and line order: each ADR-NNNN in files exists and is not
 // a retired number, each ADR-NNNN §k is a heading of that ADR, a bare §k inside an ADR is a heading of the same ADR,
-// and an ADR has the sections of the template and no quoted answers.
+// and an ADR has a Decision section, no quoted answers, and the shape of a decision (adrShape) unless
+// Pending.ADRShape lists it.
 func ADRs(root string, files []string, c *Config) ([]Finding, error) {
 	aliases, err := adr.LoadAliases(root)
 	if err != nil {
@@ -54,6 +51,18 @@ func ADRs(root string, files []string, c *Config) ([]Finding, error) {
 	}
 	sorted := append([]string(nil), files...)
 	sort.Strings(sorted)
+	arts, err := newArtifacts(root, sorted)
+	if err != nil {
+		return nil, err
+	}
+	exists := map[string]bool{}
+	for _, p := range sorted {
+		exists[p] = true
+	}
+	pending := map[string]int{}
+	for _, p := range c.Pending.ADRShape {
+		pending[p] = 0
+	}
 	docs := map[string]*document{} // by number
 	for _, p := range sorted {
 		m := reADRFile.FindStringSubmatch(p)
@@ -85,8 +94,15 @@ func ADRs(root string, files []string, c *Config) ([]Finding, error) {
 		if m := reADRFile.FindStringSubmatch(p); m != nil {
 			out = append(out, bareSections(docs[m[1]])...)
 			out = append(out, adrFormat(docs[m[1]])...)
+			_, fs := adrShape(docs[m[1]], string(b), arts)
+			if _, ok := pending[p]; ok {
+				pending[p] = len(fs)
+			} else {
+				out = append(out, fs...)
+			}
 		}
 	}
+	out = append(out, stale(c.Pending.ADRShape, pending, exists, adrShapeScope, "pending.adr-shape", "has the shape of an ADR")...)
 	sort.SliceStable(out, func(i, j int) bool {
 		if out[i].Path != out[j].Path {
 			return out[i].Path < out[j].Path
@@ -159,20 +175,12 @@ func bareSections(d *document) []Finding {
 	return out
 }
 
-// adrFormat checks the required sections of an ADR, and that it quotes no answers: git has the discussion.
+// adrFormat checks that an ADR has the Decision section that `agentkit show` and `ctx` read, and that it quotes no
+// answers: git has the discussion.
 func adrFormat(d *document) []Finding {
 	var out []Finding
-	for _, r := range adrRequired {
-		found := false
-		for _, h := range d.heads {
-			if strings.HasPrefix(h, r.anchor) {
-				found = true
-				break
-			}
-		}
-		if !found {
-			out = append(out, Finding{d.path, 0, RuleADRFormat, "lacks the section " + r.heading})
-		}
+	if !slices.ContainsFunc(d.heads, func(h string) bool { return strings.HasPrefix(h, "decision") }) {
+		out = append(out, Finding{d.path, 0, RuleADRFormat, "lacks the section ## Decision（決定）"})
 	}
 	for _, ln := range d.lines {
 		switch {
@@ -184,4 +192,34 @@ func adrFormat(d *document) []Finding {
 		}
 	}
 	return out
+}
+
+// ADRShapeOf is one ADR with its measures and whether it breaks the shape rule.
+type ADRShapeOf struct {
+	Path string
+	ADRShape
+	Breaks bool
+}
+
+// ADRShapes measures the ADRs among files, in path order.
+func ADRShapes(root string, files []string) ([]ADRShapeOf, error) {
+	sorted := append([]string(nil), files...)
+	sort.Strings(sorted)
+	arts, err := newArtifacts(root, sorted)
+	if err != nil {
+		return nil, err
+	}
+	var out []ADRShapeOf
+	for _, p := range sorted {
+		if !reADRFile.MatchString(p) {
+			continue
+		}
+		b, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(p)))
+		if err != nil {
+			return nil, err
+		}
+		s, fs := adrShape(parse(p, string(b), true), string(b), arts)
+		out = append(out, ADRShapeOf{p, s, len(fs) > 0})
+	}
+	return out, nil
 }

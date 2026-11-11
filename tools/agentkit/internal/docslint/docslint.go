@@ -4,7 +4,8 @@
 // relative links and their #anchors resolve, the English-only documents contain no Japanese outside code, and the
 // documents for users and operators neither link to nor cite the design records (ADRs, requirements, architecture)
 // and GitHub issues or pull requests, the published documents do not open with a sentence that only names their
-// audience, and the index (docs/README.md) links every one of those documents.
+// audience, the index (docs/README.md) links every one of those documents, and the AGENTS.md of a directory below
+// the root holds only pointers to the external documents that govern its code.
 // docs/lint.yaml says which files each rule covers and lists the files that do not follow a rule yet; an entry
 // there must be removed once its file follows the rule, so the lists only shrink.
 //
@@ -60,10 +61,10 @@ type Config struct {
 	Pending struct {
 		Japanese    []string `yaml:"japanese"`     // English-only files still in Japanese
 		DesignLinks []string `yaml:"design-links"` // operator files that still point at design records
+		ADRShape    []string `yaml:"adr-shape"`    // ADRs that still transcribe the implementation
 	} `yaml:"pending"`
 	// ADRs configures the checks of the ADRs and of the citations of them.
 	ADRs struct {
-		Enforce bool     `yaml:"enforce"` // findings fail the lint; otherwise they are warnings
 		Exclude []string `yaml:"exclude"` // files whose ADR-NNNN are not this repository's ADRs
 	} `yaml:"adrs"`
 	// Inventory lists, by inventory, the names that Inventory does not require a document to mention.
@@ -174,6 +175,9 @@ func Lint(root string, files []string, c *Config) ([]Finding, error) {
 		doc := parse(p, string(src), md)
 		if md {
 			out = append(out, l.links(doc)...)
+		}
+		if md && isPackageAgents(p) {
+			out = append(out, packageAgents(p, string(src))...)
 		}
 		if english {
 			fs := japanese(doc)

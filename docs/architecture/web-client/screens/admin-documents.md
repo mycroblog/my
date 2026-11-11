@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.documents.tsx", "app/web/src/features/admin/components/DocumentSettings.tsx", "app/web/src/features/admin/hooks/useDocumentSettings.ts", "app/web/src/features/admin/api/documents.ts", "app/web/src/features/documents/**", "app/ui/src/LocalNav.tsx"]
+budget: {"controls": 4, "helpers": 1, "words": 68}
 ---
 
 ## 規約とポリシー: 利用規約（`/admin/documents`）

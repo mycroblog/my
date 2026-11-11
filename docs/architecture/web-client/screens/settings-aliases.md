@@ -2,6 +2,7 @@
 start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**", "app/ui/src/ListSection.tsx"]
+budget: {"controls": 6, "helpers": 3, "words": 77}
 ---
 
 ## 別名（`/settings/aliases`）

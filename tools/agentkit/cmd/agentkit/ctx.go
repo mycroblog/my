@@ -42,7 +42,7 @@ func runCtx(r *repo.Repo, k *kb.KB, args []string) error {
 	if err != nil {
 		return err
 	}
-	m, err := ctxmap.Load(r.Root)
+	m, err := ctxmap.Of(r)
 	if err != nil {
 		return err
 	}

@@ -1,256 +1,54 @@
-# Agent workflow playbook
+# Agent workflow
 
-The step-by-step procedure an agent follows for one issue. Policy background: [ADR-0000](../adr/0000-record-architecture-decisions.md).
+How a goal goes from issues to `main` ([ADR-0000](../adr/0000-record-architecture-decisions.md) §5,
+[ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)). The commands refuse what must not pass and say the fix, so
+this page only says what to do in which order and where judgment is needed.
 
-Work runs in one of two modes:
+## The goal and its branch
 
-- **Single issue**: one agent takes one issue through §1–§8.
-- **Parallel batch**: an orchestrator runs several issues at once, each in its own agent and worktree.
-  Each agent still follows §1–§8, with the changes of [§9](#9-parallel-batches).
+The unit of delivery is a goal: an epic, a phase of one, or a milestone. One issue is the small case.
 
-## 1. Pick
+- Take only issues that nothing blocks, created with `scripts/agentkit.sh issue new`: `issue claim <n>`.
+- One branch per goal, in a worktree, named `<type>/<issue>-<slug>` after its epic or first issue. One commit per issue.
+- Issues that change the same shared files (`scripts/agentkit.sh map show <path>` says `shared`) go into the same
+  branch. A goal too large for one pull request is cut where its shared files allow, server before client.
+- A spike's report goes into its issue as a comment and its code stays on an unmerged `spike/<issue>-<slug>` branch.
 
-```sh
-gh issue list -R mycroblog/my --label agent:ready --search "no:assignee" --json number,title,milestone,labels
-```
+## Building
 
-- Prefer the earliest milestone, then `priority:p0` > `p1` > `p2`.
-- Read the full issue including comments: `gh issue view <N> --comments`.
-- An issue that changes the UI is `agent:ready` only when its screen has a requirements file (L1) in
-  [docs/architecture/web-client/screens/](../architecture/web-client/screens/README.md). If it has none, comment and stop.
-- Check that every ADR the issue depends on is `Accepted` in [docs/adr/README.md](../adr/README.md). If not, comment and stop.
-- Claim it: `gh issue edit <N> --add-assignee @me` and comment a one-line plan.
-  `scripts/agentkit.sh issue claim <N> --plan "<one line>"` checks the conditions above (and that nothing the issue waits
-  for is still open), then claims it; it refuses with the reason when a condition fails.
+- Start from `scripts/agentkit.sh ctx <n>` and hand its file to subagents instead of letting them explore again.
+- Bring the branch up to date with `git fetch origin && git rebase origin/main`; after a conflict in generated files,
+  `scripts/agentkit.sh regen`. Fold a correction into the commit it corrects (`git commit --fixup`, then
+  `git rebase --autosquash origin/main`) and push with `--force-with-lease`.
+- A UI change starts with the design, not the code: what the screen is for, what is on it now, and what the change
+  removes or merges before it adds. A new screen or a large change gets three options first.
 
-## 2. Understand
+## Checking
 
-- Start from `scripts/agentkit.sh ctx <N>`: the issue, its requirements, the Decision of its ADRs, the sections it names,
-  the rules of the areas it touches (`tools/agentkit/context-map.yaml`), and the code to start from, within a token budget.
-  Read more with `show`, `find`, `refs`, and `trace` ([tools/agentkit/README.md](../../tools/agentkit/README.md)), by section, not whole files.
-- Read the requirement IDs (`FR-xxx`, `NFR-xxx`) and ADRs referenced by the issue.
-- If the acceptance criteria are ambiguous, ask in an issue comment, add `agent:blocked`, and stop — do not guess on scope.
+`scripts/agentkit.sh check` runs what is fast for the files you changed. The merge queue runs everything else,
+once, on the merged state; do not run the full check or the web E2E locally except to reproduce a failure.
 
-## 3. Branch
+## Opening and landing
 
-```sh
-git switch main && git pull --ff-only
-git switch -c <type>/<N>-<short-slug>     # e.g. task/42-sqlite-adapter, spike/17-sqlc-dialects
-```
+- `scripts/agentkit.sh pr open` opens the pull request of the branch.
+- `scripts/agentkit.sh pr land <pr>`, in the background, queues it and follows it to the merge, removes the worktree
+  and the branch, and closes the epic and reports the milestone when the pull request completes them.
+- When it reports a failure or a conflict, fix it at once: a pull request never waits for the decider to notice.
+- The work is finished when the goal is merged and closed. The final report has three parts: what is merged, what is
+  not and why, and what needs a decision.
 
-## 4. Implement
+## Orchestrating
 
-- Keep the change scoped to the issue, but apply the boy scout rule ([ADR-0000](../adr/0000-record-architecture-decisions.md)):
-  fix broken things you find in a separate commit and list them in the PR description; file an issue for anything you cannot fix safely.
-- Update docs that the change makes stale (ADR open questions, architecture overview, i18n catalogs).
-- Keep the user and operator documents true ([AGENTS.md](../../AGENTS.md#documentation)): the context pack lists the
-  `userdocs` of the areas the issue touches. Update each one the change makes wrong (a new or changed command, setting,
-  metric, webhook event, or behaviour), in English, in the same PR. A new user-visible name goes into its document
-  (`agentkit docs inventory`); a new document goes into `docs/README.md` and the `userdocs` of its entries.
-- Spikes ([ADR-0000](../adr/0000-record-architecture-decisions.md)):
-  - Push throwaway code to a `spike/<N>-<slug>` branch only. Never open a PR to merge it.
-  - Post the findings report as a comment on the issue, linking the code by commit permalink.
-  - Put the conclusions into ADRs / docs in the present tense, from a separate `docs/<N>-<slug>` branch and PR, linking the report comment as evidence.
+- Run up to four subagents at once, each on one issue or one layer of it, in its own worktree, ending at its commit.
+  Subagents do not open pull requests and do not wait for CI: the orchestrator rebases their commits onto the goal
+  branch, opens the pull request, and lands it.
+- Use the agent definitions of `.claude/agents/`, which fix the model, the worktree, and the report of each kind of work.
+- A red Nightly stops the line: fix it before starting more issues (`gh issue list --label ci:nightly-failure`).
+- When the decider answers a question, state the conclusion in the ADR that owns the topic, or on the issue.
 
-**Web client epoch** ([ADR-0028](../adr/0028-html-shell-link-previews-and-pwa.md) §12): a change that breaks open tabs of the web client with no deprecation period (a security fix that removes or changes an API at once)
-raises `clientapi.WebClientEpoch` and `webClientEpoch` in `app/web/src/lib/webClientEpoch.ts` together. Open tabs then reload at the first safe moment, so do not raise them for a change older clients survive.
+## When a decision is needed
 
-## 5. Verify
-
-```sh
-scripts/task.sh web:fmt        # first, when the change touches TypeScript or JavaScript: bun fmt over every TS package
-scripts/agentkit.sh check      # optional: scripts/task.sh check:changed, printing the contexts, their results, and only the failing lines
-scripts/task.sh check:changed  # the contexts changed since origin/main and their dependents, in parallel
-scripts/task.sh go:check       # or one context: docs:check, go:check, i18n:check, api:check, ui:check, web:check, docker:check, agentkit:check, mykit:check
-scripts/task.sh check          # every context, when the change touches shared configuration
-```
-
-No local run is required ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)): the merge queue's full check is the only
-gate. Run these commands to reproduce a CI failure or to iterate on what you are writing; only the formatting
-(`web:fmt`) is worth running first, because the preflight checks it. `agentkit check` also lists the documents that describe the changed paths but are not changed
-(`agentkit docs impact`): update each, or note why it stays true for the PR (§6).
-The pull request's `check` runs only the preflight (formatting, licenses, image versions, tokens); the
-compile, type, lint, and test checks of the changed contexts run in the merge queue. To run the full check on the PR itself (to look into a failure in the queue, or to check
-an outside contributor's PR early), add the label `ci:full`.
-If a check is wrong or flaky, fix it in a separate commit and explain in the PR.
-
-An issue that changes the UI writes, for each task of the changed screen's L1, the shortest number of steps in the PR.
-The L4 task test itself (steps, backtracks, and lostness of an agent working from ARIA snapshots only) runs nightly on `main`
-([ADR-0015](../adr/0015-testing-strategy.md)), not before the PR; a task above 0.4 becomes an issue for its screen.
-Check the change against the four viewpoints (signifier, feedback, UX writing, information architecture) of the
-[experience principles](../architecture/web-client/21-experience-principles.md).
-
-Pull requests do not run the web E2E; the merge queue runs it on the primary project when the client changes, and the
-Nightly runs the width and locale projects too. In single-issue work, to see a failure before the queue drops the PR,
-run `scripts/task.sh web:e2e` locally, or run the workflow on the PR's branch and wait for it (in a parallel batch, see
-[§9](#9-parallel-batches) instead):
-
-```sh
-gh workflow run web-e2e.yml -R mycroblog/my --ref <branch>   # add -f matrix=full for the width and locale projects too
-gh run list -R mycroblog/my --workflow web-e2e.yml --branch <branch> --limit 1
-```
-
-### What CI runs where
-
-The layout of [ADR-0079](../adr/0079-ci-single-gate-merge-queue.md) (`.github/workflows/`). Each job of `ci.yml` sets up its tools,
-generates what its checks read, and runs the checks as parallel steps ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)). Each step is named
-after the one task it runs (`scripts/task.sh go:vet`), so the failed step names the check, and running that task locally reproduces it.
-`docs:ci-coverage` fails when a check of `scripts/task.sh check` runs in no step:
-
-| When | Workflow | What runs |
-| --- | --- | --- |
-| Pull request | `ci.yml` | `preflight`, the checks a PR's own files or lockfiles decide, so stacking PRs cannot break them: markdownlint, shellcheck, gofmt, `bun fmt` (also in the queue's `repo` job), the Go and npm licenses, the Dockerfile and `.tool-versions` versions, the Playwright image version, the design tokens, and the CSS `100vh` check; the `@my/ui` story tests (`ui-test.yml`) when the ui context changes; `lint`, golangci-lint over each module the PR changes, through the area tasks, when Go, `tools/agentkit`, `pkg/mykit`, or `pkg/mybot` changes; `docker-smoke`, the Docker Compose smoke test, when the docker context changes (the images are what it checks: the Go tests already assemble and start the server); and `db-lint`, `db:lint` of both dialects against the PR's base, when the schema changes: it fails on a destructive schema change unless the PR has the `db:destructive` label ([schema/README.md](../../schema/README.md#changing-the-schema)). The required `check` collects the results. A PR labelled `ci:full` also runs the merge queue's jobs; adding or removing the label reruns the checks |
-| Merge queue | `ci.yml` | The full check on the merge group (the PR on top of `main` and of the PRs queued ahead of it), one job per kind of check, each only when the group changes its contexts (`scripts/changed-contexts.sh`): `server-static` (tidy, vet, the build, the generated code Go reads, the schema of both dialects, and `db:lint` against the group's base, which checks only that the schema applies on top of it, not the label) and `server-test` (the Go tests, PostgreSQL on pgmem) for go, schema, api, and i18n; `client-static` (tsc, Oxlint, knip, the Vite build, the i18n catalogs) and `client-test` (Vitest in 2 shards) for ui, web, api, and i18n; `repo` (agentkit's checks but its lint, its context map, the ADR numbers, `docs:ci-coverage`) always, with the build of the documentation site (`docs:site-build`) and the tsc, Oxlint, and knip of `app/docs` when the site context changes (`app/docs/`, the published documents, `api/openapi.yaml`, and the workspace files the site shares with the client); `app/docs/` selects no client context. `contracts` runs the container contracts (`go:test-postgres`, `go:test-stream`, `go:test-mail`, `go:test-blob`, `go:test-voice`, `go:test-search`, `go:test-acme`) of the adapters the group changes, their contract suites, and their test servers (`scripts/changed-contracts.sh`); a dependency update selects none, and the Nightly runs them all. `e2e` runs the web E2E of the primary project (every spec in `en` at 1440 px, `web-e2e.yml` with `matrix: pr` on 3 shards) when the client changes. At most 10 jobs run at once; a skipped job counts as passed. golangci-lint and the build tag sets do not run here: stacking rarely adds a lint issue and never breaks the build, and the tag sets break only when adapters or tags change; the slow suite runs both. The queue merges the group when `check` passes |
-| Push to `main` | `main.yml` | No checks: only the caches that pull requests and the queue restore ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)). The Go cache holds exactly what the jobs that restore it read, built one after another with their settings (`CGO_ENABLED=0`, which setup-go sets everywhere): the modules, the builds of the packages and the Go tools, the results of `go:test` (run as `server-test` runs it, after `scripts/stable-mtime.py` sets each file's mtime from its content as `server-test` does, so that a merge group runs only the tests whose packages or files changed), go vet's results, agentkit's builds, and golangci-lint's analysis (run without failing on issues). Every push restores the week's Go cache, adds to it, saves it under a key of its own, and deletes the Go caches it replaces; a new week starts from empty. A failing `go:test` warns without failing the job. The Bun caches are keyed on the lockfiles and built only when no cache of their key exists yet |
-| Pull request or push to `main` that changes `app/` or `locales/`; every 24 hours | `ui-preview.yml`, then `ui-preview-deploy.yml`; `ui-preview-cleanup.yml` | The UI preview of [ADR-0079](../adr/0079-ci-single-gate-merge-queue.md), outside `check` and never a merge condition. `ui-preview.yml` builds the `app/web` Storybook of the screens with the `@my/ui` Storybook composed under `ui/` (`web:storybook-build`) and uploads it, without secrets, so it runs for forks too. When it completes, `ui-preview-deploy.yml` (`workflow_run`: main's workflow in the environment `ui-preview`, the only holder of the Cloudflare token) publishes the build as static files with `scripts/ui-preview.sh`: a pull request's on the Workers Preview `pr-<number>` with one PR comment holding its URL and the stories it adds or changes against `main`, `main`'s on the Worker itself (the full catalogue). `ui-preview-cleanup.yml` (`schedule` once every 24 hours on `main`, and `workflow_dispatch`; the same environment, the Cloudflare token, and a read-only `GITHUB_TOKEN`) deletes the Previews of closed pull requests with `scripts/ui-preview.sh cleanup`; no workflow uses `pull_request_target`. `DRY_RUN=1 scripts/ui-preview.sh deploy-pr app/web/storybook-static <number>` runs the same steps locally without an account, and `DRY_RUN=1 scripts/ui-preview.sh cleanup` lists the Previews it would delete |
-| Push to `main` that changes the published documents or `app/docs/`; a published stable release; by hand | `docs-site-deploy.yml` | The documentation site of [ADR-0150](../adr/0150-documentation-site.md), outside `check`. A job without secrets builds every published version with `scripts/docs-site.sh build` from main's checkout (`/next/` from `main`, `/latest/` and each minor version of `app/docs/versions.json` from the tag of its newest published release) and combines them; the job `deploy`, in the environment `doc-site` (`main` and the tags `v*`, the only holder of its Cloudflare token), publishes them on the Worker `my-docs` with `scripts/docs-site.sh deploy`. One deploy replaces every asset, so each run rebuilds every version ([releasing.md](releasing.md#the-documentation-site)) |
-| Pull request that changes the published documents, `app/docs/`, or `api/openapi.yaml`; every 24 hours | `docs-site-preview.yml`, then `docs-site-preview-deploy.yml`; `docs-site-preview-cleanup.yml` | The documentation preview of [ADR-0150](../adr/0150-documentation-site.md) §7, outside `check` and never a merge condition, built like the UI preview. `docs-site-preview.yml` builds `/next/` alone from the pull request (`scripts/docs-site.sh build-preview`) and uploads it, without secrets, so it runs for forks too. When it completes, `docs-site-preview-deploy.yml` (`workflow_run`: main's workflow in the environment `doc-site`) checks the build as plain files and publishes it on the Workers Preview `pr-<number>` of `my-docs` with `scripts/docs-site.sh deploy-pr`, with one PR comment holding its URL and the pages the pull request changes; the build is never executed. `docs-site-preview-cleanup.yml` (`schedule` once every 24 hours on `main`, and `workflow_dispatch`) deletes the Previews of closed pull requests with `scripts/docs-site.sh cleanup`. `DRY_RUN=1 scripts/docs-site.sh deploy-pr <build dir> <number>` runs the same steps locally without an account |
-| Nightly, by hand, release gate | `slow-suite.yml` | The slow suite of [ADR-0079](../adr/0079-ci-single-gate-merge-queue.md) (a release runs only its upgrade test and restore drill when the whole suite already passed on the commit): the full web E2E matrix on 8 shards (`web-e2e.yml`), the live interoperability test (`federation-live.yml`), the PostgreSQL tests on a real container (`postgres-contract.yml`), the `stream.Bus` contracts on broker containers (`stream-contract.yml`), the `mail = smtp` integration tests on Mailpit (`mail-integration.yml`), the `voice = livekit` transport contract on `livekit-server --dev` (`voice-contract.yml`), the `blob = s3` contract on Garage (`blob-contract.yml`), the ACME client contract and the server with `tls = acme` on Pebble (`acme-contract.yml`), the smoke test and the arm64 builds (`docker:smoke`, `docker:build-arm64`), the upgrade test (`docker:upgrade-test`: a database of each dialect made and filled by the previous minor version's latest patch, upgraded with the commit's images; skipped when no previous minor version exists; [releasing.md](releasing.md#the-upgrade-test)), golangci-lint over everything with the build tag sets (`go:lint`, `agentkit:lint`, `mykit:lint`, `mykit:mybot-lint`, `go:build-tags`), and CodeQL code scanning (`codeql.yml`; the results go to the Security tab). Its last job, `result`, fails when any of them failed. Never on pull requests or merge groups, and not part of `check` |
-| Release (by hand) | `release.yml` | The slow suite on the dispatched commit, whose upgrade test starts from the previous minor version of the released version; only when it passes, the tag, a draft GitHub Release, and the container image by digest; publishing the draft runs `release-image.yml`, which tags the image ([releasing.md](releasing.md)) |
-| Nightly (03:00 JST) | `nightly.yml` | The slow suite on the head of `main`, whose upgrade test starts from the latest release, skipped when `main` has not moved since the last successful full Nightly run (a run by hand of some of the jobs, titled like `Nightly (l4)`, does not count); when that suite passes on `main`, the image of the commit built, checked, and attested as a release's and tagged `ghcr.io/mycroblog/my:nightly` (`nightly-image*`, [ADR-0010](../adr/0010-configuration-and-packaging.md) §5); every night, the Grype scan of the published images (`image-scan`), which fails on a fixable HIGH or above in a published version ([Vulnerability scan](releasing.md#vulnerability-scan)) |
-
-`slow-suite.yml`, `nightly.yml`, `web-e2e.yml`, `federation-live.yml`, `postgres-contract.yml`, `stream-contract.yml`,
-`mail-integration.yml`, `voice-contract.yml`, `blob-contract.yml`, `acme-contract.yml`, and `codeql.yml` also run by hand on any branch (`gh workflow run <file> --ref <branch>`). The web E2E of the primary project alone (`web-e2e.yml` with
-`matrix: pr`, the default) runs only by hand.
-
-## 6. Commit & PR
-
-- Conventional Commits in English; reference the issue (`feat(db): add sqlite adapter (#42)`).
-- Push the branch and open a PR with the template:
-
-```sh
-git push -u origin HEAD
-gh pr create --fill --body-file - <<'EOF'
-...template contents...
-EOF
-```
-
-- Comment on the issue with the PR link. Do not merge or queue it yourself; the orchestrator or the decider queues it (§7).
-  `scripts/agentkit.sh pr open [--summary-file f] [--decisions text] [--doc-reason '<path>=<reason>']... [--confirm]` pushes,
-  fills the template from the issue and the commits, and comments the link on the issue.
-- The **Documentation** section of the description has one line per document of `agentkit docs impact`: `- <path>: changed`,
-  or `- <path>: no change — <reason>` with a reason of three words or more (say what the document covers and why the
-  change leaves it true). `pr open` writes it from `--doc-reason` and refuses to open the PR while a document has neither;
-  the preflight step `docs:pr-impact` checks it on the PR. After editing the description, rerun the failed job
-  (`gh run rerun <run> --failed`), since an edit does not start CI.
-- Wait for the PR's CI and fix failures until it is green: run `scripts/agentkit.sh pr wait <PR>` in the background. It
-  prints one line when CI passes, or the failing lines of the failed jobs, and exits 3 when the PR conflicts.
-- Wait for a long local command (`check`, tests, `web:e2e`) the same way: start it in the background and act on its
-  completion notification. Never poll for it with a loop that sleeps or with `pgrep` (`pgrep -f` matches the polling
-  shell's own command line, so the loop never ends); the agentkit hook refuses such commands.
-
-## 7. Merge through the merge queue
-
-`main` takes pull requests only through GitHub's merge queue. CI runs the full check on each merge group (the PR on top
-of `main` and of the PRs queued ahead of it) and the queue merges the group when its required `check` passes.
-
-- The critique (L5) runs after the merge, not before: UI PRs are queued as usual. The decider reviews the catalogue of `main`
-  ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)) and files issues for what to fix.
-- Once the PR's CI is green, the orchestrator or the decider queues it: `gh pr merge <PR> -R mycroblog/my --auto --merge`.
-- Merge `main` into the branch only when the PR conflicts or the queue drops it, never just to stay current: the queue
-  already checks the PR on top of the latest `main`.
-- When the queue drops the PR (a conflict with `main`, or a failed `check` on the merge group), merge `main` into the
-  branch, regenerate the generated files instead of resolving their conflicts by hand, and push; the owner fixes it
-  while the rest of the queue proceeds;
-  the orchestrator or the decider queues it again. Only the generated files Go reads are committed (the client API
-  bundle and Go code, sqlc output, the Go side of i18n, the theme token list, the configuration and command references); the ones
-  only the TypeScript clients read are not, so they never conflict ([ADR-0081](../adr/0081-generated-files-policy.md)):
-
-```sh
-git fetch origin && git merge origin/main
-scripts/agentkit.sh regen              # runs the generators whose sources changed: api:generate, go:sqlc, i18n:gen,
-                                       # web:tokens-gen, go:config-docs, go:cli-docs, and
-                                       # tofu-workers-check.sh --write (job_types.go)
-scripts/task.sh web:fmt                # when a TypeScript or JavaScript file conflicted
-scripts/agentkit.sh check
-```
-
-## 8. When blocked
-
-- Comment on the issue: what you tried, what decision is needed, the options you see, and your recommendation.
-- `gh issue edit <N> --add-label agent:blocked` (`scripts/agentkit.sh issue block <N> --reason-file f` does both)
-- If the decision is architectural, draft a Proposed ADR in the same branch and link it.
-
-## 9. Parallel batches
-
-When many changes land at once, running the web E2E on every pull request costs time and runners without making the
-result more accurate: the PRs keep changing the same areas, so a per-PR run checks a state that `main` never has, and
-a spec that passes alone can still break elsewhere. Waiting for the web E2E on `main` after each group of PRs stalls
-the agents for the same reason. Parallel work therefore runs as a rolling queue: each PR is checked by the `check`
-gate only, and the web E2E runs nightly on `main` without holding up the queue. A nightly failure is fixed as soon as
-it appears, before the batch takes more issues ([Failures on main](#failures-on-main-orchestrator)). Single-issue work
-keeps the per-PR web E2E of §5.
-
-### Planning (orchestrator)
-
-- Keep about 4–5 agents running, capped by the load of the machine. Whenever an agent finishes and a slot frees,
-  start the next issue; there is no barrier between groups of issues.
-- For each candidate issue, list the shared files it is likely to touch:
-  - the sources of committed generated code: `api/spec/` (its root `api/spec/openapi.yaml` and the files of the paths and components),
-    the area files of `locales/<locale>/<namespace>/` (a key goes in the file of its area: its first segment, or its first two under
-    `admin`, such as `client/settings.json` and `client/admin/report.json`; a new area is a new file), the module directories
-    `schema/<NN>-<module>/` and the sqlc queries, the config schema;
-  - the tables many changes edit: the FR table in
-    [01-functional.md](../requirements/01-functional.md), the files under `docs/architecture/`. In
-    `docs/architecture/web-client/` and `docs/architecture/data-model/`, each section is a file of its own: two issues
-    that edit different sections do not share a file.
-- Never run two issues that touch the same shared files at the same time: when the next issue in line shares files
-  with a running one, start a different issue for the free slot, and start the held issue after the running one has
-  opened its PR, on that PR's branch (a stacked PR: `--base <that branch>`, "Stacked on #N" at the top of the body;
-  GitHub retargets it to `main` when the base merges. The merge queue lands the base as a merge commit, so the stacked
-  branch already holds it: merge `origin/main` only when the retargeted PR conflicts or the queue drops it (§7), or when
-  the stacked work must build on a change that reached `main` after it branched).
-- Split implementation work by layer: one issue for the server (domain, application, adapters, schema, client API)
-  and one for the web client (screens, `client*` messages), the web issue stacked on the server PR. A smaller issue
-  reads and checks less.
-- Pick the agent's model by the kind of work: the default model for spikes, new ADRs, and implementation; a lighter
-  model (`model: "sonnet"`) for mechanical work, such as folding the decider's answers into an ADR, editing issue
-  bodies, docs-only changes, and resolving a conflict by regenerating files.
-- Hand each agent the issue's context pack (`scripts/agentkit.sh ctx <N> --layer server|web --quiet` writes
-  `.tmp/agentkit/ctx/<N>.md`) so that it does not explore again.
-- Ask every agent for a final report of three items only: the PR number, the CI status, and the decisions needed.
-  Everything else belongs in the PR description.
-
-### Agents in the queue
-
-- The gate is the merge queue's full check; the PR's `check` CI runs only the preflight. Do not run the full check
-  locally before opening the PR: ordering conflicts between parallel PRs are a planning concern (see Planning), and
-  local runs only compete for the machine's resources. Do not run the web E2E per PR (`scripts/task.sh web:e2e`
-  or `web-e2e.yml`), not even the specs the change adds: write and update the E2E specs the change needs, but do not
-  run the suite.
-- Before waiting on CI, check that the PR is mergeable (`gh pr view <PR> -R mycroblog/my --json mergeable`).
-  CI does not start on a conflicting PR; merge `origin/main` into the branch first, as in §7.
-- Resolve conflicts in the committed generated files by regenerating them (§7), never by hand. After resolving a
-  conflict in a TypeScript or JavaScript file, run `scripts/task.sh web:fmt`.
-- Once the PR is open and its CI is green, report the PR number, the CI status, and the decisions needed (nothing else) to the orchestrator and finish. Never queue or merge the PR.
-
-### Merging (orchestrator)
-
-- Enable auto-merge as soon as a PR is opened (`gh pr merge <PR> -R mycroblog/my --auto --merge`); the merge queue
-  takes it when its `check` is green.
-- Watch every open PR with one watcher for three events: merged, conflicting, and CI failure: `scripts/agentkit.sh pr watch`
-  under the Monitor tool prints one line per event (also opened, ci-green, and dequeued).
-- A conflict drops the PR from the queue and turns off its auto-merge. Have the agent that owns the PR merge `main`
-  into the branch, then enable auto-merge again.
-- Never remove a worktree that an agent still works in.
-- Work that follows a merged PR goes to a new agent, on a new branch.
-
-### Failures on `main` (orchestrator)
-
-- Failures of the `check` gate, the Go tests, or the merge queue are fixed at once. The merge queue keeps them off
-  `main` by design; when a build or a test on `main` still breaks, fix it before starting more issues.
-- The slow suite (the full web E2E, the real PostgreSQL and broker contracts, the live federation test, the images,
-  and CodeQL) runs nightly on `main` ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md)) and does not pause the
-  queue, but a red Nightly stops the line ([ADR-0079](../adr/0079-ci-single-gate-merge-queue.md) §8). The Nightly's
-  `report` job opens an issue labelled `nightly-failure` with the failed jobs and the commits since the last green run,
-  comments on it while the failure goes on, and closes it when a Nightly passes
-  (`gh issue list -R mycroblog/my --label nightly-failure`). Fix it before starting more issues, filing one issue per
-  cause when the failure has several. Do not collect failures for the end of the milestone. The summary of the run also
-  lists the E2E tests that passed only on a retry: quarantine or fix one that keeps appearing.
-- A release needs the slow suite green: `release.yml` tags nothing while any of it fails
-  ([releasing.md](releasing.md)). Fix every failure before cutting a release.
-
-### Recording decisions
-
-When the decider answers a question in chat, state the conclusion and its reason on the PR or issue it concerns, or
-in the ADR that owns the topic, so that the decision stays with the work it governs. Verbatim answers add nothing.
+Decide what is cheap to undo and state it in the pull request. Stop only for a decision that no Accepted ADR covers
+and that is expensive to undo: a public contract, a schema that loses data, a paid service, a new setting users see.
+Then `scripts/agentkit.sh issue block <n> --type adr` with the options and your recommendation (the decider reads
+`gh issue list --search 'type:ADR is:open'`), draft a Proposed ADR if it is architectural, and go on with the rest.

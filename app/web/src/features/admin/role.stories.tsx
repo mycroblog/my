@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // One role (/admin/roles/$key; web-client/screens/admin-role.md) and a new one (/admin/roles/new;
-// web-client/screens/admin-role-new.md) in the states of ADR-0079 §13
+// web-client/screens/admin-role-new.md) in the states of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";

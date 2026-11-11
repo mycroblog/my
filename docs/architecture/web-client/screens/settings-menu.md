@@ -2,6 +2,7 @@
 start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
+budget: null
 ---
 
 ## 設定のメニュー（`/settings` と `/settings/*` の横のメニュー）

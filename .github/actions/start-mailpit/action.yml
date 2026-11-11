@@ -18,9 +18,7 @@ runs:
     # The runner gives the job's container the host's Docker socket; the image has no Docker client.
     - name: Install the Docker client
       shell: bash
-      run: |
-        apt-get update
-        apt-get install -y --no-install-recommends docker.io docker-compose-v2
+      run: scripts/ci-apt-install.sh docker.io docker-compose-v2
     # The Docker daemon is the host's: Mailpit joins the network namespace of the job's container instead of
     # publishing ports on the host, and it mounts the certificate by its path on the host, which the daemon resolves.
     - name: Start Mailpit

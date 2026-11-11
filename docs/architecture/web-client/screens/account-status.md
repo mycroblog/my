@@ -3,6 +3,7 @@ start: "/settings"
 persona: "quickdeals"
 paths: ["app/web/src/features/moderation/components/AccountStatus.tsx", "app/web/src/features/moderation/hooks/useAccountStatus.ts", "app/web/src/routes/settings.account-status.tsx"]
 unavailable: {"処分に異議を申し立てる": "the demo's only action on an account already has an open appeal, and an action is appealed once"}
+budget: {"controls": 4, "helpers": 2, "words": 136}
 ---
 
 ## アカウントの状態（`/settings/account-status`）とサーバーの状態の画面

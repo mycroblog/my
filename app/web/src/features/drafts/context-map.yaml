@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/architecture/web-client/12-compose.md#12-投稿フォーム", "docs/adr/0110-web-experience-principles.md", "docs/adr/0156-drafts-and-scheduled-posts.md#decision決定", "docs/architecture/web-client/screens/drafts.md"]
+userdocs: ["docs/guide/posting.md"]

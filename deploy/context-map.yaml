@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/architecture/deployment-targets.md#self-hosteddocker--microk8s", "docs/operations/running.md"]
+checks: [docker]

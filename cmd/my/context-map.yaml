@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/architecture/overview.md#6-リポジトリ構成", "docs/adr/0010-configuration-and-packaging.md", "docs/operations/production-checklist.md"]
+userdocs: ["docs/reference/cli.md"]
+checks: [docker]

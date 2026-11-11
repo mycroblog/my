@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/architecture/web-client/15-search-and-remote-follow.md#15-検索とほかのサーバーのアカウントのフォロー", "docs/architecture/web-client/screens/intent.md"]
+userdocs: ["docs/guide/following.md"]

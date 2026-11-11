@@ -3,6 +3,7 @@ start: "/articles/new"
 persona: "yuki"
 paths: ["app/web/src/routes/articles.*.tsx", "app/web/src/features/articles/**"]
 unavailable: {"画像を 1 枚本文にドロップして公開する": "the agent of the L4 run cannot drag a file from outside the browser", "ほかの端末と競合した下書きを、新しい下書きとして保存する": "the demo scenario has no second device that saves the same draft"}
+budget: {"controls": 16, "helpers": 7, "words": 292}
 ---
 
 ## 記事のエディタ（`/articles/new`、`/articles/{id}/edit`）

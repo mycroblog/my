@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.jobs.tsx", "app/web/src/features/admin/components/JobQueueSummary.tsx", "app/web/src/features/admin/components/jobParts.tsx", "app/web/src/features/admin/hooks/useJobs.ts", "app/web/src/features/admin/hooks/useJobWait.ts", "app/web/src/features/admin/api/jobs.ts"]
+budget: {"controls": 2, "helpers": 1, "words": 37}
 ---
 
 ## ジョブのキュー（`/admin/jobs`）

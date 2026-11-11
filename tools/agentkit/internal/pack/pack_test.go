@@ -48,29 +48,31 @@ func TestBuild(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = s.Close() }()
-	m := &ctxmap.Map{Entries: []ctxmap.Entry{{
-		Name: "schema", Paths: []string{"schema/**"}, Docs: []string{"docs/architecture/data-model/04-tables/04-content.md#44-content"},
+	m := &ctxmap.Map{Dirs: map[string]ctxmap.Entry{"schema": {
+		Name: "schema", Docs: []string{"docs/architecture/data-model/04-tables/04-content.md#44-content"},
 		Userdocs: []string{"docs/operations/database.md#upgrading"},
-		Checks:   []string{"schema", "go"}, Shared: true, Notes: []string{"Edit every dialect together."},
+		Checks:   []string{"schema", "go"}, Shared: true,
 	}}}
 	is := &gh.Issue{
-		Number: 916, Title: "[Task] create_custom_emojis", State: "OPEN",
-		Body:   "FR-915。ADR-0070 と ADR-0071 に従う。data-model §4.4 の `custom_emojis` と `custom_emoji_requests`。\n\n#929 がマージされるまで着手しない。",
-		Labels: []gh.Label{{Name: "agent:ready"}},
+		Number: 916, Title: "create_custom_emojis", State: "OPEN",
+		Body: "FR-915。ADR-0070 と ADR-0071 に従う。data-model §4.4 の `custom_emojis` と `custom_emoji_requests`。\n\n#929 がマージされるまで着手しない。",
+		Type: "Task", Fields: map[string][]string{"Priority": {"P1"}, "Area": {"db", "api"}},
+		BlockedBy: []gh.Blocker{{Number: 7, Title: "Pick a queue", State: "OPEN", Type: "ADR"}, {Number: 8, State: "CLOSED"}},
 	}
 	out, err := Build(&kb.KB{S: s}, &gh.Cache{DB: s.DB}, m, is, Options{Budget: 30000})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
-		"# #916 [Task] create_custom_emojis",
+		"# #916 create_custom_emojis",
+		"OPEN · type: Task · priority: P1 · areas: db, api · milestone: -",
+		"waits for the decision #7: Pick a queue: do not take it",
 		"ADR-0071 is Proposed, not Accepted",
 		"| FR-915 | 絵文字の作成の権限 | S |",
 		"申請を別のリソースにする",
 		"```text untrusted",
 		"###### 申請", // headings of included text sit below the pack's own
 		"**schema** [shared",
-		"Edit every dialect together.",
 		"User and operator documents that describe these areas",
 		"- `docs/operations/database.md#upgrading`",
 		"table:custom_emoji_requests",
@@ -112,7 +114,7 @@ func TestBuildFollowsADRAliases(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = s.Close() }()
-	is := &gh.Issue{Number: 1, Title: "t", State: "OPEN", Body: "ADR-0124 と ADR-0070。", Labels: []gh.Label{{Name: "agent:ready"}}}
+	is := &gh.Issue{Number: 1, Title: "t", State: "OPEN", Body: "ADR-0124 と ADR-0070。"}
 	out, err := Build(&kb.KB{S: s}, &gh.Cache{DB: s.DB}, &ctxmap.Map{}, is, Options{Budget: 30000})
 	if err != nil {
 		t.Fatal(err)

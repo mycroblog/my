@@ -117,30 +117,46 @@ func (k *KB) Find(w io.Writer, q string, kinds []string, under string, limit int
 var (
 	reLineRange = regexp.MustCompile(`^(.+?):(\d+)(?:-(\d+))?$`)
 	reSection   = regexp.MustCompile(`^([\w./-]+?)(?:\.md)?\s*[§#]\s*(\S+)$`)
+	// A declaration as the source writes it: `func (s *Service) Create(`, `type Options`, `export function useX`.
+	reDeclRef = regexp.MustCompile(`^(?:func|type|const|var|function|class|interface|enum|export(?:\s+default)?(?:\s+async)?(?:\s+(?:function|const|class|interface|type|enum))?)\s+(?:\(\s*\w*\s*\*?([A-Za-z_]\w*)[^)]*\)\s*)?([A-Za-z_$][\w$.]*)\s*[({]?$`)
+	// A declaration of one file: internal/app/content/service.go:Create, Dialog.tsx#Dialog.
+	reMember = regexp.MustCompile(`^(.+\.\w+)[:#]([A-Za-z_$][\w$.]*)$`)
+	// Service.Create, content.NewService, content.Service.Create.
+	reQualified = regexp.MustCompile(`^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*){1,2}$`)
 )
 
 // Resolve turns a reference into nodes. It accepts node ids (ADR-0070, FR-915, op:x, table:x, sym:..., doc:...),
 // ADR-0070#decision (the first section of the ADR whose anchor starts with "decision"), the retired number of an
 // ADR merged into another (ADR-0074, ADR-0074§13, which resolve to where it lives now),
 // <file>§4.4 or <file>#<anchor> with any unique suffix of a Markdown path or of a directory of section files
-// (data-model§4.4), short names (DeleteOwnAccount, custom_emojis), and the name of a directory of section files
-// (web-client), which resolves to its README.md.
+// (data-model§4.4), short names (DeleteOwnAccount, custom_emojis), a Go name with its receiver or package
+// (Service.Create, content.NewService), a declaration of a file (service.go:Create), a declaration as the source
+// writes it (`func (s *Service) Create`), and the name of a directory of section files (web-client), which
+// resolves to its README.md.
 func (k *KB) Resolve(ref string) ([]store.Node, error) {
 	aliases, err := k.Aliases()
 	if err != nil {
 		return nil, err
 	}
 	ref = aliases.Ref(strings.TrimSpace(ref))
+	if m := reDeclRef.FindStringSubmatch(ref); m != nil {
+		ref = m[2]
+		if m[1] != "" {
+			ref = m[1] + "." + m[2]
+		}
+	}
 	if ns, err := k.S.Get(ref); err != nil || len(ns) > 0 {
 		return ns, err
 	}
-	for _, prefix := range []string{"table:", "query:", "op:", "schema:"} {
+	for _, prefix := range []string{"file:", "table:", "query:", "op:", "schema:"} {
 		if ns, err := k.S.Get(prefix + ref); err != nil || len(ns) > 0 {
 			return ns, err
 		}
 	}
 	if m := reSection.FindStringSubmatch(ref); m != nil {
-		return k.section(m[1], m[2])
+		if ns, err := k.section(m[1], m[2]); err != nil || len(ns) > 0 {
+			return ns, err
+		}
 	}
 	if ns, err := k.S.ByName(ref); err != nil || len(ns) > 0 {
 		return ns, err
@@ -148,7 +164,103 @@ func (k *KB) Resolve(ref string) ([]store.Node, error) {
 	if strings.HasPrefix(ref, "sym:") || strings.HasPrefix(ref, "doc:") || strings.HasPrefix(ref, "ts:") {
 		return k.S.ByIDPrefix(ref, 20)
 	}
+	if m := reMember.FindStringSubmatch(ref); m != nil {
+		if ns := k.member(m[1], m[2]); len(ns) > 0 {
+			return ns, nil
+		}
+	}
+	if reQualified.MatchString(ref) {
+		ns, err := k.S.Qualified(ref)
+		if err != nil {
+			return nil, err
+		}
+		// The store compares without case; Service.Create is not Service.create.
+		var exact []store.Node
+		for _, n := range ns {
+			if strings.HasSuffix(n.ID, "."+ref) || strings.HasSuffix(n.ID, "/"+ref) || n.ID == "sym:"+ref {
+				exact = append(exact, n)
+			}
+		}
+		if len(exact) > 0 {
+			return exact, nil
+		}
+	}
 	return k.splitDoc(ref)
+}
+
+// member returns the declarations named name (or Recv.Name) of the file at p, or of every file p is the
+// ending of.
+func (k *KB) member(p, name string) []store.Node {
+	ps, err := k.paths(p)
+	if err != nil {
+		return nil
+	}
+	var out []store.Node
+	for _, p := range ps {
+		ns, err := k.S.FileNodes(p)
+		if err != nil {
+			return nil
+		}
+		for _, n := range ns {
+			if n.Kind != "file" && !strings.HasPrefix(n.ID, "doc:") && (n.Name == name || n.Meta == name) {
+				out = append(out, n)
+			}
+		}
+	}
+	return out
+}
+
+// Path turns a path as the caller wrote it into a path of the repository: relative to the root, relative to
+// the working directory, absolute, or the ending of exactly one indexed path (kb/kb.go).
+func (k *KB) Path(p string) (string, error) {
+	ps, err := k.paths(p)
+	if err != nil {
+		return "", err
+	}
+	if len(ps) > 1 {
+		more := ""
+		if len(ps) > 8 {
+			more = ", …"
+		}
+		return "", fmt.Errorf("%d files end with %q: %s%s", len(ps), p, strings.Join(ps[:min(len(ps), 8)], ", "), more)
+	}
+	return ps[0], nil
+}
+
+// paths returns the file p names, or the indexed files whose path ends with p.
+func (k *KB) paths(p string) ([]string, error) {
+	root := k.S.Repo.Root
+	var candidates []string
+	if filepath.IsAbs(p) {
+		if rel, err := filepath.Rel(root, p); err == nil {
+			candidates = append(candidates, rel)
+		}
+	} else {
+		candidates = append(candidates, p)
+		if wd, err := os.Getwd(); err == nil {
+			if rel, err := filepath.Rel(root, filepath.Join(wd, p)); err == nil {
+				candidates = append(candidates, rel)
+			}
+		}
+	}
+	for _, c := range candidates {
+		if full, err := k.contained(c); err == nil {
+			if st, err := os.Stat(full); err == nil && !st.IsDir() {
+				return []string{filepath.ToSlash(filepath.Clean(c))}, nil
+			}
+		}
+	}
+	if filepath.IsAbs(p) || !filepath.IsLocal(p) {
+		return nil, fmt.Errorf("%q is not a file of the repository", p)
+	}
+	ps, err := k.S.Paths("/" + filepath.ToSlash(p))
+	if err != nil {
+		return nil, err
+	}
+	if len(ps) == 0 {
+		return nil, fmt.Errorf("no file %q in the repository", p)
+	}
+	return ps, nil
 }
 
 // section resolves file§num or file#anchor; file may be an ADR id, a path suffix, or a directory holding a
@@ -230,18 +342,17 @@ func (k *KB) splitDoc(ref string) ([]store.Node, error) {
 // limit tokens prints its outline instead, so that the caller picks the part it needs.
 func (k *KB) Show(w io.Writer, ref string, limit int) error {
 	if m := reLineRange.FindStringSubmatch(ref); m != nil {
-		if full, err := k.contained(m[1]); err == nil {
-			b, err := os.ReadFile(full)
-			if err != nil {
-				return err
-			}
+		p, err := k.Path(m[1])
+		if err == nil {
 			s, _ := strconv.Atoi(m[2])
 			e := s
 			if m[3] != "" {
 				e, _ = strconv.Atoi(m[3])
 			}
-			fmt.Fprint(w, text.Lines(b, s, e))
-			return nil
+			return k.showLines(w, p, s, e, limit)
+		}
+		if strings.Contains(err.Error(), "files end with") {
+			return err
 		}
 	}
 	ns, err := k.Resolve(ref)
@@ -249,17 +360,38 @@ func (k *KB) Show(w io.Writer, ref string, limit int) error {
 		return err
 	}
 	if len(ns) == 0 {
-		if _, err := k.contained(ref); err == nil {
-			return k.showFile(w, ref, limit)
+		p, err := k.Path(ref)
+		if err == nil {
+			return k.showFile(w, p, limit)
 		}
-		return fmt.Errorf("nothing matches %q; try `agentkit find %s`", ref, ref)
+		if strings.Contains(err.Error(), "files end with") {
+			return err
+		}
+		return fmt.Errorf("nothing matches %q; search with `agentkit grep <pattern>` or `agentkit find <words>`", ref)
 	}
+	others := 0
 	if len(ns) > 1 && ns[0].Kind != "table" {
-		fmt.Fprintf(w, "%d matches; show one by id or location:\n", len(ns))
-		for _, n := range ns[:min(len(ns), 20)] {
-			fmt.Fprintln(w, k.Line(n))
+		// One declaration outside the tests is the one meant; the helpers of the same name in tests are listed.
+		var prod []store.Node
+		for _, n := range ns {
+			if n.Kind != "go-test" && n.Kind != "ts-test" {
+				prod = append(prod, n)
+			}
 		}
-		return nil
+		if len(prod) != 1 {
+			fmt.Fprintf(w, "%d matches; show one by `<path>:<Name>`, id, or line range:\n", len(ns))
+			for _, n := range ns[:min(len(ns), 20)] {
+				fmt.Fprintln(w, k.Line(n))
+			}
+			if len(ns) > 20 {
+				fmt.Fprintf(w, "… %d more\n", len(ns)-20)
+			}
+			return nil
+		}
+		others, ns = len(ns)-1, prod
+	}
+	if others > 0 {
+		defer fmt.Fprintf(w, "(%d more named %s in tests: `agentkit find %s --kind go-test,ts-test`)\n", others, ns[0].Name, ns[0].Name)
 	}
 	if aliases, err := k.Aliases(); err == nil {
 		if cur := aliases.Ref(strings.TrimSpace(ref)); cur != strings.TrimSpace(ref) {
@@ -303,6 +435,38 @@ func (k *KB) contained(p string) (string, error) {
 		return "", fmt.Errorf("%q is outside the repository", p)
 	}
 	return full, nil
+}
+
+// showLines prints lines from..to of the file at p, cut where they pass limit tokens.
+func (k *KB) showLines(w io.Writer, p string, from, to, limit int) error {
+	full, err := k.contained(p)
+	if err != nil {
+		return err
+	}
+	b, err := os.ReadFile(full)
+	if err != nil {
+		return err
+	}
+	total := strings.Count(string(b), "\n")
+	if len(b) > 0 && b[len(b)-1] != '\n' {
+		total++
+	}
+	if from > total {
+		return fmt.Errorf("%s has %d lines", p, total)
+	}
+	lines := strings.SplitAfter(text.Lines(b, from, to), "\n")
+	tok := 0
+	for i, l := range lines {
+		if tok += text.Tokens(l); tok > limit {
+			fmt.Fprintf(w, "… cut at line %d (max %s tokens); go on with `agentkit show %s:%d-%d`\n", from+i, text.Ktok(limit), p, from+i, min(to, total))
+			return nil
+		}
+		fmt.Fprint(w, l)
+	}
+	if len(lines) > 0 && !strings.HasSuffix(lines[len(lines)-1], "\n") && lines[len(lines)-1] != "" {
+		fmt.Fprintln(w)
+	}
+	return nil
 }
 
 func (k *KB) showFile(w io.Writer, p string, limit int) error {

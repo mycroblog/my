@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.relays.tsx", "app/web/src/features/admin/components/RelaySettings.tsx", "app/web/src/features/admin/hooks/useRelays.ts", "app/web/src/features/admin/api/relays.ts"]
 seed: [{"api": "hana", "method": "POST", "path": "/admin/relays", "body": {"url": "https://relay.example/inbox", "protocol": "mastodon"}}]
+budget: {"controls": 3, "helpers": 0, "words": 31}
 ---
 
 ## リレー（`/admin/relays`）

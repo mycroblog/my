@@ -12,13 +12,17 @@ Run it through `scripts/agentkit.sh <command>`, which builds `bin/agentkit` when
 | Instead of | Run |
 | --- | --- |
 | Reading the issue, then every ADR, requirement, and document section it names | `ctx <issue> [--layer server\|web]`: one pack within a token budget (default 30k), also saved to `.tmp/agentkit/ctx/<n>.md` for subagents |
-| `grep -rn` over the repository | `find <words> [--kind adr,section,go,ts,op,table,query,...] [--under <path>]`: ranked locations with sizes |
-| `cat` of a large document | `outline <path>`, then `show '<path>#<anchor>'`, `show 'data-model§4.4'`, `show 'ADR-0070#decision'`, `show FR-915`, `show <path>:<from>-<to>` |
+| `grep` / `rg` / `git grep` over the repository | `grep <pattern> [path\|glob ...] [-i] [-w] [-F] [-l] [-o] [-C N] [--kind go,ts,md,sql,yaml,json]`: a regular expression (or `-F` string) over the tracked files, without generated files, lock files, snapshots, and tests (`--tests`, `--only-tests`, `--gen`); at most 40 matches (`-n`) and 6,000 characters (`--max`), grouped by file, each with its declaration or section and line range, and a last line that counts what was left out |
+| `grep "func X" -A 40`, `sed -n 'A,Bp'`, `head`, `tail` | `show <Name>` (also `Recv.Name`, `pkg.Name`, `<path>:<Name>`, `'func (s *Service) Create'`): the whole declaration; `show <path>:<from>-<to>`: the lines. The path may be relative to the working directory or any ending that names one file |
+| Looking for where a topic lives | `find <words> [--kind adr,section,go,ts,op,table,query,...] [--under <path>]`: ranked locations with sizes |
+| `cat` of a large document | `outline <path>`, then `show '<path>#<anchor>'`, `show 'data-model§4.4'`, `show 'ADR-0070#decision'`, `show FR-915` |
 | Following a request through the layers by hand | `trace op:<operationId>` or `trace <GoName>`: handler → app → adapter → query → table |
 | Grepping for the users of a name | `refs <ref>`: what points at it (documents, code, queries, client calls) and what it points at |
 | Listing `docs/adr/` and opening every ADR | `adr list [--status Proposed]`: number, status (the first word of its `- Status:` line), and title |
 
-`show` prints the outline instead of the text when a node is bigger than `--max` tokens (default 12k).
+`show` prints the outline instead of the text when a node is bigger than `--max` tokens (default 12k), cuts a line
+range there, and lists the candidates of a name that several declarations share (one declaration outside the tests
+is shown, the test helpers of its name counted).
 References: node ids (`ADR-0070`, `FR-915`, `op:<id>`, `table:<name>`, `query:<Name>`, `schema:<Name>`,
 `sym:<dir>.<Recv>.<Name>`, `ts:<path>:<Name>`), short names (`SubmitRequest`, `custom_emojis`), sections by number or
 anchor of any unique path suffix (`data-model§4.4`, `web-client#5-アクセシビリティ`), and line ranges.
@@ -30,72 +34,56 @@ prints the directory's `README.md`.
 
 | Step | Run |
 | --- | --- |
-| Take an issue (§1) | `issue claim <n> --plan "<one line>"`: refuses when the issue is not `agent:ready`, needs a decision, is assigned to someone else, depends on a non-Accepted ADR, waits for an open issue, or has a dependency whose state cannot be read |
-| Verify (§5, optional) | `check`: `scripts/task.sh check:changed` with the contexts it checks, only the failing lines, the workers check (`scripts/tofu-workers-check.sh`: `job_types.json` against `internal/platform/job_types.go`, which needs no `tofu`), and the documents of `docs impact` the change does not touch |
-| Open the PR (§6) | `pr open [--summary-file f] [--decisions text] [--doc-reason '<path>=<reason>']... [--confirm] [--footer text] [--base <branch>]`: refuses while a document of `docs impact` is neither changed nor given a reason; copies the issue's acceptance criteria with their checked state |
-| Wait for CI (§6) | `pr wait <pr>` **in the background**: one line when CI passes; the failing lines of the failed jobs otherwise; exit 3 on a conflict; exit 4 when checks were cancelled and no newer run replaced them. Only the newest run of each workflow counts (the checks of an older run on the same head, such as the failed `check` of a run cancelled by a newer one, are ignored while the newer run runs), and of it the latest attempt of each check; and CI passes only when the required `check` gate of the CI workflow has reported and succeeded |
-| Resolve a conflict (§7) | `git merge origin/main`, `regen` (runs the generators of the changed sources, including `scripts/tofu-workers-check.sh --write` for `internal/platform/job_types.go`), `check`, push |
+| Create an issue | `issue new --type task\|bug\|spike\|adr\|epic --title t --body-file f --parent <epic>` (`--milestone <title>` for an epic or an issue outside every epic; `--blocked-by <n>` for order): the only way, since the hook denies `gh issue create`. It links the sub-issue, gives it the epic's milestone, and refuses an epic whose description lists issues; the type, `--priority` and `--area` are GitHub's issue type and issue fields, not labels |
+| Take an issue (§1) | `issue claim <n> --plan "<one line>"`: refuses an epic or an ADR issue, and an issue that has no milestone, is assigned to someone else, depends on a non-Accepted ADR, or waits for an open issue (a decision, an investigation, or work) |
+| Verify | `check`: the quick checks of the changed files, one line each and the failing lines — `gofmt`, `go vet` of the changed packages, `bun fmt`, `tsc` and Oxlint, `i18n:lint`, `docs:lint` and `docs:rules`, shellcheck, `tofu fmt` of the changed OpenTofu files, the checks of the OpenTofu modules that compare files when the tofu context changed (`tofu:env-check`, `tofu:backend-fields`, `tofu:coverage`, `tofu:sources`), and that committed generated files are current. A step whose tool is not installed is skipped with a line. `check --full`: `scripts/task.sh check:changed` and the workers check, which the merge queue runs anyway |
+| Open the PR | `pr open [--issue n]... [--summary-file f] [--decisions text] [--confirm] [--footer text] [--base <branch>]`: prints the documents of `docs impact` the change does not touch; copies the issues' acceptance criteria with their checked state. It is the gate: before it pushes (`--force-with-lease`) it refuses, with the command that fixes it, outside a worktree, on a merge commit or a `fixup!` / `squash!` commit in `origin/main..HEAD`, on a conflict with the base, when `check` fails, and, for a change under `app/web/src` or `app/ui/src` other than tests and stories, unless a screenshot of `scripts/task.sh web:shot` is newer than the change and was opened with the Read tool since (the PostToolUse hook records the reads in `.tmp/agentkit/seen.json`); it lists those under `## Screens`. Without `--issue` it closes the issue of the branch name and the `(#N)` of the commit subjects |
+| Finish the PR | `pr land <pr>` **in the background, in the main agent**: turns on auto-merge into the merge queue, prints one line per event until the merge, then removes the branch and its worktree, checks that the closed issues are closed, closes each parent issue whose sub-issues are all closed and each milestone left with no open issue, and ends with three lines (`merged:`, `cleaned up:`, `remains:`). Exit 1 when CI failed (with the failing lines), 3 on a conflict, 4 when cancelled, 5 when the merge queue dropped it (with the failing lines of its merge group), 124 on the timeout; each prints the fix |
+| Clean up | `tidy [--dry-run]`: removes the local branches whose pull request is merged or closed, with their worktrees; keeps and names those with uncommitted changes, commits the pull request does not hold, a lock, or the caller inside. The SessionStart hook prints one line when merged branches are left |
+| Wait for CI only | `pr wait <pr>` **in the background**: one line when CI passes; the failing lines of the failed jobs otherwise; exit 3 on a conflict; exit 4 when checks were cancelled and no newer run replaced them; exit 6 when the head moved. Only the newest run of each workflow counts (the checks of an older run on the same head, such as the failed `check` of a run cancelled by a newer one, are ignored while the newer run runs), and of it the latest attempt of each check; and CI passes only when the required `check` gate of the CI workflow has reported and succeeded |
+| Find the slow job of CI | `pr jobs <pr> [--run <id>] [-n 20]`: for the newest run of each workflow on the pull request's head (or the given run), one line with the run's wall time and its number of skipped jobs, then one line per job that ran — duration, result, name — slowest first, with the three slowest steps under a job longer than 3 minutes. It reads once and does not wait |
+| Resolve a conflict | `git rebase origin/main`, `regen` (runs the generators of the changed sources, including `scripts/tofu-workers-check.sh --write` for `internal/platform/job_types.go`), `check`, `git push --force-with-lease` |
 | Watch many PRs (§9) | `pr watch [<pr>...]` with the Monitor tool: one line per opened, merged, closed, conflicting, ci-failed, ci-cancelled, ci-green, dequeued |
-| Stop (§8) | `issue block <n> --reason-file f` |
+| Stop (§8) | `issue block <n> --type adr\|spike --title t --reason-file f`, or `--on <m>` |
 
 ## The context map
 
-[context-map.yaml](context-map.yaml) maps paths to the document sections that govern them (`docs`), the user and
-operator documents that describe them (`userdocs`), their check contexts, whether parallel work treats them as shared
-files, and short notes. `ctx` uses it to pick the rules and the user and operator documents of the areas an issue
-touches. When you add a directory, module, adapter, or feature, add or extend its entry in the same change:
-`scripts/task.sh agentkit:check` (and CI, on every change) fails when a file is not covered, when a directory under a `strict`
-pattern has no entry naming it, when a `docs` or `userdocs` reference does not resolve, or when a file of
-`userdocs.cover` (`docs/operations/`, `docs/reference/`) is the `userdocs` of no entry ([ADR-0003](docs/adr/0003-context-map.md)).
-`map show <path>` prints the entries of a path.
+A `context-map.yaml` describes its directory as a whole, down to the next one below: the document sections that
+govern it (`docs`), the user and operator documents that describe it (`userdocs`), its check contexts (`checks`), and
+whether parallel work treats it as shared files (`shared`). `docs`, `userdocs`, and `checks` add to those of the maps
+above, so a file holds only what differs. The [root file](../../context-map.yaml) alone lists patterns, for the root's
+files and dot-directories. `map check` fails when a path is under no map, a map repeats one above it, a reference does
+not resolve, or a file of `userdocs.cover` is no map's `userdocs` ([ADR-0003](docs/adr/0003-context-map.md)).
+`map show <path>` prints what describes a path.
 
 ## Documentation that changes with the code
 
 `docs impact [--base origin/main]` lists the `userdocs` of the entries of the paths changed since the merge base,
-passing over the paths of `userdocs.skip` (tests, fixtures) and the map's `ignore` (generated files), and says whether
-the change touches each. A pull request changes each such document or explains it in the **Documentation** section of
-its description, one line each:
-
-```markdown
-- docs/operations/email.md: changed
-- docs/operations/running.md: no change — only the wording of a log line changed, which it does not quote
-```
-
-A reason has three words or more after `no change` and a dash or a colon; text in HTML comments does not count.
-`pr open` writes the section (`--doc-reason '<path>=<reason>'`, repeatable) and refuses while a document has neither;
-`docs impact --pr-body <file>` (`scripts/task.sh docs:pr-impact`, the step `docs:pr-impact` of the pull request's
-preflight) fails on it. Give a document to the paths whose change can make it wrong: an entry for a few files is better
-than a document that every change of a wide area flags.
+passing over the paths of `userdocs.skip` (tests, fixtures) and the map's `generated` (tracked files the index passes over), and says whether
+the change touches each. `check` and `pr open` print the ones it does not touch; nothing fails on them.
 
 ## Documentation rules
 
-`docs lint` (`scripts/task.sh docs:rules`, part of `docs:check`) checks the rules of
-[AGENTS.md "Documentation"](../../AGENTS.md#documentation) that a machine can check:
+`docs lint` (`scripts/task.sh docs:rules`, part of `docs:check`) checks the documentation rules; each finding says the fix.
+[docs/lint.yaml](../../docs/lint.yaml) names the files each rule covers and, under `pending`, the files that do not
+follow a rule yet: a pending entry fails once its file follows the rule, so the lists only shrink.
 
-- every relative link of a Markdown file (inline, reference, `href`/`src`) points at a file or directory of the
-  repository, and its `#anchor` at a heading (GitHub's slugs, Japanese headings and repeated headings included) or an
-  `<a id>` of a Markdown target;
-- the English-only files have no Japanese (kana, kanji, CJK punctuation, full-width forms) outside code spans, code
-  blocks, and link destinations; a line with `docs-lint: allow-japanese` in a comment, or the line after one, may;
-- the files for users and operators neither link to `docs/adr/`, `docs/requirements/`, `docs/architecture/`, or the
-  repository's issues and pull requests, nor cite `ADR-NNNN`, `FR-NNN`, or `#NNN` outside code;
-- the files of `maintainer-terms.files` use none of its `terms`, the words of the development of the project, in prose or
-  in code;
-- the opening of each file of `openings.files`, its first line below the title outside code and HTML, matches none of
-  the `openings.reject` patterns, the sentences that only say whom the document is for ("A guide for operators.");
-- the index (`index.file`, `docs/README.md`) links every file of `index.files` (`docs/operations/`, `docs/reference/`);
-- each `ADR-NNNN` and `ADR-NNNN §k` of the repository resolves and is not a number retired in `docs/adr/aliases.yaml`, a
-  `§k` inside an ADR that names no other document is a heading of that ADR, and an ADR has the sections of the template
-  and no quotations. These print as warnings until `adrs.enforce` is set; `adrs.exclude` names the files where
-  `ADR-NNNN` means something else.
+- Links: every relative link and `#anchor` of a Markdown file resolves.
+- Language: the English-only files have no Japanese outside code (`docs-lint: allow-japanese` on the line or the one
+  before allows it).
+- Operator documents: no link to or citation of design records, issues, or pull requests; none of the
+  `maintainer-terms`; no opening that only names the audience; the index links each of them.
+- ADR citations: each `ADR-NNNN` and `§k` resolves, and is not a number that `docs/adr/aliases.yaml` retired into
+  another ADR (`show`, `find`, `refs`, `ctx`, and `issue claim` follow that file).
+- ADR shape: an ADR has a Decision section, no quotations, at most 6,000 characters (4,000 in Decision), no table of
+  more than 8 rows, and no code span that names a path of three segments or more, a source or YAML file, a namespaced
+  task, a `pkg.Exported` of a package of the repository, or an `Err...` value. `docs adr-shape` prints the measures of
+  each ADR.
+- Package pointers: an `AGENTS.md` below the root is a title and at most 12 list items, each
+  `- <task>: [<documentation>](https://...), search for: <terms>` with one link that has no `#fragment`.
 
-`docs/adr/aliases.yaml` maps the number of an ADR merged into another to the ADR that holds it and how its sections
-moved (`to`, and `sections`, `section`, `offset`, `anchors`). `show`, `find`, `refs`, `ctx`, and `issue claim` follow it,
-so an old issue that cites a retired number still reads; a repository without the file has no retired numbers.
-
-[docs/lint.yaml](../../docs/lint.yaml) lists the files each rule covers and, under `pending`, the files that do not
-follow a rule yet. A pending entry fails the check once its file follows the rule (or is gone), so the lists only
-shrink.
+`scripts/task.sh docs:growth` (`scripts/docs-growth.sh`, a step of the pull request's preflight) fails when a group of
+the prose agents maintain is larger than at the merge base, unless the pull request has the `allow:docs-growth` label.
 
 `docs inventory` (`scripts/task.sh agentkit:inventory`, part of `agentkit:check`) checks the other direction: every
 name that users and operators see and the code defines is mentioned in the document they look it up in.
@@ -106,7 +94,6 @@ name that users and operators see and the code defines is mentioned in the docum
 | `metrics` | the `Name` of each `kernel.Instrument` literal in `internal/` and `cmd/` | `docs/operations/running.md`, as a whole name |
 | `webhook-events` | the constants of type `EventType` in `internal/domain/webhook` | a code span of `docs/reference/webhooks.md` |
 | `build-tags` | the `no_*` tags of the `//go:build` lines of the server module | a code span of `docs/reference/build-tags.md` |
-| `tasks` | the tasks with a `desc` (what `scripts/task.sh --list` lists) of `Taskfile.yml` and its includes | a code span of `docs/reference/commands.md` that starts with the name |
 | `job-types` | the first argument of each `Register` and `RegisterWithPolicy` call in `internal/` and `cmd/`, other than the events of the projectors; a constant is resolved through its package, and an argument that cannot be resolved fails the check | a code span of `docs/reference/jobs.md` |
 | `job-schedules` | the `Name` of each `queue.Schedule` literal; of a concatenation, its first part | a code span under `## Periodic jobs` of `docs/reference/jobs.md` |
 
@@ -120,11 +107,24 @@ compares those numbers with the names it collected, and fails when the sentence 
 ## Claude Code hooks
 
 `.claude/settings.json` runs `scripts/agentkit-hook.sh` ([ADR-0004](docs/adr/0004-claude-code-hooks.md)): at session
-start it builds and indexes; it denies reading a whole Markdown file of 40KB or more (code: 80KB) and watching CI with
-`gh pr checks --watch` / `gh run watch`, and polling for a background command with a loop that sleeps or with
-`pgrep`, with what to use instead; it hints at `find` for unbounded
-recursive greps; and it cuts Bash output over 20,000 characters to its head and tail, saving the whole to
-`.tmp/agentkit/out/`. `AGENTKIT_BIG_FILE` and `AGENTKIT_MAX_OUTPUT` change the limits.
+start it builds and indexes, and it cuts Bash output over 20,000 characters to its head and tail, saving the whole to
+`.tmp/agentkit/out/`. Before a Bash or Read call it denies the following, for every agent, and the reason names the
+command to run instead, filled in from the denied one:
+
+| Denied | Use instead |
+| --- | --- |
+| `grep` / `rg` / `ag` / `git grep` over files of the repository | `grep`, or `show <Name>` for a declaration |
+| `sed -n 'A,Bp'`, `head`, `tail`, `awk 'NR>=A'` on a file of the repository, `cat <file> \|` | the Read tool with offset and limit, `show <path>:A-B`, `outline` |
+| `sed -i`, `perl -pi`, a `python3` / `node` script that writes a file of the repository | the Edit tool; `scripts/i18n.sh add\|mv\|rm` for `locales/` |
+| `git merge` of `main`, `git pull` without `--rebase` or `--ff-only` | `git fetch origin && git rebase origin/main`, `regen`, `git push --force-with-lease` |
+| `gh pr checks`, `gh run watch`, `gh run view` without `--log-failed`, `gh run list` without `--workflow`, `gh api` of check runs and workflow runs, `statusCheckRollup` | `pr wait <pr>` in the background; `pr jobs <pr>` for the jobs of a run and their durations |
+| a loop that sleeps, `pgrep`, also inside `bash -c` | `run_in_background` and its notification |
+| reading a whole Markdown file of 40KB or more (code: 80KB) | `outline`, then `show` |
+
+It splits a compound command at `;`, `&&`, `||`, `|` and newlines outside quotes and here-documents, and follows `cd`
+and the variables the command sets. It leaves alone: grep as a filter on a pipe, files outside the working tree, files
+git ignores (`.tmp/`, `node_modules/`, logs), a path the shell computes, `grep -q`, a search of a revision, a merge with
+`--ff-only` or of another branch, and anything it cannot parse. `AGENTKIT_BIG_FILE` and `AGENTKIT_MAX_OUTPUT` change the limits.
 
 ## Measuring
 
@@ -142,8 +142,8 @@ a change to see what it saved.
   indexes only what changed (the first build takes seconds, later ones tens of milliseconds).
 - `internal/gh` talks to GitHub through `gh` and caches issues and merged pull requests (with their changed files) in
   the same database.
-- `internal/kb` answers `find` / `show` / `outline` / `refs` / `trace`; `internal/pack` builds `ctx`; `internal/ops`
-  runs the workflow steps; `internal/hook` implements the hooks; `internal/stats` measures; `internal/docslint`
+- `internal/kb` answers `find` / `show` / `outline` / `refs` / `trace`; `internal/grep` searches the working tree;
+  `internal/pack` builds `ctx`; `internal/ops` runs the workflow steps; `internal/hook` implements the hooks; `internal/stats` measures; `internal/docslint`
   checks the documentation rules.
 
 ## Developing

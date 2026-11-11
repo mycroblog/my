@@ -1,0 +1,263 @@
+{
+  "regionControls": {
+    "screens-admin-finance--publication": {
+      "Publication": 10
+    },
+    "screens-admin-role--normal": {
+      "Edit the role": 30
+    },
+    "screens-admin-settings--auto-delete": {
+      "Default for new accounts": 14,
+      "Maximum": 10
+    },
+    "screens-admin-settings--federation": {
+      "Federation": 8,
+      "External review": 17
+    },
+    "screens-admin-supporter-pages--plan": {
+      "Edit the plan": 9
+    },
+    "screens-admin-theme--empty": {
+      "Type, spacing, and motion": 42
+    },
+    "screens-admin-theme--normal": {
+      "Type, spacing, and motion": 42
+    },
+    "screens-admin-webhook--disabled-for-failing": {
+      "Settings": 20
+    },
+    "screens-admin-webhook--empty": {
+      "Settings": 20
+    },
+    "screens-admin-webhook--normal": {
+      "Settings": 20
+    },
+    "screens-compose-newpost--dragging-files": {
+      "New post": 14
+    },
+    "screens-compose-newpost--empty": {
+      "New post": 14
+    },
+    "screens-compose-newpost--post-failed": {
+      "New post": 14
+    },
+    "screens-compose-newpost--quote": {
+      "New post": 15
+    },
+    "screens-compose-newpost--rejected": {
+      "New post": 15
+    },
+    "screens-compose-newpost--reply": {
+      "New post": 17
+    },
+    "screens-compose-newpost--save-while-empty": {
+      "New post": 14
+    },
+    "screens-compose-newpost--shortcut-while-empty": {
+      "New post": 14
+    },
+    "screens-compose-newpost--too-long": {
+      "New post": 14
+    },
+    "screens-compose-newpost--written": {
+      "New post": 20
+    },
+    "screens-lists-lists--members": {
+      "Your lists": 10
+    },
+    "screens-moderation-account--from-post": {
+      "Take action": 9
+    },
+    "screens-moderation-domainlists--subscription": {
+      "Settings": 8
+    },
+    "screens-moderation-report--normal": {
+      "Handling": 8
+    },
+    "screens-search-posts--normal": {
+      "Posts": 22
+    },
+    "screens-settings-keywordfilters--adding": {
+      "Your filters": 16
+    },
+    "screens-settings-keywordfilters--editing": {
+      "Your filters": 34
+    },
+    "screens-settings-preferences--empty": {
+      "New posts": 9
+    },
+    "screens-settings-preferences--navigation-moved": {
+      "New posts": 9
+    },
+    "screens-settings-preferences--normal": {
+      "New posts": 9
+    },
+    "screens-timeline-post--normal": {
+      "Earlier in the thread": 10,
+      "Replies": 12
+    },
+    "screens-timeline-post--showcase": {
+      "Replies": 12
+    }
+  },
+  "regionOrder": [
+    "screens-about-announcements--japanese",
+    "screens-about-announcements-list--japanese",
+    "screens-about-costs--japanese",
+    "screens-about-finance--japanese",
+    "screens-admin-supporter-pages--plan-japanese",
+    "screens-admin-supporters--japanese",
+    "screens-admin-webhook--japanese",
+    "screens-moderation-hookdecisions--japanese",
+    "screens-moderation-report--japanese",
+    "screens-moderation-reportdialog--japanese",
+    "screens-notifications-list--push-prompt-japanese",
+    "screens-search-accounts--japanese",
+    "screens-session-signinprompt--japanese",
+    "screens-settings-account--japanese",
+    "screens-settings-browsersessions--japanese",
+    "screens-settings-followedtags--japanese",
+    "screens-settings-notifications--japanese",
+    "screens-settings-profile--japanese",
+    "screens-timeline-home--first-run-japanese",
+    "screens-voice-rooms--japanese"
+  ],
+  "noOmissions": [
+    "about-costs",
+    "about-crawler",
+    "about",
+    "account-status",
+    "admin-announcements-detail",
+    "admin-announcements-new",
+    "admin-announcements",
+    "admin-closure",
+    "admin-custom-emoji-requests",
+    "admin-custom-emoji",
+    "admin-custom-emojis-new",
+    "admin-custom-emojis",
+    "admin-documents-commerce-disclosure",
+    "admin-documents-privacy-policy",
+    "admin-documents",
+    "admin-errors",
+    "admin-finance-costs-item",
+    "admin-finance-costs-new",
+    "admin-finance-costs",
+    "admin-finance-imports",
+    "admin-finance-income",
+    "admin-finance-publication",
+    "admin-finance",
+    "admin-job",
+    "admin-jobs-list",
+    "admin-jobs",
+    "admin-link-card-domain",
+    "admin-link-card-domains-new",
+    "admin-link-card-domains",
+    "admin-login-provider",
+    "admin-login-providers-new",
+    "admin-login-providers",
+    "admin-oauth-apps-hosts",
+    "admin-oauth-apps",
+    "admin-relay",
+    "admin-relays-new",
+    "admin-relays",
+    "admin-role-new",
+    "admin-role",
+    "admin-roles",
+    "admin-rule-new",
+    "admin-rule",
+    "admin-rules",
+    "admin-settings-auto-delete",
+    "admin-settings-branding",
+    "admin-settings-content",
+    "admin-settings-discovery",
+    "admin-settings-federation",
+    "admin-settings-registration",
+    "admin-settings-voice",
+    "admin-settings",
+    "admin-supporters-plan-new",
+    "admin-supporters-plan",
+    "admin-supporters-plans",
+    "admin-supporters-subscription",
+    "admin-supporters-subscriptions",
+    "admin-supporters",
+    "admin-translation",
+    "admin-webhook",
+    "admin-webhooks-new",
+    "admin-webhooks",
+    "admin",
+    "announcement",
+    "announcements",
+    "article-editor",
+    "badges",
+    "compose",
+    "direct-messages",
+    "drafts",
+    "event-editor",
+    "event",
+    "events",
+    "finance",
+    "home-first-run",
+    "home",
+    "intent",
+    "landing",
+    "list-timeline",
+    "lists",
+    "local",
+    "moderation-account-action",
+    "moderation-account-actions",
+    "moderation-account-manage",
+    "moderation-account",
+    "moderation-domain-action-new",
+    "moderation-domain-action",
+    "moderation-domain-actions-import",
+    "moderation-domain-actions",
+    "moderation-domain-allows",
+    "moderation-domain-list-subscription-new",
+    "moderation-domain-list-subscription",
+    "moderation-domain-list-subscriptions",
+    "moderation-hook-appeal",
+    "moderation-hook-appeals",
+    "moderation-hook-decision",
+    "moderation-hook-decisions",
+    "moderation-instance",
+    "moderation-invite-new",
+    "moderation-invites",
+    "moderation-report",
+    "moderation-reports",
+    "moderation-signup-block-new",
+    "moderation-signup-block",
+    "moderation-signup-blocks-import",
+    "moderation-signup-blocks",
+    "moderation",
+    "notifications-request",
+    "notifications-requests",
+    "notifications",
+    "profile-follows",
+    "profile-tagged",
+    "profile",
+    "public",
+    "search",
+    "settings-account",
+    "settings-aliases",
+    "settings-auto-delete",
+    "settings-domain-mutes",
+    "settings-filters",
+    "settings-followed-tags",
+    "settings-interaction-requests",
+    "settings-linked-accounts",
+    "settings-menu",
+    "settings-notifications",
+    "settings-passkeys",
+    "settings-preferences",
+    "settings-profile",
+    "settings-sessions",
+    "settings-supporter-tip",
+    "settings",
+    "status",
+    "tag",
+    "voice-mini-player",
+    "voice-room",
+    "voice-rooms",
+    "welcome"
+  ]
+}

@@ -1,24 +1,18 @@
 ---
 name: work-on-issue
-description: Take a GitHub issue from mycroblog/my through the full agent workflow — claim, branch, implement, format, and open a PR (the merge queue is the gate). Use when asked to work on, pick up, or implement an issue.
+description: Take an issue, several issues, an epic, or a milestone of mycroblog/my to main - claim, build on one branch, open the pull request, land it, clean up, and close what it completes. Use when asked to work on, pick up, implement, or finish issues, an epic, or a milestone.
 ---
 
-# Work-on-issue skill
+# Work on a goal
 
-Arguments: an issue number (optional). Without one, pick the next issue as described in the playbook.
+Arguments: issue numbers, an epic, or a milestone. Without one, take the next issue nothing blocks of the earliest milestone.
 
-Follow `docs/agents/workflow.md` exactly. In particular:
-
-- Run the steps through agentkit: `scripts/agentkit.sh issue claim <n>`, then `scripts/agentkit.sh ctx <n>` as the
-  starting context (read more with `show` / `find` / `refs` / `trace`, by section), optionally `scripts/agentkit.sh check`,
-  `scripts/agentkit.sh pr open`, and `scripts/agentkit.sh pr wait <pr>` in the background.
-
-- Only work on issues labeled `agent:ready`; stop and report if the issue is `status:needs-decision` or depends on a Proposed ADR.
-- Never push to `main` and never merge.
-- No local `check` run is required before committing or opening the PR (the merge queue is the gate); run it only to
-  reproduce a CI failure or to iterate. When the change touches TypeScript or JavaScript, run `scripts/task.sh web:fmt` first.
-- Keep the user and operator documents true: update each document of `scripts/agentkit.sh docs impact` that the change
-  makes wrong, and give `pr open --doc-reason '<path>=<reason>'` for each that stays true (AGENTS.md "Documentation").
-- If blocked, comment on the issue, add `agent:blocked`, and stop.
-
-Finish by reporting the PR URL and any assumptions you made.
+1. Claim each issue: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`. It refuses what is blocked.
+2. One worktree and one branch for the whole goal. Group the issues by the shared files they touch
+   (`scripts/agentkit.sh map show <path>`), server before client.
+3. Build: yourself for one small issue; otherwise up to four subagents at once, `builder` for implementation,
+   `routine` for mechanical work, `ui-designer` before any change to a screen. Hand each
+   `scripts/agentkit.sh ctx <n> --quiet`'s file. Rebase their commits onto the goal branch, one commit per issue.
+4. `scripts/agentkit.sh pr open`, then `scripts/agentkit.sh pr land <pr>` in the background.
+5. When `pr land` reports a failure or a conflict, fix it at once (a `routine` agent for a rebase).
+6. Finish when the goal is merged and closed. Report what is merged, what is not and why, and what needs a decision.

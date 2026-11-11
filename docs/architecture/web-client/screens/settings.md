@@ -3,6 +3,7 @@ start: "/settings"
 persona: "hana"
 paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**"]
 starts: {"ナビゲーションから設定を開き、二要素認証がオンかを確かめる": "/home"}
+budget: {"controls": 8, "helpers": 2, "words": 82}
 ---
 
 ## 設定のトップ（`/settings`）

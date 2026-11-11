@@ -6,14 +6,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
 
 	"github.com/mycroblog/my/tools/agentkit/internal/docslint"
 	"github.com/mycroblog/my/tools/agentkit/internal/docsync"
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-const docsUsage = "usage: agentkit docs lint | docs inventory | docs impact [--base origin/main] [--pr-body file]"
+const docsUsage = "usage: agentkit docs lint | docs inventory | docs adr-shape | docs impact [--base origin/main]"
 
 func runDocs(r *repo.Repo, args []string) error {
 	if len(args) == 0 {
@@ -25,10 +24,41 @@ func runDocs(r *repo.Repo, args []string) error {
 			return errors.New(docsUsage)
 		}
 		return runDocsRules(r, args[0])
+	case "adr-shape":
+		if len(args) != 1 {
+			return errors.New(docsUsage)
+		}
+		return runDocsADRShape(r)
 	case "impact":
 		return runDocsImpact(r, args[1:])
 	}
 	return errors.New(docsUsage)
+}
+
+// runDocsADRShape prints the measures of each ADR that the shape rule of docs lint reads, with the ADRs that break
+// it marked: those are what pending.adr-shape may list.
+func runDocsADRShape(r *repo.Repo) error {
+	files, err := r.Files()
+	if err != nil {
+		return err
+	}
+	paths := make([]string, len(files))
+	for i, f := range files {
+		paths[i] = f.Path
+	}
+	shapes, err := docslint.ADRShapes(r.Root, paths)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("%7s %8s %9s %5s  %s\n", "chars", "decision", "artifacts", "table", fmt.Sprintf("(limits: %d, %d, 0, %d)", docslint.ADRMaxChars, docslint.ADRMaxDecisionChars, docslint.ADRMaxTableRows))
+	for _, s := range shapes {
+		mark := ""
+		if s.Breaks {
+			mark = "  breaks"
+		}
+		fmt.Printf("%7d %8d %9d %5d  %s%s\n", s.Chars, s.DecisionChars, s.Artifacts, s.TableRows, s.Path, mark)
+	}
+	return nil
 }
 
 func runDocsRules(r *repo.Repo, cmd string) error {
@@ -44,7 +74,7 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 	for i, f := range files {
 		paths[i] = f.Path
 	}
-	run, what := docslint.Lint, "the rules are in AGENTS.md#documentation, the files each covers in "+docslint.File
+	run, what := docslint.Lint, "each finding says the fix; the files each rule covers are in "+docslint.File
 	if cmd == "inventory" {
 		run, what = docslint.Inventory, "describe each name in its document, or exclude it with the reason in "+docslint.File
 	}
@@ -57,11 +87,7 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 		if err != nil {
 			return err
 		}
-		if c.ADRs.Enforce {
-			findings = append(findings, adrs...)
-		} else {
-			printADRWarnings(adrs)
-		}
+		findings = append(findings, adrs...)
 	}
 	for _, f := range findings {
 		fmt.Println("error: " + f.String())
@@ -73,24 +99,10 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 	return nil
 }
 
-// printADRWarnings shows the ADR findings that do not fail the lint yet: the first few, and how many there are.
-func printADRWarnings(fs []docslint.Finding) {
-	const shown = 20
-	for _, f := range fs[:min(len(fs), shown)] {
-		fmt.Println("warning: " + f.String())
-	}
-	if len(fs) > 0 {
-		fmt.Printf("agentkit docs lint: %d ADR warnings (they fail once adrs.enforce is set in %s)\n", len(fs), docslint.File)
-	}
-}
-
-// runDocsImpact prints the user and operator documents that describe the paths changed since the base; with
-// --pr-body it fails when the pull request's description neither changes nor explains one of them (the preflight
-// of CI).
+// runDocsImpact prints the user and operator documents that describe the paths changed since the base.
 func runDocsImpact(r *repo.Repo, args []string) error {
 	fs := flag.NewFlagSet("docs impact", flag.ContinueOnError)
 	base := fs.String("base", "origin/main", "compare with the merge base of this revision")
-	body := fs.String("pr-body", "", "the pull request's description, to check its "+docsync.Heading+" section")
 	if pos, err := parse(fs, args); err != nil || len(pos) > 0 {
 		return errors.New(docsUsage)
 	}
@@ -106,20 +118,5 @@ func runDocsImpact(r *repo.Repo, args []string) error {
 	for _, l := range docsync.Lines(ims) {
 		fmt.Println(l)
 	}
-	if *body == "" {
-		return nil
-	}
-	b, err := os.ReadFile(*body)
-	if err != nil {
-		return err
-	}
-	problems := docsync.Verify(ims, docsync.Reasons(string(b)))
-	for _, p := range problems {
-		fmt.Println("error: " + p)
-	}
-	if len(problems) > 0 {
-		return exitError{1, fmt.Sprintf("agentkit docs impact: %d documents neither changed nor explained (AGENTS.md#documentation); after editing the description, rerun the failed job", len(problems))}
-	}
-	fmt.Println("each is changed or explained in the description")
 	return nil
 }

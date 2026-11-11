@@ -3,6 +3,7 @@ start: "/notifications"
 persona: "yuki"
 paths: ["app/web/src/routes/notifications_.requests_.$accountId.tsx", "app/web/src/features/notifications/components/NotificationRequest.tsx", "app/web/src/features/notifications/hooks/useNotificationRequest.ts", "app/web/src/features/notifications/api/requests.ts"]
 unavailable: {"リクエストの通知を読んで受け入れる": "the demo scenario keeps every notification policy at accept, so no notification is held in a request"}
+budget: {"controls": 7, "helpers": 1, "words": 63}
 ---
 
 ## リクエストの通知（`/notifications/requests/{account_id}`）

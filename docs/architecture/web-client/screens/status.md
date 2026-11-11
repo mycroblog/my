@@ -3,6 +3,7 @@ start: "/home"
 persona: "yuki"
 paths: ["app/web/src/routes/@{$acct}_.status.$id.tsx", "app/web/src/features/status/**", "app/web/src/features/relationship/**", "app/web/src/routes/-layout/PageHeading.tsx"]
 unavailable: {"ほかの言語の投稿を翻訳して読み、原文に戻す": "the demo server registers no translation provider and keeps the browser's translation off, so no post offers the action", "タイムラインの記事を開いて本文を読む": "the demo scenario writes no articles"}
+budget: {"controls": 37, "helpers": 4, "words": 158}
 ---
 
 ## 投稿の詳細（`/@{acct}/status/{id}`）

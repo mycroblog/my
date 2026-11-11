@@ -2,9 +2,11 @@
 
 // Package hook implements the Claude Code hooks of .claude/settings.json.
 //
-// PreToolUse (Bash, Read) denies the calls whose output costs far more than the agentkit command that answers
-// the same question — reading a whole document of tens of thousands of tokens, watching CI with
-// `gh pr checks --watch` — and the polling loops that wait for a background command and misfire, and hints at agentkit find for repository-wide greps. PostToolUse (Bash) cuts an
+// PreToolUse (Bash, Read) denies the calls that an agentkit command or a built-in tool does at a fraction of the
+// tokens, and says which: searching the repository with grep, paging a file with sed -n / head / tail, rewriting
+// a file from the shell, merging main into a branch, polling CI, reading a whole document of tens of thousands
+// of tokens, and the polling loops that wait for a background command and misfire (rules.go; shell.go splits a
+// compound command into the simple commands the rules read). PostToolUse (Bash) cuts an
 // output longer than AGENTKIT_MAX_OUTPUT characters to its head and tail and saves the whole of it to a
 // file the agent can grep. Both fail open: anything unexpected leaves the call alone.
 package hook
@@ -52,19 +54,7 @@ func envInt(name string, def int) int {
 // bigFile is the size from which reading a whole document is denied (AGENTKIT_BIG_FILE, bytes).
 func bigFile() int64 { return int64(envInt("AGENTKIT_BIG_FILE", 40000)) }
 
-var (
-	// gh in command position only (the start of a line, or after ; & | or a subshell), not in a quoted string.
-	reWatch = regexp.MustCompile(`(?m)(^|[;&|(])\s*gh\s+(pr\s+checks\b[^\n|;&]*--watch|run\s+watch\b)`)
-	// a loop (until / while) whose body sleeps, and pgrep, both in command position: waiting for a background
-	// command this way hangs or ends early (`pgrep -f` matches the polling shell's own command line).
-	reLoop     = regexp.MustCompile(`(?m)(^|[;&|(])\s*((do|then|!)\s+)*(until|while)\s`)
-	reSleep    = regexp.MustCompile(`(?m)(^|[;&|(])\s*((do|then)\s+)*sleep\s`)
-	rePgrep    = regexp.MustCompile(`(?m)(^|[;&|(])\s*((until|while|if|do|then|!)\s+)*pgrep\b`)
-	reCat      = regexp.MustCompile(`^\s*cat\s+([^\s|;&<>]+)\s*$`)
-	reGrepAll  = regexp.MustCompile(`\b(grep\s+(-\w*[rR]\w*|--recursive)|rg)\b`)
-	reLimited  = regexp.MustCompile(`\|\s*(head|tail|wc|sort\s+-u\s*\|\s*head)|\s-(\w*[lcq]\w*)\b|--count|--files-with-matches|--max-count|-m\s*\d`)
-	reAgentkit = regexp.MustCompile(`(^|[\s/])(agentkit|agentkit\.sh)\b`)
-)
+var reAgentkit = regexp.MustCompile(`(^|[\s/])(agentkit|agentkit\.sh)\b`)
 
 func emit(w io.Writer, v any) error {
 	return json.NewEncoder(w).Encode(v)
@@ -76,79 +66,53 @@ func deny(w io.Writer, reason string) error {
 	}})
 }
 
-func hint(w io.Writer, msg string) error {
-	return emit(w, map[string]any{"hookSpecificOutput": map[string]any{
-		"hookEventName": "PreToolUse", "additionalContext": msg,
-	}})
-}
-
-// bigDoc returns the deny reason for reading the whole of file p, or "" when it is small enough.
-func bigDoc(cwd, p string) string {
-	if !filepath.IsAbs(p) {
-		p = filepath.Join(cwd, p)
-	}
-	st, err := os.Stat(p)
+// bigDoc returns the deny reason for reading the whole of the repository's file t, or "" when it is small enough.
+func bigDoc(t target, agentkit, shown string) string {
+	st, err := os.Stat(t.abs)
 	if err != nil || st.IsDir() || st.Size() < bigFile() {
 		return ""
 	}
-	ext := filepath.Ext(p)
-	if ext != ".md" && st.Size() < 2*bigFile() {
+	if filepath.Ext(t.abs) != ".md" && st.Size() < 2*bigFile() {
 		return ""
 	}
-	b, err := os.ReadFile(p)
+	b, err := os.ReadFile(t.abs)
 	if err != nil {
 		return ""
 	}
-	rel := p
-	if r, err := repo.Open(filepath.Dir(p)); err == nil {
-		if x, err := filepath.Rel(r.Root, p); err == nil {
-			rel = x
-		}
-	}
 	return fmt.Sprintf("%s is %d KB (~%s tokens); reading all of it stays in your context for the rest of the session. "+
-		"Read only the part you need: `scripts/agentkit.sh outline %s` lists its sections or declarations with line ranges, "+
-		"then `scripts/agentkit.sh show '%s#<anchor>'` (or a name, or %s:<from>-<to>), or Read with offset and limit.",
-		rel, st.Size()/1000, text.Ktok(text.Tokens(string(b))), rel, rel, rel)
+		"Read only the part you need: `%s outline %s` lists its sections or declarations with line ranges, "+
+		"then `%s show '%s#<anchor>'` (or a name, or %s:<from>-<to>), or Read with offset and limit.",
+		t.rel, st.Size()/1000, text.Ktok(text.Tokens(string(b))), agentkit, shown, agentkit, shown, shown)
 }
 
-// Pre handles PreToolUse.
-func Pre(in Input, w io.Writer) error {
+// Pre handles PreToolUse: it denies the call or prints nothing. Anything unexpected, a panic included, leaves
+// the call alone.
+func Pre(in Input, w io.Writer) (err error) {
+	defer func() {
+		if recover() != nil {
+			err = nil
+		}
+	}()
+	c := &checker{session: in.Cwd}
 	switch in.ToolName {
 	case "Read":
 		var ri readInput
 		if json.Unmarshal(in.ToolInput, &ri) != nil || ri.Offset != nil || ri.Limit != nil {
 			return nil
 		}
-		if reason := bigDoc(in.Cwd, ri.FilePath); reason != "" {
-			return deny(w, reason)
+		// Files outside the repository and under .tmp/ (context packs, saved output) are read whole.
+		if t, ok := c.locate(in.Cwd, word{text: ri.FilePath}); ok {
+			if reason := bigDoc(t, c.agentkit(t.root), c.show(t)); reason != "" {
+				return deny(w, reason)
+			}
 		}
 	case "Bash":
 		var bi bashInput
 		if json.Unmarshal(in.ToolInput, &bi) != nil {
 			return nil
 		}
-		cmd := bi.Command
-		if reWatch.MatchString(cmd) {
-			return deny(w, "Watching CI prints a status table on every poll into your context. "+
-				"Run `scripts/agentkit.sh pr wait <pr>` in the background instead: it prints one line when CI passes, "+
-				"or the failing lines of the failed jobs (exit 3 on a conflict). An orchestrator watching many PRs uses "+
-				"`scripts/agentkit.sh pr watch` with the Monitor tool.")
-		}
-		if rePgrep.MatchString(cmd) || (reLoop.MatchString(cmd) && reSleep.MatchString(cmd)) {
-			return deny(w, "Polling for a background command (an until / while loop that sleeps, or pgrep) hangs or ends "+
-				"early: `pgrep -f` matches the polling shell's own command line. Run the long command with the Bash tool's "+
-				"run_in_background and wait for its completion notification; wait for CI with `scripts/agentkit.sh pr wait <pr>` "+
-				"in the background, and for many PRs with `scripts/agentkit.sh pr watch` and the Monitor tool.")
-		}
-		if m := reCat.FindStringSubmatch(cmd); m != nil {
-			if reason := bigDoc(in.Cwd, m[1]); reason != "" {
-				return deny(w, reason)
-			}
-		}
-		if reGrepAll.MatchString(cmd) && !reLimited.MatchString(cmd) && !reAgentkit.MatchString(cmd) {
-			return hint(w, "Tip: `scripts/agentkit.sh find <words> [--kind ...] [--under <path>]` ranks document sections and "+
-				"code declarations with line ranges and sizes, and `scripts/agentkit.sh refs <name>` lists what uses a name; "+
-				"an unbounded recursive grep returns lines that stay in your context.")
+		if d := c.check(bi.Command); d != nil {
+			return deny(w, d.reason)
 		}
 	}
 	return nil
@@ -234,6 +198,7 @@ func Run(event string, r io.Reader, w io.Writer) error {
 	case "pre":
 		return Pre(in, w)
 	case "post":
+		recordSeen(in)
 		return Post(in, w)
 	}
 	return fmt.Errorf("unknown hook %q (pre or post)", event)

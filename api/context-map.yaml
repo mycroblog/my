@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/architecture/client-api.md#3-エンドポイントを追加する手順", "docs/architecture/client-api.md#2-規約"]
+userdocs: ["docs/developers/client-api.md", "docs/developers/paging.md", "docs/developers/errors.md", "docs/developers/streaming.md", "docs/developers/rate-limits.md", "docs/developers/stability.md"]
+checks: [go, api, web, mykit]
+shared: true

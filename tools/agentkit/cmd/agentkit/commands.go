@@ -17,30 +17,56 @@ const usage = `agentkit — context and workflow tools for coding agents in mycr
 
 Read (instead of grep / cat over the repository):
   ctx <issue> [--layer server|web] [--budget 30000]   everything an issue needs, in one pack (.tmp/agentkit/ctx/<n>.md)
+  grep <pattern> [path|glob ...] [-i] [-w] [-F] [-l] [-o] [-C N] [-n 40] [--max 6000] [--kind go,ts,md,sql,yaml,json]
+       [--tests|--only-tests] [--gen]                  exact / regexp search of the tracked files: bounded, grouped by
+                                                       file, with the declaration or section of each match; skips
+                                                       generated files, lock files, snapshots and tests
   find <words> [--kind k,k] [--under path] [-n 15]     ranked locations; kinds: section adr adr-section requirement
                                                        go go-test ts ts-test op schema table query msg file
-  show <ref> [--max 12000]                             the text of a ref: ADR-0070#decision, FR-915,
-                                                       data-model§4.4, web-client#5-アクセシビリティ, op:<id>,
-                                                       table:<name>, query:<Name>, <GoName>, path:10-40
+  show <ref> [--max 12000]                             the text of a ref: a declaration (<GoName>, Recv.Name,
+                                                       pkg.Name, <path>:<Name>), lines (<path>:10-40), ADR-0070#decision,
+                                                       FR-915, data-model§4.4, web-client#5-アクセシビリティ, op:<id>,
+                                                       table:<name>, query:<Name>
   outline <path>                                       headings / declarations with line ranges and sizes
   refs <ref> [-n 40]                                   what points at ref, and what ref points at
   trace <op:id|GoName> [--depth 6]                     handler -> app -> adapter -> query -> table
   adr list [--status Proposed]                         number, status, and title of every ADR
 
 Workflow (instead of gh / scripts/task.sh loops):
-  issue claim <n> [--plan text]                        check agent:ready, no assignee, Accepted ADRs; assign; comment
-  issue block <n> --reason text|--reason-file f        comment and add agent:blocked
-  pr open [--issue n] [--base b] [--summary-file f] [--decisions text] [--doc-reason 'path=reason']... [--draft]
-                                                       push, open the PR from the template, link it on the issue;
-                                                       refuses while a document of docs impact is neither
-                                                       changed nor given a --doc-reason
+  issue new --type task|bug|spike|adr|epic --title t --body-file f [--parent epic] [--milestone title]
+       [--area a]... [--priority p0|p1|p2] [--blocked-by n]...
+                                                       the only way to create an issue: a sub-issue of --parent with
+                                                       its milestone, or an epic in --milestone; order is --blocked-by
+  issue claim <n> [--plan text]                        check not an epic or an ADR, no assignee, a milestone, Accepted
+                                                       ADRs, nothing open that blocks it; assign; comment
+  issue block <n> --type adr|spike --title t --reason-file f | --on m
+                                                       make <n> wait for a new decision (adr) or investigation
+                                                       (spike) issue, or for the issue m
+  pr open [--issue n]... [--base b] [--summary-file f] [--decisions text] [--draft]
+                                                       the gate: refuses outside a worktree, on a merge or
+                                                       fixup! commit, a conflict with the base, a failing
+                                                       check, or UI screens not looked at; then pushes, opens
+                                                       the PR from the template, links it on each issue;
+                                                       prints the unchanged documents of docs impact
+  pr land <pr> [--timeout 3h]                          the only way a PR finishes (run it in the background, in
+                                                       the main agent): auto-merge through the merge queue, one
+                                                       line per event, then remove the branch and worktree and
+                                                       close finished parent issues; a push while it waits is
+                                                       followed; exit 1 CI failed, 3 conflict, 5 dropped by
+                                                       the queue (each prints the fix)
+  tidy [--dry-run]                                     remove the worktrees and branches of merged or closed PRs
   pr wait <pr> [--timeout 50m] [--all]                 block until CI ends; print one line, or the failing lines
                                                        (run it in the background; exit 3 on a conflict,
-                                                       4 when cancelled with no newer run)
-  pr watch [<pr>...] [--interval 60s]                  one line per event: merged, closed, conflicting, ci-failed,
-                                                       ci-cancelled, ci-green, dequeued (for the Monitor tool)
-  check [--base origin/main]                           optional: scripts/task.sh check:changed with a summary, the
-                                                       failing lines, and the unchanged documents of docs impact
+                                                       4 when cancelled with no newer run, 6 when a push
+                                                       moved the head while it waited: run it again)
+  pr jobs <pr> [--run <id>] [-n 20]                    where the time of CI goes: per run its wall time, then the
+                                                       jobs that ran, slowest first, with the slowest steps
+                                                       of a job over 3 minutes (reads once, does not wait)
+  pr watch [<pr>...] [--interval 60s]                one line per event: merged, closed, head-moved, conflicting,
+                                                       ci-failed, ci-cancelled, ci-green, dequeued (for the
+                                                       Monitor tool)
+  check [--base origin/main] [--full]                  the quick checks of the changed files, one line each
+                                                       (pr open runs them); --full: scripts/task.sh check:changed
   regen [--base origin/main] [--dry-run]               run the generators the changed sources need
   gh sync                                              refresh the local cache of issues and pull requests
 
@@ -48,14 +74,15 @@ Maintenance:
   docs lint                                            links and anchors resolve, English-only documents have no
                                                        Japanese, operator documents cite no design records,
                                                        docs/README.md links them all (docs/lint.yaml)
+  docs adr-shape                                       the size, the implementation names, and the longest table
+                                                       of each ADR, which docs lint limits
   docs inventory                                       every command of my, metric, webhook event type, build tag,
                                                        and listed task is mentioned in its document
-  docs impact [--base origin/main] [--pr-body f]       the user and operator documents (userdocs) of the changed
-                                                       paths; with --pr-body, fail on one neither changed nor
-                                                       explained in its Documentation section
-  map check                                            every path is covered by tools/agentkit/context-map.yaml,
-                                                       every operations/reference document is some entry's userdocs
-  map show <path>                                      the context-map entries, docs and checks of a path
+  docs impact [--base origin/main]                     the user and operator documents (userdocs) of the changed
+                                                       paths
+  map check                                            every path is under a context-map.yaml, no map repeats one
+                                                       above it, every user document is some map's userdocs
+  map show <path>                                      the context map, docs and checks of a path
   stats [--since 2026-10-01] [--top 20]                token use of past Claude Code sessions in this repository
   hook pre|post                                        Claude Code hooks (reads the hook JSON on stdin)
   index                                                build the index now and print its size
@@ -86,12 +113,16 @@ func run(args []string) error {
 		return runCheck(r, rest)
 	case "regen":
 		return runRegen(r, rest)
+	case "tidy":
+		return runTidy(r, rest)
 	case "map":
 		return runMap(r, rest)
 	case "adr":
 		return runADR(r, rest)
 	case "docs":
 		return runDocs(r, rest)
+	case "grep":
+		return runGrep(r, rest)
 	}
 	s, err := store.Open(r)
 	if err != nil {

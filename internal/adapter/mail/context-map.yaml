@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0086-email-delivery.md#6-mailses", "docs/operations/email.md"]
+userdocs: ["docs/operations/email.md"]

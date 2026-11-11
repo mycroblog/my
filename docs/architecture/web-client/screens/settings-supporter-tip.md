@@ -3,6 +3,7 @@ start: "/settings/supporter/tip"
 persona: "yuki"
 paths: ["app/web/src/routes/settings.supporter_.tip.tsx", "app/web/src/features/supporters/components/Tips.tsx", "app/web/src/features/supporters/hooks/useTip.ts", "app/web/src/features/supporters/api/tips.ts"]
 unavailable: {"チップを払う": "the demo scenario does not enable the tips"}
+budget: {"controls": 3, "helpers": 1, "words": 52}
 ---
 
 ## チップ（`/settings/supporter/tip`）

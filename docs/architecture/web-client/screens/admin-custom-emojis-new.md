@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.custom-emojis_.new.tsx", "app/web/src/features/admin/components/NewCustomEmoji.tsx", "app/web/src/features/admin/hooks/useCustomEmojis.ts", "app/web/src/features/admin/api/customEmojis.ts"]
 unavailable: {"カスタム絵文字を登録する（画像の選択は 1 つと数える）": "the agent has no file to choose: the browser tools give it none"}
+budget: {"controls": 7, "helpers": 5, "words": 115}
 ---
 
 ## カスタム絵文字の登録（`/admin/custom-emojis/new`）

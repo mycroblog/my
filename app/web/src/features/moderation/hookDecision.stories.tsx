@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A decision's page of the automated reviews (/moderation/hook-decisions/{id};
 // web-client/screens/moderation-hook-decision.md): every fact of a decision and its cancellation, in the states of
-// ADR-0079 §13.
+// ADR-0165 §1.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { failingOn, inLocale, loadingOn, narrow, renderScreen, screenLoader, settled } from "../../test/stories";
 import { hookReviewsApi, storyHookAppeals, storyHookDecisions } from "./test/hookStories";

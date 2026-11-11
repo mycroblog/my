@@ -9,8 +9,9 @@ the maintainer updates `ja` in the same change as `en`. The other locales (`zh-C
 Every file `locales/en/<namespace>/<area>.json` has a translation `locales/<locale>/<namespace>/<area>.json`: the
 same keys in the same order, each with its translated `defaultMessage` and the English `description` copied as it is.
 A key missing from a translation shows the English text, and `scripts/task.sh i18n:check` warns about it; it never
-fails the check, so a change to `en` needs no translation in the same pull request. A key removed from `en` or renamed
-is removed from every locale in the same change, since a key that `en` does not have fails the check.
+fails the check, so a change to `en` needs no translation in the same pull request (a key missing from `ja` does fail).
+`scripts/i18n.sh rm` and `mv` remove and rename a key in every locale, since a key that `en` does not have fails the
+check, and `scripts/i18n.sh set` with a new English text drops the key's translations, which makes it untranslated again.
 
 A locale's directory is the language tag alone (`es`, `de`), with a region only where the language is written
 differently by region (`zh-CN`, `zh-TW`, `pt-BR`). The server and the web client find a new directory on their own;
@@ -34,14 +35,13 @@ the tags that resolve to it are in `parentLocales` of `internal/i18n/locale.go` 
 1. List the untranslated keys of the locale:
 
    ```sh
-   scripts/task.sh i18n:check 2>&1 | grep 'untranslated' | grep 'zh-CN'
+   scripts/i18n.sh check --locale zh-CN --warnings | grep untranslated
    ```
 
-   A key whose English text changed after it was translated is not listed: compare the `git log` of the English file
-   with the translation's when a run catches up after many changes.
-2. Translate the missing keys into the locale's files, in the order of the English file. For a large catch-up, split
-   the work by area files.
-3. Run `scripts/task.sh i18n:gen` and `scripts/task.sh i18n:check`, and fix every error.
+2. Translate them. `scripts/i18n.sh show <key or prefix>` prints the English and Japanese text and the description, and
+   `scripts/i18n.sh set <namespace>:<key> --zh-CN "<text>"` checks one translation and writes it in its place. For a
+   large catch-up, write the area files in the order of the English files and split the work by them.
+3. Run `scripts/task.sh i18n:gen` and `scripts/i18n.sh check --changed --locale zh-CN`, and fix every error.
 4. Open a pull request with the translations only.
 
 ## Adding a locale

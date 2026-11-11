@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.login-providers.tsx", "app/web/src/features/admin/components/LoginProviderSettings.tsx", "app/web/src/features/admin/hooks/useLoginProviders.ts", "app/web/src/features/admin/api/loginProviders.ts"]
 seed: [{"api": "hana", "method": "POST", "path": "/admin/login_providers", "body": {"kind": "github", "display_name": "GitHub", "client_id": "demo-client", "client_secret": "demo-secret"}}]
+budget: {"controls": 2, "helpers": 0, "words": 33}
 ---
 
 ## ログインプロバイダー（`/admin/login-providers`）

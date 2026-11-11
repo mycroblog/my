@@ -122,7 +122,14 @@ export type HintProps<E extends "p" | "span" | "div" = "p"> = Omit<TextProps<E>,
 /** Secondary text: a description, a hint, a count or a time (`text-sm text-fg-muted`, G6). A paragraph unless `as` says otherwise. */
 export function Hint<E extends "p" | "span" | "div" = "p">({ as, size = "sm", ...rest }: HintProps<E>) {
   // The generic props spread into Text's own generic props, which TypeScript cannot relate without the cast.
-  const props = { ...rest, as: as ?? "p", size: size === "inherit" ? undefined : size, tone: "muted" } as TextProps;
+  // data-helper marks a helper text for the measure of a screen (app/web/src/test/screenMeasure.ts).
+  const props = {
+    "data-helper": "hint",
+    ...rest,
+    as: as ?? "p",
+    size: size === "inherit" ? undefined : size,
+    tone: "muted",
+  } as TextProps;
   return <Text {...props} />;
 }
 

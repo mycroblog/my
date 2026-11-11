@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The custom emoji screen (/admin/custom-emojis and its pages; web-client/screens/admin-custom-emojis.md and the files
-// next to it) in the states of ADR-0079 §13: this server's emoji, those of other servers, the form that registers one,
+// next to it) in the states of ADR-0165 §1: this server's emoji, those of other servers, the form that registers one,
 // the page of one emoji, and the requests for new ones.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

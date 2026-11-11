@@ -3,6 +3,7 @@ start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.settings.tsx", "app/web/src/features/admin/components/ServerSettings.tsx", "app/web/src/features/admin/hooks/useServerGeneral.ts", "app/web/src/features/admin/api/settings.ts", "app/ui/src/LocalNav.tsx"]
 unavailable: {"リンクのプレビューの画像を設定する": "the agent has no file to choose: the browser tools give it none"}
+budget: {"controls": 11, "helpers": 8, "words": 294}
 ---
 
 ## サーバーの設定: 全般（`/admin/settings`）

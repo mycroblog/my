@@ -15,7 +15,7 @@ import { previewOrigin, previewPort, serverPort, voiceServerPort } from "./e2e/s
 
 /**
  * The projects (ADR-0015 §1). Every spec runs in `primaryProject` (en, 1440 px): most specs are flows, whose result
- * the width and the locale do not change, and the screen stories (ADR-0079 §13) check how each screen looks in every
+ * the width and the locale do not change, and the screen stories (ADR-0165 §1) check how each screen looks in every
  * locale and at 320 px. With E2E_MATRIX=full (the Nightly), the specs below also run where their behaviour changes:
  */
 const primary = { locale: "en", width: 1440 } as const;

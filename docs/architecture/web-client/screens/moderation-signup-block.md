@@ -3,6 +3,7 @@ start: "/moderation/signup-blocks"
 persona: "marco"
 paths: ["app/web/src/routes/moderation.signup-blocks_.$id.tsx", "app/web/src/features/moderation/components/SignupBlockDetail.tsx", "app/web/src/features/moderation/hooks/useSignupBlocks.ts", "app/web/src/features/moderation/api/signupBlocks.ts"]
 seed: [{"my": ["admin", "signup-block", "create", "-kind", "email_domain", "-comment", "Throwaway addresses used by spam sign-ups.", "disposable-mail.example"]}]
+budget: {"controls": 2, "helpers": 1, "words": 57}
 ---
 
 ## 登録の拒否の詳細（`/moderation/signup-blocks/{id}`）

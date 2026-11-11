@@ -2,6 +2,7 @@
 start: "/tags/散歩"
 persona: "yuki"
 paths: ["app/web/src/routes/tags.$tag.tsx", "app/web/src/features/hashtags/**", "app/web/src/features/timeline/**", "app/web/src/features/status/components/**"]
+budget: {"controls": 18, "helpers": 2, "words": 97}
 ---
 
 ## ハッシュタグ（`/tags/{tag}`）

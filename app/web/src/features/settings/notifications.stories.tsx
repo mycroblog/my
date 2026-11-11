@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The notification settings (/settings/notifications; web-client/screens/settings-notifications.md) in the states of
-// ADR-0079 §13
+// ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect, within } from "storybook/test";

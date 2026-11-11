@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The terms and policies (/admin/documents and its pages; web-client/screens/admin-documents*.md) in the states of ADR-0079 §13
+// The terms and policies (/admin/documents and its pages; web-client/screens/admin-documents*.md) in the states of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { instanceFixture, type Schemas } from "../../test/fixtures";

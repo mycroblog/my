@@ -2,6 +2,7 @@
 start: "/admin/rules"
 persona: "hana"
 paths: ["app/web/src/routes/admin.rules_.$id.tsx", "app/web/src/features/admin/components/RuleDetail.tsx", "app/web/src/features/admin/hooks/useRules.ts", "app/web/src/features/admin/api/rules.ts", "app/web/src/features/admin/components/ruleParts.tsx"]
+budget: {"controls": 5, "helpers": 2, "words": 91}
 ---
 
 ## ルール（`/admin/rules/{id}`）

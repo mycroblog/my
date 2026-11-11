@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The search of posts (/search?type=posts; FR-309, web-client/screens/search.md) in the states of ADR-0079 §13, on a
+// The search of posts (/search?type=posts; FR-309, web-client/screens/search.md) in the states of ADR-0165 §1, on a
 // server with a search engine.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

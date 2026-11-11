@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The page of one announcement (/admin/announcements/$id; web-client/screens/admin-announcements-detail.md) in the
-// states of ADR-0079 §13: a published one within its window, a draft, a withdrawn one.
+// states of ADR-0165 §1: a published one within its window, a draft, a withdrawn one.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";

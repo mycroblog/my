@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The story tests of app/web (ADR-0079 §13): every screen story runs in Chromium through Vitest browser mode and the
+// The story tests of app/web (ADR-0165 §1): every screen story runs in Chromium through Vitest browser mode and the
 // Storybook Vitest addon, with its play function, and fails on any axe violation (parameters.a11y.test = 'error' in
 // .storybook/preview.tsx) and on a console.error or console.warn (@my/ui's test/consoleGuard.ts). Screens have no
 // screenshot baselines: the E2E screenshots cover them. The component tests are vitest.config.ts (jsdom).
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { defineConfig, mergeConfig } from "vitest/config";
+import { screenBudget } from "./l4/budgetRun.ts";
 import viteConfig from "./vite.config.ts";
 
 export default mergeConfig(
@@ -22,10 +23,16 @@ export default mergeConfig(
       name: "storybook",
       // A screen loads the app and its data through the worker; room for a loaded machine (web-client/README.md T7).
       testTimeout: 30_000,
+      // What each story shows against the budget of its screen's L1 file (l4/budget.ts).
+      setupFiles: ["./src/test/storyBudget.ts"],
+      globalSetup: ["./l4/budgetRun.ts"],
       browser: {
+        commands: { screenBudget },
         enabled: true,
         headless: true,
-        provider: playwright(),
+        // The fixtures' time zone, so that a screen counts the same on every machine: the time zone settings show
+        // more when the device's zone differs from the saved one (screen budgets, l4/budget.ts).
+        provider: playwright({ contextOptions: { timezoneId: "UTC" } }),
         instances: [{ browser: "chromium" as const }],
       },
     },

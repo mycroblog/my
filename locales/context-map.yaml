@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0009-internationalization.md", "docs/agents/translating-catalogs.md"]
+checks: [go, i18n, web]
+shared: true

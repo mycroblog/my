@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The drafts page (/drafts; web-client/screens/drafts.md) in the states of ADR-0079 §13: scheduled posts and drafts,
+// The drafts page (/drafts; web-client/screens/drafts.md) in the states of ADR-0165 §1: scheduled posts and drafts,
 // one whose schedule failed, nothing saved, loading, a failure, the schedule popover, Japanese, and narrow.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";

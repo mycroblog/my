@@ -2,6 +2,7 @@
 start: "/moderation/hook-decisions/appeals"
 persona: "marco"
 paths: ["app/web/src/features/moderation/**", "app/web/src/routes/moderation.hook-decisions_.appeals_.$id.tsx"]
+budget: {"controls": 5, "helpers": 1, "words": 92}
 ---
 
 ## 止められた投稿への異議申し立て（`/moderation/hook-decisions/appeals/{id}`）

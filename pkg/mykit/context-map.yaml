@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: MIT
+docs: ["docs/adr/0093-api-client-library-mykit.md", "docs/architecture/client-api.md#4-認可oauth-20"]
+userdocs: ["docs/developers/libraries.md"]
+checks: [mykit]

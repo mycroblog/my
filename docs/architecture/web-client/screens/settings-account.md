@@ -2,6 +2,7 @@
 start: "/settings"
 persona: "hana"
 paths: ["app/web/src/features/settings/components/OwnAccount.tsx", "app/web/src/features/settings/hooks/useOwnAccount.ts", "app/web/src/features/settings/hooks/useAccountDeactivation.ts", "app/web/src/routes/settings.account.tsx", "app/web/src/routes/deactivated.tsx"]
+budget: {"controls": 5, "helpers": 0, "words": 203}
 ---
 
 ## アカウント（`/settings/account`）と無効化の後の画面（`/deactivated`）

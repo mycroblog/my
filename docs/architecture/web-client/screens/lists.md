@@ -2,6 +2,7 @@
 start: "/lists"
 persona: "yuki"
 paths: ["app/web/src/features/lists/**", "app/web/src/routes/lists.tsx"]
+budget: {"controls": 10, "helpers": 2, "words": 56}
 ---
 
 ## リストの一覧と管理（`/lists`）

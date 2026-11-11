@@ -15,13 +15,20 @@ import (
 )
 
 func runIssue(r *repo.Repo, args []string) error {
+	if len(args) > 0 && args[0] == "new" {
+		return runIssueNew(args[1:])
+	}
 	if len(args) < 2 {
-		return fmt.Errorf("usage: agentkit issue claim <n> [--plan text] | issue block <n> --reason text|--reason-file f")
+		return fmt.Errorf("usage: agentkit issue new --type t --title t --body-file f [--parent n] | issue claim <n> [--plan text] | issue block <n> --type adr|spike --title t --reason-file f | issue block <n> --on <issue>")
 	}
 	fs := flag.NewFlagSet("issue", flag.ContinueOnError)
 	plan := fs.String("plan", "", "one-line plan to comment")
-	reason := fs.String("reason", "", "why the work stops")
-	reasonFile := fs.String("reason-file", "", "file with the reason")
+	b := ops.BlockOptions{}
+	fs.StringVar(&b.Type, "type", "", "block: adr (the decider decides) or spike (an investigation comes first)")
+	fs.StringVar(&b.Title, "title", "", "block: the decision or the investigation needed")
+	fs.StringVar(&b.Reason, "reason", "", "block: what was tried, the options, the recommendation")
+	reasonFile := fs.String("reason-file", "", "block: file with the reason")
+	fs.IntVar(&b.On, "on", 0, "block: an existing issue to wait for, instead of a new one")
 	pos, err := parse(fs, args[1:])
 	if err != nil || len(pos) != 1 {
 		return fmt.Errorf("one issue number expected")
@@ -35,15 +42,20 @@ func runIssue(r *repo.Repo, args []string) error {
 	case "claim":
 		line, err = ops.Claim(r.Root, n, *plan)
 	case "block":
-		text := *reason
 		if *reasonFile != "" {
-			b, err := os.ReadFile(*reasonFile)
+			text, err := os.ReadFile(*reasonFile)
 			if err != nil {
 				return err
 			}
-			text = string(b)
+			b.Reason = string(text)
 		}
-		line, err = ops.Block(n, text)
+		b.N = n
+		var lines []string
+		lines, err = ops.Block(b)
+		line = strings.Join(lines, "\n")
+		if err != nil && line != "" {
+			fmt.Println(line)
+		}
 	default:
 		return fmt.Errorf("unknown issue command %q", args[0])
 	}
@@ -54,15 +66,71 @@ func runIssue(r *repo.Repo, args []string) error {
 	return nil
 }
 
+func runIssueNew(args []string) error {
+	fs := flag.NewFlagSet("issue new", flag.ContinueOnError)
+	var o ops.NewOptions
+	number := func(dst *[]int) func(string) error {
+		return func(v string) error {
+			n, err := strconv.Atoi(strings.TrimPrefix(v, "#"))
+			if err != nil || n <= 0 {
+				return fmt.Errorf("an issue number expected")
+			}
+			*dst = append(*dst, n)
+			return nil
+		}
+	}
+	var parents []int
+	fs.StringVar(&o.Type, "type", "", "task, bug, spike, adr, or epic")
+	fs.StringVar(&o.Title, "title", "", "the title, without a [Type] prefix")
+	bodyFile := fs.String("body-file", "", "file with the description")
+	fs.Func("parent", "the epic this is a sub-issue of; the issue gets its milestone", number(&parents))
+	fs.StringVar(&o.Milestone, "milestone", "", "an open milestone's title (an epic, or an issue outside every epic)")
+	fs.Func("area", "an option of the Area field (repeatable)", func(v string) error {
+		o.Areas = append(o.Areas, v)
+		return nil
+	})
+	fs.StringVar(&o.Priority, "priority", "", "p0, p1, or p2")
+	fs.Func("blocked-by", "an issue to finish first (repeatable)", number(&o.BlockedBy))
+	pos, err := parse(fs, args)
+	if err != nil {
+		return err
+	}
+	if len(pos) > 0 || len(parents) > 1 {
+		return fmt.Errorf("issue new takes flags only, and one --parent (got %q)", pos)
+	}
+	if len(parents) == 1 {
+		o.Parent = parents[0]
+	}
+	if *bodyFile != "" {
+		b, err := os.ReadFile(*bodyFile)
+		if err != nil {
+			return err
+		}
+		o.Body = string(b)
+	}
+	lines, err := ops.New(o)
+	if len(lines) > 0 {
+		fmt.Println(strings.Join(lines, "\n"))
+	}
+	return err
+}
+
 func runPR(r *repo.Repo, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("usage: agentkit pr open|wait|watch")
+		return fmt.Errorf("usage: agentkit pr open|land|wait|jobs|watch")
 	}
 	switch args[0] {
 	case "open":
 		fs := flag.NewFlagSet("pr open", flag.ContinueOnError)
 		var o ops.OpenOptions
-		fs.IntVar(&o.Issue, "issue", 0, "issue number (default: from the branch name)")
+		fs.Func("issue", "an issue the pull request closes (repeatable; default: the branch name's and the (#N) of the commit subjects)", func(v string) error {
+			n, err := strconv.Atoi(strings.TrimPrefix(v, "#"))
+			if err != nil {
+				return err
+			}
+			o.Issues = append(o.Issues, n)
+			return nil
+		})
 		fs.StringVar(&o.Base, "base", "main", "base branch (a stacked PR's base)")
 		fs.StringVar(&o.Title, "title", "", "PR title (default: the first commit's subject)")
 		fs.StringVar(&o.Summary, "summary", "", "summary: what and why")
@@ -70,15 +138,6 @@ func runPR(r *repo.Repo, args []string) error {
 		fs.StringVar(&o.Decisions, "decisions", "", "decisions and assumptions (default: None)")
 		fs.StringVar(&o.Footer, "footer", "", "last line of the description, such as an attribution line")
 		fs.BoolVar(&o.Confirm, "confirm", false, "check the docs and no-secrets items of the checklist")
-		o.DocReasons = map[string]string{}
-		fs.Func("doc-reason", "'<path>=<reason>': why a document that describes the changed paths needs no change (repeatable)", func(v string) error {
-			p, reason, ok := strings.Cut(v, "=")
-			if !ok || strings.TrimSpace(p) == "" || strings.TrimSpace(reason) == "" {
-				return fmt.Errorf("want <path>=<reason>, got %q", v)
-			}
-			o.DocReasons[strings.TrimSpace(p)] = strings.TrimSpace(reason)
-			return nil
-		})
 		fs.BoolVar(&o.Draft, "draft", false, "open as a draft")
 		fs.BoolVar(&o.NoPush, "no-push", false, "do not push first")
 		if _, err := parse(fs, args[1:]); err != nil {
@@ -104,7 +163,7 @@ func runPR(r *repo.Repo, args []string) error {
 		all := fs.Bool("all", false, "wait for every check instead of returning at the first failure")
 		pos, err := parse(fs, args[1:])
 		if err != nil || len(pos) != 1 {
-			return fmt.Errorf("usage: agentkit pr wait <pr> [--timeout 50m] [--all]")
+			return fmt.Errorf("usage: agentkit pr wait <pr> [--timeout 50m] [--all] (exit 1 CI failed or closed, 3 conflict, 4 cancelled, 6 the head moved while waiting, 124 timeout)")
 		}
 		n, err := strconv.Atoi(strings.TrimPrefix(pos[0], "#"))
 		if err != nil {
@@ -116,10 +175,42 @@ func runPR(r *repo.Repo, args []string) error {
 		}
 		branch, _ := r.Branch()
 		head, _ := repo.Git(r.Root, "rev-parse", "HEAD")
-		res := ops.Wait(n, branch, strings.TrimSpace(head), *timeout, *interval, *all, dir)
-		fmt.Println(strings.Join(res.Lines, "\n"))
-		if res.Code != 0 {
-			return exitError{res.Code, ""}
+		if code := ops.Wait(os.Stdout, n, ops.WaitOptions{Branch: branch, Head: strings.TrimSpace(head), Timeout: *timeout,
+			Interval: *interval, All: *all, LogDir: dir}); code != 0 {
+			return exitError{code, ""}
+		}
+		return nil
+	case "jobs":
+		fs := flag.NewFlagSet("pr jobs", flag.ContinueOnError)
+		run := fs.Int64("run", 0, "the run to read (default: the newest run of each workflow on the pull request's head)")
+		limit := fs.Int("n", 20, "jobs printed per run")
+		pos, err := parse(fs, args[1:])
+		if err != nil || len(pos) != 1 {
+			return fmt.Errorf("usage: agentkit pr jobs <pr> [--run <id>] [-n 20]")
+		}
+		n, err := strconv.Atoi(strings.TrimPrefix(pos[0], "#"))
+		if err != nil {
+			return err
+		}
+		return ops.Jobs(os.Stdout, n, ops.JobsOptions{Run: *run, Limit: *limit})
+	case "land":
+		fs := flag.NewFlagSet("pr land", flag.ContinueOnError)
+		timeout := fs.Duration("timeout", 3*time.Hour, "give up after")
+		interval := fs.Duration("interval", 30*time.Second, "poll interval")
+		pos, err := parse(fs, args[1:])
+		if err != nil || len(pos) != 1 {
+			return fmt.Errorf("usage: agentkit pr land <pr> [--timeout 3h]")
+		}
+		n, err := strconv.Atoi(strings.TrimPrefix(pos[0], "#"))
+		if err != nil {
+			return err
+		}
+		dir, err := r.TmpDir("ci")
+		if err != nil {
+			return err
+		}
+		if code := ops.Land(os.Stdout, r, n, ops.LandOptions{Timeout: *timeout, Interval: *interval, LogDir: dir}); code != 0 {
+			return exitError{code, ""}
 		}
 		return nil
 	case "watch":
@@ -145,10 +236,16 @@ func runPR(r *repo.Repo, args []string) error {
 func runCheck(r *repo.Repo, args []string) error {
 	fs := flag.NewFlagSet("check", flag.ContinueOnError)
 	base := fs.String("base", "origin/main", "compare with the merge base of this revision")
+	full := fs.Bool("full", false, "run scripts/task.sh check:changed, every check of the changed contexts")
+	fs.Bool("fast", true, "the quick checks of the changed files (the default)")
 	if _, err := parse(fs, args); err != nil {
 		return err
 	}
-	ok, lines, err := ops.Check(r, *base)
+	run := ops.CheckFast
+	if *full {
+		run = ops.Check
+	}
+	ok, lines, err := run(r, *base)
 	if err != nil {
 		return err
 	}
@@ -156,6 +253,27 @@ func runCheck(r *repo.Repo, args []string) error {
 	if !ok {
 		return exitError{1, ""}
 	}
+	return nil
+}
+
+func runTidy(r *repo.Repo, args []string) error {
+	fs := flag.NewFlagSet("tidy", flag.ContinueOnError)
+	dry := fs.Bool("dry-run", false, "print what it would remove")
+	hint := fs.Bool("hint", false, "print one line when merged branches are left, reading no remote (the SessionStart hook)")
+	if _, err := parse(fs, args); err != nil {
+		return err
+	}
+	if *hint {
+		if n := ops.Leftovers(r); n > 0 {
+			fmt.Printf("%d merged local branches (with their worktrees) are left: run scripts/agentkit.sh tidy\n", n)
+		}
+		return nil
+	}
+	lines, err := ops.Tidy(r, *dry)
+	if err != nil {
+		return err
+	}
+	fmt.Println(strings.Join(lines, "\n"))
 	return nil
 }
 

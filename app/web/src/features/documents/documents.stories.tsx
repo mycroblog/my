@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The documents the server publishes (/about/terms, /about/privacy, /about/commerce) in
-// the states of ADR-0079 §13
+// the states of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import type { Schemas } from "../../test/fixtures";

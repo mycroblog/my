@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The aliases (/settings/aliases; web-client/screens/settings-aliases.md) in the states of ADR-0079 §13
+// The aliases (/settings/aliases; web-client/screens/settings-aliases.md) in the states of ADR-0165 §1
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { http, HttpResponse } from "msw";
 import { expect } from "storybook/test";

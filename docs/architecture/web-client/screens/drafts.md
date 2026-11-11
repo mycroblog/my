@@ -3,6 +3,7 @@ start: "/drafts"
 persona: "yuki"
 paths: ["app/web/src/routes/drafts.tsx", "app/web/src/features/drafts/**"]
 unavailable: {"予約投稿を 1 つ開いて、時刻を変える": "the demo scenario saves no draft and schedules no post", "下書きを 1 つ開いて、フォームで続きを書く": "the demo scenario saves no draft and schedules no post", "予約を 1 つ取り消す": "the demo scenario saves no draft and schedules no post", "下書きを 1 つ削除する": "the demo scenario saves no draft and schedules no post"}
+budget: {"controls": 7, "helpers": 4, "words": 68}
 ---
 
 ## 下書きと予約投稿（`/drafts`）

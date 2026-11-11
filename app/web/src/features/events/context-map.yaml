@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+docs: ["docs/adr/0161-events.md#5-設定と日時", "docs/adr/0161-events.md#6-場所", "docs/adr/0161-events.md#7-日程の調整", "docs/adr/0161-events.md#9-公開範囲の判定", "docs/adr/0161-events.md#10-通話のルーム", "docs/architecture/web-client/screens/events.md", "docs/architecture/web-client/screens/event.md", "docs/architecture/web-client/screens/event-editor.md", "docs/architecture/web-client/09-app-shell.md#9-アプリの外枠"]
+userdocs: ["docs/guide/events.md"]

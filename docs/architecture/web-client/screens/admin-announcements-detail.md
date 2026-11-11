@@ -3,6 +3,7 @@ start: "/admin/announcements"
 persona: "hana"
 paths: ["app/web/src/routes/admin.announcements_.$id.tsx", "app/web/src/features/admin/components/AnnouncementDetail.tsx", "app/web/src/features/admin/components/AnnouncementFields.tsx", "app/web/src/features/admin/hooks/useAnnouncements.ts", "app/web/src/features/admin/api/announcements.ts"]
 seed: [{"api": "hana", "method": "POST", "path": "/admin/announcements", "body": {"title": "New rules next month", "text": "The rules change on the first of next month. Read them on the about page.", "publish": false}}]
+budget: {"controls": 7, "helpers": 5, "words": 143}
 ---
 
 ## お知らせの詳細（`/admin/announcements/{id}`）

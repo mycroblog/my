@@ -8,7 +8,7 @@
 ## Context（背景・課題）
 
 本体の [workflow.md](../../../../docs/agents/workflow.md) の手順（Issue の着手条件の確認、PR の作成、CI の待ち、衝突の解消、マージの監視）は、毎回 gh と make の出力を読みながら進めている。
-着手条件（`agent:ready`、担当者なし、依存する ADR が Accepted、待つべき Issue が閉じている）の確認や PR の本文は機械的に決まる。CI の待ちは、ポーリングのたびに文脈全体を読み直すターンを消費する。
+着手条件（担当者なし、依存する ADR が Accepted、待つべき Issue が閉じている）の確認や PR の本文は機械的に決まる。CI の待ちは、ポーリングのたびに文脈全体を読み直すターンを消費する。
 決定者の回答（原文、2 は「GitHub のデータをローカルにキャッシュすること」）:
 
 > 1, 2 : OK
@@ -30,7 +30,7 @@
 
 - キャッシュ: Issue（本文・ラベル・状態）と、マージ済みの PR（本文・ブランチ・変更したファイル）を [ADR-0002](0002-knowledge-graph.md) と同じデータベースに保存し、言及する ID と変更したファイルを辺にする。`gh sync` と、15 分より古いときの `ctx` が、前回から更新された分だけを取り直す
 - `issue claim <n>`: 着手条件を確かめ、満たさなければ理由を返して止まる。満たせば自分を担当者にし、計画をコメントする
-- `issue block <n>`: 理由をコメントし、`agent:blocked` を付ける
+- `issue block <n>`: 待つ理由を、それを止める Issue として記録する
 - `pr open`: push し、テンプレートの節を Issue（`Closes #N`、受け入れ基準）とコミットの件名から埋め、Issue に PR を記録する。「`make check` が通る」の項目は、`agentkit check` が同じ作業ツリーで通ったときだけ埋める。stacked PR は `Stacked on #M` を先頭に書く
 - `pr wait <pr>`: CI が終わるまでポーリングし、通れば 1 行を、落ちれば失敗したジョブのログから失敗した行だけを返す（全体は `.tmp/agentkit/ci/` に保存）。衝突は終了コード 3。エージェントはバックグラウンドで動かす
 - `pr watch`: オーケストレーター向けに、opened・merged・closed・conflicting・ci-failed・ci-green・dequeued の各イベントを 1 行ずつ出す。Monitor ツールの通知と 1 対 1 で対応する

@@ -27,7 +27,7 @@ whose inputs have not changed.
 
 Tasks run with [go-task](https://taskfile.dev/) and live in `Taskfile.yml` and `tasks/<area>.yml`. `scripts/task.sh`
 builds the version pinned in `tools/go.mod` into `bin/task` and runs it; never use a `task` from your PATH.
-`scripts/task.sh --list` lists the tasks, and [docs/reference/commands.md](docs/reference/commands.md) describes them.
+`scripts/task.sh --list` lists and describes the tasks.
 
 `scripts/task.sh check` runs the check of every context in parallel: docs, Go, i18n, the email layout (`app/mail`),
 the API, `app/ui`, `app/web`, Docker, agentkit, and `pkg/mykit` with `pkg/mybot` (`docs:check`, `go:check`,
@@ -143,23 +143,18 @@ services `postgres` and `mailpit` alone.
 
 ## Workflow
 
-1. Pick a GitHub issue. `agent:ready` marks the issues with clear acceptance criteria that are ready to start.
+1. Pick a GitHub issue that no open issue blocks; an issue of type ADR waits for the maintainer's decision.
 2. Create a branch `<type>/<issue>-<slug>`. Never push to `main`.
-3. Commit (Conventional Commits, in English). Running the checks locally is not required: the merge queue's full check
-   is the gate. Run `scripts/task.sh check:changed` or the check of one context (`scripts/task.sh go:check`, ...) to
-   reproduce a CI failure or to iterate on what you write. Format Go with `gofmt` and TypeScript and JavaScript with
-   `scripts/task.sh web:fmt` before you commit, since the preflight checks it ([Formatting](#formatting)).
-4. Open a pull request from the template, with its Documentation section filled (see [Documentation](#documentation)).
-5. When its CI is green, a maintainer or the orchestrator (the role that runs agents in parallel and merges their pull
-   requests) adds it to the merge queue with `gh pr merge <PR> -R mycroblog/my --auto --merge`. `main` only receives
-   merges from the merge queue.
-6. If the queue drops the pull request because of a conflict or a failing `check`, its owner fixes it while the rest of
-   the queue proceeds: merge `main` into the branch,
-   regenerate the committed generated files (those Go reads, the output of `scripts/task.sh generate`) instead of
-   resolving their conflicts by hand, run `scripts/task.sh web:fmt` if a TypeScript or JavaScript file conflicted,
-   and push; the person from step 5 queues it
-   again. Merge `main` only when the pull request conflicts or the queue drops it: the queue checks it on top of the
-   latest `main` anyway.
+3. Commit (Conventional Commits, in English), one commit per issue. Before a push, run the fast checks of what you
+   changed (`scripts/agentkit.sh check`); the merge queue's full check is the gate, so the full check is for
+   reproducing a CI failure.
+4. Open a pull request from the template (`scripts/agentkit.sh pr open`). Its commits contain no merge commit: bring
+   the branch up to date with `git rebase origin/main`.
+5. Add it to the merge queue with `gh pr merge <PR> -R mycroblog/my --auto --merge` (`scripts/agentkit.sh pr land`
+   also follows it to the merge and cleans up). `main` only receives merges from the merge queue.
+6. If the queue drops the pull request because of a conflict or a failing `check`, fix it while the rest of the queue
+   proceeds: rebase onto `main`, regenerate the committed generated files (`scripts/agentkit.sh regen`) instead of
+   resolving their conflicts by hand, push with `--force-with-lease`, and queue it again.
 
 ## Formatting
 
@@ -179,31 +174,14 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## CI
 
-CI (`.github/workflows/`) splits what runs where as follows. Each job of `ci.yml` sets up its tools and then runs its
-checks as parallel steps. Each step is named after its check and calls one task (`scripts/task.sh go:vet`), so the
-Actions page shows the log and duration of every check, and you can run a failed check locally with the same task.
-`scripts/task.sh docs:ci-coverage` makes sure that every check of the local `scripts/task.sh check` runs in some CI
-step.
-
-| When | Workflow | What runs |
-| --- | --- | --- |
-| Pull request | `ci.yml` | `preflight`: the checks that the pull request's own files and lockfiles decide — markdownlint, shellcheck, gofmt, `bun fmt` (which the merge queue's `repo` job runs again), the Go and npm dependency licenses, the versions of the Dockerfile against `.tool-versions` and of the Playwright image, the design tokens, and the CSS `100vh` check. A change to the ui context also runs the `@my/ui` story tests (`ui-test.yml`); a change to Go or `tools/agentkit` runs golangci-lint on the changed lines (`lint`); a change to the Docker setup (`Dockerfile`, `.dockerignore`, `deploy/`) runs the Docker Compose smoke test (`docker-smoke`). The required check `check` collects the results. A pull request labelled `ci:full` also runs the merge queue's jobs (adding or removing the label runs them again) |
-| Merge queue | `ci.yml` | The full check on the merge group (the pull request on top of `main` and the pull requests queued before it). By the contexts changed (`scripts/changed-contexts.sh`): for go, schema, api, or i18n, `server-static` (tidy, vet, build, the generated files Go reads, the schema of both dialects) and `server-test` (the Go tests, PostgreSQL on pgmem); for ui, web, api, or i18n, `client-static` (tsc, Oxlint, knip, the Vite build, the i18n catalogs) and `client-test` (Vitest in two shards); always `repo` (agentkit, the context map, the documentation rules, the ADR numbers, `bun fmt`, and that CI runs every check of `check`), which also builds the documentation site and runs tsc, Oxlint, and knip on `app/docs/` when `app/docs/`, a published document, or `api/openapi.yaml` changes (a change under `app/docs/` alone runs no client job). golangci-lint and the build tag combinations do not run here (the slow suite runs them). At most six jobs; a skipped job counts as passed. The queue merges when `check` passes |
-| Push to `main` | `main.yml` | No checks: it only builds the caches that pull requests and the merge queue restore. The Go cache holds what the restoring jobs read (modules, package and tool builds, test binaries, vet and golangci-lint results), built one after another with the same settings (`CGO_ENABLED=0`) and rebuilt from scratch under a key of the Go version, `go.sum`, `tools/go.sum`, and the date; the Bun cache is keyed by the lockfile. Each is built only when no cache of its key exists yet |
-| Release gate, nightly, by hand | `slow-suite.yml` | The slow suite: the full web E2E matrix (eight shards), the live interoperability tests (`federation-live.yml`), the tests on a real PostgreSQL, the `stream.Bus` contract against broker containers, the smoke test and the linux/arm64 image build, golangci-lint on everything and the build tag combinations, and CodeQL code scanning (`codeql.yml`; results go to the Security tab). Never on pull requests or the merge queue, and not part of `check` |
-| Release (by hand) | `release.yml` | Runs the slow suite on the given commit and, only when it passes, creates the tag and a draft GitHub Release |
-| Nightly (03:00 JST) | `nightly.yml` | Runs the slow suite on the head of `main`, unless `main` has not moved since the last successful full nightly (a run by hand of some of the jobs, titled like `Nightly (l4)`, does not count) |
-
-- Pull request CI does not compile, type-check, or test; the merge queue does, and it is the only gate. Running
-  `scripts/task.sh check:changed` locally is optional (to reproduce a failure or to iterate).
-  To investigate a merge queue failure on the pull request, or to check an outside contribution early, add the label
-  `ci:full` to the pull request.
-- Pull requests do not run the web E2E automatically; the merge queue runs it on the primary project (`en`, 1440 px)
-  when the client changes. To see a failure earlier, for a pull request that touches the web client, run
-  `scripts/task.sh web:e2e` locally, or run `gh workflow run web-e2e.yml -R mycroblog/my --ref <branch>` against its
-  branch (add `-f matrix=full` for the width and locale projects too; the Actions tab can start it too).
-- `slow-suite.yml`, `nightly.yml`, `web-e2e.yml`, `federation-live.yml`, `postgres-contract.yml`,
-  `stream-contract.yml`, `mail-integration.yml`, and `codeql.yml` can also be run by hand (`workflow_dispatch`).
+A pull request runs only what its own files decide (formatting, licenses, lint of the changed modules); the merge
+queue runs the compile, type, and test checks once, on the merged state, for the contexts the group changes, and is
+the only gate ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)). The slow suite runs nightly, by hand, and
+before a release. The workflows in `.github/workflows/` say which job runs what: each step is named after the task it
+runs, so a failed step is reproduced with `scripts/task.sh <step name>`, and `scripts/agentkit.sh pr jobs <pr>`
+prints where the time went. To run the merge queue's jobs on a pull request (an outside contribution, a failure to
+investigate), add the label `allow:full-ci`. The web E2E does not run on pull requests: run it locally with
+`scripts/task.sh web:e2e`, or by hand with `gh workflow run web-e2e.yml --ref <branch>`.
 
 ## Schema changes
 
@@ -528,20 +506,18 @@ mark an ADR `Accepted`.
 - The documentation site's Japanese pages are machine translations that an agent writes into `app/docs/i18n/`, following
   [docs/agents/translating-docs.md](docs/agents/translating-docs.md). The English document is authoritative: change it,
   not only its translation. A pull request that changes English documents does not need to translate them too.
-- Documents for users and operators (`README.md`, `docs/operations/`, `docs/reference/` except `commands.md`, the
-  development tasks for contributors) explain the behaviour themselves. They do not link to or cite ADRs, `docs/requirements/`, `docs/architecture/`, or GitHub issues and pull
+- Documents for users and operators (`README.md`, `docs/operations/`, `docs/reference/`) explain the behaviour themselves. They do not link to or cite ADRs, `docs/requirements/`, `docs/architecture/`, or GitHub issues and pull
   requests; link only the other user and operator documents a reader needs.
 - A diagram in a document follows [docs/agents/diagrams.md](docs/agents/diagrams.md): hand-written SVG that switches
   between light and dark itself, with text alternatives.
 - Every document describes the present state. Write why something changed in the commit message and the pull request.
 - `scripts/task.sh docs:rules` (part of `docs:check`) checks these rules and that relative links and their `#anchors`
   resolve; [docs/lint.yaml](docs/lint.yaml) lists the files each rule covers.
-- A change keeps the user and operator documents that describe it true. The `userdocs` of
-  [tools/agentkit/context-map.yaml](tools/agentkit/context-map.yaml) say which documents describe which paths, and
-  `scripts/agentkit.sh docs impact` lists those of your change. Update each one the change makes wrong; the
-  **Documentation** section of the pull request lists every one as `changed` or as `no change — <reason>`, and the
-  pull request's check fails otherwise. Every command of `my`, metric, webhook event type, build tag, and task appears
-  in its document (`scripts/task.sh agentkit:inventory`).
+- A change keeps the user and operator documents that describe it true: `scripts/agentkit.sh docs impact` lists those
+  of your change. Every command of `my`, metric, webhook event type, build tag, and task appears in its document
+  (`scripts/task.sh agentkit:inventory`).
+- The design documents and the agent instructions do not grow without the decider's `allow:docs-growth` label
+  (`scripts/task.sh docs:growth`): an ADR holds a decision, its reasons, and when to revisit it, not what the code says.
 
 ## Language
 
@@ -551,14 +527,27 @@ mark an ADR `Accepted`.
 ## Translations and messages
 
 User-facing strings go into `locales/<locale>/<namespace>/<area>.json` (FormatJS JSON format), and `en` and `ja` are
-updated together.
-A key goes into the file of its area: the area is the key's first segment, or its first two segments for `admin`.
-`settings.profile.title` goes into `locales/en/client/settings.json`, and `admin.report.title` into
-`locales/en/client/admin/report.json`. A key of a new area goes into a new file of that name (nothing that bundles the
-files needs to change); `scripts/task.sh i18n:check` reports keys written in the wrong file.
-After editing, run `scripts/task.sh i18n:gen` to regenerate the pseudo-locales (`en-XA` / `ar-XB`) and the typed
-accessors, and commit what Go reads (the pseudo-locales of `server`, `internal/i18n/messages_gen.go`, and
+updated together: a key that `ja` lacks fails `scripts/task.sh i18n:check`.
+Change the catalogs with `scripts/i18n.sh` (`scripts/i18n.sh help` lists its commands). It writes a key to the file of
+its area (the key's first segment, or its first two for `admin`: `settings.profile.title` is in
+`locales/en/client/settings.json`, `admin.report.title` in `locales/en/client/admin/report.json`), refuses a text that
+breaks a rule of the check and says which, and regenerates the pseudo-locales (`en-XA` / `ar-XB`) and the typed accessors:
+
+```sh
+scripts/i18n.sh add client:lists.empty.title --en "No lists yet" --ja "リストはまだありません" --desc "Heading of the empty list of lists."
+scripts/i18n.sh set client:lists.empty.title --en "No lists" --ja "リストはありません"  # drops the machine translations of the old text
+scripts/i18n.sh mv client:lists.empty.title lists.none.title  # in every locale, and the references in the source
+scripts/i18n.sh rm client:lists.none.title                    # refused while the source refers to it
+scripts/i18n.sh show lists.empty                              # also: find "<text>", unused
+scripts/i18n.sh check --changed                               # the checks of the keys changed since origin/main
+```
+
+Commit what Go reads (the pseudo-locales of `server`, `internal/i18n/messages_gen.go`, and
 `internal/i18n/testdata/golden.json`). The pseudo-locales of `client` and the TypeScript accessors are not committed.
+
+A helper text of a client, a key that ends in `description`, `hint`, `help`, or `note`, is one short sentence: at most
+20 words in `en` and 50 characters in `ja`. Say more in the label or in the documentation. The texts that were longer
+when the rule arrived are listed in `tools/i18n/helper-text-baseline.json`; they may not grow, and the list only shrinks.
 
 Every accessor takes the arguments of a message by name, so that two arguments of the same type cannot be swapped:
 

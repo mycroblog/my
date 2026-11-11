@@ -2,6 +2,7 @@
 start: "/home"
 persona: "yuki"
 paths: ["app/web/src/routes/announcements_.$id.tsx", "app/web/src/features/announcements/**"]
+budget: {"controls": 3, "helpers": 2, "words": 51}
 ---
 
 ## お知らせ（`/announcements/$id`）

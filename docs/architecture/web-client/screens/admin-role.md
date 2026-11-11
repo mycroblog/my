@@ -3,6 +3,7 @@ start: "/admin/roles"
 persona: "hana"
 paths: ["app/web/src/routes/admin.roles_.$key.tsx", "app/web/src/features/admin/components/RoleDetail.tsx", "app/web/src/features/admin/hooks/useRoleSettings.ts", "app/web/src/features/admin/api/roles.ts", "app/web/src/features/admin/components/roleParts.tsx"]
 unavailable: {"誰も持っていないロールを削除する": "every role of the demo scenario that may be deleted has a holder"}
+budget: {"controls": 33, "helpers": 7, "words": 245}
 ---
 
 ## ロール（`/admin/roles/{key}`）

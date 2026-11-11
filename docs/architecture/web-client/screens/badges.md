@@ -3,6 +3,7 @@ start: "/settings"
 persona: "yuki"
 paths: ["app/web/src/features/settings/**", "app/web/src/features/session/**", "app/web/src/features/supporters/**"]
 seed: [{"my": ["admin", "role", "grant", "yuki", "translator"]}, {"api": "yuki", "method": "PUT", "path": "/preferences/supporter_listing", "body": {"listed": false}}]
+budget: {"controls": 2, "helpers": 1, "words": 35}
 ---
 
 ## バッジとサポーターの一覧（`/settings/badges`）

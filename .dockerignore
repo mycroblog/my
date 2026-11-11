@@ -28,3 +28,5 @@ app/ui/src/themeTokens.gen.ts
 !schema/
 !scripts/install-atlas.sh
 !scripts/check-release-build.sh
+# The pointers for coding agents: no build reads them, so a change to one keeps the layers.
+**/AGENTS.md

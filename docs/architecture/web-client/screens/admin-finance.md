@@ -2,6 +2,7 @@
 start: "/admin"
 persona: "hana"
 paths: ["app/web/src/routes/admin.finance.tsx", "app/web/src/features/admin/components/FinanceTotals.tsx", "app/web/src/features/admin/components/FinanceParts.tsx", "app/web/src/features/admin/hooks/useFinance.ts", "app/web/src/features/admin/api/finance.ts", "app/web/src/features/costs/**"]
+budget: {"controls": 6, "helpers": 6, "words": 281}
 ---
 
 ## 費用の概要（`/admin/finance`）

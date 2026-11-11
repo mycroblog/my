@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The pages of the supporters screen after the program (web-client/screens/admin-supporters-*.md) in the states of
-// ADR-0079 §13: the plans, a new plan, one plan (in effect and retired), the subscriptions and one subscription. Each
+// ADR-0165 §1: the plans, a new plan, one plan (in effect and retired), the subscriptions and one subscription. Each
 // story opens its page's path.
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { expect } from "storybook/test";
