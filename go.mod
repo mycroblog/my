@@ -26,10 +26,10 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/translate v1.43.8
 	github.com/aws/smithy-go v1.28.8
 	github.com/cloudflare/cloudflare-go/v7 v7.14.0
-	github.com/dadrus/httpsig v0.10.0
+	github.com/dadrus/httpsig v0.12.0
 	github.com/deepteams/webp v1.2.8
 	github.com/dunglas/httpsfv v1.1.2
-	github.com/getkin/kin-openapi v0.152.0
+	github.com/getkin/kin-openapi v0.153.0
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/googleapis/gax-go/v2 v2.27.0
 	github.com/jackc/pgx/v5 v5.12.0
@@ -72,7 +72,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e
 	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12
-	modernc.org/sqlite v1.61.1
+	modernc.org/sqlite v1.62.0
 	rsc.io/qr v0.2.0
 )
 
@@ -168,8 +168,6 @@ require (
 	github.com/moby/term v0.5.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect
-	github.com/oasdiff/yaml v0.1.1 // indirect
-	github.com/oasdiff/yaml3 v0.0.14 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
@@ -205,13 +203,14 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.71.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.47.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.6 // indirect
+	go.yaml.in/yaml/v4 v4.0.0 // indirect
 	golang.org/x/oauth2 v0.37.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/time v0.16.0 // indirect
 	google.golang.org/genproto v0.0.0-20261012220534-4341edf3f941 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20261012220534-4341edf3f941 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.79.0 // indirect
+	modernc.org/libc v1.80.1 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect
 )
