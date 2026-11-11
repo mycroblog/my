@@ -62,7 +62,11 @@ An instance setting that has never been set reads as its default, which is defin
 | [`worker_job_types`](#worker_job_types) | `MY_WORKER_JOB_TYPES` | none | no | no |
 | [`worker_job_types_except`](#worker_job_types_except) | `MY_WORKER_JOB_TYPES_EXCEPT` | none | no | no |
 | [`worker_job_concurrency`](#worker_job_concurrency) | `MY_WORKER_JOB_CONCURRENCY` | `1` | no | no |
-| [`listen`](#listen) | `MY_LISTEN` | `:8080` | no | no |
+| [`listen`](#listen) | `MY_LISTEN` | `:443` with `tls` other than `off` in the `web` and `all` roles, `:8080` otherwise | no | no |
+| [`tls`](#tls) | `MY_TLS` | `off` | no | no |
+| [`tls_cert_file`](#tls_cert_file) | `MY_TLS_CERT_FILE` | none | `tls = files` | no |
+| [`tls_key_file`](#tls_key_file) | `MY_TLS_KEY_FILE` | none | `tls = files` | no |
+| [`tls_http_listen`](#tls_http_listen) | `MY_TLS_HTTP_LISTEN` | `:80` | no | no |
 | [`trusted_proxies`](#trusted_proxies) | `MY_TRUSTED_PROXIES` | none | no | no |
 | [`trusted_proxy_header`](#trusted_proxy_header) | `MY_TRUSTED_PROXY_HEADER` | `x-forwarded-for` | no | no |
 | [`origin_secret`](#origin_secret) | `MY_ORIGIN_SECRET` | none | no | yes |
@@ -466,10 +470,47 @@ How many jobs this process runs at once, from 1 to 128. Raise it for jobs that m
 
 ### `listen`
 
-TCP address the HTTP server listens on, as `host:port`.
+TCP address the HTTP server listens on, as `host:port`. With `tls` other than `off`, the `web` and `all` roles serve HTTPS on it; the `worker` role always serves plain HTTP (its health checks).
 
 - Environment variable: `MY_LISTEN`
-- Default: `:8080`
+- Default: `:443` with `tls` other than `off` in the `web` and `all` roles, `:8080` otherwise
+- Required: no
+
+### `tls`
+
+Whether the server serves HTTPS itself, so that it runs without a reverse proxy ([serving HTTPS from the server](../operations/running.md#serving-https-from-the-server)). Only the `web` and `all` roles listen with TLS.
+
+- Environment variable: `MY_TLS`
+- Default: `off`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `off` | Plain HTTP on `listen`: a reverse proxy, a load balancer, or a CDN in front terminates TLS. |
+| `files` | HTTPS on `listen` with the certificate `tls_cert_file` and its key `tls_key_file`, which another tool such as certbot keeps up to date. The server looks at their modification times every minute and loads them again when they change, without a restart. Port `tls_http_listen` redirects to `https`. |
+
+### `tls_cert_file`
+
+Path of the certificate chain in PEM, the server's certificate first and then its intermediates, for `tls = files`. It must cover `host`.
+
+- Environment variable: `MY_TLS_CERT_FILE`
+- Default: none
+- Required: `tls = files`
+
+### `tls_key_file`
+
+Path of the private key of `tls_cert_file` in PEM, for `tls = files`.
+
+- Environment variable: `MY_TLS_KEY_FILE`
+- Default: none
+- Required: `tls = files`
+
+### `tls_http_listen`
+
+TCP address of the plain HTTP port with `tls` other than `off`, as `host:port`. It sends `GET` and `HEAD` requests to the same path on `https` with `301` and answers `400` to every other method, so that no request body travels in plain text. Empty opens no such port.
+
+- Environment variable: `MY_TLS_HTTP_LISTEN`
+- Default: `:80`
 - Required: no
 
 ### `trusted_proxies`

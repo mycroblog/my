@@ -23,6 +23,8 @@ var sealedValueInserts = map[string]string{ //nolint:gosec // G101: SQL statemen
 	"instance_secrets.sealed_secret":             `INSERT INTO instance_secrets (id, name, sealed_secret, created_at) VALUES ($1, $1::uuid::text, $2, now())`,
 	"local_account_private_keys.private_key_enc": `INSERT INTO local_account_private_keys (account_key_id, private_key_enc) VALUES ($1, $2)`,
 	"login_provider_secrets.sealed_secret":       `INSERT INTO login_provider_secrets (id, provider_id, sealed_secret, created_at) VALUES ($1, $1, $2, now())`,
+	"tls_acme_accounts.sealed_private_key":       `INSERT INTO tls_acme_accounts (id, directory_url, account_url, sealed_private_key, created_at) VALUES ($1, $1::uuid::text, $1::uuid::text, $2, now())`,
+	"tls_certificates.sealed_private_key":        `INSERT INTO tls_certificates (id, attempt_id, host, directory_url, serial, not_before, not_after, chain_pem, sealed_private_key, created_at) VALUES ($1, $1, 'example.com', 'https://ca.example/dir', '01', now(), now() + interval '1 day', '', $2, now())`,
 	"totp_enrollments.secret_enc":                `INSERT INTO totp_enrollments (id, user_id, secret_enc, enrolled_at) VALUES ($1, $1, $2, now())`,
 	"webhook_secrets.sealed_secret":              `INSERT INTO webhook_secrets (id, endpoint_id, sealed_secret, created_at) VALUES ($1, $1, $2, now())`,
 }

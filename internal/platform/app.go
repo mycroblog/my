@@ -55,6 +55,7 @@ import (
 	"github.com/mycroblog/my/internal/app/webhook"
 	"github.com/mycroblog/my/internal/i18n"
 	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/internal/platform/tlsserve"
 )
 
 // WebClientCallbackPath is the path on the web origin where the web client receives the
@@ -189,6 +190,13 @@ type App struct {
 	CustomEmojis *content.CustomEmojiService
 	// MediaProxy relays remote media files under /media/proxy/ and signs their URLs (ADR-0005).
 	MediaProxy *content.MediaProxy
+	// TLSCertificates are the certificates in memory that the TLS listener serves, by host; nil
+	// unless this process listens with TLS (Config.ServesTLS). Whatever obtains a certificate
+	// puts it there; the handshake reads nothing else (ADR-0163 §6).
+	TLSCertificates *tlsserve.Holder
+	// TLSHTTPChallenge answers the ACME HTTP-01 challenges on port 80
+	// (tlsserve.ACMEChallengePrefix); nil leaves those paths to the redirect to https.
+	TLSHTTPChallenge http.Handler
 	// LinkCards fetches and presents the cards of the links in statuses (ADR-0062).
 	LinkCards *content.LinkCards
 	// Translation translates posts on a reader's request (ADR-0148).
@@ -627,6 +635,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 		return nil, err
 	}
 	a.setUpMediaHTTP()
+	a.setUpTLS(cfg)
 	a.setUpClientAPI(cfg, opts.Version, opts.ClientAPIAccountLimit)
 	a.registerMetricsSnapshot()
 	if err := a.setUpWorkerJobTypes(cfg); err != nil {
