@@ -314,6 +314,8 @@ fields_copy() {
   mkdir -p "$fields/modules"
   cp "$root/deploy/opentofu/README.md" "$fields/"
   for module in "$root"/deploy/opentofu/modules/*/; do
+    # modules/internal holds modules and none of its own, and the check skips it.
+    [ "$(basename "$module")" != internal ] || continue
     mkdir "$fields/modules/$(basename "$module")"
     cp "$module"*.tf "$fields/modules/$(basename "$module")/"
   done

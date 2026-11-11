@@ -5,8 +5,9 @@
 version: "3"
 
 vars:
+  # Every module: those of modules/ and of modules/internal/, which holds modules and is none itself.
   TOFU_DIRS:
-    sh: printf '%s\n' deploy/opentofu/modules/* | tr '\n' ' '
+    sh: printf '%s\n' deploy/opentofu/modules/* deploy/opentofu/modules/internal/* | grep -vx deploy/opentofu/modules/internal | tr '\n' ' '
   # One copy of the providers for every directory: each is over 100 MB.
   TF_PLUGIN_CACHE_DIR: "{{.ROOT_DIR}}/.tmp/tofu-plugins"
   # The modules that validate and test run at once. init stays one module at a time: it fills the shared plugin cache,
@@ -66,7 +67,7 @@ tasks:
     desc: Run the tests of deploy/opentofu (each module with a tests directory), on mocked providers, TOFU_JOBS modules at a time
     deps: [init]
     cmds:
-      - printf '%s\n' deploy/opentofu/modules/*/tests | xargs -n 1 dirname | xargs -P {{.TOFU_JOBS}} -I {} scripts/tofu-each.sh {} test
+      - printf '%s\n' deploy/opentofu/modules/*/tests deploy/opentofu/modules/internal/*/tests | xargs -n 1 dirname | xargs -P {{.TOFU_JOBS}} -I {} scripts/tofu-each.sh {} test
 
   state-test:
     desc: Prove against a local stub of Secret Manager that generated secrets have the right formats and reach neither the plan nor the state

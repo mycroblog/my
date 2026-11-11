@@ -1,0 +1,1162 @@
+{
+  "account_domain": {
+    "env": "MY_ACCOUNT_DOMAIN",
+    "secret": false
+  },
+  "billing_aws_filter": {
+    "env": "MY_BILLING_AWS_FILTER",
+    "secret": false
+  },
+  "billing_aws_linked_accounts": {
+    "env": "MY_BILLING_AWS_LINKED_ACCOUNTS",
+    "secret": false
+  },
+  "billing_aws_max_requests_per_day": {
+    "env": "MY_BILLING_AWS_MAX_REQUESTS_PER_DAY",
+    "secret": false
+  },
+  "billing_aws_max_requests_per_month": {
+    "env": "MY_BILLING_AWS_MAX_REQUESTS_PER_MONTH",
+    "secret": false
+  },
+  "billing_aws_metric": {
+    "env": "MY_BILLING_AWS_METRIC",
+    "secret": false
+  },
+  "billing_aws_role_arn": {
+    "env": "MY_BILLING_AWS_ROLE_ARN",
+    "secret": false
+  },
+  "billing_aws_tag": {
+    "env": "MY_BILLING_AWS_TAG",
+    "secret": false
+  },
+  "billing_cloudflare_account_id": {
+    "env": "MY_BILLING_CLOUDFLARE_ACCOUNT_ID",
+    "secret": false
+  },
+  "billing_cloudflare_api_token": {
+    "env": "MY_BILLING_CLOUDFLARE_API_TOKEN",
+    "secret": true
+  },
+  "billing_gcp_budget_subscription": {
+    "env": "MY_BILLING_GCP_BUDGET_SUBSCRIPTION",
+    "secret": false
+  },
+  "billing_gcp_label": {
+    "env": "MY_BILLING_GCP_LABEL",
+    "secret": false
+  },
+  "billing_gcp_max_bytes_billed": {
+    "env": "MY_BILLING_GCP_MAX_BYTES_BILLED",
+    "secret": false
+  },
+  "billing_gcp_method": {
+    "env": "MY_BILLING_GCP_METHOD",
+    "secret": false
+  },
+  "billing_gcp_projects": {
+    "env": "MY_BILLING_GCP_PROJECTS",
+    "secret": false
+  },
+  "billing_gcp_query_project": {
+    "env": "MY_BILLING_GCP_QUERY_PROJECT",
+    "secret": false
+  },
+  "billing_gcp_table": {
+    "env": "MY_BILLING_GCP_TABLE",
+    "secret": false
+  },
+  "billing_sources": {
+    "env": "MY_BILLING_SOURCES",
+    "secret": false
+  },
+  "blob": {
+    "env": "MY_BLOB",
+    "secret": false
+  },
+  "blob_fs_dir": {
+    "env": "MY_BLOB_FS_DIR",
+    "secret": false
+  },
+  "blob_gcs_bucket": {
+    "env": "MY_BLOB_GCS_BUCKET",
+    "secret": false
+  },
+  "blob_s3_access_key_id": {
+    "env": "MY_BLOB_S3_ACCESS_KEY_ID",
+    "secret": false
+  },
+  "blob_s3_bucket": {
+    "env": "MY_BLOB_S3_BUCKET",
+    "secret": false
+  },
+  "blob_s3_endpoint": {
+    "env": "MY_BLOB_S3_ENDPOINT",
+    "secret": false
+  },
+  "blob_s3_path_style": {
+    "env": "MY_BLOB_S3_PATH_STYLE",
+    "secret": false
+  },
+  "blob_s3_region": {
+    "env": "MY_BLOB_S3_REGION",
+    "secret": false
+  },
+  "blob_s3_secret_access_key": {
+    "env": "MY_BLOB_S3_SECRET_ACCESS_KEY",
+    "secret": true
+  },
+  "captcha": {
+    "env": "MY_CAPTCHA",
+    "secret": false
+  },
+  "captcha_secret_key": {
+    "env": "MY_CAPTCHA_SECRET_KEY",
+    "secret": true
+  },
+  "captcha_site_key": {
+    "env": "MY_CAPTCHA_SITE_KEY",
+    "secret": false
+  },
+  "custom_emoji_max_bytes": {
+    "env": "MY_CUSTOM_EMOJI_MAX_BYTES",
+    "secret": false
+  },
+  "database": {
+    "env": "MY_DATABASE",
+    "secret": false
+  },
+  "database_acquire_timeout": {
+    "env": "MY_DATABASE_ACQUIRE_TIMEOUT",
+    "secret": false
+  },
+  "database_dev_url": {
+    "env": "MY_DATABASE_DEV_URL",
+    "secret": true
+  },
+  "database_url": {
+    "env": "MY_DATABASE_URL",
+    "secret": true
+  },
+  "dead_job_retention": {
+    "env": "MY_DEAD_JOB_RETENTION",
+    "secret": false
+  },
+  "dynamic_client_idle_retention": {
+    "env": "MY_DYNAMIC_CLIENT_IDLE_RETENTION",
+    "secret": false
+  },
+  "dynamic_client_unredeemed_retention": {
+    "env": "MY_DYNAMIC_CLIENT_UNREDEEMED_RETENTION",
+    "secret": false
+  },
+  "errors_environment": {
+    "env": "MY_ERRORS_ENVIRONMENT",
+    "secret": false
+  },
+  "errors_exporter": {
+    "env": "MY_ERRORS_EXPORTER",
+    "secret": false
+  },
+  "errors_sentry_dsn": {
+    "env": "MY_ERRORS_SENTRY_DSN",
+    "secret": true
+  },
+  "host": {
+    "env": "MY_HOST",
+    "secret": false
+  },
+  "http_allow_private_networks": {
+    "env": "MY_HTTP_ALLOW_PRIVATE_NETWORKS",
+    "secret": false
+  },
+  "job_attempt_retention": {
+    "env": "MY_JOB_ATTEMPT_RETENTION",
+    "secret": false
+  },
+  "kek": {
+    "env": "MY_KEK",
+    "secret": true
+  },
+  "kek_previous": {
+    "env": "MY_KEK_PREVIOUS",
+    "secret": true
+  },
+  "key_manager": {
+    "env": "MY_KEY_MANAGER",
+    "secret": false
+  },
+  "kms_dek_cache_entries": {
+    "env": "MY_KMS_DEK_CACHE_ENTRIES",
+    "secret": false
+  },
+  "kms_dek_cache_ttl": {
+    "env": "MY_KMS_DEK_CACHE_TTL",
+    "secret": false
+  },
+  "kms_key": {
+    "env": "MY_KMS_KEY",
+    "secret": false
+  },
+  "kms_key_previous": {
+    "env": "MY_KMS_KEY_PREVIOUS",
+    "secret": false
+  },
+  "kv": {
+    "env": "MY_KV",
+    "secret": false
+  },
+  "listen": {
+    "env": "MY_LISTEN",
+    "secret": false
+  },
+  "login_provider_allowed_destinations": {
+    "env": "MY_LOGIN_PROVIDER_ALLOWED_DESTINATIONS",
+    "secret": false
+  },
+  "mail": {
+    "env": "MY_MAIL",
+    "secret": false
+  },
+  "mail_from": {
+    "env": "MY_MAIL_FROM",
+    "secret": false
+  },
+  "mail_ses_configuration_set": {
+    "env": "MY_MAIL_SES_CONFIGURATION_SET",
+    "secret": false
+  },
+  "mail_ses_region": {
+    "env": "MY_MAIL_SES_REGION",
+    "secret": false
+  },
+  "mail_ses_sns_topic_arn": {
+    "env": "MY_MAIL_SES_SNS_TOPIC_ARN",
+    "secret": false
+  },
+  "mail_smtp_host": {
+    "env": "MY_MAIL_SMTP_HOST",
+    "secret": false
+  },
+  "mail_smtp_password": {
+    "env": "MY_MAIL_SMTP_PASSWORD",
+    "secret": true
+  },
+  "mail_smtp_port": {
+    "env": "MY_MAIL_SMTP_PORT",
+    "secret": false
+  },
+  "mail_smtp_username": {
+    "env": "MY_MAIL_SMTP_USERNAME",
+    "secret": false
+  },
+  "maintenance": {
+    "env": "MY_MAINTENANCE",
+    "secret": false
+  },
+  "maintenance_message": {
+    "env": "MY_MAINTENANCE_MESSAGE",
+    "secret": false
+  },
+  "maintenance_retry_after": {
+    "env": "MY_MAINTENANCE_RETRY_AFTER",
+    "secret": false
+  },
+  "maintenance_server_name": {
+    "env": "MY_MAINTENANCE_SERVER_NAME",
+    "secret": false
+  },
+  "maintenance_until": {
+    "env": "MY_MAINTENANCE_UNTIL",
+    "secret": false
+  },
+  "media_audio": {
+    "env": "MY_MEDIA_AUDIO",
+    "secret": false
+  },
+  "media_image": {
+    "env": "MY_MEDIA_IMAGE",
+    "secret": false
+  },
+  "media_max_audio_duration": {
+    "env": "MY_MEDIA_MAX_AUDIO_DURATION",
+    "secret": false
+  },
+  "media_max_av_bytes": {
+    "env": "MY_MEDIA_MAX_AV_BYTES",
+    "secret": false
+  },
+  "media_max_image_bytes": {
+    "env": "MY_MEDIA_MAX_IMAGE_BYTES",
+    "secret": false
+  },
+  "media_max_image_pixels": {
+    "env": "MY_MEDIA_MAX_IMAGE_PIXELS",
+    "secret": false
+  },
+  "media_max_image_side": {
+    "env": "MY_MEDIA_MAX_IMAGE_SIDE",
+    "secret": false
+  },
+  "media_max_video_duration": {
+    "env": "MY_MEDIA_MAX_VIDEO_DURATION",
+    "secret": false
+  },
+  "media_origin": {
+    "env": "MY_MEDIA_ORIGIN",
+    "secret": false
+  },
+  "media_replaced_retention": {
+    "env": "MY_MEDIA_REPLACED_RETENTION",
+    "secret": false
+  },
+  "media_unattached_retention": {
+    "env": "MY_MEDIA_UNATTACHED_RETENTION",
+    "secret": false
+  },
+  "media_video": {
+    "env": "MY_MEDIA_VIDEO",
+    "secret": false
+  },
+  "metrics_emf_dimensions": {
+    "env": "MY_METRICS_EMF_DIMENSIONS",
+    "secret": false
+  },
+  "metrics_emf_namespace": {
+    "env": "MY_METRICS_EMF_NAMESPACE",
+    "secret": false
+  },
+  "metrics_exporter": {
+    "env": "MY_METRICS_EXPORTER",
+    "secret": false
+  },
+  "metrics_listen": {
+    "env": "MY_METRICS_LISTEN",
+    "secret": false
+  },
+  "origin_secret": {
+    "env": "MY_ORIGIN_SECRET",
+    "secret": true
+  },
+  "origin_secret_header": {
+    "env": "MY_ORIGIN_SECRET_HEADER",
+    "secret": false
+  },
+  "origin_secret_previous": {
+    "env": "MY_ORIGIN_SECRET_PREVIOUS",
+    "secret": true
+  },
+  "payments": {
+    "env": "MY_PAYMENTS",
+    "secret": false
+  },
+  "payments_payjp_public_key": {
+    "env": "MY_PAYMENTS_PAYJP_PUBLIC_KEY",
+    "secret": false
+  },
+  "payments_payjp_secret_key": {
+    "env": "MY_PAYMENTS_PAYJP_SECRET_KEY",
+    "secret": true
+  },
+  "payments_payjp_webhook_token": {
+    "env": "MY_PAYMENTS_PAYJP_WEBHOOK_TOKEN",
+    "secret": true
+  },
+  "payments_reconcile_interval": {
+    "env": "MY_PAYMENTS_RECONCILE_INTERVAL",
+    "secret": false
+  },
+  "payments_reconcile_max_requests": {
+    "env": "MY_PAYMENTS_RECONCILE_MAX_REQUESTS",
+    "secret": false
+  },
+  "payments_stripe_secret_key": {
+    "env": "MY_PAYMENTS_STRIPE_SECRET_KEY",
+    "secret": true
+  },
+  "payments_stripe_webhook_secret": {
+    "env": "MY_PAYMENTS_STRIPE_WEBHOOK_SECRET",
+    "secret": true
+  },
+  "plugin_billing_address": {
+    "env": "MY_PLUGIN_BILLING_ADDRESS",
+    "secret": false
+  },
+  "plugin_billing_location": {
+    "env": "MY_PLUGIN_BILLING_LOCATION",
+    "secret": false
+  },
+  "plugin_billing_protocol": {
+    "env": "MY_PLUGIN_BILLING_PROTOCOL",
+    "secret": false
+  },
+  "plugin_billing_provider": {
+    "env": "MY_PLUGIN_BILLING_PROVIDER",
+    "secret": false
+  },
+  "plugin_billing_timeout": {
+    "env": "MY_PLUGIN_BILLING_TIMEOUT",
+    "secret": false
+  },
+  "plugin_billing_tls_ca_file": {
+    "env": "MY_PLUGIN_BILLING_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_billing_tls_cert_file": {
+    "env": "MY_PLUGIN_BILLING_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_billing_tls_key_file": {
+    "env": "MY_PLUGIN_BILLING_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_billing_token": {
+    "env": "MY_PLUGIN_BILLING_TOKEN",
+    "secret": true
+  },
+  "plugin_inbound_actor_address": {
+    "env": "MY_PLUGIN_INBOUND_ACTOR_ADDRESS",
+    "secret": false
+  },
+  "plugin_inbound_actor_protocol": {
+    "env": "MY_PLUGIN_INBOUND_ACTOR_PROTOCOL",
+    "secret": false
+  },
+  "plugin_inbound_actor_timeout": {
+    "env": "MY_PLUGIN_INBOUND_ACTOR_TIMEOUT",
+    "secret": false
+  },
+  "plugin_inbound_actor_tls_ca_file": {
+    "env": "MY_PLUGIN_INBOUND_ACTOR_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_inbound_actor_tls_cert_file": {
+    "env": "MY_PLUGIN_INBOUND_ACTOR_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_inbound_actor_tls_key_file": {
+    "env": "MY_PLUGIN_INBOUND_ACTOR_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_inbound_actor_token": {
+    "env": "MY_PLUGIN_INBOUND_ACTOR_TOKEN",
+    "secret": true
+  },
+  "plugin_inbound_follow_address": {
+    "env": "MY_PLUGIN_INBOUND_FOLLOW_ADDRESS",
+    "secret": false
+  },
+  "plugin_inbound_follow_protocol": {
+    "env": "MY_PLUGIN_INBOUND_FOLLOW_PROTOCOL",
+    "secret": false
+  },
+  "plugin_inbound_follow_timeout": {
+    "env": "MY_PLUGIN_INBOUND_FOLLOW_TIMEOUT",
+    "secret": false
+  },
+  "plugin_inbound_follow_tls_ca_file": {
+    "env": "MY_PLUGIN_INBOUND_FOLLOW_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_inbound_follow_tls_cert_file": {
+    "env": "MY_PLUGIN_INBOUND_FOLLOW_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_inbound_follow_tls_key_file": {
+    "env": "MY_PLUGIN_INBOUND_FOLLOW_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_inbound_follow_token": {
+    "env": "MY_PLUGIN_INBOUND_FOLLOW_TOKEN",
+    "secret": true
+  },
+  "plugin_inbound_status_address": {
+    "env": "MY_PLUGIN_INBOUND_STATUS_ADDRESS",
+    "secret": false
+  },
+  "plugin_inbound_status_protocol": {
+    "env": "MY_PLUGIN_INBOUND_STATUS_PROTOCOL",
+    "secret": false
+  },
+  "plugin_inbound_status_timeout": {
+    "env": "MY_PLUGIN_INBOUND_STATUS_TIMEOUT",
+    "secret": false
+  },
+  "plugin_inbound_status_tls_ca_file": {
+    "env": "MY_PLUGIN_INBOUND_STATUS_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_inbound_status_tls_cert_file": {
+    "env": "MY_PLUGIN_INBOUND_STATUS_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_inbound_status_tls_key_file": {
+    "env": "MY_PLUGIN_INBOUND_STATUS_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_inbound_status_token": {
+    "env": "MY_PLUGIN_INBOUND_STATUS_TOKEN",
+    "secret": true
+  },
+  "plugin_key_manager_address": {
+    "env": "MY_PLUGIN_KEY_MANAGER_ADDRESS",
+    "secret": false
+  },
+  "plugin_key_manager_protocol": {
+    "env": "MY_PLUGIN_KEY_MANAGER_PROTOCOL",
+    "secret": false
+  },
+  "plugin_key_manager_timeout": {
+    "env": "MY_PLUGIN_KEY_MANAGER_TIMEOUT",
+    "secret": false
+  },
+  "plugin_key_manager_tls_ca_file": {
+    "env": "MY_PLUGIN_KEY_MANAGER_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_key_manager_tls_cert_file": {
+    "env": "MY_PLUGIN_KEY_MANAGER_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_key_manager_tls_key_file": {
+    "env": "MY_PLUGIN_KEY_MANAGER_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_key_manager_token": {
+    "env": "MY_PLUGIN_KEY_MANAGER_TOKEN",
+    "secret": true
+  },
+  "plugin_local_profile_address": {
+    "env": "MY_PLUGIN_LOCAL_PROFILE_ADDRESS",
+    "secret": false
+  },
+  "plugin_local_profile_protocol": {
+    "env": "MY_PLUGIN_LOCAL_PROFILE_PROTOCOL",
+    "secret": false
+  },
+  "plugin_local_profile_timeout": {
+    "env": "MY_PLUGIN_LOCAL_PROFILE_TIMEOUT",
+    "secret": false
+  },
+  "plugin_local_profile_tls_ca_file": {
+    "env": "MY_PLUGIN_LOCAL_PROFILE_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_local_profile_tls_cert_file": {
+    "env": "MY_PLUGIN_LOCAL_PROFILE_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_local_profile_tls_key_file": {
+    "env": "MY_PLUGIN_LOCAL_PROFILE_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_local_profile_token": {
+    "env": "MY_PLUGIN_LOCAL_PROFILE_TOKEN",
+    "secret": true
+  },
+  "plugin_local_status_address": {
+    "env": "MY_PLUGIN_LOCAL_STATUS_ADDRESS",
+    "secret": false
+  },
+  "plugin_local_status_protocol": {
+    "env": "MY_PLUGIN_LOCAL_STATUS_PROTOCOL",
+    "secret": false
+  },
+  "plugin_local_status_timeout": {
+    "env": "MY_PLUGIN_LOCAL_STATUS_TIMEOUT",
+    "secret": false
+  },
+  "plugin_local_status_tls_ca_file": {
+    "env": "MY_PLUGIN_LOCAL_STATUS_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_local_status_tls_cert_file": {
+    "env": "MY_PLUGIN_LOCAL_STATUS_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_local_status_tls_key_file": {
+    "env": "MY_PLUGIN_LOCAL_STATUS_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_local_status_token": {
+    "env": "MY_PLUGIN_LOCAL_STATUS_TOKEN",
+    "secret": true
+  },
+  "plugin_mailer_address": {
+    "env": "MY_PLUGIN_MAILER_ADDRESS",
+    "secret": false
+  },
+  "plugin_mailer_protocol": {
+    "env": "MY_PLUGIN_MAILER_PROTOCOL",
+    "secret": false
+  },
+  "plugin_mailer_timeout": {
+    "env": "MY_PLUGIN_MAILER_TIMEOUT",
+    "secret": false
+  },
+  "plugin_mailer_tls_ca_file": {
+    "env": "MY_PLUGIN_MAILER_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_mailer_tls_cert_file": {
+    "env": "MY_PLUGIN_MAILER_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_mailer_tls_key_file": {
+    "env": "MY_PLUGIN_MAILER_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_mailer_token": {
+    "env": "MY_PLUGIN_MAILER_TOKEN",
+    "secret": true
+  },
+  "plugin_media_audio_address": {
+    "env": "MY_PLUGIN_MEDIA_AUDIO_ADDRESS",
+    "secret": false
+  },
+  "plugin_media_audio_protocol": {
+    "env": "MY_PLUGIN_MEDIA_AUDIO_PROTOCOL",
+    "secret": false
+  },
+  "plugin_media_audio_timeout": {
+    "env": "MY_PLUGIN_MEDIA_AUDIO_TIMEOUT",
+    "secret": false
+  },
+  "plugin_media_audio_tls_ca_file": {
+    "env": "MY_PLUGIN_MEDIA_AUDIO_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_media_audio_tls_cert_file": {
+    "env": "MY_PLUGIN_MEDIA_AUDIO_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_media_audio_tls_key_file": {
+    "env": "MY_PLUGIN_MEDIA_AUDIO_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_media_audio_token": {
+    "env": "MY_PLUGIN_MEDIA_AUDIO_TOKEN",
+    "secret": true
+  },
+  "plugin_media_check_address": {
+    "env": "MY_PLUGIN_MEDIA_CHECK_ADDRESS",
+    "secret": false
+  },
+  "plugin_media_check_protocol": {
+    "env": "MY_PLUGIN_MEDIA_CHECK_PROTOCOL",
+    "secret": false
+  },
+  "plugin_media_check_timeout": {
+    "env": "MY_PLUGIN_MEDIA_CHECK_TIMEOUT",
+    "secret": false
+  },
+  "plugin_media_check_tls_ca_file": {
+    "env": "MY_PLUGIN_MEDIA_CHECK_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_media_check_tls_cert_file": {
+    "env": "MY_PLUGIN_MEDIA_CHECK_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_media_check_tls_key_file": {
+    "env": "MY_PLUGIN_MEDIA_CHECK_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_media_check_token": {
+    "env": "MY_PLUGIN_MEDIA_CHECK_TOKEN",
+    "secret": true
+  },
+  "plugin_media_image_address": {
+    "env": "MY_PLUGIN_MEDIA_IMAGE_ADDRESS",
+    "secret": false
+  },
+  "plugin_media_image_protocol": {
+    "env": "MY_PLUGIN_MEDIA_IMAGE_PROTOCOL",
+    "secret": false
+  },
+  "plugin_media_image_timeout": {
+    "env": "MY_PLUGIN_MEDIA_IMAGE_TIMEOUT",
+    "secret": false
+  },
+  "plugin_media_image_tls_ca_file": {
+    "env": "MY_PLUGIN_MEDIA_IMAGE_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_media_image_tls_cert_file": {
+    "env": "MY_PLUGIN_MEDIA_IMAGE_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_media_image_tls_key_file": {
+    "env": "MY_PLUGIN_MEDIA_IMAGE_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_media_image_token": {
+    "env": "MY_PLUGIN_MEDIA_IMAGE_TOKEN",
+    "secret": true
+  },
+  "plugin_media_video_address": {
+    "env": "MY_PLUGIN_MEDIA_VIDEO_ADDRESS",
+    "secret": false
+  },
+  "plugin_media_video_protocol": {
+    "env": "MY_PLUGIN_MEDIA_VIDEO_PROTOCOL",
+    "secret": false
+  },
+  "plugin_media_video_timeout": {
+    "env": "MY_PLUGIN_MEDIA_VIDEO_TIMEOUT",
+    "secret": false
+  },
+  "plugin_media_video_tls_ca_file": {
+    "env": "MY_PLUGIN_MEDIA_VIDEO_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_media_video_tls_cert_file": {
+    "env": "MY_PLUGIN_MEDIA_VIDEO_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_media_video_tls_key_file": {
+    "env": "MY_PLUGIN_MEDIA_VIDEO_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_media_video_token": {
+    "env": "MY_PLUGIN_MEDIA_VIDEO_TOKEN",
+    "secret": true
+  },
+  "plugin_search_address": {
+    "env": "MY_PLUGIN_SEARCH_ADDRESS",
+    "secret": false
+  },
+  "plugin_search_protocol": {
+    "env": "MY_PLUGIN_SEARCH_PROTOCOL",
+    "secret": false
+  },
+  "plugin_search_timeout": {
+    "env": "MY_PLUGIN_SEARCH_TIMEOUT",
+    "secret": false
+  },
+  "plugin_search_tls_ca_file": {
+    "env": "MY_PLUGIN_SEARCH_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_search_tls_cert_file": {
+    "env": "MY_PLUGIN_SEARCH_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_search_tls_key_file": {
+    "env": "MY_PLUGIN_SEARCH_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_search_token": {
+    "env": "MY_PLUGIN_SEARCH_TOKEN",
+    "secret": true
+  },
+  "plugin_signup_check_address": {
+    "env": "MY_PLUGIN_SIGNUP_CHECK_ADDRESS",
+    "secret": false
+  },
+  "plugin_signup_check_protocol": {
+    "env": "MY_PLUGIN_SIGNUP_CHECK_PROTOCOL",
+    "secret": false
+  },
+  "plugin_signup_check_timeout": {
+    "env": "MY_PLUGIN_SIGNUP_CHECK_TIMEOUT",
+    "secret": false
+  },
+  "plugin_signup_check_tls_ca_file": {
+    "env": "MY_PLUGIN_SIGNUP_CHECK_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_signup_check_tls_cert_file": {
+    "env": "MY_PLUGIN_SIGNUP_CHECK_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_signup_check_tls_key_file": {
+    "env": "MY_PLUGIN_SIGNUP_CHECK_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_signup_check_token": {
+    "env": "MY_PLUGIN_SIGNUP_CHECK_TOKEN",
+    "secret": true
+  },
+  "plugin_translator_address": {
+    "env": "MY_PLUGIN_TRANSLATOR_ADDRESS",
+    "secret": false
+  },
+  "plugin_translator_name": {
+    "env": "MY_PLUGIN_TRANSLATOR_NAME",
+    "secret": false
+  },
+  "plugin_translator_protocol": {
+    "env": "MY_PLUGIN_TRANSLATOR_PROTOCOL",
+    "secret": false
+  },
+  "plugin_translator_timeout": {
+    "env": "MY_PLUGIN_TRANSLATOR_TIMEOUT",
+    "secret": false
+  },
+  "plugin_translator_tls_ca_file": {
+    "env": "MY_PLUGIN_TRANSLATOR_TLS_CA_FILE",
+    "secret": false
+  },
+  "plugin_translator_tls_cert_file": {
+    "env": "MY_PLUGIN_TRANSLATOR_TLS_CERT_FILE",
+    "secret": false
+  },
+  "plugin_translator_tls_key_file": {
+    "env": "MY_PLUGIN_TRANSLATOR_TLS_KEY_FILE",
+    "secret": false
+  },
+  "plugin_translator_token": {
+    "env": "MY_PLUGIN_TRANSLATOR_TOKEN",
+    "secret": true
+  },
+  "profile": {
+    "env": "MY_PROFILE",
+    "secret": false
+  },
+  "push_allowed_destinations": {
+    "env": "MY_PUSH_ALLOWED_DESTINATIONS",
+    "secret": false
+  },
+  "queue": {
+    "env": "MY_QUEUE",
+    "secret": false
+  },
+  "queue_cloudtasks_audience": {
+    "env": "MY_QUEUE_CLOUDTASKS_AUDIENCE",
+    "secret": false
+  },
+  "queue_cloudtasks_dispatch_deadline": {
+    "env": "MY_QUEUE_CLOUDTASKS_DISPATCH_DEADLINE",
+    "secret": false
+  },
+  "queue_cloudtasks_queue": {
+    "env": "MY_QUEUE_CLOUDTASKS_QUEUE",
+    "secret": false
+  },
+  "queue_cloudtasks_routes": {
+    "env": "MY_QUEUE_CLOUDTASKS_ROUTES",
+    "secret": false
+  },
+  "queue_cloudtasks_service_account": {
+    "env": "MY_QUEUE_CLOUDTASKS_SERVICE_ACCOUNT",
+    "secret": false
+  },
+  "queue_cloudtasks_url": {
+    "env": "MY_QUEUE_CLOUDTASKS_URL",
+    "secret": false
+  },
+  "relay_max_activities_per_hour": {
+    "env": "MY_RELAY_MAX_ACTIVITIES_PER_HOUR",
+    "secret": false
+  },
+  "remote_custom_emoji_max_bytes": {
+    "env": "MY_REMOTE_CUSTOM_EMOJI_MAX_BYTES",
+    "secret": false
+  },
+  "role": {
+    "env": "MY_ROLE",
+    "secret": false
+  },
+  "search": {
+    "env": "MY_SEARCH",
+    "secret": false
+  },
+  "search_elasticsearch_api_key": {
+    "env": "MY_SEARCH_ELASTICSEARCH_API_KEY",
+    "secret": true
+  },
+  "search_elasticsearch_ca_file": {
+    "env": "MY_SEARCH_ELASTICSEARCH_CA_FILE",
+    "secret": false
+  },
+  "search_elasticsearch_index": {
+    "env": "MY_SEARCH_ELASTICSEARCH_INDEX",
+    "secret": false
+  },
+  "search_elasticsearch_index_settings_file": {
+    "env": "MY_SEARCH_ELASTICSEARCH_INDEX_SETTINGS_FILE",
+    "secret": false
+  },
+  "search_elasticsearch_password": {
+    "env": "MY_SEARCH_ELASTICSEARCH_PASSWORD",
+    "secret": true
+  },
+  "search_elasticsearch_url": {
+    "env": "MY_SEARCH_ELASTICSEARCH_URL",
+    "secret": false
+  },
+  "search_elasticsearch_username": {
+    "env": "MY_SEARCH_ELASTICSEARCH_USERNAME",
+    "secret": false
+  },
+  "search_meilisearch_api_key": {
+    "env": "MY_SEARCH_MEILISEARCH_API_KEY",
+    "secret": true
+  },
+  "search_meilisearch_index": {
+    "env": "MY_SEARCH_MEILISEARCH_INDEX",
+    "secret": false
+  },
+  "search_meilisearch_settings_file": {
+    "env": "MY_SEARCH_MEILISEARCH_SETTINGS_FILE",
+    "secret": false
+  },
+  "search_meilisearch_url": {
+    "env": "MY_SEARCH_MEILISEARCH_URL",
+    "secret": false
+  },
+  "search_opensearch_aws_region": {
+    "env": "MY_SEARCH_OPENSEARCH_AWS_REGION",
+    "secret": false
+  },
+  "search_opensearch_aws_signing": {
+    "env": "MY_SEARCH_OPENSEARCH_AWS_SIGNING",
+    "secret": false
+  },
+  "search_opensearch_index": {
+    "env": "MY_SEARCH_OPENSEARCH_INDEX",
+    "secret": false
+  },
+  "search_opensearch_index_settings_file": {
+    "env": "MY_SEARCH_OPENSEARCH_INDEX_SETTINGS_FILE",
+    "secret": false
+  },
+  "search_opensearch_password": {
+    "env": "MY_SEARCH_OPENSEARCH_PASSWORD",
+    "secret": true
+  },
+  "search_opensearch_url": {
+    "env": "MY_SEARCH_OPENSEARCH_URL",
+    "secret": false
+  },
+  "search_opensearch_username": {
+    "env": "MY_SEARCH_OPENSEARCH_USERNAME",
+    "secret": false
+  },
+  "source_url": {
+    "env": "MY_SOURCE_URL",
+    "secret": false
+  },
+  "status_page_url": {
+    "env": "MY_STATUS_PAGE_URL",
+    "secret": false
+  },
+  "stream": {
+    "env": "MY_STREAM",
+    "secret": false
+  },
+  "stream_postgres_url": {
+    "env": "MY_STREAM_POSTGRES_URL",
+    "secret": true
+  },
+  "stream_pubsub_subscription_prefix": {
+    "env": "MY_STREAM_PUBSUB_SUBSCRIPTION_PREFIX",
+    "secret": false
+  },
+  "stream_pubsub_topic": {
+    "env": "MY_STREAM_PUBSUB_TOPIC",
+    "secret": false
+  },
+  "stream_sns_queue_prefix": {
+    "env": "MY_STREAM_SNS_QUEUE_PREFIX",
+    "secret": false
+  },
+  "stream_sns_topic_arn": {
+    "env": "MY_STREAM_SNS_TOPIC_ARN",
+    "secret": false
+  },
+  "traces_exporter": {
+    "env": "MY_TRACES_EXPORTER",
+    "secret": false
+  },
+  "traces_flush": {
+    "env": "MY_TRACES_FLUSH",
+    "secret": false
+  },
+  "traces_sample_ratio": {
+    "env": "MY_TRACES_SAMPLE_RATIO",
+    "secret": false
+  },
+  "translator_aws_region": {
+    "env": "MY_TRANSLATOR_AWS_REGION",
+    "secret": false
+  },
+  "translator_deepl_api_key": {
+    "env": "MY_TRANSLATOR_DEEPL_API_KEY",
+    "secret": true
+  },
+  "translator_deepl_url": {
+    "env": "MY_TRANSLATOR_DEEPL_URL",
+    "secret": false
+  },
+  "translator_google_location": {
+    "env": "MY_TRANSLATOR_GOOGLE_LOCATION",
+    "secret": false
+  },
+  "translator_google_project": {
+    "env": "MY_TRANSLATOR_GOOGLE_PROJECT",
+    "secret": false
+  },
+  "translator_libretranslate_api_key": {
+    "env": "MY_TRANSLATOR_LIBRETRANSLATE_API_KEY",
+    "secret": true
+  },
+  "translator_libretranslate_url": {
+    "env": "MY_TRANSLATOR_LIBRETRANSLATE_URL",
+    "secret": false
+  },
+  "trusted_proxies": {
+    "env": "MY_TRUSTED_PROXIES",
+    "secret": false
+  },
+  "trusted_proxy_header": {
+    "env": "MY_TRUSTED_PROXY_HEADER",
+    "secret": false
+  },
+  "valkey_key_prefix": {
+    "env": "MY_VALKEY_KEY_PREFIX",
+    "secret": false
+  },
+  "valkey_tls_ca_file": {
+    "env": "MY_VALKEY_TLS_CA_FILE",
+    "secret": false
+  },
+  "valkey_url": {
+    "env": "MY_VALKEY_URL",
+    "secret": true
+  },
+  "vapid_private_key": {
+    "env": "MY_VAPID_PRIVATE_KEY",
+    "secret": true
+  },
+  "voice": {
+    "env": "MY_VOICE",
+    "secret": false
+  },
+  "voice_ice_transport_policy": {
+    "env": "MY_VOICE_ICE_TRANSPORT_POLICY",
+    "secret": false
+  },
+  "voice_livekit_api_key": {
+    "env": "MY_VOICE_LIVEKIT_API_KEY",
+    "secret": false
+  },
+  "voice_livekit_api_secret": {
+    "env": "MY_VOICE_LIVEKIT_API_SECRET",
+    "secret": true
+  },
+  "voice_livekit_api_url": {
+    "env": "MY_VOICE_LIVEKIT_API_URL",
+    "secret": false
+  },
+  "voice_livekit_url": {
+    "env": "MY_VOICE_LIVEKIT_URL",
+    "secret": false
+  },
+  "voice_max_open_rooms": {
+    "env": "MY_VOICE_MAX_OPEN_ROOMS",
+    "secret": false
+  },
+  "voice_max_room_duration": {
+    "env": "MY_VOICE_MAX_ROOM_DURATION",
+    "secret": false
+  },
+  "voice_p2p_max_participants": {
+    "env": "MY_VOICE_P2P_MAX_PARTICIPANTS",
+    "secret": false
+  },
+  "voice_sfu_max_participants": {
+    "env": "MY_VOICE_SFU_MAX_PARTICIPANTS",
+    "secret": false
+  },
+  "voice_sora_api_header_name": {
+    "env": "MY_VOICE_SORA_API_HEADER_NAME",
+    "secret": false
+  },
+  "voice_sora_api_header_value": {
+    "env": "MY_VOICE_SORA_API_HEADER_VALUE",
+    "secret": true
+  },
+  "voice_sora_api_url": {
+    "env": "MY_VOICE_SORA_API_URL",
+    "secret": false
+  },
+  "voice_sora_cloud_api_key": {
+    "env": "MY_VOICE_SORA_CLOUD_API_KEY",
+    "secret": true
+  },
+  "voice_sora_cloud_project_id": {
+    "env": "MY_VOICE_SORA_CLOUD_PROJECT_ID",
+    "secret": false
+  },
+  "voice_sora_join_secret": {
+    "env": "MY_VOICE_SORA_JOIN_SECRET",
+    "secret": true
+  },
+  "voice_sora_mode": {
+    "env": "MY_VOICE_SORA_MODE",
+    "secret": false
+  },
+  "voice_sora_signaling_urls": {
+    "env": "MY_VOICE_SORA_SIGNALING_URLS",
+    "secret": false
+  },
+  "voice_sora_webhook_password": {
+    "env": "MY_VOICE_SORA_WEBHOOK_PASSWORD",
+    "secret": true
+  },
+  "voice_sora_webhook_username": {
+    "env": "MY_VOICE_SORA_WEBHOOK_USERNAME",
+    "secret": false
+  },
+  "voice_stun_urls": {
+    "env": "MY_VOICE_STUN_URLS",
+    "secret": false
+  },
+  "voice_turn": {
+    "env": "MY_VOICE_TURN",
+    "secret": false
+  },
+  "voice_turn_cloudflare_api_token": {
+    "env": "MY_VOICE_TURN_CLOUDFLARE_API_TOKEN",
+    "secret": true
+  },
+  "voice_turn_cloudflare_key_id": {
+    "env": "MY_VOICE_TURN_CLOUDFLARE_KEY_ID",
+    "secret": false
+  },
+  "voice_turn_coturn_secret": {
+    "env": "MY_VOICE_TURN_COTURN_SECRET",
+    "secret": true
+  },
+  "voice_turn_coturn_urls": {
+    "env": "MY_VOICE_TURN_COTURN_URLS",
+    "secret": false
+  },
+  "voice_turn_credential_ttl": {
+    "env": "MY_VOICE_TURN_CREDENTIAL_TTL",
+    "secret": false
+  },
+  "web_origin": {
+    "env": "MY_WEB_ORIGIN",
+    "secret": false
+  },
+  "webhook_allowed_destinations": {
+    "env": "MY_WEBHOOK_ALLOWED_DESTINATIONS",
+    "secret": false
+  },
+  "worker_job_concurrency": {
+    "env": "MY_WORKER_JOB_CONCURRENCY",
+    "secret": false
+  },
+  "worker_job_types": {
+    "env": "MY_WORKER_JOB_TYPES",
+    "secret": false
+  },
+  "worker_job_types_except": {
+    "env": "MY_WORKER_JOB_TYPES_EXCEPT",
+    "secret": false
+  }
+}

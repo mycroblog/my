@@ -142,11 +142,11 @@ tasks:
       - go build -trimpath -tags "{{.GO_TAGS}}" -ldflags "-X main.version={{.VERSION}}" -o bin/my ./cmd/my
 
   config-docs:
-    desc: Regenerate docs/reference/configuration.md and deploy/docker/example.env from the config schema (go:test fails when they are stale)
+    desc: Regenerate docs/reference/configuration.md, deploy/docker/example.env, and the settings list of the OpenTofu modules from the config schema (go:test fails when they are stale)
     sources: ["internal/platform/config/**/*.go"]
-    generates: [docs/reference/configuration.md, deploy/docker/example.env]
+    generates: [docs/reference/configuration.md, deploy/docker/example.env, deploy/opentofu/modules/internal/settings/settings.json]
     cmds:
-      - go test ./internal/platform/config -run '^Test(Reference|ExampleEnv)UpToDate$' -update
+      - go test ./internal/platform/config -run '^Test(Reference|ExampleEnv|SettingsJSON)UpToDate$' -update
 
   cli-docs:
     desc: Regenerate docs/reference/cli.md from the commands of cmd/my (go:test fails when it is stale)

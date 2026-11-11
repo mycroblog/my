@@ -22,6 +22,7 @@ deploy/opentofu/
   modules/network-gcp-vpc/        a VPC that the others take as network, never applied
   modules/network-aws-vpc/        the same on AWS, never applied
   modules/workers/                what the workers input means, for the app and queue modules: no block of a deployment
+  modules/internal/settings/      the settings and secrets inputs of the public modules, checked against settings.json
   modules/stream-valkey/          the broker on Valkey Pub/Sub, beside a kv module or alone
   modules/stream-postgres/        the broker on LISTEN / NOTIFY of the database
   modules/mail-smtp/              email through any SMTP service
@@ -461,5 +462,9 @@ the state, and that another apply writes nothing; `tofu:db-state-test` does the 
 consistent, not that an apply on Google Cloud succeeds. Only the example
 pins its providers (`.terraform.lock.hcl`). `tofu:sources` fails on a relative source or a `ref` other than `MODULE_REF`, and
 `tofu:git-source-test` runs `tofu init` on a copy of the example against a local bare repository with the tag.
+`modules/internal/settings/settings.json` lists every configuration key with its `MY_` name and whether it is a secret.
+`scripts/task.sh go:config-docs` writes it from the configuration schema, and `go:test` fails when it is stale. The module
+`modules/internal/settings` reads it, makes nothing, and refuses a key the configuration does not have, a secret in
+`settings`, a setting that is not secret in `secrets`, and a key that a section sets (`managed`); its tests show each refusal.
 `tofu:aws-plan-test` plans the AWS modules that generate a value, `db-aws-rds` among them, with no credentials and no call to AWS, and shows that the plan holds nothing of it. There is no
 stub of AWS and no apply on that side, so nothing has shown what the state holds beyond what the provider's schema says.
