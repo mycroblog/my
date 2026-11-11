@@ -16,7 +16,7 @@ import (
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-// fastStep is one check of `check --fast`: a command that a pull request's preflight or a quick tool decides.
+// fastStep is one check of `agentkit check`: a command that a pull request's preflight or a quick tool decides.
 type fastStep struct {
 	name string
 	dir  string // relative to the working tree

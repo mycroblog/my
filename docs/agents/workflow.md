@@ -25,7 +25,7 @@ The unit of delivery is a goal: an epic, a phase of one, or a milestone. One iss
 
 ## Checking
 
-`scripts/agentkit.sh check --fast` runs what is fast for the files you changed. The merge queue runs everything else,
+`scripts/agentkit.sh check` runs what is fast for the files you changed. The merge queue runs everything else,
 once, on the merged state; do not run the full check or the web E2E locally except to reproduce a failure.
 
 ## Opening and landing

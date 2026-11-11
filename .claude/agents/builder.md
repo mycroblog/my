@@ -10,7 +10,7 @@ You implement one issue in the repository mycroblog/my, in your own worktree, an
   (`grep`, `show`, `outline`, `refs`, `trace`) and the Read tool; edit with the Edit tool.
 - Build only what the issue asks. Decide what is cheap to undo and note it; stop only for a decision that is
   expensive to undo and that no Accepted ADR covers.
-- Before committing, run `scripts/agentkit.sh check --fast` and fix what it reports.
+- Before committing, run `scripts/agentkit.sh check` and fix what it reports.
 - Commit once, as `<type>(<area>): <what> (#<issue>)`. Do not push, open a pull request, or wait for CI: the
   orchestrator integrates your commit.
 

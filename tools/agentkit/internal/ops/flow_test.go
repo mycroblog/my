@@ -181,7 +181,7 @@ func TestGateRunsFastCheck(t *testing.T) {
 	write(t, filepath.Join(r.Root, "go.mod"), "module example.test/m\n\ngo 1.22\n")
 	commit(t, r.Root, "x/x.go", "package x\n\nfunc  F() {}\n", "feat: x")
 	_, err := gate(r, "feat/5-fmt", "origin/main")
-	wantRefusal(t, err, "check --fast fails", "FAIL  gofmt", "x/x.go", "fix: gofmt -w", "ok    go vet (1 packages)")
+	wantRefusal(t, err, "the quick checks fail", "FAIL  gofmt", "x/x.go", "fix: gofmt -w", "ok    go vet (1 packages)")
 
 	commit(t, r.Root, "x/x.go", "package x\n\nfunc F() { undefined() }\n", "feat: x2")
 	ok, lines, err := CheckFast(r, "origin/main")

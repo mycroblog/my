@@ -144,7 +144,7 @@ func gate(r *repo.Repo, branch, base string) ([]string, error) {
 		return nil, err
 	}
 	if !ok {
-		return nil, refusal("check --fast fails:\n"+strings.Join(lines, "\n"), "repair the lines above, commit, and run pr open again (scripts/agentkit.sh check reruns the checks)")
+		return nil, refusal("the quick checks fail:\n"+strings.Join(lines, "\n"), "repair the lines above, commit, and run pr open again (scripts/agentkit.sh check reruns the checks)")
 	}
 	return screens(r, base)
 }

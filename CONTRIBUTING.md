@@ -27,7 +27,7 @@ whose inputs have not changed.
 
 Tasks run with [go-task](https://taskfile.dev/) and live in `Taskfile.yml` and `tasks/<area>.yml`. `scripts/task.sh`
 builds the version pinned in `tools/go.mod` into `bin/task` and runs it; never use a `task` from your PATH.
-`scripts/task.sh --list` lists the tasks, and [docs/reference/commands.md](docs/reference/commands.md) describes them.
+`scripts/task.sh --list` lists and describes the tasks.
 
 `scripts/task.sh check` runs the check of every context in parallel: docs, Go, i18n, the email layout (`app/mail`),
 the API, `app/ui`, `app/web`, Docker, agentkit, and `pkg/mykit` with `pkg/mybot` (`docs:check`, `go:check`,
@@ -146,7 +146,7 @@ services `postgres` and `mailpit` alone.
 1. Pick a GitHub issue. `agent:ready` marks the issues with clear acceptance criteria that are ready to start.
 2. Create a branch `<type>/<issue>-<slug>`. Never push to `main`.
 3. Commit (Conventional Commits, in English), one commit per issue. Before a push, run the fast checks of what you
-   changed (`scripts/agentkit.sh check --fast`); the merge queue's full check is the gate, so the full check is for
+   changed (`scripts/agentkit.sh check`); the merge queue's full check is the gate, so the full check is for
    reproducing a CI failure.
 4. Open a pull request from the template (`scripts/agentkit.sh pr open`). Its commits contain no merge commit: bring
    the branch up to date with `git rebase origin/main`.
@@ -522,8 +522,7 @@ mark an ADR `Accepted`.
 - The documentation site's Japanese pages are machine translations that an agent writes into `app/docs/i18n/`, following
   [docs/agents/translating-docs.md](docs/agents/translating-docs.md). The English document is authoritative: change it,
   not only its translation. A pull request that changes English documents does not need to translate them too.
-- Documents for users and operators (`README.md`, `docs/operations/`, `docs/reference/` except `commands.md`, the
-  development tasks for contributors) explain the behaviour themselves. They do not link to or cite ADRs, `docs/requirements/`, `docs/architecture/`, or GitHub issues and pull
+- Documents for users and operators (`README.md`, `docs/operations/`, `docs/reference/`) explain the behaviour themselves. They do not link to or cite ADRs, `docs/requirements/`, `docs/architecture/`, or GitHub issues and pull
   requests; link only the other user and operator documents a reader needs.
 - A diagram in a document follows [docs/agents/diagrams.md](docs/agents/diagrams.md): hand-written SVG that switches
   between light and dark itself, with text alternatives.
