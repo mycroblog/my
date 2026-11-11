@@ -1,67 +1,60 @@
-# OpenTofu modules
+# Internal OpenTofu modules
 
-Modules that compose a deployment of `my` from swappable backends. They are written for [OpenTofu](https://opentofu.org)
-and need version 1.11 or later: they use its `lifecycle` `enabled`, ephemeral resources, and write-only attributes. Only OpenTofu is supported. To deploy, follow [Deploying on Cloud Run](../../../../docs/operations/deploy-cloud-run.md);
-this file is the contract for whoever uses or adds a module.
+The modules that the public module [`mycroblog-gcp`](../../mycroblog-gcp/main.tf) composes, one per backend, and the
+contract that lets it swap one for another. They are written for [OpenTofu](https://opentofu.org) and need version 1.11 or
+later: they use its `lifecycle` `enabled`, ephemeral resources, and write-only attributes. Only OpenTofu is supported. A
+deployment calls the public module, which [the README of deploy/opentofu](../../README.md) describes; nothing promises that
+these modules keep their inputs and outputs from one release to the next. This file is the contract for whoever changes or
+adds one.
 
 ```text
-deploy/opentofu/
-  modules/app-gcp-cloud-run/      service, migration job, console, service account, public access
-  modules/queue-gcp-cloud-tasks/  queue, Scheduler tick, the service account that calls the server
-  modules/queue-db/               the queue in the database, for a process that stays up: settings only
-  modules/blob-gcp-gcs/           media bucket
-  modules/stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
-  modules/db-external/            connection URLs in Secret Manager: Neon created by hand, or any PostgreSQL
-  modules/db-neon/                a Neon project it creates, with the password in the state: read its README
-  modules/db-gcp-cloud-sql/       Cloud SQL, through the connector's socket or on a network, never applied
-  modules/blob-s3/                any S3-compatible store, given an endpoint and a key
-  modules/blob-cloudflare-r2/     an R2 bucket, with its credentials by reference
-  modules/kv-external/            a Valkey outside this configuration, by a URL in the secret store
-  modules/kv-gcp-memorystore/     Memorystore for Valkey, on a network, never applied
-  modules/kv-aws-elasticache/     ElastiCache Serverless for Valkey, on a network, never applied
-  modules/network-gcp-vpc/        a VPC that the others take as network, never applied
-  modules/network-aws-vpc/        the same on AWS, never applied
-  modules/workers/                what the workers input means, for the app and queue modules: no block of a deployment
-  modules/stream-valkey/          the broker on Valkey Pub/Sub, beside a kv module or alone
-  modules/stream-postgres/        the broker on LISTEN / NOTIFY of the database
-  modules/mail-smtp/              email through any SMTP service
-  modules/ingress-gcp-domain-mapping/  traffic through a Cloud Run domain mapping
-  modules/ingress-gcp-load-balancer/   traffic through a global external Application Load Balancer
-  modules/ingress-cloudflare-app/      traffic through Cloudflare, for any origin
-  modules/ingress-cloudflare-media/    a media host through Cloudflare, beside any ingress
-  modules/secrets-gcp-secret-manager/  secrets to fill by hand, or a VAPID key it generates
-  modules/kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
-  modules/kek-gcp-kms/                 the KEK in Cloud KMS
-  modules/billing-gcp/                 the usage cost import from Google Cloud, never applied
-  modules/billing-aws/                 the usage cost import from AWS, never applied
-  modules/monitoring-gcp/              uptime check, log-based metrics, and alert policies
-  examples/gcp-cloud-run-neon/    all of the above, composed, on Git sources at MODULE_REF
-  modules/*-aws-*/, examples/aws-ecs-neon/  the same on AWS, never applied: see "AWS: unverified" below
-  upgrade.sh                      migration job first, then the service
-  console.sh                      runs one my command through an app module's console
-  aws-ecs.sh                      what those two share on ECS
+deploy/opentofu/modules/internal/
+  app-gcp-cloud-run/      service, migration job, console, service account, public access
+  queue-gcp-cloud-tasks/  queue, Scheduler tick, the service account that calls the server
+  queue-db/               the queue in the database, for a process that stays up: settings only
+  blob-gcp-gcs/           media bucket
+  stream-gcp-pubsub/      topic and the permissions for the server's own subscriptions
+  db-external/            connection URLs in Secret Manager: Neon created by hand, or any PostgreSQL
+  db-neon/                a Neon project it creates, with the password in the state: read its README
+  db-gcp-cloud-sql/       Cloud SQL, through the connector's socket or on a network, never applied
+  blob-s3/                any S3-compatible store, given an endpoint and a key
+  blob-cloudflare-r2/     an R2 bucket, with its credentials by reference
+  kv-external/            a Valkey outside this configuration, by a URL in the secret store
+  kv-gcp-memorystore/     Memorystore for Valkey, on a network, never applied
+  kv-aws-elasticache/     ElastiCache Serverless for Valkey, on a network, never applied
+  network-gcp-vpc/        a VPC that the others take as network, never applied
+  network-aws-vpc/        the same on AWS, never applied
+  workers/                what the workers input means, for the app and queue modules: no backend
+  settings/               what the settings and secrets inputs of a public module mean: no backend
+  stream-valkey/          the broker on Valkey Pub/Sub, beside a kv module or alone
+  stream-postgres/        the broker on LISTEN / NOTIFY of the database
+  mail-smtp/              email through any SMTP service
+  ingress-gcp-domain-mapping/  traffic through a Cloud Run domain mapping
+  ingress-gcp-load-balancer/   traffic through a global external Application Load Balancer
+  ingress-cloudflare-app/      traffic through Cloudflare, for any origin
+  ingress-cloudflare-media/    a media host through Cloudflare, beside any ingress
+  secrets-gcp-secret-manager/  secrets to fill by hand, or a VAPID key it generates
+  kek-gcp-secret-manager/      the KEK it generates as a secret, mounted as a file
+  kek-gcp-kms/                 the KEK in Cloud KMS
+  billing-gcp/                 the usage cost import from Google Cloud, never applied
+  billing-aws/                 the usage cost import from AWS, never applied
+  monitoring-gcp/              uptime check, log-based metrics, and alert policies
+  *-aws-*/                     the same on AWS, never applied: see "AWS: unverified" below
 ```
 
-## Using a module
+## How the public module uses them
 
-A module is a Git source pinned to a release. A pin is required: an unpinned module could change the KEK's resources under you.
+`mycroblog-gcp` names each module by relative path, `../modules/internal/<name>`, which OpenTofu resolves inside the package of
+the public module's `ref`, so a deployment pins one release and gets these modules at that release. It writes one block per
+kind with `lifecycle` `enabled`, so that one module of each role is on, and gathers the enabled blocks into the `backends` of
+the app: a reference to a block that is off is null and drops out. A block that is off still checks its inputs against its
+module's validations, so the public module gives it well-formed values even where its section has none. The service's name
+comes from the public module's `name`, so an ingress, the queue, and the monitoring take it as an input known in advance, and
+none depends on the app.
 
-```hcl
-module "db" {
-  source = "git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/db-external?ref=v0.1.0&depth=1"
-  # ...
-}
-```
-
-Keep every block at the same release, the one you deploy, whether stable or a prerelease such as `v0.1.0-rc.4`. A module exists
-only from the first tag that contains it, so an earlier tag has none of them. `.terraform/modules/app/deploy/opentofu` holds
-`upgrade.sh` and `console.sh` after `tofu init`, at that release. `examples/gcp-cloud-run-neon` works when copied to an empty
-directory with its lock file: [the guide](../../../../docs/operations/deploy-cloud-run.md#3-copy-the-example-and-set-the-variables)
-starts that way.
-
-In this repository, `MODULE_REF` holds the release the examples name. Inside the repository the checks test the modules of the
-same commit: `scripts/task.sh tofu:example-test` runs on a copy whose sources are rewritten to local paths, and never
-fetches from GitHub. To update the example's lock file, use `scripts/task.sh tofu:lock`.
+`examples/aws-ecs-neon` composes the AWS modules itself, by their sources at `MODULE_REF`, until AWS has a public module of its
+own. Inside the repository the checks test the modules of the same commit: `scripts/task.sh tofu:example-test` runs on a copy
+whose sources are rewritten to local paths, and never fetches from GitHub.
 
 ## Naming
 
@@ -201,9 +194,10 @@ An `ingress-*` module decides how traffic reaches the app. It is a backend, with
 | `dns_records` | `list(object({ name, type, rrdata }))` | What to add at the DNS provider |
 | `load_balancer` (optional) | `object({ target_group_arn, security_group_id })` | What the service attaches to, on a platform where the app registers with its load balancer rather than the load balancer naming the app. An app with no way to attach refuses the ingress by its `service_ingress` |
 
-It takes the service's name from the app (`service_name = module.app.service_name`) while the app takes its settings, which
-is no cycle as long as `platform`, `env`, `service_ingress`, and `trusted_proxies` do not depend on anything that reads the service's name.
-`dns_records` may, so `backends` names those four outputs rather than the whole module:
+It takes the service's name as an input. The public module passes the name it gives the app, known before the app exists, so
+the whole module goes in `backends`. A configuration that passes `service_name = module.app.service_name` instead has no cycle
+only as long as `platform`, `env`, `service_ingress`, and `trusted_proxies` do not depend on anything that reads the service's
+name. `dns_records` may, so its `backends` names those four outputs rather than the whole module:
 
 ```hcl
 { platform = module.ingress.platform, env = module.ingress.env, service_ingress = module.ingress.service_ingress, trusted_proxies = module.ingress.trusted_proxies },
@@ -454,12 +448,13 @@ its comments name; those tests mock the provider.
 
 ## Checks
 
-`scripts/task.sh tofu:check` runs `tofu fmt -check`, `tofu init -backend=false` and `tofu validate` for each module
-and the example, the tests on mocked providers, a check that every `MY_*` name here exists in the configuration, and a real
+`scripts/task.sh tofu:check` runs `tofu fmt -check`, `tofu init -backend=false` and `tofu validate` for each module, the
+public module, and the examples, the tests on mocked providers, a check that every `MY_*` name here exists in the configuration, and a real
 apply against a local stub of Secret Manager, which shows the formats of the generated values, that none reaches the plan or
 the state, and that another apply writes nothing; `tofu:db-state-test` does the same against a stub of Cloud SQL and shows that the database user and the URL get the same password. None of them reaches a cloud, so they show that the configuration is
-consistent, not that an apply on Google Cloud succeeds. Only the example
-pins its providers (`.terraform.lock.hcl`). `tofu:sources` fails on a relative source or a `ref` other than `MODULE_REF`, and
-`tofu:git-source-test` runs `tofu init` on a copy of the example against a local bare repository with the tag.
+consistent, not that an apply on Google Cloud succeeds. Only the examples
+pin their providers (`.terraform.lock.hcl`). `tofu:sources` fails on a relative source in an example or a document, on a `ref`
+other than `MODULE_REF`, and on a source of a public module other than `../modules/internal/<name>`, and
+`tofu:git-source-test` runs `tofu init` on a copy of each example against a local bare repository with the tag.
 `tofu:aws-plan-test` plans the AWS modules that generate a value, `db-aws-rds` among them, with no credentials and no call to AWS, and shows that the plan holds nothing of it. There is no
 stub of AWS and no apply on that side, so nothing has shown what the state holds beyond what the provider's schema says.

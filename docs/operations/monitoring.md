@@ -16,7 +16,7 @@ Third-party facts below carry the date they were confirmed and their source. Ser
 
 Point the external monitor at **`/api/v1/instance/health`**, not at `/readyz` (`/health/ready`): it queries the database on every request,
 so a monitor with a short interval keeps a scale-to-zero database awake. The probes are for your platform.
-The modules [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) and [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) check `/health/live` (`monitoring-gcp`) or `/readyz` (`monitoring-aws`) from the platform's own monitor at a long interval, and their READMEs say what that costs.
+The `monitoring` section of [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) checks `/health/live` on Google Cloud, and the module [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) of the AWS example checks `/readyz`, each from the platform's own monitor at a long interval: its `uptime_period` is what that costs, since each check wakes an instance.
 
 Responses of `/api/v1/instance/health` (no authentication, `Cache-Control: no-store`):
 

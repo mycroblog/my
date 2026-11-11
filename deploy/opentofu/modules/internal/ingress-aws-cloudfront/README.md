@@ -30,7 +30,7 @@ module "cdn" {
 }
 ```
 
-**It is no backend of the app.** `backends` of `app-aws-ecs` names `module.ingress`, the load balancer, as it does without CloudFront: that module returns what the server trusts and what the service attaches to. [`examples/aws-ecs-neon`](../../examples/aws-ecs-neon/main.tf) has both blocks, behind `cloudfront = true`.
+**It is no backend of the app.** `backends` of `app-aws-ecs` names `module.ingress`, the load balancer, as it does without CloudFront: that module returns what the server trusts and what the service attaches to. [`examples/aws-ecs-neon`](../../../examples/aws-ecs-neon/main.tf) has both blocks, behind `cloudfront = true`.
 
 | Input | Default | Meaning |
 | --- | --- | --- |

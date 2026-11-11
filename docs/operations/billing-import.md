@@ -12,19 +12,20 @@ Cloudflare has no such chain, so its import reads an API token from [`billing_cl
 
 ## With the OpenTofu modules
 
-The modules [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) and [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) set `billing_sources` and do the parts of this guide that a provider's API allows. `billing-gcp` works only with Google Cloud's app module, so on AWS the modules import AWS's costs alone. `billing-aws` works with AWS's app modules and with Cloud Run's, where both can sit in the `backends`. Neither has been applied on a real account yet.
+On Google Cloud, the `billing` section of [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) sets `billing_sources = gcp` and does the parts of this guide that the provider's API allows, with `billing_account_id`, `method` (`bigquery` or `budget`), and `dataset_location`. It imports Google Cloud's costs alone. On AWS, the module [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) of the AWS example does the same for AWS's costs. Neither has been applied on a real account yet.
 
 | Step in this guide | With the modules |
 | --- | --- |
-| The IAM policy, and the role of "Calling from Cloud Run with web identity" | `billing-aws` |
+| The IAM policy of AWS | `billing-aws` |
 | Enable Cost Explorer, Linked Account Access, cost allocation tags | By hand, in the AWS console |
-| The dataset of the export, and the roles of "IAM roles" | `billing-gcp` |
+| The dataset of the export, and the roles of "IAM roles" | The `billing` section |
 | Enable the export ("Standard usage cost") | By hand, in the Google Cloud console, with a role on the billing account |
-| The topic and the pull subscription of a budget, and the subscriber role | `billing-gcp` with `method = "budget"` |
+| The topic and the pull subscription of a budget, and the subscriber role | The `billing` section with `method = "budget"` |
 | Create the budget and connect it to the topic | By hand, in the Google Cloud console, with a role on the billing account |
 | Enable the BigQuery or Pub/Sub API | By hand, as in [Deploying on Cloud Run](deploy-cloud-run.md#1-enable-the-apis) |
-| Cloudflare | Not by these modules. Set `MY_BILLING_SOURCES`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID`, and `MY_BILLING_CLOUDFLARE_API_TOKEN` (from a secret) as for a plugin |
-| A plugin | Not by these modules. With no billing module in the `backends`, set `MY_BILLING_SOURCES = plugin` and the settings of [the plugin](#a-plugin-billing_sources--plugin) in the app module's `env`; beside a billing module, the app module refuses `MY_BILLING_SOURCES` in `env`, so add a backend of your own that returns `billing_sources = ["plugin"]` ([the fields of a backend](../../deploy/opentofu/modules/internal/README.md)) |
+| AWS's costs on Cloud Run | Not by `mycroblog-gcp`. Create the role of [Calling from Cloud Run with web identity](#calling-from-cloud-run-with-web-identity) by hand, and set `billing_sources = aws` and `billing_aws_role_arn` in `settings`, without the `billing` section |
+| Cloudflare | Not by these modules. On Cloud Run, without the `billing` section, set `billing_sources`, `billing_cloudflare_account_id` in `settings`, and `billing_cloudflare_api_token` in `secrets`, as for a plugin |
+| A plugin | Not by these modules. On Cloud Run, without the `billing` section, set `billing_sources = plugin` and the settings of [the plugin](#a-plugin-billing_sources--plugin) in `settings`. Beside the `billing` section, the module refuses `billing_sources` in `settings` |
 
 ## AWS (`billing_sources = aws`)
 
