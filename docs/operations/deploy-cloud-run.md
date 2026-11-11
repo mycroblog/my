@@ -71,7 +71,7 @@ cp terraform.tfvars.example terraform.tfvars
 
 Fill in `terraform.tfvars`. `mail_from`, `mail_smtp_host`, and `mail_smtp_username` configure [email](email.md); the port is 587, since Google Cloud blocks outbound port 25. To change anything else, add the section to the block in `main.tf`, such as `ingress = { kind = "domain-mapping" }`: every section and what it refuses is in [the module's README](../../deploy/opentofu/README.md#sections).
 
-`settings` takes any other setting from the [configuration reference](../reference/configuration.md) by its key, and `secrets` the keys of secret settings, each of which gets an empty secret to fill. A key that a section sets fails the plan. Decide on [`account_domain`](../reference/configuration.md#account_domain) now, as `settings = { account_domain = "example.org" }`, if handles use another domain.
+`settings` takes any other setting from the [configuration reference](../reference/configuration.md) by its key, and `secrets` the keys of secret settings, each of which gets an empty secret to fill. A key that a section or the module sets fails the plan, and so does a key the module does not take on Cloud Run, such as `listen`; the error says why. Decide on [`account_domain`](../reference/configuration.md#account_domain) now, as `settings = { account_domain = "example.org" }`, if handles use another domain.
 
 **The state** stays in this directory by default. It holds no secret values, but it is the only record of what was created: keep it in a bucket with a `backend "gcs"` block if more than one person runs this.
 

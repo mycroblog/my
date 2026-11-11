@@ -96,7 +96,8 @@ that must stay together.
 `settings` takes any other setting of the [configuration reference](../../docs/reference/configuration.md) by its key, such as
 `translator_deepl_url`, and the module passes it to the service, the workers, and the jobs. `secrets` takes the keys of secret
 settings: for each, the module creates an empty secret `<name>-<key>`, with hyphens for underscores, passes it to the server,
-and lists it in `secrets_to_fill`. A key that a section sets fails the plan.
+and lists it in `secrets_to_fill`. A key that a section sets or the module fixes fails the plan, and so does a key the
+module does not take, such as `listen`: the error gives the reason.
 
 ```hcl
   settings = { translator_deepl_url = "https://api.deepl.com" }
@@ -172,3 +173,28 @@ AWS has no public module yet. `examples/aws-ecs-neon` composes ECS on Fargate fr
 `scripts/task.sh tofu:check` validates the public module, the internal modules, and the examples, and runs their tests on
 mocked providers, which plan each kind of each section and each refused combination. None of the checks reaches a cloud, so
 they show that the configuration is consistent, not that an apply on Google Cloud succeeds.
+
+### Every configuration key
+
+`coverage.json` in each public module says how the module handles every key of the configuration, one key or a prefix
+ending in `*` (`plugin_*`) per entry:
+
+- `section`, by the name of the module's variable: the section sets the key, for the kinds that need it;
+- `fixed`: the module sets a value of its own, such as `media_max_av_bytes` on Cloud Run;
+- `generic`: the operator sets it through `settings` or `secrets`;
+- `excluded`, with a reason of a few words: the module does not take it.
+
+The module reads the file: `settings` and `secrets` refuse the keys of `section` (while that section is set), `fixed`, and
+`excluded`. `scripts/task.sh tofu:coverage` fails on a key with no class, a key that two entries match, an entry that matches
+no key, and a `section` or `fixed` key whose `MY_` name `tests/coverage.tftest.hcl` does not name: that file plans the kind
+that sets each such key on mocked providers and asserts that the service's environment has it.
+
+A pull request that adds a configuration key, for a new adapter or anything else, runs `scripts/task.sh go:config-docs`, which
+rewrites `modules/internal/settings/settings.json`, and then classifies the key in the `coverage.json` of every public
+module:
+
+- An adapter that needs only a URL and a secret is `generic`, and needs nothing more.
+- An adapter for which the module must create a resource, grant a permission, enable an API, join a network, or generate a
+  value is a new `kind` of a section, or a new section: add the internal module and its block, put its keys under that
+  section, and add a run to `tests/coverage.tftest.hcl` that plans the kind and names each key's `MY_` variable.
+- A key that cannot work on the platform is `excluded`, with the reason.
