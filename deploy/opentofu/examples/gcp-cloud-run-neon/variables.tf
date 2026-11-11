@@ -76,3 +76,8 @@ output "console" {
   description = "Pipe this to console.sh: tofu output -json console | .terraform/modules/mycroblog/deploy/opentofu/console.sh <my command>."
   value       = module.mycroblog.console
 }
+
+variable "alert_emails" {
+  description = "Addresses the alerts notify."
+  type        = list(string)
+}

@@ -36,6 +36,8 @@ variables {
   image = "ghcr.io/mycroblog/my:0.1.0"
   media = { bucket_name = "my-project-my-media" }
   mail  = { from = "noreply@social.example.org", smtp = { host = "smtp.example.org", username = "my-smtp-user" } }
+
+  monitoring = { notification_emails = ["ops@social.example.org"] }
 }
 
 run "plans_the_recommended_setup_from_the_fewest_inputs" {
@@ -54,6 +56,7 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
       MY_MAIL_SMTP_PORT                    = "587"
       MY_MAIL_SMTP_USERNAME                = "my-smtp-user"
       MY_MEDIA_MAX_AV_BYTES                = "31457280"
+      MY_METRICS_EXPORTER                  = "none"
       MY_PROFILE                           = "production"
       MY_QUEUE                             = "cloudtasks"
       MY_QUEUE_CLOUDTASKS_QUEUE            = "projects/my-project/locations/asia-northeast1/queues/my-jobs"

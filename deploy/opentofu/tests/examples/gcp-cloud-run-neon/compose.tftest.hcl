@@ -41,6 +41,7 @@ variables {
   mail_from          = "noreply@social.example.org"
   mail_smtp_host     = "smtp.example.org"
   mail_smtp_username = "my-smtp-user"
+  alert_emails       = ["ops@social.example.org"]
 }
 
 run "plans_the_recommended_setup" {

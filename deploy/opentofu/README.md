@@ -69,7 +69,7 @@ default.
 | `service` | | The Cloud Run service: `min_instances` (0, which scales to zero), `max_instances` (3), `cpu`, `memory_mib`, `concurrency`, `cpu_always_allocated`, `request_timeout_seconds` |
 | `jobs` | | The migration and console jobs: `memory_mib`, `timeout_seconds` |
 | `workers` | | Services that run some job types apart from the default service, by a key that names each: [Workers](#workers) |
-| `monitoring` | | Null by default. `{}` creates an uptime check, log-based metrics, and alert policies: `notification_emails`, `notification_channels`, `page_notification_channels`, `uptime_period`, `disabled_alerts`, `metrics_exporter`, and size limits. Each uptime check wakes an instance |
+| `monitoring` | | Required: an uptime check, log-based metrics, and alert policies, which notify at least one of `notification_emails` and `notification_channels`. Null creates none. Its fields: `notification_emails`, `notification_channels`, `page_notification_channels`, `uptime_period`, `disabled_alerts`, `metrics_exporter`, and size limits. Each uptime check wakes an instance |
 | `billing` | | Null by default. `billing_account_id`, `method`, and `dataset_location` import the usage cost into the server's dashboard |
 
 `name` (`my` by default) starts every name the module creates, so two deployments can share a project: the service is `<name>`,

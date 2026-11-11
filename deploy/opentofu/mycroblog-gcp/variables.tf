@@ -347,7 +347,7 @@ variable "secrets" {
 # Operations
 
 variable "monitoring" {
-  description = "Uptime check, log-based metrics, and alert policies. Null, the default, creates none; {} creates them with the defaults. Each uptime check wakes an instance, and the database too when it reaches it: uptime_period is the trade-off."
+  description = "Uptime check, log-based metrics, and alert policies. Required, with no default: name at least one of notification_emails and notification_channels, since an alert that notifies nobody is not one, or set null to create none. Each uptime check wakes an instance, and the database too when it reaches it: uptime_period is the trade-off."
   type = object({
     notification_emails        = optional(list(string), [])
     notification_channels      = optional(list(string), [])
@@ -360,7 +360,6 @@ variable "monitoring" {
     media_size_limit_bytes         = optional(number)
     remote_media_cache_limit_bytes = optional(number)
   })
-  default = null
 }
 
 variable "billing" {

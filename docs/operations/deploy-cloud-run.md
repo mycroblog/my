@@ -36,7 +36,8 @@ Secret values never reach the OpenTofu plan or state: you add the ones that come
 ```sh
 gcloud services enable --project="$PROJECT" run.googleapis.com cloudtasks.googleapis.com cloudscheduler.googleapis.com \
   pubsub.googleapis.com secretmanager.googleapis.com storage.googleapis.com iam.googleapis.com \
-  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com compute.googleapis.com
+  iamcredentials.googleapis.com cloudresourcemanager.googleapis.com logging.googleapis.com compute.googleapis.com \
+  monitoring.googleapis.com
 ```
 
 `compute.googleapis.com` is for the load balancer.
@@ -206,7 +207,7 @@ To go back after the schema changed, restore the backup: see [Rolling back](data
 
 ## Monitoring and alerts
 
-`monitoring = {}` adds an uptime check of `/health/live`, log-based metrics, alert policies with the names of [the runbook](alerts.md), and, with `notification_emails`, email notifications. It has never been applied, so try it once by making a check fail. Enable `monitoring.googleapis.com` first. Each run of the check wakes an instance, which adds to [the tick's trade-off](#costs): `uptime_period`, 15 minutes by default, is how often.
+The module adds an uptime check of `/health/live`, log-based metrics, and alert policies with the names of [the runbook](alerts.md), which notify the addresses of `monitoring.notification_emails` (`alert_emails` in the example) or the channels of `notification_channels`. The input has no default: name who is notified, or set `monitoring = null` to leave all of it out. It has never been applied, so try it once by making a check fail. Each run of the check wakes an instance, which adds to [the tick's trade-off](#costs): `uptime_period`, 15 minutes by default, is how often.
 
 ## Changing a backend
 

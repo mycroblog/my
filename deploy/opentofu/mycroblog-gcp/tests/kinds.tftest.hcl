@@ -64,6 +64,8 @@ variables {
   image = "ghcr.io/mycroblog/my:0.1.0"
   media = { bucket_name = "my-project-my-media" }
   mail  = { from = "noreply@social.example.org", smtp = { host = "smtp.example.org", username = "my-smtp-user" } }
+
+  monitoring = { notification_emails = ["ops@social.example.org"] }
 }
 
 # ---------------------------------------------------------------------------------------------------------------------------------
@@ -374,8 +376,7 @@ run "monitoring_and_billing" {
   command = plan
 
   variables {
-    monitoring = { notification_emails = ["ops@example.org"] }
-    billing    = { billing_account_id = "012345-6789AB-CDEF01" }
+    billing = { billing_account_id = "012345-6789AB-CDEF01" }
   }
 
   assert {

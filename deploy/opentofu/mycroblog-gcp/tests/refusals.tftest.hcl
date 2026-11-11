@@ -25,6 +25,8 @@ variables {
   image = "ghcr.io/mycroblog/my:0.1.0"
   media = { bucket_name = "my-project-my-media" }
   mail  = { from = "noreply@social.example.org", smtp = { host = "smtp.example.org", username = "my-smtp-user" } }
+
+  monitoring = { notification_emails = ["ops@social.example.org"] }
 }
 
 run "a_name_that_cannot_name_things" {

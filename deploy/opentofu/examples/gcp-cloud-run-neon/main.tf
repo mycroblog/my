@@ -30,6 +30,8 @@ module "mycroblog" {
     from = var.mail_from
     smtp = { host = var.mail_smtp_host, username = var.mail_smtp_username }
   }
+  # Who the alerts notify. null creates no uptime check and no alerts.
+  monitoring = { notification_emails = var.alert_emails }
 
   console_enabled = var.console_enabled
 
