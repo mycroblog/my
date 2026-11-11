@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-22
 - Deciders: @rosylilly
-- Issue: #913, #909, #925, #1301, #2612
+- Issue: #913, #909, #925, #1301, #2612, #2863
 
 ## Decision（決定）
 
@@ -341,13 +341,13 @@ PAY.JP でも §1 のポートの形をそのまま使い、足すのは次の 2
 
 ### 11. 決済の画面と顧客ポータルの代わり
 
-v1 にホスト型の画面がないので、adapter が Stripe のホスト型の画面の役をする短命のページを、このサーバーのオリジンの `/payments/pages/payjp/` に出す（§9 の `PageServer`）。ページは ADR-0090 のサーバー描画の画面（`authpages`）と同じく `html/template` で作り、Web クライアント（SPA）の外に置く。
+v1 にホスト型の画面がないので、adapter が Stripe のホスト型の画面の役をする短命のページを、このサーバーのオリジンの `/payments/pages/payjp/` に出す（§9 の `PageServer`）。ページは Web クライアントのエントリの 1 つ（ADR-0028 §4、ADR-0090 §16 と同じ）で、ルーターではなくページの読み込みで開く。アプリと Vite の chunk を共有する。
 
 - **署名した状態**: `StartCheckout` と `PortalURL` は、ページに要る状態（こちらの加入の ID・Plan・顧客・メール・ロケール・戻り先・有効期限）を JSON にし、秘密鍵から導いた鍵（HMAC-SHA256）で署名して URL に載せる。サーバーは DB に何も持たない。
   ページの URL のオリジンは `SuccessURL`（ポータルは `returnURL`）のオリジンで、adapter はそれ以外へ送らない（§7 の URL の確かめに当たる）。URL は Stripe のセッションの URL と同じく短命の持参人の鍵で、`Referrer-Policy: no-referrer` と `Cache-Control: no-store` を付ける。
   有効期限は作成の時刻を 1 時間に切り捨てて 2 時間を足した時刻で、同じ `Key` は同じ時間帯に同じ申し込みを返す。
 - **申し込み**（`StartCheckout` → ページ → `SuccessURL`）:
-  1. `GET` のページは、プランの名前・金額・間隔、テストのモードの表示（§5）、メール（主アドレスを入れておく）とカードの名義の欄、payjp.js の card element（PAY.JP の iframe）を出す。ページの小さなスクリプトが payjp.js でトークンを作り、フォームで送る。
+  1. `GET` のページは、プランの名前・金額・間隔、テストのモードの表示（§5）、メール（主アドレスを入れておく）とカードの名義の欄、payjp.js の card element（PAY.JP の iframe）を出す。ページが payjp.js でトークンを作り、フォームで送る。
      スクリプトは `createToken` に `three_d_secure: true` と名義・メールを渡し、iframe 型の 3D セキュアを経たトークンを受ける。
   2. `POST` は、トークンを取り直して（`GET /v1/tokens/:id`）`card.three_d_secure_status` が `verified` か `attempted` であることを確かめる。顧客を用意し（`CheckoutRequest.Customer` が空なら ID `my_<こちらの加入の ID>` の顧客を作る。あればそれを使う）、トークンのカードを顧客の既定のカードとして足す。
      続けて、`metadata.my_subscription_id` にこちらの加入の ID を入れた定期課金を作る（作る前に顧客の定期課金を読み、もうあれば作らない）。作成は最初の課金を伴う。
@@ -355,10 +355,10 @@ v1 にホスト型の画面がないので、adapter が Stripe のホスト型�
   - `CheckoutRef` は `<顧客>/<こちらの加入の ID>/<有効期限>`。`GetCheckout` は顧客の定期課金を読み、`metadata.my_subscription_id` が一致するものがあれば `completed`（その顧客と定期課金）、なく有効期限を過ぎていれば `expired`、ほかは `open` を返す。
 - **ポータル**（`PortalURL`）: 既定のカードのブランド・下 4 桁・有効期限（表示するだけで保存しない）、定期課金の状態（停止していれば支払いに失敗したことと、カードを更新すると再開すること）、直近の支払いの履歴（`GET /v1/charges?customer=`、日付・金額・返金）、カードの変更を出す。
   カードの変更は申し込みと同じ 1・2 の手順（定期課金は作らない）で、成功したら新しいカードを既定にして古いカードを消し、停止している定期課金を `/resume` で再開する（その場で課金する）。解約はポータルに出さない（解約はこのサーバーの画面と API で行う、ADR-0072 §8）。
-- **CSP**: ページにだけ次の CSP を付け、Web クライアントの CSP（ADR-0019 §9）は変えない。正確なオリジンは **要検証**（実装で payjp.js の文書に合わせる）。
+- **CSP**: ページごとに次の CSP を付け（payjp.js を許す）、Web クライアントの CSP（ADR-0019 §9）は変えない。正確なオリジンは **要検証**（実装で payjp.js の文書に合わせる）。
 
   ```text
-  default-src 'none'; script-src 'nonce-<n>' https://js.pay.jp; style-src 'nonce-<n>'; frame-src https://js.pay.jp https://api.pay.jp;
+  default-src 'none'; script-src 'self' https://js.pay.jp; style-src 'self'; frame-src https://js.pay.jp https://api.pay.jp;
   connect-src https://api.pay.jp; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
   ```
 
@@ -366,8 +366,8 @@ v1 にホスト型の画面がないので、adapter が Stripe のホスト型�
 - **i18n**: 文言はサーバーのメッセージ（`server.payments.*`、`locales/en` と `locales/ja`）で、ロケールは状態のロケールを使う（ADR-0009）。
 - **PCI**: カードの番号は PAY.JP の iframe の中だけで入力され、このサーバーと Web クライアントのスクリプトは触れない。運営者の範囲は SAQ A 相当で、運営者が確かめる事項として docs に書く（§5 と同じ）。
   決済のページがこのサーバーのオリジンに載るので、PCI DSS v4 の決済のページのスクリプトの管理（要件 6.4.3）と改ざんの検知（要件 11.6.1）に沿って、次を守る。
-  - ページが読むスクリプトは、payjp.js と、テンプレートに埋めた nonce 付きの自前の小さなスクリプトだけにする。外部のスクリプトは CSP の `script-src` で `https://js.pay.jp` だけを許す。Web クライアントの bundle・解析・広告のスクリプトを載せない。
-  - ページのテンプレートとスクリプトは adapter のソースに `embed` で入れ、実行時に変えられない。CSP と `X-Content-Type-Options: nosniff`・`frame-ancestors 'none'` は常に付け、ページのテストで確かめる。
+  - ページが読むスクリプトの目録（要件 6.4.3）は、ビルドのマニフェストから生成し、リリースごとに公開する。chunk を共有するので一覧は変わるが、生成なので費用はかからない（採らなかった案: chunk を共有しない入口）。外部のスクリプトは CSP の `script-src` で `https://js.pay.jp` だけを許す。解析・広告のスクリプトを載せない。
+  - CSP と `X-Content-Type-Options: nosniff`・`frame-ancestors 'none'` は常に付け、ページのテストで確かめる。
   - カードの番号・有効期限・CVC を受ける項目を、フォームにもサーバーにも持たない。サーバーが受けるのはトークンの ID・名義・メールだけで、ログに残すのは PAY.JP のオブジェクトの ID だけにする。
   - 運営者の docs に、SAQ A の範囲の確かめ方（このページと PAY.JP の iframe の分担、CSP、TLS）と、ページの CSP を変える設定を持たないことを書く。
 
