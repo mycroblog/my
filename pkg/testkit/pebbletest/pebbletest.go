@@ -50,7 +50,8 @@ const (
 // Options configure New.
 type Options struct {
 	// HTTPPort and TLSPort are the ports of 127.0.0.1 where the CA validates HTTP-01 and
-	// TLS-ALPN-01; zero picks free ones.
+	// TLS-ALPN-01; zero picks free ones, which Answer serves. A test that listens there itself
+	// listens first and passes the port of its listener, so that nothing takes it meanwhile.
 	HTTPPort int
 	TLSPort  int
 }
@@ -65,6 +66,8 @@ type Server struct {
 	// roots trusts Pebble's own TLS certificate; mgmt is its management interface.
 	roots *x509.CertPool
 	mgmt  string
+	// httpLn and tlsLn listen on the ports that New picked, for Answer.
+	httpLn, tlsLn net.Listener
 }
 
 // HTTPClient returns a client that reaches the CA: it trusts Pebble's TLS certificate and
@@ -106,22 +109,61 @@ func (s Server) get(t testing.TB, url string) []byte {
 	return b
 }
 
+// startAttempts is how many times New starts Pebble with new ports when one of its ports was
+// taken before it bound it.
+const startAttempts = 5
+
 // New starts a Pebble for t and stops it when t ends. It skips t unless TEST_ACME is "pebble".
+// The ports that Pebble binds are picked free just before; when a parallel test or another
+// process binds one first, New starts Pebble again on others.
 func New(t testing.TB, opts Options) Server {
 	t.Helper()
 	if os.Getenv(EnvACME) != "pebble" {
 		t.Skipf("the Pebble tests run with %s=pebble (scripts/task.sh go:test-acme)", EnvACME)
 	}
 	pebble, challtestsrv := tools(t)
+	var httpLn, tlsLn net.Listener
 	if opts.HTTPPort == 0 {
-		opts.HTTPPort = FreePort(t)
+		httpLn = listen(t)
+		opts.HTTPPort = httpLn.Addr().(*net.TCPAddr).Port
 	}
 	if opts.TLSPort == 0 {
-		opts.TLSPort = FreePort(t)
+		tlsLn = listen(t)
+		opts.TLSPort = tlsLn.Addr().(*net.TCPAddr).Port
 	}
 	dir := t.TempDir()
 	cert := testkit.NewTLSCertificate(t, 1, time.Now().Add(-time.Hour), 24*time.Hour, "127.0.0.1", "localhost")
 	certFile, keyFile := cert.WriteFiles(t, dir, time.Time{})
+	for attempt := 1; ; attempt++ {
+		s, procs, err := launch(t, opts, pebble, challtestsrv, dir, certFile, keyFile)
+		if err == nil {
+			s.roots, s.httpLn, s.tlsLn = cert.Pool(), httpLn, tlsLn
+			t.Cleanup(func() {
+				for _, p := range procs {
+					p.stop()
+					if t.Failed() {
+						t.Logf("%s:\n%s", p.name, p.out.String())
+					}
+				}
+			})
+			return s
+		}
+		for _, p := range procs {
+			p.stop()
+		}
+		if attempt == startAttempts {
+			for _, p := range procs {
+				t.Logf("%s:\n%s", p.name, p.out.String())
+			}
+			t.Fatalf("pebbletest: %v", err)
+		}
+		t.Logf("pebbletest: starting again on other ports: %v", err)
+	}
+}
+
+// launch starts pebble-challtestsrv and Pebble on free ports, and waits until the CA serves its
+// directory. It returns the processes it started, to stop, with its error.
+func launch(t testing.TB, opts Options, pebble, challtestsrv, dir, certFile, keyFile string) (Server, []*process, error) {
 	apiPort, mgmtPort, dnsPort, challMgmtPort := FreePort(t), FreePort(t), FreePort(t), FreePort(t)
 	config := map[string]any{"pebble": map[string]any{
 		"listenAddress":                  "127.0.0.1:" + strconv.Itoa(apiPort),
@@ -142,41 +184,78 @@ func New(t testing.TB, opts Options) Server {
 	}}
 	b, err := json.Marshal(config)
 	if err != nil {
-		t.Fatal(err)
+		return Server{}, nil, err
 	}
 	configFile := filepath.Join(dir, "pebble-config.json")
 	if err := os.WriteFile(configFile, b, 0o600); err != nil {
-		t.Fatal(err)
+		return Server{}, nil, err
 	}
+	var procs []*process
 	dns := "127.0.0.1:" + strconv.Itoa(dnsPort)
-	start(t, "pebble-challtestsrv", exec.Command(challtestsrv, //nolint:gosec // G204: the path of a pinned Go tool
+	chall, err := start("pebble-challtestsrv", exec.Command(challtestsrv, //nolint:gosec // G204: the path of a pinned Go tool
 		"-defaultIPv4", "127.0.0.1", "-defaultIPv6", "", "-dnsserver", dns, "-management", "127.0.0.1:"+strconv.Itoa(challMgmtPort),
 		"-http01", "", "-https01", "", "-tlsalpn01", "", "-doh", ""))
-	waitTCP(t, "127.0.0.1:"+strconv.Itoa(challMgmtPort))
+	if err != nil {
+		return Server{}, procs, err
+	}
+	procs = append(procs, chall)
+	if err := waitTCP(t, chall, "127.0.0.1:"+strconv.Itoa(challMgmtPort)); err != nil {
+		return Server{}, procs, err
+	}
 	cmd := exec.Command(pebble, "-config", configFile, "-dnsserver", dns) //nolint:gosec // G204: the path of a pinned Go tool
 	// No sleep before a validation, no nonce rejected at random, and no authorization reused,
 	// so that every order validates its challenges.
 	cmd.Env = append(os.Environ(), "PEBBLE_VA_NOSLEEP=1", "PEBBLE_WFE_NONCEREJECT=0", "PEBBLE_AUTHZREUSE=0")
-	start(t, "pebble", cmd)
+	ca, err := start("pebble", cmd)
+	if err != nil {
+		return Server{}, procs, err
+	}
+	procs = append(procs, ca)
 	s := Server{
 		DirectoryURL: "https://127.0.0.1:" + strconv.Itoa(apiPort) + "/dir",
 		HTTPPort:     opts.HTTPPort, TLSPort: opts.TLSPort,
-		roots: cert.Pool(), mgmt: "https://127.0.0.1:" + strconv.Itoa(mgmtPort),
+		mgmt: "https://127.0.0.1:" + strconv.Itoa(mgmtPort),
 	}
-	waitReady(t, s)
-	return s
+	return s, procs, waitReady(t, ca, s, certFile)
 }
 
-// FreePort returns a TCP port of 127.0.0.1 that nothing listens on now.
+// FreePort returns a TCP port of 127.0.0.1 that nothing listens on now, and that it never
+// returned before in this test binary: the parallel tests that take ports from it never share
+// one, although another process may still bind it first.
 func FreePort(t testing.TB) int {
+	t.Helper()
+	for {
+		ln, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
+		if err != nil {
+			t.Fatal(err)
+		}
+		port := ln.Addr().(*net.TCPAddr).Port
+		_ = ln.Close()
+		portsMu.Lock()
+		taken := ports[port]
+		ports[port] = true
+		portsMu.Unlock()
+		if !taken {
+			return port
+		}
+	}
+}
+
+// listen listens on a free port of 127.0.0.1 until t ends.
+func listen(t testing.TB) net.Listener {
 	t.Helper()
 	ln, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() { _ = ln.Close() }()
-	return ln.Addr().(*net.TCPAddr).Port
+	t.Cleanup(func() { _ = ln.Close() })
+	return ln
 }
+
+var (
+	portsMu sync.Mutex
+	ports   = map[int]bool{}
+)
 
 var (
 	toolsOnce sync.Once
@@ -231,45 +310,78 @@ func repositoryRoot() (string, error) {
 	}
 }
 
-// start runs cmd until t ends, and logs its output when t failed.
-func start(t testing.TB, name string, cmd *exec.Cmd) {
-	t.Helper()
-	var out syncBuffer
-	cmd.Stdout, cmd.Stderr = &out, &out
-	if err := cmd.Start(); err != nil {
-		t.Fatalf("pebbletest: start %s: %v", name, err)
-	}
-	t.Cleanup(func() {
-		_ = cmd.Process.Kill()
-		_ = cmd.Wait()
-		if t.Failed() {
-			t.Logf("%s:\n%s", name, out.String())
-		}
-	})
+// process is a running tool of the CA.
+type process struct {
+	name string
+	cmd  *exec.Cmd
+	out  *syncBuffer
+	// done is closed when the process exits.
+	done chan struct{}
 }
 
-// waitTCP waits until addr accepts connections.
-func waitTCP(t testing.TB, addr string) {
-	t.Helper()
+// start runs cmd, keeping its output.
+func start(name string, cmd *exec.Cmd) (*process, error) {
+	p := &process{name: name, cmd: cmd, out: &syncBuffer{}, done: make(chan struct{})}
+	cmd.Stdout, cmd.Stderr = p.out, p.out
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("start %s: %w", name, err)
+	}
+	go func() {
+		_ = cmd.Wait()
+		close(p.done)
+	}()
+	return p, nil
+}
+
+// stop kills the process and waits for it.
+func (p *process) stop() {
+	_ = p.cmd.Process.Kill()
+	<-p.done
+}
+
+// exited returns an error when p has exited: it could not bind a port.
+func (p *process) exited() error {
+	select {
+	case <-p.done:
+		return fmt.Errorf("%s exited: %s", p.name, strings.TrimSpace(p.out.String()))
+	default:
+		return nil
+	}
+}
+
+// waitTCP waits until addr accepts connections, while p runs.
+func waitTCP(t testing.TB, p *process, addr string) error {
 	deadline := time.Now().Add(30 * time.Second)
 	for {
+		if err := p.exited(); err != nil {
+			return err
+		}
 		c, err := (&net.Dialer{Timeout: time.Second}).DialContext(t.Context(), "tcp", addr)
 		if err == nil {
 			_ = c.Close()
-			return
+			return nil
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("pebbletest: %s does not accept connections: %v", addr, err)
+			return fmt.Errorf("%s does not accept connections: %w", addr, err)
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
 }
 
-// waitReady waits until the CA serves its directory.
-func waitReady(t testing.TB, s Server) {
-	t.Helper()
+// waitReady waits until the CA serves its directory, while p runs. Pebble's own certificate is in
+// certFile.
+func waitReady(t testing.TB, p *process, s Server, certFile string) error {
+	pem, err := os.ReadFile(certFile) //nolint:gosec // G304: a file of the test's own directory
+	if err != nil {
+		return err
+	}
+	s.roots = x509.NewCertPool()
+	s.roots.AppendCertsFromPEM(pem)
 	deadline := time.Now().Add(30 * time.Second)
 	for {
+		if err := p.exited(); err != nil {
+			return err
+		}
 		ctx, cancel := context.WithTimeout(t.Context(), 2*time.Second)
 		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, s.DirectoryURL, nil)
 		resp, err := s.HTTPClient().Do(req)
@@ -278,10 +390,10 @@ func waitReady(t testing.TB, s Server) {
 		}
 		cancel()
 		if err == nil && resp.StatusCode == http.StatusOK {
-			return
+			return nil
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("pebbletest: the CA does not serve %s: %v", s.DirectoryURL, err)
+			return fmt.Errorf("the CA does not serve %s: %w", s.DirectoryURL, err)
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
@@ -307,18 +419,13 @@ func (b *syncBuffer) String() string {
 
 // Answer serves the answers of the challenges where the CA validates them, until t ends: http01
 // returns the body of the HTTP-01 resource of a token on 127.0.0.1:HTTPPort, and tlsALPN the
-// certificate of a handshake that offers acme-tls/1 on 127.0.0.1:TLSPort. Call it once per Server.
+// certificate of a handshake that offers acme-tls/1 on 127.0.0.1:TLSPort. Call it once per Server,
+// made with neither port given.
 func (s Server) Answer(t testing.TB, http01 func(ctx context.Context, token string) (string, error), tlsALPN func(*tls.ClientHelloInfo) (*tls.Certificate, error)) {
 	t.Helper()
-	lc := net.ListenConfig{}
-	hl, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:"+strconv.Itoa(s.HTTPPort))
-	if err != nil {
-		t.Fatal(err)
-	}
-	tl, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:"+strconv.Itoa(s.TLSPort))
-	if err != nil {
-		_ = hl.Close()
-		t.Fatal(err)
+	hl, tl := s.httpLn, s.tlsLn
+	if hl == nil || tl == nil {
+		t.Fatal("pebbletest: Answer needs the ports that New picked")
 	}
 	hs := &http.Server{ReadHeaderTimeout: 5 * time.Second, Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, ok := strings.CutPrefix(r.URL.Path, "/.well-known/acme-challenge/")
