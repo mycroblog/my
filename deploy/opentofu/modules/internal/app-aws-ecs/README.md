@@ -28,7 +28,7 @@ module "app" {
 | `name` | `my` | Name of the cluster, the service, and its family |
 | `profile` | `production` | `profile` of the server |
 | `backends`, `env`, `secret_env`, `secret_files` | empty | [The backend contract](../README.md#the-backend-contract). `secret_files` is treated as `secret_env`. The module sets `MY_BILLING_SOURCES` from what `backends` returns as `billing_sources` |
-| `cpu`, `memory_mib` | `256`, `1024` | Size of a service task, from [the sizes Fargate offers](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html). A size it does not offer fails the apply. `GOMEMLIMIT` is 90% of the memory |
+| `cpu`, `memory_mib` | `256`, `1024` | Size of a service task, from [the sizes Fargate offers](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html). A size it does not offer fails the apply. `GOMEMLIMIT` is 90% of what the [sidecars](#sidecars) leave of the memory |
 | `desired_count` | `1` | Tasks of the service. Above 1 needs a stream other than `hub`, which the plan checks |
 | `job_cpu`, `job_memory_mib` | `512`, `1024` | Size of a one-off task, billed only while it runs |
 | `health_check_grace_seconds` | `120` | How long a new task may fail the load balancer's check |
@@ -48,6 +48,8 @@ module "app" {
 | `task_subnet_ids` | The subnets of the service and the one-off tasks |
 | `worker_services`, `worker_env` | The service of each worker, and what it sets over `env` |
 | `execution_role_arn`, `task_role_arn` | Read [Secrets](#secrets) |
+| `task_permissions` | What the task role is allowed: one IAM action on a resource each, as the backends asked |
+| `containers` | The containers of each task definition by its key (`server`, `worker-<key>`, `migrate`, `console`): `my` first, then the [sidecars](#sidecars) |
 | `log_group` | `/ecs/<name>` |
 | `console` | What `console.sh` reads, or null |
 | `env`, `secret_env`, `one_off_secret_env` | The merged settings: the service's, and those of the one-off tasks |
@@ -78,6 +80,10 @@ A task reads a secret once, at start. After you change one, run `aws ecs update-
 ## The image
 
 The released image runs as it is. Fargate pulls `ghcr.io/mycroblog/my` over the internet, so a task needs a way out, and the architecture you choose picks from its index. A copy in ECR works too, in the same region or another: the execution role may pull from any repository of the account.
+
+## Sidecars
+
+A backend's `sidecars` run in every task beside the server: the service, each worker, the migration, and the console. `observability-aws` returns one, the collector that sends the traces to X-Ray. Each takes its CPU units and memory from the task's size, so the server's container is given the rest of the CPU and its `GOMEMLIMIT` is 90% of the rest of the memory; a plan fails when a task would leave the server less than 128 CPU units or 512 MiB. A sidecar is not essential, so one that stops leaves the server running; the server waits for each to start, and stops before them. Its logs go to the tasks' log group under the task's prefix and its own name. With the collector, a service task of 256 CPU units and 1,024 MiB gives the server 224 and 896, and its `GOMEMLIMIT` falls from 921 MiB to 806 MiB.
 
 ## The first deployment
 
@@ -162,5 +168,6 @@ Not read, so not in the total: Secrets Manager per secret, CloudWatch Logs, S3, 
 - What `wait_for_steady_state` reports when the circuit breaker rolls a deployment back: whether the apply fails, or succeeds with the service back on the old revision while the state holds the new one, which the next apply would deploy again.
 - That `ecs list-tasks --family` with `--desired-status RUNNING` lists a migration task that is still starting, which `migrate.sh` waits for.
 - `stopTimeout` of 60 on Fargate, whose limit of 120 seconds comes from a part of AWS's page that was read only in summary.
+- That the collector of `observability-aws` starts within its 128 MiB, and that X-Ray takes the spans it sends, whose trace IDs the server makes at random.
 - That everything `my serve` writes fits the task's disk, and that its user can write there.
 - The first start's timing against `health_check_grace_seconds`, and two tasks of `role = all` running the jobs of one instance on Fargate.

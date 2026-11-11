@@ -467,14 +467,33 @@ run "an_unknown_kind_of_kek" {
   expect_failures = [var.kek]
 }
 
-run "traces_to_x_ray" {
+run "traces_to_cloud_trace" {
   command = plan
 
   variables {
-    observability = { traces = "x-ray" }
+    observability = { traces = "cloud-trace" }
   }
 
   expect_failures = [var.observability]
+}
+
+run "a_task_too_small_for_the_collector" {
+  command = plan
+
+  variables {
+    service = { cpu = 256, memory_mib = 512 }
+  }
+
+  expect_failures = [var.observability]
+}
+
+run "a_small_task_without_the_collector" {
+  command = plan
+
+  variables {
+    service       = { cpu = 256, memory_mib = 512 }
+    observability = { traces = "none" }
+  }
 }
 
 run "monitoring_without_the_metrics_in_cloudwatch" {

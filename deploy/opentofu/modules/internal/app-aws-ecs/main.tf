@@ -178,6 +178,17 @@ locals {
     }
   }
   tasks = merge(local.long_running, local.worker_tasks, local.one_off)
+
+  # What the backends run beside the server in every task, such as the collector of observability-aws. They take their CPU
+  # units and memory from the task's, so the server is given the rest, and GOMEMLIMIT follows what is left of the memory.
+  sidecars       = flatten([for b in var.backends : b.sidecars])
+  sidecar_cpu    = sum(concat([0], [for s in local.sidecars : s.cpu]))
+  sidecar_memory = sum(concat([0], [for s in local.sidecars : s.memory_mib]))
+  # A task too small to hold its sidecars and a server of 512 MiB and 128 CPU units, the least that the server runs in.
+  tasks_too_small = [
+    for key, t in local.tasks : key
+    if length(local.sidecars) > 0 && (t.memory - local.sidecar_memory < 512 || t.cpu - local.sidecar_cpu < 128)
+  ]
 }
 
 resource "aws_iam_role" "execution" {
@@ -260,6 +271,10 @@ resource "aws_iam_role" "execution" {
     precondition {
       condition     = var.desired_count == 1 || local.stream != "hub"
       error_message = "With desired_count above 1, stream = hub would give each stream only the changes of its own task. Add a stream-* module, or set MY_STREAM to postgres."
+    }
+    precondition {
+      condition     = length(local.tasks_too_small) == 0
+      error_message = "The sidecars take ${local.sidecar_cpu} CPU units and ${local.sidecar_memory} MiB from every task, which leaves the server less than 128 CPU units or 512 MiB in: ${join(", ", local.tasks_too_small)}. Give those tasks a larger size."
     }
     precondition {
       condition     = length(local.on_disk) == 0
@@ -441,7 +456,8 @@ resource "aws_ecs_task_definition" "task" {
     cpu_architecture        = upper(var.architecture)
   }
 
-  container_definitions = jsonencode([merge(
+  # The server comes first: console.sh and migrate.sh read the first container as the server's.
+  container_definitions = jsonencode(concat([merge(
     {
       name      = local.container_name
       image     = var.image
@@ -450,7 +466,7 @@ resource "aws_ecs_task_definition" "task" {
       stopTimeout = 60
       environment = [
         for name, value in merge(local.env, each.value.env, {
-          GOMEMLIMIT = "${floor(each.value.memory * 0.9)}MiB"
+          GOMEMLIMIT = "${floor((each.value.memory - local.sidecar_memory) * 0.9)}MiB"
           MY_ROLE    = each.value.role
         }) : { name = name, value = value }
       ]
@@ -466,7 +482,29 @@ resource "aws_ecs_task_definition" "task" {
       }
     },
     each.value.command == null ? {} : { command = each.value.command },
-  )])
+    # The sidecars start first and stop last, so that the server's last spans reach the collector before it stops, and the
+    # server is given what they leave of the task's CPU.
+    length(local.sidecars) == 0 ? {} : { cpu = each.value.cpu - local.sidecar_cpu },
+    length(local.sidecars) == 0 ? {} : { dependsOn = [for s in local.sidecars : { containerName = s.name, condition = "START" }] },
+    )], [
+    # Not essential: a sidecar that stops loses what it carries, and leaves the server running.
+    for s in local.sidecars : {
+      name        = s.name
+      image       = s.image
+      essential   = false
+      cpu         = s.cpu
+      memory      = s.memory_mib
+      environment = [for name, value in s.env : { name = name, value = value }]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.tasks.name
+          awslogs-region        = data.aws_region.current.region
+          awslogs-stream-prefix = each.key
+        }
+      }
+    }
+  ]))
 
   # Everything a one-off task needs, so that the first deployment can target the migration's definition alone.
   depends_on = [

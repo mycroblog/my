@@ -914,3 +914,124 @@ run "a_concurrency_the_pool_cannot_serve_fails" {
 
   expect_failures = [aws_iam_role.execution]
 }
+
+run "a_sidecar_runs_beside_the_server_in_every_task" {
+  command = plan
+
+  variables {
+    console_enabled = true
+    workers = {
+      delivery = { job_types = ["federation.*"], memory_mib = 2048 }
+    }
+    backends = [
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }, env = { MY_DATABASE = "postgres", MY_BLOB = "s3" } },
+      { platform = "neutral", env = { MY_QUEUE = "db", MY_STREAM = "postgres" }, workers = { delivery = ["federation.*"] } },
+      {
+        platform    = "aws"
+        env         = { MY_TRACES_EXPORTER = "otlp" }
+        permissions = [{ permission = "xray:PutTraceSegments", resource = "*" }]
+        sidecars    = [{ name = "otel-collector", image = "public.ecr.aws/aws-observability/aws-otel-collector:v0.50.0", cpu = 32, memory_mib = 128, env = { AOT_CONFIG_CONTENT = "receivers: {}" } }]
+      },
+    ]
+  }
+
+  assert {
+    condition = alltrue([
+      for key in ["server", "worker-delivery", "migrate", "console"] : (
+        length(jsondecode(aws_ecs_task_definition.task[key].container_definitions)) == 2 &&
+        jsondecode(aws_ecs_task_definition.task[key].container_definitions)[0].name == "my" &&
+        jsondecode(aws_ecs_task_definition.task[key].container_definitions)[1].name == "otel-collector" &&
+        jsondecode(aws_ecs_task_definition.task[key].container_definitions)[1].essential == false &&
+        jsondecode(aws_ecs_task_definition.task[key].container_definitions)[1].memory == 128 &&
+        contains(jsondecode(aws_ecs_task_definition.task[key].container_definitions)[1].environment, { name = "AOT_CONFIG_CONTENT", value = "receivers: {}" }) &&
+        jsondecode(aws_ecs_task_definition.task[key].container_definitions)[0].dependsOn == [{ containerName = "otel-collector", condition = "START" }]
+      )
+    ])
+    error_message = "every task, the service, the worker, the migration, and the console, runs the sidecar after the server, which waits for it to start"
+  }
+
+  assert {
+    condition = (
+      jsondecode(aws_ecs_task_definition.task["server"].container_definitions)[0].cpu == 224 &&
+      contains(jsondecode(aws_ecs_task_definition.task["server"].container_definitions)[0].environment, { name = "GOMEMLIMIT", value = "806MiB" }) &&
+      jsondecode(aws_ecs_task_definition.task["migrate"].container_definitions)[0].cpu == 480 &&
+      contains(jsondecode(aws_ecs_task_definition.task["worker-delivery"].container_definitions)[0].environment, { name = "GOMEMLIMIT", value = "1728MiB" })
+    )
+    error_message = "the server is given what the sidecar leaves of the task's CPU and memory"
+  }
+
+  assert {
+    condition     = length([for e in jsondecode(aws_ecs_task_definition.task["server"].container_definitions)[0].environment : e if e.name == "AOT_CONFIG_CONTENT"]) == 0
+    error_message = "the sidecar's settings stay in the sidecar"
+  }
+
+  assert {
+    condition     = contains(flatten(data.aws_iam_policy_document.task.statement[*].actions), "xray:PutTraceSegments")
+    error_message = "the task role holds what the sidecar's backend asks, since the sidecar runs as the task"
+  }
+
+  assert {
+    condition     = alltrue([for key in ["server", "worker-delivery", "migrate", "console"] : output.containers[key] == ["my", "otel-collector"]])
+    error_message = "the output names the containers of every task: ${jsonencode(output.containers)}"
+  }
+}
+
+run "no_sidecar_leaves_the_server_alone" {
+  command = plan
+
+  assert {
+    condition = (
+      length(jsondecode(aws_ecs_task_definition.task["server"].container_definitions)) == 1 &&
+      !contains(keys(jsondecode(aws_ecs_task_definition.task["server"].container_definitions)[0]), "dependsOn") &&
+      !contains(keys(jsondecode(aws_ecs_task_definition.task["server"].container_definitions)[0]), "cpu")
+    )
+    error_message = "with no sidecar the task holds the server alone, with the whole of the task"
+  }
+}
+
+run "a_task_too_small_for_its_sidecars_fails" {
+  command = plan
+
+  variables {
+    memory_mib = 512
+    backends = [
+      { platform = "aws", secret_env = { MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" }, env = { MY_DATABASE = "postgres", MY_BLOB = "s3", MY_QUEUE = "db" } },
+      { platform = "aws", sidecars = [{ name = "otel-collector", image = "collector:1.0.0", cpu = 32, memory_mib = 128 }] },
+    ]
+  }
+
+  expect_failures = [aws_iam_role.execution]
+}
+
+run "a_sidecar_named_as_the_server_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "aws", sidecars = [{ name = "my", image = "collector:1.0.0", cpu = 32, memory_mib = 128 }] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "a_sidecar_of_the_latest_image_fails" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "aws", sidecars = [{ name = "otel-collector", image = "collector:latest", cpu = 32, memory_mib = 128 }] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
+run "two_sidecars_of_one_name_fail" {
+  command = plan
+
+  variables {
+    backends = [
+      { platform = "aws", sidecars = [{ name = "otel-collector", image = "collector:1.0.0", cpu = 32, memory_mib = 128 }] },
+      { platform = "aws", sidecars = [{ name = "otel-collector", image = "collector:1.0.0", cpu = 32, memory_mib = 128 }] },
+    ]
+  }
+
+  expect_failures = [var.backends]
+}

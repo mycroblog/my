@@ -430,10 +430,10 @@ variable "monitoring" {
 }
 
 variable "observability" {
-  description = "Where the metrics, the traces, and the error reports go. Everything rides on the log lines, which the tasks' log driver sends to CloudWatch Logs, so nothing needs a grant: metrics = cloudwatch writes them in Embedded Metric Format, in the namespace name, which CloudWatch extracts; errors = cloudwatch keeps the error report line, with its stack, in CloudWatch Logs; traces = none records no spans, since X-Ray takes them only through a collector beside the server, which the tasks do not run. settings leaves a signal to the settings input: errors = settings with errors_exporter = sentry in settings and errors_sentry_dsn in secrets, for one."
+  description = "Where the metrics, the traces, and the error reports go. metrics = cloudwatch writes them in Embedded Metric Format, in the namespace name, which CloudWatch extracts from the log lines; errors = cloudwatch keeps the error report line, with its stack, in CloudWatch Logs; traces = x-ray runs the AWS Distro for OpenTelemetry collector beside the server in every task, with 32 CPU units and 128 MiB of the task's size, sends the spans to it over OTLP, and allows the tasks' role xray:PutTraceSegments; traces = none records no spans and runs no collector. settings leaves a signal to the settings input: errors = settings with errors_exporter = sentry in settings and errors_sentry_dsn in secrets, for one."
   type = object({
     metrics = optional(string, "cloudwatch")
-    traces  = optional(string, "none")
+    traces  = optional(string, "x-ray")
     errors  = optional(string, "cloudwatch")
   })
   default  = {}
@@ -442,10 +442,18 @@ variable "observability" {
   validation {
     condition = (
       contains(["cloudwatch", "settings"], var.observability.metrics) &&
-      contains(["none", "settings"], var.observability.traces) &&
+      contains(["x-ray", "none", "settings"], var.observability.traces) &&
       contains(["cloudwatch", "settings"], var.observability.errors)
     )
-    error_message = "observability.metrics must be cloudwatch or settings, traces none or settings, and errors cloudwatch or settings."
+    error_message = "observability.metrics must be cloudwatch or settings, traces x-ray, none, or settings, and errors cloudwatch or settings."
+  }
+
+  # What app-aws-ecs checks of every task, said here of the sizes this module takes, before anything else is planned.
+  validation {
+    condition = var.observability.traces != "x-ray" || alltrue([
+      for size in [var.service, var.jobs] : size.memory_mib - 128 >= 512 && size.cpu - 32 >= 128
+    ])
+    error_message = "observability.traces = x-ray runs the collector in every task, which takes 32 CPU units and 128 MiB, and leaves the server less than 128 CPU units or 512 MiB in service or jobs. Give them a larger size, or set traces to none."
   }
 }
 

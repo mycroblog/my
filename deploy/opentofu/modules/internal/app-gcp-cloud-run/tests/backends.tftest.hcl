@@ -1173,6 +1173,16 @@ run "the_security_groups_of_aws_fail" {
   expect_failures = [var.backends]
 }
 
+run "the_sidecars_of_ecs_fail" {
+  command = plan
+
+  variables {
+    backends = [{ platform = "neutral", sidecars = [{ name = "otel-collector", image = "collector:1.0.0", cpu = 32, memory_mib = 128 }] }]
+  }
+
+  expect_failures = [var.backends]
+}
+
 run "the_load_balancer_of_ecs_fails" {
   command = plan
 
