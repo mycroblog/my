@@ -20,7 +20,7 @@
 ### 2. 入力の形: 役割ごとのセクションと `kind`
 
 - 入力は役割ごとの object にする。`ingress`・`database`・`queue`・`media`・`kv`・`stream`・`mail`・`kek`・`network` の各セクションで、`kind` によって中身を選ぶ。
-- どのセクションにも、プラットフォームの推奨構成を既定値として置く。何も書かなければ推奨構成になる。必須の入力は、どちらのプラットフォームでも `host`・`image`・`media.bucket_name`・`mail.from` と、それぞれのプラットフォームでしか決まらないものだけにする。GCP では SMTP の接続先、AWS では `network.egress` と `ingress.certificate_arn` がこれに当たる。
+- どのセクションにも、プラットフォームの推奨構成を既定値として置く。何も書かなければ推奨構成になる。必須の入力は、どちらのプラットフォームでも `host`・`media.bucket_name`・`mail.from` と、それぞれのプラットフォームでしか決まらないものだけにする。GCP では SMTP の接続先、AWS では `network.egress` と `ingress.certificate_arn` がこれに当たる。
 - 1 つの `kind` だけが使う項目は、同じセクションの optional な属性に置く。HCL には union 型がないので、`kind` と組み合わせの誤りは変数の `validation` で plan の前に止める。例: `stream.kind = valkey` なのに `kv.kind = db`、`kv.kind = memorystore` なのに VPC がない。
 - 推奨する既定値:
 
@@ -100,8 +100,36 @@
   - `dns_records`: ingress・メディアのホスト・SES の検証のレコード
   - `kek`: KEK の場所と、控えを取るコマンド
   - `console`（`console.sh` が読む）
-  - `upgrade`（`upgrade.sh` が読む）
-- `upgrade.sh` と `console.sh` は、`.terraform/modules/<ブロック名>/deploy/opentofu/` から公開モジュールの出力を読む。
+  - `version`: 今のサーバーの版と、最後にマイグレーションを実行した版
+- `console.sh` は、`.terraform/modules/<ブロック名>/deploy/opentofu/` から公開モジュールの出力を読む。アップグレードは §9 のとおり apply で行い、`upgrade.sh` は公開の手順から外す。
+
+### 9. アップグレードを apply で行う
+
+**版を変えて apply すれば、マイグレーションからサービスの差し替えまでが、`upgrade.sh` と同じ順序で実行される。** 版の差分は plan に出る。今の `ignore_changes`（GCP の image）と SSM のパラメータ（AWS）による「apply は image を変えない」形はやめる。
+
+- **入力**: `image` を `image = { repository, version, digest }` に分ける。
+  - `repository` の既定値は `ghcr.io/mycroblog/my`。
+  - `version` の既定値は **公開モジュール自身の版** にする。リリースのワークフローが、タグの時点で公開モジュールに版を書き込む。こうすると、利用者は `source` の `?ref=v0.2.0` を上げるだけで、モジュールとイメージが同じ版に揃って上がる。README の「すべてのブロックを同じ版に」という約束が、利用者の作業ではなくなる。
+  - `version` を明示するのは、rc を試すときと、モジュールだけを先に上げるときである。`digest` は `nightly@sha256:...` のように digest で固定するときに使う。
+- **順序**: apply の依存で、`upgrade.sh` と同じ順序にする。
+  1. マイグレーションのジョブが新しい版で `my upgrade` を実行し、成功を待つ。`my upgrade` は `config check`・`db upgrade -check`・`schema apply`・`db upgrade` を 1 つのプロセスで順に実行する、新しいサブコマンドである。
+  2. ワーカーのサービスが新しい版になる。
+  3. 既定のサービスが新しい版になる。
+  - どれかが失敗すると apply はそこで止まり、まだ動いていないものは前の版のままになる。もう一度 apply すれば、終わっていない段から続く。
+- **GCP**: `google_cloud_run_v2_job` の `run_execution_token` を使う。トークンを変えてジョブを作るか更新すると実行が 1 回作られ、その実行が成功するまでリソースは ready にならない。google 7.46.2 のスキーマの説明で 2026-11-11 に確かめた。
+  - トークンは image（版または digest）と `upgrade.retry` から作る。ジョブの名前とトークンを合わせて 63 文字未満という制限があるので、ハッシュの先頭を使う。
+  - サービスはジョブに `depends_on` し、新しいリビジョンが ready になるまでプロバイダが待つ。
+  - スクリプトも、gcloud を実行する環境も要らないので、CI から apply する利用者もそのまま使える。
+  - 最初のデプロイでも、ジョブを作るときにマイグレーションが走ってからサービスができる。`upgrade.sh --migrate-only` は要らなくなる。
+- **AWS**: aws プロバイダには、ECS のタスクを実行して終了を待つリソースがない。6.72.0 で確かめた。`aws_ecs_task_execution` はデータソースで、plan のたびに実行され、終了も待たない。
+  - そのため、`terraform_data`（`triggers_replace` に image と `upgrade.retry`）の `local-exec` で、同じ版の `deploy/opentofu` にあるスクリプトのマイグレーションの段を実行する。apply する環境に aws CLI と jq が要るのは今と同じである。
+  - サービスは `wait_for_steady_state` と、デプロイの circuit breaker の自動ロールバックで新しいタスク定義を待つ。
+  - AWS は未検証のままである（§1）。
+- **`allow_destructive`**: `upgrade.allow_destructive_for = "0.3.0"` のように、版を名指しして許す。名指しした版へ上げる apply だけで効くので、宣言的な設定に残っても次のアップグレードで破壊的な変更を黙って通さない。
+- **やり直し**: マイグレーションが失敗したら、原因を直して `upgrade.retry` を 1 つ上げて apply する。トークンが変わって、もう一度実行される。
+- **下げる**: 版を下げた apply では、古い版の `db upgrade -check` が新しいスキーマを拒む。ジョブが失敗し、サービスには触らない。版を下げる手順は今と同じく、バックアップからの復元である。
+- **メンテナンスモード**: apply の外に残す。前後で 2 回サービスを変える必要があり、1 回の apply では表せないからである。リリースノートがメンテナンスモードを求める版は、`env` に `MY_MAINTENANCE = "true"` を足して apply し、版を上げて apply し、外して apply する、という 3 回の apply を文書に書く。
+- **console**: ジョブの image も同じ版に揃う。実行は今と同じく `console.sh` で行う。
 
 ## 経緯
 
@@ -135,6 +163,9 @@ v0.1.0 の前で、互換を保つ相手がいないので、今変える。
 - **外から入れる secret の値を ephemeral な変数で受け取り、write-only 属性で書く**: state に残さずに、1 回の apply で secret まで揃う。採らなかったのは §7 のとおり、値が要る apply のたびに毎回渡す必要があるからである。
 - **Neon の作成を公開モジュールに含める**: DB まで 1 回の apply で揃う。採らなかったのは §6 のとおりで、プロバイダが使わない利用者にも key を求め、パスワードが state に残り、プロバイダは上流で保守されていない。
 - **R2 のアクセスキーを Cloudflare の API トークンとして公開モジュールで作る**: 利用者が埋める secret が 2 つ減る。この ADR では採らず、Open Questions に残す。トークンの値が state に残り、トークンを作る権限を OpenTofu の実行者に渡すことになるからである。
+- **アップグレードを `upgrade.sh` に残す**: 順序もメンテナンスモードも 1 本のスクリプトで扱え、今動いている。採らなかったのは、apply とスクリプトの 2 つの道具で同じリソースを変えることになるからである。image を `ignore_changes` にするため、plan に版の差分が出ず、CI の apply とも噛み合わない。
+- **マイグレーションの 4 段をそれぞれ別のジョブにし、`run_execution_token` で鎖にする**: サーバーの変更なしで GCP でも実現できる。採らなかったのは、ジョブが 4 つに増え、途中で止まったときにどこまで進んだかが読みにくいからである。1 つのサブコマンドの方が、AWS の 1 回のタスクとも揃う。
+- **AWS で、タスクを実行して待つ Lambda を `aws_lambda_invocation` で呼ぶ**: apply する環境に CLI が要らない。採らなかったのは、Lambda のコードと権限を保守することになり、15 分の上限があるからである。未検証の AWS には重い。
 - **scale の口を「プロファイル」（`small` / `large` など）にまとめる**: 選択がさらに簡単になる。採らなかったのは、プロファイルの名前が量を隠し、ワーカーだけを増やすような部分的な調整ができなくなるからである。
 
 ## Consequences（影響）
@@ -146,12 +177,18 @@ v0.1.0 の前で、互換を保つ相手がいないので、今変える。
 - 悪い影響: 公開モジュールの変数が大きくなる。HCL に union 型がないため、`kind` ごとの項目が同じ object に並び、validation が増える。
 - 悪い影響: 選ばなかった `kind` のブロックも module として書かれるので、`tofu init` は使わない内部モジュールも取得する。同じ Git パッケージなので、余分な取得はない。
 - 悪い影響: AWS では scale to zero を選べない（§4）。
+- 版を変えた apply がそのままアップグレードになる。plan に版の差分が出て、CI からの apply でもアップグレードできる（§9）。
+- 悪い影響: 版を上げる apply は、マイグレーションの時間だけ長くなる。apply を中断すると、ジョブの実行は続く。
+- 悪い影響: AWS のアップグレードは `local-exec` に頼り、apply する環境に aws CLI と jq が要る。
 - ADR-0010 §3 の表の Google Cloud と AWS の行は、この ADR が Accepted になったら公開モジュールを指すように直す。
 - 後続の作業（Issue にする）:
   - 公開モジュール `mycroblog-gcp` の実装と `tofu test`。内部モジュールの `modules/internal` への移動。
   - `mycroblog-aws` の実装。AWS は今も apply していないので、未検証のままであることも明記する。
   - `examples/` を公開モジュールを 1 回呼ぶだけの形に書き換え、`deploy-cloud-run.md` と `deploy/opentofu/README.md` を書き直す。
-  - `upgrade.sh`・`console.sh` が公開モジュールの出力を読むようにする。
+  - `console.sh` が公開モジュールの出力を読むようにする。
+  - `my upgrade`（§9）をサーバーに足す。
+  - リリースのワークフローで、公開モジュールに版を書き込む（§9）。
+  - アップグレードの文書を apply の手順に書き直し、`upgrade.sh` を外す。
   - SES の sandbox と本番利用の申請についての文書。
   - `scripts/tofu-examples.sh` などの検査を、公開モジュールの相対ソースを許すように直す（example の相対ソースの禁止は残す）。
 
@@ -162,3 +199,7 @@ v0.1.0 の前で、互換を保つ相手がいないので、今変える。
 - ECS で、リクエストを受けてタスクを 0 から起こす仕組みがないこと（§4、要検証）。あれば AWS にも scale to zero の口を足すかを考える。
 - R2 のアクセスキーを公開モジュールで生成するか（採らなかった案を参照）。
 - AWS の自動スケーリング（Application Auto Scaling）を `service` と `workers` の口に足すか。
+- `run_execution_token` について、次を実装の最初に実際のプロジェクトで確かめる（§9）。
+  - トークンを変えずにジョブの別の設定（env など）を変えたとき、実行が作られないか。
+  - 失敗した実行の後に同じトークンで apply したときの動き。
+  - 長いマイグレーションに対するプロバイダの待ち時間の上限。
