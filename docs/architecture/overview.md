@@ -130,6 +130,7 @@ Blob のキーはサーバーが生成し、`blob.ValidateKey` の構文（`[A-Z
 | `OIDCClient`（identity） | 管理者が設定した OpenID Connect の IdP の Discovery・JWKS・ID トークンの検証（`HTTPClient` の `HTTPPurposeLoginProvider` で取得し、応答のキャッシュ指示に従ってメモリに置く） | oidc（標準ライブラリ） | [0106](../adr/0106-external-login-providers.md) |
 | `HumanVerifier` | サインインと登録の CAPTCHA のトークンの検証（`HTTPClient` で siteverify に送る）。`captcha = none` では使わない（nil） | なし（`captcha = none`） | [0042](../adr/0106-external-login-providers.md) |
 | `PushSender` | Web Push 送信 | webpush | — |
+| `ACMEClient`（instance） | `tls = acme` の証明書を ACME（RFC 8555）の CA から取る。アカウントの登録・発注（プロファイルと `replaces`）・チャレンジの回答（`ACMESolver` に渡す）・チェーンの取得・失効・ARI（RFC 9773）。CA へは `internal/platform` が渡す、リダイレクトに従わない専用の `*http.Client` で行く。いつ・どのプロセスが発注するかは `instance.TLSManager` が決める。テスト用の fake は `instancetest.FakeACMEClient`、契約は `instancetest.ACMEClientContract` | なし（`tls = acme` で acme） | [0163](../adr/0163-acme-tls.md) |
 | `Publisher` / `Subscriber` | リアルタイム更新の通知と購読（§4.4）。設定 `stream` が `hub` なら `stream.Hub`、それ以外は `stream.Relay` | in-process（`stream.Hub`、`stream = hub`） | [0016](../adr/0016-client-api-style.md), [0050](../adr/0050-stream-pubsub-across-processes.md) |
 | `Bus` / `Sweeper` | プロセス間の知らせの同報（`stream.Relay` が使う）と、プロセスが残したブローカーの資源の後始末（§4.4）。アダプタは `postgres` / `valkey` / `sns` / `pubsub`（`sns` と `pubsub` は `Sweeper` も実装）。`stream.MemoryBroker` はテスト用 | なし（`stream = hub`）。複数プロセスは `postgres` | [0050](../adr/0050-stream-pubsub-across-processes.md) |
 | `Clock` / `IdGenerator` | 時刻（UTC・ミリ秒）・ID 生成（テスト容易性のため注入） | system（システム時計 / UUIDv7。どちらもプロセス内では小さく戻った時計で逆行しない） | [0003](../adr/0003-database-abstraction.md) |
@@ -274,6 +275,7 @@ internal/
     htmlsanitizer/   # HTMLSanitizer の実装（bluemonday。リモート HTML の許可リスト。federation.md §5）と、インスタンスの文書の許可リスト
     oidc/            # identity.OIDCClient の実装（標準ライブラリ。Discovery・JWKS・RS256 / ES256 / EdDSA の ID トークンの検証。ADR-0106）
     webauthn/        # identity.PasskeyCeremonies の実装（go-webauthn。パスキーの登録とログインの WebAuthn の手続き。FR-004）
+    acme/            # instance.ACMEClient の実装（acmez/v3。tls = acme の証明書の発注・失効・ARI。ADR-0163 §2）
     markdown/        # instance.DocumentRenderer の実装（goldmark。利用規約・プライバシーポリシーの Markdown を HTML にし、htmlsanitizer の文書の許可リストに通す）
   platform/          # 設定、composition root、ログ、HTTP サーバー
   i18n/              # メッセージ整形・ロケール解決（型付きアクセサは tools/i18n が生成）
