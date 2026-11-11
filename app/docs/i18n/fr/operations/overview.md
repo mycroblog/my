@@ -26,40 +26,37 @@ De haut en bas du schéma :
 - **Les services extérieurs au serveur.** CAPTCHA, chat vocal, paiements, plugins et import des coûts cloud restent chacun désactivés
   tant que vous ne les configurez pas ; le serveur appelle alors le service que vous indiquez.
 
-<!-- source: parts-you-choose-by-configuration f7dbfce7a91c -->
-## Les composants que vous choisissez par la configuration
+<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+## Les éléments que vous choisissez par la configuration
 
-Chaque composant est un paramètre de la [référence de configuration](../reference/configuration.md), défini dans un fichier TOML ou comme
-variable d’environnement (`MY_` suivi de la clé en majuscules, par exemple `MY_DATABASE`). La première option de chaque liste est la valeur par défaut.
-Lorsqu’un composant conserve des données, choisissez-le avant le premier démarrage : les données ne se déplacent pas d’elles-mêmes quand le paramètre change.
+Chaque élément est un réglage de la [référence de configuration](../reference/configuration.md), défini dans un fichier TOML ou sous forme de variable d’environnement (`MY_` suivi de la clé en majuscules, par exemple `MY_DATABASE`). La première option de chaque liste est la valeur par défaut.
+Lorsqu’un élément conserve des données, choisissez-le avant le premier démarrage : les données ne se déplacent pas d’elles-mêmes lorsque le réglage change.
 
-| Composant | Paramètre | Options | À lire ensuite |
+| Élément | Réglage | Options | À lire ensuite |
 | --- | --- | --- | --- |
-| Base de données | [`database`](../reference/configuration.md#database) | `sqlite` (un fichier), `postgres` (PostgreSQL et services compatibles) | [Base de données](database.md), [sauvegarde](backup.md) |
-| File de tâches | [`queue`](../reference/configuration.md#queue) | `db` (une table de la base de données), `inline` (exécute chaque tâche aussitôt dans le même processus, pour les tests et le développement), `cloudtasks` (Google Cloud Tasks réveille le serveur pour chaque tâche ; nécessite PostgreSQL) | [La file de tâches](running.md#the-job-queue-and-failed-dead-jobs) |
+| Base de données | [`database`](../reference/configuration.md#database) | `sqlite` (un fichier), `postgres` (PostgreSQL et les services compatibles) | [Base de données](database.md), [sauvegarde](backup.md) |
+| File de tâches | [`queue`](../reference/configuration.md#queue) | `db` (une table de la base de données), `inline` (exécute chaque tâche immédiatement dans le même processus, pour les tests et le développement), `cloudtasks` (Google Cloud Tasks réveille le serveur pour chaque tâche ; exige PostgreSQL) | [La file de tâches](running.md#the-job-queue-and-failed-dead-jobs) |
 | Magasin clé-valeur, pour les caches et les limites de débit | [`kv`](../reference/configuration.md#kv) | `db` (une table de la base de données), `memory` (chaque processus pour lui-même), `valkey` (Valkey ou un autre serveur au protocole Redis, partagé par tous les processus) | [`kv`](../reference/configuration.md#kv) |
-| Stockage des médias | [`blob`](../reference/configuration.md#blob) | `fs` (un répertoire), `s3` (Amazon S3, Cloudflare R2, MinIO, Garage et autres stockages compatibles S3), `gcs` (Google Cloud Storage) | [Fichiers Docker Compose](running.md#docker-compose-files), [sauvegarder les médias](backup.md#media-in-a-bucket) |
-| Traitement des médias | [`media_image`](../reference/configuration.md#media_image), [`media_video`](../reference/configuration.md#media_video), [`media_audio`](../reference/configuration.md#media_audio), un pour chaque type de fichier | `native` (dans le serveur), `plugin` (un plugin de votre choix convertit les fichiers de ce type) | [Convertir les médias](plugins.md#converting-media) |
+| Stockage des médias | [`blob`](../reference/configuration.md#blob) | `fs` (un répertoire), `s3` (Amazon S3, Cloudflare R2, MinIO, Garage et d’autres magasins compatibles S3), `gcs` (Google Cloud Storage) | [Fichiers Docker Compose](running.md#docker-compose-files), [sauvegarde des médias](backup.md#media-in-a-bucket) |
+| Traitement des médias | [`media_image`](../reference/configuration.md#media_image), [`media_video`](../reference/configuration.md#media_video), [`media_audio`](../reference/configuration.md#media_audio), un pour chaque type de fichier | `native` (dans le serveur), `plugin` (un plugin à vous convertit les fichiers de ce type) | [Convertir des médias](plugins.md#converting-media) |
 | Flux en temps réel entre les processus | [`stream`](../reference/configuration.md#stream) | `hub` (à l’intérieur d’un seul processus), `postgres` (`LISTEN` / `NOTIFY`), `valkey`, `sns` (Amazon SNS et SQS), `pubsub` (Google Cloud Pub/Sub) | [`stream`](../reference/configuration.md#stream) |
 | Gestionnaire de clés, qui chiffre les clés privées des comptes | [`key_manager`](../reference/configuration.md#key_manager) | `local` (une clé de chiffrement de clés que vous conservez), `gcpkms` (Google Cloud KMS), `awskms` (AWS KMS), `plugin` | [Gérer la clé](key-management.md) |
 | E-mail | [`mail`](../reference/configuration.md#mail) | `none`, `smtp`, `ses` (Amazon SES), `plugin` | [Envoyer des e-mails](email.md) |
 | CAPTCHA | [`captcha`](../reference/configuration.md#captcha) | `none`, `turnstile` (Cloudflare Turnstile), `hcaptcha`, `recaptcha` (Google reCAPTCHA v2) | [CAPTCHA](captcha.md) |
-| Chat vocal | [`voice`](../reference/configuration.md#voice) | `off`, `p2p` (de navigateur à navigateur, avec TURN via `voice_turn` : `none`, `coturn` ou `cloudflare`), `livekit`, `sora` | [Chat vocal](voice.md) |
-| Paiements des soutiens | [`payments`](../reference/configuration.md#payments) | `none`, `stripe`, `payjp` (PAY.JP) | [Soutiens](supporters.md), [Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md) |
+| Chat vocal | [`voice`](../reference/configuration.md#voice) | `off`, `p2p` (de navigateur à navigateur, avec TURN depuis `voice_turn` : `none`, `coturn` ou `cloudflare`), `livekit`, `sora` | [Chat vocal](voice.md) |
+| Paiements de soutien | [`payments`](../reference/configuration.md#payments) | `none`, `stripe`, `payjp` (PAY.JP) | [Soutiens](supporters.md), [Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md) |
 | Plugins | `plugin_<kind>_address` | aucun par défaut ; une adresse pour chaque type : `translator`, `search`, `billing`, `mailer`, `media_image`, `media_video`, `media_audio`, `key_manager`, et les hooks de décision `inbound.status`, `local.status`, `inbound.follow`, `signup.check`, `media.check`, `inbound.actor`, `local.profile` | [Plugins](plugins.md), [hooks de décision](decision-hooks.md) |
-| Traduction des publications | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | aucun (seulement la traduction propre au navigateur) ; `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate), ou un plugin de votre choix devant le service que vous choisissez | [Traduire les publications](translation.md), [un plugin de traduction](plugins.md#translating-posts) |
-| Recherche plein texte des publications | [`search`](../reference/configuration.md#search) | `none` ; ou `elasticsearch`, `opensearch` ou `meilisearch` ([moteurs de recherche](search-engines.md)) ; ou `plugin`, un plugin de votre choix devant un autre moteur | [Recherche plein texte](search.md), [un plugin de recherche](plugins.md#searching-posts) |
-| CDN pour les médias | [`media_origin`](../reference/configuration.md#media_origin) | non défini (le serveur sert les médias depuis sa propre origine), ou l’origine de votre CDN | [Servir les médias via un CDN](cdn.md) |
-| Coûts cloud | [`billing_sources`](../reference/configuration.md#billing_sources) | aucun, ou l’un de `aws` (AWS Cost Explorer), `gcp` (l’export de facturation ou le budget de Google Cloud), `plugin` | [Importer les coûts cloud](billing-import.md) |
+| Traduction des publications | `translator_<provider>_*`, [`plugin_translator_address`](../reference/configuration.md#plugin_translator_address) | aucun (seulement la traduction propre au navigateur) ; `libretranslate`, `deepl`, `google` (Google Cloud Translation), `aws` (Amazon Translate), ou un plugin à vous devant le service que vous choisissez | [Traduire les publications](translation.md), [un plugin de traduction](plugins.md#translating-posts) |
+| Recherche plein texte des publications | [`search`](../reference/configuration.md#search) | `none` ; ou `elasticsearch`, `opensearch` ou `meilisearch` ([moteurs de recherche](search-engines.md)) ; ou `plugin`, un plugin à vous devant un autre moteur | [Recherche plein texte](search.md), [un plugin de recherche](plugins.md#searching-posts) |
+| CDN pour les médias | [`media_origin`](../reference/configuration.md#media_origin) | non défini (le serveur sert les médias depuis sa propre origine), ou l’origine de votre CDN | [Servir les médias par un CDN](cdn.md) |
+| Coûts du cloud | [`billing_sources`](../reference/configuration.md#billing_sources) | aucun, ou n’importe lequel de `aws` (AWS Cost Explorer), `gcp` (l’export de facturation ou le budget de Google Cloud), `cloudflare` (les frais d’utilisation de Cloudflare), `plugin` | [Importer les coûts du cloud](billing-import.md) |
 | Métriques | [`metrics_exporter`](../reference/configuration.md#metrics_exporter) | `none`, `prometheus`, `otlp` (OpenTelemetry), `emf` (CloudWatch) | [Métriques](running.md#metrics), [alertes](alerts.md) |
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
-| Rapports d’erreurs | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (la ligne de journal et les groupes d’erreurs uniquement), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Rapports d’erreurs](error-reporting.md) |
+| Rapports d’erreurs | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (uniquement la ligne de journal et les groupes d’erreurs), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Rapports d’erreurs](error-reporting.md) |
 
-Le binaire publié et l’image de conteneur contiennent tous les adaptateurs du tableau. Un binaire que vous compilez vous-même peut omettre
-ceux que vous n’utilisez pas grâce aux [build tags](../reference/build-tags.md), et refuse alors leurs paramètres au démarrage.
+Le binaire publié et l’image de conteneur contiennent tous les adaptateurs du tableau. Un binaire que vous compilez vous-même peut omettre ceux que vous n’utilisez pas grâce aux [build tags](../reference/build-tags.md), et refuse alors leurs réglages au démarrage.
 
-`my config check` signale d’un coup tous les problèmes de la configuration, avant que vous ne démarriez le serveur
-([liste de contrôle de production](production-checklist.md)).
+`my config check` signale d’un coup tous les problèmes de la configuration, avant que vous démarriez le serveur ([liste de contrôle de production](production-checklist.md)).
 
 <!-- source: from-a-small-server-to-a-large-one 42bbd3f2a76e -->
 ## D’un petit serveur à un grand serveur

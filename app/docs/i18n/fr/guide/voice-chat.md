@@ -14,15 +14,15 @@ Dans un salon, les personnes sont des « Intervenants » ou des « Auditeu
 
 Si votre connexion est interrompue, l’appel affiche « Reconnexion… ». Un appel prend aussi fin lorsque vous rejoignez le même salon depuis un autre appareil, lorsqu’un hôte vous retire, ou lorsque vous et l’hôte ou un co-hôte vous bloquez mutuellement.
 
-<!-- source: starting-a-room f9578f023829 -->
+<!-- source: starting-a-room 9a2c5bc39c3c -->
 ## Créer un salon
 
 « Créer un salon » apparaît pour les personnes que les opérateurs du serveur autorisent à héberger des salons. Le formulaire demande :
 
 - **Nom**, ainsi qu’une **Icône** et une **Description** facultatives.
 - **Hashtags** : le salon s’affiche sur les pages de ses hashtags.
-- **Qui peut voir et rejoindre** : « Tout le monde sur ce serveur », « Abonnés de l’hôte », « Abonnés mutuels de l’hôte » ou « Uniquement les personnes invitées ».
-- **Qui peut parler sans demander** : « Toutes les personnes qui rejoignent », « Abonnés de l’hôte », « Abonnés mutuels de l’hôte » ou « Uniquement les personnes que les hôtes autorisent à parler ».
+- **Qui peut voir et rejoindre** : « Tout le monde sur ce serveur », « Abonnés de l’hôte », « Personnes suivies par l’hôte », « Abonnés mutuels de l’hôte » ou « Uniquement les personnes invitées ».
+- **Qui peut parler sans demander** : « Toutes les personnes qui rejoignent », « Abonnés de l’hôte », « Personnes suivies par l’hôte », « Abonnés mutuels de l’hôte » ou « Uniquement les personnes que les hôtes autorisent à parler ».
 - **Publier à propos du salon** : une publication avec le lien vers le salon, visible par tout le monde sur ce serveur ou uniquement par vos abonnés.
   Sur un serveur d’une seule personne, la publication à propos d’un salon ouvert à tout le monde sur ce serveur est destinée à vos abonnés.
 

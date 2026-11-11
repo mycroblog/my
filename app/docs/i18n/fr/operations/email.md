@@ -24,52 +24,39 @@ l’utilisateur reçoit le message « nous avons envoyé un e-mail de confirma
 
 Les e-mails de notification destinés aux souscripteurs (`notification.supporter_email`) passent par la même file de tâches.
 
-<!-- source: which-notifications-are-emailed 76c2b871762c -->
+<!-- source: which-notifications-are-emailed a19ef61af242 -->
 ### Quelles notifications sont envoyées par e-mail
 
-Chaque utilisateur choisit, par type de notification, si elle arrive dans l’application et par e-mail, sur la page **Notifications** des
-paramètres (`/settings/notifications` dans le client web). La colonne E-mail n’y apparaît que lorsque le serveur envoie
-des e-mails. Un type désactivé dans l’application n’est pas créé du tout : il n’est donc ni envoyé par e-mail ni poussé.
+Chaque utilisateur choisit, par type de notification, si elle arrive dans l’application et par e-mail, sur la page **Notifications** des paramètres (`/settings/notifications` dans le client web). La colonne E-mail n’y apparaît que tant que le serveur envoie des e-mails. Un type désactivé dans l’application n’est pas créé du tout ; il n’est donc ni envoyé par e-mail ni poussé.
 
 | Type | E-mail par défaut | Quand il est envoyé |
 | --- | --- | --- |
-| Notifications d’autres utilisateurs (mentions, nouveaux abonnés, demandes d’abonnement, demandes d’abonnement acceptées, boosts, favoris, réactions d’émoji, citations, sondages terminés, migration de comptes que vous suivez, chats vocaux) | Désactivé | 15 minutes après la notification, seulement si elle est toujours non lue (ni marquée comme lue, ni écartée) et toujours visible, et si l’utilisateur reçoit toujours ce type par e-mail. Un e-mail par notification |
+| Notifications d’autres utilisateurs (mentions, nouveaux abonnés, demandes d’abonnement, demandes d’abonnement acceptées, boosts, favoris, réactions par émoji, citations, sondages terminés, comptes que vous suivez qui migrent, chats vocaux) | Désactivé | 15 minutes après la notification, seulement si elle est encore non lue (ni marquée comme lue, ni écartée) et encore visible, et que l’utilisateur reçoit toujours ce type par e-mail. Un e-mail par notification |
+| Événements (invitations, dates confirmées, changements de date ou de lieu, annulations, rappels et débuts d’événements sur ce serveur) | Désactivé | Comme ci-dessus, sauf les rappels, qui sont envoyés immédiatement. L’e-mail donne le titre, le début et les organisateurs de l’événement, et jamais où il se tient |
 | Avis des modérateurs (une mesure de modération sur le compte, un signalement résolu, une contestation tranchée, des abonnements perdus à cause d’une suspension, une demande d’émoji personnalisé tranchée) | Désactivé | Comme ci-dessus |
-| Avis aux modérateurs (nouveaux signalements, inscriptions en attente d’approbation, contestations, webhooks désactivés, demandes d’émoji personnalisé, migration de comptes limités, passage de la date de fermeture, erreurs nouvelles et récurrentes), aux personnes dont le rôle a la permission | Activé | Aussitôt, sans attendre qu’il soit lu |
-| Fermeture du service, et avis des formules de soutien | Toujours | Aussitôt ; ils ne peuvent pas être désactivés |
+| Avis aux modérateurs (nouveaux signalements, inscriptions en attente d’approbation, contestations, webhooks désactivés, demandes d’émojis personnalisés, comptes limités qui migrent, date de fermeture dépassée, erreurs nouvelles et récurrentes), aux personnes dont le rôle a la permission | Activé | Immédiatement, sans attendre qu’il soit lu |
+| Fermeture du service, et avis des formules de soutien | Toujours | Immédiatement ; ils ne peuvent pas être désactivés |
 
-Les e-mails de notification ne vont qu’à l’adresse principale de l’utilisateur, une fois confirmée, et jamais à une adresse dont les e-mails sont
-arrêtés (voir plus bas). L’objet de l’e-mail d’une notification d’un autre utilisateur est le même texte que son message Web Push,
-et l’e-mail renvoie vers la publication, le profil ou les notifications.
+Les e-mails de notification vont uniquement à l’adresse principale de l’utilisateur une fois confirmée, et jamais à une adresse dont les e-mails sont arrêtés (voir ci-dessous). L’objet de l’e-mail d’une notification d’un autre utilisateur est le même texte que son message Web Push, et l’e-mail renvoie vers la publication, le profil ou les notifications.
 
-Les e-mails de fermeture du service vont à chaque utilisateur dont l’adresse principale est confirmée. En manquer un peut faire perdre des données : ils sont donc envoyés
-comme e-mails transactionnels, ne comportent aucun lien de désabonnement et ne sont pas arrêtés par une plainte (un hard bounce, lui, les arrête).
-L’annonce, un changement de date, une annulation et la fermeture mettent chacun en file `identity.closure_email_fanout` dans la même
-transaction que leur enregistrement. La tâche horaire `identity.queue_closure_reminders` décide quand envoyer les rappels de 7 jours et
-de 1 jour avant la date de fermeture et de 7 jours avant la date limite d’export. Un rappel dont l’heure était déjà passée lorsque la fermeture
-a été annoncée n’est pas envoyé, car l’e-mail d’annonce indique les dates.
-La tâche de diffusion enregistre une ligne de `service_closure_emails` par utilisateur et met en file `identity.closure_email` uniquement pour les utilisateurs
-qu’elle a pu enregistrer : quel que soit le nombre d’exécutions de la tâche, chaque utilisateur reçoit chaque e-mail une seule fois. Avant l’envoi, la tâche vérifie que l’e-mail est
-toujours valable (qu’il ne concerne ni une annonce annulée ni une date qui a changé depuis).
+Les e-mails de fermeture du service vont à chaque utilisateur dont l’adresse principale est confirmée. En manquer un peut signifier perdre des données ; ils sont donc envoyés comme des e-mails transactionnels, ne portent aucun lien de désabonnement et ne sont pas arrêtés par une plainte (un hard bounce, lui, les arrête).
+L’annonce, un changement de date, une annulation et la fermeture mettent chacun en file `identity.closure_email_fanout` dans la même transaction que leur enregistrement. La tâche horaire `identity.queue_closure_reminders` décide quand envoyer les rappels de 7 jours et de 1 jour avant la date de fermeture et de 7 jours avant la date limite d’export. Un rappel dont l’heure était déjà passée lorsque la fermeture a été annoncée n’est pas envoyé, car l’e-mail d’annonce indique les dates.
+La tâche de diffusion enregistre une ligne de `service_closure_emails` par utilisateur et ne met en file `identity.closure_email` que pour les utilisateurs qu’elle a pu enregistrer ; quelle que soit la fréquence d’exécution de la tâche, chaque utilisateur reçoit donc chaque e-mail une seule fois. Avant l’envoi, la tâche vérifie que l’e-mail est toujours valide (qu’il ne concerne ni une annonce annulée ni une date qui a changé depuis).
 
-Le paramètre `mail` choisit la façon d’envoyer les e-mails.
+Le réglage `mail` choisit la manière dont les e-mails sont envoyés.
 
 | `mail` | Comportement |
 | --- | --- |
-| `none` (par défaut) | N’envoie rien et écrit `mail not sent (mail = none)` dans le journal du serveur avec la catégorie du message. Avec `profile = development`, la ligne contient aussi les adresses, l’objet et le corps, liens compris. Pour les configurations qui n’utilisent pas l’e-mail, et pour le développement |
+| `none` (par défaut) | N’envoie rien et écrit `mail not sent (mail = none)` dans le journal du serveur avec la catégorie du message. Avec `profile = development`, la ligne contient aussi les adresses, l’objet et le corps, liens compris. Pour les installations qui n’utilisent pas l’e-mail, et pour le développement |
 | `smtp` | Envoie par soumission SMTP. Exige STARTTLS et vérifie le certificat avant de s’authentifier et d’envoyer |
 | `ses` | Envoie avec l’API Amazon SES v2 (`SendEmail` avec contenu brut). S’authentifie par la chaîne d’identifiants par défaut du SDK AWS (un rôle IAM, par exemple) et ne détient aucun mot de passe SMTP |
-| `plugin` | Confie chaque message à un [plugin](#a-plugin-mail--plugin) que vous exploitez, pour un service d’e-mail qui n’offre qu’une API HTTP |
+| `plugin` | Confie chaque message à un [plugin](#a-plugin-mail--plugin) que vous exécutez, pour un service de messagerie qui n’offre qu’une API HTTP |
 
-Les paramètres de `smtp` sont `mail_from`, `mail_smtp_host`, `mail_smtp_port` (587 par défaut), `mail_smtp_username` et `mail_smtp_password`. Les
-paramètres de `ses` sont `mail_from`, `mail_ses_region` et `mail_ses_configuration_set`. Les paramètres de `plugin` sont `mail_from`
-et `plugin_mailer_address` avec le reste de [sa destination](plugins.md#the-destination).
-`mail_from` est une adresse simple telle que `noreply@social.example`. `From` devient `"<server name>" <mail_from>`, et le domaine
-de `mail_from` est aussi le domaine de `Message-ID` et celui auquel s’appliquent SPF, DKIM et DMARC (voir plus bas).
-`Reply-To` est le paramètre d’instance `contact_email` lorsqu’il est défini ([paramètres de l’instance](instance-settings.md)).
+Les réglages de `smtp` sont `mail_from`, `mail_smtp_host`, `mail_smtp_port` (587 par défaut), `mail_smtp_username` et `mail_smtp_password`. Les réglages de `ses` sont `mail_from`, `mail_ses_region` et `mail_ses_configuration_set`. Les réglages de `plugin` sont `mail_from` et `plugin_mailer_address` avec le reste de [sa destination](plugins.md#the-destination).
+`mail_from` est une adresse simple telle que `noreply@social.example`. `From` devient `"<server name>" <mail_from>`, et le domaine de `mail_from` est aussi le domaine de `Message-ID` et celui auquel s’appliquent SPF, DKIM et DMARC (voir ci-dessous).
+`Reply-To` est le réglage d’instance `contact_email` lorsqu’il est défini ([réglages de l’instance](instance-settings.md)).
 Chaque e-mail porte `Auto-Submitted: auto-generated`.
-`smtp` et `ses` construisent le même message. SMTPUTF8 n’est pas utilisé : les adresses sont donc envoyées en ASCII et les domaines internationalisés sont
-convertis en Punycode. Une adresse dont la partie locale (avant le `@`) n’est pas en ASCII ne peut pas recevoir d’e-mail, et sa tâche échoue.
+`smtp` et `ses` construisent le même message. SMTPUTF8 n’est pas utilisé ; les adresses sont donc envoyées en ASCII et les domaines internationalisés sont convertis en Punycode. Une adresse dont la partie locale (avant le `@`) n’est pas en ASCII ne peut pas recevoir de message, et sa tâche échoue.
 
 <!-- source: examples-by-provider 7ab129a02c43 -->
 ## Exemples par fournisseur

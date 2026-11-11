@@ -1,7 +1,10 @@
-<!-- source: account-and-domain-actions-and-handling-reports 59d39b2e3f37 -->
+<!-- source: account-and-domain-actions-and-handling-reports 7f21d5c6c925 -->
 # Mesures sur les comptes et les domaines, et traitement des signalements
 
-Comment les opérateurs et les modérateurs agissent sur les comptes et les domaines, tranchent les contestations, traitent les signalements et lisent le journal d’audit. Tout ce qui figure ici, sauf la gestion des comptes (API d’administration uniquement), peut se faire via l’API d’administration (`/api/v1/admin/...`, portées `admin:read` / `admin:write`) et la CLI (`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`). L’API d’administration exige des permissions de rôle : la gestion des comptes, les mesures et les contestations nécessitent `manage_accounts`, les mesures sur les domaines nécessitent `manage_domains`, et les signalements nécessitent `manage_reports`. La CLI se connecte directement à la base de données avec la même configuration que le serveur (`-config` ou variables d’environnement) et n’enregistre pas quel utilisateur l’a utilisée (`issued_by_user_id` et les champs semblables valent NULL, et l’acteur dans le [journal d’audit](#audit-log) est `cli`).
+Comment les exploitants et les modérateurs agissent sur les comptes et les domaines, tranchent les contestations, traitent les signalements, vérifient ce qui a atteint un serveur distant et lisent le journal d’audit.
+Tout ce qui figure ici, sauf la gestion des comptes et la vérification des envois (API d’administration uniquement), peut se faire par l’API d’administration (`/api/v1/admin/...`, périmètres `admin:read` / `admin:write`) et la CLI (`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`).
+L’API d’administration exige des permissions de rôle : la gestion des comptes, les mesures et les contestations exigent `manage_accounts`, les mesures sur les domaines exigent `manage_domains`, et les signalements exigent `manage_reports`.
+La CLI se connecte directement à la base de données avec la même configuration que le serveur (`-config` ou variables d’environnement) et n’enregistre pas quel utilisateur l’a utilisée (`issued_by_user_id` et les champs similaires valent NULL, et l’acteur dans le [journal d’audit](#audit-log) est `cli`).
 
 <!-- source: from-a-report-to-an-action-and-an-appeal dabd0eabc7c7 -->
 ## D’un signalement à une mesure et à une contestation
@@ -17,21 +20,40 @@ Du haut du schéma vers le bas :
 
 Les attributions, les notes, les avis et les contestations restent sur ce serveur ; seules les activités de la colonne de droite le quittent.
 
-<!-- source: moderation-and-server-administration-in-the-web-client 3beb1c9760a0 -->
+<!-- source: moderation-and-server-administration-in-the-web-client d7c65fc5b3d0 -->
 ## Modération et administration du serveur dans le client web
 
-Le client web répartit les écrans de l’équipe en deux groupes. La navigation n’affiche « Modération » et « Administration » qu’aux personnes dont le rôle a au moins une permission de ce groupe. Chaque écran n’affiche qu’une explication aux personnes sans la permission, et le serveur rejette aussi leurs requêtes.
+Le client web répartit les écrans du personnel en deux.
+La navigation n’affiche « Modération » et « Administration » qu’aux personnes dont le rôle a au moins une permission de ce groupe. Chaque écran n’affiche qu’une raison aux personnes sans la permission, et le serveur rejette aussi leurs requêtes.
 
 | Groupe | Permissions | Écrans |
 | --- | --- | --- |
 | Modération (`/moderation`) | `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit` | Signalements (`/moderation/reports`), Contestations (`/moderation/appeals`), Comptes (`/moderation/accounts`), Inscriptions (`/moderation/registrations`), Blocages d’inscription (`/moderation/signup-blocks`), Invitations (`/moderation/invites`), Mesures sur les domaines (`/moderation/domain-actions`), Serveurs distants (`/moderation/instances`), Journal d’audit (`/moderation/audit-log`) |
-| Administration du serveur (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Paramètres du serveur (`/admin/settings`), Règles (`/admin/rules`), Conditions et politiques (`/admin/documents`), la file de tâches et les tâches échouées (`/admin/jobs`), Émojis personnalisés (`/admin/custom-emojis`), Annonces (`/admin/announcements`), Webhooks (`/admin/webhooks`), coûts et import de facturation (`/admin/finance`, `manage_finance`). `manage_login_recovery` (récupération de connexion : suppression de l’authentification à deux facteurs et émission d’un lien de réinitialisation du mot de passe) et `manage_roles` (attribution et retrait des rôles d’un compte) apparaissent comme des sections de la page de gestion d’un compte (`/moderation/accounts/{id}/manage`, qui exige aussi `manage_accounts`) |
+| Administration du serveur (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Paramètres du serveur (`/admin/settings`), Règles (`/admin/rules`), Conditions et politiques (`/admin/documents`), la file de tâches et les tâches en échec (`/admin/jobs`), Émojis personnalisés (`/admin/custom-emojis`), Annonces (`/admin/announcements`), Webhooks (`/admin/webhooks`), coûts et import de facturation (`/admin/finance`, `manage_finance`). `manage_login_recovery` (récupération de connexion : suppression de l’authentification à deux facteurs et émission d’un lien de réinitialisation du mot de passe) et `manage_roles` (attribution et révocation des rôles d’un compte) apparaissent comme des sections de la page Gestion d’un compte (`/moderation/accounts/{id}/manage`, qui exige aussi `manage_accounts`) |
 
 - Le badge sur « Modération » est le total des signalements ouverts, des inscriptions en attente d’approbation et des contestations en attente d’examen ([notifications pour les modérateurs et compteurs en attente](#notifications-for-moderators-and-the-pending-counts)). « Administration » n’affiche aucun compteur.
-- Chaque groupe s’ouvre sur une vue d’ensemble ; les écrans eux-mêmes se trouvent dans le menu à côté. La vue d’ensemble de la modération a une tuile pour chaque file que compte votre rôle (signalements ouverts, inscriptions en attente d’approbation, contestations en attente de décision), chacune étant un lien vers sa file, une tuile indiquant depuis combien de temps le plus ancien signalement ouvert attend (un lien vers la liste des signalements, du plus ancien au plus récent), et liste les signalements ouverts à traiter en premier dans l’ensemble de la file : d’abord les contenus illégaux, puis ceux qui attendent depuis le plus longtemps, avec la durée d’attente de chacun et la personne qui s’en occupe. La liste des signalements se filtre par état, catégorie et responsable (vous ou personne) et affiche les plus récents ou les plus anciens en premier ; les filtres restent dans l’adresse de la page. La vue d’ensemble de l’administration montre la santé du serveur : les tâches échouées, depuis combien de temps la file de tâches fait attendre sa plus ancienne tâche, et les erreurs ouvertes, chaque tuile étant un lien vers son écran et marquée lorsqu’elle demande de l’attention.
-- Le rôle intégré `moderator` n’a que `manage_reports`, `manage_accounts` et `view_audit`, et ne voit pas « Administration ». Il ne voit pas non plus les écrans Mesures sur les domaines et Serveurs distants (`manage_domains`), donc pour déléguer ceux-ci, créez un rôle avec cette permission et attribuez-le ([attribuer et retirer des rôles](admin-cli.md#granting-and-revoking-roles)).
-- Les chemins de l’API d’administration restent `/api/v1/admin/...` quel que soit le groupe, et les portées sont toujours la même paire `admin:read` / `admin:write`. Les groupes sont séparés par des balises dans la référence de l’API (`admin-moderation`, `admin-server`).
-- Il existe un troisième groupe de permissions, les « fonctionnalités utilisateur » (`view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`), qui se trouve en dehors des écrans de l’équipe. Une personne qui n’a que ces permissions ne voit ni « Modération » ni « Administration », et pour une personne avec `view_finance`, la navigation affiche « Finances » (`/finance`) après les paramètres. Son API se trouve dans l’espace de noms utilisateur (`GET /api/v1/finance/cost_totals` et `GET /api/v1/finance/income_totals`, portée `read:finance`) et n’exige aucune portée `admin:*`. Ce qu’elle affiche est défini par `finance_viewer_*` dans les [paramètres d’instance](instance-settings.md).
+- Chaque groupe s’ouvre sur une vue d’ensemble ; les écrans eux-mêmes se trouvent dans le menu à côté. La vue d’ensemble de la Modération a une tuile pour chaque file que compte votre rôle (signalements ouverts, inscriptions en attente d’approbation, contestations en attente de décision), chacune étant un lien vers sa file, une tuile indiquant depuis combien de temps attend le plus ancien signalement ouvert (un lien vers la liste des signalements, les plus anciens en premier), et liste les signalements ouverts à traiter en premier dans toute la file : le contenu illégal d’abord, puis ceux qui attendent depuis le plus longtemps, avec la durée d’attente de chacun et la personne qui s’en occupe.
+  La liste des signalements filtre par état, catégorie et responsable (vous ou personne) et liste les plus récents ou les plus anciens en premier ; les filtres restent dans l’adresse de la page.
+  La vue d’ensemble de l’Administration montre la santé du serveur : les tâches en échec, depuis combien de temps la file de tâches fait attendre sa plus ancienne tâche, et les erreurs ouvertes, chaque tuile étant un lien vers son écran et marquée lorsqu’elle demande de l’attention.
+- Le rôle intégré `moderator` n’a que `manage_reports`, `manage_accounts` et `view_audit`, et ne voit pas « Administration ». Il ne voit pas non plus les écrans Mesures sur les domaines et Serveurs distants (`manage_domains`) ; pour les déléguer, créez donc un rôle avec cette permission et attribuez-le ([accorder et révoquer des rôles](admin-cli.md#granting-and-revoking-roles)).
+- Les chemins de l’API d’administration restent `/api/v1/admin/...` quel que soit le groupe, et les périmètres sont la même paire `admin:read` / `admin:write`. Les groupes sont séparés par des tags dans la référence de l’API (`admin-moderation`, `admin-server`).
+  Un service extérieur au serveur peut appeler les opérations d’une permission avec un périmètre de permission à la place ([laisser un autre service utiliser l’API d’administration](#letting-another-service-use-the-admin-api)).
+- Il existe un troisième groupe de permissions, les « fonctionnalités des utilisateurs » (`view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`, `create_articles`, `create_events`), qui se trouve en dehors des écrans du personnel. Une personne qui n’a que ces permissions ne voit ni « Modération » ni « Administration », et pour une personne qui a `view_finance`, la navigation affiche « Finances » (`/finance`) après Paramètres.
+  Son API se trouve dans l’espace de noms utilisateur (`GET /api/v1/finance/cost_totals` et `GET /api/v1/finance/income_totals`, périmètre `read:finance`) et n’a besoin d’aucun périmètre `admin:*`. Ce qu’elle montre se règle avec `finance_viewer_*` dans les [paramètres de l’instance](instance-settings.md).
+
+<!-- source: letting-another-service-use-the-admin-api 6c266c1e1111 -->
+### Laisser un autre service utiliser l’API d’administration
+
+Un service que vous exploitez à côté du serveur, par exemple un qui distribue des invitations ou enregistre des coûts, peut appeler l’API d’administration pour une permission sans plugin.
+
+1. Inscrivez un compte pour le service et attribuez-lui un rôle ne comportant que les permissions dont le service a besoin (pour les invitations, un rôle avec `manage_invites` ; [accorder et révoquer des rôles](admin-cli.md#granting-and-revoking-roles)).
+2. Connecté avec ce compte, enregistrez une application dans **Paramètres → Vos applications** dont les périmètres incluent le périmètre de permission, `admin:` suivi de la permission : `admin:manage_invites`.
+3. Émettez un jeton pour le compte depuis l’application, avec ce périmètre, et donnez au service le jeton d’accès et le jeton d’actualisation.
+
+- Le jeton n’atteint que les opérations des permissions que ses périmètres nomment, et seulement tant que les rôles du compte les conservent ; le journal d’audit enregistre ce qu’il fait comme des actions du compte.
+- Le jeton d’accès dure une heure. Le service l’actualise avec le jeton d’actualisation et conserve à chaque fois le nouveau jeton d’actualisation : un ancien jeton réutilisé révoque le jeton.
+- `manage_roles`, `manage_oauth_apps`, `manage_login_recovery`, `manage_login_providers` et `manage_service_closure` n’ont pas de périmètre de permission, et aucune application ne peut en demander un à un membre du personnel sur l’écran de consentement.
+- Pour arrêter le service, révoquez les jetons de l’application ou supprimez l’application, retirez le rôle, ou désactivez l’application dans Administration → Applications OAuth.
 
 <!-- source: account-actions a61dac7c5921 -->
 ## Mesures sur les comptes
@@ -201,6 +223,46 @@ Dans l’API d’administration : `GET /api/v1/admin/domain_actions/export` (`
 - Les mesures importées durent « until lifted » et portent le commentaire public et l’obfuscation de la ligne ainsi que la note privée que vous avez donnée. Elles apparaissent dans le journal d’audit comme les mesures prises une par une (l’acteur est la personne pour l’API et `cli` pour la CLI).
 - Un export écrit une ligne par domaine pour les mesures en vigueur. Un domaine avec un `suspend` reçoit `suspend`, un domaine avec un `limit` reçoit `silence`, et un domaine sans l’un ni l’autre reçoit `noop`. Un domaine avec seulement `force_sensitive`, que les blocages de domaines de Mastodon n’ont pas, n’est pas exporté. Les notes privées et les heures de fin ne sont pas exportées.
 
+<!-- source: subscribing-to-blocklists d49a93c3c44f -->
+### S’abonner à des listes de blocage
+
+Au lieu d’importer un CSV à la main, vous pouvez vous abonner à une liste de blocage de domaines qu’un autre serveur ou une autre personne publie à une URL `https`. Le serveur récupère la liste juste après votre abonnement, chaque jour ensuite, et lorsque vous le demandez, et transforme ses lignes en mesures sur les domaines : soit sous forme de brouillons qu’un modérateur accepte ou rejette (le mode `draft`, par défaut), soit directement à chaque récupération (le mode `automatic`).
+
+```sh
+my admin domain subscription add -format mastodon_csv -title "Shared blocklist" https://lists.example/blocklist.csv
+my admin domain subscription list
+my admin domain subscription drafts <subscription id>
+my admin domain subscription accept -keys issue:suspend:spam.example <subscription id>
+my admin domain subscription reject -all <subscription id>
+my admin domain subscription update -mode automatic <subscription id>
+my admin domain subscription fetch <subscription id>               # fetch now and print the outcome
+my admin domain subscription fetches <subscription id>
+my admin domain subscription remove [-lift-actions] <subscription id>
+```
+
+Dans l’API d’administration : `GET` et `POST /api/v1/admin/domain_list_subscriptions`, `GET`, `PATCH` et `DELETE .../{id}` (`lift_actions=true` lève les mesures de l’abonnement), `POST .../{id}/fetch`, `GET .../{id}/fetches`, `GET .../{id}/drafts`, et `POST .../{id}/drafts/accept` et `.../drafts/reject` (le corps contient `keys`, ou rien pour tous les brouillons). Toutes exigent `manage_domains`.
+
+Dans le client web, ouvrez Modération → Mesures sur les domaines et choisissez « Abonnements aux listes de blocage » (`/moderation/domain-actions/subscriptions`). La liste montre le mode et la dernière récupération de chaque abonnement, avec les échecs consécutifs ; « Ajouter un abonnement » ouvre le formulaire du nom, de l’URL, du format et des réglages ci-dessous, et s’abonner ouvre la page de l’abonnement. Cette page a quatre sections : les brouillons, que vous acceptez ou rejetez un par un ou tous ensemble (accepter des brouillons qui suspendent un domaine demande d’abord confirmation) ; les récupérations, avec « Récupérer maintenant » et le résultat de chaque récupération ; les réglages ; et « Se désabonner », qui demande s’il faut lever les mesures émises par l’abonnement. La notification `admin_domain_list_failing` renvoie vers la liste.
+
+| Format | Ce qu’est la liste |
+| --- | --- |
+| `mastodon_csv` | Le CSV des blocages de domaines de Mastodon, lu comme le lit un import |
+| `mastodon_json` | La réponse de `GET /api/v1/instance/domain_blocks` d’un serveur Mastodon qui publie ses blocages de domaines. Les domaines qu’il masque (avec `*`) sont ignorés, et un serveur qui ne publie pas la liste (`401`, `403`, `404`) fait échouer la récupération |
+| `plain_text` | Un domaine par ligne, chacun un `suspend` |
+
+Ce qu’émet une ligne suit le même tableau qu’un import, modifié par les réglages de l’abonnement : `suspend_as` (`suspend`, `limit` ou `ignore` ; `suspend` par défaut), `silence_as` (`limit` ou `ignore` ; `limit` par défaut), si les `reject_media` et `reject_reports` de la ligne s’appliquent (les deux par défaut), et si les mesures copient le commentaire public de la ligne (pas par défaut).
+
+- Une récupération passe par la même protection que les récupérations des autres serveurs : une URL, ou une redirection, qui mène à une adresse privée échoue. Elle lit au plus 2 MiB et 5 000 lignes ; une liste plus grande fait échouer la récupération. Le serveur renvoie l’`ETag` et le `Last-Modified` de la liste, de sorte qu’une liste inchangée coûte peu, et qu’une liste identique à la dernière lue ne change rien.
+- Une récupération qui échoue ne change aucune mesure. Elle est enregistrée avec la raison de l’échec (`http_status`, `network`, `forbidden_destination`, `too_large`, `too_many_entries` ou `malformed`) et affichée dans la liste des abonnements et leurs récupérations. Après 3 échecs consécutifs, les personnes dont le rôle a `manage_domains` reçoivent la notification `admin_domain_list_failing`.
+- Un abonnement ne lève ni ne remplace jamais une mesure qu’il n’a pas émise. Si une mesure du même type couvre déjà le domaine, sur lui ou sur un domaine parent, quelle que soit la personne qui l’a émise, l’abonnement n’émet rien à cet endroit. Lorsque deux abonnements listent le même domaine, la mesure de celui qui l’a émise en premier est en vigueur ; si celui-ci la lève, le suivant émet la sienne.
+- Lorsque la liste retire un domaine, le mode automatique lève, à la récupération suivante, la mesure que l’abonnement a émise dessus. Si une récupération levait plus de 10 mesures et plus de la moitié de celles de l’abonnement, les levées attendent plutôt sous forme de brouillons, puisqu’une liste cassée ou vide ressemble à cela.
+- Une gravité que le serveur ne connaît pas (ni `suspend`, ni `silence`, ni `noop`) attend toujours sous forme de brouillon, comme un `suspend` selon les réglages de l’abonnement.
+- Les brouillons listent ce que la liste ajouterait (`issue`) et retirerait (`lift`), chacun avec une clé telle que `issue:suspend:spam.example`. Un brouillon rejeté ne revient pas tant que la liste ne change pas la ligne du domaine (un `issue`) ou que la mesure ne se termine pas (un `lift`).
+- Si un modérateur lève une mesure qu’un abonnement a émise, l’abonnement ne la réémet pas tant que la liste ne change pas la ligne du domaine.
+- Changer les réglages les applique à la récupération que le changement déclenche. L’URL et le format ne changent pas ; abonnez-vous de nouveau pour les changer.
+- Supprimer un abonnement conserve les mesures qu’il a émises, qui comptent alors comme celles d’un modérateur, sauf si vous les levez avec lui.
+- Le journal d’audit enregistre l’abonnement, la modification, la suppression, les brouillons acceptés et rejetés, et les récupérations demandées à la main. Les mesures du mode automatique sont enregistrées comme les autres mesures sur les domaines avec `system` comme acteur, et sont envoyées aux webhooks sous `domain_moderation_action.created` et `.lifted`, dont le `data` contient le `subscription_id`.
+
 <!-- source: severed-follows 51be435d8635 -->
 ### Abonnements rompus
 
@@ -211,6 +273,47 @@ Un `suspend` de domaine et un `suspend` de compte distant coupent les abonnement
 - Chaque utilisateur qui a perdu des abonnements approuvés reçoit une notification (`relationships_severed`) qui indique combien d’abonnés et d’abonnements ont été perdus. Un utilisateur qui n’a perdu que des demandes d’abonnement n’en reçoit aucune.
 - Lever la mesure ne rétablit pas les abonnements coupés. Les utilisateurs se réabonnent.
 - Traiter à nouveau la même mesure (par exemple lorsqu’une tâche se réexécute) n’ajoute ni enregistrements de relations rompues ni notifications.
+
+<!-- source: federating-only-with-allowed-servers 042f518cd527 -->
+### Ne fédérer qu’avec des serveurs autorisés
+
+Le paramètre d’instance `federation_scope` décide avec quels serveurs ce serveur se fédère : `open` (par défaut) se fédère avec chaque serveur qu’aucune mesure sur les domaines ne suspend, et `allowlist` uniquement avec les domaines de la liste d’autorisation et leurs sous-domaines, pour une organisation ou un serveur personnel qui ne dialogue qu’avec des serveurs qu’il connaît.
+
+Tant que `federation_scope` vaut `allowlist` :
+
+- Un serveur sans autorisation est traité comme un domaine suspendu : ses envois reçoivent `403` avant la vérification de leurs signatures, rien ne lui est envoyé ni n’en est récupéré, et les relais n’en font rien entrer.
+- Une autorisation couvre ses sous-domaines : autoriser `friend.example` autorise aussi `social.friend.example`.
+- Les mesures sur les domaines s’appliquent toujours aux serveurs autorisés : un domaine autorisé avec un `suspend` reste suspendu, et un domaine avec un `limit` ou `reject_media` reste limité.
+- Les GET ActivityPub exigent une signature d’un serveur autorisé, quoi que dise `authorized_fetch`, afin qu’un serveur sans autorisation ne puisse pas lire les publications publiques. Les serveurs et les robots qui ne signent pas leurs GET reçoivent `401`.
+- NodeInfo indique `metadata.federationScope`, afin que les autres serveurs puissent le savoir.
+
+Tant qu’il vaut `open`, la liste d’autorisation ne change rien, et elle est conservée pour la prochaine fois que vous basculez.
+
+```sh
+my admin domain allow add -comment "partner" friend.example
+my admin domain allow list
+my admin domain allow remove friend.example
+my admin federation scope                   # prints the setting
+my admin federation scope allowlist         # shows what the switch would end, and changes nothing
+my admin federation scope -apply allowlist  # switches
+my admin federation scope open
+```
+
+Dans l’API d’administration : `GET /api/v1/admin/domain_allows`, `POST /api/v1/admin/domain_allows` (le corps contient `domain` et `comment` ; un domaine déjà autorisé répond `200` et conserve son autorisation), et `DELETE /api/v1/admin/domain_allows/{domain}`, avec la permission `manage_domains`.
+`GET /api/v1/admin/settings/federation_scope/impact` compte ce que la bascule mettrait fin, avec la permission `manage_settings`, et `PATCH /api/v1/admin/settings` change `federation_scope` comme tout autre paramètre.
+La liste d’autorisation contient au plus 5 000 domaines, et un commentaire, qui n’est jamais publié, au plus 5 000 caractères. Le domaine propre de ce serveur ne peut pas être autorisé.
+
+Basculer vers `allowlist`, et retirer une autorisation tant qu’elle est active, met fin définitivement à des abonnements :
+
+- Avant de basculer, lisez combien d’abonnements approuvés entre utilisateurs locaux et serveurs sans autorisation la bascule terminerait, combien d’utilisateurs locaux en perdent un, et les serveurs qui en comptent le plus (l’impact ci-dessus, ou `my admin federation scope allowlist` sans `-apply`).
+- La bascule coupe les abonnements avec chaque serveur que la liste d’autorisation n’autorise pas, dans les deux sens et sans en informer ces serveurs, comme le fait un `suspend` de domaine : une tâche (`moderation.sever_allowlist`) les coupe un utilisateur local à la fois, et chaque utilisateur qui a perdu des abonnements approuvés reçoit une notification (`relationships_severed`) avec les nombres.
+- Retirer une autorisation tant que `federation_scope` vaut `allowlist` coupe, de la même façon, les abonnements avec les comptes de ce domaine et de ses sous-domaines qu’aucune autre autorisation ne couvre. Retirer l’autorisation d’un sous-domaine dont le domaine parent est autorisé ne coupe rien.
+- Revenir à `open`, ou autoriser de nouveau le domaine, ne ramène pas les abonnements coupés. Les utilisateurs s’abonnent de nouveau.
+- Définir `allowlist` alors que c’est déjà `allowlist` ne coupe rien de plus.
+
+Dans le client web, ouvrez Modération → Mesures sur les domaines et choisissez « Domaines autorisés » (`/moderation/domain-actions/allowed`) pour lire, ajouter et retirer des autorisations ; en retirer une demande d’abord confirmation, puisque cela coupe le domaine tant que `federation_scope` vaut `allowlist`. Le paramètre lui-même est « Portée de la fédération » sur la page de fédération des paramètres du serveur (`/admin/settings/federation`, avec la permission `manage_settings`) : choisir « Domaines autorisés uniquement » et enregistrer montre les abonnements que la bascule terminerait, les utilisateurs locaux qui en perdent un et les serveurs qui en comptent le plus, et n’enregistre qu’une fois que vous avez confirmé.
+
+Ajouter et retirer une autorisation figurent dans le journal d’audit (`domain_allow_added` et `domain_allow_removed`), et la bascule est le `setting_changed` de `federation_scope`.
 
 <!-- source: publishing-the-domains-you-act-on b647d2c8c84c -->
 ### Publier les domaines visés par des mesures
@@ -247,7 +350,40 @@ Dans l’API d’administration : `POST /api/v1/admin/statuses/{id}/refetch`, 
 - Il ne récupère rien depuis un domaine soumis à un `suspend`, ni depuis un domaine `unavailable` parce que des livraisons ont échoué. Un échec de récupération de la même URI est mémorisé pendant 1 heure, et une nouvelle récupération pendant ce délai ne la récupère pas.
 - Votre demande est consignée dans le journal d’audit sous `status_refetch_queued`, `account_statuses_refetch_queued` ou `domain_statuses_refetch_queued`.
 
-<!-- source: reports e8a3f112b323 -->
+<!-- source: checking-what-reached-a-remote-server b659a7421ff9 -->
+## Vérifier ce qui a atteint un serveur distant
+
+Lorsqu’un utilisateur demande si une publication, un abonnement ou une acceptation a atteint un autre serveur, listez les envois vers ce serveur avec l’API d’administration.
+Elle montre chaque envoi d’une activité vers une boîte de réception du serveur, les plus récents en premier, avec chaque tentative et ce que le serveur a répondu, y compris les envois réussis.
+Elle exige la permission `manage_domains`.
+Dans le client web, la section **Livraisons** de l’écran du serveur distant (`/moderation/instances/{domain}`) montre la même liste, avec ses filtres par **ID d’activité** et **Compte local**, et **Afficher les champs masqués** sur chaque envoi masqué ; l’écran indique, avant qu’ils s’exécutent, lesquels sont enregistrés dans le journal d’audit.
+
+```sh
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://example.com/api/v1/admin/instances/misskey.io/deliveries"
+```
+
+- Chaque envoi a le type d’activité (`Create`, `Follow`, `Accept`, etc.), le moment où l’activité a été enregistrée et celui où la boîte de réception a été ajoutée, ainsi que ses `attempts`, les plus anciennes en premier.
+  Chaque tentative a son `outcome` (`succeeded`, `retryable_failure`, `permanent_failure`, `skipped`), le `signature_scheme` et le `status_code` de la réponse, l’`error` d’un échec sans réponse ou la raison pour laquelle rien n’a été envoyé, et l’heure.
+  Une tentative `succeeded` avec `202` signifie que l’autre serveur a accepté l’activité ; qu’il l’affiche ensuite dépend de ce serveur.
+- Les tentatives sont conservées 30 jours ; l’historique remonte donc à 30 jours.
+- Pour restreindre la liste, ajoutez `activity_uri=<the activity's ID>`, ou `account_id=<a local account's ID>` pour les envois d’un compte.
+  Une requête avec `account_id` est enregistrée dans le journal d’audit sous `account_deliveries_viewed`, avec le compte et le serveur ; les autres requêtes ne sont pas enregistrées.
+- Le corps de l’activité n’est jamais montré.
+
+Certains envois sont masqués : leur expéditeur, l’URI de l’activité et la boîte de réception sont omis, et `mask` en indique la raison.
+
+| `mask` | L’activité concerne |
+| --- | --- |
+| `private`, `direct`, `local` | une publication ayant cette visibilité |
+| `approves_followers` | un abonnement, son annulation, une acceptation ou un rejet d’un compte local qui approuve ses abonnés |
+| `unknown` | une publication ou un compte qui a disparu, de sorte que l’on ne sait plus ce que c’était |
+
+Une boîte de réception partagée ne nomme aucun destinataire et est toujours montrée ; une boîte de réception personnelle masquée dans l’erreur d’une tentative apparaît sous la forme `[masked]`.
+Le type, les heures et chaque tentative d’un envoi masqué sont montrés ; vous pouvez donc toujours voir s’il a atteint le serveur.
+Pour voir les champs masqués d’un envoi, utilisez `POST /api/v1/admin/instances/{domain}/deliveries/{id}/reveal` ; chaque appel est enregistré dans le journal d’audit sous `delivery_revealed` avant que quoi que ce soit soit montré.
+
+<!-- source: reports 8b0684a0561c -->
 ## Signalements
 
 Les signalements (`Flag`) reçus d’autres serveurs entrent dans la liste des signalements comme ouverts (`open`).
@@ -263,19 +399,23 @@ my admin report reopen <report id>
 my admin report forward -comment "Spam account, see the linked posts" <report id>
 ```
 
-Dans l’API d’administration : `GET /api/v1/admin/reports` (filtrez avec `state`, `category` et `assignee` : `me`, `none` ou l’ID d’un compte local ; `order=oldest` liste d’abord le signalement qui attend depuis le plus longtemps plutôt que le plus récent), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`, `POST .../{id}/resolve` (corps `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (corps `{"body": "..."}`), `POST .../{id}/reopen` et `POST .../{id}/forward` (corps `{"comment": "..."}`, facultatif).
+Dans l’API d’administration : `GET /api/v1/admin/reports` (filtrez avec `state`, `category` et `assignee` : `me`, `none` ou l’ID d’un compte local ; `order=oldest` liste d’abord le signalement qui attend depuis le plus longtemps plutôt que le plus récent), `GET .../{id}`, `POST .../{id}/assign_to_self`, `POST .../{id}/unassign`,
+`POST .../{id}/resolve` (corps `{"outcome": "actioned" | "dismissed"}`), `POST .../{id}/notes` (corps `{"body": "..."}`), `POST .../{id}/reopen` et `POST .../{id}/forward` (corps `{"comment": "..."}`, facultatif).
 
-- Une attribution (`assign`) ne peut aller qu’à un utilisateur local dont le rôle a `manage_reports`. Dans l’API d’administration, vous vous l’attribuez à vous-même.
-- Le résultat d’une résolution (`resolve`) est `actioned` (une mesure a été prise contre la cible) ou `dismissed` (aucune mesure n’était nécessaire). Résoudre à nouveau un signalement résolu ne change pas le résultat.
-- Lorsque vous prenez une mesure depuis un signalement (`report_id` / `-report` de la mesure), le signalement est résolu comme `actioned` dans la même opération.
+- Une attribution (`assign`) ne peut aller qu’à un utilisateur local dont le rôle a `manage_reports`. Dans l’API d’administration, vous vous attribuez le signalement à vous-même.
+- Le résultat d’une résolution (`resolve`) est `actioned` (une mesure a été prise contre la cible) ou `dismissed` (aucune mesure n’était nécessaire). Résoudre de nouveau un signalement résolu ne change pas le résultat.
+- Lorsque vous émettez une mesure à partir d’un signalement (`report_id` / `-report` de la mesure), le signalement est résolu comme `actioned` dans la même opération.
 - Une note (`note`) est une note interne que seuls les modérateurs voient, de 2 000 caractères au plus. Elle n’est montrée ni à la cible ni à l’auteur du signalement. Elle ne peut être ni modifiée ni supprimée.
-- La réouverture (`reopen`) remet un signalement résolu à `open` (l’attribution reste). Un signalement ouvert ne peut pas être rouvert (`409` dans l’API d’administration).
-- La transmission (`forward`, le bouton **Transmettre à son serveur** des détails du signalement) envoie un signalement concernant un compte d’un autre serveur à ce serveur, sous la forme d’un `Flag` de l’acteur de votre instance avec le compte et les publications signalées qui existent encore. Le seul texte qu’il porte est ce que vous écrivez pour les modérateurs de ce serveur lorsque vous le transmettez (`-comment`, `comment` dans l’API d’administration, ou **Texte pour leurs modérateurs** sur la page du signalement ; jusqu’à 1 000 caractères, aucun par défaut). Le commentaire de l’auteur du signalement et la note d’un [examen externe](#reports-that-an-external-review-filed) ne quittent jamais votre serveur de cette façon, et rien concernant l’auteur du signalement n’est envoyé. Un signalement que son auteur a choisi de transmettre en le déposant est parti aussitôt, avec le commentaire de l’auteur. La transmission fonctionne pour un signalement déposé sur ce serveur, par une personne ou par un [examen externe](#reports-that-an-external-review-filed), ouvert ou résolu, qui n’a pas encore été transmis ; un signalement reçu d’un autre serveur ou concernant un salon de chat vocal ne peut pas être transmis (`409` `report-not-forwardable` dans l’API d’administration, et les détails du signalement n’affichent aucun bouton). Un signalement n’est envoyé qu’une fois : le transmettre à nouveau, avec n’importe quel texte, ou transmettre un signalement que son auteur avait transmis en le déposant, ne change rien. `forwarded` dans l’API d’administration indique s’il a été envoyé, `forwardable` si vous pouvez l’envoyer maintenant.
-- Les détails du signalement (`show`, `GET .../{id}`) renvoient les notes, de la plus ancienne à la plus récente, avec le nombre d’autres signalements concernant la cible et le nombre de mesures prises contre la cible (y compris levées et expirées). La liste ne renvoie pas les notes.
-- Les attributions, résolutions, réouvertures, notes et transmissions sont conservées sous forme d’événements (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `report_forwards`), et `report_states` contient l’état actuel.
-- Les modérateurs peuvent traduire les publications signalées et le commentaire de l’auteur du signalement sur la page du signalement, ou avec `POST .../{id}/statuses/{status_id}/translation` et `POST .../{id}/comment/translation` (corps `{"target_language": "en"}`). Le texte n’est envoyé à un fournisseur de traduction que tant que le [paramètre d’instance](instance-settings.md) `translation_reports_to_server` est activé, et alors uniquement à un fournisseur autorisé pour la visibilité de la publication : l’accès d’un modérateur n’élargit rien, donc une publication directe n’est envoyée qu’à un fournisseur autorisé pour `direct`, et le commentaire compte comme `private`. La traduction du commentaire n’est pas conservée, pas plus que celle d’une publication supprimée, et les caractères ne comptent que dans la limite mensuelle du serveur. La traduction intégrée du navigateur, lorsque `translation_browser` est activé, fonctionne sur les signalements quelle que soit la valeur de `translation_reports_to_server`.
+- Rouvrir (`reopen`) remet un signalement résolu à `open` (l’attribution reste). Un signalement ouvert ne peut pas être rouvert (`409` dans l’API d’administration).
+- Transmettre (`forward`, le bouton **Transmettre à son serveur** des détails du signalement) envoie un signalement concernant un compte d’un autre serveur à ce serveur, sous la forme d’un `Flag` de l’acteur de votre instance avec le compte et les publications signalées qui existent encore. Le seul texte qu’il porte est ce que vous écrivez pour les modérateurs de ce serveur lorsque vous le transmettez (`-comment`, `comment` dans l’API d’administration, ou **Texte pour leurs modérateurs** sur la page du signalement ; 1 000 caractères au plus, aucun par défaut). Le commentaire de l’auteur du signalement et la note d’un [examen externe](#reports-that-an-external-review-filed) ne quittent jamais votre serveur de cette façon, et rien de l’auteur du signalement n’est envoyé. Un signalement que son auteur a choisi de transmettre en le déposant est parti immédiatement, avec le commentaire de l’auteur. La transmission fonctionne pour un signalement déposé sur ce serveur, par une personne ou par un [examen externe](#reports-that-an-external-review-filed), ouvert ou résolu, qui n’a pas encore été transmis ; un signalement reçu d’un autre serveur ou concernant un salon de chat vocal ou un événement ne peut pas être transmis (`409` `report-not-forwardable` dans l’API d’administration, et les détails du signalement n’affichent aucun bouton). Un signalement n’est envoyé qu’une fois : le transmettre de nouveau, avec n’importe quel texte, ou transmettre un signalement que son auteur avait transmis en le déposant, ne change rien. `forwarded` dans l’API d’administration indique s’il a été envoyé, `forwardable` si vous pouvez l’envoyer maintenant.
+- Les détails du signalement (`show`, `GET .../{id}`) renvoient les notes, les plus anciennes en premier, avec le nombre d’autres signalements concernant la cible et le nombre de mesures contre la cible (y compris celles levées et expirées). La liste ne renvoie pas les notes.
+- Les attributions, résolutions, réouvertures, notes et transmissions sont conservées comme des événements (`report_assignments`, `report_resolutions`, `report_reopenings`, `report_notes`, `report_forwards`), et `report_states` contient l’état actuel.
+- Les modérateurs peuvent traduire les publications signalées et le commentaire de l’auteur du signalement sur la page du signalement, ou avec `POST .../{id}/statuses/{status_id}/translation` et `POST .../{id}/comment/translation` (corps `{"target_language": "en"}`).
+  Le texte n’est envoyé à un fournisseur de traduction que tant que le [paramètre d’instance](instance-settings.md) `translation_reports_to_server` est activé, et alors seulement à un fournisseur autorisé pour la visibilité de la publication : l’accès d’un modérateur n’élargit rien ; une publication directe ne va donc qu’à un fournisseur autorisé pour `direct`, et le commentaire compte comme `private`.
+  La traduction du commentaire n’est pas conservée, pas plus que celle d’une publication supprimée, et les caractères ne comptent que dans la limite mensuelle du serveur. La traduction intégrée du navigateur, lorsque `translation_browser` est activé, fonctionne sur les signalements quoi que dise `translation_reports_to_server`.
 - Un auteur de signalement ne voit de la cible que ce qu’il verrait autrement du compte : tant qu’il est suspendu ou qu’il le bloque, son signalement reste listé sans le compte. Les modérateurs voient toujours toute la cible.
-- Un auteur de signalement local reçoit une notification (`report_resolved`) à la première résolution. Rouvrir puis résoudre à nouveau n’ajoute aucune notification. Un auteur de signalement peut lister ses propres signalements avec `GET /api/v1/reports` et ne voit que si chacun est ouvert ou résolu. Le résultat, la mesure prise, le motif donné à la cible et la personne responsable ne sont pas montrés.
+- Un auteur de signalement local reçoit une notification (`report_resolved`) à la première résolution. Rouvrir puis résoudre de nouveau n’ajoute aucune notification.
+  Un auteur de signalement peut lister ses propres signalements avec `GET /api/v1/reports` et ne voit que si chacun est ouvert ou résolu. Le résultat, la mesure prise, la raison donnée à la cible et le responsable ne sont pas montrés.
 
 <!-- source: reports-that-an-external-review-filed 8563536b46e4 -->
 ### Signalements déposés par un examen externe
@@ -289,62 +429,85 @@ Un [point de décision](decision-hooks.md) qui répond `flag` dépose un signale
 - Les détails du signalement (`GET /api/v1/admin/reports/{id}`) montrent le salon (`voice_room`) : chaque modification de ses paramètres, qui y a participé et quand cette personne est partie, qui en a été retiré, et comment il s’est terminé. Les enregistrements des participants sont conservés 90 jours après la fin du salon (`voice_participants_retention_days`) et aussi longtemps qu’un signalement renvoie au salon ([conservation des enregistrements](#record-retention-and-holds)). Il n’y a ni enregistrements audio ni chat texte, ces enregistrements sont donc la seule preuve.
 - Un détenteur de `manage_reports` peut mettre fin à un salon ouvert pour tous les participants avec `POST /api/v1/admin/voice_rooms/{id}/end` (corps `{"reason": "..."}`, facultatif, jusqu’à 500 caractères). Le motif est réservé aux modérateurs ; les participants voient seulement que le salon est terminé. Cela fonctionne aussi lorsque le chat vocal est désactivé, et le journal d’audit consigne `voice_room_ended`.
 
-<!-- source: notifications-for-moderators-and-the-pending-counts 7b83fa4097b2 -->
+<!-- source: events d37a09a66811 -->
+### Événements
+
+- Un utilisateur local peut signaler un événement qu’il peut voir, y compris un événement annulé (`POST /api/v1/reports` avec `event_id`, et `account_id` défini sur l’organisateur de l’événement).
+  Le signalement vise l’organisateur et pointe vers les réglages de l’événement (titre, description et lieux) tels que l’auteur du signalement les a vus. Un événement qui sonde encore une date peut être signalé et annulé comme n’importe quel autre. Il ne pointe vers aucune publication et n’est jamais transmis à un autre serveur.
+- Les détails du signalement (`GET /api/v1/admin/reports/{id}`) montrent l’événement (`event`) : sa date, s’il a été annulé et comment, et chaque changement de ses réglages, les plus anciens en premier, avec tous ses lieux, y compris ceux que seuls les participants approuvés voyaient.
+  `reported_revision_id` est la version que l’auteur du signalement a vue ; un titre ou une adresse modifié après le signalement reste donc sous vos yeux.
+- Un détenteur de `manage_reports` peut annuler un événement avec `POST /api/v1/admin/events/{id}/cancel` (corps `{"reason": "..."}`, facultatif, 500 caractères au plus).
+  Le motif est affiché avec l’annulation à toutes les personnes qui voient l’événement. Les utilisateurs qui ont répondu « Je participe » ou « Peut-être » et les utilisateurs invités sont notifiés, comme pour l’annulation par l’organisateur lui-même, et le journal d’audit enregistre `event_cancelled`.
+  Un événement déjà annulé répond `409` `event-closed`.
+- Suspendre ou supprimer l’organisateur annule les événements de l’organisateur qui n’ont pas encore commencé, y compris ceux qui sondent encore une date (`gathering.cancel_organized`), et notifie leurs participants. Ces annulations ne nomment personne comme étant à l’origine de l’annulation, et lever la suspension ne les rétablit pas. Les événements déjà commencés ne sont pas annulés.
+
+<!-- source: notifications-for-moderators-and-the-pending-counts a9a32ea8cccb -->
 ## Notifications pour les modérateurs et compteurs en attente
 
-Les nouveaux signalements, les inscriptions en attente d’approbation et les contestations parviennent aux personnes disposant de la permission sous forme de notifications dans l’application.
+Les nouveaux signalements, les inscriptions en attente d’approbation et les contestations parviennent aux personnes ayant la permission sous forme de notifications dans l’application.
 
 | Notification | Quand elle arrive | Qui la reçoit |
 | --- | --- | --- |
-| `admin_report` | Lorsque la cible du signalement n’a pas d’autre signalement ouvert (un deuxième signalement ou suivant concernant le même compte ne notifie pas) | Les personnes dont le rôle a `manage_reports`, sauf l’auteur du signalement et la cible du signalement |
-| `admin_sign_up` | Lorsqu’une inscription commence en attente d’approbation (mode d’approbation, ou `open` sur une configuration qui ne peut pas envoyer d’e-mails) | Les personnes dont le rôle a `manage_accounts` |
-| `admin_appeal` | Lorsqu’une contestation est faite contre une mesure | Les personnes dont le rôle a `manage_accounts`, sauf la personne qui a contesté |
+| `admin_report` | Lorsque la cible du signalement n’a aucun autre signalement ouvert (un deuxième signalement ou plus concernant le même compte ne notifie pas) | Les personnes dont le rôle a `manage_reports`, sauf l’auteur du signalement et la cible du signalement |
+| `admin_sign_up` | Lorsqu’une inscription commence en attente d’approbation (mode approbation, ou `open` sur une installation qui ne peut pas envoyer d’e-mails) | Les personnes dont le rôle a `manage_accounts` |
+| `admin_appeal` | Lorsqu’une contestation est déposée contre une mesure | Les personnes dont le rôle a `manage_accounts`, sauf la personne qui a contesté |
 | `admin_custom_emoji_request` | Lorsque la création d’un émoji personnalisé ou le remplacement de son image est demandé | Les personnes dont le rôle a `manage_custom_emojis`, sauf le demandeur |
-| `admin_error_group` | Lorsque le serveur ou le client web signale une erreur d’un nouveau type, ou qu’un groupe d’erreurs résolu se reproduit sur une autre version du serveur | Les personnes dont le rôle a `manage_errors` |
+| `admin_error_group` | Lorsque le serveur ou le client web signale une erreur d’un nouveau type, ou qu’un groupe d’erreurs qui avait été résolu se reproduit sur une autre version du serveur | Les personnes dont le rôle a `manage_errors` |
+| `admin_domain_list_failing` | Lorsque la récupération d’une liste de blocage souscrite échoue pour la troisième fois de suite | Les personnes dont le rôle a `manage_domains` |
 
-- `admin_error_group` arrive au plus 10 fois par heure pour l’ensemble du serveur. Le reste de l’heure est regroupé en une seule notification qui indique combien de groupes d’erreurs supplémentaires il y a eu. Un groupe mis en sourdine ne notifie jamais. Une erreur que le client web signale pour un visiteur non connecté ne notifie que lorsque le navigateur d’un utilisateur connecté la signale aussi, et sa récurrence ne notifie personne. Les groupes d’erreurs sont lus et résolus, mis en sourdine ou rétablis via `GET /api/v1/admin/error_groups` et `POST /api/v1/admin/error_groups/{id}/resolve` (`/mute`, `/unmute`), qui exigent `manage_errors`.
-- La personne qui reçoit une notification est déterminée par sa permission au moment où la notification est créée. Une personne qui perd ensuite la permission ne voit plus ce type dans sa liste ni dans son compteur de non lus. Si la permission revient, elle le voit de nouveau.
-- Chaque type de notification ci-dessus arrive aussi par e-mail, activé par défaut. Chaque personne active ou désactive chaque type dans l’application et par e-mail sur la page **Notifications** des paramètres (`/settings/notifications` dans le client web), qui ne liste que les types que son rôle reçoit. Un type désactivé dans l’application n’est pas créé pour elle, il n’est donc ni poussé ni envoyé par e-mail ; les compteurs de `GET /api/v1/admin/counts` ne changent pas, car ils comptent les signalements, inscriptions et contestations eux-mêmes. Avec les signalements ouverts, les compteurs renvoient aussi la date de dépôt du plus ancien signalement ouvert (`oldest_open_report_filed_at`). Le serveur met la tâche d’e-mail en file dans la transaction qui enregistre la notification, et la tâche envoie l’e-mail juste après la validation, sans attendre que la notification soit lue. Si la personne a perdu la permission ou désactivé l’e-mail de ce type au moment de l’envoi, ou si son adresse principale n’est pas confirmée ou que ses e-mails sont arrêtés, rien n’est envoyé. L’e-mail ne contient que le type de notification et un lien vers l’écran des notifications, et rien du contenu du signalement ou du compte. Son lien de désabonnement ne désactive que l’e-mail de ce type. Avec `mail = none`, aucun e-mail n’est envoyé, et `sends_email` dans `GET /api/v1/instance` vaut `false`.
+- `admin_error_group` arrive au plus 10 fois par heure pour l’ensemble du serveur. Le reste de l’heure se fond en une seule notification qui indique combien de groupes d’erreurs de plus il y a eu. Un groupe mis en sourdine ne notifie jamais. Une erreur que le client web signale pour un visiteur qui n’est pas connecté ne notifie qu’une fois que le navigateur d’un utilisateur connecté la signale aussi, et sa récurrence ne notifie personne.
+  Les groupes d’erreurs sont lus et résolus, mis en sourdine ou réactivés par `GET /api/v1/admin/error_groups` et `POST /api/v1/admin/error_groups/{id}/resolve` (`/mute`, `/unmute`), qui exigent `manage_errors`.
+- La personne qui reçoit une notification est déterminée par sa permission au moment où la notification est créée. Une personne qui perd ensuite la permission ne voit plus ce type dans sa liste ni dans son compteur de non-lus. Si la permission revient, elle le voit de nouveau.
+- Chaque type de notification ci-dessus arrive aussi par e-mail, activé par défaut. Chaque personne active ou désactive chaque type dans l’application et par e-mail sur la page **Notifications** des paramètres (`/settings/notifications` dans le client web), qui ne liste que les types que reçoit son rôle. Un type désactivé dans l’application n’est pas créé pour elle ; il n’est donc ni poussé ni envoyé par e-mail ; les compteurs de `GET /api/v1/admin/counts` ne changent pas, car ils comptent les signalements, les inscriptions et les contestations eux-mêmes.
+  Avec les signalements ouverts, les compteurs renvoient aussi le moment où le plus ancien signalement ouvert a été déposé (`oldest_open_report_filed_at`).
+  Le serveur met la tâche d’e-mail en file dans la transaction qui enregistre la notification, et la tâche envoie l’e-mail juste après la validation, sans attendre que la notification soit lue. Si la personne a perdu la permission ou désactivé l’e-mail de ce type au moment de l’envoi, ou si son adresse principale n’est pas confirmée ou si ses e-mails sont arrêtés, rien n’est envoyé.
+  L’e-mail ne contient que le type de notification et un lien vers l’écran des notifications, et rien du contenu du signalement ou du compte. Son lien de désabonnement ne désactive que l’e-mail de ce type.
+  Avec `mail = none`, aucun e-mail n’est envoyé, et `sends_email` dans `GET /api/v1/instance` vaut `false`.
 
-`GET /api/v1/admin/counts` renvoie le nombre de signalements ouverts (`open_reports`, exige `manage_reports`), le nombre d’inscriptions en attente d’approbation (`pending_registrations`) et le nombre de contestations en attente d’examen (`pending_appeals`) (les deux exigent `manage_accounts`). Les éléments pour lesquels vous n’avez pas la permission ne sont pas renvoyés.
+`GET /api/v1/admin/counts` renvoie le nombre de signalements ouverts (`open_reports`, exige `manage_reports`), le nombre d’inscriptions en attente d’approbation (`pending_registrations`) et le nombre de contestations en attente d’examen (`pending_appeals`) (les deux exigent `manage_accounts`).
+Les éléments pour lesquels vous n’avez pas la permission ne sont pas renvoyés.
 
-<!-- source: audit-log 86955f4182c0 -->
+<!-- source: audit-log e8f33b4d2da4 -->
 ## Journal d’audit
 
-Les opérations des modérateurs et des administrateurs sont consignées à raison d’une ligne chacune dans le journal d’audit (`audit_log_entries`) dans la même transaction que l’opération. Les opérations échouées et les opérations qui n’ont rien changé ne sont pas consignées : lever une mesure déjà levée, résoudre un signalement résolu, attribuer au même responsable, retirer une règle déjà retirée, déplacer à la même position, attribuer un rôle que l’utilisateur a déjà, et retirer un rôle que l’utilisateur n’a pas.
+Les opérations des modérateurs et des administrateurs sont enregistrées à raison d’une ligne chacune dans le journal d’audit (`audit_log_entries`), dans la même transaction que l’opération.
+Les opérations échouées et celles qui n’ont rien changé ne sont pas enregistrées : lever une mesure déjà levée, résoudre un signalement résolu, attribuer au même responsable, retirer une règle déjà retirée, déplacer à la même position, attribuer un rôle que l’utilisateur a déjà, et révoquer un rôle que l’utilisateur n’a pas.
 
 | Type de cible | Opérations |
 | --- | --- |
-| `account` | `account_action_issued` et `account_action_lifted` (prise et levée d’une mesure contre un compte), `account_deletion_canceled` (la suppression annulée parce qu’une contestation d’un `ban` a été reconnue fondée), `revealed_private_data` (adresses IP et adresses e-mail affichées), `two_factor_disabled` (authentification à deux facteurs supprimée), `password_reset_link_issued` (un lien de réinitialisation du mot de passe émis), `email_suppression_lifted` (arrêt des e-mails levé), `account_moved` (un compte local restreint déplacé vers un compte local ; les restrictions ne sont pas reportées sur la destination, c’est donc à vous de décider si vous les y appliquez), `account_statuses_refetch_queued` (nouvelle récupération des publications d’un compte distant) |
+| `account` | `account_action_issued` et `account_action_lifted` (émission et levée d’une mesure contre un compte), `account_deletion_canceled` (la suppression annulée parce qu’une contestation contre un `ban` a été infirmée), `revealed_private_data` (adresses IP et adresses e-mail révélées), `two_factor_disabled` (authentification à deux facteurs supprimée), `password_reset_link_issued` (un lien de réinitialisation du mot de passe émis), `email_suppression_lifted` (suppression d’e-mails levée), `account_moved` (un compte local restreint migré vers un compte local ; les restrictions ne sont pas reportées sur la destination, c’est donc à vous de décider si vous les y appliquez), `account_statuses_refetch_queued` (nouvelle récupération des publications d’un compte distant), `account_deliveries_viewed` (les envois d’un compte local vers un serveur listés ; le nom de la cible est l’identifiant et le serveur) |
 | `status` | `status_refetch_queued` (nouvelle récupération d’une publication distante ; le nom de la cible est l’URI de la publication) |
-| `domain` | `domain_action_issued` et `domain_action_lifted` (prise et levée d’une mesure sur un domaine), `domain_statuses_refetch_queued` (nouvelle récupération des publications des comptes du domaine), `instance_marked_available` (effacement des échecs d’un serveur) |
-| `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`, `report_forwarded` (attribution, retrait d’attribution, résolution et réouverture d’un signalement, ajout d’une note, et transmission) |
-| `user` | `registration_approved`, `registration_rejected` (examen de l’inscription) |
+| `domain` | `domain_action_issued` et `domain_action_lifted` (émission et levée d’une mesure sur un domaine), `domain_statuses_refetch_queued` (nouvelle récupération des publications des comptes du domaine), `instance_marked_available` (effacement des échecs d’un serveur), `delivery_revealed` (l’expéditeur, l’URI de l’activité et la boîte de réception masqués d’un envoi vers le serveur, montrés) |
+| `report` | `report_assigned`, `report_unassigned`, `report_resolved`, `report_reopened`, `report_note_added`, `report_forwarded` (attribution, retrait de l’attribution, résolution et réouverture d’un signalement, ajout d’une note, et transmission) |
+| `user` | `registration_approved`, `registration_rejected` (examen des inscriptions) |
 | `setting` | `setting_changed` (paramètres d’instance), `text_changed` (textes d’instance) |
 | `rule` | `rule_added`, `rule_revised`, `rule_moved`, `rule_retired` (règles de l’instance) |
-| `role` | `role_granted`, `role_revoked` (attribution et retrait d’un rôle à un utilisateur), `role_created`, `role_updated`, `role_deleted` (création, modification et suppression d’un rôle) |
-| `appeal` | `appeal_upheld`, `appeal_overturned` (examen d’une contestation ; l’annulation consigne aussi `account_action_lifted` pour la mesure, et `account_deletion_canceled` pour un `ban`) |
+| `role` | `role_granted`, `role_revoked` (attribution et révocation d’un rôle pour un utilisateur), `role_created`, `role_updated`, `role_deleted` (création, modification et suppression d’un rôle) |
+| `appeal` | `appeal_upheld`, `appeal_overturned` (examen d’une contestation ; l’infirmer enregistre aussi `account_action_lifted` pour la mesure, et `account_deletion_canceled` pour un `ban`) |
 | `signup_block` | `signup_block_added`, `signup_block_lifted` (ajout et levée d’un blocage d’inscription) |
-| `hook_decision` | `hook_decision_applied` (le serveur a agi sur le verdict d’un examen externe et a laissé l’état ; l’acteur est le système), `hook_decision_overridden` (un modérateur a annulé la décision, y compris en acceptant sa contestation), `hook_appeal_upheld` (un modérateur a rejeté la contestation d’une publication refusée, et la décision reste) |
-| `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (enregistrement d’un émoji personnalisé, remplacement de son image, copie d’un émoji d’un autre serveur, modification, activation, désactivation et suppression) |
+| `hook_decision` | `hook_decision_applied` (le serveur a agi sur le verdict d’un examen externe et a laissé l’état ; l’acteur est le système), `hook_decision_overridden` (un modérateur a annulé la décision, aussi en infirmant sa contestation), `hook_appeal_upheld` (un modérateur a confirmé la contestation d’une publication refusée, et la décision reste) |
+| `custom_emoji` | `custom_emoji_created`, `custom_emoji_image_replaced`, `custom_emoji_copied`, `custom_emoji_updated`, `custom_emoji_enabled`, `custom_emoji_disabled`, `custom_emoji_deleted` (enregistrement d’un émoji personnalisé, remplacement de son image, copie d’un émoji depuis un autre serveur, modification, activation, désactivation et suppression) |
 | `webhook` | `webhook_created`, `webhook_updated`, `webhook_deleted`, `webhook_enabled`, `webhook_disabled`, `webhook_secret_rotated` (création, modification, suppression, activation et désactivation d’un webhook, et régénération de son secret) |
 | `announcement` | `announcement_created`, `announcement_updated`, `announcement_published`, `announcement_withdrawn` (création, modification, publication et retrait d’une annonce) |
-| `invite` | `invite_created`, `invite_revoked` (création et révocation d’une invitation ; le nom de la cible correspond aux 4 premiers caractères du code) |
+| `invite` | `invite_created`, `invite_revoked` (création et révocation d’une invitation ; le nom de la cible est constitué des 4 premiers caractères du code) |
 | `billing_source` | `billing_import_queued` (un import de facturation a été lancé à la main ; le nom de la cible est le nom du fournisseur) |
-| `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_deleted` (enregistrement d’un coût, modification de son nom et semblables, révision de son montant, modification de sa date de fin, et suppression ; le nom de la cible est le nom de l’élément) |
-| `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (activation et désactivation de la facturation ; le nom de la cible est le nom du fournisseur de paiement) |
+| `cost_item` | `cost_item_created`, `cost_item_relabeled`, `cost_item_price_revised`, `cost_item_end_changed`, `cost_item_deleted` (enregistrement d’un coût, changement de son nom et semblables, révision de son montant, changement de sa date de fin, et suppression ; le nom de la cible est le nom de l’élément) |
+| `supporter_program` | `supporter_program_enabled`, `supporter_program_disabled` (activation et désactivation de la facturation ; le nom de la cible est le nom du prestataire de paiement), et `supporter_tips_enabled`, `supporter_tips_revised`, `supporter_tips_disabled` (activation des pourboires, changement de leurs montants et désactivation ; le nom de la cible est la devise et les montants en unités mineures) |
 | `supporter_plan` | `supporter_plan_created`, `supporter_plan_revised`, `supporter_plan_retired` (création, modification et retrait d’une formule de soutien ; le nom de la cible est le nom de la formule) |
 | `supporter_subscription` | `supporter_subscription_ended` (un administrateur a mis fin immédiatement à une souscription ; le nom de la cible est le nom de la formule et l’identifiant de l’utilisateur) |
 | `custom_emoji_request` | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` (dépôt, retrait, approbation et rejet d’une demande d’émoji personnalisé ; le nom de la cible est le `:shortcode:`) |
-| `payment_provider` | `payment_reconcile_queued` (le rapprochement avec le fournisseur de paiement a été lancé à la main ; le nom de la cible est le nom du fournisseur) |
-| `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (désactivation et rétablissement d’un client OAuth ; la désactivation révoque tous ses jetons ; le nom de la cible est le nom du client et `client_id`) |
-| `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (refus et annulation du refus d’un hôte de Client ID Metadata Document ; le refus révoque les jetons des clients de cet hôte ; le nom de la cible est l’hôte) |
-| `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (annonce de la fermeture du service ou changement de la date, retrait de l’annonce, fermeture, et fin de la livraison de la fermeture ; le nom de la cible est `service_closure`) |
-| `voice_room` | `voice_room_ended` (un modérateur a mis fin à un salon de chat vocal ouvert ; le nom de la cible est l’ID du salon, car le nom disparaît lorsque le compte qui l’a écrit est effacé ; les détails du signalement montrent le nom) |
-| `link_card_domain` | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` (définition d’une règle du robot des cartes de lien sur un domaine, et son retrait ; voir [domaines des cartes de lien](instance-settings.md#link-card-domains)) |
+| `payment_provider` | `payment_reconcile_queued` (le rapprochement avec le prestataire de paiement a été lancé à la main ; le nom de la cible est le nom du fournisseur) |
+| `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (désactivation et révocation d’un client OAuth ; la désactivation révoque tous ses jetons ; le nom de la cible est le nom du client et `client_id`) |
+| `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (refus et levée du refus d’un hôte de Client ID Metadata Document ; le refus révoque les jetons des clients de cet hôte ; le nom de la cible est l’hôte) |
+| `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (annonce de la fermeture du service ou changement de la date, retrait de l’annonce, fermeture, et fin de l’envoi de la fermeture ; le nom de la cible est `service_closure`) |
+| `voice_room` | `voice_room_ended` (un modérateur a terminé un salon de chat vocal ouvert ; le nom de la cible est l’ID du salon, puisque le nom disparaît lorsque le compte qui l’a écrit est effacé ; les détails du signalement montrent le nom) |
+| `event` | `event_cancelled` (un modérateur a annulé un événement ; le nom de la cible est l’ID de l’événement, puisque le titre disparaît lorsque le compte qui l’a écrit est effacé ; les détails du signalement montrent le titre) |
+| `domain_allow` | `domain_allow_added`, `domain_allow_removed` (ajout d’un domaine à la liste d’autorisation de la fédération et retrait ; voir [ne fédérer qu’avec des serveurs autorisés](#federating-only-with-allowed-servers) ; le nom de la cible est le domaine) |
+| `link_card_domain` | `link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed` (définition d’une règle du robot des cartes de liens sur un domaine, et retrait ; voir [domaines des cartes de liens](instance-settings.md#link-card-domains)) |
 | `login_provider` | `login_provider_created`, `login_provider_updated`, `login_provider_deleted`, `login_provider_enabled`, `login_provider_disabled`, `login_provider_secret_rotated` (ajout, modification, suppression, activation et désactivation d’un fournisseur de connexion externe, et remplacement de son secret client ; le nom de la cible est le nom d’affichage du fournisseur) |
+| `domain_list_subscription` | `domain_list_subscription_created`, `domain_list_subscription_updated`, `domain_list_subscription_deleted` (abonnement à une liste de blocage, modification de ses réglages et suppression), `domain_list_draft_accepted` et `domain_list_draft_rejected` (acceptation d’un brouillon, qui enregistre aussi la mesure sur le domaine, et rejet d’un brouillon), `domain_list_fetch_queued` (une récupération demandée à la main) ; le nom de la cible est le titre de l’abonnement ; voir [s’abonner à des listes de blocage](#subscribing-to-blocklists) |
 
-La liste indique si la cible existe encore. Les comptes, signalements, contestations et blocages d’inscription qui ont disparu après leur durée de conservation, ainsi que les rôles, émojis personnalisés et webhooks supprimés, n’affichent que le nom au moment de l’enregistrement et aucun lien vers un écran.
+La liste indique si la cible existe encore. Les comptes, signalements, contestations et blocages d’inscription qui ont disparu après leur durée de conservation, les autorisations retirées, ainsi que les rôles, émojis personnalisés et webhooks supprimés, n’affichent que le nom au moment de l’enregistrement et aucun lien vers un écran.
 
 ```sh
 my admin audit list
@@ -354,34 +517,40 @@ my admin audit list -target-kind domain -target-id spam.example
 
 Dans l’API d’administration : `GET /api/v1/admin/audit_log` (filtrez avec `actor_account_id`, `action`, `target_kind` et `target_id`). Elle exige la permission `view_audit`.
 
-- Une ligne comprend l’acteur (l’utilisateur pour `user`, ou `cli` pour la CLI), l’opération, le type et l’ID de la cible, le nom d’affichage de la cible, l’ID de l’enregistrement d’origine et l’heure. L’ID de la cible est l’ID du compte, du signalement, de la contestation, de l’utilisateur, de la règle, du rôle ou du blocage d’inscription ; pour une mesure sur un domaine, c’est le domaine ; pour les paramètres et les textes, c’est la clé.
-- Le nom d’affichage de la cible (`@alice`, `@bob@example.com`, un domaine, une clé de paramètre, le texte d’une règle ; pour un texte sa clé, pour un rôle sa clé et l’identifiant de l’utilisateur, pour un blocage d’inscription son type et sa valeur) est une copie prise au moment de l’enregistrement, il reste donc lisible une fois la cible disparue. Chaque ligne de l’API renvoie aussi si la cible existe encore (`target_exists`), qui vaut `false` pour les comptes, signalements, contestations et blocages d’inscription disparus. Le journal d’audit du web n’affiche que le nom d’affichage, sans lien, pour une cible disparue.
-- Le texte des motifs et des notes n’est pas copié. Retrouvez-le via l’ID de l’enregistrement d’origine (la mesure, l’attribution, la résolution, la réouverture, la note, l’examen, ou la version d’un paramètre ou d’une règle).
-- La liste va de la plus récente à la plus ancienne avec une pagination par clé (`-before <entry id>` dans la CLI).
-- Il n’existe ni API ni CLI pour modifier ou supprimer le journal d’audit. Les anciennes lignes sont supprimées après la [durée de conservation](#record-retention-and-holds).
+- Une ligne comprend l’acteur (l’utilisateur pour `user`, ou `cli` pour la CLI), l’opération, le type et l’ID de la cible, le nom d’affichage de la cible, l’ID de l’enregistrement d’origine et l’heure.
+  L’ID de la cible est l’ID du compte, du signalement, de la contestation, de l’utilisateur, de la règle, du rôle ou du blocage d’inscription ; pour une mesure sur un domaine, c’est le domaine ; pour les paramètres et les textes, c’est la clé.
+- Le nom d’affichage de la cible (`@alice`, `@bob@example.com`, un domaine, une clé de paramètre, le texte d’une règle ; pour un texte sa clé, pour un rôle sa clé et l’identifiant de l’utilisateur, pour un blocage d’inscription son type et sa valeur) est une copie prise au moment de l’enregistrement ; il reste donc lisible après la disparition de la cible.
+  Chaque ligne de l’API renvoie aussi si la cible existe encore (`target_exists`), qui vaut `false` pour les comptes, signalements, contestations et blocages d’inscription qui ont disparu. Le journal d’audit du web n’affiche que le nom d’affichage, sans lien, pour une cible qui a disparu.
+- Le texte des motifs et des notes n’est pas copié. Retrouvez-le par l’ID de l’enregistrement d’origine (la mesure, l’attribution, la résolution, la réouverture, la note, l’examen, ou la version d’un paramètre ou d’une règle).
+- La liste va des plus récentes aux plus anciennes avec une pagination par clé (`-before <entry id>` dans la CLI).
+- Il n’existe aucune API ni CLI pour modifier ou supprimer le journal d’audit. Les anciennes lignes sont retirées après la [durée de conservation](#record-retention-and-holds).
 
-<!-- source: record-retention-and-holds bd806b3bbda7 -->
+<!-- source: record-retention-and-holds 9861d8570a91 -->
 ## Conservation des enregistrements et conservations obligatoires
 
-Après la durée de conservation de chaque type d’enregistrement, des tâches horaires (`moderation.purge_records`, `identity.purge_origins` et `voice.purge_records`) suppriment les enregistrements de modération. Vous pouvez modifier les durées dans les paramètres d’instance, mais pas en dessous de la limite inférieure ([paramètres d’instance](instance-settings.md)). Une durée modifiée prend effet à l’exécution suivante. Une conservation obligatoire levée, avec son motif, est supprimée une fois écoulée, depuis sa levée, la durée de conservation des mesures de modération.
+Après la durée de conservation de chaque type d’enregistrement, des tâches horaires (`moderation.purge_records`, `identity.purge_origins`, `voice.purge_records` et `gathering.purge_records`) retirent les enregistrements de modération.
+Vous pouvez modifier les durées dans les paramètres d’instance, mais pas en dessous de la limite inférieure ([paramètres de l’instance](instance-settings.md)). Une durée modifiée prend effet à partir de la prochaine exécution. Une conservation obligatoire levée, avec son motif, est retirée une fois que la durée de conservation des mesures de modération s’est écoulée depuis sa levée.
 
-| Enregistrement | Paramètre | Par défaut | Limite inférieure | Point de départ |
+| Enregistrement | Paramètre | Valeur par défaut | Limite inférieure | Point de départ |
 | --- | --- | --- | --- | --- |
 | Adresse IP et User-Agent de connexion | `session_origins_retention_days` | 180 jours | 90 jours | La connexion |
 | Adresse IP d’inscription | `registration_origins_retention_days` | 180 jours | 90 jours | L’inscription |
 | Signalements (commentaire, publications visées, notes, attributions, résolutions, réouvertures) | `reports_retention_days` | 365 jours | 180 jours | La dernière résolution |
 | Mesures contre des comptes (motif, note, publications visées, levée) et contestations | `moderation_actions_retention_days` | 365 jours | 180 jours | La fin de la mesure |
 | Journal d’audit | `audit_log_retention_days` | 730 jours | 365 jours | L’enregistrement |
-| Blocages d’inscription | Aucun (ne peut pas être modifié) | 30 jours | n/a | Le premier de la levée et de l’expiration |
+| Blocages d’inscription | Aucun (ne peut pas être modifié) | 30 jours | s. o. | La première des deux dates entre la levée et l’expiration |
 | Qui a participé à un salon de chat vocal (participations, intervenants et auditeurs, mains levées, invitations, retraits) | `voice_participants_retention_days` | 90 jours | 30 jours | La fin du salon |
-| Les décisions des [points de décision](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 jours | 30 jours | La décision |
+| Les décisions des [hooks de décision](decision-hooks.md#the-decisions) | `hook_decisions_retention_days` | 90 jours | 30 jours | La décision |
+| Les réponses, approbations, invitations et votes sur les dates candidates d’un événement | `event_records_retention_days` | 90 jours | 30 jours | La première des deux dates entre la fin de l’événement (pour un événement dont la date n’a jamais été fixée, la fin de sa dernière date candidate) et son annulation |
 
-- Les signalements ouverts ne sont jamais supprimés. Un signalement auquel une mesure renvoie (`report_id` de la mesure) reste jusqu’à la suppression de cette mesure.
-- La fin d’une mesure est le premier de la levée et de l’expiration. Pour une mesure qui a été contestée, si l’examen arrive plus tard, la fin est l’heure de l’examen, et la mesure est conservée tant que la contestation attend un examen. `warn` et `delete_statuses` n’ont pas d’effet durable, donc la fin est l’heure où elles ont été prises. Une mesure sans fin (un `ban`, un `suspend` sans heure de fin, etc.) n’est pas supprimée avant d’être levée.
-- Les publications vers lesquelles un signalement ou une mesure renvoie ne sont pas physiquement supprimées par la tâche de purge, avec leurs médias joints, avant la suppression de ce signalement ou de cette mesure, même si l’auteur les a supprimées (elles disparaissent de la vue). Les publications distantes restent aussi au-delà de la durée de conservation (y compris le paramètre d’instance `remote_status_max_retention_days`).
-- Un blocage d’inscription qui n’a ni levée ni heure de fin reste tant qu’il est en vigueur.
-- Les enregistrements de qui a participé à un salon de chat vocal visé par un signalement restent jusqu’à la suppression de ce signalement. Le salon lui-même (son nom, sa description, ses hôtes et la manière dont il s’est terminé) n’est jamais supprimé.
-- Une exécution de tâche ne supprime qu’un nombre limité de lignes par type (100 à la fois, 20 fois, pour les mesures, signalements et blocages d’inscription ; 1 000 lignes à la fois, 20 fois, pour le journal d’audit). L’exécution suivante supprime le reste.
+- Les signalements ouverts ne sont jamais retirés. Un signalement auquel une mesure fait référence (`report_id` de la mesure) reste jusqu’à ce que cette mesure soit retirée.
+- La fin d’une mesure est la première des deux dates entre la levée et l’expiration. Pour une mesure qui a fait l’objet d’une contestation, si l’examen survient après cela, la fin est le moment de l’examen, et la mesure est conservée tant que la contestation attend son examen.
+  `warn` et `delete_statuses` n’ont aucun effet durable ; leur fin est donc le moment où elles ont été émises. Une mesure sans fin (un `ban`, un `suspend` sans heure de fin, etc.) n’est retirée que lorsqu’elle est levée.
+- Les publications auxquelles un signalement ou une mesure fait référence ne sont pas physiquement supprimées par la tâche de purge, avec leurs médias joints, tant que ce signalement ou cette mesure n’est pas retiré, même si l’auteur les a supprimées (elles disparaissent de la vue). Les publications distantes restent aussi au-delà de la durée de conservation (y compris le paramètre d’instance `remote_status_max_retention_days`).
+- Un blocage d’inscription qui n’a ni levée ni heure de fin reste aussi longtemps qu’il est en vigueur.
+- Les enregistrements de qui a participé à un salon de chat vocal visé par un signalement restent jusqu’à ce que ce signalement soit retiré. Le salon lui-même (son nom, sa description, ses hôtes et la manière dont il s’est terminé) n’est jamais retiré.
+- Les réponses, votes et invitations d’un événement visé par un signalement restent jusqu’à ce que ce signalement soit retiré, tout comme ceux qui nomment un compte sous conservation obligatoire. L’événement lui-même (ses réglages et lieux, sa date et ses dates candidates, ses co-organisateurs et son annulation) n’est jamais retiré ; une fois ses réponses disparues, il ne compte plus personne comme participant.
+- Une exécution de tâche ne retire qu’un nombre limité de lignes par type (100 à la fois, 20 fois, pour les mesures, les signalements et les blocages d’inscription ; 1 000 lignes à la fois, 20 fois, pour le journal d’audit). L’exécution suivante retire le reste.
 
 <!-- source: holds f3bf57c2c258 -->
 ### Conservations obligatoires

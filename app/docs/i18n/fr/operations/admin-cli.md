@@ -37,14 +37,13 @@ my admin create -username alice -email alice@example.com
 - Une exécution échouée n’écrit rien ; vous pouvez donc corriger la cause et relancer la même commande.
 - Le code de sortie 2 signale une erreur d’utilisation.
 
-<!-- source: granting-and-revoking-roles b87e1adb131e -->
-## Attribuer et révoquer des rôles
+<!-- source: granting-and-revoking-roles a8783994c097 -->
+## Accorder et révoquer des rôles
 
-Les rôles contiennent des permissions. Les rôles intégrés sont `admin` (`position` 1000, toutes les permissions) et
-`moderator` (`position` 100, avec `manage_reports`, `manage_accounts` et `view_audit`).
+Les rôles regroupent des permissions. Les rôles intégrés sont `admin` (`position` 1000, toutes les permissions) et `moderator` (`position` 100, avec `manage_reports`, `manage_accounts` et `view_audit`).
 `my serve` vérifie les rôles intégrés à chaque démarrage (dans un processus de n’importe quel `role`), et `my admin role` les vérifie à chaque exécution.
 Chacun crée ce qui manque et donne à `admin` toutes les permissions de la version en cours d’exécution.
-Lorsqu’une mise à niveau ajoute une permission, aucune étape manuelle n’est nécessaire. Un `moderator` conserve les permissions et la position définies par l’administrateur.
+Lorsqu’une mise à niveau ajoute une permission, aucune étape manuelle n’est nécessaire. Un `moderator` conserve les permissions et la position que l’administrateur a définies.
 
 ```sh
 my admin role list                 # each role's position, permissions (grouped as moderation, server administration, and member features), and holders
@@ -53,20 +52,20 @@ my admin role grant alice moderator
 my admin role revoke alice moderator
 ```
 
-- Les permissions appartiennent à l’un des trois groupes.
+- Les permissions appartiennent à l’un de trois groupes.
   - Modération : `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit`.
   - Administration du serveur : `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers`.
-  - Fonctionnalités des membres : `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`.
+  - Fonctionnalités des membres : `view_finance`, `create_custom_emojis`, `start_voice_rooms`, `create_invites`, `keep_posts_longer`, `create_articles`, `create_events`.
 
-  `list` affiche une colonne par groupe (`MODERATION`, `SERVER`, `MEMBER`). Le client web affiche « Modération » et « Administration » pour les deux premiers groupes et ne compte les fonctionnalités des membres dans aucun des deux (consultez [moderation.md](moderation.md)).
-- Une modification prend effet à la requête suivante de l’utilisateur. Les notifications destinées aux modérateurs vont aux personnes qui détiennent la permission au moment de la création de la notification.
-- Les attributions et les révocations sont écrites dans le journal d’audit sous `role_granted` et `role_revoked` (type de cible `role`). L’acteur d’une opération CLI est `cli` (`my admin audit list -target-kind role`).
-- Attribuer un rôle que l’utilisateur possède déjà, ou révoquer un rôle qu’il n’a pas, ne modifie ni n’enregistre rien.
-- Le dernier détenteur de `admin` ne peut pas le perdre (code de sortie 1). Attribuez d’abord `admin` à un autre utilisateur.
+  `list` affiche une colonne par groupe (`MODERATION`, `SERVER`, `MEMBER`). Le client web affiche « Modération » et « Administration » pour les deux premiers groupes et ne compte les fonctionnalités des membres dans aucun des deux (voir [moderation.md](moderation.md)).
+- Un changement prend effet à la prochaine requête de l’utilisateur. Les notifications destinées aux modérateurs vont aux personnes qui détiennent la permission au moment où la notification est créée.
+- Les attributions et les révocations sont écrites dans le journal d’audit sous les noms `role_granted` et `role_revoked` (type de cible `role`). L’acteur d’une opération de la CLI est `cli` (`my admin audit list -target-kind role`).
+- Accorder un rôle que l’utilisateur possède déjà, ou révoquer un rôle qu’il ne possède pas, ne change ni n’enregistre rien.
+- Le dernier détenteur de `admin` ne peut pas le perdre (code de sortie 1). Accordez d’abord `admin` à un autre utilisateur.
 - L’API d’administration est `GET /api/v1/admin/roles`, `GET /api/v1/admin/accounts/{id}/roles` et `PUT` / `DELETE /api/v1/admin/accounts/{id}/roles/{role}`, et elle exige la permission `manage_roles`.
-  Via l’API, vous ne pouvez pas attribuer ni révoquer un rôle supérieur à la `position` la plus élevée parmi vos propres rôles (403). Révoquer le dernier `admin` renvoie 409.
-- Le personnel n’agit que sur les rangs inférieurs. Via l’API, les mesures de modération et leur levée, la décision sur les recours, la levée des suppressions d’e-mail, la révélation des données privées d’un compte, l’émission d’un lien de réinitialisation de mot de passe et le retrait de l’authentification à deux facteurs exigent que la `position` la plus élevée parmi vos rôles soit supérieure à celle de chaque rôle de la cible ; un rang supérieur ou égal, votre propre compte inclus, renvoie 403. Un modérateur ne peut pas agir sur un administrateur, et un administrateur ne peut pas agir sur un autre. Ces commandes (`my admin account ...`) n’ont pas une telle limite ; utilisez-les lorsque des administrateurs ne sont pas d’accord.
-- Le seul administrateur ne peut être ni verrouillé ni retiré : `disable_login`, `suspend` et `ban` le visant sont refusés, via l’API (409) et via ces commandes (code de sortie 1), et il ne peut pas supprimer son propre compte (409). Un autre détenteur de `admin` ne compte que tant qu’il peut se connecter : pas après la suppression de son compte, ni lorsqu’il est suspendu, banni ou sous `disable_login`.
+  Par l’API, vous ne pouvez pas accorder ni révoquer un rôle supérieur à la `position` la plus élevée parmi vos propres rôles (403). Révoquer le dernier `admin` renvoie 409.
+- Le personnel n’agit que sur les rangs inférieurs. Par l’API, les mesures de modération et leur levée, le jugement des contestations, la levée des suppressions d’e-mail, la révélation des données privées d’un compte, l’émission d’un lien de réinitialisation du mot de passe et la suppression de l’authentification à deux facteurs exigent que la `position` la plus élevée parmi vos rôles soit supérieure à celle de chacun des rôles de la cible ; un rang supérieur ou égal, y compris pour votre propre compte, renvoie 403. Un modérateur ne peut pas agir sur un administrateur, et un administrateur ne peut pas agir sur un autre. Ces commandes (`my admin account ...`) n’ont pas une telle limite ; utilisez-les lorsque des administrateurs sont en désaccord.
+- L’unique administrateur ne peut pas être verrouillé ni retiré : `disable_login`, `suspend` et `ban` sur lui sont refusés, par l’API (409) et par ces commandes (code de sortie 1), et il ne peut pas supprimer son propre compte (409). Un autre détenteur de `admin` ne compte que tant qu’il peut se connecter : pas après avoir supprimé son compte, ni tant qu’il est suspendu, banni ou sous `disable_login`.
 
 <!-- source: announcing-the-end-of-the-service e1c40ec145f0 -->
 ## Annoncer la fin du service

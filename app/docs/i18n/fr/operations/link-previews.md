@@ -4,24 +4,26 @@
 Les aperçus que d’autres services affichent des pages de ce serveur, ce que le serveur renvoie pour eux, et les étapes pour les vérifier à la main. Les cartes que ce serveur affiche pour les liens de ses propres publications
 sont décrites dans [Cartes des liens dans les publications](#cards-of-links-in-posts) plus bas ; la façon d’arrêter de les récupérer depuis un domaine est décrite dans les [paramètres de l’instance](instance-settings.md#link-card-domains).
 
-<!-- source: what-the-server-returns bb9326f9729a -->
+<!-- source: what-the-server-returns fe60560f1b91 -->
 ## Ce que le serveur renvoie
 
-`my serve` renvoie le HTML de la page d’accueil (`https://<host>/`), de la page d’informations de l’instance (`https://<host>/about`),
-des pages des documents publiés (`/about/terms`, `/about/privacy`, `/about/commerce`), de la page consacrée au robot des cartes de liens (`/about/crawler`), des profils
+`my serve` renvoie le HTML de la page d’accueil (`https://<host>/`), de la page d’informations sur l’instance (`https://<host>/about`),
+des pages des documents publiés (`/about/terms`, `/about/privacy`, `/about/commerce`), de la page consacrée à l’outil de récupération des cartes de lien (`/about/crawler`), des profils
 (`https://<host>/@alice`) et des publications (`https://<host>/@alice/status/<post ID>`) en intégrant des balises meta dans l’enveloppe du
 client web.
-Une requête de HTML est toujours traitée comme celle d’un visiteur non connecté : un aperçu ne montre donc que ce qu’un visiteur non connecté peut voir.
+Une requête de HTML est toujours traitée comme celle d’un visiteur non connecté ; un aperçu n’affiche donc que ce qu’un visiteur non connecté peut voir.
 
 | Page | Réponse |
 | --- | --- |
-| La page d’accueil (`/`) et la page d’informations de l’instance (`/about`) | 200. L’enveloppe avec des balises meta qui présentent l’instance (voir « La page d’accueil » plus bas) |
-| La page consacrée au robot des cartes de liens (`/about/crawler`) | 200. L’enveloppe avec des balises meta qui présentent l’instance, intitulée « Robot des cartes de liens \| nom de l’instance » |
+| La page d’accueil (`/`) et la page d’informations sur l’instance (`/about`) | 200. L’enveloppe avec des balises meta qui présentent l’instance (voir « La page d’accueil » ci-dessous) |
+| La page consacrée à l’outil de récupération des cartes de lien (`/about/crawler`) | 200. L’enveloppe avec des balises meta qui présentent l’instance, intitulée « Outil de récupération des cartes de lien \| nom de l’instance » |
 | Les pages des documents publiés (`/about/terms`, `/about/privacy`, `/about/commerce`) | 200. L’enveloppe avec des balises meta qui présentent l’instance, intitulée « nom du document \| nom de l’instance ». La page d’un document non publié reçoit l’enveloppe générique |
 | Une publication `public`, le profil d’un compte local actif | 200. L’enveloppe avec des balises meta |
 | Une publication `unlisted` | 200. L’enveloppe avec des balises meta, plus `<meta name="robots" content="noindex, noarchive">` et `X-Robots-Tag: noindex, noarchive` |
 | Une publication `local`, `private`, `direct`, supprimée ou inexistante, et le profil et les publications d’un compte suspendu, désactivé, supprimé ou limité | 404. L’enveloppe générique et `X-Robots-Tag: noindex, noarchive`. Le corps et les en-têtes sont les mêmes quelle que soit la raison |
 | `/@<old username>/status/<post ID>` | 301, vers l’URL avec le nom d’utilisateur actuel |
+| La page d’un hashtag (`/tags/<tag>`) | 200. L’enveloppe générique, avec le lien vers le flux Atom du hashtag (voir « L’enveloppe générique » ci-dessous) |
+| Toute autre page du client web (explorer, les pages publiques des coûts et des soutiens, la connexion, etc.) | 200. L’enveloppe générique, avec les balises meta de l’instance (voir « L’enveloppe générique » ci-dessous) |
 
 Chaque page porte aussi les déclarations destinées aux moteurs de recherche et aux robots d’IA (balises meta telles que `noindex` et `noai`, et
 `X-Robots-Tag`, `Content-Usage` et `tdm-reservation`), selon les paramètres de l’instance et ceux de son propriétaire
@@ -31,71 +33,64 @@ Chaque page porte aussi les déclarations destinées aux moteurs de recherche et
 Une requête avec un `Accept` ActivityPub ne reçoit pas l’enveloppe ; c’est la partie ActivityPub qui y répond (un profil répond avec l’`id` de
 l’acteur, et une publication qu’un visiteur non connecté peut voir répond par un 302 vers son `id`). Chaque réponse porte `Vary: Accept`.
 
-<!-- source: meta-tags 00a4a8115b9e -->
+<!-- source: meta-tags 1a514282794e -->
 ### Balises meta
 
 | Balise | Contenu |
 | --- | --- |
-| `og:title`, `<title>` | « Nom affiché (@nom_d’utilisateur@domaine du compte) ». Le nom d’utilisateur si le nom affiché est vide |
-| `og:type` | `profile` pour un profil, `article` pour une publication |
+| `og:title`, `<title>` | « Nom affiché (@nom d’utilisateur@domaine du compte) ». Le nom d’utilisateur si le nom affiché est vide. Pour un article, son titre |
+| `og:type` | `profile` pour un profil, `article` pour une publication et un article |
 | `og:url`, `<link rel="canonical">` | L’URL canonique (l’URL avec le nom d’utilisateur actuel) |
-| `og:description` | Le texte brut du corps de la publication (la biographie pour un profil) sans balises, tronqué à 200 graphèmes. Pour une publication avec un avertissement de contenu, uniquement le texte de l’avertissement |
+| `og:description` | Le texte brut du corps de la publication (la biographie pour un profil) sans balises, coupé à 200 graphèmes. Pour une publication avec un avertissement de contenu, uniquement le texte de l’avertissement. Pour un article, son résumé, y compris lorsqu’il est marqué comme sensible ; le corps d’un article ne figure jamais dans la page |
 | `og:image`, `og:image:alt` / `width` / `height` | L’image choisie dans l’ordre ci-dessous |
-| `og:site_name` | Le nom de l’instance (le texte `name`, identique dans toutes les langues ; `host` s’il n’y en a pas ; [nom et domaine](instance-settings.md#name-and-domain)) |
-| `og:locale`, `<html lang dir>` | La langue de la publication. Lorsqu’elle n’est pas définie (`und`), la langue de publication par défaut de l’auteur et, à défaut, le `default_locale` de l’instance. Elle ne change pas avec `Accept-Language` |
+| `og:site_name` | Le nom de l’instance (le texte `name`, identique dans toutes les langues ; `host` lorsqu’il n’y en a pas ; [nom et domaine](instance-settings.md#name-and-domain)) |
+| `og:locale`, `<html lang dir>` | La langue de la publication. Lorsqu’elle n’est pas définie (`und`), la langue de publication par défaut de l’auteur, et à défaut le `default_locale` de l’instance. Elle ne change pas avec `Accept-Language`. `og:locale` a la forme `language_TERRITORY` : une langue sans région reçoit sa région habituelle (`ja` → `ja_JP`, `en` → `en_US`, `pt` → `pt_BR`), et `<html lang>` conserve la balise de langue telle quelle |
 | `article:published_time`, `article:author` | Publications uniquement. L’heure de la publication (UTC) et l’URL du profil de l’auteur |
 | `profile:username` | Profils uniquement. `username@account domain` |
-| `twitter:card` | `summary_large_image` lorsque l’image est plus large qu’environ 2:1 (largeur / hauteur >= 1.7) et fait au moins 300x157, sinon `summary` |
+| `twitter:card` | `summary_large_image` lorsque l’image est plus large qu’environ 2:1 (largeur / hauteur >= 1.7) et d’au moins 300x157, sinon `summary` |
 | `fediverse:creator` | `@username@account domain`. Mastodon l’affiche comme « auteur » |
 | `<link rel="alternate" type="application/activity+json">` | L’`id` AP (l’acteur ou l’objet de la publication) |
+| `<link rel="alternate" type="application/atom+xml">` | Uniquement les profils qui ont un flux Atom : l’adresse du flux (`https://<host>/@<username>.atom`), intitulée comme `og:title`. Un profil dont le propriétaire a désactivé le flux, ainsi qu’un compte limité ou qui a migré, n’en ont pas |
 
 Les balises meta de la page d’accueil présentent l’instance elle-même.
 
-- `og:type` vaut `website`, `og:title`, `<title>` et `og:site_name` sont le nom de l’instance, et `og:url` et
-  `<link rel="canonical">` valent `https://<host>/`.
-- `og:description` est le texte d’instance `short_description` tronqué à 200 graphèmes. Il est omis s’il n’y en a pas.
-- La langue (`og:locale`, `<html lang dir>`) est le `default_locale` de l’instance. Le nom et la description sont la même valeur
-  dans toutes les langues.
-- `og:image` est le numéro 3 ci-dessous (l’image d’aperçu de l’instance), ou le numéro 4 ou 5 s’il n’y en a pas.
-- Elle n’appartient à aucun compte : `fediverse:creator` et le `alternate` ActivityPub ne sont donc pas produits.
-- La page d’informations de l’instance (`/about`) a les mêmes balises meta. `og:title` et `<title>` valent « À propos de {nom de l’instance} »
-  (`server:preview.about_title`), et `og:url` et `<link rel="canonical">` valent `https://<host>/about`.
-- Les pages des documents publiés (`/about/terms`, `/about/privacy`, `/about/commerce`) ont aussi les mêmes balises meta.
-  `og:title` et `<title>` valent « {nom du document} | {nom de l’instance} » (`server:preview.document_title`), et `og:url` et
-  `<link rel="canonical">` sont l’adresse de cette page. La page d’un document non publié reçoit l’enveloppe générique.
-- La page consacrée au robot des cartes de liens (`/about/crawler`) a les mêmes balises meta, avec la même forme de titre et d’adresse.
+- `og:type` vaut `website`, `og:title`, `<title>` et `og:site_name` sont le nom de l’instance, et `og:url` et `<link rel="canonical">` valent `https://<host>/`.
+- `og:description` est le texte d’instance `short_description` coupé à 200 graphèmes. Il est omis lorsqu’il n’y en a pas.
+- La langue (`og:locale`, `<html lang dir>`) est le `default_locale` de l’instance. Le nom et la description sont la même valeur dans toutes les langues.
+- `og:image` est l’image de l’instance : le numéro 3 ci-dessous, ou le numéro 4, 5 ou 6 s’il n’y en a pas.
+- Elle n’appartient à aucun compte ; `fediverse:creator` et l’`alternate` ActivityPub ne sont donc pas produits.
+- La page d’informations sur l’instance (`/about`) a les mêmes balises meta. `og:title` et `<title>` sont « À propos de {nom de l’instance} » (`server:preview.about_title`), et `og:url` et `<link rel="canonical">` valent `https://<host>/about`.
+- Les pages des documents publiés (`/about/terms`, `/about/privacy`, `/about/commerce`) ont elles aussi les mêmes balises meta. `og:title` et `<title>` sont « {nom du document} | {nom de l’instance} » (`server:preview.document_title`), et `og:url` et `<link rel="canonical">` sont l’adresse de cette page. La page d’un document non publié reçoit l’enveloppe générique.
+- La page consacrée à l’outil de récupération des cartes de lien (`/about/crawler`) a les mêmes balises meta, avec la même forme de titre et d’adresse.
+
+L’enveloppe générique, que renvoient toutes les autres pages et le 404 d’une publication masquée, porte les mêmes balises que la page d’accueil
+sans adresse propre : `og:type` `website`, le nom de l’instance comme `og:site_name` et `og:title`, `short_description` comme `og:description`, `og:locale`, l’image de l’instance et `twitter:card`. Elle n’a ni `og:url` ni `<link rel="canonical">`, de sorte qu’une seule copie sert tous les chemins, et que le 404 d’une publication masquée reste identique à toute autre page.
+La page d’un hashtag ajoute seulement `<link rel="alternate" type="application/atom+xml">` vers le flux du hashtag (`https://<host>/tags/<tag>.atom`), intitulé « #tag sur nom de l’instance » (`server:feed.tag_title`), qu’une publication ait déjà utilisé ou non le hashtag. Un lien partagé vers un hashtag ou vers la page publique des coûts affiche la carte de l’instance.
+
+Les flux eux-mêmes sont des documents Atom 1.0 des 20 publications publiques locales les plus récentes qui ne sont ni des réponses ni des boosts, avec `ETag`, `Last-Modified` et `Cache-Control: public, max-age=60`. L’entrée d’un article est son titre et son résumé, avec le lien vers l’article ; son corps reste sur la page de l’article. Chaque profil qui a un flux a aussi un flux réservé aux articles, `https://<host>/@<username>/articles.atom`, intitulé « Articles de nom (@handle) » (`server:feed.articles_title`), qui suit les mêmes règles ; la page du profil ne lie que son flux principal. Le serveur conserve chaque flux rendu dans son magasin clé-valeur pendant une minute ; un changement atteint donc un flux en une minute environ. Un flux porte les mêmes `X-Robots-Tag` et déclarations d’IA que son profil ; le flux d’un hashtag est toujours `noindex`, et déclare le refus d’IA de n’importe lequel de ses auteurs. Un profil sans flux, et un hashtag qu’aucune publication n’a utilisé, répondent 404.
 
 `og:image` est choisie dans cet ordre.
 
-1. La première image jointe à la publication (son texte alternatif va dans `og:image:alt`). Elle n’est pas utilisée pour une publication marquée comme sensible ou
-   avec un avertissement de contenu.
+1. La première image jointe à la publication, ou la couverture d’un article (son texte alternatif va dans `og:image:alt`). Elle n’est pas utilisée pour une publication ou un article marqué comme sensible, ni pour une publication avec un avertissement de contenu.
 2. L’image d’en-tête du profil, ou à défaut l’avatar (`og:image:alt` vaut « Image d’en-tête de {name} » ou « Avatar de {name} »).
-3. L’image d’aperçu de l’instance (le paramètre d’instance `preview_image` ; `og:image:alt` est le texte `preview_image_alt`, ou « Image
-   de {nom de l’instance} » s’il n’y en a pas).
-4. La version pour aperçu de lien du logo propre à l’instance ([logo et icône](instance-settings.md#logo-and-icon)), un PNG de 1200x630
-   à `https://<host>/brand/<revision>/preview-1200x630.png` (`og:image:alt` vaut « Image de {nom de l’instance} »).
-5. L’image par défaut fournie (`https://<host>/preview-image.png`, un PNG de 1200x630. C’est une image générique sans le nom de
-   l’instance, et `og:image:alt` décrit l’image).
+3. L’image d’aperçu de l’instance (le paramètre d’instance `preview_image`, sous « Aperçus de liens » dans Paramètres → Général de l’administration ; `og:image:alt` est le texte `preview_image_alt`, ou « Image de {nom de l’instance} » s’il n’y en a pas).
+4. La miniature de l’instance (le paramètre d’instance `thumbnail`, l’image de la page Paramètres → Général ; `og:image:alt` est le texte `thumbnail_alt`, ou « Image de {nom de l’instance} » s’il n’y en a pas).
+5. La version pour aperçu de lien du logo propre à l’instance ([logo et icône](instance-settings.md#logo-and-icon)), un PNG de 1200x630 à `https://<host>/brand/<revision>/preview-1200x630.png` (`og:image:alt` vaut « Image de {nom de l’instance} »).
+6. L’image par défaut fournie (`https://<host>/preview-image.png`, un PNG de 1200x630 du logotype mycroblog sur fond blanc, sans le nom de l’instance ; `og:image:alt` vaut « Le logo de mycroblog »).
 
-Une page qui affiche un aperçu a donc toujours `og:image` et `og:image:alt`.
-Les images de 1 à 3 sont la variante `full` du média traité, et la largeur et la hauteur sont les valeurs issues du traitement.
-Si `preview_image` est encore en cours de traitement, que son traitement a échoué ou qu’elle n’est pas une image, le numéro 4 (ou 5 sans logo) est utilisé.
-Les paramètres d’instance sont lus à chaque requête : `my instance set preview_image ...` prend donc effet sans redémarrage (pour la
-procédure, voir les [paramètres de l’instance](instance-settings.md)).
+Les numéros 3 à 6 sont l’image de l’instance. Une page qui affiche un aperçu a donc toujours `og:image` et `og:image:alt`.
+Les images de 1 à 4 sont la variante `large` du média traité, et la largeur et la hauteur sont les valeurs issues du traitement.
+Si `preview_image` n’est pas définie, est encore en cours de traitement, que son traitement a échoué ou qu’elle n’est pas une image, la miniature est utilisée, puis le logo, puis l’image fournie. Les paramètres d’instance sont lus à chaque requête : `my instance set preview_image ...` prend donc effet sans redémarrage (pour la procédure, voir les [paramètres de l’instance](instance-settings.md)).
 
-L’image par défaut est dessinée avec la bibliothèque standard à la première requête après le démarrage et conservée dans le processus (environ 10 Ko).
-Elle est servie avec `Cache-Control: no-cache` et un ETag.
+L’image fournie fait partie du binaire (environ 20 Ko). Elle est servie avec `Cache-Control: no-cache` et un ETag.
 
-<!-- source: caching 5bc906452b10 -->
+<!-- source: caching e6ace7ad3fd0 -->
 ### Mise en cache
 
-- La réponse porte `Cache-Control: public, max-age=60, stale-while-revalidate=300`. Une suppression, un changement de visibilité, ou
-  la publication ou le retrait d’un document restent dans les caches partagés au plus pendant cette durée.
-- L’ETag est construit à partir des versions du modèle, des ressources et des paramètres d’instance, de la langue, de la version
-  (révision) de la publication, de la visibilité effective, de la version du profil et de l’image choisie (pour la page d’accueil, la page
-  d’informations, les pages de documents et la page consacrée au robot : l’adresse de la page, son titre, la description de l’instance et l’image choisie).
+- La réponse porte `Cache-Control: public, max-age=60, stale-while-revalidate=300`. Une suppression, un changement de visibilité, ou la publication ou la dépublication d’un document reste dans les caches partagés au plus pendant cette durée.
+- L’ETag est construit à partir des versions du gabarit, des ressources et des paramètres de l’instance, de la langue, de la version (révision) de la publication, de la visibilité effective, de la version du profil et de l’image choisie (pour la page d’accueil, la page d’informations, les pages de documents et la page de l’outil de récupération : l’adresse de la page, son titre, la description de l’instance et l’image choisie ; pour l’enveloppe générique : le nom de l’instance, sa description et l’image de l’instance).
   `If-None-Match` reçoit `304`.
-- Si vous placez un CDN devant, incluez `Accept` dans la clé de cache (pour que le JSON AP et le HTML ne soient pas mélangés).
+- Si vous placez un CDN devant, incluez `Accept` dans la clé de cache (afin que le JSON AP et le HTML ne soient pas confondus).
 
 <!-- source: manual-check bf2c7a86a5de -->
 ## Vérification manuelle

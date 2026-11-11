@@ -10,42 +10,41 @@ Il y a deux outils :
 - **La page exportée** (`my maintenance export`). Du HTML statique issu du même modèle, qu’un répartiteur de charge, un CDN ou un proxy inverse sert
   lorsque `my serve` ne peut plus du tout s’exécuter (image en cours de remplacement, révision qui ne démarre pas). Voir [Exporter la page de maintenance](admin-cli.md#exporting-the-maintenance-page).
 
-<!-- source: what-the-maintenance-mode-answers 05dd30158a8e -->
-## Ce que répond le mode maintenance
+<!-- source: what-the-maintenance-mode-answers 13edbbd09e33 -->
+## Ce que répond le mode de maintenance
 
 Le processus ne lit que l’adresse d’écoute, `host`, `account_domain`, `web_origin`, les proxys (`trusted_proxies`, `trusted_proxy_header`),
-le [contrôle de l’origine](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) (`origin_secret`, `origin_secret_previous`, `origin_secret_header`), `status_page_url` et les paramètres `maintenance_*` ([référence de configuration](../reference/configuration.md)).
-Les paramètres de la base de données, de la file, du magasin de blobs, du KV, de l’e-mail et du flux ne sont ni lus ni vérifiés : ils peuvent donc être erronés ou injoignables pendant ce temps.
-Quel que soit le `role`, il ne sert que du HTTP : pas de tâches, pas de tâches périodiques, pas de broker de flux.
-`my config check -maintenance` vérifie exactement ce que lit le mode maintenance.
+la [vérification de l’origine](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) (`origin_secret`, `origin_secret_previous`, `origin_secret_header`), `status_page_url` et les réglages `maintenance_*` ([référence de configuration](../reference/configuration.md)).
+Les réglages de la base de données, de la file, du magasin de blobs, du KV, de l’e-mail et du flux ne sont ni lus ni vérifiés ; ils peuvent donc être erronés ou inaccessibles entre-temps.
+Quel que soit le `role`, il ne sert que du HTTP : pas de tâches, pas de tâches périodiques, pas de courtier de flux.
+`my config check -maintenance` vérifie exactement ce que lit le mode de maintenance.
 
-Lorsque [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) est défini, une requête qui exige l’en-tête et ne l’a pas reçoit le `403` de ce contrôle au lieu de la réponse du tableau ci-dessous.
+Lorsque [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) est défini, une requête qui a besoin de l’en-tête et qui ne l’a pas reçoit le `403` de cette vérification au lieu du tableau ci-dessous.
 
 | Requête | Statut | Corps |
 | --- | --- | --- |
-| `GET /healthz`, `GET /readyz` | `200` | `{"status":"maintenance"}` |
+| `GET /healthz`, `GET /readyz`, `GET /health/live`, `GET /health/ready` | `200` | `{"status":"maintenance"}` |
 | `GET /api/v1/instance/health` | `503` | `{"status":"maintenance"}` |
-| Le reste de l’API cliente (`/api/*`) et les points d’accès OAuth qui répondent en JSON | `503` | `application/problem+json` de type `/api/v1/problems/maintenance`, avec `message`, `until` et `status_page_url` s’il est défini |
-| ActivityPub (selon le chemin, `Accept` ou `Content-Type`), WebFinger, host-meta, NodeInfo, les webhooks de paiement, les appels de Cloud Tasks et de Cloud Scheduler (`/_internal/*`) | `503` | `{"error":"maintenance"}` |
+| Le reste de l’API cliente (`/api/*`) et les points de terminaison OAuth qui répondent en JSON | `503` | `application/problem+json` de type `/api/v1/problems/maintenance`, avec `message`, `until` et `status_page_url` lorsqu’il est défini |
+| ActivityPub (par chemin, `Accept` ou `Content-Type`), WebFinger, host-meta, NodeInfo, les webhooks de paiement, les appels de Cloud Tasks et de Cloud Scheduler (`/_internal/*`) | `503` | `{"error":"maintenance"}` |
 | Tout le reste (pages, client web, ses ressources, envois de formulaires) | `503` | La page de maintenance, ou le problème lorsque `Accept` demande du JSON |
 
-Chaque réponse porte `Retry-After` et `Cache-Control: no-store`. `Retry-After` compte les secondes jusqu’à `maintenance_until` tant qu’il est dans le futur
-(au plus 86 400), et vaut sinon `maintenance_retry_after` (une durée Go, `10m` par défaut).
+Chaque réponse porte `Retry-After` et `Cache-Control: no-store`. `Retry-After` compte les secondes jusqu’à `maintenance_until` tant qu’il est à venir
+(86 400 au plus), et vaut sinon `maintenance_retry_after` (une durée Go, `10m` par défaut).
 
 La page et le problème affichent :
 
-| Paramètre | Affiché comme |
+| Réglage | Affiché comme |
 | --- | --- |
-| `maintenance_server_name` | Le nom du serveur. Le nom d’hôte s’il n’est pas défini (le nom propre de l’instance se trouve dans la base de données) |
+| `maintenance_server_name` | Le nom du serveur. Le nom d’hôte lorsqu’il n’est pas défini (le nom propre de l’instance se trouve dans la base de données) |
 | `maintenance_message` | Un avis en texte brut, de 2 000 caractères au plus, identique dans toutes les langues |
-| `maintenance_until` | Le moment où l’intervention devrait se terminer (RFC 3339). La page l’affiche en UTC ; le client web dans le fuseau horaire de l’utilisateur |
-| `status_page_url` | Un lien vers la page d’état ([Supervision](monitoring.md#a-status-page)) |
+| `maintenance_until` | Quand les travaux devraient se terminer (RFC 3339). La page l’affiche en UTC ; le client web dans le fuseau horaire de l’utilisateur |
+| `status_page_url` | Un lien vers la page d’état ([Surveillance](monitoring.md#a-status-page)) |
 
-Les paramètres `maintenance_*` peuvent rester définis en fonctionnement normal : ils ne sont utilisés que lorsque `maintenance` vaut true.
-Les textes de la page suivent `Accept-Language` (anglais sinon).
+Les réglages `maintenance_*` peuvent rester définis pendant le fonctionnement normal : ils ne sont utilisés que tant que `maintenance` est vrai.
+Les mots de la page suivent `Accept-Language` (l’anglais sinon).
 
-Le client web affiche un avis de maintenance en plein écran lorsque l’API répond avec le problème de maintenance,
-garde l’utilisateur connecté et réessaie après `Retry-After`.
+Le client web affiche un avis de maintenance plein écran lorsque l’API répond avec le problème de maintenance, garde l’utilisateur connecté et réessaie après `Retry-After`.
 
 <!-- source: how-long a7b6a44f0269 -->
 ## Combien de temps
@@ -57,34 +56,34 @@ d’après leurs calendriers de nouvelles tentatives).
 Les moteurs de recherche traitent un `503` bref comme une panne temporaire, mais Google déconseille de servir un `503` pour `robots.txt` pendant plus d’un jour ou deux.
 Un arrêt de plus d’un jour ou deux n’est pas une maintenance : fermez plutôt le service ([Fermer le service](service-closure.md)).
 
-<!-- source: steps 1427d2c6d499 -->
+<!-- source: steps 9377fd324cdc -->
 ## Étapes
 
 1. **Annoncez-la.** Publiez la fenêtre sur la page d’état (`status_page_url`) et comme annonce (Administration → Annonces) un peu à l’avance.
    Définissez `maintenance_message` et `maintenance_until` dans la configuration du déploiement, et actualisez les pages exportées
-   (`my maintenance export`) si le frontal les sert.
-2. **Arrêtez la file en mode push** (Cloud Tasks) — voir [ci-dessous](#push-queues). Sinon, chaque remise pendant la fenêtre
+   (`my maintenance export`) si le front-end les sert.
+2. **Arrêtez la file de poussée** (Cloud Tasks) — voir [ci-dessous](#push-queues). Sinon, chaque envoi pendant la fenêtre
    est un `503` qui consomme l’une des tentatives de la tâche.
-3. **Passez en mode maintenance** : redéployez avec `MY_MAINTENANCE=true` (selon la cible ci-dessous). Chaque réplique redémarre en mode maintenance ;
-   le répartiteur de charge les conserve parce que `/readyz` répond `200`.
+3. **Passez en mode de maintenance** : redéployez avec `MY_MAINTENANCE=true` (selon la cible ci-dessous). Chaque réplique redémarre en mode de maintenance ;
+   le répartiteur de charge les conserve car `/readyz` répond `200`.
 4. **Faites le travail.**
-5. **Revenez en arrière** : redéployez sans `MY_MAINTENANCE` (ou avec `false`), vérifiez que `/readyz` et `/api/v1/instance/health` répondent `{"status":"ok"}`,
-   puis reprenez la file en mode push et fermez l’annonce.
+5. **Revenez en arrière** : redéployez sans `MY_MAINTENANCE` (ou avec `false`), vérifiez que `/health/ready` et `/api/v1/instance/health` répondent `{"status":"ok"}`,
+   puis reprenez la file de poussée et fermez l’annonce.
 
-![Ce que le serveur répond avant, pendant et après le mode maintenance, selon le type de requête : comme d’habitude avant et après, et 503 avec Retry-After pendant, sauf /healthz et /readyz, qui restent à 200. La liste ci-dessous dit la même chose.](images/maintenance.svg)
+![Ce que répond le serveur avant, pendant et après le mode de maintenance, par type de requête : comme d’habitude avant et après, et 503 avec Retry-After pendant, sauf les vérifications d’état (/healthz, /readyz, /health/live, /health/ready), qui restent à 200. La liste ci-dessous dit la même chose.](images/maintenance.svg)
 
 De gauche à droite :
 
 - **Avant**, pendant que vous annoncez la maintenance, chaque requête reçoit sa réponse habituelle : `/healthz`, `/readyz` et
   `/api/v1/instance/health` répondent `200` avec `{"status":"ok"}`.
-- **En mode maintenance** (`MY_MAINTENANCE=true`) :
-  - `/healthz` et `/readyz` répondent `200` avec `{"status":"maintenance"}`.
+- **En mode de maintenance** (`MY_MAINTENANCE=true`) :
+  - `/healthz`, `/readyz`, `/health/live` et `/health/ready` répondent `200` avec `{"status":"maintenance"}`.
   - `/api/v1/instance/health` répond `503` avec `{"status":"maintenance"}`.
-  - Le reste de l’API cliente et les points d’accès OAuth qui répondent en JSON reçoivent `503` avec le problème de maintenance.
+  - Le reste de l’API cliente et les points de terminaison OAuth qui répondent en JSON reçoivent `503` avec le problème de maintenance.
   - ActivityPub, WebFinger et NodeInfo répondent `503` avec `{"error":"maintenance"}`.
   - Les pages et le client web reçoivent `503` avec la page de maintenance.
   - Chaque réponse porte `Retry-After` et `Cache-Control: no-store`.
-- **Après** votre redéploiement sans `MY_MAINTENANCE`, chaque requête reçoit de nouveau sa réponse habituelle.
+- **Après** que vous avez redéployé sans `MY_MAINTENANCE`, chaque requête reçoit de nouveau sa réponse habituelle.
 
 <!-- source: push-queues 0d0d1fc56a29 -->
 ### Files en mode push
@@ -226,9 +225,9 @@ metadata:
     nginx.ingress.kubernetes.io/default-backend: my-maintenance   # a Service in the same namespace
 ```
 
-<!-- source: monitoring-during-the-maintenance 91e64028447e -->
-## Supervision pendant la maintenance
+<!-- source: monitoring-during-the-maintenance 76cf0bd38c93 -->
+## Surveillance pendant la maintenance
 
-- `/healthz` et `/readyz` restent à `200` avec `{"status":"maintenance"}` : les répartiteurs de charge et Kubernetes conservent les instances.
-- `/api/v1/instance/health` répond `503` avec `{"status":"maintenance"}` ([Supervision](monitoring.md)).
-  Les moniteurs de disponibilité voient le serveur comme arrêté, sauf s’ils comparent le corps ou disposent d’une fenêtre de maintenance ; mettez-les en pause ou définissez la fenêtre.
+- `/healthz`, `/readyz`, `/health/live` et `/health/ready` restent à `200` avec `{"status":"maintenance"}` : les répartiteurs de charge et Kubernetes conservent les instances.
+- `/api/v1/instance/health` répond `503` avec `{"status":"maintenance"}` ([Surveillance](monitoring.md)).
+  Les moniteurs de disponibilité voient le serveur comme arrêté, à moins qu’ils ne vérifient le corps ou qu’ils aient une fenêtre de maintenance ; mettez-les en pause ou définissez la fenêtre.

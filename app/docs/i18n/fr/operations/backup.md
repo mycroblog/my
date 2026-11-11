@@ -133,26 +133,20 @@ docker run --rm -v my_data:/data -v "$PWD":/backup busybox \
 
 `rsync` vers l’hôte de sauvegarde garde la copie petite après la première fois, puisque les fichiers médias ne changent jamais une fois écrits.
 
-<!-- source: media-in-a-bucket 882f3a0f9a2b -->
+<!-- source: media-in-a-bucket ff4b1024347c -->
 ### Médias dans un bucket
 
-Les magasins de blobs `s3` et `gcs` conservent chaque fichier sous forme d’objet du bucket `blob_s3_bucket` ou `blob_gcs_bucket`, nommé par sa clé : les médias traités sous `media/`,
-les téléversements tels que reçus sous `uploads/`, et les fichiers distants en cache sous `remote/`. Le bucket reste privé : le serveur lit les
-fichiers et les sert sous `/media/`. Un objet n’apparaît qu’une fois écrit entièrement ; une copie réalisée pendant que le serveur fonctionne ne contient donc jamais
-la moitié d’un fichier. Protégez le bucket en trois couches, de la moins chère à la plus sûre.
+Les magasins de blobs `s3` et `gcs` conservent chaque fichier comme un objet du bucket `blob_s3_bucket` ou `blob_gcs_bucket`, nommé par sa clé : les médias traités sous `media/`, les téléversements tels que reçus sous `uploads/`, et les fichiers distants mis en cache sous `remote/`. Le bucket reste privé : le serveur lit les fichiers et les sert sous `/media/`. Un objet n’apparaît qu’une fois écrit en entier ; une copie réalisée pendant que le serveur fonctionne ne contient donc jamais un fichier à moitié écrit. Protégez le bucket en trois couches, de la moins coûteuse à la plus sûre.
 
-**Gestion des versions.** Activez la gestion des versions des objets du bucket lorsque le service l’offre (Amazon S3, Google Cloud Storage, MinIO et d’autres).
-Un objet supprimé ou écrasé reste alors comme version non courante, et le bucket peut revenir à l’instant d’une sauvegarde de la base de données.
+**Versionnement.** Activez le versionnement des objets du bucket lorsque le service le propose (Amazon S3, Google Cloud Storage, MinIO, et d’autres). Un objet supprimé ou écrasé reste alors comme version non courante, et le bucket peut revenir au moment d’une sauvegarde de la base de données.
 
 ```sh
 aws s3api put-bucket-versioning --bucket my-media --versioning-configuration Status=Enabled
 ```
 
-**Règles de cycle de vie.** Avec la gestion des versions, chaque fichier supprimé conserve son coût de stockage jusqu’à ce qu’une règle le retire. Ajoutez une règle qui supprime les versions non courantes
-après l’âge de votre plus ancienne sauvegarde de la base de données (35 jours pour les générations de [À quelle fréquence et où](#how-often-and-where) sans les mensuelles),
-afin que chaque sauvegarde de la base de données que vous conservez retrouve ses fichiers et qu’un fichier supprimé par un utilisateur ne reste pas plus longtemps que ne le dit votre politique de confidentialité.
-Ajoutez une règle qui abandonne les téléversements multipart incomplets au bout d’un jour : le serveur abandonne lui-même un téléversement échoué d’un gros fichier, mais un processus
-qui s’arrête au milieu de l’un d’eux laisse ses parties derrière lui.
+Avec les modules OpenTofu d’Amazon S3 et de Google Cloud Storage, définissez `versioning = true` : cela active le versionnement et ajoute la règle des versions non courantes ci-dessous, dont l’âge est `noncurrent_version_days` (35 par défaut). Cloudflare R2 n’a pas de versionnement des objets, et le module d’un autre magasin compatible S3 ne crée pas le bucket ; pour ces deux cas, utilisez une copie (ci-dessous).
+
+**Règles de cycle de vie.** Avec le versionnement, chaque fichier supprimé conserve son coût de stockage jusqu’à ce qu’une règle le retire. Ajoutez une règle qui supprime les versions non courantes après l’âge de votre plus ancienne sauvegarde de la base de données (35 jours pour les générations de [Fréquence et destination](#how-often-and-where) sans les mensuelles), afin que chaque sauvegarde de la base de données que vous conservez retrouve ses fichiers et qu’un fichier supprimé par un utilisateur ne reste pas plus longtemps que ne l’indique votre politique de confidentialité. Ajoutez une règle qui interrompt les téléversements multipartites incomplets après un jour : le serveur interrompt lui-même un téléversement échoué d’un gros fichier, mais un processus qui s’arrête au milieu de l’un d’eux laisse ses parties derrière lui.
 
 ```json
 {
@@ -172,27 +166,18 @@ qui s’arrête au milieu de l’un d’eux laisse ses parties derrière lui.
 aws s3api put-bucket-lifecycle-configuration --bucket my-media --lifecycle-configuration file://lifecycle.json
 ```
 
-**Une copie dans un autre compte ou une autre région.** La gestion des versions protège contre une erreur, pas contre la perte du bucket ou du compte qui le possède,
-et les identifiants du serveur peuvent supprimer des objets. Conservez une copie que ces identifiants ne peuvent pas atteindre :
+**Une copie dans un autre compte ou une autre région.** Le versionnement protège contre une erreur, pas contre la perte du bucket ou du compte qui le possède, et les identifiants du serveur peuvent supprimer des objets. Conservez une copie que ces identifiants ne peuvent pas atteindre :
 
-- **Réplication.** Amazon S3 réplique un bucket versionné vers un bucket d’une autre région ou d’un autre compte (Cross-Region ou Same-Region Replication,
-  avec la destination appartenant à l’autre compte). Activez aussi la gestion des versions pour la destination, et ne répliquez pas les suppressions
-  (laissez la réplication des marqueurs de suppression désactivée), afin qu’une suppression sur l’instance n’atteigne pas la copie.
-  D’autres services ont leur propre réplication, comme les buckets bi-régionaux de Cloud Storage et la réplication de buckets de MinIO.
-- **Une copie planifiée.** Là où il n’y a pas de réplication, ou pour copier vers un autre fournisseur, copiez le bucket selon le calendrier de la sauvegarde de la base de données,
-  juste après celle-ci, avec des identifiants qui peuvent seulement lire le bucket de l’instance et seulement écrire dans le bucket de sauvegarde :
+- **Réplication.** Amazon S3 réplique un bucket versionné vers un bucket d’une autre région ou d’un autre compte (Cross-Region ou Same-Region Replication, la destination appartenant à l’autre compte). Activez aussi le versionnement sur la destination, et ne répliquez pas les suppressions (laissez la réplication des marqueurs de suppression désactivée), afin qu’une suppression sur l’instance n’atteigne pas la copie. D’autres services ont leur propre réplication, comme les buckets bi-régionaux de Cloud Storage et la réplication de buckets de MinIO.
+- **Une copie planifiée.** Là où il n’y a pas de réplication, ou pour copier vers un autre fournisseur, copiez le bucket selon le calendrier de la sauvegarde de la base de données, juste après elle, avec des identifiants qui ne peuvent que lire le bucket de l’instance et que écrire dans le bucket de sauvegarde :
 
   ```sh
   rclone copy --checksum source:my-media backup:my-media-backup
   ```
 
-  `rclone copy` et `aws s3 sync` sans `--delete` ajoutent de nouveaux objets et n’en retirent jamais un de la copie. Les fichiers ne changent jamais une fois écrits,
-  de sorte qu’après la première exécution, chaque copie ne transfère que les nouveaux. Supprimez les anciens objets de la copie selon le calendrier de votre politique de rétention,
-  ou activez-y aussi la gestion des versions et une règle de cycle de vie.
+  `rclone copy` et `aws s3 sync` sans `--delete` ajoutent les nouveaux objets et n’en retirent jamais un de la copie. Les fichiers ne changent jamais une fois écrits ; après la première exécution, chaque copie ne transfère donc que les nouveaux. Supprimez les anciens objets de la copie selon le calendrier de votre politique de conservation, ou activez-y aussi le versionnement et une règle de cycle de vie.
 
-Les identifiants restent hors de la copie : le bucket ne contient aucun secret, mais la configuration nomme la clé dans `blob_s3_access_key_id`
-et `blob_s3_secret_access_key`, qui vont avec la configuration. Le magasin de blobs `gcs` ne conserve aucune clé : il utilise le compte de service
-de la machine ou de Cloud Run.
+Les identifiants restent hors de la copie : le bucket ne contient aucun secret, mais la configuration nomme la clé dans `blob_s3_access_key_id` et `blob_s3_secret_access_key`, qui vont avec la configuration. Le magasin de blobs `gcs` ne conserve aucune clé : il utilise le compte de service de la machine ou de Cloud Run.
 
 <!-- source: the-order-of-the-database-and-the-media 52b56171d6d9 -->
 ### L’ordre de la base de données et des médias
@@ -208,6 +193,15 @@ La base de données nomme les fichiers médias qu’elle utilise, et la copie de
 
 L’autre ordre est pire : chaque fichier téléversé entre la sauvegarde des médias et celle de la base de données manquerait après une restauration,
 y compris les médias des nouvelles publications. Réaliser les deux en mode maintenance évite l’un et l’autre écart.
+
+<!-- source: on-the-opentofu-targets 9862430f808c -->
+### Sur les cibles OpenTofu
+
+Les modules ne conservent aucune sauvegarde propre au-delà de ce que le fournisseur offre : le PostgreSQL géré de Cloud SQL et de RDS dispose de sauvegardes automatiques avec une durée de conservation que vous définissez, alors qu’une base de données avec seulement l’historique du fournisseur (Neon) ne peut remonter que jusqu’où va cet historique. Planifiez-les vous-même, avec des identifiants que l’instance ne détient pas :
+
+1. **La base de données, chaque jour.** Exécutez `pg_dump` sur le PostgreSQL de l’instance depuis une machine ou une tâche planifiée extérieure au fournisseur qui héberge la base de données (voir [PostgreSQL](#postgresql)), chiffrez l’export et écrivez-le dans un bucket d’un autre compte ou fournisseur. Conservez les générations de [Fréquence et destination](#how-often-and-where). La tâche n’a besoin que de `database_url` ; elle ne doit pas détenir la KEK.
+2. **Les médias, juste après.** Avec `versioning = true` sur le module du bucket, les versions sont la copie pour les derniers `noncurrent_version_days` ; pour la perte du compte, exécutez aussi `rclone copy` du bucket de l’instance vers un bucket ailleurs, comme dans [Médias dans un bucket](#media-in-a-bucket), selon le calendrier de l’export de la base de données.
+3. **La KEK et la configuration** ne font pas partie du calendrier : sauvegardez-les lorsqu’elles changent ([La KEK et la configuration](#the-kek-and-the-configuration)).
 
 <!-- source: the-kek-and-the-configuration b3d65ec5edb5 -->
 ### La KEK et la configuration
@@ -329,16 +323,27 @@ Avec un moteur de recherche, exécutez `my search rebuild` après la restauratio
 - Trouvez la KEK dont l’ID de clé est nommé par l’erreur, définissez-la comme `kek` (ou dans `kek_previous`) et redémarrez. Il n’existe aucun moyen de récupérer un secret sans sa KEK ;
   si la KEK est définitivement perdue, les clés des acteurs doivent être régénérées, et les autres serveurs voient chaque acteur comme une nouvelle clé pour le même compte.
 
-<!-- source: recovery-drill f9adfe0e0d28 -->
-## Exercice de reprise
+<!-- source: recovery-drill cdd349df0cb8 -->
+## Exercice de restauration
 
-On ne sait qu’une sauvegarde fonctionne qu’une fois qu’elle a été restaurée. Répétez une restauration avant que l’instance devienne publique, et à nouveau après un changement dans la façon dont les
-sauvegardes sont réalisées (au moins tous les quelques mois) :
+On ne sait qu’une sauvegarde fonctionne qu’une fois qu’elle a été restaurée. Répétez une restauration avant que l’instance devienne publique, et de nouveau après un changement de la façon dont les sauvegardes sont réalisées (au moins tous les quelques mois) :
 
 1. Réalisez une sauvegarde de l’instance en production comme ci-dessus : la base de données, puis les médias.
-2. Sur une autre machine ou dans un autre projet Compose, restaurez-la avec la KEK et la configuration issues de l’endroit où vous les conservez
-   (et non copiées depuis le serveur en production), et avec `host` inchangé pour que les URL des acteurs correspondent.
-3. Ne laissez pas la copie se fédérer : gardez-la hors d’internet, ou activez le mode maintenance une fois les vérifications ci-dessous réussies.
-4. Parcourez [Démarrage et vérification](#starting-and-checking) : connexion, publications et médias, et la `publicKey` de quelques acteurs comparée à celle de l’instance en production.
-5. Démarrez-la une fois sans la KEK et une fois avec une autre, et vérifiez qu’elle échoue comme le décrit [Sans la bonne KEK](#without-the-right-kek).
-6. Notez la durée de chaque étape : c’est la durée pendant laquelle une vraie restauration maintient l’instance à l’arrêt.
+2. Sur une autre machine ou dans un autre projet Compose, restaurez-la avec la KEK et la configuration depuis l’endroit où vous les conservez (pas copiées depuis le serveur en production), et avec `host` inchangé pour que les URL des acteurs correspondent.
+3. Ne laissez pas la copie se fédérer. Définissez `role = web`, qui n’exécute aucun worker de tâches : les tâches restaurées avec la base de données incluent des envois qui étaient dus au moment de la sauvegarde, et une copie qui les exécute les signe avec les clés des vrais acteurs et les renvoie à d’autres serveurs. Garder la copie hors d’Internet ne suffit pas, car c’est difficile à garantir. Activez le mode de maintenance une fois les vérifications ci-dessous réussies si vous la laissez en marche.
+4. En dehors de Compose, par exemple sur une machine locale face à une instance cloud, donnez à la copie ces réglages afin qu’elle ne touche à rien de l’instance en production :
+
+   | Réglage | Valeur dans la copie | Pourquoi |
+   | --- | --- | --- |
+   | `role` | `web` | N’exécute aucune tâche ; rien de ce qui a été restauré n’est renvoyé |
+   | `queue` | `db` | Les tâches mises en file dans la copie restent dans sa base de données au lieu d’atteindre la file en production |
+   | `stream` | `postgres` | Ne rejoint pas le flux d’événements en production de l’instance |
+   | `mail` | `none` | N’envoie aucun e-mail à de vrais utilisateurs |
+   | le magasin de blobs | un nouveau bucket (ou répertoire) contenant les médias restaurés | Laisse intact le bucket en production |
+   | `database_url` | la base de données restaurée | Jamais celle en production |
+   | la KEK (`MY_KEK`, ou `key_manager` et `kms_key`) | comme en production, depuis l’endroit où vous la conservez | Sans elle, la copie ne démarre pas |
+   | `host` | comme en production | Pour que les URL des acteurs correspondent |
+
+5. Parcourez [Démarrage et vérification](#starting-and-checking) : connexion, publications et médias, et la `publicKey` de quelques acteurs comparée à celle de l’instance en production.
+6. Démarrez-la une fois sans la KEK et une fois avec une autre, et vérifiez qu’elle échoue comme le décrit [Sans la bonne KEK](#without-the-right-kek).
+7. Notez la durée de chaque étape : c’est le temps pendant lequel une vraie restauration maintient l’instance à l’arrêt.

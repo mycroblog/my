@@ -35,6 +35,10 @@
     "defaultMessage": "{instance} : les publications de plus de {days, plural, one {# jour} other {# jours}} seront supprimées automatiquement {daysLeft, plural, =0 {dès maintenant} one {dans # jour} other {dans # jours}}",
     "description": "Web Push notification, and the subject of its email, telling a local user that the server's maximum of the automatic deletion of old posts now applies to their posts. {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.scheduled_status_failed": {
+    "defaultMessage": "{instance} : votre publication programmée n’a pas pu être publiée {reason, select, restricted {car votre compte ne peut pas publier pour le moment} reply_unavailable {car la publication à laquelle elle répond n’est plus disponible} quote_unavailable {car la publication qu’elle cite n’est plus disponible} media_unavailable {car un fichier joint n’est plus disponible} invalid {car elle ne respecte pas les conditions d’une publication} rejected {car l’examen automatisé du serveur l’a refusée} other {}}",
+    "description": "Web Push notification telling a local user that a post they scheduled could not be published at its time; the draft stays and can be fixed and scheduled again. {reason} says why: restricted (the account may not post now), reply_unavailable (the post it replies to is gone or does not take the reply), quote_unavailable (the post it quotes is gone or may not be quoted), media_unavailable (an attached file is gone or failed processing), invalid (the post does not pass the checks, such as its length), rejected (the server's automated review refused it). {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.appeal_decided": {
     "defaultMessage": "Les modérateurs de {instance} ont statué sur votre contestation",
     "description": "Web Push notification: the moderators upheld or overturned the user's appeal. {instance} is the server's display name, or its domain name when it has none."
@@ -50,6 +54,10 @@
   "push.favourite": {
     "defaultMessage": "{name} a ajouté votre publication à ses favoris",
     "description": "Web Push notification. {name} is the display name, or the @handle, of the account that favourited the user's post."
+  },
+  "push.filtered": {
+    "defaultMessage": "{title} (correspond à votre filtre « {filter} »)",
+    "description": "Web Push notification, and the subject of its email, about a post that one of the user's keyword filters with the action warn matched: it says what the notification is and names the filter instead of showing more. {title} is the usual text of the notification, such as “Alice mentioned you”; {filter} is the title of the filter, as the user wrote it."
   },
   "push.follow": {
     "defaultMessage": "{name} vous suit",
@@ -143,6 +151,10 @@
     "defaultMessage": "Un examen externe de {instance} échoue de façon répétée",
     "description": "Web Push notification to a moderator: calls of the external review of submissions keep failing. {instance} is the server's display name, or its domain name when it has none."
   },
+  "push.admin_domain_list_failing": {
+    "defaultMessage": "Un abonnement à une liste de blocage de {instance} échoue à répétition",
+    "description": "Web Push notification to a moderator: the fetches of a subscribed domain block list keep failing. {instance} is the server's display name, or its domain name when it has none."
+  },
   "push.admin_hook_appeal": {
     "defaultMessage": "Une publication refusée a été contestée auprès des modérateurs de {instance}",
     "description": "Web Push notification to a moderator: a user appealed a post that the server's automated review refused, and the appeal awaits review. {instance} is the server's display name, or its domain name when it has none."
@@ -162,5 +174,57 @@
   "push.voice_room_invited": {
     "defaultMessage": "{name} vous a invité à un salon vocal",
     "description": "Web Push notification: the host or a co-host of a voice chat room invited the user to it. {name} is the display name, or the @handle, of the account that invited the user."
+  },
+  "push.reply_request": {
+    "defaultMessage": "{name} a demandé à répondre à votre publication",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account whose reply to the user's post waits for the user's approval."
+  },
+  "push.boost_request": {
+    "defaultMessage": "{name} a demandé à booster votre publication",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account whose boost of the user's post waits for the user's approval."
+  },
+  "push.quote_request": {
+    "defaultMessage": "{name} a demandé à citer votre publication",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the account whose quote of the user's post waits for the user's approval."
+  },
+  "push.interaction_accepted": {
+    "defaultMessage": "{name} a approuvé votre interaction avec sa publication",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the author of a post who approved the user's reply to it, boost of it, or quote of it."
+  },
+  "push.interaction_rejected": {
+    "defaultMessage": "{name} a refusé votre interaction avec sa publication",
+    "description": "Web Push notification. {name} is the display name, or the @handle, of the author of a post who declined the user's reply to it, boost of it, or quote of it."
+  },
+  "push.event_invited": {
+    "defaultMessage": "{name} vous a invité à {title}",
+    "description": "Web Push notification, and the subject of its email, telling a local user that someone invited them to an event of the server. {name} is the display name, or the @handle, of the account that invited them. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_schedule_confirmed": {
+    "defaultMessage": "La date de {title} est fixée",
+    "description": "Web Push notification, and the subject of its email, telling a local user who answered the date poll of an event, or who was invited to it, that its organizers fixed the date. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_changed": {
+    "defaultMessage": "La date ou le lieu de {title} a changé",
+    "description": "Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that the organizers changed the date, the places, or the voice chat room of an event. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_cancelled": {
+    "defaultMessage": "{title} a été annulé",
+    "description": "Web Push notification, and the subject of its email, telling a local user who is going, may go, or was invited that an event was cancelled. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_reminder": {
+    "defaultMessage": "{unit, select, day {{count, plural, one {{title} commence dans # jour} other {{title} commence dans # jours}}} hour {{count, plural, one {{title} commence dans # heure} other {{title} commence dans # heures}}} other {{count, plural, one {{title} commence dans # minute} other {{title} commence dans # minutes}}}}",
+    "description": "Web Push notification, and the subject of its email, reminding a local user who is going or may go to an event that it starts soon, at the time before the start that the user chose. {unit} is day, hour, or minute, and {count} how many of them before the start. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_started": {
+    "defaultMessage": "{title} commence",
+    "description": "Web Push notification, and the subject of its email, telling a local user who is going or may go to an event that it starts now. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_room_unavailable": {
+    "defaultMessage": "Le salon vocal de {title} ne peut pas s’ouvrir",
+    "description": "Web Push notification, and the subject of its email, telling the organizer of an event that its voice chat room cannot open, or could not, for example because the voice chat is off. The event itself stays. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none."
+  },
+  "push.event_untitled": {
+    "defaultMessage": "un événement",
+    "description": "Words for an event without a title (its organizer's account was erased), in place of {title} in the Web Push notifications of the events, such as “The date of an event is set”."
   }
 }

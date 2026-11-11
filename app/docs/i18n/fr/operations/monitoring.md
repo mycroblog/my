@@ -5,37 +5,46 @@ Comment pointer une sonde de disponibilité vers le serveur, comment éviter que
 
 Les informations de tiers ci-dessous portent la date à laquelle elles ont été confirmées et leur source. Les services changent leurs offres et leurs écrans ; consultez la page liée avant de vous fier à une limite.
 
-<!-- source: which-url-to-monitor 50bdaa5c9f31 -->
+<!-- source: which-url-to-monitor 1c5761757c52 -->
 ## Quelle URL surveiller
 
-| Chemin | Usage | Sollicite la base de données | En mode maintenance |
+| Chemin | Pour | Touche la base de données | En mode de maintenance |
 | --- | --- | --- | --- |
-| `GET /api/v1/instance/health` | Sondes de disponibilité, pages de statut, client web | Au plus une fois par 60 s et par processus | `503` avec `Retry-After` et `{"status":"maintenance"}` |
-| `GET /healthz` | Sonde de vivacité de la plateforme | Jamais | `200` `{"status":"maintenance"}` |
-| `GET /readyz` | Sonde de disponibilité du répartiteur de charge ou de Kubernetes | À chaque requête (les requêtes simultanées partagent un seul contrôle) | `200` `{"status":"maintenance"}` |
+| `GET /api/v1/instance/health` | Moniteurs de disponibilité, pages d’état, client web | Au plus une fois toutes les 60 s par processus | `503` avec `Retry-After` et `{"status":"maintenance"}` |
+| `GET /healthz`, `GET /health/live` | La sonde de vivacité de la plateforme | Jamais | `200` `{"status":"maintenance"}` |
+| `GET /readyz`, `GET /health/ready` | La sonde de disponibilité du répartiteur de charge ou de Kubernetes | À chaque requête (les requêtes simultanées partagent une seule vérification) | `200` `{"status":"maintenance"}` |
 
-Pointez la sonde externe vers **`/api/v1/instance/health`**, pas vers `/readyz` : `/readyz` interroge la base de données à chaque requête, de sorte qu’une sonde à intervalle court empêche une base de données qui passe à zéro de s’endormir. Les sondes sont destinées à votre plateforme. Les modules [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) et [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) contrôlent `/readyz` depuis la surveillance propre à la plateforme à un intervalle long, et leurs README indiquent ce que cela coûte.
+Faites pointer le moniteur externe vers **`/api/v1/instance/health`**, pas vers `/readyz` (`/health/ready`) : celui-ci interroge la base de données à chaque requête ; un moniteur à court intervalle garde donc éveillée une base de données qui descend à zéro. Les sondes sont destinées à votre plateforme.
+Les modules [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) et [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) vérifient `/health/live` (`monitoring-gcp`) ou `/readyz` (`monitoring-aws`) depuis le moniteur propre à la plateforme, à un long intervalle, et leurs README indiquent ce que cela coûte.
 
 Réponses de `/api/v1/instance/health` (sans authentification, `Cache-Control: no-store`) :
 
 | État | HTTP | Corps |
 | --- | --- | --- |
-| En bonne santé | `200` | `{"status":"ok","checked_at":"<RFC 3339>"}` |
-| Indisponible (la base de données est injoignable ou le schéma n’est pas appliqué) | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
-| Mode maintenance | `503` avec `Retry-After` | `{"status":"maintenance"}` |
+| Sain | `200` | `{"status":"ok","checked_at":"<RFC 3339>"}` |
+| Indisponible (la base de données est inaccessible ou le schéma n’est pas appliqué) | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
+| Mode de maintenance | `503` avec `Retry-After` | `{"status":"maintenance"}` |
 
-`/healthz` et `/readyz` répondent `200` avec `{"status":"ok"}` lorsque tout va bien, et `/readyz` répond `503` avec un document de problème lorsque la base de données n’est pas prête. Le corps ne contient jamais de raison, de nom d’hôte ni de version. La cause figure dans le journal du serveur.
+`/healthz` et `/readyz` répondent `200` avec `{"status":"ok"}` lorsque tout va bien, et `/readyz` répond `503` avec un document de problème lorsque la base de données n’est pas prête. `/health/live` et `/health/ready` sont les mêmes vérifications sous d’autres noms.
 
-`checked_at` est l’heure du contrôle sur lequel la réponse se base. Le serveur exécute le contrôle de la base de données au plus une fois par minute et par processus et réutilise le résultat, de sorte qu’une sonde qui interroge plus souvent que toutes les 60 s voit le même `checked_at` et n’y gagne rien. Avec plusieurs processus, chacun exécute son propre contrôle.
+**Sur Cloud Run, appelez les chemins qui ne se terminent pas par `z`.** Cloud Run réserve certains chemins qui se terminent par `z` et y répond par son propre `404` avant qu’une requête n’atteigne le conteneur : `/healthz` en fait partie, et rien ne promet que `/readyz` continuera de répondre. Depuis l’extérieur d’un déploiement Cloud Run (un moniteur de disponibilité, `curl`), utilisez `/health/live`, `/health/ready` ou `/api/v1/instance/health`. Les sondes du conteneur lui-même ne sont pas concernées.
+Le corps ne porte jamais de raison, de nom d’hôte ni de version. La cause se trouve dans le journal du serveur.
 
-Lorsque [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) est défini, ces trois chemins répondent quand même sans l’en-tête, et ne montrent donc pas que le CDN l’a perdu. Surveillez aussi une page à travers le CDN, par exemple `https://<host>/about`, si une sonde est votre premier signe de problème.
+`checked_at` est l’heure de la vérification sur laquelle la réponse repose. Le serveur exécute la vérification de la base de données au plus une fois par minute et par processus et réutilise le résultat ; un moniteur qui interroge plus souvent que toutes les 60 s voit donc le même `checked_at` et n’y gagne rien. Avec plusieurs processus, chacun exécute sa propre vérification.
 
-<!-- source: keep-the-monitoring-cheap 29d1da3d6dc2 -->
+Lorsque [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) est défini, ces trois chemins répondent toujours sans l’en-tête ; ils ne montrent donc pas que le CDN l’a perdu. Surveillez aussi une page passant par le CDN, comme `https://<host>/about`, si un moniteur est votre premier signe de problème.
+
+<!-- source: keep-the-monitoring-cheap d7956dee97ca -->
 ## Garder la surveillance peu coûteuse
 
-- **Bases de données qui passent à zéro.** Si l’intervalle de la sonde est plus court que le délai avant l’arrêt de la base de données, celle-ci ne s’arrête jamais. Neon suspend un calcul après 5 minutes sans activité ; l’offre Free ne permet pas de le désactiver (confirmé le 2026-10-25, [Neon: Scale to zero](https://neon.com/docs/introduction/scale-to-zero)). En règle générale, un intervalle de 5 minutes ou plus permet à une base de données inactive de s’arrêter entre deux contrôles, et chaque contrôle la réveille pour la durée du contrôle plus le délai d’inactivité. Un serveur fédéré reçoit des livraisons d’autres serveurs en permanence, donc sa base de données est de toute façon éveillée une bonne partie de la journée ; le surcoût se limite aux heures creuses.
-- **Préférez une répartition moins chère si le coût à l’arrêt compte le plus.** Surveillez `/healthz` (qui ne touche jamais la base de données) à un intervalle court, et `/api/v1/instance/health`, qui s’appuie sur la base de données, à un intervalle long (15 minutes ou plus). `/healthz` répond aussi `200` pendant le mode maintenance, donc recherchez `"status":"ok"` dans le corps.
-- **Les requêtes elles-mêmes sont légères.** Un contrôle toutes les 5 minutes représente environ 8 640 requêtes par mois, un contrôle par minute environ 43 200. Cela tient dans l’offre gratuite de Cloud Run (2 millions de requêtes, 180 000 vCPU-secondes et 360 000 GiB-secondes par mois ; durée arrondie à 100 ms ; confirmé le 2026-10-23, [Cloud Run pricing](https://cloud.google.com/run/pricing)).
+- **Bases de données qui descendent à zéro.** Si l’intervalle du moniteur est plus court que le temps que la base de données attend avant de s’arrêter, la base de données ne s’arrête jamais.
+  Neon suspend un calcul après 5 minutes sans activité ; la formule Free ne peut pas le désactiver
+  (confirmé le 2026-10-25, [Neon : Scale to zero](https://neon.com/docs/introduction/scale-to-zero)).
+  En règle générale, un intervalle de 5 minutes ou plus permet à une base de données inactive de s’arrêter entre les vérifications, et chaque vérification la réveille pendant la durée de la vérification plus le temps d’inactivité.
+  Un serveur fédéré reçoit des envois d’autres serveurs jour et nuit ; sa base de données est donc éveillée une bonne partie de la journée de toute façon ;
+  le surcoût se limite aux heures calmes.
+- **Préférez une répartition moins coûteuse si le coût au repos compte le plus.** Surveillez `/health/live` (qui ne touche jamais la base de données) à un court intervalle, et `/api/v1/instance/health`, qui s’appuie sur la base de données, à un long intervalle (15 minutes ou plus). `/health/live` répond aussi `200` pendant le mode de maintenance ; vérifiez donc `"status":"ok"` dans le corps.
+- **Les requêtes elles-mêmes sont légères.** Une vérification toutes les 5 minutes représente environ 8 640 requêtes par mois, une toutes les minutes environ 43 200. Cela tient dans l’offre gratuite de Cloud Run (2 millions de requêtes, 180 000 vCPU-secondes et 360 000 GiB-secondes par mois ; durée arrondie à 100 ms ; confirmé le 2026-10-23, [tarifs de Cloud Run](https://cloud.google.com/run/pricing)).
 
 <!-- source: telling-the-maintenance-mode-from-an-outage 15833e5da3fc -->
 ## Distinguer le mode maintenance d’une panne

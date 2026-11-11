@@ -28,16 +28,18 @@ La défaillance d’un service extérieur (e-mail, stockage, paiements, voix) n�
 
 Une panique dans une tâche de fond arrête le processus après avoir été signalée, de sorte que le serveur ne continue jamais à tourner dans un état défaillant. Votre plateforme le redémarre.
 
-<!-- source: the-log-line 6b570d0bfd09 -->
+<!-- source: the-log-line ef6f03400831 -->
 ## La ligne de journal
 
-La ligne a `msg` = `error report` et `level` `ERROR` (`severity` vaut `CRITICAL` quand la défaillance arrête le processus).
-Ses champs, et ce que le nettoyage leur fait, sont décrits dans [Exécuter le serveur](running.md#error-reports). En bref :
+La ligne a `msg` = `error report` et `level` `ERROR` (`severity` vaut `CRITICAL` lorsque l’échec arrête le processus).
+Ses champs, et ce que fait le nettoyage sur eux, sont décrits dans [Exécuter le serveur](running.md#error-reports). En bref :
 
-- `my.error.fingerprint` est identique pour toutes les occurrences d’une même erreur. Recherchez ou groupez par ce champ.
+- `my.error.fingerprint` est identique pour chaque occurrence de la même erreur. Recherchez ou regroupez par ce champ.
 - `my.error.where` indique où cela s’est produit, par exemple `client_api GET /api/v1/statuses/{id}`.
 - `request_id`, `job_id`, `trace_id` et `span_id` permettent de retrouver les autres lignes de la même requête ou de la même tâche.
+- La ligne d’une erreur de requête contient `context.httpRequest` : la méthode, la route sous forme d’URL (`/api/v1/statuses/{id}`, jamais le chemin demandé par le client) et le statut répondu. Error Reporting les affiche sur le groupe et peut filtrer par ces valeurs.
 - `message` est en dernier sur la ligne : le type et le message de l’erreur, un saut de ligne, puis la pile Go.
+- La pile commence là d’où l’erreur provient, pas là où elle a été signalée : pour une erreur de base de données, la fonction du serveur qui a exécuté la requête. Les erreurs de lieux différents tombent donc dans des groupes différents, aussi bien dans Error Reporting que dans l’écran d’administration.
 
 Aucune autre ligne ne porte de pile.
 

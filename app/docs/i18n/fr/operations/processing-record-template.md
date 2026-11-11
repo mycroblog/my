@@ -97,16 +97,16 @@ Ces noms sont utilisés dans les activités ci-dessous. Listez chacun de ceux qu
 | Effacement | Adresses IP d’inscription `{{180 days}}`, origines de connexion `{{180 days}}`, compteurs dans un délai de deux fois la fenêtre de la limite, blocages d’inscription 30 jours après la levée ou l’expiration. Suspendu par une conservation obligatoire |
 | Base juridique | {{e.g. legitimate interests}} |
 
-<!-- source: 3-publishing-and-social-features 5e271f0279f9 -->
+<!-- source: 3-publishing-and-social-features 33e1e1657705 -->
 ### 3. Publication et fonctionnalités sociales
 
 | | |
 | --- | --- |
 | Finalités | Publier des profils et des publications, et les interactions que les personnes demandent |
-| Personnes concernées | Les personnes ayant un compte, les personnes qu’elles mentionnent |
-| Données personnelles | Profil et ses versions, publications et leurs versions, médias, favoris, réactions, boosts, marque-pages, épingles, votes de sondage, abonnements, blocages, mises en sourdine, listes. Les publications peuvent contenir toute donnée qu’une personne écrit, y compris des catégories particulières. `{{IF post review}}` Le texte d’une publication refusée que son auteur envoie avec une contestation |
-| Destinataires | Hébergement, CDN, service d’examen des médias (une petite copie traitée de chaque téléversement), autres utilisateurs, le web public pour le contenu public, serveurs fédérés (activité 4), moteurs de recherche et robots d’IA selon `search_indexing` et `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, applications que la personne a autorisées, `{{IF post review}}` le service d’examen des publications pour les publications `public`, `local` et `unlisted` des nouveaux comptes et leurs modifications (leur texte tel que saisi et tel que rendu, avertissement de contenu, langue, indicateur de contenu sensible, options de sondage, descriptions d’images, hashtags et nombre de mentions, leur adresse et les adresses des publications auxquelles elles répondent ou qu’elles citent, l’adresse et le nom d’utilisateur de l’auteur, et la date de création du compte ; aucun média), `{{IF profile review}}` le service d’examen des profils pour les modifications de profil des nouveaux comptes (le nom d’affichage, la biographie telle que saisie et telle que rendue, les champs du profil, si l’avatar ou l’en-tête a changé, l’adresse et le nom d’utilisateur du compte, et la date de création du compte ; aucune image) |
-| Effacement | Lorsque la personne la supprime, par sa politique de suppression automatique, ou lors de l’effacement du compte. `{{IF auto_delete_max_age_days}}` Au plus `{{auto_delete_max_age_days}}` jours après la publication, pour les comptes sans `keep_posts_longer`. Téléversements rattachés à rien `{{24 hours}}`. Anciennes versions d’images après qu’une version plus récente les remplace `{{30 days}}`. L’enregistrement de l’URI d’une publication supprimée reste. `{{IF post review}}` Un contestation disparaît avec sa décision (`hook_decisions_retention_days`, conservé tant qu’il peut faire l’objet d’une contestation ou attend un examen) ou lors de l’effacement du compte |
+| Personnes concernées | Les personnes qui ont un compte, les personnes qu’elles mentionnent |
+| Données personnelles | Profil et ses versions, hashtags mis en avant, publications et leurs versions, médias, favoris, réactions, boosts, marque-pages, épingles, votes aux sondages, abonnements, hashtags suivis, blocages, mises en sourdine, listes, filtres de mots-clés, notes privées sur des comptes. Les publications peuvent contenir toute donnée qu’une personne écrit, y compris des catégories particulières. `{{IF post review}}` Le texte d’une publication refusée que son auteur envoie avec une contestation |
+| Destinataires | Hébergement, CDN, service d’examen des médias (une petite copie traitée de chaque téléversement), autres utilisateurs, le web public pour le contenu public, serveurs fédérés (activité 4), moteurs de recherche et robots d’IA selon `search_indexing` et `ai_usage`, `{{the operator of the full-text search engine, if another company runs it}}`, applications que la personne a autorisées, `{{IF post review}}` le service d’examen des publications pour les publications `public`, `local` et `unlisted` des nouveaux comptes et leurs modifications (leur texte tel que saisi et tel que rendu, avertissement de contenu, langue, indicateur sensible, options de sondage, descriptions d’images, hashtags et nombre de mentions, leur adresse et celles des publications auxquelles elles répondent ou qu’elles citent, l’adresse et le nom d’utilisateur de l’auteur, et la date de création du compte ; aucun média), `{{IF profile review}}` le service d’examen des profils pour les modifications de profil des nouveaux comptes (le nom affiché, la biographie telle que saisie et telle que rendue, les champs de profil, si l’avatar ou l’en-tête a changé, l’adresse et le nom d’utilisateur du compte, et la date de création du compte ; aucune image) |
+| Effacement | Lorsque la personne la supprime, selon sa politique de suppression automatique, ou à l’effacement du compte. `{{IF auto_delete_max_age_days}}` Au plus `{{auto_delete_max_age_days}}` jours après la publication, pour les comptes sans `keep_posts_longer`. Téléversements rattachés à rien `{{24 hours}}`. Anciennes versions d’images après qu’une version plus récente les remplace `{{30 days}}`. L’enregistrement de l’URI d’une publication supprimée reste. `{{IF post review}}` Une contestation part avec sa décision (`hook_decisions_retention_days`, conservée tant qu’elle peut être contestée ou qu’elle attend un examen) ou à l’effacement du compte |
 | Base juridique | {{e.g. contract}} |
 
 <!-- source: 4-federation 795a56004c37 -->
@@ -133,16 +133,16 @@ Ces noms sont utilisés dans les activités ci-dessous. Listez chacun de ceux qu
 | Effacement | Publications `{{90 days}}` lorsque rien ici n’y fait référence, `{{7 days}}` lorsque seul un relais les a apportées, et `{{no limit}}` pour toute autre publication. Copies de médias `{{not kept}}`. Vérifications d’identifiants 90 jours. Tout ce qui concerne un compte 7 jours après sa suppression par son serveur, ou jusqu’à 30 jours lorsque seul un `410 Gone` l’a indiqué et que le serveur ne répond plus. Son URI et son domaine restent |
 | Base juridique | {{e.g. legitimate interests}} |
 
-<!-- source: 6-notifications ad34beea6ab2 -->
+<!-- source: 6-notifications 3a5f63da6e4b -->
 ### 6. Notifications
 
 | | |
 | --- | --- |
 | Finalités | Informer les personnes de l’activité et de leur compte, par e-mail et Web Push |
-| Personnes concernées | Les personnes ayant un compte, les personnes nommées dans une notification |
-| Données personnelles | Notifications et marqueurs de lecture, paramètres de notification, adresse e-mail, texte de chaque e-mail, enregistrements de rebonds et de plaintes, adresse et clés Web Push, abonnements aux publications |
-| Destinataires | Hébergement, fournisseur d’e-mail, services push (le corps du message est chiffré, et ils le conservent jusqu’à 48 heures) |
-| Effacement | Lors de l’effacement du compte, ou avec la publication concernée. Web Push : aussi lorsque la personne ou le service push y met fin. Le fournisseur d’e-mail : {{ITS PERIOD}} |
+| Personnes concernées | Les personnes qui ont un compte, les personnes nommées dans une notification |
+| Données personnelles | Notifications et marqueurs de lecture, réglages de notification, la politique de notifications avec les demandes de notifications acceptées et écartées, adresse e-mail, texte de chaque e-mail, enregistrements de bounces et de plaintes, adresse et clés Web Push, abonnements aux publications |
+| Destinataires | Hébergement, fournisseur d’e-mail, services de poussée (le corps du message est chiffré, et ils le conservent jusqu’à 48 heures) |
+| Effacement | À l’effacement du compte, ou avec la publication dont elles parlent. Web Push : aussi lorsque la personne ou le service de poussée y met fin. Le fournisseur d’e-mail : {{ITS PERIOD}} |
 | Base juridique | {{e.g. contract, legitimate interests}} |
 
 <!-- source: 7-moderation-and-audit d72a42b6312e -->
@@ -185,18 +185,18 @@ Supprimez cette activité lorsque `voice = off`.
 | Effacement | Participants `{{90 days}}` après la fin du salon, ou aussi longtemps qu’un signalement le concernant. Les salons restent, avec le nom et la description vidés lors de l’effacement de l’auteur. Chez les services : {{THEIR PERIOD}} |
 | Base juridique | {{e.g. contract, legitimate interests}} |
 
-<!-- source: 10-supporter-payments 99d64d001780 -->
+<!-- source: 10-supporter-payments 66328ed833a1 -->
 ### 10. Paiements de soutien
 
 Supprimez cette activité lorsque `payments = none`.
 
 | | |
 | --- | --- |
-| Finalités | Encaisser les souscriptions, attribuer des rôles, comptabilité |
-| Personnes concernées | Les souscripteurs |
-| Données personnelles | Identifiants d’objets chez le fournisseur, montants, périodes, états, remboursements, rétrofacturations, le choix d’être listé. Adresse e-mail envoyée au fournisseur. Aucun numéro de carte, quatre derniers chiffres ou date d’expiration |
-| Destinataires | Hébergement, fournisseur de paiement, personnes qui peuvent voir la liste des personnes soutenant le serveur, équipe disposant de la permission correspondante |
-| Effacement | Accusés de réception de webhooks 45 jours. Le lien client et l’inscription sur la liste lors de l’effacement du compte. Les enregistrements de souscriptions et de paiements n’ont pas de fin automatique : {{PERIOD AND THE LAW THAT REQUIRES IT}}. Chez le fournisseur : {{ITS PERIOD, AND WHETHER YOU DELETE THE CUSTOMER}} |
+| Finalités | Prendre des souscriptions et des pourboires, attribuer des rôles, tenir la comptabilité |
+| Personnes concernées | Les souscripteurs, les utilisateurs qui donnent un pourboire |
+| Données personnelles | Identifiants d’objets du fournisseur, montants, périodes, états, remboursements, rétrofacturations, le choix d’être listé, les pourboires et leurs paiements. Adresse e-mail envoyée au fournisseur. Aucun numéro de carte, quatre derniers chiffres ni date d’expiration |
+| Destinataires | Hébergement, prestataire de paiement, personnes qui peuvent voir la liste des soutiens, personnel disposant de la permission correspondante |
+| Effacement | Reçus de webhooks 45 jours. Le lien client, l’inscription sur la liste et les pourboires à l’effacement du compte (leurs revenus restent sans l’utilisateur). Les enregistrements de souscriptions et de paiements n’ont pas de fin automatique : {{PERIOD AND THE LAW THAT REQUIRES IT}}. Chez le fournisseur : {{ITS PERIOD, AND WHETHER YOU DELETE THE CUSTOMER}} |
 | Base juridique | {{e.g. contract, legal obligation}} |
 
 <!-- source: 11-running-the-service 9c89577f9cee -->
@@ -224,6 +224,18 @@ Supprimez cette activité lorsque `translation_providers` est vide.
 | Destinataires | Fournisseurs de traduction, en tant que vos sous-traitants : publications `public`, `local` et `unlisted` par défaut. {{IF translation to private and direct}} Aussi les publications `private` et `direct`, pour {{THE PROVIDERS YOU ALLOWED}}. {{IF translation of reports}} Les commentaires des signalements, pour les fournisseurs autorisés pour les publications `private`, et les publications que les signalements nomment, lorsqu’un modérateur le demande |
 | Effacement | Traductions `{{30 days}}` après la traduction, et avec la publication lorsqu’elle est supprimée. Caractères par compte jusqu’à la fin du mois suivant, ou lors de l’effacement du compte. Chez les fournisseurs : ce qui a été envoyé ne peut pas être rappelé. {{THEIR PERIODS}} |
 | Base juridique | {{e.g. legitimate interests}} |
+
+<!-- source: 13-events 3f83323d2455 -->
+### 13. Événements
+
+| | |
+| --- | --- |
+| Finalités | Planifier les événements des utilisateurs locaux, avec leurs dates, dates candidates, lieux, invitations et réponses, et informer les personnes concernées de leurs changements et de leur début |
+| Personnes concernées | Les organisateurs, les co-organisateurs, les utilisateurs invités et les participants |
+| Données personnelles | Titre, description, date, fuseau horaire et lieux (l’adresse d’un lieu de rendez-vous, un lien) de chaque version d’un événement ; organisateurs et co-organisateurs ; dates candidates et la réponse de chaque utilisateur à celles-ci ; invitations ; réponses et leur approbation ; annulations avec leur motif ; combien de temps avant un événement chaque utilisateur reçoit un rappel. Les événements ne sont pas fédérés |
+| Destinataires | Hébergement, les utilisateurs locaux qui voient l’événement (l’adresse et le lien uniquement pour les participants approuvés, sauf si l’organisateur les montre à tous), et le fournisseur d’e-mail pour les e-mails de notification, qui donnent le titre, le début et les organisateurs et jamais les lieux |
+| Effacement | Le titre, la description et les lieux des versions qu’un compte a écrites, ainsi que ses heures de rappel, à son effacement. Invitations, réponses, leur approbation et votes sur les dates candidates {{90 days}} après que l’événement s’est terminé ou a été annulé (`event_records_retention_days`), plus longtemps tant qu’un signalement pointe vers l’événement ou qu’une conservation couvre un compte qu’ils nomment. Les événements, leurs dates et leurs dates candidates n’ont pas de fin automatique : {{PERIOD}} |
+| Base juridique | {{e.g. contract, legitimate interests}} |
 
 <!-- source: security-measures-article-301g 756bb9e562e3 -->
 ### Mesures de sécurité (article 30, paragraphe 1, point g)

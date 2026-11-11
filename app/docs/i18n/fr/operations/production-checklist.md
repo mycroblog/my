@@ -50,19 +50,19 @@ Exécutez `my config check` dans le même environnement que le serveur (mêmes v
 - **Vérifier** : `my config check` affiche `host` et `account_domain` et signale un domaine que les autres serveurs ne peuvent pas joindre. `my config check -instance` échoue aussi lorsqu’ils diffèrent des valeurs de la base de données, et n’enregistre rien. Avec un domaine d’identifiants distinct, `curl -sI "https://<account_domain>/.well-known/webfinger?resource=acct:<user>@<account_domain>"` répond `301` vers `https://<host>/.well-known/webfinger?...`.
 - **Détails** : [exécuter le serveur](running.md) (les points de terminaison de fédération et la publication des identifiants depuis un autre domaine), [`host`](../reference/configuration.md#host) et [`account_domain`](../reference/configuration.md#account_domain).
 
-<!-- source: reachable-over-https 1cf53c613f7b -->
+<!-- source: reachable-over-https b7513cc3534f -->
 ### Joignable en `https`
 
 - **Pourquoi** : les autres serveurs récupèrent les identifiants à `https://<host>/` sur le port 443, et les navigateurs n’envoient les cookies de connexion qu’en `https`.
-- **Vérifier** : `curl -sI https://<host>/healthz` répond `200` depuis l’extérieur de votre réseau avec un certificat valide pour `host`, et `my config check` ne signale aucune erreur à propos de `web_origin`. `http://<host>/` redirige vers `https`, ce que font le proxy inverse, le répartiteur de charge ou le CDN placé devant le serveur (avec Docker Compose, la couche `compose.caddy.yaml` est un tel proxy).
+- **Vérifier** : `curl -sI https://<host>/health/live` répond `200` depuis l’extérieur de votre réseau avec un certificat valide pour `host`, et `my config check` ne signale aucune erreur à propos de `web_origin`. `http://<host>/` redirige vers `https`, ce que fait le proxy inverse, le répartiteur de charge ou le CDN placé devant le serveur (avec Docker Compose, la couche `compose.caddy.yaml` est un tel proxy).
 - **Détails** : [exécuter le serveur](running.md), [`web_origin`](../reference/configuration.md#web_origin).
 
-<!-- source: not-reachable-past-the-cdn 58310b9f29d7 -->
+<!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### Non joignable en contournant le CDN
 
-- **Pourquoi** : avec un CDN devant, et l’adresse propre du serveur toujours publique (`*.run.app` sur Cloud Run), n’importe qui peut appeler le serveur en contournant le WAF et le cache, et un appelant situé sur la plateforme même du CDN peut choisir l’IP client que voient les limites de débit. Nécessaire uniquement dans ce cas : pas lorsqu’un pare-feu ou la plateforme limite déjà qui peut se connecter, et sans CDN il n’y a rien à contourner.
-- **Vérifier** : `origin_secret` et `origin_secret_header` sont définis et le CDN place l’en-tête sur chaque nom d’hôte. `curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/` répond `403`, son `/healthz` répond `200`, et `https://<host>/` répond `200`.
-- **Détails** : [Refuser les requêtes qui ne sont pas passées par le CDN](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), y compris comment s’en sortir lorsque cela enferme tout le monde dehors.
+- **Pourquoi** : avec un CDN devant, et l’adresse propre du serveur toujours publique (`*.run.app` sur Cloud Run), n’importe qui peut appeler le serveur en contournant le WAF et le cache, et un appelant sur la plateforme même du CDN peut choisir l’IP cliente que voient les limites de débit. Nécessaire uniquement dans ce cas : pas lorsqu’un pare-feu ou la plateforme limite déjà qui peut se connecter, et sans CDN il n’y a rien à contourner.
+- **Vérifier** : `origin_secret` et `origin_secret_header` sont définis et le CDN définit l’en-tête sur chaque nom d’hôte. `curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/` répond `403`, son `/health/live` répond `200`, et `https://<host>/` répond `200`.
+- **Détails** : [Refuser les requêtes qui ne sont pas passées par le CDN](cdn.md#refuse-requests-that-did-not-come-through-the-cdn), y compris comment récupérer lorsqu’il verrouille tout le monde.
 
 <!-- source: secrets ec71f1f20574 -->
 ## Secrets
@@ -127,14 +127,17 @@ Les paramètres d’instance résident dans la base de données et peuvent être
   - Seules les personnes qui en ont besoin détiennent le rôle `admin` ; les modérateurs détiennent `moderator` ou un rôle avec uniquement les permissions qu’ils utilisent. Listez-les avec `my admin role` et passez-les en revue dans les écrans d’administration.
 - **Détails** : [administrateurs et rôles](admin-cli.md), [modération](moderation.md) (permissions et récupération de connexion).
 
-<!-- source: operations 56bd643c2241 -->
+<!-- source: operations aac00b13fc38 -->
 ## Exploitation
 
-- **Sauvegardes et restauration** : la base de données, le stockage de blobs (`blob_fs_dir` ou le bucket) et la KEK sont sauvegardés selon un calendrier, vers un emplacement distinct du serveur, et une restauration vers un serveur neuf a été répétée : le serveur restauré démarre et les comptes peuvent se connecter et publier. Une sauvegarde qui n’a jamais été restaurée n’est pas réputée fonctionner. La base de données et les médias ne doivent pas se trouver dans un répertoire temporaire ; `my config check` avertit lorsque c’est le cas. Voir [gestion des clés](key-management.md) (sauvegarder la KEK) et [base de données](database.md).
-- **Surveillance et alertes** : une sonde externe contrôle `/healthz` et alerte une personne en mesure d’agir, et les tâches mortes de la file de tâches sont surveillées. Voir [surveillance](monitoring.md) et [exécuter le serveur](running.md) (contrôles de santé, métriques et file de tâches).
-- **L’image** : l’instance exécute une image publiée épinglée par son empreinte (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, tirée des notes de version), et non une image qui change à un redémarrage, et [sa provenance a été vérifiée](running.md#verify-an-image). Il n’existe pas de balise `latest`. Une mise à niveau change cette version volontairement et suit [Mise à niveau](database.md#upgrading), une version mineure à la fois.
-- **Code source (AGPL-3.0)** : le serveur doit proposer son code source à toutes les personnes qui l’utilisent. Laissez [`source_url`](../reference/configuration.md#source_url) à sa valeur par défaut pour une version publiée non modifiée ; faites-le pointer vers votre propre source lorsque vous exécutez un fork ou une version modifiée. Vérifiez le lien sur `/about`. Voir [exécuter le serveur](running.md) (publier le code source).
-- **Maintenance** : sachez comment placer le serveur en mode maintenance avant d’en avoir besoin. Voir [maintenance](maintenance.md).
+- **Sauvegardes et récupération** : la base de données, le magasin de blobs (`blob_fs_dir` ou le bucket) et la KEK sont sauvegardés selon un calendrier, dans un endroit distinct du serveur, et une restauration vers un serveur neuf a été répétée : le serveur restauré démarre et les comptes peuvent se connecter et publier. On ne sait pas qu’une sauvegarde jamais restaurée fonctionne. La base de données et les médias ne doivent pas se trouver dans un répertoire temporaire ; `my config check` avertit lorsque c’est le cas.
+  Voir [gestion des clés](key-management.md) (sauvegarde de la KEK) et [base de données](database.md).
+- **Surveillance et alertes** : un moniteur externe vérifie `/health/live` et alerte une personne capable d’agir, et les tâches mortes de la file de tâches sont surveillées. Voir [surveillance](monitoring.md) et [exécuter le serveur](running.md) (vérifications d’état, métriques et file de tâches).
+- **L’image** : l’instance exécute une image publiée épinglée par condensat (`ghcr.io/mycroblog/my:0.1.0@sha256:...`, tirée des notes de la version), et non une image qui change à un redémarrage, et [sa provenance a été vérifiée](running.md#verify-an-image). Il n’y a pas de tag `latest`.
+  Une mise à niveau change cette version délibérément et suit [Mise à niveau](database.md#upgrading), une version mineure à la fois.
+- **Code source (AGPL-3.0)** : le serveur doit proposer son code source à toutes les personnes qui l’utilisent. Laissez [`source_url`](../reference/configuration.md#source_url) à sa valeur par défaut pour une version publiée non modifiée ; faites-le pointer vers votre propre code source lorsque vous exécutez un fork ou une version modifiée. Vérifiez le lien sur `/about`.
+  Voir [exécuter le serveur](running.md) (publier le code source).
+- **Maintenance** : sachez comment placer le serveur en mode de maintenance avant d’en avoir besoin. Voir [maintenance](maintenance.md).
 
 <!-- source: federation a5ab186ec04b -->
 ## Fédération

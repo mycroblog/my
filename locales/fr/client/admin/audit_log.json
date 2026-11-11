@@ -459,6 +459,18 @@
     "defaultMessage": "Programme de soutien désactivé",
     "description": "Kind of an audited operation: an administrator disabled the supporter program."
   },
+  "admin.audit_log.action.supporter_tips_enabled": {
+    "defaultMessage": "Pourboires activés",
+    "description": "Kind of an audited operation: an administrator enabled the tips, one-time payments to the server's operation."
+  },
+  "admin.audit_log.action.supporter_tips_revised": {
+    "defaultMessage": "Montants des pourboires modifiés",
+    "description": "Kind of an audited operation: an administrator changed the amounts that the tips offer."
+  },
+  "admin.audit_log.action.supporter_tips_disabled": {
+    "defaultMessage": "Pourboires désactivés",
+    "description": "Kind of an audited operation: an administrator disabled the tips."
+  },
   "admin.audit_log.action.supporter_plan_created": {
     "defaultMessage": "Formule de soutien créée",
     "description": "Kind of an audited operation: an administrator created a supporter plan."
@@ -615,6 +627,14 @@
     "defaultMessage": "Serveur marqué comme disponible",
     "description": "Kind of an audited operation: an operator cleared the delivery failures of a remote server, so that deliveries to it resume."
   },
+  "admin.audit_log.action.delivery_revealed": {
+    "defaultMessage": "Détails d’une distribution affichés",
+    "description": "Kind of an audited operation: a holder of manage_domains was shown the masked sender, activity URI, and inbox of one delivery to a remote server."
+  },
+  "admin.audit_log.action.account_deliveries_viewed": {
+    "defaultMessage": "Distributions d’un compte consultées",
+    "description": "Kind of an audited operation: a holder of manage_domains listed the deliveries of one local account to a remote server."
+  },
   "admin.audit_log.action.link_card_domain_rule_removed": {
     "defaultMessage": "Règle de cartes de lien supprimée",
     "description": "Kind of an audited operation: an administrator removed the rule of the link card crawler on a domain."
@@ -630,5 +650,53 @@
   "admin.audit_log.target_kind.login_provider": {
     "defaultMessage": "Fournisseur de connexion",
     "description": "Kind of target of an audited operation: an external identity provider that users sign in with, shown by its display name."
+  },
+  "admin.audit_log.action.domain_allow_added": {
+    "defaultMessage": "Serveur autorisé",
+    "description": "Kind of an audited operation: a moderator added a domain to the allowlist of federation, the only servers this server federates with while it federates by allowlist."
+  },
+  "admin.audit_log.action.domain_allow_removed": {
+    "defaultMessage": "Autorisation de serveur retirée",
+    "description": "Kind of an audited operation: a moderator removed a domain from the allowlist of federation; while the server federates by allowlist, this cuts the domain off as a suspension does."
+  },
+  "admin.audit_log.target_kind.domain_allow": {
+    "defaultMessage": "Serveur autorisé",
+    "description": "Kind of target of an audited operation: a domain of the allowlist of federation, shown by its domain name."
+  },
+  "admin.audit_log.action.domain_list_subscription_created": {
+    "defaultMessage": "Abonnement à une liste de blocage",
+    "description": "Kind of an audited operation: a moderator subscribed to a domain block list that another server or person publishes."
+  },
+  "admin.audit_log.action.domain_list_subscription_updated": {
+    "defaultMessage": "Abonnement à une liste de blocage modifié",
+    "description": "Kind of an audited operation: a moderator changed the settings of a subscription to a domain block list."
+  },
+  "admin.audit_log.action.domain_list_subscription_deleted": {
+    "defaultMessage": "Abonnement à une liste de blocage supprimé",
+    "description": "Kind of an audited operation: a moderator removed a subscription to a domain block list."
+  },
+  "admin.audit_log.action.domain_list_draft_accepted": {
+    "defaultMessage": "Modification de liste de blocage acceptée",
+    "description": "Kind of an audited operation: a moderator accepted a change that a subscribed domain block list proposed, which issued or lifted a domain action."
+  },
+  "admin.audit_log.action.domain_list_draft_rejected": {
+    "defaultMessage": "Modification de liste de blocage refusée",
+    "description": "Kind of an audited operation: a moderator rejected a change that a subscribed domain block list proposed."
+  },
+  "admin.audit_log.action.domain_list_fetch_queued": {
+    "defaultMessage": "Récupération de liste de blocage demandée",
+    "description": "Kind of an audited operation: a moderator asked the server to fetch a subscribed domain block list now."
+  },
+  "admin.audit_log.target_kind.domain_list_subscription": {
+    "defaultMessage": "Abonnement à une liste de blocage",
+    "description": "Kind of target of an audited operation: a subscription to a domain block list, shown by its title."
+  },
+  "admin.audit_log.action.event_cancelled": {
+    "defaultMessage": "Événement annulé",
+    "description": "Kind of an audited operation: a moderator cancelled an event."
+  },
+  "admin.audit_log.target_kind.event": {
+    "defaultMessage": "Événement",
+    "description": "Kind of target of an audited operation: an event of the local users, shown by its ID."
   }
 }

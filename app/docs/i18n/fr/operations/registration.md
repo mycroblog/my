@@ -81,10 +81,11 @@ Tant que le paramètre d’instance `login_providers_only` s’applique, les lie
 - Un utilisateur connecté peut changer le mot de passe sous « Mot de passe » dans les paramètres en saisissant le mot de passe actuel (les saisies erronées sont limitées à 5 par heure et par utilisateur).
 - Une réinitialisation ou un changement révoque les autres sessions et les jetons d’application de l’utilisateur (un changement depuis les paramètres ne conserve que l’application qui a fait le changement). Les clés d’accès et l’authentification à deux facteurs restent. Une connexion qui attend son code à deux facteurs, et une autorisation d’application pas encore terminée, cessent aussi de fonctionner : l’utilisateur les recommence. Avec `mail = smtp`, le serveur envoie aussi un e-mail à l’utilisateur pour indiquer que le mot de passe a changé.
 
-<!-- source: invite-codes 5f98f9eb7d6f -->
+<!-- source: invite-codes 441b486504dd -->
 ## Codes d’invitation
 
-Les invitations fonctionnent dans les modes `open`, `approval` et `invite`. Les invitations de l’équipe sont créées avec la CLI, les écrans de modération et l’API d’administration ci-dessous ; les membres peuvent aussi créer leurs propres invitations ([invitations des membres](#member-invites)). En mode `closed`, aucune invitation ne peut être créée et aucune ne fonctionne.
+Les invitations fonctionnent dans les modes `open`, `approval` et `invite`. Les invitations du personnel se créent avec la CLI, les écrans de modération et l’API d’administration ci-dessous ; les membres peuvent aussi créer leurs propres invitations ([invitations des membres](#member-invites)).
+En mode `closed`, aucune invitation ne peut être créée et aucune ne fonctionne.
 
 ```sh
 my invite create                          # single use, expires in 7 days
@@ -94,14 +95,18 @@ my invite list                            # newest first; states: usable / revok
 my invite revoke <code>
 ```
 
-- `create` affiche le code (16 caractères) et le lien vers la page d’inscription avec le code renseigné (`https://<host>/auth/sign_up?invite=<code>`).
+- `create` affiche le code (16 caractères) et le lien vers la page d’inscription avec le code déjà renseigné (`https://<host>/auth/sign_up?invite=<code>`).
 - Les codes sont comparés sans tenir compte de la casse, des espaces et des tirets.
 - Même lorsque plusieurs personnes s’inscrivent en même temps, un code n’est jamais utilisé au-delà de sa limite (une contrainte d’unicité sur `invite_redemptions`).
 - Un code révoqué, expiré ou épuisé donne la même erreur (une invitation inutilisable).
-- Outre la CLI, vous pouvez créer, lister et révoquer des invitations dans les écrans de modération du client web (« Invitations », `/moderation/invites`) et via l’API cliente (`GET` / `POST /api/v1/admin/invites` et `POST /api/v1/admin/invites/{id}/revoke`). Les deux exigent la permission de rôle `manage_invites` (le rôle intégré `moderator` ne l’a pas, donc pour déléguer cette tâche, créez un rôle avec cette permission et attribuez-le). « Créer une invitation » dans la liste ouvre le formulaire (`/moderation/invites/new`), qui affiche le code et le lien d’inscription de la nouvelle invitation. La liste permet de copier le lien d’une invitation utilisable et de la révoquer.
-- La liste affiche chaque invitation, celles de l’équipe et celles des membres, avec la personne qui l’a créée (`created_by`) et la manière (`creator_kind` : `staff` ou `member`). Les détenteurs de `manage_invites` peuvent révoquer n’importe laquelle.
-- La page d’examen du compte dans les écrans de modération (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) affiche l’invitation avec laquelle le compte s’est inscrit et la personne qui l’a créée, c’est-à-dire celle qui a invité l’utilisateur.
-- La création et la révocation d’une invitation sont consignées dans le journal d’audit (`invite_created`, `invite_revoked`), que ce soit depuis l’écran, l’API ou la CLI. Le nom de la cible correspond aux 4 premiers caractères du code (`ABCD…`) ; le code complet n’est pas copié dans le journal d’audit. Révoquer une invitation déjà révoquée ne change rien, et n’est donc pas consigné.
+- Outre la CLI, vous pouvez créer, lister et révoquer des invitations dans les écrans de modération du client web (« Invitations », `/moderation/invites`) et via l’API cliente (`GET` / `POST /api/v1/admin/invites` et `POST /api/v1/admin/invites/{id}/revoke`). Les deux exigent la permission de rôle `manage_invites` (le rôle intégré `moderator` ne l’a pas ; pour déléguer cette tâche, créez donc un rôle avec cette permission et attribuez-le).
+  Un service qui distribue lui-même des invitations appelle la même API avec un jeton du périmètre `admin:manage_invites` ([laisser un autre service utiliser l’API d’administration](moderation.md#letting-another-service-use-the-admin-api)).
+  « Créer une invitation » dans la liste ouvre le formulaire (`/moderation/invites/new`), qui affiche le code et le lien d’inscription de la nouvelle invitation.
+  La liste permet de copier le lien d’une invitation utilisable et de la révoquer.
+- La liste affiche chaque invitation, celles du personnel et celles des membres, avec la personne qui l’a créée (`created_by`) et la manière (`creator_kind` : `staff` ou `member`). Les détenteurs de `manage_invites` peuvent révoquer n’importe laquelle d’entre elles.
+- La page d’examen du compte dans les écrans de modération (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) affiche l’invitation avec laquelle le compte s’est inscrit et qui l’a créée, c’est-à-dire la personne qui a invité l’utilisateur.
+- Créer et révoquer une invitation est enregistré dans le journal d’audit (`invite_created`, `invite_revoked`) depuis l’écran, l’API et la CLI de la même façon. Le nom de la cible est constitué des 4 premiers caractères du code (`ABCD…`) ; le code complet n’est pas copié dans le journal d’audit.
+  Révoquer une invitation déjà révoquée ne change rien ; ce n’est donc pas enregistré.
 
 <!-- source: member-invites db3bff74ed69 -->
 ## Invitations des membres

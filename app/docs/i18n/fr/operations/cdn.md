@@ -102,61 +102,61 @@ Elle ne peut pas aider lorsque c’est une fonctionnalité propre à la platefor
 
 Si aucun n’est défini, rien n’est vérifié et le serveur se comporte comme si cette section n’existait pas.
 
-<!-- source: what-passes-without-the-header 38e1ceda6e34 -->
+<!-- source: what-passes-without-the-header b79877bb91a3 -->
 ### Ce qui passe sans l’en-tête
 
-| Requête | Raison |
+| Requête | Pourquoi |
 | --- | --- |
-| `GET` ou `HEAD` de `/healthz`, `/readyz`, `/api/v1/instance/health` | Les sondes de la plateforme et les moniteurs de disponibilité les appellent directement |
+| `GET` ou `HEAD` de `/healthz`, `/readyz`, `/health/live`, `/health/ready`, `/api/v1/instance/health` | Les sondes de la plateforme et les moniteurs de disponibilité les appellent directement |
 | `POST` vers les chemins `/_internal/` | Cloud Tasks et Cloud Scheduler les appellent sur l’URL propre du serveur. Ils portent leur propre jeton signé |
 
-Tout le reste nécessite l’en-tête, y compris en mode maintenance : le client web et ses ressources, `/media/`, l’API client, OAuth et ActivityPub, y compris les remises des autres serveurs.
-Tout ce qui appelle directement le serveur à sa propre adresse, au lieu de passer par le CDN, est donc refusé : un webhook qui vous appartient, un serveur de médias vocaux, un script. Faites-le pointer vers le nom d’hôte du CDN.
+Tout le reste exige l’en-tête, y compris en mode de maintenance : le client web et ses ressources, `/media/`, l’API cliente, OAuth et ActivityPub, y compris les envois des autres serveurs.
+Tout ce qui appelle directement le serveur par sa propre adresse, au lieu de passer par le CDN, est donc refusé : un webhook à vous, un serveur média vocal, un script. Faites-le pointer vers le nom d’hôte du CDN.
 
-Le port des métriques (`metrics_listen`) est un écouteur distinct, non public et non vérifié.
+Le port des métriques (`metrics_listen`) est un écouteur distinct, non public, qui n’est pas vérifié.
 
-Une requête qui ne porte pas le secret n’a aucune influence sur le reste du traitement, même lorsqu’elle passe : son adresse IP de client est celle du pair de la connexion, quoi que dise `X-Forwarded-For`, et ses `traceparent` et `X-Request-Id` sont ignorés.
+Une requête qui ne porte pas le secret n’a aucune influence sur le reste du traitement, même lorsqu’elle passe : son IP cliente est celle du pair de la connexion, quoi que dise `X-Forwarded-For`, et ses `traceparent` et `X-Request-Id` sont ignorés.
 
-<!-- source: set-it-up ee0a17ad2d33 -->
-### Mise en place
+<!-- source: set-it-up 3804d0cc5c18 -->
+### Le configurer
 
-Chaque nom d’hôte que le CDN transmet au serveur nécessite l’en-tête : `host`, l’hôte de `media_origin` et un `account_domain` distinct si le CDN le sert. Un hôte de médias placé derrière le même CDN le définit lui aussi, puisque `/media/` est refusé comme tout le reste.
+Chaque nom d’hôte que le CDN transmet au serveur a besoin de l’en-tête : `host`, l’hôte de `media_origin`, et un `account_domain` distinct si le CDN le sert. Un hôte de médias placé derrière le même CDN le définit aussi, puisque `/media/` est refusé comme tout le reste.
 
-1. Générez la valeur et choisissez un nom que rien d’autre n’utilise :
+1. Générez la valeur, et choisissez un nom que rien d’autre n’utilise :
 
    ```sh
    openssl rand -hex 32
    ```
 
-2. **Définissez d’abord l’en-tête sur le CDN.** Le serveur ignore un en-tête qu’il ne connaît pas ; cette étape ne change donc encore rien.
-   - **Cloudflare** : une règle de transformation d’en-tête de requête (Rules, puis Transform Rules, puis Modify Request Header), sur toutes les formules. Faites-la correspondre à toutes les requêtes entrantes de la zone et choisissez **Set static** avec votre nom et votre valeur. Elle remplace une valeur envoyée par un client. Une règle limitée à certains noms d’hôte laisse les autres verrouillés.
+2. **Définissez d’abord l’en-tête au niveau du CDN.** Le serveur ignore un en-tête qu’il ne connaît pas ; cette étape ne change donc encore rien.
+   - **Cloudflare** : une règle de transformation d’en-tête de requête (Rules, puis Transform Rules, puis Modify Request Header), sur tous les plans. Faites-la correspondre à toutes les requêtes entrantes de la zone, et choisissez **Set static** avec votre nom et votre valeur. Elle remplace une valeur envoyée par un client. Une règle pour seulement certains noms d’hôte laisse les autres verrouillés.
    - **Amazon CloudFront** : un en-tête personnalisé d’origine sur l’origine de chaque distribution. Il remplace aussi la valeur d’un visiteur.
-   - **Répartiteurs de charge Google Cloud** : un en-tête de requête personnalisé sur le service de backend.
-   - Tout autre CDN ou proxy : l’en-tête doit être défini, et non ajouté, sur chaque requête vers le serveur.
-3. Définissez `MY_ORIGIN_SECRET` et `MY_ORIGIN_SECRET_HEADER`, puis déployez. `my config check` les valide et répète ce qui est vérifié, mais il ne peut pas voir le CDN.
+   - **Répartiteurs de charge Google Cloud** : un en-tête de requête personnalisé sur le service backend.
+   - Tout autre CDN ou proxy : l’en-tête doit être défini, non ajouté, sur chaque requête vers le serveur.
+3. Définissez `MY_ORIGIN_SECRET` et `MY_ORIGIN_SECRET_HEADER` et déployez. `my config check` les valide et répète ce qui est vérifié, mais il ne peut pas voir le CDN.
 4. Vérifiez depuis l’extérieur, avec l’adresse de l’origine elle-même :
 
    ```sh
    curl -s -o /dev/null -w '%{http_code}\n' https://<host>/                 # 200: through the CDN
    curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/       # 403: directly
-   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/healthz # 200: a health check
+   curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/health/live # 200: a health check
    ```
 
-Indiquez aussi les adresses du CDN dans [`trusted_proxies`](../reference/configuration.md#trusted_proxies), sinon le serveur ne voit qu’un seul client et toutes les requêtes partagent les limites de débit du CDN ; `my config check` avertit à ce sujet.
+Listez aussi les adresses du CDN dans [`trusted_proxies`](../reference/configuration.md#trusted_proxies), sans quoi le serveur voit un seul client et toutes les requêtes partagent les limites de débit du CDN ; `my config check` avertit de cela.
 
 Une requête refusée reçoit le même document de problème `403` que toute autre requête interdite, avec `Cache-Control: no-store`, quelle que soit la manière dont l’en-tête était erroné. Rien dans la réponse ne nomme l’en-tête.
 
-<!-- source: when-everyone-is-locked-out 47c8f706e5e7 -->
-### Lorsque tout le monde est verrouillé
+<!-- source: when-everyone-is-locked-out bd514f7ec98b -->
+### Quand tout le monde est verrouillé
 
-Une configuration erronée refuse toutes les requêtes alors que les contrôles de santé restent à `200` : la plateforme voit donc un serveur en bonne santé et un moniteur de disponibilité sur `/healthz` ne voit rien. Les signes sont les suivants :
+Une mauvaise configuration refuse chaque requête alors que les vérifications d’état restent à `200` ; la plateforme voit donc un serveur sain, et un moniteur de disponibilité de `/health/live` ne voit rien. Les signes sont :
 
 - `403` pour chaque page passant par le CDN.
-- La métrique `my.http.origin_refused` augmente tandis que les requêtes de `http.server.request.duration` cessent.
+- La métrique `my.http.origin_refused` qui augmente pendant que les requêtes de `http.server.request.duration` s’arrêtent.
 - Des lignes `http request` dans le journal avec le statut `403` et sans `http.route`. Le journal et les traces ne contiennent jamais l’en-tête, son nom ni sa valeur. Une requête refusée ne crée aucun span de trace.
 
-Pour rétablir la situation, déployez sans la vérification : retirez `MY_ORIGIN_SECRET` et `MY_ORIGIN_SECRET_HEADER`. Les autres serveurs retentent leurs remises, mais les personnes n’ont pas pu joindre le serveur entre-temps.
-Comparez ensuite le nom et la valeur du CDN avec les paramètres, vérifiez que la règle couvre chaque nom d’hôte, puis définissez-les de nouveau.
+Pour récupérer, déployez sans la vérification : supprimez `MY_ORIGIN_SECRET` et `MY_ORIGIN_SECRET_HEADER`. Les autres serveurs réessaient leurs envois, mais les personnes n’ont pas pu joindre le serveur entre-temps.
+Comparez ensuite le nom et la valeur au niveau du CDN avec les réglages, vérifiez que la règle couvre chaque nom d’hôte, puis définissez-les de nouveau.
 
 <!-- source: rotate-the-value b88f695fde31 -->
 ### Faire pivoter la valeur

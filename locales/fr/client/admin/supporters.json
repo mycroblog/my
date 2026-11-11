@@ -658,5 +658,113 @@
   "admin.supporters.subscription.no_period": {
     "defaultMessage": "Aucune",
     "description": "Shown for the end of the period of a subscription that has no paid period yet."
+  },
+  "admin.supporters.tips.title": {
+    "defaultMessage": "Pourboires",
+    "description": "Heading of the section of the tips on the first page of the supporters screen. A tip is a one-time payment to the server's operation with nothing in return; never word it as a donation."
+  },
+  "admin.supporters.tips.description": {
+    "defaultMessage": "Un pourboire est un paiement unique d’une personne de ce serveur pour son fonctionnement, sans contrepartie. Les personnes dont l’adresse e-mail est vérifiée choisissent l’un de vos montants et le paient sur la page du prestataire de paiement. Les pourboires ne nécessitent aucune formule.",
+    "description": "What the tips are, at the top of their section. Never word them as donations, and never suggest a deduction."
+  },
+  "admin.supporters.tips.accepting": {
+    "defaultMessage": "Les personnes peuvent laisser un pourboire maintenant",
+    "description": "Term of the tips' section: whether users may tip now."
+  },
+  "admin.supporters.tips.accepting.yes": {
+    "defaultMessage": "Oui",
+    "description": "Users may tip now."
+  },
+  "admin.supporters.tips.accepting.no": {
+    "defaultMessage": "Non",
+    "description": "Users may not tip now."
+  },
+  "admin.supporters.tips.changed_at": {
+    "defaultMessage": "Dernière modification",
+    "description": "Term of the tips' section: when the tips were last enabled, changed, or disabled."
+  },
+  "admin.supporters.tips.never": {
+    "defaultMessage": "Jamais",
+    "description": "The tips were never enabled."
+  },
+  "admin.supporters.tips.warning.no_one_time": {
+    "defaultMessage": "Le prestataire de paiement n’accepte pas les paiements uniques : les pourboires ne peuvent pas être activés.",
+    "description": "Warning of the tips' section: the configured payment provider cannot take tips."
+  },
+  "admin.supporters.tips.warning.not_accepting": {
+    "defaultMessage": "Les pourboires sont activés, mais les personnes ne peuvent pas en laisser tant que le programme de soutien est désactivé.",
+    "description": "Warning of the tips' section: the tips are enabled but the supporter program is off."
+  },
+  "admin.supporters.tips.warning.server_limit": {
+    "defaultMessage": "Durant la dernière heure, les débuts de pourboires ont atteint la limite de l’ensemble du serveur. Il peut s’agir d’un test de cartes : quelqu’un essaie des cartes volées avec de petits paiements. Vérifiez les paiements dans le tableau de bord du prestataire.",
+    "description": "Warning of the tips' section: the server-wide rate limit of the starts of tips was reached in the last hour."
+  },
+  "admin.supporters.tips.note.disputes": {
+    "defaultMessage": "Chaque rétrofacturation coûte les frais de litige du prestataire de paiement, quel que soit le montant du pourboire : avec Stripe au Japon, 1 500 ¥ par litige au moment de la rédaction. Un petit pourboire peut coûter plusieurs fois ce qu’il a rapporté.",
+    "description": "Note of the tips' section: the dispute fee of each chargeback."
+  },
+  "admin.supporters.tips.note.refunds": {
+    "defaultMessage": "Les remboursements et rétrofacturations de pourboires sont déduits des revenus. Remboursez un pourboire dans le tableau de bord du prestataire ; ce serveur n’a pas d’opération de remboursement.",
+    "description": "Note of the tips' section: refunds and chargebacks subtract from the income."
+  },
+  "admin.supporters.tips.note.breakdown": {
+    "defaultMessage": "Les totaux publics des revenus incluent les pourboires, mais n’en montrent jamais le montant ni le nombre : sur un petit serveur, le détail révélerait qui a payé. Seule la page des paiements et remboursements de l’écran des coûts montre chaque pourboire et qui l’a payé.",
+    "description": "Note of the tips' section: why the public totals do not break the tips out."
+  },
+  "admin.supporters.tips.note.provider": {
+    "defaultMessage": "Il vous appartient de vérifier si votre prestataire de paiement accepte les pourboires pour faire fonctionner un service, selon son examen et ses conditions. Formulez votre mention commerciale comme un pourboire pour faire fonctionner le service, sans contrepartie.",
+    "description": "Note of the tips' section: the operator checks the provider's terms. Never word the tips as donations."
+  },
+  "admin.supporters.tips.guide": {
+    "defaultMessage": "En savoir plus sur les pourboires dans la documentation de l’opérateur",
+    "description": "Link from the tips' section to the operator documentation of the tips, which opens in a new tab."
+  },
+  "admin.supporters.tips.switch": {
+    "defaultMessage": "Accepter les pourboires",
+    "description": "Label of the checkbox of the tips' form that enables or disables them."
+  },
+  "admin.supporters.tips.switch.description": {
+    "defaultMessage": "Un paiement déjà ouvert reste payable jusqu’à son expiration après la désactivation des pourboires.",
+    "description": "Description of the checkbox that enables or disables the tips."
+  },
+  "admin.supporters.tips.currency": {
+    "defaultMessage": "Devise",
+    "description": "Label of the choice of the currency of the amounts of the tips."
+  },
+  "admin.supporters.tips.amounts": {
+    "defaultMessage": "Montants",
+    "description": "Label of the field of the amounts that users choose from when they tip."
+  },
+  "admin.supporters.tips.amounts.description": {
+    "defaultMessage": "De 1 à {max} montants, séparés par des virgules, par exemple 500, 1000, 3000.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6."
+  },
+  "admin.supporters.tips.amounts.range": {
+    "defaultMessage": "De 1 à {max} montants, séparés par des virgules, par exemple 500, 1000, 3000, chacun de {minimum} à {maximum}.",
+    "description": "Description of the field of the amounts of the tips. max is a number, such as 6; minimum and maximum are formatted amounts, such as ¥100 and ¥100,000."
+  },
+  "admin.supporters.tips.amounts.invalid": {
+    "defaultMessage": "Écrivez chaque montant sous forme de nombre, par exemple 500 ou 5,00.",
+    "description": "Error of the field of the amounts of the tips: one is not a number."
+  },
+  "admin.supporters.tips.amounts.count": {
+    "defaultMessage": "Écrivez de 1 à {max} montants différents.",
+    "description": "Error of the field of the amounts of the tips: none or too many. max is a number, such as 6."
+  },
+  "admin.supporters.tips.save": {
+    "defaultMessage": "Enregistrer les pourboires",
+    "description": "Button that saves the tips' form."
+  },
+  "admin.supporters.tips.saved": {
+    "defaultMessage": "Enregistré. Le journal d’audit consigne chaque modification.",
+    "description": "Shown beside the save button of the tips' form after it is saved."
+  },
+  "admin.supporters.tips.unchanged": {
+    "defaultMessage": "Rien n’a changé.",
+    "description": "Shown beside the save button of the tips' form when it is saved without a change."
+  },
+  "admin.supporters.tips.failed": {
+    "defaultMessage": "Impossible d’enregistrer : {reason}",
+    "description": "Shown beside the save button of the tips' form when it could not be saved, with the server's reason."
   }
 }
