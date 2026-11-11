@@ -52,9 +52,10 @@ module's validations, so the public module gives it well-formed values even wher
 comes from the public module's `name`, so an ingress, the queue, and the monitoring take it as an input known in advance, and
 none depends on the app.
 
-`examples/aws-ecs-neon` composes the AWS modules itself, by their sources at `MODULE_REF`, until AWS has a public module of its
-own. Inside the repository the checks test the modules of the same commit: `scripts/task.sh tofu:example-test` runs on a copy
-whose sources are rewritten to local paths, and never fetches from GitHub.
+`mycroblog-aws` composes the AWS modules the same way, and passes the load balancer as an object of its contract fields: its
+sensitive `origin_secret` would make the whole list of backends sensitive. Inside the repository the checks test the modules
+of the same commit: `scripts/task.sh tofu:example-test` runs the examples on a copy whose sources are rewritten to local
+paths, and never fetches from GitHub.
 
 ## Naming
 
@@ -443,8 +444,8 @@ The modules for AWS test whether this contract holds on a second platform. **Non
 | `monitoring-aws` | `monitoring-gcp` |
 
 `db-external`, `db-neon`, and `mail-smtp` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
-tests show that a block of one platform fails the plan on the other's app. `examples/aws-ecs-neon` composes them, and its tests swap each block
-its comments name; those tests mock the provider.
+tests show that a block of one platform fails the plan on the other's app. `mycroblog-aws` composes them, and its tests plan each kind
+of each section; those tests mock the provider.
 
 ## Checks
 
