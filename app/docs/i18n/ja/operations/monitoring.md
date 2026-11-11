@@ -15,7 +15,7 @@
 | `GET /readyz`, `GET /health/ready` | ロードバランサーや Kubernetes の readiness プローブ | リクエストごと（同時のリクエストは 1 回のチェックを共有） | `200` `{"status":"maintenance"}` |
 
 外部の監視は **`/api/v1/instance/health`** に向けてください。`/readyz`（`/health/ready`）には向けないでください。これらはリクエストのたびにデータベースに問い合わせるので、間隔の短い監視はスケールトゥゼロのデータベースを起こし続けます。プローブはプラットフォームのためのものです。
-モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) と [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) は、プラットフォーム自身の監視から長い間隔で `/health/live`（`monitoring-gcp`）か `/readyz`（`monitoring-aws`）をチェックします。そのコストはそれぞれの README に書かれています。
+モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) と [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) は、プラットフォーム自身の監視から長い間隔で `/health/live`（`monitoring-gcp`）か `/readyz`（`monitoring-aws`）をチェックします。そのコストはそれぞれの README に書かれています。
 
 `/api/v1/instance/health` の応答（認証なし、`Cache-Control: no-store`）は次のとおりです。
 

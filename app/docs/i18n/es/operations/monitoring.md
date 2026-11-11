@@ -18,7 +18,7 @@ Los datos de terceros que aparecen abajo llevan la fecha en que se confirmaron y
 
 Apunta el monitor externo a **`/api/v1/instance/health`**, no a `/readyz` (`/health/ready`): consulta la base de datos en cada petición,
 así que un monitor con un intervalo corto mantiene despierta una base de datos que escala a cero. Las sondas son para tu plataforma.
-Los módulos [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) y [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) comprueban `/health/live` (`monitoring-gcp`) o `/readyz` (`monitoring-aws`) desde el monitor propio de la plataforma con un intervalo largo, y sus README indican cuánto cuesta.
+Los módulos [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) y [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) comprueban `/health/live` (`monitoring-gcp`) o `/readyz` (`monitoring-aws`) desde el monitor propio de la plataforma con un intervalo largo, y sus README indican cuánto cuesta.
 
 Respuestas de `/api/v1/instance/health` (sin autenticación, `Cache-Control: no-store`):
 

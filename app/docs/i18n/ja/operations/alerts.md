@@ -77,7 +77,7 @@ promtool test rules alerts.test.yml
 - **データベース**: Cloud SQL のディスク使用率と接続のメトリクス、またはデータベースの事業者の使用量アラート。
 - **費用**: アラートのしきい値を設定した Cloud Billing の予算（[費用と予算](#cost-and-budget)）。
 
-モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) は、これらを下の表の名前のポリシーとして作り、違う方法で扱うアラートや表現できないアラートを一覧にしています。このモジュールはまだ一度も適用されたことがありません。トラフィックがあるときだけ生じるメトリクスは、ゼロまでスケールするサービスでは途切れるため、その欠落に対するアラートは誤って発生します。アイドル状態で停止したサーバーに気づくのは、このモジュールの稼働時間チェックです。
+モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) は、これらを下の表の名前のポリシーとして作り、違う方法で扱うアラートや表現できないアラートを一覧にしています。このモジュールはまだ一度も適用されたことがありません。トラフィックがあるときだけ生じるメトリクスは、ゼロまでスケールするサービスでは途切れるため、その欠落に対するアラートは誤って発生します。アイドル状態で停止したサーバーに気づくのは、このモジュールの稼働時間チェックです。
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -94,7 +94,7 @@ EMF では書き出されないため、代わりに ECS サービスの CPU と
 - **メール**（`mail = ses`）: CloudWatch にある SES の評価のメトリクス（バウンス率と苦情率）。
 - **費用**: アラートを設定した AWS Budgets の予算（[費用と予算](#cost-and-budget)）。
 
-モジュール [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) は、これらを下の表の名前のアラームとして作り、同じように一覧を持っています。このモジュールはまだ一度も適用されたことがありません。
+モジュール [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) は、これらを下の表の名前のアラームとして作り、同じように一覧を持っています。このモジュールはまだ一度も適用されたことがありません。
 
 <!-- source: the-alerts d76842ca02b8 -->
 ## アラートの一覧

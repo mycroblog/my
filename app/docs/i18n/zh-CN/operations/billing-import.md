@@ -12,7 +12,7 @@
 <!-- source: with-the-opentofu-modules 56be0b668f32 -->
 ## 使用 OpenTofu 模块
 
-模块 [`billing-aws`](../../deploy/opentofu/modules/billing-aws/README.md) 和 [`billing-gcp`](../../deploy/opentofu/modules/billing-gcp/README.md) 会设置 `billing_sources`，并完成本指南中服务商 API 允许自动完成的部分。`billing-gcp` 只能与 Google Cloud 的应用模块一起使用，因此在 AWS 上，这些模块只导入 AWS 的费用。`billing-aws` 可以与 AWS 的应用模块以及 Cloud Run 的应用模块一起使用，在后者中两个模块可以同时放在 `backends` 里。两个模块都尚未在真实账号上应用过。
+模块 [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/README.md) 和 [`billing-gcp`](../../deploy/opentofu/modules/internal/billing-gcp/README.md) 会设置 `billing_sources`，并完成本指南中服务商 API 允许自动完成的部分。`billing-gcp` 只能与 Google Cloud 的应用模块一起使用，因此在 AWS 上，这些模块只导入 AWS 的费用。`billing-aws` 可以与 AWS 的应用模块以及 Cloud Run 的应用模块一起使用，在后者中两个模块可以同时放在 `backends` 里。两个模块都尚未在真实账号上应用过。
 
 | 本指南中的步骤 | 使用模块时 |
 | --- | --- |

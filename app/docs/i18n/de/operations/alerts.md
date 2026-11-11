@@ -78,7 +78,7 @@ Baue die Alarme mit `metrics_exporter = none` aus dem, was Cloud Run und Cloud L
 - **Datenbank**: die Metriken zu Festplattenauslastung und Verbindungen von Cloud SQL oder die Nutzungsalarme deines Datenbankanbieters.
 - **Kosten**: ein Cloud-Billing-Budget mit Alarmschwellen ([Kosten und Budget](#cost-and-budget)).
 
-Das Modul [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) erzeugt diese als Richtlinien mit den Namen aus der Tabelle unten und listet jeden Alarm auf, den es anders abdeckt oder nicht ausdrücken kann. Es wurde noch nie angewendet. Eine Metrik, die nur Traffic erzeugt, hat bei einem Dienst, der auf null skaliert, Lücken, daher löst ein Alarm auf ihr Ausbleiben fälschlich aus; seine Uptime-Prüfung ist es, die einen toten, untätigen Server bemerkt.
+Das Modul [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) erzeugt diese als Richtlinien mit den Namen aus der Tabelle unten und listet jeden Alarm auf, den es anders abdeckt oder nicht ausdrücken kann. Es wurde noch nie angewendet. Eine Metrik, die nur Traffic erzeugt, hat bei einem Dienst, der auf null skaliert, Lücken, daher löst ein Alarm auf ihr Ausbleiben fälschlich aus; seine Uptime-Prüfung ist es, die einen toten, untätigen Server bemerkt.
 
 <!-- source: aws-ecs 609e5bf632ef -->
 ### AWS ECS
@@ -95,7 +95,7 @@ werden nicht in EMF geschrieben; nutze stattdessen die CPU- und Speichermetriken
 - **E-Mail** (`mail = ses`): die SES-Reputationsmetriken (Bounce- und Beschwerderaten) in CloudWatch.
 - **Kosten**: ein AWS-Budgets-Budget mit Alarmen ([Kosten und Budget](#cost-and-budget)).
 
-Das Modul [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) erzeugt diese als Alarme mit den Namen aus der Tabelle unten, mit derselben Liste. Es wurde noch nie angewendet.
+Das Modul [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) erzeugt diese als Alarme mit den Namen aus der Tabelle unten, mit derselben Liste. Es wurde noch nie angewendet.
 
 <!-- source: the-alerts d76842ca02b8 -->
 ## Die Alarme
