@@ -51,6 +51,82 @@ func (q *Queries) ListSealedInstanceSecrets(ctx context.Context, arg ListSealedI
 	return items, nil
 }
 
+const listSealedTLSAccounts = `-- name: ListSealedTLSAccounts :many
+SELECT id AS row_id, sealed_private_key AS sealed FROM tls_acme_accounts WHERE id > CAST(?1 AS TEXT) ORDER BY id LIMIT ?2
+`
+
+type ListSealedTLSAccountsParams struct {
+	After     string
+	PageLimit int64
+}
+
+type ListSealedTLSAccountsRow struct {
+	RowID  string
+	Sealed []byte
+}
+
+// ListSealedTLSAccounts returns a page of tls_acme_accounts.sealed_private_key ordered by id.
+func (q *Queries) ListSealedTLSAccounts(ctx context.Context, arg ListSealedTLSAccountsParams) ([]ListSealedTLSAccountsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listSealedTLSAccounts, arg.After, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSealedTLSAccountsRow{}
+	for rows.Next() {
+		var i ListSealedTLSAccountsRow
+		if err := rows.Scan(&i.RowID, &i.Sealed); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSealedTLSCertificates = `-- name: ListSealedTLSCertificates :many
+SELECT id AS row_id, sealed_private_key AS sealed FROM tls_certificates WHERE id > CAST(?1 AS TEXT) ORDER BY id LIMIT ?2
+`
+
+type ListSealedTLSCertificatesParams struct {
+	After     string
+	PageLimit int64
+}
+
+type ListSealedTLSCertificatesRow struct {
+	RowID  string
+	Sealed []byte
+}
+
+// ListSealedTLSCertificates returns a page of tls_certificates.sealed_private_key ordered by id.
+func (q *Queries) ListSealedTLSCertificates(ctx context.Context, arg ListSealedTLSCertificatesParams) ([]ListSealedTLSCertificatesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listSealedTLSCertificates, arg.After, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSealedTLSCertificatesRow{}
+	for rows.Next() {
+		var i ListSealedTLSCertificatesRow
+		if err := rows.Scan(&i.RowID, &i.Sealed); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const replaceSealedInstanceSecrets = `-- name: ReplaceSealedInstanceSecrets :execrows
 UPDATE instance_secrets SET sealed_secret = ?1 WHERE id = ?2 AND sealed_secret = ?3
 `
@@ -64,6 +140,44 @@ type ReplaceSealedInstanceSecretsParams struct {
 // ReplaceSealedInstanceSecrets rewrites instance_secrets.sealed_secret of a row that still holds old_sealed.
 func (q *Queries) ReplaceSealedInstanceSecrets(ctx context.Context, arg ReplaceSealedInstanceSecretsParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, replaceSealedInstanceSecrets, arg.Sealed, arg.RowID, arg.OldSealed)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const replaceSealedTLSAccounts = `-- name: ReplaceSealedTLSAccounts :execrows
+UPDATE tls_acme_accounts SET sealed_private_key = ?1 WHERE id = ?2 AND sealed_private_key = ?3
+`
+
+type ReplaceSealedTLSAccountsParams struct {
+	Sealed    []byte
+	RowID     string
+	OldSealed []byte
+}
+
+// ReplaceSealedTLSAccounts rewrites tls_acme_accounts.sealed_private_key of a row that still holds old_sealed.
+func (q *Queries) ReplaceSealedTLSAccounts(ctx context.Context, arg ReplaceSealedTLSAccountsParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, replaceSealedTLSAccounts, arg.Sealed, arg.RowID, arg.OldSealed)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const replaceSealedTLSCertificates = `-- name: ReplaceSealedTLSCertificates :execrows
+UPDATE tls_certificates SET sealed_private_key = ?1 WHERE id = ?2 AND sealed_private_key = ?3
+`
+
+type ReplaceSealedTLSCertificatesParams struct {
+	Sealed    []byte
+	RowID     string
+	OldSealed []byte
+}
+
+// ReplaceSealedTLSCertificates rewrites tls_certificates.sealed_private_key of a row that still holds old_sealed.
+func (q *Queries) ReplaceSealedTLSCertificates(ctx context.Context, arg ReplaceSealedTLSCertificatesParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, replaceSealedTLSCertificates, arg.Sealed, arg.RowID, arg.OldSealed)
 	if err != nil {
 		return 0, err
 	}

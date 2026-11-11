@@ -22,8 +22,9 @@ import (
 // with their current values, histories newest first, and what a rebuild reads and deletes; the
 // rules with their revisions, retirements, and heads by position; the rules of the link card
 // crawler; the theme, the brand images, the announcements with their states, pages, and reads,
-// and the service closure, each with its head; and the secrets and domains of the instance,
-// recorded once. The use cases on top of it are InstanceFlows, which internal/flowtest/instance
+// and the service closure, each with its head; the secrets and domains of the instance,
+// recorded once; and the TLS accounts, orders, and certificates with the current certificate of
+// a host. The use cases on top of it are InstanceFlows, which internal/flowtest/instance
 // runs once on SQLite.
 func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 	t.Helper()
@@ -40,6 +41,8 @@ func InstanceRepositoryContract(t *testing.T, newHarness InstanceFactory) {
 		{"KeepsAnnouncements", instanceRepoAnnouncements},
 		{"KeepsTheServiceClosure", instanceRepoClosure},
 		{"RecordsSecretsAndDomainsOnce", instanceRepoSecretsAndDomains},
+		{"RegistersOneTLSAccountPerDirectory", instanceRepoTLSAccounts},
+		{"KeepsTLSCertificatesAndOrders", instanceRepoTLSCertificates},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -3,6 +3,7 @@
 package platform
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -14,6 +15,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/internal/platform/tlsserve"
 )
 
 // DefaultShutdownTimeout is how long Serve waits for in-flight requests and jobs after ctx
@@ -35,11 +37,17 @@ type ServeOptions struct {
 	Listener net.Listener
 	// MetricsListener, when set, is used instead of listening on metrics_listen.
 	MetricsListener net.Listener
+	// HTTPListener, when set, is used instead of listening on tls_http_listen, the plain HTTP
+	// port that redirects to https with tls other than off.
+	HTTPListener net.Listener
 	// ShutdownTimeout bounds the graceful shutdown; the default is DefaultShutdownTimeout.
 	ShutdownTimeout time.Duration
 	// JobStopTimeout bounds the wait for the job runner after ShutdownTimeout canceled its
 	// job; the default is DefaultJobStopTimeout.
 	JobStopTimeout time.Duration
+	// TLSFileCheckInterval is how often the files of tls = files are looked at; the default is
+	// tlsserve.FileCheckInterval. Tests only.
+	TLSFileCheckInterval time.Duration
 	// DomainsRetry is how often a process that could not verify its domains at the start tries
 	// again; the default is defaultDomainsRetry. Tests only.
 	DomainsRetry time.Duration
@@ -47,7 +55,9 @@ type ServeOptions struct {
 
 // Serve runs the App in its configured role until ctx ends, then shuts down gracefully:
 //
-//   - every role serves HTTP on the listen address (the worker role only the health checks);
+//   - every role serves HTTP on the listen address (the worker role only the health checks); with
+//     tls other than off, the web and all roles serve HTTPS there instead, and plain HTTP on
+//     tls_http_listen that redirects to https;
 //   - with metrics_exporter = prometheus, every role serves GET /metrics on metrics_listen;
 //   - the worker and all roles run the job runner and the scheduler of periodic jobs, or with
 //     queue = cloudtasks or sqs serve the endpoints that run the jobs and tick the periodic ones;
@@ -83,14 +93,23 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	hardCtx, hardStop := context.WithCancel(context.WithoutCancel(ctx))
 	defer hardStop()
 
+	tlsLn, err := a.startTLS(ctx, opts.HTTPListener)
+	if err != nil {
+		_ = ln.Close()
+		return err
+	}
+
 	srv := &http.Server{
-		Handler:           a.handler(true),
+		Handler:           a.warnPlainWithoutProxy(a.handler(true)),
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       60 * time.Second,
 		WriteTimeout:      httpWriteTimeout,
 		IdleTimeout:       120 * time.Second,
 		ErrorLog:          slog.NewLogLogger(a.Logger.Handler(), slog.LevelWarn),
 		BaseContext:       func(net.Listener) context.Context { return hardCtx },
+	}
+	if tlsLn != nil {
+		a.configureTLS(srv)
 	}
 	// Open streams never finish on their own: end them when the shutdown starts, so that it
 	// waits only for the other requests. A worker has no streams and keeps sending the signals
@@ -105,9 +124,10 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	metricsSrv, err := a.serveMetrics(ctx, opts.MetricsListener)
 	if err != nil {
 		_ = ln.Close()
+		tlsLn.close()
 		return err
 	}
-	serveErr := make(chan error, 2)
+	serveErr := make(chan error, 3)
 	// The panic of a goroutine of kernel.Go stops the server as a failure (ADR-0103 §5).
 	fatal := make(chan error, 1)
 	defer a.ErrorReporter.setStop(func(cause error) {
@@ -143,7 +163,12 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 			}
 		})
 	}
-	kernel.Go(ctx, "http.serve", a.ErrorReporter, func(context.Context) { serveErr <- srv.Serve(ln) })
+	if tlsLn != nil {
+		kernel.Go(ctx, "http.serve", a.ErrorReporter, func(context.Context) { serveErr <- srv.ServeTLS(ln, "", "") })
+		tlsLn.run(ctx, a, cmp.Or(opts.TLSFileCheckInterval, tlsserve.FileCheckInterval), serveErr)
+	} else {
+		kernel.Go(ctx, "http.serve", a.ErrorReporter, func(context.Context) { serveErr <- srv.Serve(ln) })
+	}
 	if metricsSrv != nil {
 		kernel.Go(ctx, "http.serve_metrics", a.ErrorReporter, func(context.Context) {
 			if err := metricsSrv.srv.Serve(metricsSrv.ln); !errors.Is(err, http.ErrServerClosed) {
@@ -184,7 +209,8 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 			slog.String("routes", routes), slog.String("routes_hash", hash))
 	}
 	a.logOriginCheck(ctx)
-	a.Logger.InfoContext(ctx, "started", slog.String("role", string(a.Config.Role)), slog.String("addr", ln.Addr().String()))
+	a.Logger.InfoContext(ctx, "started", slog.String("role", string(a.Config.Role)), slog.String("addr", ln.Addr().String()),
+		slog.Bool("tls", tlsLn != nil))
 
 	select {
 	case <-ctx.Done():
@@ -200,6 +226,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	if shutdownErr := srv.Shutdown(graceCtx); shutdownErr != nil {
 		err = errors.Join(err, fmt.Errorf("http server shutdown: %w", shutdownErr))
 	}
+	tlsLn.shutdown(graceCtx)
 	if metricsSrv != nil {
 		// A scrape is short; the metrics stay available while the requests finish.
 		_ = metricsSrv.srv.Shutdown(graceCtx)

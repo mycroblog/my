@@ -6,7 +6,7 @@ The [configuration reference](../reference/configuration.md) lists every setting
 
 ## How it works
 
-![The key hierarchy: the key-encryption key, kept where key_manager says and never in the database, wraps a data-encryption key made for each secret, which encrypts the secret; the database holds the key ID, the wrapped data-encryption key, and the encrypted secret in five sealed columns. The list below describes each layer.](images/key-hierarchy.svg)
+![The key hierarchy: the key-encryption key, kept where key_manager says and never in the database, wraps a data-encryption key made for each secret, which encrypts the secret; the database holds the key ID, the wrapped data-encryption key, and the encrypted secret in seven sealed columns. The list below describes each layer.](images/key-hierarchy.svg)
 
 - Secrets stored in the database, such as actors' private keys, are encrypted with AES-256-GCM using a data-encryption key (DEK) generated for each secret.
   The DEK is wrapped with a **key-encryption key (KEK)** and stored next to the ciphertext (envelope encryption).
@@ -16,7 +16,9 @@ The [configuration reference](../reference/configuration.md) lists every setting
 - A ciphertext is bound to the row ID and column name where it is stored. Copying it to another row or column makes it undecryptable.
 - The sealed columns, named as `my kek status` prints them, are `local_account_private_keys.private_key_enc` (actors' private keys),
   `totp_enrollments.secret_enc` (two-factor authentication secrets), `login_provider_secrets.sealed_secret` (client secrets of sign-in providers),
-  `webhook_secrets.sealed_secret` (webhook signing secrets), and `instance_secrets.sealed_secret` (the media proxy signing key).
+  `webhook_secrets.sealed_secret` (webhook signing secrets), `instance_secrets.sealed_secret` (the media proxy signing key),
+  `tls_acme_accounts.sealed_private_key` (the keys of the ACME accounts when the server gets its own certificates), and
+  `tls_certificates.sealed_private_key` (the keys of those certificates).
 - The state of a passkey sign-in or a sign-in through an external provider is sealed the same way but not stored: the browser holds it for at most 30 minutes.
 - The signing key (HMAC-SHA256) for media proxy URLs is a random key that the server generates on its first start and stores in the database, encrypted like the other secrets.
   It does not change when you rotate the KEK, so media proxy URLs keep working across rotations, and `my kek rewrap` re-wraps it with the other secrets.
@@ -32,7 +34,7 @@ and **the actor's identity in the fediverse is broken** (followers' relationship
 
 What is not sealed stays readable: posts, accounts, follows, and the rest of the database, and the media files in storage.
 Every sealed value fails with an `unknown key-encryption key` error: the actors' private keys, two-factor authentication secrets,
-client secrets of sign-in providers, webhook signing secrets, and the media proxy signing key.
+client secrets of sign-in providers, webhook signing secrets, the media proxy signing key, and the keys of the certificates the server got itself.
 The same happens when another KEK is set in place of the one that wrapped the secrets, or when the KMS key or the plugin's key that wrapped them is disabled or destroyed.
 
 ## Generate a KEK

@@ -353,3 +353,73 @@ CREATE TABLE instance_domains (
   account_domain TEXT NOT NULL,
   recorded_at INTEGER NOT NULL
 ) STRICT;
+
+-- ---------------------------------------------------------------------------------------------
+-- instance: TLS certificates that the server serves itself (data-model §4.9, ADR-0163 §4). Owned
+-- by internal/app/instance. The current certificate of a host is the last one issued that is not
+-- revoked, by created_at; the wait before the next order is derived from the attempts after it.
+-- ---------------------------------------------------------------------------------------------
+
+-- Resource: the ACME account of a CA, one per directory URL. Two processes that register at once
+-- agree on the row inserted first. sealed_private_key is the account key (PKCS #8), sealed with the
+-- Sealer bound to its id; `my kek rewrap` re-wraps it.
+CREATE TABLE tls_acme_accounts (
+  id TEXT NOT NULL PRIMARY KEY,
+  directory_url TEXT NOT NULL,
+  account_url TEXT NOT NULL,
+  sealed_private_key BLOB NOT NULL,
+  created_at INTEGER NOT NULL
+) STRICT;
+CREATE UNIQUE INDEX tls_acme_accounts_directory_url ON tls_acme_accounts (directory_url);
+
+-- Event: an order of a certificate for host, written just before the order. profile is '' for the
+-- CA's default; replaces_certificate_id is NULL for a first order. Its result is a row of
+-- tls_order_failures or tls_certificates; an attempt whose process died has neither.
+CREATE TABLE tls_order_attempts (
+  id TEXT NOT NULL PRIMARY KEY,
+  host TEXT NOT NULL,
+  directory_url TEXT NOT NULL,
+  profile TEXT NOT NULL,
+  replaces_certificate_id TEXT,
+  occurred_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX tls_order_attempts_host_occurred_at ON tls_order_attempts (host, occurred_at);
+
+-- Event (subtype of the result of an attempt): the failure of an order. problem_type is the type
+-- of the RFC 8555 problem, or the class of a failure on the client's side.
+CREATE TABLE tls_order_failures (
+  attempt_id TEXT NOT NULL PRIMARY KEY,
+  problem_type TEXT NOT NULL,
+  detail TEXT NOT NULL CHECK (length(detail) <= 1000),
+  occurred_at INTEGER NOT NULL
+) STRICT;
+
+-- Resource (subtype of the result of an attempt), insert only: an issued certificate. chain_pem is
+-- public; sealed_private_key is its key (PKCS #8), sealed with the Sealer bound to its id; `my kek
+-- rewrap` re-wraps it.
+CREATE TABLE tls_certificates (
+  id TEXT NOT NULL PRIMARY KEY,
+  attempt_id TEXT NOT NULL,
+  host TEXT NOT NULL,
+  directory_url TEXT NOT NULL,
+  serial TEXT NOT NULL,
+  not_before INTEGER NOT NULL,
+  not_after INTEGER NOT NULL,
+  chain_pem TEXT NOT NULL,
+  sealed_private_key BLOB NOT NULL,
+  created_at INTEGER NOT NULL,
+  CHECK (not_after > not_before)
+) STRICT;
+CREATE UNIQUE INDEX tls_certificates_attempt_id ON tls_certificates (attempt_id);
+CREATE INDEX tls_certificates_host_created_at ON tls_certificates (host, created_at);
+
+-- Event: the revocation of a certificate, written after the CA revoked it. revoked_by_user_id is
+-- NULL for the CLI.
+CREATE TABLE tls_certificate_revocations (
+  id TEXT NOT NULL PRIMARY KEY,
+  certificate_id TEXT NOT NULL,
+  reason TEXT NOT NULL CHECK (reason IN ('key_compromise', 'superseded', 'operator')),
+  revoked_by_user_id TEXT,
+  occurred_at INTEGER NOT NULL
+) STRICT;
+CREATE INDEX tls_certificate_revocations_certificate_id ON tls_certificate_revocations (certificate_id);

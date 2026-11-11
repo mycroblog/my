@@ -14,7 +14,8 @@ There are two tools:
 The process reads only the listen address, `host`, `account_domain`, `web_origin`, the proxies (`trusted_proxies`, `trusted_proxy_header`),
 the [origin check](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) (`origin_secret`, `origin_secret_previous`, `origin_secret_header`), `status_page_url`, and the `maintenance_*` settings ([configuration reference](../reference/configuration.md)).
 The settings of the database, the queue, the blob store, the KV, mail, and the stream are not read or checked, so they may be wrong or unreachable meanwhile.
-Whatever the `role`, it serves HTTP only: no jobs, no periodic jobs, no stream broker.
+Whatever the `role`, it serves HTTP only: no jobs, no periodic jobs, no stream broker. It also serves plain HTTP whatever `tls` says,
+on `listen` or its default `:8080` ([serving HTTPS from the server](running.md#serving-https-from-the-server)).
 `my config check -maintenance` checks exactly what the maintenance mode reads.
 
 With [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) set, a request that needs the header and lacks it gets the `403` of that check instead of the table below.
