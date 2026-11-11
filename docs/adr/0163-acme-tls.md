@@ -3,7 +3,7 @@
 - Status: Proposed
 - Date: 2026-11-11
 - Deciders: @rosylilly
-- Issue: #2823（spike。報告は issue のコメント）
+- Issue: #2823（spike。[報告](https://github.com/mycroblog/my/issues/2823#issuecomment-6786802481)）
 
 ## Decision（決定）
 
@@ -153,7 +153,7 @@
 そのうえで、発行の履歴を見たいこと、`my kek rewrap` に乗らないこと、起動時の故障の箇所が増えることから、置き場所を DB に移し、状態をイベントとして持つ形にした。KV は失ってよいものだけに絞った。
 最後に、ハンドシェイクを DB と KMS から切り離すメモリのキャッシュと、`Bus` での知らせを足した。
 
-spike のコードと計測（コミットへのリンク）は #2823 の報告にある。
+spike のコードと計測（コミットへのリンク）は [#2823 の報告](https://github.com/mycroblog/my/issues/2823#issuecomment-6786802481) にある。
 
 ## 採らなかった案
 
