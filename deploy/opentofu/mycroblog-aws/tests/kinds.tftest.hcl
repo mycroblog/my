@@ -359,7 +359,7 @@ run "kv_external_with_its_ca" {
   }
 
   assert {
-    condition     = module.app.env["MY_KV"] == "valkey" && contains(keys(module.app.secret_env), "MY_VALKEY_URL") && contains(keys(module.app.secret_env), "MY_VALKEY_TLS_CA") && module.app.env["MY_STREAM"] == "sns"
+    condition     = module.app.env["MY_KV"] == "valkey" && contains(keys(module.app.secret_env), "MY_VALKEY_URL") && contains([for name in keys(module.app.secret_env) : "${name}_FILE"], "MY_VALKEY_TLS_CA_FILE") && module.app.env["MY_STREAM"] == "sns"
     error_message = "an external Valkey must reach the app by its secrets"
   }
 

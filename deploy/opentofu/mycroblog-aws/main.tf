@@ -139,6 +139,29 @@ resource "random_password" "origin_secret" {
 
 locals {
   settings_list = jsondecode(file("${path.module}/../modules/internal/settings/settings.json"))
+
+  # How this module handles each configuration key (coverage.json, which scripts/tofu-coverage.sh checks against the settings
+  # list): an entry is a key, or a prefix that ends in *.
+  coverage = jsondecode(file("${path.module}/coverage.json"))
+  # The sections that are null set nothing, so settings may name their keys: billing_sources for a plugin, for one.
+  sections_off = concat(var.billing == null ? ["billing"] : [], var.monitoring == null ? ["monitoring"] : [])
+  managed_entries = concat(
+    flatten([for section, entries in local.coverage.section : entries if !contains(local.sections_off, section)]),
+    local.coverage.fixed,
+  )
+  # The keys that a section sets or the module fixes, which settings and secrets must not name again. A static file, so it
+  # depends on no resource.
+  managed = toset([
+    for key in keys(local.settings_list) : key
+    if anytrue([for entry in local.managed_entries : endswith(entry, "*") ? startswith(key, trimsuffix(entry, "*")) : key == entry])
+  ])
+  # The keys this module does not take, each to the reason.
+  excluded = merge([
+    for entry, reason in local.coverage.excluded : {
+      for key in keys(local.settings_list) : key => reason
+      if endswith(entry, "*") ? startswith(key, trimsuffix(entry, "*")) : key == entry
+    }
+  ]...)
 }
 
 module "settings" {
@@ -148,6 +171,7 @@ module "settings" {
   settings = var.settings
   secrets  = var.secrets
   managed  = local.managed
+  excluded = local.excluded
 }
 
 module "secrets" {
@@ -493,9 +517,9 @@ module "monitoring" {
 # 7. The app: every enabled block above, as one list. A disabled block is null and drops out.
 
 locals {
-  # Every backend but the secrets, whose settings come in part from module.settings: what the sections set.
-  section_backends = [
+  backends = [
     for b in [
+      module.secrets,
       module.kek_secrets_manager, module.kek_kms,
       module.db_external, module.db_rds,
       module.queue,
@@ -507,21 +531,6 @@ locals {
       module.billing, module.monitoring,
     ] : b if b != null
   ]
-  backends = concat([module.secrets], local.section_backends)
-
-  # The configuration keys that a section or the app sets, which settings and secrets must not name again.
-  managed = toset(concat(
-    [
-      for setting in flatten([for b in local.section_backends : concat(keys(b.env), keys(b.secret_env), keys(try(b.secret_files, {})))]) :
-      lower(trimsuffix(trimprefix(setting, "MY_"), "_FILE"))
-    ],
-    [
-      "host", "role", "profile", "trusted_proxies", "vapid_private_key",
-      "worker_job_types", "worker_job_types_except", "worker_job_concurrency", "http_allow_private_networks",
-    ],
-    # The app sets it from the billing section; without one, settings may name it, for a plugin.
-    var.billing != null ? ["billing_sources"] : [],
-  ))
 }
 
 module "app" {
