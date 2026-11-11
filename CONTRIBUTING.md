@@ -174,11 +174,13 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## CI
 
-CI (`.github/workflows/`) splits what runs where as follows. Each job of `ci.yml` sets up its tools and then runs its
-checks as parallel steps. Each step is named after its check and calls one task (`scripts/task.sh go:vet`), so the
-Actions page shows the log and duration of every check, and you can run a failed check locally with the same task.
-`scripts/task.sh docs:ci-coverage` makes sure that every check of the local `scripts/task.sh check` runs in some CI
-step.
+A pull request runs only what its own files decide (formatting, licenses, lint of the changed modules); the merge
+queue runs the compile, type, and test checks once, on the merged state, for the contexts the group changes, and is
+the only gate ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)). The slow suite runs nightly, by hand, and
+before a release. The workflows in `.github/workflows/` say which job runs what: each step is named after the task it
+runs, so a failed step is reproduced with `scripts/task.sh <step name>`, and `scripts/agentkit.sh pr jobs <pr>`
+prints where the time went. To run the merge queue's jobs on a pull request (an outside contribution, a failure to
+investigate), add the label `allow:full-ci`.
 
 | When | Workflow | What runs |
 | --- | --- | --- |
