@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect } from "storybook/test";
 import { Radio, RadioGroup } from "./RadioGroup";
 
 const meta = {
@@ -50,3 +51,16 @@ export const Invalid: Story = {
 };
 
 export const Disabled: Story = { args: { isDisabled: true } };
+
+/** The native input lies over the circle, so that a press on the radio itself reaches it (src/ToggleInput.ts). */
+export const InputOverCircle: Story = {
+  tags: ["no-screenshot"],
+  play: async ({ canvas, userEvent }) => {
+    const input = canvas.getByRole("radio", { name: "Unlisted" });
+    const circle = input.closest("label")?.querySelector(":scope > span:not(:has(input))")?.getBoundingClientRect();
+    if (circle === undefined) throw new Error("the radio has no circle");
+    await expect(document.elementFromPoint(circle.x + circle.width / 2, circle.y + circle.height / 2)).toBe(input);
+    await userEvent.click(input);
+    await expect(input).toBeChecked();
+  },
+};

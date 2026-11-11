@@ -43,6 +43,19 @@ export const PointerStates: Story = {
   },
 };
 
+/** The native input lies over the box, so that a press on the checkbox itself reaches it (src/ToggleInput.ts). */
+export const InputOverBox: Story = {
+  tags: ["no-screenshot"],
+  play: async ({ canvas, userEvent }) => {
+    const input = canvas.getByRole("checkbox");
+    const box = input.closest("label")?.querySelector(":scope > span:not(:has(input))")?.getBoundingClientRect();
+    if (box === undefined) throw new Error("the checkbox has no box");
+    await expect(document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)).toBe(input);
+    await userEvent.click(input);
+    await expect(input).toBeChecked();
+  },
+};
+
 export const Disabled: Story = {
   render: (args) => (
     <div className="flex flex-col gap-2">

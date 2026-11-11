@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { CheckboxButton, CheckboxField, type CheckboxFieldProps, composeRenderProps } from "react-aria-components";
 import { tv } from "tailwind-variants";
 import { FieldDescription, FieldError, type FieldTextProps } from "./Field";
+import { inputOverBox } from "./ToggleInput";
 
 const checkbox = tv({
   slots: {
@@ -10,6 +11,7 @@ const checkbox = tv({
     button: [
       "group/control flex min-h-6 cursor-pointer items-center gap-3 text-base text-fg",
       "data-disabled:cursor-not-allowed data-disabled:opacity-50 pointer-coarse:min-h-11",
+      ...inputOverBox,
     ],
     box: [
       "flex size-5 shrink-0 items-center justify-center rounded-sm border-2 border-border-strong bg-surface-sunken text-accent-fg",
