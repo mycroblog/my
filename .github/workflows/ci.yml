@@ -12,7 +12,7 @@ name: CI
 #   (scripts/changed-contracts.sh), and the web E2E of the primary project (e2e, a build, 3 shards, and a report,
 #   web-e2e.yml) when the client changes; repo also checks the documentation
 #   site (app/docs) when the site context changes.
-# - pull_request labelled `ci:full`: both.
+# - pull_request labelled `allow:full-ci`: both.
 #
 # Each job sets up its tools and generates what its checks read, then runs the checks as parallel steps (ADR-0079),
 # each named after the one task it runs (`scripts/task.sh go:vet`), so that each check keeps its own log and time.
@@ -21,7 +21,7 @@ name: CI
 # reports. Pushes to main run main.yml instead.
 
 on:
-  # labeled / unlabeled rerun the checks when `ci:full` is added or removed, and the concurrency group cancels the
+  # labeled / unlabeled rerun the checks when `allow:full-ci` is added or removed, and the concurrency group cancels the
   # older run, so no result of the other set of jobs is left on the pull request.
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
@@ -71,8 +71,8 @@ jobs:
         id: select
         env:
           EVENT: ${{ github.event_name }}
-          # The merge queue, or a pull request labelled `ci:full`.
-          FULL: ${{ github.event_name == 'merge_group' || contains(github.event.pull_request.labels.*.name, 'ci:full') }}
+          # The merge queue, or a pull request labelled `allow:full-ci`.
+          FULL: ${{ github.event_name == 'merge_group' || contains(github.event.pull_request.labels.*.name, 'allow:full-ci') }}
           MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
           MERGE_GROUP_HEAD_SHA: ${{ github.event.merge_group.head_sha }}
         run: |
@@ -175,10 +175,10 @@ jobs:
           - name: mail:typecheck
             run: scripts/task.sh mail:typecheck
           # The prose agents maintain is no larger than at the base, the first parent of the merge commit, unless the
-          # owner approved the growth with the docs:grow label (labelling reruns the checks).
+          # owner approved the growth with the allow:docs-growth label (labelling reruns the checks).
           - name: docs:growth
             env:
-              APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'docs:grow') }}
+              APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'allow:docs-growth') }}
             run: scripts/task.sh docs:growth BASE=HEAD^1 ALLOW_GROWTH="$APPROVED"
           - name: docker:dockerfile-check
             run: scripts/task.sh docker:dockerfile-check
@@ -310,13 +310,13 @@ jobs:
   db-lint:
     # The schema change of a pull request against its base, the first parent of its merge commit (ADR-0023 §6): it
     # fails on a change that can lose or rewrite data of an existing database, unless the decider approved it with the
-    # db:destructive label (labelling reruns the checks). The merge queue cannot read labels and checks only that the
+    # allow:db-destructive label (labelling reruns the checks). The merge queue cannot read labels and checks only that the
     # change applies on top of its base (server-static). db:lint-test runs the lint on its fixtures.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.schema == 'true'
     runs-on: ubuntu-latest
     env:
-      APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'db:destructive') }}
+      APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'allow:db-destructive') }}
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -337,7 +337,7 @@ jobs:
       - name: db:lint-test (postgres)
         run: scripts/task.sh db:lint-test DB_DIALECT=postgres
 
-  # --- The full check: merge groups, and pull requests labelled ci:full -------------------------------------------
+  # --- The full check: merge groups, and pull requests labelled allow:full-ci -------------------------------------------
   # A job whose `if` is false is skipped, and `check` counts a skipped job as passed.
 
   server-static:
@@ -450,7 +450,7 @@ jobs:
   e2e:
     # The web E2E of the primary project (ADR-0079 §5, ADR-0015 §1: every spec, en at 1440 px; the width and locale
     # projects stay in the Nightly) when the group changes the client, on 3 shards of one build. Pull requests do not
-    # run it; with `ci:full` they do.
+    # run it; with `allow:full-ci` they do.
     needs: changes
     if: needs.changes.outputs.full == 'true' && needs.changes.outputs.client == 'true'
     uses: ./.github/workflows/web-e2e.yml

@@ -66,7 +66,7 @@ red='{"slow-suite":{"result":"failure"},"demo-e2e":{"result":"success"}}'
 green='{"slow-suite":{"result":"success"},"demo-e2e":{"result":"success"}}'
 
 run "a first failure" "$red" ""
-expect_has "a first failure" "$calls" "issue create" "--label nightly-failure" "shard 1/8" "compare/def...abc" "actions/runs/7"
+expect_has "a first failure" "$calls" "issue create" "--label type:nightly-failure" "shard 1/8" "compare/def...abc" "actions/runs/7"
 expect_not "a first failure" "$calls" "issue comment" "issue close "
 
 run "a failure that goes on" "$red" "12"

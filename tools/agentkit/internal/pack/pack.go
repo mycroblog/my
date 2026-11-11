@@ -113,11 +113,11 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 	if is.HasLabel("status:needs-decision") {
 		warn = append(warn, "labeled status:needs-decision: do not take it (workflow.md §1)")
 	}
-	if is.HasLabel("agent:blocked") {
-		warn = append(warn, "labeled agent:blocked: read the last comments before doing anything")
+	if is.HasLabel("status:blocked") {
+		warn = append(warn, "labeled status:blocked: read the last comments before doing anything")
 	}
-	if !is.HasLabel("agent:ready") {
-		warn = append(warn, "not labeled agent:ready")
+	if !is.HasLabel("status:ready") {
+		warn = append(warn, "not labeled status:ready")
 	}
 	aliases, err := k.Aliases()
 	if err != nil {

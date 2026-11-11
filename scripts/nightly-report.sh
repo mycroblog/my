@@ -19,7 +19,7 @@
 # gh must be on PATH with a token that may write issues.
 set -euo pipefail
 
-label="nightly-failure"
+label="type:nightly-failure"
 summary="${GITHUB_STEP_SUMMARY:-/dev/stdout}"
 run_url="https://github.com/$GH_REPO/actions/runs/$RUN_ID"
 
@@ -76,7 +76,7 @@ if [ -n "$open_issue" ]; then
 else
   gh label create "$label" --repo "$GH_REPO" --color B60205 \
     --description "The Nightly on main fails; closed by the next green Nightly" > /dev/null 2>&1 || true
-  url="$(gh issue create --repo "$GH_REPO" --title "[Bug] The Nightly fails on main" --label "$label" --label type:bug \
+  url="$(gh issue create --repo "$GH_REPO" --title "The Nightly fails on main" --label "$label" --label type:bug \
     --label priority:p1 --body "$body")"
   echo "Opened $url." >> "$summary"
 fi

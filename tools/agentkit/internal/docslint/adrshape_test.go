@@ -79,7 +79,7 @@ func TestArtifactKind(t *testing.T) {
 		"CGO_ENABLED=0":                "",
 		"my serve":                     "",
 		"check":                        "",
-		"db:destructive":               "",
+		"allow:db-destructive":         "",
 		"type:bug":                     "",
 		"GET /api/v1/statuses/{id}":    "",
 		"/internal/app/x":              "",

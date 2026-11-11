@@ -45,7 +45,7 @@ func Me() (string, error) {
 	return strings.TrimSpace(string(out)), err
 }
 
-// Claim takes issue n by the rules of workflow.md §1: open, agent:ready, not status:needs-decision, nobody
+// Claim takes issue n by the rules of workflow.md §1: open, status:ready, not status:needs-decision, nobody
 // else assigned, every referenced ADR Accepted, nothing it waits for still open. It assigns the gh user and
 // comments the plan. It returns the line to print.
 func Claim(root string, n int, plan string) (string, error) {
@@ -61,8 +61,8 @@ func Claim(root string, n int, plan string) (string, error) {
 	if is.State != "OPEN" {
 		stop = append(stop, "the issue is "+is.State)
 	}
-	if !is.HasLabel("agent:ready") {
-		stop = append(stop, "not labeled agent:ready")
+	if !is.HasLabel("status:ready") {
+		stop = append(stop, "not labeled status:ready")
 	}
 	if is.HasLabel("status:needs-decision") {
 		stop = append(stop, "labeled status:needs-decision")
@@ -143,7 +143,7 @@ func openDependencies(deps []string) ([]string, error) {
 	return stop, nil
 }
 
-// Block comments why the work stops and labels the issue agent:blocked (workflow.md §8).
+// Block comments why the work stops and labels the issue status:blocked (workflow.md §8).
 func Block(n int, reason string) (string, error) {
 	if strings.TrimSpace(reason) == "" {
 		return "", fmt.Errorf("a reason is required: what you tried, the decision needed, the options, your recommendation")
@@ -151,8 +151,8 @@ func Block(n int, reason string) (string, error) {
 	if _, err := gh.Run("issue", "comment", strconv.Itoa(n), "-R", gh.Repo(), "--body", reason); err != nil {
 		return "", err
 	}
-	if _, err := gh.Run("issue", "edit", strconv.Itoa(n), "-R", gh.Repo(), "--add-label", "agent:blocked"); err != nil {
+	if _, err := gh.Run("issue", "edit", strconv.Itoa(n), "-R", gh.Repo(), "--add-label", "status:blocked"); err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("blocked #%d: commented and labeled agent:blocked", n), nil
+	return fmt.Sprintf("blocked #%d: commented and labeled status:blocked", n), nil
 }

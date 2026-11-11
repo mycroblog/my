@@ -56,7 +56,7 @@ bytes 1257 > "$repo/docs/adr/0001-a.md"
 expect "one byte over the allowance" 1 '^docs/adr .* <- grew$'
 expect "the file that grew" 1 '^    \+257  docs/adr/0001-a\.md$'
 expect "the fix" 1 '^docs:growth: the prose grew\. Shorten what you touched'
-expect "the label" 1 'ask for the docs:grow label'
+expect "the label" 1 'ask for the allow:docs-growth label'
 expect "growth the owner allowed" 0 'growth allowed' --allow-growth
 
 reset

@@ -226,6 +226,6 @@ fi
 cat >&2 << 'EOF'
 db:lint: the change can lose or rewrite data of an existing database. Split it into expand and contract
 (schema/README.md#changing-the-schema); a change to a projection or a contract needs the decider's approval,
-the db:destructive label on the pull request.
+the allow:db-destructive label on the pull request.
 EOF
 exit 1

@@ -143,7 +143,7 @@ services `postgres` and `mailpit` alone.
 
 ## Workflow
 
-1. Pick a GitHub issue. `agent:ready` marks the issues with clear acceptance criteria that are ready to start.
+1. Pick a GitHub issue. `status:ready` marks the issues with clear acceptance criteria that are ready to start.
 2. Create a branch `<type>/<issue>-<slug>`. Never push to `main`.
 3. Commit (Conventional Commits, in English), one commit per issue. Before a push, run the fast checks of what you
    changed (`scripts/agentkit.sh check`); the merge queue's full check is the gate, so the full check is for
@@ -182,7 +182,7 @@ step.
 
 | When | Workflow | What runs |
 | --- | --- | --- |
-| Pull request | `ci.yml` | `preflight`: the checks that the pull request's own files and lockfiles decide — markdownlint, shellcheck, gofmt, `bun fmt` (which the merge queue's `repo` job runs again), the Go and npm dependency licenses, the versions of the Dockerfile against `.tool-versions` and of the Playwright image, the design tokens, and the CSS `100vh` check. A change to the ui context also runs the `@my/ui` story tests (`ui-test.yml`); a change to Go or `tools/agentkit` runs golangci-lint on the changed lines (`lint`); a change to the Docker setup (`Dockerfile`, `.dockerignore`, `deploy/`) runs the Docker Compose smoke test (`docker-smoke`). The required check `check` collects the results. A pull request labelled `ci:full` also runs the merge queue's jobs (adding or removing the label runs them again) |
+| Pull request | `ci.yml` | `preflight`: the checks that the pull request's own files and lockfiles decide — markdownlint, shellcheck, gofmt, `bun fmt` (which the merge queue's `repo` job runs again), the Go and npm dependency licenses, the versions of the Dockerfile against `.tool-versions` and of the Playwright image, the design tokens, and the CSS `100vh` check. A change to the ui context also runs the `@my/ui` story tests (`ui-test.yml`); a change to Go or `tools/agentkit` runs golangci-lint on the changed lines (`lint`); a change to the Docker setup (`Dockerfile`, `.dockerignore`, `deploy/`) runs the Docker Compose smoke test (`docker-smoke`). The required check `check` collects the results. A pull request labelled `allow:full-ci` also runs the merge queue's jobs (adding or removing the label runs them again) |
 | Merge queue | `ci.yml` | The full check on the merge group (the pull request on top of `main` and the pull requests queued before it). By the contexts changed (`scripts/changed-contexts.sh`): for go, schema, api, or i18n, `server-static` (tidy, vet, build, the generated files Go reads, the schema of both dialects) and `server-test` (the Go tests, PostgreSQL on pgmem); for ui, web, api, or i18n, `client-static` (tsc, Oxlint, knip, the Vite build, the i18n catalogs) and `client-test` (Vitest in two shards); always `repo` (agentkit, the context map, the documentation rules, the ADR numbers, `bun fmt`, and that CI runs every check of `check`), which also builds the documentation site and runs tsc, Oxlint, and knip on `app/docs/` when `app/docs/`, a published document, or `api/openapi.yaml` changes (a change under `app/docs/` alone runs no client job). golangci-lint and the build tag combinations do not run here (the slow suite runs them). At most six jobs; a skipped job counts as passed. The queue merges when `check` passes |
 | Push to `main` | `main.yml` | No checks: it only builds the caches that pull requests and the merge queue restore. The Go cache holds what the restoring jobs read (modules, package and tool builds, test binaries, vet and golangci-lint results), built one after another with the same settings (`CGO_ENABLED=0`) and rebuilt from scratch under a key of the Go version, `go.sum`, `tools/go.sum`, and the date; the Bun cache is keyed by the lockfile. Each is built only when no cache of its key exists yet |
 | Release gate, nightly, by hand | `slow-suite.yml` | The slow suite: the full web E2E matrix (eight shards), the live interoperability tests (`federation-live.yml`), the tests on a real PostgreSQL, the `stream.Bus` contract against broker containers, the smoke test and the linux/arm64 image build, golangci-lint on everything and the build tag combinations, and CodeQL code scanning (`codeql.yml`; results go to the Security tab). Never on pull requests or the merge queue, and not part of `check` |
@@ -191,7 +191,7 @@ step.
 
 - Pull request CI does not compile, type-check, or test; the merge queue does, and it is the only gate.
   To investigate a merge queue failure on the pull request, or to check an outside contribution early, add the label
-  `ci:full` to the pull request.
+  `allow:full-ci` to the pull request.
 - Pull requests do not run the web E2E automatically; the merge queue runs it on the primary project (`en`, 1440 px)
   when the client changes. To see a failure earlier, for a pull request that touches the web client, run
   `scripts/task.sh web:e2e` locally, or run `gh workflow run web-e2e.yml -R mycroblog/my --ref <branch>` against its
@@ -532,7 +532,7 @@ mark an ADR `Accepted`.
 - A change keeps the user and operator documents that describe it true: `scripts/agentkit.sh docs impact` lists those
   of your change. Every command of `my`, metric, webhook event type, build tag, and task appears in its document
   (`scripts/task.sh agentkit:inventory`).
-- The design documents and the agent instructions do not grow without the decider's `docs:grow` label
+- The design documents and the agent instructions do not grow without the decider's `allow:docs-growth` label
   (`scripts/task.sh docs:growth`): an ADR holds a decision, its reasons, and when to revisit it, not what the code says.
 
 ## Language

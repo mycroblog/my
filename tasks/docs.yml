@@ -24,7 +24,7 @@ tasks:
       - bin/agentkit docs lint
 
   growth:
-    desc: "Fail when the prose agents maintain (ADRs, architecture, requirements, docs/agents, AGENTS.md / CLAUDE.md, the context maps, .claude) is larger than at the merge base with BASE (default origin/main); ALLOW_GROWTH=true, the docs:grow label in CI, reports without failing"
+    desc: "Fail when the prose agents maintain (ADRs, architecture, requirements, docs/agents, AGENTS.md / CLAUDE.md, the context maps, .claude) is larger than at the merge base with BASE (default origin/main); ALLOW_GROWTH=true, the allow:docs-growth label in CI, reports without failing"
     vars:
       BASE: '{{.BASE | default "origin/main"}}'
     cmds:

@@ -34,7 +34,7 @@ prints the directory's `README.md`.
 
 | Step | Run |
 | --- | --- |
-| Take an issue (§1) | `issue claim <n> --plan "<one line>"`: refuses when the issue is not `agent:ready`, needs a decision, is assigned to someone else, depends on a non-Accepted ADR, waits for an open issue, or has a dependency whose state cannot be read |
+| Take an issue (§1) | `issue claim <n> --plan "<one line>"`: refuses when the issue is not `status:ready`, needs a decision, is assigned to someone else, depends on a non-Accepted ADR, waits for an open issue, or has a dependency whose state cannot be read |
 | Verify | `check`: the quick checks of the changed files, one line each and the failing lines — `gofmt`, `go vet` of the changed packages, `bun fmt`, `tsc` and Oxlint, `i18n:lint`, `docs:lint` and `docs:rules`, shellcheck, and that committed generated files are current. `check --full`: `scripts/task.sh check:changed` and the workers check, which the merge queue runs anyway |
 | Open the PR | `pr open [--issue n]... [--summary-file f] [--decisions text] [--confirm] [--footer text] [--base <branch>]`: prints the documents of `docs impact` the change does not touch; copies the issues' acceptance criteria with their checked state. It is the gate: before it pushes (`--force-with-lease`) it refuses, with the command that fixes it, outside a worktree, on a merge commit or a `fixup!` / `squash!` commit in `origin/main..HEAD`, on a conflict with the base, when `check` fails, and, for a change under `app/web/src` or `app/ui/src` other than tests and stories, unless a screenshot of `scripts/task.sh web:shot` is newer than the change and was opened with the Read tool since (the PostToolUse hook records the reads in `.tmp/agentkit/seen.json`); it lists those under `## Screens`. Without `--issue` it closes the issue of the branch name and the `(#N)` of the commit subjects |
 | Finish the PR | `pr land <pr>` **in the background, in the main agent**: turns on auto-merge into the merge queue, prints one line per event until the merge, then removes the branch and its worktree, checks that the closed issues are closed, closes each parent issue whose sub-issues are all closed, and ends with three lines (`merged:`, `cleaned up:`, `remains:`). Exit 1 when CI failed (with the failing lines), 3 on a conflict, 4 when cancelled, 5 when the merge queue dropped it (with the failing lines of its merge group), 124 on the timeout; each prints the fix |
@@ -79,7 +79,7 @@ follow a rule yet: a pending entry fails once its file follows the rule, so the 
   each ADR.
 
 `scripts/task.sh docs:growth` (`scripts/docs-growth.sh`, a step of the pull request's preflight) fails when a group of
-the prose agents maintain is larger than at the merge base, unless the pull request has the `docs:grow` label.
+the prose agents maintain is larger than at the merge base, unless the pull request has the `allow:docs-growth` label.
 
 `docs inventory` (`scripts/task.sh agentkit:inventory`, part of `agentkit:check`) checks the other direction: every
 name that users and operators see and the code defines is mentioned in the document they look it up in.

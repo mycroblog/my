@@ -5,7 +5,7 @@ description: Take an issue, several issues, an epic, or a milestone of mycroblog
 
 # Work on a goal
 
-Arguments: issue numbers, an epic, or a milestone. Without one, take the next `agent:ready` issue of the earliest milestone.
+Arguments: issue numbers, an epic, or a milestone. Without one, take the next `status:ready` issue of the earliest milestone.
 
 1. Claim each issue: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`. It refuses what is not ready.
 2. One worktree and one branch for the whole goal. Group the issues by the shared files they touch

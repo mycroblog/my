@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Fails when the prose that agents read and maintain grew since a base: `scripts/task.sh docs:growth` runs it. A net
-# increase needs the owner's approval, the docs:grow label on the pull request, as a destructive schema change needs
-# db:destructive (scripts/db-lint.sh).
+# increase needs the owner's approval, the allow:docs-growth label on the pull request, as a destructive schema change needs
+# allow:db-destructive (scripts/db-lint.sh).
 #
 #   scripts/docs-growth.sh [options]
 #     --base REF       compare with the merge base of REF and HEAD (default: origin/main)
@@ -121,11 +121,11 @@ if [ "$status" = 0 ]; then
   exit 0
 fi
 if [ "$allow" = 1 ]; then
-  echo "docs:growth: growth allowed (--allow-growth, the docs:grow label)"
+  echo "docs:growth: growth allowed (--allow-growth, the allow:docs-growth label)"
   exit 0
 fi
 cat >&2 << 'EOF'
 docs:growth: the prose grew. Shorten what you touched, or delete what the change makes obsolete, until no group grows.
-If the growth is a new decision the owner wants recorded, ask for the docs:grow label on the pull request.
+If the growth is a new decision the owner wants recorded, ask for the allow:docs-growth label on the pull request.
 EOF
 exit 1

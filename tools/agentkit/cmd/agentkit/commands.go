@@ -33,8 +33,8 @@ Read (instead of grep / cat over the repository):
   adr list [--status Proposed]                         number, status, and title of every ADR
 
 Workflow (instead of gh / scripts/task.sh loops):
-  issue claim <n> [--plan text]                        check agent:ready, no assignee, Accepted ADRs; assign; comment
-  issue block <n> --reason text|--reason-file f        comment and add agent:blocked
+  issue claim <n> [--plan text]                        check status:ready, no assignee, Accepted ADRs; assign; comment
+  issue block <n> --reason text|--reason-file f        comment and add status:blocked
   pr open [--issue n]... [--base b] [--summary-file f] [--decisions text] [--draft]
                                                        the gate: refuses outside a worktree, on a merge or
                                                        fixup! commit, a conflict with the base, a failing

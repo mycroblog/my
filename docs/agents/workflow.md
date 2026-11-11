@@ -8,7 +8,7 @@ this page only says what to do in which order and where judgment is needed.
 
 The unit of delivery is a goal: an epic, a phase of one, or a milestone. One issue is the small case.
 
-- Take only issues labeled `agent:ready`: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`.
+- Take only issues labeled `status:ready`: `scripts/agentkit.sh issue claim <n> --plan "<one line>"`.
 - One branch per goal, in a worktree, named `<type>/<issue>-<slug>` after its epic or first issue. One commit per issue.
 - Issues that change the same shared files (`scripts/agentkit.sh map show <path>` says `shared`) go into the same
   branch. A goal too large for one pull request is cut where its shared files allow, server before client.
@@ -43,7 +43,7 @@ once, on the merged state; do not run the full check or the web E2E locally exce
   Subagents do not open pull requests and do not wait for CI: the orchestrator rebases their commits onto the goal
   branch, opens the pull request, and lands it.
 - Use the agent definitions of `.claude/agents/`, which fix the model, the worktree, and the report of each kind of work.
-- A red Nightly stops the line: fix it before starting more issues (`gh issue list --label nightly-failure`).
+- A red Nightly stops the line: fix it before starting more issues (`gh issue list --label type:nightly-failure`).
 - When the decider answers a question, state the conclusion in the ADR that owns the topic, or on the issue.
 
 ## When a decision is needed

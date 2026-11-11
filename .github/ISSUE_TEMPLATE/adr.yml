@@ -1,6 +1,5 @@
 name: ADR / Decision request
 description: Discuss and decide an architecture decision recorded in docs/adr
-title: "[ADR] "
 labels: ["type:adr", "status:needs-decision"]
 body:
   - type: input

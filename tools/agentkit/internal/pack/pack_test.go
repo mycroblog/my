@@ -54,16 +54,16 @@ func TestBuild(t *testing.T) {
 		Checks:   []string{"schema", "go"}, Shared: true,
 	}}}
 	is := &gh.Issue{
-		Number: 916, Title: "[Task] create_custom_emojis", State: "OPEN",
+		Number: 916, Title: "create_custom_emojis", State: "OPEN",
 		Body:   "FR-915。ADR-0070 と ADR-0071 に従う。data-model §4.4 の `custom_emojis` と `custom_emoji_requests`。\n\n#929 がマージされるまで着手しない。",
-		Labels: []gh.Label{{Name: "agent:ready"}},
+		Labels: []gh.Label{{Name: "status:ready"}},
 	}
 	out, err := Build(&kb.KB{S: s}, &gh.Cache{DB: s.DB}, m, is, Options{Budget: 30000})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, want := range []string{
-		"# #916 [Task] create_custom_emojis",
+		"# #916 create_custom_emojis",
 		"ADR-0071 is Proposed, not Accepted",
 		"| FR-915 | 絵文字の作成の権限 | S |",
 		"申請を別のリソースにする",
@@ -111,7 +111,7 @@ func TestBuildFollowsADRAliases(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = s.Close() }()
-	is := &gh.Issue{Number: 1, Title: "t", State: "OPEN", Body: "ADR-0124 と ADR-0070。", Labels: []gh.Label{{Name: "agent:ready"}}}
+	is := &gh.Issue{Number: 1, Title: "t", State: "OPEN", Body: "ADR-0124 と ADR-0070。", Labels: []gh.Label{{Name: "status:ready"}}}
 	out, err := Build(&kb.KB{S: s}, &gh.Cache{DB: s.DB}, &ctxmap.Map{}, is, Options{Budget: 30000})
 	if err != nil {
 		t.Fatal(err)

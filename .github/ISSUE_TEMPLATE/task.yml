@@ -1,6 +1,5 @@
 name: Task
 description: Implementation, documentation, or tooling work with clear acceptance criteria
-title: "[Task] "
 labels: ["type:task"]
 body:
   - type: textarea

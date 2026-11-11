@@ -33,7 +33,7 @@ One path takes a change from an issue to `main`; each step is a command that ref
 
 - **Never weaken a check to make a change pass** (a lint rule, a test, a budget, a baseline). Change the code.
 - **Build only what was asked.** No document, ADR, screen, setting, or option because it might be useful. Design
-  documents may not grow without the decider's `docs:grow` label: say it in fewer words, or delete what the change
+  documents may not grow without the decider's `allow:docs-growth` label: say it in fewer words, or delete what the change
   makes obsolete.
 - **Decide what is cheap to undo, and say so in the pull request. Ask only for what is expensive to undo** and that no
   Accepted ADR covers ([workflow.md](docs/agents/workflow.md#when-a-decision-is-needed)). Silence is not approval.
