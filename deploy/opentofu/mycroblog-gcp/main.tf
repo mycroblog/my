@@ -530,9 +530,11 @@ locals {
       lower(trimsuffix(trimprefix(setting, "MY_"), "_FILE"))
     ],
     [
-      "host", "role", "profile", "trusted_proxies", "media_max_av_bytes", "billing_sources", "vapid_private_key",
+      "host", "role", "profile", "trusted_proxies", "media_max_av_bytes", "vapid_private_key",
       "worker_job_types", "worker_job_types_except", "worker_job_concurrency", "http_allow_private_networks",
     ],
+    # The app sets it from the billing section; without one, settings may name it, for a plugin.
+    var.billing != null ? ["billing_sources"] : [],
   ))
 }
 
