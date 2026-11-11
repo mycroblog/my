@@ -187,7 +187,7 @@
 
 コンテナの PostgreSQL は `go test` の大半の時間を準備に使い、並列のエージェントでは reaper の起動失敗やタイムアウトで落ちた。spike #453 で pgmem（MIT、PGlite のフォークを WebAssembly にし wasm2go で Go に変換したもの）を試すと、4 つのパッケージの全テストが変更なしで通り（スキーマ、`FOR UPDATE` / `SKIP LOCKED`、advisory lock、READ COMMITTED、デッドロック検出 40P01 を含む）、CI の `go test ./...` は 129 秒から 52〜59 秒になった。
 
-ADR-0110 §7 は L4 を PR の前に行うと決めていたが、並列の作業（[workflow §9](../agents/workflow.md#9-parallel-batches)）では PR が同じ領域を変え続け、最初の並列の作業（#1643）では L4 を測れなかった。測る対象が main に実際にある画面であること、並列の作業の速さを落とさないこと、費用に上限があることから、§4 にした。API キーは ADR-0079 で Workload Identity Federation に替わった。
+ADR-0110 §7 は L4 を PR の前に行うと決めていたが、並列の作業（[workflow.md](../agents/workflow.md#orchestrating)）では PR が同じ領域を変え続け、最初の並列の作業（#1643）では L4 を測れなかった。測る対象が main に実際にある画面であること、並列の作業の速さを落とさないこと、費用に上限があることから、§4 にした。API キーは ADR-0079 で Workload Identity Federation に替わった。
 
 本物のサーバーを動かして画面を確かめる場面が増えたが、サーバーのデータがほとんどなく、L4 の多くの作業が測れなかった。v0 の公開の前の決定者の手での確認も、人が使っている途中のサーバーを要る。そこで §5 から §8 を決めた。基準は、支払い済みと記録できる fake が本番の binary に決して入らないこと、データが領域の規則（ADR-0020）を通ること、外部のサービスと秘密を要さないこと、決定的で冪等であること、本物の `my serve` を測ることである。メールは決定者の問いを受けて、ログへの出力から Mailpit に替えた。
 

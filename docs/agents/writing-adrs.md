@@ -1,51 +1,20 @@
-# Writing ADRs (playbook)
+# Writing ADRs
 
-Policy: [ADR-0000](../adr/0000-record-architecture-decisions.md). Template: [template.md](../adr/template.md).
+Policy: [ADR-0000](../adr/0000-record-architecture-decisions.md) §1. Template: [template.md](../adr/template.md).
 
-## Creating
+An ADR holds three things: the decision, its reasons (with the alternatives not taken), and the conditions under
+which to revisit it. File, function, task, and setting names, lists of what exists, and procedures belong to the code;
+`scripts/task.sh docs:rules` rejects them in an ADR.
 
-```sh
-scripts/task.sh docs:adr-new TITLE="RDB の抽象化と対応方言" SLUG=database-abstraction
-```
-
-The script picks the next number, one past the largest ADR number on the working tree, among the numbers retired in
-`docs/adr/aliases.yaml`, and in the files the open pull requests add (it warns and uses the working tree only when `gh` is
-unavailable), and fills in the date and `Status: Proposed`.
-If another pull request takes the same number first, `docs:adr-numbers` fails in the merge queue: renumber yours.
-`scripts/agentkit.sh adr list [--status Proposed]` lists the existing ADRs.
-
-Create a file only for a topic no ADR owns. A small decision within a topic goes into the ADR that owns it: a tree of many
-narrow ADRs is noise to whoever has to find the conclusion.
-
-## Quality bar
-
-An ADR says what was decided, how the decision came to have that form, and what was rejected.
-
-- **Decision** comes first and stands alone: the conclusion, in numbered sections that others can cite. For a Proposed ADR, it is
-  phrased as a recommendation (`推奨案`, "recommended option") and states what would overturn it.
-- **`経緯`** (progression): the problem, the requirement IDs, and the turns that led here, short. The detail stays in git.
-- **`採らなかった案`** (rejected alternatives): each option fairly, including the strongest case for it, and why it lost, in a line or two.
-- **Consequences** list the bad parts too, and follow-up work that should become issues.
-- No quotations of the decider's answers: state the conclusion and the reason. `docs lint` reports quotation lines.
-- Facts about third-party services (prices, limits, feature support) are marked **`要検証`** (to be verified) unless verified against official docs,
-  with the date and source of verification when they are.
-- Keep it short. Long research goes into a spike report and is linked.
-
-## Revising
-
-- Proposed ADRs: edit freely in a PR, but write only the current proposal. Never add "previously proposed" notes or changelog sections; summarize what changed in the PR description ([ADR-0000](../adr/0000-record-architecture-decisions.md)).
-- When an Open Question is resolved, write the answer into Decision / Consequences in the present tense and delete the item. Do not leave `[x]` items.
-- Accepted ADRs: edit the ADR in place when the decider changes a decision or when the code has to follow something new. Rewrite
-  the conclusion, and move what it replaces to `経緯` or `採らなかった案` if a reader still needs it. Only the decider changes a
-  conclusion, so an agent records one the decider has stated, and proposes any other in the PR or the issue.
-- Keep section numbers: code and documents cite `ADR-NNNN §k`. Add sections at the end, and rewrite a section's content in place.
-- Merging an ADR into another retires its number: list it in `docs/adr/aliases.yaml`, with where its sections went. Old issues and
-  pull requests keep citing it, and agentkit resolves it through that file. Never reuse the number.
-
-## Asking for a decision
-
-Open (or update) the `type:adr` issue for the ADR, summarize the options and recommendation in 5 lines or less,
-add `status:needs-decision`, and link the PR.
-
-Link the ADR from the issue with a `blob/main/...` URL. If the ADR is not merged yet, link the PR instead of a file on the PR branch:
-branches are deleted on merge, so branch URLs break.
+- **One ADR per topic.** Edit the ADR that owns the topic (`scripts/agentkit.sh adr list`); create a file only for a
+  topic none owns: `scripts/task.sh docs:adr-new TITLE="<Japanese title>" SLUG=<kebab-case-english>`.
+- **Decision** stands alone, in numbered sections others cite as `ADR-NNNN §k`. Keep the numbers: add sections at the
+  end and rewrite a section in place. A Proposed ADR phrases it as a recommendation.
+- **`経緯`** says why the decision has its present form, and **`採らなかった案`** gives each alternative its strongest
+  case and why it lost, a line or two each. Neither is a changelog.
+- State conclusions, not the decider's words. Mark a third-party fact `要検証` until verified, then give its source and date.
+- Only the decider sets `Accepted` or `Rejected` or changes an Accepted conclusion; record one the decider has stated
+  by rewriting the section, and propose any other in the pull request.
+- Merging an ADR into another retires its number in `docs/adr/aliases.yaml`. Never reuse a number.
+- To ask for a decision, open or update the ADR's `type:adr` issue with the options and your recommendation in five
+  lines, add `status:needs-decision`, and link the pull request.
