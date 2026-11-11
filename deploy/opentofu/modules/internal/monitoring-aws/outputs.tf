@@ -6,10 +6,8 @@ output "platform" {
 }
 
 output "env" {
-  description = "Settings of the server, by variable name."
+  description = "Settings of the server: the dimensions that the alarms name. The exporter and the namespace are observability-aws's."
   value = {
-    MY_METRICS_EXPORTER       = "emf"
-    MY_METRICS_EMF_NAMESPACE  = var.metrics_emf_namespace
     MY_METRICS_EMF_DIMENSIONS = join(",", local.emf_dimensions)
   }
 }

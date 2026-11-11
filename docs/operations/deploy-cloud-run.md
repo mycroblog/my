@@ -19,6 +19,7 @@ One block of `mycroblog-gcp` creates all of this. Each row is a section of the m
 | Email | `mail` | A secret for the SMTP password: any SMTP service |
 | Secrets | | A generated VAPID key, and the secrets that only you can fill, empty |
 | KEK | `kek` | A generated secret mounted as a file. Cloud KMS is the other kind |
+| Metrics, traces, errors | `observability` | The APIs of Cloud Monitoring, Cloud Trace, and Error Reporting, which read what Cloud Run sends them |
 
 Secret values never reach the OpenTofu plan or state: you add the ones that come from elsewhere yourself, and the module generates the KEK and the VAPID key through write-only attributes.
 

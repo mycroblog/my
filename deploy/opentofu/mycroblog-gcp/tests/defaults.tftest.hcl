@@ -47,6 +47,7 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
       MY_BLOB                              = "gcs"
       MY_BLOB_GCS_BUCKET                   = "my-project-my-media"
       MY_DATABASE                          = "postgres"
+      MY_ERRORS_EXPORTER                   = "none"
       MY_HOST                              = "social.example.org"
       MY_KEK_FILE                          = "/secrets/my-kek-file/value"
       MY_MAIL                              = "smtp"
@@ -65,6 +66,7 @@ run "plans_the_recommended_setup_from_the_fewest_inputs" {
       MY_STREAM                            = "pubsub"
       MY_STREAM_PUBSUB_SUBSCRIPTION_PREFIX = "my-stream"
       MY_STREAM_PUBSUB_TOPIC               = "projects/my-project/topics/my-stream"
+      MY_TRACES_EXPORTER                   = "none"
       MY_TRUSTED_PROXIES                   = "169.254.0.0/16, 203.0.113.10"
     }
     error_message = "the recommended setup does not compose the settings it should: ${jsonencode(module.app.env)}"

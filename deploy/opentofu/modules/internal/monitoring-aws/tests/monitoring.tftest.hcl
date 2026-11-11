@@ -95,8 +95,8 @@ run "the_server_writes_what_the_alarms_read" {
   command = plan
 
   assert {
-    condition     = output.env["MY_METRICS_EXPORTER"] == "emf"
-    error_message = "CloudWatch Logs takes the metrics from the lines of emf"
+    condition     = keys(output.env) == ["MY_METRICS_EMF_DIMENSIONS"]
+    error_message = "the exporter and the namespace are observability-aws's, which sets each setting once"
   }
 
   assert {
@@ -252,13 +252,13 @@ run "the_outputs_fit_the_app" {
     assign_public_ip = true
     backends = [
       # What this module returns: run blocks of a plan cannot pass outputs to another module.
-      { platform = "aws", env = { MY_METRICS_EXPORTER = "emf", MY_METRICS_EMF_NAMESPACE = "my", MY_METRICS_EMF_DIMENSIONS = "my.outcome" }, secret_env = {}, permissions = [] },
+      { platform = "aws", env = { MY_METRICS_EMF_DIMENSIONS = "my.outcome" }, secret_env = {}, permissions = [] },
       { platform = "aws", env = { MY_DATABASE = "postgres", MY_BLOB = "s3" }, secret_env = { MY_DATABASE_URL = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:db-AbCdEf", MY_KEK = "arn:aws:secretsmanager:ap-northeast-1:111122223333:secret:kek-AbCdEf" } },
     ]
   }
 
   assert {
-    condition     = output.env["MY_METRICS_EXPORTER"] == "emf"
+    condition     = output.env["MY_METRICS_EMF_DIMENSIONS"] == "my.outcome"
     error_message = "the app takes the setting"
   }
 }

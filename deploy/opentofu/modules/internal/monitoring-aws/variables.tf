@@ -25,7 +25,7 @@ variable "host" {
 }
 
 variable "metrics_emf_namespace" {
-  description = "CloudWatch namespace of the server's metrics, returned in env."
+  description = "CloudWatch namespace of the server's metrics, which observability-aws sets."
   type        = string
   default     = "my"
   nullable    = false

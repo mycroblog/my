@@ -39,6 +39,11 @@ deploy/opentofu/modules/internal/
   billing-gcp/                 the usage cost import from Google Cloud, never applied
   billing-aws/                 the usage cost import from AWS, never applied
   monitoring-gcp/              uptime check, log-based metrics, and alert policies
+  observability-gcp/           the APIs of Cloud Monitoring, Cloud Trace, and Error Reporting, and the exporters
+  observability-aws/           the exporters to CloudWatch: settings only
+  translation-gcp-cloud-translation/  Cloud Translation's API and role, for the provider google
+  translation-aws-translate/   Amazon Translate's IAM actions, for the provider aws: settings and permissions only
+  search-aws-opensearch/       an Amazon OpenSearch Service domain of yours, with signed requests, never applied
   *-aws-*/                     the same on AWS, never applied: see "AWS: unverified" below
 ```
 
@@ -73,13 +78,16 @@ A module is named `<role>-<provider>-<service>`, so that the name says what it i
 | `secrets` | Secrets, filled by hand or generated |
 | `kek` | The key that encrypts the secrets in the database |
 | `ingress` | How traffic reaches the app |
+| `translation` | A translation provider that needs an API or a grant on the platform |
+| `search` | A search engine that needs a grant on the platform |
+| `observability` | Where the metrics, the traces, and the error reports go, as the exporter settings |
 | `billing` | What the import of a provider's usage costs reads |
-| `monitoring` | The uptime check, the alerts, and the settings of the metrics that they read |
+| `monitoring` | The uptime check, the alerts, and the dimensions of the metrics that they read |
 | `network` | The private network that the others take as an input. It is no backend |
 
 A module with no provider of its own drops that part (`db-external`, `mail-smtp`). The provider is what the module talks to,
 not the platform behind it: `ingress-cloudflare-app` takes its origin as an input, so the same module fronts Cloud Run or AWS. Cloud SQL would be `db-gcp-cloud-sql`.
-A module that covers a provider's several services for one purpose drops the service (`billing-gcp`).
+A module that covers a provider's several services for one purpose drops the service (`billing-gcp`, `observability-gcp`).
 
 ## Platforms
 
@@ -103,7 +111,7 @@ Mixing them would take identity bridges between clouds, and more combinations th
 
 ## The backend contract
 
-Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, `billing-*`, and `monitoring-*` module returns the same outputs, so that changing the database means
+Every `db-*`, `queue-*`, `blob-*`, `kv-*`, `stream-*`, `mail-*`, `secrets-*`, `kek-*`, `translation-*`, `search-*`, `observability-*`, `billing-*`, and `monitoring-*` module returns the same outputs, so that changing the database means
 changing one module block:
 
 | Output | Type | Meaning |
@@ -319,9 +327,27 @@ module, as with an ingress. Its `env` is built from names, so it does not wait f
 
 Neither module has ever been applied, and turning on a billing export or a budget stays a step in the Console: [each README](billing-gcp/README.md#what-stays-manual) says which, and [the guide](../../../../docs/operations/billing-import.md) what the import does with them.
 
+## The modules of the services the server calls
+
+A port of the server gets a module only when choosing it makes the public module do something on the platform: enable an
+API, grant a permission, create a resource, join a network, or generate a value. A provider that takes only a URL and a
+secret, such as DeepL, LibreTranslate, Sentry, Elasticsearch, or Meilisearch, goes through the `settings` and `secrets` of the
+public module and has no module here.
+
+- `translation-gcp-cloud-translation` enables `translate.googleapis.com` in the project that pays for the translations and
+  asks for `roles/cloudtranslate.user` there, on the app's own project by no resource or on another one by its ID.
+- `translation-aws-translate` asks for `translate:TranslateText` and `comprehend:DetectDominantLanguage`, and creates nothing.
+- `search-aws-opensearch` reads a domain the operator created, asks for the HTTP methods the server sends on its indexes, and
+  returns the domain's VPC as `private_network`, so that a domain on another network fails the plan.
+- `observability-gcp` and `observability-aws` set the exporter of each signal, so that one module owns each of
+  `metrics_exporter`, `traces_exporter`, and `errors_exporter` (and `metrics_emf_namespace` on AWS). A signal set to
+  `settings` sets nothing, so that the public module lets `settings` name it. Google Cloud's destinations read what Cloud Run
+  sends them, so `observability-gcp` exports nothing to them and only enables their APIs; on AWS everything rides on the log
+  lines that the log driver sends with the execution role. Neither asks for a permission.
+
 ## The monitoring contract
 
-A `monitoring-*` module is a backend: it returns `env`, with the settings of the metrics that its alerts read, so that a setting of them elsewhere fails the plan. It calls the service from outside and reads what the platform keeps, so it asks for no `permissions`, and it takes `host` as an input rather than an output of the app. It takes `notification_emails`, more channels of the platform as IDs, and the period of its uptime check, since each check wakes what scales to zero. Its alerts carry the names of [the runbook](../../../../docs/operations/alerts.md), and its README lists each alert of the runbook as covered, covered differently, or not expressible. No alert may fire on the absence of a metric that only traffic produces.
+A `monitoring-*` module is a backend: it returns `env`, with the settings of the metrics that its alerts read, so that a setting of them elsewhere fails the plan. The exporter is not one of them: `observability-*` sets it, and a `monitoring-*` module takes the exporter or its namespace as an input. It calls the service from outside and reads what the platform keeps, so it asks for no `permissions`, and it takes `host` as an input rather than an output of the app. It takes `notification_emails`, more channels of the platform as IDs, and the period of its uptime check, since each check wakes what scales to zero. Its alerts carry the names of [the runbook](../../../../docs/operations/alerts.md), and its README lists each alert of the runbook as covered, covered differently, or not expressible. No alert may fire on the absence of a metric that only traffic produces.
 
 ## The app contract
 
@@ -453,6 +479,9 @@ The modules for AWS test whether this contract holds on a second platform. **Non
 | `ingress-aws-alb`, and `ingress-aws-cloudfront` in front of it | `ingress-gcp-domain-mapping`, `ingress-gcp-load-balancer` |
 | `billing-aws` | `billing-gcp`, and it also runs on Google Cloud's app: read [The billing modules](#the-billing-modules) |
 | `monitoring-aws` | `monitoring-gcp` |
+| `observability-aws` | `observability-gcp` |
+| `translation-aws-translate` | `translation-gcp-cloud-translation` |
+| `search-aws-opensearch` | Nothing: on Google Cloud a search engine goes through `settings` |
 
 `db-external`, `db-neon`, and `mail-smtp` take the same blocks, with an ARN where Google Cloud has a secret's ID. The app's `backends`
 tests show that a block of one platform fails the plan on the other's app. `mycroblog-aws` composes them, and its tests plan each kind

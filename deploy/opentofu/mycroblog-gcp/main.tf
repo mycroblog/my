@@ -153,9 +153,20 @@ locals {
   # list): an entry is a key, or a prefix that ends in *.
   coverage = jsondecode(file("${path.module}/coverage.json"))
   # The sections that are null set nothing, so settings may name their keys: billing_sources for a plugin, for one.
-  sections_off = concat(var.billing == null ? ["billing"] : [], var.monitoring == null ? ["monitoring"] : [])
+  sections_off = concat(
+    var.billing == null ? ["billing"] : [],
+    var.monitoring == null ? ["monitoring"] : [],
+    var.translation == null ? ["translation"] : [],
+  )
+  # A signal of observability left to the settings sets nothing either: errors_exporter = sentry, for one. Its keys start
+  # with the signal's name.
+  observability_off = [for signal, destination in var.observability : "${signal}_" if destination == "settings"]
   managed_entries = concat(
-    flatten([for section, entries in local.coverage.section : entries if !contains(local.sections_off, section)]),
+    flatten([
+      for section, entries in local.coverage.section : [
+        for entry in entries : entry if !anytrue([for prefix in local.observability_off : section == "observability" && startswith(entry, prefix)])
+      ] if !contains(local.sections_off, section)
+    ]),
     local.coverage.fixed,
   )
   # The keys that a section sets or the module fixes, which settings and secrets must not name again. A static file, so it
@@ -419,6 +430,19 @@ module "mail" {
   password_secret_id = var.mail.smtp.username != null ? local.secret.smtp_password : null
 }
 
+# A service the server calls, which needs an API and a grant: null, the default, leaves translation to the settings.
+module "translation" {
+  source = "../modules/internal/translation-gcp-cloud-translation"
+
+  project_id     = coalesce(try(var.translation.project_id, null), local.project_id)
+  app_project_id = local.project_id
+  location       = try(var.translation.location, "global")
+
+  lifecycle {
+    enabled = var.translation != null
+  }
+}
+
 # ---------------------------------------------------------------------------------------------------------------------------------
 # 5. Ingress: the service's name comes from locals, so no ingress depends on the app, and each is a whole backend.
 
@@ -500,6 +524,15 @@ module "media_origin" {
 # ---------------------------------------------------------------------------------------------------------------------------------
 # 6. Operations
 
+module "observability" {
+  source = "../modules/internal/observability-gcp"
+
+  project_id = local.project_id
+  metrics    = var.observability.metrics
+  traces     = var.observability.traces
+  errors     = var.observability.errors
+}
+
 module "billing" {
   source = "../modules/internal/billing-gcp"
 
@@ -515,6 +548,7 @@ module "billing" {
   }
 }
 
+# The alerts read the lines of the exporter that observability sets: var.monitoring needs metrics = cloud-monitoring.
 module "monitoring" {
   source = "../modules/internal/monitoring-gcp"
 
@@ -526,7 +560,7 @@ module "monitoring" {
   notification_emails            = try(var.monitoring.notification_emails, [])
   notification_channels          = try(var.monitoring.notification_channels, [])
   page_notification_channels     = try(var.monitoring.page_notification_channels, [])
-  metrics_exporter               = try(var.monitoring.metrics_exporter, "none")
+  metrics_exporter               = lookup(module.observability.env, "MY_METRICS_EXPORTER", "none")
   uptime_period                  = try(var.monitoring.uptime_period, "900s")
   disabled_alerts                = try(var.monitoring.disabled_alerts, [])
   database_size_limit_bytes      = try(var.monitoring.database_size_limit_bytes, null)
@@ -555,7 +589,8 @@ locals {
       module.mail,
       var.ingress.kind == "domain-mapping" ? module.ingress_domain_mapping : null,
       module.ingress_load_balancer, module.ingress_cloudflare, module.ingress_media,
-      module.billing, module.monitoring,
+      module.translation,
+      module.observability, module.billing, module.monitoring,
     ] : b if b != null
   ]
 }

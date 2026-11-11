@@ -16,7 +16,9 @@ Third-party facts below carry the date they were confirmed and their source. Ser
 
 Point the external monitor at **`/api/v1/instance/health`**, not at `/readyz` (`/health/ready`): it queries the database on every request,
 so a monitor with a short interval keeps a scale-to-zero database awake. The probes are for your platform.
-The `monitoring` section of [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) checks `/health/live` on Google Cloud, and the module [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) of the AWS example checks `/readyz`, each from the platform's own monitor at a long interval: its `uptime_period` is what that costs, since each check wakes an instance.
+The `monitoring` section of [`mycroblog-gcp`](../../deploy/opentofu/README.md#sections) checks `/health/live` on Google Cloud, and that of [`mycroblog-aws`](../../deploy/opentofu/README.md#sections-of-mycroblog-aws) checks `/readyz`, each from the platform's own monitor at a long interval: its `uptime_period` is what that costs, since each check wakes an instance.
+
+Where the server's own metrics, traces, and error reports go is the `observability` section of the same modules, which `monitoring` reads. By default it sends each to the platform: on Google Cloud the metrics to Cloud Monitoring, the request traces to Cloud Trace, and the error reports to Error Reporting, all three from what Cloud Run sends them, with their APIs enabled; on AWS the metrics to CloudWatch in Embedded Metric Format and the error reports to CloudWatch Logs, with no traces, since X-Ray needs a collector beside the server. `monitoring` needs the metrics there: it refuses `observability.metrics = "settings"`, which leaves `metrics_exporter` to the `settings` input.
 
 Responses of `/api/v1/instance/health` (no authentication, `Cache-Control: no-store`):
 

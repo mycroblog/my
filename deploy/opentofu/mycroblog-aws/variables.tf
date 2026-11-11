@@ -422,6 +422,49 @@ variable "monitoring" {
     condition     = var.monitoring == null || length(try(var.monitoring.notification_emails, [])) + length(try(var.monitoring.notification_topic_arns, [])) > 0
     error_message = "monitoring must name at least one of notification_emails and notification_topic_arns, since an alarm that notifies nobody is not an alert, or be null to create none."
   }
+
+  validation {
+    condition     = var.monitoring == null || var.observability.metrics == "cloudwatch"
+    error_message = "monitoring alarms on the metrics in CloudWatch: it needs observability.metrics = cloudwatch."
+  }
+}
+
+variable "observability" {
+  description = "Where the metrics, the traces, and the error reports go. Everything rides on the log lines, which the tasks' log driver sends to CloudWatch Logs, so nothing needs a grant: metrics = cloudwatch writes them in Embedded Metric Format, in the namespace name, which CloudWatch extracts; errors = cloudwatch keeps the error report line, with its stack, in CloudWatch Logs; traces = none records no spans, since X-Ray takes them only through a collector beside the server, which the tasks do not run. settings leaves a signal to the settings input: errors = settings with errors_exporter = sentry in settings and errors_sentry_dsn in secrets, for one."
+  type = object({
+    metrics = optional(string, "cloudwatch")
+    traces  = optional(string, "none")
+    errors  = optional(string, "cloudwatch")
+  })
+  default  = {}
+  nullable = false
+
+  validation {
+    condition = (
+      contains(["cloudwatch", "settings"], var.observability.metrics) &&
+      contains(["none", "settings"], var.observability.traces) &&
+      contains(["cloudwatch", "settings"], var.observability.errors)
+    )
+    error_message = "observability.metrics must be cloudwatch or settings, traces none or settings, and errors cloudwatch or settings."
+  }
+}
+
+variable "translation" {
+  description = "Amazon Translate, the translation provider aws: the module allows the tasks' role translate:TranslateText, and comprehend:DetectDominantLanguage for a post whose language is unknown, and sets the provider's region, the deployment's by default. The instance setting translation_providers enables the provider. Null, the default, does none of it; DeepL and LibreTranslate go through settings and secrets."
+  type = object({
+    region = optional(string)
+  })
+  default = null
+}
+
+variable "search" {
+  description = "Search on a domain of Amazon OpenSearch Service that you created, in the region, with an access policy that lets the tasks' role in: domain_name. The module reads the domain, allows the role the HTTP methods the server sends to it, and sets search = opensearch with the requests signed. index names the alias (my-statuses). For a domain in the VPC, security_group_ids are groups the tasks join, which its security group admits. Null, the default, leaves search to the settings: the database, or Elasticsearch, Meilisearch, or OpenSearch with a user and password."
+  type = object({
+    domain_name        = string
+    index              = optional(string)
+    security_group_ids = optional(list(string), [])
+  })
+  default = null
 }
 
 variable "billing" {

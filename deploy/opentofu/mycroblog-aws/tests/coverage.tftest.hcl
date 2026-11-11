@@ -72,6 +72,13 @@ mock_provider "aws" {
       arn = "arn:aws:kms:ap-northeast-1:111122223333:key/abc"
     }
   }
+  mock_data "aws_opensearch_domain" {
+    defaults = {
+      arn         = "arn:aws:es:ap-northeast-1:111122223333:domain/my-search"
+      endpoint    = "search-my-search-abc123.ap-northeast-1.es.amazonaws.com"
+      vpc_options = []
+    }
+  }
   mock_resource "aws_lb" {
     defaults = {
       arn        = "arn:aws:elasticloadbalancing:ap-northeast-1:111122223333:loadbalancer/app/my/abc"
@@ -163,7 +170,7 @@ run "the_recommended_setup" {
       "MY_MAIL", "MY_MAIL_FROM",
       "MY_KEK",
       "MY_BILLING_SOURCES",
-      "MY_METRICS_EXPORTER", "MY_METRICS_EMF_NAMESPACE", "MY_METRICS_EMF_DIMENSIONS",
+      "MY_METRICS_EXPORTER", "MY_METRICS_EMF_NAMESPACE", "MY_METRICS_EMF_DIMENSIONS", "MY_TRACES_EXPORTER", "MY_ERRORS_EXPORTER",
     ], concat(keys(module.app.env), keys(module.app.secret_env)))) == 0
     error_message = "the recommended setup misses a setting of its sections: ${jsonencode(module.app.env)} ${jsonencode(module.app.secret_env)}"
   }
@@ -318,6 +325,35 @@ run "the_role_of_each_task" {
   }
 }
 
+run "translation_by_amazon_translate" {
+  command = plan
+
+  variables {
+    translation = { region = "us-east-1" }
+  }
+
+  assert {
+    condition     = module.app.env["MY_TRANSLATOR_AWS_REGION"] == "us-east-1"
+    error_message = "Amazon Translate must reach the tasks: ${jsonencode(module.app.env)}"
+  }
+}
+
+run "search_on_amazon_opensearch_service" {
+  command = plan
+
+  variables {
+    search = { domain_name = "my-search", index = "social-statuses" }
+  }
+
+  assert {
+    condition = length(setsubtract([
+      "MY_SEARCH", "MY_SEARCH_OPENSEARCH_URL", "MY_SEARCH_OPENSEARCH_INDEX", "MY_SEARCH_OPENSEARCH_AWS_SIGNING",
+      "MY_SEARCH_OPENSEARCH_AWS_REGION",
+    ], keys(module.app.env))) == 0
+    error_message = "the domain must reach the tasks: ${jsonencode(module.app.env)}"
+  }
+}
+
 # The classification feeds the settings input, which refuses what a section sets, the module fixes, or the module does not
 # take (the tests of modules/internal/settings: a test cannot expect the failure of a variable of a module it calls). A section
 # that is off sets nothing, so its keys are free.
@@ -327,11 +363,37 @@ run "settings_may_set_what_a_section_that_is_off_would" {
 
   variables {
     monitoring = null
-    settings   = { billing_sources = "cloudflare", metrics_exporter = "prometheus" }
+    settings = {
+      billing_sources        = "cloudflare", metrics_emf_dimensions = "my.outcome", search = "meilisearch",
+      search_meilisearch_url = "https://search.example.org", translator_aws_region = "us-east-1",
+    }
   }
 
   assert {
-    condition     = module.app.env["MY_BILLING_SOURCES"] == "cloudflare" && module.app.env["MY_METRICS_EXPORTER"] == "prometheus"
-    error_message = "without billing and monitoring, settings may name their keys"
+    condition = (
+      module.app.env["MY_BILLING_SOURCES"] == "cloudflare" && module.app.env["MY_METRICS_EMF_DIMENSIONS"] == "my.outcome" &&
+      module.app.env["MY_SEARCH"] == "meilisearch" && module.app.env["MY_TRANSLATOR_AWS_REGION"] == "us-east-1"
+    )
+    error_message = "without billing, monitoring, search, and translation, settings may name their keys"
+  }
+}
+
+run "settings_may_set_a_signal_that_observability_leaves_to_them" {
+  command = plan
+
+  variables {
+    monitoring    = null
+    observability = { metrics = "settings", errors = "settings" }
+    settings      = { metrics_exporter = "otlp", errors_exporter = "sentry" }
+    secrets       = ["errors_sentry_dsn"]
+  }
+
+  assert {
+    condition = (
+      module.app.env["MY_METRICS_EXPORTER"] == "otlp" && module.app.env["MY_ERRORS_EXPORTER"] == "sentry" &&
+      module.app.env["MY_TRACES_EXPORTER"] == "none" && !contains(keys(module.app.env), "MY_METRICS_EMF_NAMESPACE") &&
+      contains(keys(module.app.secret_env), "MY_ERRORS_SENTRY_DSN")
+    )
+    error_message = "a signal left to the settings takes them, and the others stay the section's: ${jsonencode(module.app.env)}"
   }
 }

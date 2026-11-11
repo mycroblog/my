@@ -467,6 +467,26 @@ run "an_unknown_kind_of_kek" {
   expect_failures = [var.kek]
 }
 
+run "traces_to_x_ray" {
+  command = plan
+
+  variables {
+    observability = { traces = "x-ray" }
+  }
+
+  expect_failures = [var.observability]
+}
+
+run "monitoring_without_the_metrics_in_cloudwatch" {
+  command = plan
+
+  variables {
+    observability = { metrics = "settings" }
+  }
+
+  expect_failures = [var.monitoring]
+}
+
 run "monitoring_that_notifies_nobody" {
   command = plan
 
