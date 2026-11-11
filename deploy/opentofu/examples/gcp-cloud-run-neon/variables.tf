@@ -6,7 +6,7 @@ variable "project_id" {
 }
 
 variable "region" {
-  description = "Region of the service, the jobs, and the queue."
+  description = "Region of the service, the jobs, the queue, and the media bucket."
   type        = string
   default     = "asia-northeast1"
 }
@@ -21,33 +21,9 @@ variable "image" {
   type        = string
 }
 
-variable "database_url_secret_id" {
-  description = "Secret that holds Neon's direct connection URL."
-  type        = string
-  default     = "my-database-url"
-}
-
-variable "vapid_secret_id" {
-  description = "Secret that holds the private key of Web Push."
-  type        = string
-  default     = "my-vapid-key"
-}
-
-variable "kek_secret_id" {
-  description = "Secret that holds the KEK."
-  type        = string
-  default     = "my-kek"
-}
-
 variable "bucket_name" {
   description = "Name of the media bucket, unique across Google Cloud."
   type        = string
-}
-
-variable "bucket_location" {
-  description = "Location of the media bucket."
-  type        = string
-  default     = "asia-northeast1"
 }
 
 variable "mail_from" {
@@ -60,39 +36,9 @@ variable "mail_smtp_host" {
   type        = string
 }
 
-variable "mail_smtp_port" {
-  description = "TCP port of the SMTP server."
-  type        = number
-  default     = 587
-}
-
 variable "mail_smtp_username" {
-  description = "User name for SMTP AUTH."
+  description = "User name for SMTP AUTH. Its password goes in the secret that secrets_to_fill names."
   type        = string
-}
-
-variable "mail_smtp_password_secret_id" {
-  description = "Secret that holds the SMTP password."
-  type        = string
-  default     = "my-smtp-password"
-}
-
-variable "tick_schedule" {
-  description = "Cron schedule of the tick, in UTC."
-  type        = string
-  default     = "* * * * *"
-}
-
-variable "env" {
-  description = "Other settings by variable name, for everything no module covers."
-  type        = map(string)
-  default     = {}
-}
-
-variable "secret_env" {
-  description = "Other secret settings: variable name to secret ID."
-  type        = map(string)
-  default     = {}
 }
 
 variable "console_enabled" {
@@ -101,17 +47,32 @@ variable "console_enabled" {
   default     = false
 }
 
-output "console" {
-  description = "Pipe this to console.sh: tofu output -json console | .terraform/modules/app/deploy/opentofu/console.sh <my command>."
-  value       = module.app.console
+output "secrets_to_fill" {
+  description = "The secrets to fill before the server starts, with the command that adds each."
+  value       = module.mycroblog.secrets_to_fill
 }
 
-output "service_uri" {
-  description = "URL Cloud Run gave the service."
-  value       = module.app.service_uri
+output "kek" {
+  description = "Where the KEK is, and the command that copies it."
+  value       = module.mycroblog.kek
 }
 
 output "dns_records" {
   description = "The records to add at the DNS provider."
-  value       = module.ingress.dns_records
+  value       = module.mycroblog.dns_records
+}
+
+output "service_uri" {
+  description = "URL Cloud Run gave the service."
+  value       = module.mycroblog.service_uri
+}
+
+output "upgrade" {
+  description = "What upgrade.sh takes."
+  value       = module.mycroblog.upgrade
+}
+
+output "console" {
+  description = "Pipe this to console.sh: tofu output -json console | .terraform/modules/mycroblog/deploy/opentofu/console.sh <my command>."
+  value       = module.mycroblog.console
 }

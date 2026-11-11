@@ -277,9 +277,14 @@ if "$root/scripts/tofu-env-check.sh" -r "$tmp/reference.md" "$tmp/bad" 2> /dev/n
 
 # tofu-examples: the sources and the release gate, on a small tree.
 tree="$tmp/tree"
-mkdir -p "$tree/deploy/opentofu/examples/e" "$tree/deploy/opentofu/modules/internal/m" "$tree/docs/operations"
+mkdir -p "$tree/deploy/opentofu/examples/e" "$tree/deploy/opentofu/modules/internal/m" "$tree/deploy/opentofu/mycroblog-p" \
+  "$tree/docs/operations"
 echo v0.1.0 > "$tree/deploy/opentofu/MODULE_REF"
-good='git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m?ref=v0.1.0&depth=1'
+good='git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-p?ref=v0.1.0&depth=1'
+write_public() {
+  printf 'module "m" {\n  source = "%s"\n}\n' "$1" > "$tree/deploy/opentofu/mycroblog-p/main.tf"
+}
+write_public '../modules/internal/m'
 write_example() {
   printf 'terraform {\n  required_providers {\n    google = {\n      source = "hashicorp/google"\n    }\n  }\n}\nmodule "m" {\n  source = "%s"\n}\n' "$1" > "$tree/deploy/opentofu/examples/e/main.tf"
 }
@@ -288,7 +293,11 @@ examples() {
 }
 write_example "$good"
 examples check || fail "a good source was refused"
-for bad in '../../modules/internal/m' 'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m' \
+write_example 'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m?ref=v0.1.0&depth=1'
+examples check || fail "an internal module by its Git source was refused"
+for bad in '../../mycroblog-p' '../../modules/internal/m' 'git::https://github.com/mycroblog/my.git//deploy/opentofu/mycroblog-p' \
+  'git::https://github.com/mycroblog/my.git//deploy/opentofu/examples/e?ref=v0.1.0&depth=1' \
+  'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m' \
   'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m?ref=v0.0.9&depth=1' \
   'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/none?ref=v0.1.0&depth=1' \
   'git::https://github.com/someone/else.git//deploy/opentofu/modules/internal/m?ref=v0.1.0&depth=1'; do
@@ -299,6 +308,12 @@ write_example "$good"
 printf '#   source = "../../modules/internal/m"\n' >> "$tree/deploy/opentofu/examples/e/main.tf"
 if examples check; then fail "check passed a relative source in a comment"; fi
 write_example "$good"
+for bad in '../modules/internal/none' '../../modules/internal/m' \
+  'git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/m?ref=v0.1.0&depth=1'; do
+  write_public "$bad"
+  if examples check; then fail "check passed in a public module: $bad"; fi
+done
+write_public '../modules/internal/m'
 examples check --release v0.1.0 || fail "the release of MODULE_REF was refused"
 examples check --release v0.2.0-rc.1 || fail "a prerelease was checked"
 if examples check --release v0.2.0; then fail "a stable release passed with another ref"; fi
