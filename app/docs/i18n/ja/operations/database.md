@@ -87,7 +87,7 @@ docker run --rm -v my_data:/data -e MY_DATABASE=sqlite -e MY_DATABASE_URL=/data/
 docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db.example/my' my schema apply
 ```
 
-<!-- source: upgrading 4996c9dc9019 -->
+<!-- source: upgrading 3882f4bb0751 -->
 ## アップグレード
 
 新しいリリースへのアップグレードでは、**新しい**リリースのサーバーのイメージで、必ず次の手順をこの順に実行します。
@@ -105,7 +105,7 @@ docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db
 `my serve` は `my db upgrade -check`、`my schema apply`、`my db upgrade` のどれも実行しません。これらは一回限りのジョブです。1 つのデータベースに対しては、同時に 1 つだけ実行してください。
 
 ほとんどのリリースにはデータアップグレード手順がありません。そのとき `my db upgrade -check` は `ok: the database can be upgraded to this release` を、
-`my db upgrade` は `ok: no data upgrade step to run` を出力します。それでも両方を実行してください。そうすれば、手順がすべてのリリースノートを読むことに依存しません。
+それ以前のリリースの手順を記録済みのデータベースでは、`my db upgrade` は `ok: no data upgrade step to run` を出力します。新しいデータベースは、最初の `my db upgrade` でそのリリースのすべての手順を記録し、書き換えるものはありません。それでも両方を実行してください。そうすれば、手順がすべてのリリースノートを読むことに依存しません。
 各リリースの手順は、リリースノートの **Upgrading** の節に載っています。
 
 <!-- source: the-server-during-an-upgrade ef479675745b -->

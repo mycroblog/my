@@ -71,23 +71,23 @@ my config check -instance  # also the instance settings in the database
 - **詳細**: [サーバーの運用](running.md)（連合のエンドポイントと、別のドメインからのハンドルの配信）、
   [`host`](../reference/configuration.md#host) と [`account_domain`](../reference/configuration.md#account_domain)。
 
-<!-- source: reachable-over-https 1cf53c613f7b -->
+<!-- source: reachable-over-https b7513cc3534f -->
 ### `https` で届くこと
 
 - **理由**: ほかのサーバーは id を `https://<host>/` のポート 443 で取得し、ブラウザーはログインの Cookie を `https` でだけ送ります。
-- **確認**: ネットワークの外から `curl -sI https://<host>/healthz` を実行すると、`host` に有効な証明書で `200` が返り、
+- **確認**: ネットワークの外から `curl -sI https://<host>/health/live` を実行すると、`host` に有効な証明書で `200` が返り、
   `my config check` が `web_origin` についてのエラーを報告しないこと。`http://<host>/` は `https` にリダイレクトされます。これはサーバーの前にある
   リバースプロキシ、ロードバランサー、CDN が行います（Docker Compose では、レイヤー `compose.caddy.yaml` がそうしたプロキシです）。
 - **詳細**: [サーバーの運用](running.md)、[`web_origin`](../reference/configuration.md#web_origin)。
 
-<!-- source: not-reachable-past-the-cdn 58310b9f29d7 -->
+<!-- source: not-reachable-past-the-cdn 9d483f56634f -->
 ### CDN を迂回して届かないこと
 
 - **理由**: 前に CDN があり、サーバー自身のアドレスも公開されたまま（Cloud Run の `*.run.app`）だと、誰でも WAF とキャッシュを迂回してサーバーを呼べ、
   CDN と同じプラットフォームにいる呼び出し元は、レート制限が見るクライアントの IP を選べてしまいます。必要なのはこの場合だけです。ファイアウォールやプラットフォームがすでに接続できる相手を制限しているときは不要で、
   CDN がなければ迂回するものもありません。
 - **確認**: `origin_secret` と `origin_secret_header` が設定され、CDN がすべてのホスト名でそのヘッダーを付けていること。`curl -s -o /dev/null -w '%{http_code}\n' https://<origin address>/`
-  が `403` を返し、その `/healthz` が `200` を返し、`https://<host>/` が `200` を返すこと。
+  が `403` を返し、その `/health/live` が `200` を返し、`https://<host>/` が `200` を返すこと。
 - **詳細**: [CDN を通らなかったリクエストを拒否する](cdn.md#refuse-requests-that-did-not-come-through-the-cdn)。全員が締め出されたときの戻し方も説明しています。
 
 <!-- source: secrets ec71f1f20574 -->
@@ -177,7 +177,7 @@ my config check -instance  # also the instance settings in the database
     `my admin role` で一覧し、管理画面で見直してください。
 - **詳細**: [管理者とロール](admin-cli.md)、[モデレーション](moderation.md)（権限とログインの回復）。
 
-<!-- source: operations 56bd643c2241 -->
+<!-- source: operations aac00b13fc38 -->
 ## 運用
 
 - **バックアップと復旧**: データベース、blob ストア（`blob_fs_dir` またはバケット）、KEK が、定期的に、
@@ -185,7 +185,7 @@ my config check -instance  # also the instance settings in the database
   ログインして投稿できることを確かめます。一度も復元したことのないバックアップは、使えるかどうか分かりません。データベースとメディアは
   一時ディレクトリに置いてはいけません。置いていると `my config check` が警告します。
   [鍵の管理](key-management.md)（KEK のバックアップ）と[データベース](database.md)を参照してください。
-- **監視とアラート**: 外部の監視が `/healthz` を確認し、対応できる人にアラートを送ること、そしてジョブキューの dead のジョブを
+- **監視とアラート**: 外部の監視が `/health/live` を確認し、対応できる人にアラートを送ること、そしてジョブキューの dead のジョブを
   見張っていること。[監視](monitoring.md)と[サーバーの運用](running.md)（ヘルスチェック、メトリクス、ジョブキュー）を参照してください。
 - **イメージ**: インスタンスが、再起動で変わるイメージではなく、ダイジェストで固定したリリース済みのイメージ（`ghcr.io/mycroblog/my:0.1.0@sha256:...`、リリースノートにあります）を実行し、
   [その来歴を確認していること](running.md#verify-an-image)。`latest` タグはありません。

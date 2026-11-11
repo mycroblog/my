@@ -4,7 +4,7 @@
 ほかのサービスがこのサーバーのページについて表示するプレビューと、そのためにサーバーが返すもの、そして手で確認する手順を説明します。このサーバーが自身の投稿のリンクについて表示するカードは、
 下の[投稿のリンクのカード](#cards-of-links-in-posts)にあります。ドメインからの取得を止める方法は[インスタンスの設定](instance-settings.md#link-card-domains)にあります。
 
-<!-- source: what-the-server-returns bb9326f9729a -->
+<!-- source: what-the-server-returns fe60560f1b91 -->
 ## サーバーが返すもの
 
 `my serve` は、ランディングページ（`https://<host>/`）、インスタンスの情報のページ（`https://<host>/about`）、
@@ -22,6 +22,8 @@ HTML のリクエストは常にログインしていないものとして扱う
 | `unlisted` の投稿 | 200。メタタグの入ったシェルに、`<meta name="robots" content="noindex, noarchive">` と `X-Robots-Tag: noindex, noarchive` を加えたもの |
 | `local`、`private`、`direct`、削除された、または存在しない投稿と、凍結、無効化、削除、または制限されたアカウントのプロフィールと投稿 | 404。汎用のシェルと `X-Robots-Tag: noindex, noarchive`。本文とヘッダーは、理由が何であっても同じです |
 | `/@<old username>/status/<post ID>` | 301。いまのユーザー名の URL へ |
+| ハッシュタグのページ（`/tags/<tag>`） | 200。汎用のシェルに、そのハッシュタグの Atom フィードへのリンクを加えたもの（下の「汎用のシェル」を参照） |
+| Web クライアントのそのほかのすべてのページ（探索、公開の費用とサポーターのページ、ログインなど） | 200。インスタンスのメタタグの入った汎用のシェル（下の「汎用のシェル」を参照） |
 
 どのページにも、インスタンスの設定と持ち主の設定に従って、検索エンジンと AI のクローラーへの表明（`noindex` や `noai` などのメタタグと、
 `X-Robots-Tag`、`Content-Usage`、`tdm-reservation`）が付きます
@@ -31,23 +33,24 @@ HTML のリクエストは常にログインしていないものとして扱う
 ActivityPub の `Accept` を付けたリクエストにはシェルを返しません。ActivityPub の側が応答します（プロフィールは
 Actor の `id` で応答し、ログインしていない訪問者に見える投稿は、その `id` への 302 で応答します）。どの応答にも `Vary: Accept` が付きます。
 
-<!-- source: meta-tags 00a4a8115b9e -->
+<!-- source: meta-tags 1a514282794e -->
 ### メタタグ
 
 | タグ | 内容 |
 | --- | --- |
-| `og:title`、`<title>` | 「表示名 (@ユーザー名@アカウントのドメイン)」。表示名が空ならユーザー名 |
-| `og:type` | プロフィールでは `profile`、投稿では `article` |
+| `og:title`、`<title>` | 「表示名 (@ユーザー名@アカウントのドメイン)」。表示名が空ならユーザー名。記事ではその題名 |
+| `og:type` | プロフィールでは `profile`、投稿と記事では `article` |
 | `og:url`、`<link rel="canonical">` | 正規の URL（いまのユーザー名の URL） |
-| `og:description` | 投稿の本文（プロフィールでは自己紹介）からタグを除いたプレーンテキストを、200 書記素で切ったもの。注意書きのある投稿では、注意書きの文章だけ |
+| `og:description` | 投稿の本文（プロフィールでは自己紹介）からタグを除いたプレーンテキストを、200 書記素で切ったもの。注意書きのある投稿では、注意書きの文章だけ。記事ではその要約で、センシティブに指定していても同じです。記事の本文がページに入ることはありません |
 | `og:image`、`og:image:alt` / `width` / `height` | 下の順で選んだ画像 |
 | `og:site_name` | インスタンス名（テキスト `name`。どの言語でも同じです。ない場合は `host`。[名前とドメイン](instance-settings.md#name-and-domain)） |
-| `og:locale`、`<html lang dir>` | 投稿の言語。設定されていない（`und`）場合は投稿者の既定の投稿の言語、それもなければインスタンスの `default_locale`。`Accept-Language` によっては変わりません |
+| `og:locale`、`<html lang dir>` | 投稿の言語。設定されていない（`und`）場合は投稿者の既定の投稿の言語、それもなければインスタンスの `default_locale`。`Accept-Language` によっては変わりません。`og:locale` は `language_TERRITORY` の形です。地域のない言語には通常の地域が付き（`ja` → `ja_JP`、`en` → `en_US`、`pt` → `pt_BR`）、`<html lang>` は言語タグをそのまま保ちます |
 | `article:published_time`、`article:author` | 投稿のみ。投稿の日時（UTC）と投稿者のプロフィールの URL |
 | `profile:username` | プロフィールのみ。`username@account domain` |
 | `twitter:card` | 画像がおよそ 2:1 より横長（幅 / 高さ >= 1.7）で、300x157 以上なら `summary_large_image`、それ以外は `summary` |
 | `fediverse:creator` | `@username@account domain`。Mastodon はこれを「作者」として表示します |
 | `<link rel="alternate" type="application/activity+json">` | AP の `id`（Actor か、投稿のオブジェクト） |
+| `<link rel="alternate" type="application/atom+xml">` | Atom フィードのあるプロフィールのみ。フィードのアドレス（`https://<host>/@<username>.atom`）で、題名は `og:title` と同じ形です。持ち主がフィードを止めたプロフィールと、制限された、または移行したアカウントにはありません |
 
 ランディングページのメタタグは、インスタンス自体を紹介します。
 
@@ -55,7 +58,7 @@ Actor の `id` で応答し、ログインしていない訪問者に見える�
   `<link rel="canonical">` は `https://<host>/` です。
 - `og:description` は、インスタンスのテキスト `short_description` を 200 書記素で切ったものです。ない場合は出力しません。
 - 言語（`og:locale`、`<html lang dir>`）はインスタンスの `default_locale` です。名前と説明は、どの言語でも同じ値です。
-- `og:image` は下の 3 番（インスタンスのプレビュー画像）、それがなければ 4 番か 5 番です。
+- `og:image` はインスタンスの画像で、下の 3 番、それがなければ 4 番、5 番、6 番です。
 - アカウントに属さないので、`fediverse:creator` と ActivityPub の `alternate` は出力しません。
 - インスタンスの情報のページ（`/about`）にも同じメタタグがあります。`og:title` と `<title>` は「{インスタンス名} について」
   （`server:preview.about_title`）、`og:url` と `<link rel="canonical">` は `https://<host>/about` です。
@@ -64,35 +67,54 @@ Actor の `id` で応答し、ログインしていない訪問者に見える�
   `<link rel="canonical">` はそのページのアドレスです。公開していない文書のページには汎用のシェルを返します。
 - リンクのカードのクローラーについてのページ（`/about/crawler`）にも同じメタタグがあり、題名とアドレスも同じ形です。
 
+汎用のシェルは、そのほかのすべてのページと、非公開の投稿の 404 が返すもので、ランディングページと同じタグを、そのページ自身のアドレスなしで持ちます。
+`og:type` は `website`、インスタンス名が `og:site_name` と `og:title`、`short_description` が
+`og:description` で、ほかに `og:locale`、インスタンスの画像、`twitter:card` があります。`og:url` と
+`<link rel="canonical">` はないので、1 つのコピーがすべてのパスに使え、非公開の投稿の 404 はほかのどのページとも同一のままです。
+ハッシュタグのページが加えるのは、そのハッシュタグのフィード（`https://<host>/tags/<tag>.atom`）への
+`<link rel="alternate" type="application/atom+xml">` だけで、題名は「#tag on instance name」（`server:feed.tag_title`）です。まだ投稿がそのハッシュタグを
+使っていなくても付きます。ハッシュタグか公開の費用のページへの共有リンクには、インスタンスのカードが表示されます。
+
+フィードそのものは、返信でもブーストでもないローカルの公開投稿の新しい 20 件を載せた Atom 1.0 の文書で、
+`ETag`、`Last-Modified`、`Cache-Control: public, max-age=60` が付きます。記事のエントリーは題名と要約に記事へのリンクを加えたもので、
+本文は記事のページに残ります。フィードのあるプロフィールには、記事だけのフィード
+`https://<host>/@<username>/articles.atom` もあり、題名は「Articles by name (@handle)」（`server:feed.articles_title`）で、同じ規則に
+従います。プロフィールのページがリンクするのは、メインのフィードだけです。サーバーは描画したフィードをキーバリューストアに
+1 分間保持するので、変更は約 1 分以内にフィードに届きます。フィードには、そのプロフィールと同じ `X-Robots-Tag` と AI への
+表明が付きます。ハッシュタグのフィードは常に `noindex` で、その著者のいずれかの AI の拒否を表明します。
+フィードのないプロフィールと、まだどの投稿も使っていないハッシュタグには、404 を返します。
+
 `og:image` は次の順で選びます。
 
-1. 投稿に添付された最初の画像（その代替テキストが `og:image:alt` に入ります）。センシティブに指定した投稿や
+1. 投稿に添付された最初の画像、または記事のカバー（その代替テキストが `og:image:alt` に入ります）。センシティブに指定した投稿や記事、
    注意書きのある投稿では使いません。
 2. プロフィールのヘッダー画像、なければアバター（`og:image:alt` は「{name} のヘッダー画像」か「{name} のアバター」）。
-3. インスタンスのプレビュー画像（インスタンスの設定 `preview_image`。`og:image:alt` はテキスト `preview_image_alt`、なければ「{インスタンス名} の
+3. インスタンスのプレビュー画像（インスタンスの設定 `preview_image`。管理の「サーバーの設定」→「全般」の「リンクのプレビュー」で設定します。`og:image:alt` はテキスト `preview_image_alt`、なければ「{インスタンス名} の
    イメージ画像」）。
-4. インスタンス自身のロゴのリンクプレビュー用の版（[ロゴとアイコン](instance-settings.md#logo-and-icon)）。`https://<host>/brand/<revision>/preview-1200x630.png` にある
+4. インスタンスのサムネイル（インスタンスの設定 `thumbnail`。「サーバーの設定」→「全般」のページの画像です。`og:image:alt` はテキスト
+   `thumbnail_alt`、なければ「{インスタンス名} のイメージ画像」）。
+5. インスタンス自身のロゴのリンクプレビュー用の版（[ロゴとアイコン](instance-settings.md#logo-and-icon)）。`https://<host>/brand/<revision>/preview-1200x630.png` にある
    1200x630 の PNG です（`og:image:alt` は「{インスタンス名} のイメージ画像」）。
-5. 同梱の既定の画像（`https://<host>/preview-image.png`、1200x630 の PNG。インスタンス名を含まない汎用の絵で、
-   `og:image:alt` はその絵を説明します）。
+6. 同梱の既定の画像（`https://<host>/preview-image.png`、白地に mycroblog のワードマークを置いた 1200x630 の PNG。
+   インスタンス名は含みません。`og:image:alt` は「mycroblog のロゴ」）。
 
-そのため、プレビューを表示するページには必ず `og:image` と `og:image:alt` があります。
-1 から 3 の画像は処理済みのメディアの `full` の版で、幅と高さは処理で得た値です。
-`preview_image` が処理中、処理に失敗した、または画像でない場合は、4 番（ロゴがなければ 5 番）を使います。
-インスタンスの設定はリクエストのたびに読むので、`my instance set preview_image ...` は再起動なしで反映されます（手順は
+3 番から 6 番がインスタンスの画像です。そのため、プレビューを表示するページには必ず `og:image` と `og:image:alt` があります。
+1 番から 4 番の画像は処理済みのメディアの `large` の版で、幅と高さは処理で得た値です。
+`preview_image` が未設定、処理中、処理に失敗した、または画像でない場合は、サムネイル、次にロゴ、
+その次に同梱の画像を使います。インスタンスの設定はリクエストのたびに読むので、`my instance set preview_image ...` は再起動なしで反映されます（手順は
 [インスタンスの設定](instance-settings.md)を参照してください）。
 
-既定の画像は、起動後の最初のリクエストで標準ライブラリーによって描かれ、プロセスの中に保持されます（約 10 KB）。
-`Cache-Control: no-cache` と ETag を付けて配信します。
+同梱の画像はバイナリーの一部です（約 20 KB）。`Cache-Control: no-cache` と ETag を付けて配信します。
 
-<!-- source: caching 5bc906452b10 -->
+<!-- source: caching e6ace7ad3fd0 -->
 ### キャッシュ
 
 - 応答には `Cache-Control: public, max-age=60, stale-while-revalidate=300` が付きます。削除、公開範囲の変更、
   文書の公開や非公開は、最長でその間、共有キャッシュに残ります。
 - ETag は、テンプレート、アセット、インスタンスの設定のバージョン、言語、投稿のバージョン
   （版）、実際の公開範囲、プロフィールのバージョン、選んだ画像から作ります（ランディングページ、
-  情報のページ、文書のページ、クローラーについてのページでは、ページのアドレス、その題名、インスタンスの説明、選んだ画像）。
+  情報のページ、文書のページ、クローラーについてのページでは、ページのアドレス、その題名、インスタンスの説明、選んだ画像。
+  汎用のシェルでは、インスタンス名、その説明、インスタンスの画像）。
   `If-None-Match` には `304` を返します。
 - 前に CDN を置く場合は、キャッシュキーに `Accept` を含めてください（AP の JSON と HTML が混ざらないようにするためです）。
 

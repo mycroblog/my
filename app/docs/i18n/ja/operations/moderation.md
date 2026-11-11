@@ -1,8 +1,8 @@
-<!-- source: account-and-domain-actions-and-handling-reports 59d39b2e3f37 -->
+<!-- source: account-and-domain-actions-and-handling-reports 7f21d5c6c925 -->
 # アカウントとドメインへの処分、通報の対応
 
-運営者とモデレーターが、アカウントやドメインに処分を行い、異議申し立てを審査し、通報に対応し、監査ログを読む方法を説明します。
-アカウントの管理（管理 API のみ）を除き、ここで説明することはすべて、管理 API（`/api/v1/admin/...`、スコープ `admin:read` / `admin:write`）と CLI（`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`）で行えます。
+運営者とモデレーターが、アカウントやドメインに処分を行い、異議申し立てを審査し、通報に対応し、ほかのサーバーに何が届いたかを確かめ、監査ログを読む方法を説明します。
+アカウントの管理と配送の確認（どちらも管理 API のみ）を除き、ここで説明することはすべて、管理 API（`/api/v1/admin/...`、スコープ `admin:read` / `admin:write`）と CLI（`my admin account action` / `my admin domain` / `my admin report` / `my admin appeal`）で行えます。
 管理 API にはロールの権限が必要です。アカウントの管理、処分、異議申し立てには `manage_accounts`、ドメインへの処分には `manage_domains`、通報には `manage_reports` が必要です。
 CLI はサーバーと同じ設定（`-config` または環境変数）で DB に直接接続し、どのユーザーが操作したかは記録しません（`issued_by_user_id` などのフィールドは NULL になり、[監査ログ](#audit-log)の操作者は `cli` になります）。
 
@@ -34,7 +34,7 @@ CLI はサーバーと同じ設定（`-config` または環境変数）で DB �
 
 担当の割り当て、メモ、お知らせ、異議申し立てはこのサーバーにとどまります。サーバーの外に出るのは右の列のアクティビティだけです。
 
-<!-- source: moderation-and-server-administration-in-the-web-client 3beb1c9760a0 -->
+<!-- source: moderation-and-server-administration-in-the-web-client d7c65fc5b3d0 -->
 ## Web クライアントでのモデレーションとサーバー管理
 
 Web クライアントでは、スタッフ向けの画面が 2 つに分かれています。
@@ -52,9 +52,24 @@ Web クライアントでは、スタッフ向けの画面が 2 つに分かれ�
 - 組み込みの `moderator` が持つのは `manage_reports`、`manage_accounts`、`view_audit` だけで、「管理」は表示されません。「ドメインへの処分」と「連合先のサーバー」の画面（`manage_domains`）も表示されないため、
   これらを任せるには、その権限を持つロールを作って付与してください（[ロールの付与と取り消し](admin-cli.md#granting-and-revoking-roles)）。
 - 管理 API のパスはグループにかかわらず `/api/v1/admin/...` で、スコープも同じ `admin:read` / `admin:write` の組です。API リファレンスでは、グループはタグ（`admin-moderation`、`admin-server`）で分かれています。
-- 権限には 3 つ目のグループ「利用者の機能」（`view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`）があり、スタッフ向けの画面の外にあります。これらの権限だけを持つ人には「モデレーション」も「管理」も表示されず、
+  サーバーの外のサービスは、権限のスコープを使って、1 つの権限の操作を呼び出せます（[別のサービスに管理 API を使わせる](#letting-another-service-use-the-admin-api)）。
+- 権限には 3 つ目のグループ「利用者の機能」（`view_finance`、`create_custom_emojis`、`start_voice_rooms`、`create_invites`、`keep_posts_longer`、`create_articles`、`create_events`）があり、スタッフ向けの画面の外にあります。これらの権限だけを持つ人には「モデレーション」も「管理」も表示されず、
   `view_finance` を持つ人のナビゲーションには、設定のあとに「会計」（`/finance`）が表示されます。
   その API は利用者向けの名前空間にあり（`GET /api/v1/finance/cost_totals` と `GET /api/v1/finance/income_totals`、スコープ `read:finance`）、`admin:*` のスコープは必要ありません。表示する内容は[インスタンス設定](instance-settings.md)の `finance_viewer_*` で決まります。
+
+<!-- source: letting-another-service-use-the-admin-api 6c266c1e1111 -->
+### 別のサービスに管理 API を使わせる
+
+サーバーのそばで動かしているサービス、たとえば招待を配るものや費用を記録するものは、プラグインなしで、1 つの権限に対する管理 API を呼び出せます。
+
+1. サービス用のアカウントを登録し、サービスに必要な権限だけを持つロールを付与します（招待なら `manage_invites` を持つロールです。[ロールの付与と取り消し](admin-cli.md#granting-and-revoking-roles)）。
+2. そのアカウントでサインインし、**設定 → あなたのアプリ** で、権限のスコープ、つまり `admin:` に権限を付けたスコープ（`admin:manage_invites`）を含むアプリを登録します。
+3. アプリから、そのスコープでアカウントにトークンを発行し、サービスにアクセストークンとリフレッシュトークンを渡します。
+
+- トークンが使えるのは、そのスコープが挙げる権限の操作だけで、しかもアカウントのロールがその権限を持っている間だけです。監査ログには、トークンの操作がそのアカウントの操作として記録されます。
+- アクセストークンの有効期間は 1 時間です。サービスはリフレッシュトークンで更新し、そのたびに新しいリフレッシュトークンを保存してください。古いものをもう一度使うと、そのトークンは取り消されます。
+- `manage_roles`、`manage_oauth_apps`、`manage_login_recovery`、`manage_login_providers`、`manage_service_closure` には権限のスコープがなく、同意の画面でスタッフにこれらを求めるアプリも作れません。
+- サービスを止めるには、アプリのトークンを取り消すかアプリを削除する、ロールを外す、または「管理」の「OAuth のアプリ」でアプリを無効にします。
 
 <!-- source: account-actions a61dac7c5921 -->
 ## アカウントへの処分
@@ -279,6 +294,72 @@ Web クライアントでは、「モデレーション」→「ドメインへ�
 - 取り込んだ処分は「解除されるまで」続き、行の公開コメントと伏せ字の指定、そしてあなたが指定した非公開のメモを持ちます。1 件ずつ行った処分と同じく監査ログに記録されます（操作者は、API ではその人、CLI では `cli` です）。
 - 書き出しでは、効力のある処分について、ドメインごとに 1 行を書きます。`suspend` のあるドメインは `suspend`、`limit` のあるドメインは `silence`、どちらもないドメインは `noop` になります。Mastodon のドメインブロックにない `force_sensitive` だけを持つドメインは書き出しません。非公開のメモと終了日時は書き出しません。
 
+<!-- source: subscribing-to-blocklists d49a93c3c44f -->
+### ブロックリストの購読
+
+CSV を手作業で取り込む代わりに、ほかのサーバーや個人が `https` の URL で公開しているドメインのブロックリストを購読できます。サーバーは、購読した直後、その後は毎日、そして求められたときにリストを取得し、
+その行をドメインへの処分に変えます。モデレーターが承認または却下する下書きとして作る方法（`draft` モード、既定）と、取得のたびに直接作る方法（`automatic` モード）があります。
+
+```sh
+my admin domain subscription add -format mastodon_csv -title "Shared blocklist" https://lists.example/blocklist.csv
+my admin domain subscription list
+my admin domain subscription drafts <subscription id>
+my admin domain subscription accept -keys issue:suspend:spam.example <subscription id>
+my admin domain subscription reject -all <subscription id>
+my admin domain subscription update -mode automatic <subscription id>
+my admin domain subscription fetch <subscription id>               # fetch now and print the outcome
+my admin domain subscription fetches <subscription id>
+my admin domain subscription remove [-lift-actions] <subscription id>
+```
+
+管理 API では、`GET` と `POST /api/v1/admin/domain_list_subscriptions`、`GET`、`PATCH`、`DELETE .../{id}`
+（`lift_actions=true` で購読の処分を解除します）、`POST .../{id}/fetch`、`GET .../{id}/fetches`、`GET .../{id}/drafts`、
+`POST .../{id}/drafts/accept` と `.../drafts/reject`（本文には `keys` を指定します。何も指定しなければすべての下書きが対象です）を使います。どれにも
+`manage_domains` が必要です。
+
+Web クライアントでは、「モデレーション」→「ドメインへの処分」を開いて「ブロックリストの購読」
+（`/moderation/domain-actions/subscriptions`）を選びます。一覧には、各購読のモードと最後の取得が表示され、失敗は
+まとめて表示されます。「購読を追加」は、名前、URL、形式、下の設定を入力するフォームを開き、購読すると
+その購読のページが開きます。このページには 4 つのセクションがあります。下書き（1 件ずつでも、まとめてでも承認または却下できます。ドメインを凍結する
+下書きを承認するときは先に確認されます）、取得（「今すぐ取得」と、各取得の結果）、設定、そして「購読をやめる」です。
+「購読をやめる」では、購読が作った処分を解除するかどうかを尋ねられます。通知 `admin_domain_list_failing` は
+一覧へのリンクになっています。
+
+| 形式 | リストの内容 |
+| --- | --- |
+| `mastodon_csv` | Mastodon のドメインブロックの CSV。取り込みと同じように読みます |
+| `mastodon_json` | ドメインブロックを公開している Mastodon サーバーの `GET /api/v1/instance/domain_blocks` の応答。伏せ字（`*`）になっているドメインは読み飛ばし、リストを公開していないサーバー（`401`、`403`、`404`）は取得が失敗します |
+| `plain_text` | 1 行に 1 ドメイン。どれも `suspend` になります |
+
+1 行から作る処分は取り込みと同じ表に従い、購読の設定で変わります。設定は、`suspend_as`（`suspend`、
+`limit`、`ignore`。既定は `suspend`）、`silence_as`（`limit` または `ignore`。既定は `limit`）、行の
+`reject_media` と `reject_reports` を適用するかどうか（既定ではどちらも適用）、そして処分に行の公開コメントを写すかどうか（既定では
+写しません）です。
+
+- 取得は、ほかのサーバーの取得と同じ保護を通ります。プライベートなアドレスに通じる URL やリダイレクトは
+  失敗します。読み込むのは最大 2 MiB、5,000 行までで、それより大きなリストは取得が失敗します。サーバーはリストの `ETag` と
+  `Last-Modified` を送り返すので、変わっていないリストの取得は負担が小さく、前回読んだものと同じリストは何も変えません。
+- 失敗した取得は、どの処分も変えません。失敗の理由（`http_status`、`network`、
+  `forbidden_destination`、`too_large`、`too_many_entries`、`malformed`）とともに記録され、購読の一覧とその
+  取得の一覧に表示されます。3 回続けて失敗すると、ロールが `manage_domains` を持つ人に通知
+  `admin_domain_list_failing` が届きます。
+- 購読は、自分が作っていない処分を解除することも置き換えることもありません。同じ種類の処分がすでにそのドメインまたは親ドメインを対象にしている場合は、
+  誰が作ったものでも、購読はそこに何も作りません。2 つの購読が同じドメインを挙げているときは、先に作ったほうの処分が有効で、
+  それが解除されると、次の購読が自分の処分を作ります。
+- リストからドメインがなくなると、automatic モードでは、次の取得で、購読がそのドメインに作った処分を解除します。1 回の
+  取得で 10 件を超え、しかも購読の処分の半分を超える解除になる場合は、解除は代わりに下書きとして待機します。壊れたリストや空のリストはそう見えるためです。
+- サーバーが知らない重大度（`suspend`、`silence`、`noop` のどれでもないもの）は、常に下書きとして待機し、購読の設定に従って
+  `suspend` として扱われます。
+- 下書きには、リストが加えるもの（`issue`）と取り除くもの（`lift`）が、`issue:suspend:spam.example` のようなキーとともに並びます。
+  却下した下書きは、リストがそのドメインの行を変える（`issue`）か、処分が終わる（`lift`）まで、戻ってきません。
+- モデレーターが購読の作った処分を解除すると、購読は、リストがそのドメインの行を変えるまで、その処分をもう一度作ることはありません。
+- 設定の変更は、その変更が始める取得で適用されます。URL と形式は変更できないので、変えるには
+  もう一度購読してください。
+- 購読を削除しても、購読が作った処分は残り、モデレーターのものとして扱われます。購読と一緒に解除することもできます。
+- 監査ログには、購読、変更、削除、承認と却下した下書き、手動で求めた取得が記録されます。
+  automatic モードの処分は、ほかのドメインへの処分と同じように、操作者を `system` として記録され、
+  Webhook には `domain_moderation_action.created` と `.lifted` として送られ、その `data` に `subscription_id` が入ります。
+
 <!-- source: severed-follows 51be435d8635 -->
 ### 断ち切られたフォロー
 
@@ -289,6 +370,52 @@ Web クライアントでは、「モデレーション」→「ドメインへ�
 - 承認済みのフォローを失った利用者には、失ったフォロワーとフォローの数を伝える通知（`relationships_severed`）が 1 件ずつ届きます。フォローリクエストだけを失った利用者には届きません。
 - 処分を解除しても、断ち切られたフォローは戻りません。利用者はもう一度フォローします。
 - 同じ処分をもう一度処理しても（ジョブが再実行されたときなど）、断ち切られた関係の記録や通知は増えません。
+
+<!-- source: federating-only-with-allowed-servers 042f518cd527 -->
+### 許可したサーバーとだけ連合する
+
+インスタンス設定 `federation_scope` は、このサーバーがどのサーバーと連合するかを決めます。`open`（既定）は、ドメインへの処分で凍結されていないすべてのサーバーと連合し、
+`allowlist` は、許可リストにあるドメインとそのサブドメインとだけ連合します。知っているサーバーとだけ話す組織や個人のサーバー向けです。
+
+`federation_scope` が `allowlist` の間は、次のようになります。
+
+- 許可のないサーバーは、凍結したドメインとして扱われます。そのサーバーからの配送は署名を確認する前に `403` になり、そのサーバーには何も配送せず、何も取得せず、リレーもそこからは何も取り込みません。
+- 許可はサブドメインにも及びます。`friend.example` を許可すると、`social.friend.example` も許可されます。
+- ドメインへの処分は、許可したサーバーにも引き続き適用されます。許可したドメインでも `suspend` があれば凍結されたままで、`limit` や `reject_media` があれば制限されたままです。
+- ActivityPub の GET には、`authorized_fetch` の設定にかかわらず、許可したサーバーの署名が必要です。これにより、許可のないサーバーは公開投稿を読めません。GET に署名しないサーバーやクローラーは `401` になります。
+- NodeInfo は `metadata.federationScope` を示すので、ほかのサーバーがそれを知ることができます。
+
+`open` の間は、許可リストは何も変えず、次に切り替えるときのために残されます。
+
+```sh
+my admin domain allow add -comment "partner" friend.example
+my admin domain allow list
+my admin domain allow remove friend.example
+my admin federation scope                   # prints the setting
+my admin federation scope allowlist         # shows what the switch would end, and changes nothing
+my admin federation scope -apply allowlist  # switches
+my admin federation scope open
+```
+
+管理 API では、`GET /api/v1/admin/domain_allows`、`POST /api/v1/admin/domain_allows`（本文は `domain` と `comment`。すでに許可されているドメインは `200` を返し、許可はそのままです）、`DELETE /api/v1/admin/domain_allows/{domain}` を、権限 `manage_domains` で使います。
+`GET /api/v1/admin/settings/federation_scope/impact` は、切り替えで終わるものを数えます（権限 `manage_settings`）。`PATCH /api/v1/admin/settings` は、ほかの設定と同じように `federation_scope` を変更します。
+許可リストに入れられるドメインは最大 5,000 件で、公開されることのないコメントは最大 5,000 文字です。このサーバー自身のドメインは許可できません。
+
+`allowlist` への切り替えと、オンの間の許可の削除は、フォローを完全に終わらせます。
+
+- 切り替える前に、切り替えで終わる、ローカルの利用者と許可のないサーバーの間の承認済みのフォローの数、それを失うローカルの利用者の数、最も多いサーバーを確認してください（上の影響の確認、または `-apply` なしの `my admin federation scope allowlist`）。
+- 切り替えると、許可リストが許可していないすべてのサーバーとのフォローが、双方向に、相手のサーバーに知らせることなく切られます。ドメインの `suspend` と同じです。ジョブ（`moderation.sever_allowlist`）がローカルの利用者を 1 人ずつ処理して切り、承認済みのフォローを失った利用者には、件数を示す通知（`relationships_severed`）が 1 件届きます。
+- `federation_scope` が `allowlist` の間に許可を削除すると、そのドメインとそのサブドメインのアカウントのうち、ほかの許可がカバーしていないものとのフォローが、同じように切られます。親ドメインが許可されているサブドメインの許可を削除しても、何も切られません。
+- `open` に戻したり、そのドメインをもう一度許可したりしても、切られたフォローは戻りません。利用者はもう一度フォローします。
+- すでに `allowlist` のときに `allowlist` を設定しても、それ以上は何も切られません。
+
+Web クライアントでは、「モデレーション」→「ドメインへの処分」を開いて「許可したドメイン」（`/moderation/domain-actions/allowed`）を選ぶと、許可を読み、
+追加し、削除できます。`federation_scope` が `allowlist` の間は削除するとそのドメインが切り離されるため、削除する前に確認されます。
+設定そのものは、サーバーの設定の連合のページ（`/admin/settings/federation`、権限 `manage_settings`）にある「連合の範囲」です。「許可したドメインだけ」を選んで保存すると、
+切り替えで終わるフォロー、それを失うローカルの
+利用者、最も多いサーバーが表示され、確認したときにだけ保存されます。
+
+許可の追加と削除は監査ログに記録され（`domain_allow_added` と `domain_allow_removed`）、切り替えは `federation_scope` の `setting_changed` として記録されます。
 
 <!-- source: publishing-the-domains-you-act-on b647d2c8c84c -->
 ### 処分したドメインの公開
@@ -330,7 +457,40 @@ Web クライアントでは、アカウントの「審査」ページ（`/moder
 - `suspend` のあるドメインや、配送の失敗によって `unavailable` になっているドメインからは取得しません。同じ URI の取得の失敗は 1 時間記憶され、その間の取り直しでは取得しません。
 - あなたの依頼は、監査ログに `status_refetch_queued`、`account_statuses_refetch_queued`、`domain_statuses_refetch_queued` として記録されます。
 
-<!-- source: reports e8a3f112b323 -->
+<!-- source: checking-what-reached-a-remote-server b659a7421ff9 -->
+## ほかのサーバーに届いたものを確かめる
+
+投稿、フォロー、承認がほかのサーバーに届いたかどうかを利用者に尋ねられたときは、管理 API で、そのサーバーへの配送を一覧にします。
+一覧には、そのサーバーのインボックスへのアクティビティの配送が、成功したものも含めて新しい順に表示され、各配送には、すべての試行とサーバーの応答が付きます。
+`manage_domains` の権限が必要です。
+Web クライアントでは、連合先のサーバーの画面（`/moderation/instances/{domain}`）の **配送** セクションに同じ一覧が表示されます。**アクティビティの ID** と **このサーバーのアカウント** で絞り込め、伏せた配送ごとに **伏せた項目を表示** があります。実行する前に、そのうちどれが監査ログに記録されるかが画面に表示されます。
+
+```sh
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://example.com/api/v1/admin/instances/misskey.io/deliveries"
+```
+
+- 各配送には、アクティビティの種類（`Create`、`Follow`、`Accept` など）、アクティビティが記録された時刻とインボックスが追加された時刻、古い順の `attempts` があります。
+  各試行には、`outcome`（`succeeded`、`retryable_failure`、`permanent_failure`、`skipped`）、応答の `signature_scheme` と `status_code`、応答のない失敗や何も送られなかった理由を示す `error`、そして時刻があります。
+  `succeeded` の試行で `202` の場合は、相手のサーバーがアクティビティを受け付けたことを意味します。そのあと表示するかどうかは相手のサーバー次第です。
+- 試行は 30 日間保存されるので、履歴は 30 日前までさかのぼれます。
+- 一覧を絞り込むには、`activity_uri=<the activity's ID>`（アクティビティの ID）を加えるか、1 つのアカウントの配送なら `account_id=<a local account's ID>`（ローカルのアカウントの ID）を加えます。
+  `account_id` を付けた問い合わせは、そのアカウントとサーバーとともに、監査ログに `account_deliveries_viewed` として記録されます。ほかの問い合わせは記録されません。
+- アクティビティの本文は表示されません。
+
+一部の配送は伏せられます。送信者、アクティビティの URI、インボックスが省かれ、理由が `mask` に示されます。
+
+| `mask` | アクティビティの内容 |
+| --- | --- |
+| `private`、`direct`、`local` | その公開範囲の投稿 |
+| `approves_followers` | フォロワーを承認制にしているローカルのアカウントのフォロー、その取り消し、承認、拒否 |
+| `unknown` | なくなった投稿またはアカウント。何についてのものだったのかがもうわからない |
+
+共有インボックスは受信者を示さないので、常に表示されます。試行のエラーにある伏せた個人のインボックスは `[masked]` と表示されます。
+伏せた配送でも、種類、時刻、すべての試行は表示されるので、サーバーに届いたかどうかは確かめられます。
+1 件の配送の伏せた項目を見るには、`POST /api/v1/admin/instances/{domain}/deliveries/{id}/reveal` を使います。呼び出しのたびに、何かが表示される前に、監査ログに `delivery_revealed` として記録されます。
+
+<!-- source: reports 8b0684a0561c -->
 ## 通報
 
 ほかのサーバーから受け取った通報（`Flag`）は、未解決（`open`）として通報の一覧に入ります。
@@ -354,7 +514,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 - 通報から処分を行うと（処分の `report_id` / `-report`）、同じ操作の中でその通報は `actioned` として解決されます。
 - メモ（`note`）はモデレーターだけが見る内部のメモで、最大 2,000 文字です。対象の人にも通報者にも表示されません。編集も削除もできません。
 - 再開（`reopen`）は、解決済みの通報を `open` に戻します（担当の割り当ては残ります）。未解決の通報は再開できません（管理 API では `409`）。
-- 転送（`forward`、通報の詳細の **相手のサーバーに転送する** ボタン）は、ほかのサーバーのアカウントについての通報を、あなたのインスタンスの Actor による `Flag` として、そのアカウントとまだ残っている通報された投稿とともに、そのサーバーへ送ります。含まれる文章は、転送するときにそのサーバーのモデレーターに向けてあなたが書いたものだけです（`-comment`、管理 API の `comment`、または通報のページの **相手のモデレーターへのメッセージ**。最大 1,000 文字で、既定では何もありません）。通報者のコメントと[外部の審査](#reports-that-an-external-review-filed)のメモは、この方法では決してあなたのサーバーの外に出ず、通報者のことは何も送られません。通報者が通報するときに転送を選んだ通報は、通報者のコメントとともにすぐ送られています。転送できるのは、このサーバーで人または[外部の審査](#reports-that-an-external-review-filed)が出した通報で、未解決か解決済みかにかかわらず、まだ転送していないものです。ほかのサーバーから受け取った通報と、通話のルームについての通報は転送できません（管理 API では `409` `report-not-forwardable` になり、通報の詳細にはボタンが表示されません）。通報が送られるのは 1 回だけです。どんな文章でもう一度転送しても、通報者が通報時に転送していた通報を転送しても、何も変わりません。管理 API の `forwarded` は送られたかどうかを、`forwardable` はいま送れるかどうかを示します。
+- 転送（`forward`、通報の詳細の **相手のサーバーに転送する** ボタン）は、ほかのサーバーのアカウントについての通報を、あなたのインスタンスの Actor による `Flag` として、そのアカウントとまだ残っている通報された投稿とともに、そのサーバーへ送ります。含まれる文章は、転送するときにそのサーバーのモデレーターに向けてあなたが書いたものだけです（`-comment`、管理 API の `comment`、または通報のページの **相手のモデレーターへのメッセージ**。最大 1,000 文字で、既定では何もありません）。通報者のコメントと[外部の審査](#reports-that-an-external-review-filed)のメモは、この方法では決してあなたのサーバーの外に出ず、通報者のことは何も送られません。通報者が通報するときに転送を選んだ通報は、通報者のコメントとともにすぐ送られています。転送できるのは、このサーバーで人または[外部の審査](#reports-that-an-external-review-filed)が出した通報で、未解決か解決済みかにかかわらず、まだ転送していないものです。ほかのサーバーから受け取った通報と、通話のルームやイベントについての通報は転送できません（管理 API では `409` `report-not-forwardable` になり、通報の詳細にはボタンが表示されません）。通報が送られるのは 1 回だけです。どんな文章でもう一度転送しても、通報者が通報時に転送していた通報を転送しても、何も変わりません。管理 API の `forwarded` は送られたかどうかを、`forwardable` はいま送れるかどうかを示します。
 - 通報の詳細（`show`、`GET .../{id}`）は、メモを古い順に返し、対象についてのほかの通報の数と、対象への処分の数（解除されたものと期限が切れたものを含みます）も返します。一覧はメモを返しません。
 - 割り当て、解決、再開、メモ、転送はイベント（`report_assignments`、`report_resolutions`、`report_reopenings`、`report_notes`、`report_forwards`）として保存され、`report_states` が現在の状態を持ちます。
 - モデレーターは、通報のページで、または `POST .../{id}/statuses/{status_id}/translation` と `POST .../{id}/comment/translation`（本文 `{"target_language": "en"}`）で、通報された投稿と通報者のコメントを翻訳できます。
@@ -385,7 +545,19 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 - `manage_reports` を持つ人は、`POST /api/v1/admin/voice_rooms/{id}/end`（本文 `{"reason": "..."}`、省略可、最大 500 文字）で、開いているルームを参加者全員について終了できます。
   理由はモデレーターのためだけのもので、参加者にはルームが終わったことだけが見えます。通話がオフの間も使え、監査ログには `voice_room_ended` が記録されます。
 
-<!-- source: notifications-for-moderators-and-the-pending-counts 7b83fa4097b2 -->
+<!-- source: events d37a09a66811 -->
+### イベント
+
+- ローカルの利用者は、自分に見えているイベントを、中止されたものも含めて通報できます（`event_id` を指定し、`account_id` をイベントの主催者にした `POST /api/v1/reports`）。
+  その通報は主催者を対象にし、通報者が見たとおりのイベントの設定（タイトル、説明、場所）を指します。まだ日程を調整中のイベントも、ほかのイベントと同じように通報や中止ができます。投稿は指さず、ほかのサーバーへ転送されることもありません。
+- 通報の詳細（`GET /api/v1/admin/reports/{id}`）にはイベント（`event`）が表示されます。日程、中止されたかどうかとその方法、設定のすべての変更が古い順に、すべての場所とともに表示され、承認された参加者にだけ見えていた場所も含まれます。
+  `reported_revision_id` は通報者が見た版なので、通報のあとに変えられたタイトルや住所も、あなたの目の前にあります。
+- `manage_reports` を持つ人は、`POST /api/v1/admin/events/{id}/cancel`（本文 `{"reason": "..."}`、省略可、最大 500 文字）でイベントを中止できます。
+  理由は、中止とともに、そのイベントが見える全員に表示されます。参加する、または未定と答えた利用者と招待された利用者には、主催者自身が中止した場合と同じように通知が届き、監査ログには `event_cancelled` が記録されます。
+  すでに中止されたイベントには `409` `event-closed` を返します。
+- 主催者を凍結または削除すると、まだ始まっていない主催者のイベント（日程を調整中のものも含みます）が中止され（`gathering.cancel_organized`）、参加者に通知します。これらの中止は、中止した人を誰とも記録せず、凍結を解除しても元には戻りません。すでに始まったイベントは中止されません。
+
+<!-- source: notifications-for-moderators-and-the-pending-counts a9a32ea8cccb -->
 ## モデレーター向けの通知と未処理の件数
 
 新しい通報、承認待ちの登録、異議申し立ては、権限を持つ人にアプリ内の通知として届きます。
@@ -397,6 +569,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `admin_appeal` | 処分に異議が申し立てられたとき | ロールが `manage_accounts` を持つ人。異議を申し立てた人を除く |
 | `admin_custom_emoji_request` | カスタム絵文字の作成や画像の差し替えが申請されたとき | ロールが `manage_custom_emojis` を持つ人。申請した人を除く |
 | `admin_error_group` | サーバーか Web クライアントが新しい種類のエラーを報告したとき、または解決済みのエラーグループがサーバーの別のバージョンで再び起きたとき | ロールが `manage_errors` を持つ人 |
+| `admin_domain_list_failing` | 購読しているブロックリストの取得が 3 回続けて失敗したとき | ロールが `manage_domains` を持つ人 |
 
 - `admin_error_group` が届くのは、サーバー全体で 1 時間に最大 10 回です。その時間の残りは、ほかにいくつのエラーグループがあったかを伝える 1 件の通知に
   まとめられます。ミュートしたグループは通知しません。サインインしていない訪問者について Web クライアントが報告したエラーは、
@@ -415,7 +588,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 `GET /api/v1/admin/counts` は、未解決の通報の数（`open_reports`、`manage_reports` が必要）、承認待ちの登録の数（`pending_registrations`）、審査待ちの異議申し立ての数（`pending_appeals`）（どちらも `manage_accounts` が必要）を返します。
 権限のない項目は返されません。
 
-<!-- source: audit-log 86955f4182c0 -->
+<!-- source: audit-log e8f33b4d2da4 -->
 ## 監査ログ
 
 モデレーターと管理者の操作は、操作と同じトランザクションの中で、1 件ずつ 1 行として監査ログ（`audit_log_entries`）に記録されます。
@@ -423,9 +596,9 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 
 | 対象の種類 | 操作 |
 | --- | --- |
-| `account` | `account_action_issued` と `account_action_lifted`（アカウントへの処分とその解除）、`account_deletion_canceled`（`ban` への異議申し立てが認められて削除が取り消された）、`revealed_private_data`（IP アドレスとメールアドレスの開示）、`two_factor_disabled`（二要素認証の解除）、`password_reset_link_issued`（パスワードのリセット用リンクの発行）、`email_suppression_lifted`（メールの送信停止の解除）、`account_moved`（制限を受けたローカルのアカウントがローカルのアカウントへ移行した。制限は移行先に引き継がれないため、移行先にも適用するかどうかはあなたが決めます）、`account_statuses_refetch_queued`（リモートのアカウントの投稿の取り直し） |
+| `account` | `account_action_issued` と `account_action_lifted`（アカウントへの処分とその解除）、`account_deletion_canceled`（`ban` への異議申し立てが認められて削除が取り消された）、`revealed_private_data`（IP アドレスとメールアドレスの開示）、`two_factor_disabled`（二要素認証の解除）、`password_reset_link_issued`（パスワードのリセット用リンクの発行）、`email_suppression_lifted`（メールの送信停止の解除）、`account_moved`（制限を受けたローカルのアカウントがローカルのアカウントへ移行した。制限は移行先に引き継がれないため、移行先にも適用するかどうかはあなたが決めます）、`account_statuses_refetch_queued`（リモートのアカウントの投稿の取り直し）、`account_deliveries_viewed`（ローカルのアカウントのサーバーへの配送の一覧表示。対象の名前はハンドルとサーバー） |
 | `status` | `status_refetch_queued`（リモートの投稿の取り直し。対象の名前は投稿の URI） |
-| `domain` | `domain_action_issued` と `domain_action_lifted`（ドメインへの処分とその解除）、`domain_statuses_refetch_queued`（そのドメインのアカウントの投稿の取り直し）、`instance_marked_available`（サーバーの失敗の記録の消去） |
+| `domain` | `domain_action_issued` と `domain_action_lifted`（ドメインへの処分とその解除）、`domain_statuses_refetch_queued`（そのドメインのアカウントの投稿の取り直し）、`instance_marked_available`（サーバーの失敗の記録の消去）、`delivery_revealed`（サーバーへの配送の、伏せた送信者、アクティビティの URI、インボックスの表示） |
 | `report` | `report_assigned`、`report_unassigned`、`report_resolved`、`report_reopened`、`report_note_added`、`report_forwarded`（通報の担当の割り当て、割り当ての解除、解決、再開、メモの追加、転送） |
 | `user` | `registration_approved`、`registration_rejected`（登録の審査） |
 | `setting` | `setting_changed`（インスタンス設定）、`text_changed`（インスタンスの文章） |
@@ -440,7 +613,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `invite` | `invite_created`、`invite_revoked`（招待の作成と取り消し。対象の名前はコードの最初の 4 文字） |
 | `billing_source` | `billing_import_queued`（請求の取り込みを手動で始めた。対象の名前はプロバイダーの名前） |
 | `cost_item` | `cost_item_created`、`cost_item_relabeled`、`cost_item_price_revised`、`cost_item_end_changed`、`cost_item_deleted`（費用の登録、名前などの変更、金額の改定、終了日の変更、削除。対象の名前は項目の名前） |
-| `supporter_program` | `supporter_program_enabled`、`supporter_program_disabled`（課金の有効化と無効化。対象の名前は決済サービスの名前） |
+| `supporter_program` | `supporter_program_enabled`、`supporter_program_disabled`（課金の有効化と無効化。対象の名前は決済サービスの名前）、`supporter_tips_enabled`、`supporter_tips_revised`、`supporter_tips_disabled`（チップの有効化、金額の変更、無効化。対象の名前は通貨と、最小単位での金額） |
 | `supporter_plan` | `supporter_plan_created`、`supporter_plan_revised`、`supporter_plan_retired`（サポーターのプランの作成、変更、廃止。対象の名前はプランの名前） |
 | `supporter_subscription` | `supporter_subscription_ended`（管理者が申し込みをすぐに終了した。対象の名前はプランの名前と利用者のハンドル） |
 | `custom_emoji_request` | `custom_emoji_request_submitted`、`custom_emoji_request_withdrawn`、`custom_emoji_request_approved`、`custom_emoji_request_rejected`（カスタム絵文字の申請の提出、取り下げ、承認、却下。対象の名前は `:shortcode:`） |
@@ -449,8 +622,11 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（Client ID Metadata Document のホストの拒否とその取り消し。拒否するとそのホストのクライアントのトークンが無効になる。対象の名前はホスト） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（サービスの終了の告知または日付の変更、告知の取り下げ、終了、終了の配送の完了。対象の名前は `service_closure`） |
 | `voice_room` | `voice_room_ended`（モデレーターが開いている通話のルームを終了した。名前は書いたアカウントが消去されるとなくなるため、対象の名前はルームの ID。通報の詳細には名前が表示される） |
+| `event` | `event_cancelled`（モデレーターがイベントを中止した。タイトルは書いたアカウントが消去されるとなくなるため、対象の名前はイベントの ID。通報の詳細にはタイトルが表示される） |
+| `domain_allow` | `domain_allow_added`、`domain_allow_removed`（連合の許可リストへのドメインの追加と削除。[許可したサーバーとだけ連合する](#federating-only-with-allowed-servers)を参照。対象の名前はドメイン） |
 | `link_card_domain` | `link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`（ドメインへのリンクカードのクローラーのルールの設定と削除。[リンクカードのドメイン](instance-settings.md#link-card-domains)を参照） |
 | `login_provider` | `login_provider_created`、`login_provider_updated`、`login_provider_deleted`、`login_provider_enabled`、`login_provider_disabled`、`login_provider_secret_rotated`（外部のログインプロバイダーの追加、変更、削除、有効化、無効化、クライアントシークレットの差し替え。対象の名前はプロバイダーの表示名） |
+| `domain_list_subscription` | `domain_list_subscription_created`、`domain_list_subscription_updated`、`domain_list_subscription_deleted`（ブロックリストの購読、設定の変更、削除）、`domain_list_draft_accepted` と `domain_list_draft_rejected`（下書きの承認。ドメインへの処分も記録されます。下書きの却下）、`domain_list_fetch_queued`（手動で求めた取得）。対象の名前は購読のタイトル。[ブロックリストの購読](#subscribing-to-blocklists)を参照 |
 
 一覧には、対象がまだ存在するかどうかが表示されます。保存期間を過ぎてなくなったアカウント、通報、異議申し立て、登録の拒否と、削除されたロール、カスタム絵文字、Webhook は、記録した時点の名前だけが表示され、画面へのリンクはありません。
 
@@ -470,10 +646,10 @@ my admin audit list -target-kind domain -target-id spam.example
 - 一覧は新しい順で、キーセットによるページ送りを使います（CLI では `-before <entry id>`）。
 - 監査ログを更新したり削除したりする API や CLI はありません。古い行は[保存期間](#record-retention-and-holds)を過ぎると削除されます。
 
-<!-- source: record-retention-and-holds bd806b3bbda7 -->
+<!-- source: record-retention-and-holds 9861d8570a91 -->
 ## 記録の保存と保全
 
-記録の種類ごとの保存期間を過ぎると、1 時間ごとのジョブ（`moderation.purge_records`、`identity.purge_origins`、`voice.purge_records`）がモデレーションの記録を削除します。
+記録の種類ごとの保存期間を過ぎると、1 時間ごとのジョブ（`moderation.purge_records`、`identity.purge_origins`、`voice.purge_records`、`gathering.purge_records`）がモデレーションの記録を削除します。
 期間はインスタンス設定で変えられますが、下限より短くはできません（[インスタンス設定](instance-settings.md)）。変えた期間は次の実行から反映されます。解除された保全は、その理由とともに、解除からモデレーションの処分の保存期間が過ぎると削除されます。
 
 | 記録 | 設定 | 既定 | 下限 | 起点 |
@@ -486,6 +662,7 @@ my admin audit list -target-kind domain -target-id spam.example
 | 登録の拒否 | なし（変更できません） | 30 日 | なし | 解除と期限切れのうち早いほう |
 | 通話のルームに参加した人（参加、話す人と聞く人、挙手、招待、外された人） | `voice_participants_retention_days` | 90 日 | 30 日 | ルームの終わり |
 | [判定フック](decision-hooks.md#the-decisions)の判定 | `hook_decisions_retention_days` | 90 日 | 30 日 | 判定 |
+| イベントの回答、承認、招待、候補日の投票 | `event_records_retention_days` | 90 日 | 30 日 | イベントの終わり（日程が決まらなかったイベントでは最後の候補日の終わり）と中止のうち早いほう |
 
 - 未解決の通報は削除されません。処分が参照している通報（処分の `report_id`）は、その処分が削除されるまで残ります。
 - 処分の終わりは、解除と期限切れのうち早いほうです。異議申し立てのあった処分では、審査がそれより遅ければ審査の時刻が終わりになり、異議申し立てが審査を待っている間は処分は保存されます。
@@ -493,6 +670,7 @@ my admin audit list -target-kind domain -target-id spam.example
 - 通報や処分が指している投稿は、作成者が削除しても（表示からは消えます）、その通報や処分が削除されるまで、添付のメディアとともに削除ジョブによって物理的に削除されることはありません。リモートの投稿も保存期間（インスタンス設定 `remote_status_max_retention_days` を含みます）を過ぎても残ります。
 - 解除も終了日時もない登録の拒否は、効力を持つ限り残ります。
 - 通報が指している通話のルームに参加した人の記録は、その通報が削除されるまで残ります。ルームそのもの（名前、説明、ホスト、終わり方）は削除されません。
+- 通報が指しているイベントの回答、投票、招待は、その通報が削除されるまで残り、保全の対象のアカウントを挙げているものも同じです。イベントそのもの（設定と場所、日程と候補日、共同主催者、中止）は削除されません。回答が削除されたあとは、参加する人は誰もいないものとして数えられます。
 - 1 回のジョブの実行で削除するのは、種類ごとに上限のある行数だけです（処分、通報、登録の拒否は 100 件ずつ 20 回、監査ログは 1,000 行ずつ 20 回）。残りは次の実行で削除します。
 
 <!-- source: holds f3bf57c2c258 -->

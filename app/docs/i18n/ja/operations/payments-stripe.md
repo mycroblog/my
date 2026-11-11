@@ -1,13 +1,13 @@
-<!-- source: supporter-payments-with-stripe f12ff4a0af71 -->
+<!-- source: supporter-payments-with-stripe e517db9d077d -->
 # Stripe によるサポーターの支払い
 
-`payments = stripe` にすると、ローカルの利用者は Stripe がホストする支払いページ（Checkout）で月額または年額のプランに加入でき、支払いの状態が変わるのに合わせて、プランのロールが付与され、取り除かれます。
+`payments = stripe` にすると、ローカルの利用者は Stripe がホストする支払いページ（Checkout）で月額または年額のプランに加入でき、支払いの状態が変わるのに合わせて、プランのロールが付与され、取り除かれます。管理者が有効にすると、利用者は同じページで 1 回限りの[チップ](#tips)も送れます。
 デプロイ時の設定は [設定のリファレンス](../reference/configuration.md#payments) で説明しています。プログラム全体（プラン、ロール、メンバーの一覧）については [supporters.md](supporters.md) を参照してください。
 プログラムを有効にし、プランを作るのは管理画面で管理者が行います。この設定は、サーバーが Stripe とやりとりできるようにするだけです。
 
 1 つのサーバーで使える事業者は 1 つだけです。あとで別の事業者に切り替えるには、既存の加入者に新しい事業者で加入し直してもらってください。
 
-<!-- source: what-the-server-does-at-stripe ca3e0d4f59f3 -->
+<!-- source: what-the-server-does-at-stripe 17a592e3f643 -->
 ## サーバーが Stripe で行うこと
 
 [加入のしくみ](supporters.md#how-a-subscription-works) では、支払いページ、Webhook、照合、プランのロール、収入がどう組み合わさるかを図で示しています。
@@ -33,6 +33,7 @@
   さらに、`payments_reconcile_interval`（既定値は 6 時間）ごとの照合で、イベントの一覧、完了していない Checkout セッション、残高の取引、すべての subscription の走査を読み、サーバーが受け取りそこねた Webhook を補います。
 - **収入**: サーバーは、各残高取引の総額、手数料、純額を記録します。Billing の 0.7% のような手数料は別の `stripe_fee` 取引として現れ、収入から差し引かれます。
   `stripe_fee` はアカウント全体の手数料を含むので、**このサーバー専用の Stripe アカウントを使ってください**。ほかの販売にも使っているアカウントでは、それらの手数料も収入から差し引かれます。
+- **チップ**: [チップ](#tips)を参照してください。
 - **日付**: 収入の日付は、Stripe アカウントのタイムゾーン（ダッシュボードの「設定 > ビジネス > アカウントの詳細」のタイムゾーン、API では `settings.dashboard.timezone`）で数えます。読み取れないときは、サーバーは UTC で数え、1 時間ごとに読み直します。
 
 各サーバープロセスが送るリクエストは毎秒 20 件まで（テストモードでは 10 件）です。[Stripe の制限](https://docs.stripe.com/rate-limits) はアカウントごとで、本番モードでは毎秒 100 件、サンドボックスでは 25 件、エンドポイントごとに毎秒 25 件です。1 つのサーバーのプロセスはこれを共有し、そのアカウントを使うほかのものも同じ制限を共有します。
@@ -41,11 +42,25 @@ Stripe が `429` を返したときは、`Retry-After` が 30 秒以下であれ
 Stripe は読み取りのリクエストもアカウントごとに割り当てています。30 日間で取引 1 件あたり平均 500 件で、取引の件数にかかわらず少なくとも月に 10,000 件です。既定の間隔では、小さなサーバーの照合はこれを大きく下回ります。何も見つからない照合でも数ページは読むので、最短の 15 分間隔（30 日で 2,880 回）では、取引の少ないアカウントで 10,000 件に近づきます。
 Stripe は、subscription 1 つにつき新しい請求書を 1 分に 10 件、1 日に 20 件までに制限しており、すぐに請求するプランの変更では新しい請求書が作られます。
 
-<!-- source: card-data-and-pci-dss f45a3c7d1846 -->
+<!-- source: tips 5c0435583f71 -->
+## チップ
+
+チップ（その内容と有効にする方法は[チップ](supporters.md#tips)を参照してください）は、1 回の支払いのためにサーバーが作る、`mode=payment` の Checkout セッションです。
+
+- **ページ**: リクエストの中で価格を指定した 1 つの明細行で、利用者の言語での名前は「<サーバー名> へのチップ」、金額と通貨は利用者が選んだものです。サーバーはそのための Product、Price、顧客を作りません。利用者のメールアドレスは、ページの入力欄に最初から入れておくだけです。ページはカードだけを受け付けるので、完了したページはすべて支払い済みです。Adaptive Pricing は使わないので、利用者はあなたが設定した金額の通貨で支払います。ボタンの表記は「寄付する」ではなく「支払う」です。ページは、加入のページと同じく 1 時間で期限切れになります。
+- **このサーバーの ID**: サーバーのチップ ID は、`client_reference_id`、`metadata.my_tip_id`、そして支払いの PaymentIntent の `metadata.my_tip_id` に入り、ダッシュボードで検索できます。
+- **金額**: チップには、プランの通貨とその最低額が使えます（[サーバーが Stripe で行うこと](#what-the-server-does-at-stripe)を参照）。上限は Stripe の最大請求額の 8 桁（999,999.99 米ドル、または 99,999,999 円）です。
+- **結果**: サーバーは、`checkout.session.completed` か `checkout.session.expired` のイベントが届いたとき、利用者がページから戻ったとき、そして照合で、セッションを読み戻します。完了していて `payment_status` が `paid` のセッションが、支払い済みのチップで、その PaymentIntent と請求した金額が分かります。
+- **返金と異議申し立て**: チップの返金はダッシュボードで行います。返金、異議申し立て、異議申し立てに勝ったことは、加入が使うのと同じイベントと残高取引で届き、チップの PaymentIntent を指すので、サーバーはそこからチップにたどり着きます。
+- **テスト**: テストモードでは、[テストモードで試す](#5-try-it-in-test-mode)のテスト用のカードでチップのページを支払います。`4000 0000 0000 0259` では異議申し立てになります。
+
+[API キーを作る](#2-create-an-api-key)の制限付きのキーには、チップのための権限を加える必要はありません。チップはまだサンドボックスで実行していません。
+
+<!-- source: card-data-and-pci-dss 5fd1cd5551e0 -->
 ## カードのデータと PCI DSS
 
 支払い方法は Stripe の Checkout とカスタマーポータルでだけ入力し、このサーバーの Web クライアントは Stripe のスクリプトも iframe も読み込みません。
-サーバーが保存するのは、Stripe のオブジェクト ID（`cus_`、`sub_`、`price_`、`prod_`、`cs_`、`txn_`）、金額、期間、状態だけです。カード番号、下 4 桁、有効期限、請求先住所は保存しません。Webhook の本文と Stripe の応答は、ログにもデータベースにも残しません。
+サーバーが保存するのは、Stripe のオブジェクト ID（`cus_`、`sub_`、`price_`、`prod_`、`cs_`、`pi_`、`txn_`）、金額、期間、状態だけです。カード番号、下 4 桁、有効期限、請求先住所は保存しません。Webhook の本文と Stripe の応答は、ログにもデータベースにも残しません。
 そのため、運営者の PCI DSS の対象範囲は、ホストされた支払いページを使う加盟店のもの（SAQ A）になると見込まれます。あてはまる対象範囲と自己評価問診票の種類は、Stripe のダッシュボードの案内（「設定 > コンプライアンス」）で確認してください。
 
 <!-- source: 1-prepare-the-stripe-account 06eefed5779b -->
@@ -85,7 +100,7 @@ Stripe は、subscription 1 つにつき新しい請求書を 1 分に 10 件、
 キーは環境変数 `MY_PAYMENTS_STRIPE_SECRET_KEY`（またはファイルのパスを `MY_PAYMENTS_STRIPE_SECRET_KEY_FILE`）で渡します。設定ファイルには書けません。
 キーが漏れた場合は、ダッシュボードでローテーションし、新しいキーで再デプロイしてください。
 
-<!-- source: 3-register-the-webhook-endpoint 1cbc2cf9ace3 -->
+<!-- source: 3-register-the-webhook-endpoint bf645f89a942 -->
 ## 3. Webhook のエンドポイントを登録する
 
 「開発者 > Webhook > エンドポイントを追加」で、次の内容を登録します。サーバーは API でエンドポイントを作りません。
@@ -93,7 +108,7 @@ Stripe は、subscription 1 つにつき新しい請求書を 1 分に 10 件、
 - URL: `https://<server domain>/payments/webhooks/stripe`
 - イベントの送信元: 「お客様のアカウント」（連結アカウントではありません）
 - ペイロードの形式: スナップショット。サーバーが読むのは本文の `id`、`type`、`livemode`、`created`、`data.object.id`、`data.object.object` だけなので、エンドポイントの API バージョンは問いません。
-- 送信するイベント（16 種類）:
+- 送信するイベント（16 種類。チップにはこれ以外の種類は要りません）:
 
   - `checkout.session.completed`, `checkout.session.expired`
   - `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed`
@@ -151,7 +166,7 @@ Stripe がこれを許すのは、`frozen_time` が過去でなく、アカウ�
 - **猶予期間の終わり**: サーバーは、実際の時刻と、Stripe が失敗について報告する時刻（`finalized_at`）を比べます。後者はシミュレートされた時刻で、実際の時刻より先に進んでいます。加入は猶予期間に入りますが、クロックをさらに進めても猶予期間は終わりません。ロールは、シミュレートされた失敗から実際の時刻で 7 日が過ぎるまで、またはアカウントがそう設定されていれば、再試行を使い切って Stripe が subscription を解約するまで残ります。
 - **すべての subscription の走査**: Stripe の subscription の一覧は、リクエストでクロックか顧客を指定しない限り、クロック上の subscription を含めません。サーバーの走査はどちらも指定しません。それらの変更をサーバーに届けるのは、Webhook とイベントの一覧だけです。
 
-<!-- source: 6-try-it-locally-stripe-cli 8a3e87b02ce0 -->
+<!-- source: 6-try-it-locally-stripe-cli 115b10f5518c -->
 ## 6. ローカルで試す（Stripe CLI）
 
 [Stripe CLI](https://docs.stripe.com/stripe-cli)（Apache-2.0）は、Stripe のイベントを手元のマシンのサーバーに転送します。公開の URL は要りません。
@@ -176,7 +191,7 @@ stripe trigger charge.dispute.created
 stripe events resend evt_...   # send an event you missed again (up to 30 days)
 ```
 
-`stripe trigger` が作るオブジェクトには、このサーバーの加入 ID が入っていないので、どの加入の状態も変わりません（サーバーはそれらを読み戻し、自分の加入でないものは無視します）。加入の流れ全体を確かめるには、Web クライアントから加入し、テスト用のカードで支払ってください。
+`stripe trigger` が作るオブジェクトには、このサーバーの加入 ID もチップ ID も入っていないので、どの状態も変わりません（サーバーはそれらを読み戻し、自分の加入でもチップでもないものは無視します）。加入の流れ全体やチップを確かめるには、Web クライアントから加入またはチップを送り、テスト用のカードで支払ってください。
 
 <!-- source: 7-operation f70cd2967b9f -->
 ## 7. 運用
@@ -187,7 +202,7 @@ stripe events resend evt_...   # send an event you missed again (up to 30 days)
 - 警告の `duplicate_charge` は、利用者が 2 回支払い、サーバーが 2 つ目の加入の解約と返金を終えられなかったことを意味します。ログ行 `a second subscription could not be canceled and refunded` には両方の subscription と失敗の種類が書かれ、照合のたびに再試行されるので、そのたびにまた現れます。種類が `permission` の場合は、返金の書き込み権限を加えてください。それ以外の場合は、ダッシュボードで請求を返金してください。次の試行で返金するものが残っていないことがわかり、警告が消えます。「今すぐ照合する」ですぐに試せます。
 - そのほかの返金とチャージバックは、Stripe のダッシュボードで扱います。全額返金とチャージバックでは、ロールが取り除かれ、加入がすぐに解約されます。一部返金ではロールは取り除かれません。異議申し立てに勝っても、ロールは自動では戻りません。
 
-<!-- source: items-to-verify 8960333fa514 -->
+<!-- source: items-to-verify 19584d53548f -->
 ## 確認が必要な項目
 
 次のことは、サンドボックスでも本番でも Stripe に対して試しておらず、Stripe のドキュメントに基づいています。
@@ -206,3 +221,5 @@ stripe events resend evt_...   # send an event you missed again (up to 30 days)
 - 1 つのセッションに 2 つのタブから 2 回支払えないこと。セッションは 1 つの subscription を持ち、一度だけ完了しますが、同時に 2 回送信された場合についてはドキュメントに書かれていません。
 - 支払いページでの認証の失敗が、サーバーの加入を指す `incomplete` の subscription を残すかどうか。残る場合、サーバーはそれを結び付けて利用者を保留のままにし、別のページでの支払いは 2 つ目として返金されることになります。
 - 制限付きのキーの「Charges」と「Refunds」の権限が表のとおりの場合の、2 つ目の加入の返金と、それに続くお金の動き。
+- 制限付きのキーでの、チップのページから返金と異議申し立てまで。特に、`allowed_payment_method_types=["card"]` がほかのすべての支払い方法をページから外すこと、Adaptive Pricing を無効にして作ったセッションが指定した通貨で請求すること、そして表のすべての通貨で Stripe が 8 桁の 1 回限りの請求を受け付けることです。
+- Stripe が、サービスの運営のためのチップと、日本の個人事業主のチップを受け付けるかどうか。有効にする前に Stripe に確認してください。

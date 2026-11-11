@@ -126,7 +126,7 @@ SMTP の例、DNS の設定、配送の失敗の読み方は [メールの送信
   2 段階認証のコードを待っているサインインと、まだ完了していないアプリの認可も使えなくなり、利用者はそれらをやり直します。
   `mail = smtp` の場合、サーバーはパスワードが変わったことを利用者にメールでも知らせます。
 
-<!-- source: invite-codes 5f98f9eb7d6f -->
+<!-- source: invite-codes 441b486504dd -->
 ## 招待コード
 
 招待は `open`、`approval`、`invite` のモードで使えます。スタッフの招待は、下の CLI、モデレーションの画面、管理 API で作ります。メンバーも自分の招待を作れます（[利用者の招待](#member-invites)）。
@@ -147,6 +147,7 @@ my invite revoke <code>
 - CLI のほかに、Web クライアントのモデレーションの画面（「招待の一覧」、`/moderation/invites`）と、クライアント API
   （`GET` / `POST /api/v1/admin/invites` と `POST /api/v1/admin/invites/{id}/revoke`）でも、招待を作成、一覧表示、取り消しできます。どちらにもロールの権限 `manage_invites` が必要です
   （組み込みの `moderator` にはこの権限がないので、これを任せるには、この権限を持つロールを作って付与してください）。
+  自分で招待を配るサービスは、スコープ `admin:manage_invites` のトークンで同じ API を呼び出します（[別のサービスに管理 API を使わせる](moderation.md#letting-another-service-use-the-admin-api)）。
   一覧の「招待を作成する」でフォーム（`/moderation/invites/new`）が開き、新しい招待のコードと登録のリンクが表示されます。
   一覧では、使える招待のリンクをコピーし、取り消せます。
 - 一覧には、スタッフのものもメンバーのものもすべての招待が、誰が作ったか（`created_by`）とどのように作ったか（`creator_kind`: `staff` または `member`）とともに表示されます。`manage_invites` を持つ人は、どれでも取り消せます。

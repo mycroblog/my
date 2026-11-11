@@ -22,7 +22,7 @@
 
 以下の設定やサービスを変えたとき、またリリースノートに個人データへの言及があるアップグレードのたびに、ポリシーを見直してください。
 
-<!-- source: the-periods-and-their-settings 111d5a4b6af8 -->
+<!-- source: the-periods-and-their-settings 8313baaa97d8 -->
 ## 期間とその設定
 
 `my instance list` は、すべてのインスタンスの設定と、それが既定値かどうかを表示します。期間の変更は、その期間を扱う 1 時間ごとのジョブの次の実行から有効になります。範囲外の値は受け付けられません。
@@ -35,6 +35,7 @@
 | アカウントへの処分と異議申し立て | 365 日 | `moderation_actions_retention_days` | 180-3650 | 処分の終了 |
 | 監査ログ | 730 日 | `audit_log_retention_days` | 365-3650 | 記録 |
 | 通話のルームに参加した人 | 90 日 | `voice_participants_retention_days` | 30-3650 | ルームの終了 |
+| イベントに回答した人、日程に投票した人、招待された人 | 90 日 | `event_records_retention_days` | 30-3650 | イベントの終了と取り消しのうち早いほう |
 | 外部の審査を使う場合の、その判定 | 90 日 | `hook_decisions_retention_days` | 30-3650 | 判定 |
 | このサーバーの何からも参照されていないリモートの投稿 | 90 日 | `remote_status_retention_days` | 1-3650 | 投稿の公開 |
 | すべてのリモートの投稿 | 無制限（`0`） | `remote_status_max_retention_days` | 0-3650 | 投稿の公開 |
@@ -69,13 +70,13 @@
 
 [保全](moderation.md#holds)は 1 つのアカウントの消去を止めます。そのため、保全の対象のアカウントでは、上のどの期間も長くなることがあります。保全を使う場合は、テンプレートにあるとおり、そのことを書いてください。
 
-<!-- source: records-with-no-automatic-end 90a13d1f648e -->
+<!-- source: records-with-no-automatic-end 4ac8f904a3a9 -->
 ## 自動では終わらない記録
 
 サーバーがこれらを削除するのは、アカウントが消去されたときだけか、まったく削除しません。法律によっては、保存し続ける正当な理由を示すことや、ほかの方法で削除することを求められることがあります。それぞれについてポリシーに何を書くかを決めてください。
 
 - 有効なアカウントの行: メールアドレス、プロフィールの過去の版、投稿の過去の版、通知、フォロー、拒否された利用者の登録申請。誰も削除しないアカウントは残り続けます。
-- 消去のあとに残るもの: アカウントの URI とユーザー名（どちらも再利用されないようにするため）、そのライフサイクルのイベント、投稿が削除されたという記録、それぞれの期間が終わるまでのモデレーションの記録、招待とロールの付与、アカウントの引っ越し、名前と説明を除いた通話のルーム。
+- 消去のあとに残るもの: アカウントの URI とユーザー名（どちらも再利用されないようにするため）、そのライフサイクルのイベント、投稿が削除されたという記録、それぞれの期間が終わるまでのモデレーションの記録、招待とロールの付与、アカウントの引っ越し、名前と説明を除いた通話のルーム、作者が書いたタイトル、説明、場所を除いたイベント、そしてイベントとその候補日への招待と回答。
 - サポーターの記録（サブスクリプション、状態の変化、支払い、返金、チャージバック）。会計と決済事業者との照合のために保存します。サーバーは決済事業者の顧客を削除しません。あなたの義務が許すなら、事業者のダッシュボードで削除してください。
 - 終わりのない処分（`ban`、または終了日時のない `suspend`）は、解除されるまで。未解決の通報。
 - リモートのアカウントは、そのサーバーが削除するまで。
@@ -123,7 +124,7 @@
 - **Web プッシュ。** 利用者がこれを有効にすると、その人のブラウザーがプッシュサービスを選び、そのアドレスをサーバーに渡します。メッセージの本文はそのブラウザー向けに暗号化されるため、プッシュサービスは読めないはずです。ただし、購読のアドレス、各メッセージのサイズと時刻、あなたのサーバーの連絡先（VAPID の subject）は見え、ブラウザーがオフラインの間はメッセージを最長 48 時間保持します。
 - **連合。** テンプレートのセクション 5 を見てください。`federation_mode` で連合を止めたり方向を制限したりでき、リレーを追加するかどうかはあなたが決めます（[リレー](relays.md)）。
 
-<!-- source: the-template 8b6bd2fc983a -->
+<!-- source: the-template 5a65f2c53778 -->
 ## テンプレート
 
 ```markdown
@@ -154,16 +155,16 @@ This policy covers people with an account here, people who read pages here witho
 | --- | --- | --- |
 | Email addresses | Signing in, confirming the address, resetting the password, and the email you choose to get | Until your account is erased |
 | Password hash, two-factor secret (encrypted) and recovery codes (hashed), passkeys, the identifier of an account you linked at a login provider | Signing you in | Until your account is erased |
-| Language, time zone, default post settings, notification settings, and other preferences | Running the service the way you asked | Until your account is erased |
+| Language, time zone, default post settings, notification settings and notification filters, and other preferences | Running the service the way you asked | Until your account is erased |
 | Registration application: the reason you gave, the invite you used, and the decision | Deciding who joins | Until your account is erased |
 | IP address at registration | Preventing abuse | {{180 days}} from registration |
 | IP address and browser name (User-Agent) at each sign-in | Security and preventing abuse | {{180 days}} from the sign-in |
 | Sessions and app access (stored as hashes) | Keeping you signed in | 30 days after they expire. A session lasts 30 days |
 | IP address, and for password-reset requests the email address, in rate limit counters | Protecting the service | Removed automatically, within twice the window of the limit |
-| Profile: display name, bio, extra fields, avatar, header, aliases, and earlier versions of them | Showing your profile, which is public | Until your account is erased |
+| Profile: display name, bio, extra fields, avatar, header, aliases, featured hashtags, and earlier versions of them | Showing your profile, which is public | Until your account is erased |
 | Posts, their earlier versions, and attached media | Publishing what you write | Until you delete them, your automatic deletion policy deletes them, or your account is erased. {{IF you set a maximum for keeping posts}} At most {{N days}} after you publish them, unless your account may keep them longer. Uploads attached to nothing go after {{24 hours}} |
-| Favourites, reactions, boosts, bookmarks, pins, poll votes, follows, blocks, mutes, lists | Running the features you use | Until you undo them, or your account is erased |
-| Notifications and what you have read | Telling you what happened | Until your account is erased or the post they are about is removed |
+| Favourites, reactions, boosts, bookmarks, pins, poll votes, follows, followed hashtags, blocks, mutes, lists, keyword filters, private notes on accounts | Running the features you use | Until you undo them, or your account is erased |
+| Notifications and what you have read, the notification requests you accepted or dismissed | Telling you what happened, and holding back the notifications you chose to filter | Until your account is erased or the post they are about is removed |
 | Web Push subscription: your browser's push address and keys | Sending you push notifications | Until you turn it off, the push service ends it, or your account is erased |
 | Records that an email bounced or was reported as spam | Not sending mail that is unwanted or cannot arrive | Until your account is erased |
 | Data export archives and data imports | Giving you your data, and bringing it in | 7 days |
@@ -174,8 +175,11 @@ This policy covers people with an account here, people who read pages here witho
 | Sign-up blocks: an email domain, a hashed email address, or an IP range | Preventing repeat abuse | While in effect, and 30 days after the lift or expiry |
 | {{IF voice}} Voice chat rooms: name, description, hosts, and how they ended | Showing and moderating rooms | Kept. The name and description you wrote are emptied when your account is erased |
 | {{IF voice}} Who took part in a room: participation, speakers, raised hands, invitations, removals | Moderating rooms | {{90 days}} from the end of the room, or as long as a report about the room. We record neither audio nor text chat |
+| Events: title, description, date, places, organizers, and cancellation | Showing events to the people who may see them | Kept. The title, description, and places you wrote are removed when your account is erased |
+| Invitations to events, your answers to them and to their candidate dates, and their approval | Showing who comes and who can come on which date, and showing the address and link to the approved | {{90 days}} after the event ended or was cancelled, longer while a report about the event is kept |
 | {{IF payments}} Supporter plans: the provider's IDs for you and your subscription, amounts, periods, and states. Not your card details | Running your subscription, and accounting | {{PERIOD AND REASON, e.g. as long as tax law requires}}. The link to the provider's customer goes when your account is erased |
 | {{IF payments}} Your choice to appear in the list of supporters | Showing the list | Until the subscription ends or your account is erased |
+| {{IF tips}} Tips: the amount, when you paid, the provider's ID of the payment, refunds and chargebacks. Not your card details | Taking the tip, and accounting | Until your account is erased; the amounts stay in the accounts without you. The provider keeps the payment and the email address of its page: {{ITS PERIOD}} |
 | Copies of activities sent to and received from other servers | Delivering, retrying, and rejecting duplicates | 30 days. The first delivery of a post stays until 30 days after the post or its author is deleted |
 | Posts and profiles of people on other servers | Showing them here | Posts: {{90 days}} when nothing here refers to them, {{7 days}} when only a relay brought them, and {{no limit}} otherwise. Profiles: until their server deletes the account. Then erased after 7 days |
 | Copies of remote media | Showing it | {{Not kept, or the period you set}} |
@@ -297,7 +301,7 @@ Passwords are stored as Argon2id hashes. Two-factor secrets and the keys that si
 
 {{ADJUST TO THE RIGHTS OF YOUR JURISDICTION. Under the GDPR these are access, rectification, erasure, restriction, objection, and portability, and the right to withdraw consent.}}
 
-- **See and take your data:** your settings offer a data export (your profile, your posts, and your moderation records) and CSV files of follows, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
+- **See and take your data:** your settings offer a data export (your profile, your posts, your keyword filters, your private notes on accounts, and your moderation records) and CSV files of follows, followed hashtags, blocks, mutes, muted domains, and bookmarks. For everything else, including your email and IP addresses, write to us.
 - **Correct it:** edit your profile and account settings, or write to us.
 - **Delete it:** delete your account in your settings, or deactivate it first. This is what section 3 and section 5 describe.
 - **Move:** you can move your followers to an account on another server.

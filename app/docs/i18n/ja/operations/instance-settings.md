@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## キー
 
-<!-- source: settings-one-key-one-value 4f827bf97480 -->
+<!-- source: settings-one-key-one-value 3a7617a2d2aa -->
 ### 設定（1 つのキーに 1 つの値）
 
 | キー | 型 | 既定値 | 説明 |
@@ -35,15 +35,16 @@
 | `default_locale` | BCP 47 の言語タグ | `en` | 既定のロケール。新しい利用者の最初の UI のロケールであり、利用者の希望に合うカタログがないときの代わりにもなります |
 | `local_timeline_visibility` | `off` / `signed_in` / `everyone` | `everyone` | ローカルタイムライン（`GET /api/v1/timelines/local`）を見られる人: 誰も見られない、ログインしている利用者、誰でも。`off` は 404 を返し、`signed_in` はログインしていない訪問者に 401 を返します。どちらの場合もナビゲーションには表示されません。値が `everyone` でなければ、ランディングページに投稿の見本は表示されません。[一人のサーバー](#one-person-server)では `off` として扱われます |
 | `federated_timeline_visibility` | `off` / `signed_in` / `everyone` | `signed_in` | 連合タイムライン（`GET /api/v1/timelines/federated`）を見られる人。値の意味はローカルタイムラインと同じで、一人のサーバーではこちらも `off` として扱われます |
-| `preview_image` | メディア ID（空 = 未設定） | 空 | 画像のない投稿やプロフィールのリンクプレビューの画像（`og:image`）。未設定のときは同梱の既定の画像を使います（[リンクプレビュー](link-previews.md)） |
+| `preview_image` | メディア ID（空 = 未設定） | 空 | 独自の画像を持たないページのリンクプレビューの画像（`og:image`）。「設定」→「全般」の「リンクのプレビュー」で設定します。未設定のときは、サムネイル、ロゴ、同梱の画像の順に使います（[リンクプレビュー](link-previews.md)） |
 | `contact_account` | ローカルアカウントのユーザー名（空 = 未設定） | 空 | 運営者への連絡先のアカウント。[連絡先とサムネイル](#contact-and-thumbnail)を参照してください |
 | `contact_email` | メールアドレス（空 = 未設定） | 空 | 運営者への連絡先のメールアドレス。サーバーが送るメールの `Reply-To` と署名にも使われます |
-| `thumbnail` | メディア ID（空 = 未設定） | 空 | インスタンスを表す画像（サムネイル） |
+| `thumbnail` | メディア ID（空 = 未設定） | 空 | インスタンスを表す画像（サムネイル）。概要のページとランディングページに表示され、`preview_image` が未設定のときはリンクプレビューにも使われます |
 | `remote_media_policy` | `none` / `avatars` / `all` | `none` | リモートのメディアの複製を保持するかどうか。`none`: メディアプロキシがすべてのリクエストを中継します。`avatars`: アバター、ヘッダー、カスタム絵文字を `remote_media_cache_ttl_seconds` の間 blob ストレージにキャッシュします。`all`: リモートのメディアをすべてキャッシュします。キャッシュの合計サイズは構成 `remote_media_cache_max_bytes` で制限されます |
 | `remote_media_cache_ttl_seconds` | 整数 60-31536000（秒） | `86400` | 取得したリモートのメディアを保持してよい期間。メディアプロキシの応答の `Cache-Control: max-age` にもなるので、CDN やブラウザーもこの期間キャッシュします |
 | `remote_media_cache_max_bytes` | 1 以上の整数（バイト） | `1073741824` | メディアプロキシが保持するリモートのメディアの複製のサイズの上限。1 時間ごとの掃除で、期限切れの複製を削除し、そのあと上限を超えた分を最後にアクセスされたのが古いものから削除します |
 | `authorized_fetch` | `true` / `false` | `false` | Authorized Fetch（セキュアモード）。`true` のとき、検証できる HTTP 署名のない ActivityPub の GET には、オブジェクトとコレクションでは `401` を返し、利用者のアクターでは鍵を含む最小限の文書を返します。インスタンスのアクターは常に文書全体を返すので、どのサーバーも署名の検証のために鍵を取得できます |
 | `federation_mode` | `off` / `inbound` / `outbound` / `both` | `both` | 連合の方向。`off`: 連合しません。`inbound`: リモートのアカウントをフォローして読めますが、ローカルの投稿、プロフィール、リアクションは送り出さず、外部からのフォローは拒否します（`Reject`）。`outbound`: 外部からのフォローを受け入れてローカルの投稿を配送しますが、リモートの投稿とリアクションは取り込みません。`both`: 送信も受信もします。変更はすぐに反映され、権限 `manage_settings` が必要です |
+| `federation_scope` | `open` / `allowlist` | `open` | このサーバーがどのサーバーと連合するか。`open`: ドメインへの措置で凍結されていないすべてのサーバー。`allowlist`: 許可リストのドメインとそのサブドメインだけ。それ以外のサーバーは凍結されたものとして扱われ、ActivityPub の GET には、`authorized_fetch` の値にかかわらず、許可されたサーバーの署名が必要です。`allowlist` に切り替えると、切り離されるサーバーとのフォローは完全に終了します。[許可したサーバーとだけ連合する](moderation.md#federating-only-with-allowed-servers)を参照してください。変更はすぐに反映され、権限 `manage_settings` が必要です |
 | `dynamic_client_registration` | `true` / `false` | `true` | 動的クライアント登録（RFC 7591）。`true` の間は、`POST /oauth/register` が認証なしでパブリッククライアントの登録を受け付けます。`false` のときは、このエンドポイントがすべてのリクエストを `403`（`access_denied`）で拒否します。登録済みのクライアントは引き続き使えます。定期ジョブが、構成 `dynamic_client_unredeemed_retention` と `dynamic_client_idle_retention` に従って、使われていない動的登録のクライアントを削除します。変更はすぐに反映され、`manage_settings` が必要です |
 | `domain_actions_visibility` | `off` / `signed_in` / `everyone` | `off` | 措置を取ったドメインの一覧（`GET /api/v1/instance/domain_actions`）を見られる人: 誰も見られない、ログインしている利用者、誰でも（[モデレーション](moderation.md#publishing-the-domains-you-act-on)） |
 | `domain_actions_rationale_visibility` | `off` / `signed_in` / `everyone` | `off` | その一覧の公開コメントを見られる人。一覧を見られない人がコメントを見ることはありません |
@@ -64,6 +65,7 @@
 | `auto_delete_default_min_age_days` | 整数 1-3650（日） | `30` | 新しいアカウントのポリシーが、公開から何日後に投稿を削除するか |
 | `auto_delete_default_keep_pinned`, `auto_delete_default_keep_bookmarked`, `auto_delete_default_keep_favourited` | `true` / `false` | `true` | 新しいアカウントのポリシーが、作者がピン留め、ブックマーク、お気に入りした投稿を残すかどうか |
 | `auto_delete_default_keep_media`, `auto_delete_default_keep_polls` | `true` / `false` | `false` | 新しいアカウントのポリシーが、メディアや投票のある投稿を残すかどうか |
+| `auto_delete_default_keep_articles` | `true` / `false` | `true` | 新しいアカウントのポリシーが、[記事](#articles)を残すかどうか |
 | `auto_delete_default_keep_public`, `auto_delete_default_keep_local`, `auto_delete_default_keep_unlisted`, `auto_delete_default_keep_private` | `true` / `false` | `false` | 新しいアカウントのポリシーが、その公開範囲の投稿を残すかどうか |
 | `auto_delete_default_keep_direct` | `true` / `false` | `true` | 新しいアカウントのポリシーが、ダイレクトの投稿を残すかどうか |
 | `auto_delete_default_keep_min_boosts`, `auto_delete_default_keep_min_favourites` | 整数 0-1000000 | `0` | 新しいアカウントのポリシーは、この回数以上ブーストまたはお気に入りされた投稿を残します。`0` はしきい値なしです |
@@ -71,6 +73,7 @@
 | `auto_delete_max_allow_pinned` | `true` / `false` | `true` | 上限のもとでも、ピン留めした投稿を残してよいかどうか |
 | `auto_delete_max_kept_pins` | 整数 1-5 | `5` | 上限のもとで投稿を残すピン留めの数。最近ピン留めしたものから数えます。アカウントのピン留めの最大数である `5` なら、ピン留めした投稿をすべて残します |
 | `auto_delete_max_allow_bookmarked`, `auto_delete_max_allow_favourited`, `auto_delete_max_allow_media`, `auto_delete_max_allow_polls` | `true` / `false` | `false` | 上限のもとでも、作者がブックマークまたはお気に入りした投稿や、メディアや投票のある投稿を残してよいかどうか |
+| `auto_delete_max_allow_articles` | `true` / `false` | `true` | 上限のもとでも、記事を残してよいかどうか |
 | `auto_delete_max_allow_visibilities` | `true` / `false` | `false` | 上限のもとでも、公開範囲によって投稿を残してよいかどうか |
 | `auto_delete_max_allow_thresholds` | `true` / `false` | `false` | 上限のもとでも、ブーストとお気に入りの数によって投稿を残してよいかどうか |
 | `auto_delete_grace_days` | 整数 0-365（日） | `30` | 新たに上限がかかるアカウントが、知らせを受けてから自分の設定を保てる日数。変えても、すでに知らせを受けたアカウントの日付は動きません |
@@ -85,10 +88,15 @@
 | `finance_viewer_item_memos` | `true` / `false` | `false` | `view_finance` を持つ利用者が、会計の画面で費用の項目のメモを見られるかどうか。名前かメモの設定のどちらかが `true` なら、各期間に項目の行（プロバイダー、カテゴリー、その期間の金額と、有効なら名前とメモ）が表示されます。`manage_finance` を持つ人は、これにかかわらずすべてを見られます |
 | `finance_viewer_income` | `totals` / `plans` | `totals` | `view_finance` を持つ利用者が、収入の合計だけ（`totals`）を見るか、プランごとの加入者数も（`plans`）見るか。プランごとの金額と、誰が支払ったかは表示されません。`income_visibility` が `plans` なら、公開している数はこの値にかかわらず表示されます。収入は Web クライアントの会計の画面（`/finance`）と `GET /api/v1/finance/income_totals` で見られます |
 | `income_visibility` | `private` / `totals` / `plans` | `private` | サポーターからの収入（決済プロバイダーの手数料を引いたあとの金額）をどこまで公開するか。`finance_visibility` とは別に選びます。`private`: 何も公開しません（`GET /api/v1/instance/income_totals` は 404 です）。`totals`: 期間と通貨ごとの収入の合計だけ。`plans`: プランごとの現在の加入者数も、誰にでも表示します。加入者の少ないプランでは、その数から誰が加入しているかを推測されることがあります。収支（収入から費用を引いたもの）は、この値も `finance_visibility` も `private` でないときにだけ表示されます。そうでなければ、収支から隠した側がわかってしまうためです。どの段階でも、個々の支払い、加入者、プランごとの金額、手数料を引く前の金額と手数料は公開されません。今日（UTC）を含む期間までが公開されます |
+| `funding_meter_visibility` | `off` / `percent` / `amounts` | `off` | 活動資金メーターが公開する内容。今月の収入（決済プロバイダーの手数料を引いたあと）が月の目標にどこまで届いているかを、概要のページ、サポーターの一覧（`/about/supporters`）、`GET /api/v1/instance`（`funding_meter`）に表示します。目標とともに `/admin/finance/publication` で設定し、そこでは現在の公開設定では選べない選択肢が無効になり、その理由が表示されます。`off`: 何も公開しません。`percent`: 1% 単位に切り捨てた達成率、その月がまかなえているか、見込みの費用が目標に含まれているかだけを公開します。`finance_visibility` と `income_visibility` がどちらも `private` の間だけ選べます。`amounts`: 収入と目標の額も公開します。どちらも `private` でない間だけ選べます。片方だけを公開している間は、公開した額と達成率から隠している側が分かってしまうため、メーターは表示できません。どちらかの公開設定を変えて、選んでいる値が許されなくなると、メーターは `off` になり、その変更はほかの変更と同じように記録され、監査されます。月は今日（UTC）を含む暦の月で、目標の通貨での収入だけを数えます |
+| `funding_meter_target_amount` | 0 より大きい小数、または空 | 空 | 活動資金メーターの月の目標。`funding_meter_target_currency` の主単位で指定します（`1650` 円、`12.50` ドル）。小数点以下の桁数は通貨が持つ桁数までです。空: 目標は今月の費用になり、費用が 1 つの通貨にそろっている必要があります。費用が複数の通貨にわたる月や、費用が 0 の月は、メーターは表示されません |
+| `funding_meter_target_currency` | ISO 4217 コード、または空 | 空 | `funding_meter_target_amount` の通貨（`JPY` など）。空: 今月の費用の通貨 |
+| `funding_meter_rail` | `true` / `false` | `false` | `funding_meter_visibility` が `off` でない間、Web クライアントが、概要のページに加えて、広いレイアウトの右の列にも活動資金メーターを表示するかどうか |
 | `supporter_list_visibility` | `off` / `signed_in` / `everyone` | `off` | サポーターの一覧（`GET /api/v1/instance/supporters` と `/about/supporters`）を見られる人。`off`: 誰も見られません（API は 404 を返し、`/about` にリンクはありません）。`signed_in`: このサーバーにログインしている人だけ（それ以外には API が 401 を返します）。`everyone`: 誰でも。一覧には、掲載を選んだ有効な加入者のアカウントとプランだけが表示されます。金額、月払いか年払いか、日付、人数は表示されません。一覧のページと API の応答は、`search_indexing` にかかわらず常に `noindex, noarchive` です |
 | `user_app_registration` | `true` / `false` | `true` | ログインしている利用者が、クライアント API（`POST /api/v1/oauth_apps`）で自分の OAuth アプリ（パブリックまたはコンフィデンシャル）を登録できるかどうか。`false` のとき、登録には 403 を返します。登録済みのアプリの一覧、変更、削除、シークレットの再発行、自分へのトークンの発行、ほかの利用者による認可は引き続き使えます |
 | `voice_room_starters` | `everyone` / `permitted` | `permitted` | 構成 `voice` が `off` でないときに、通話のルームを開ける人（[構成](../reference/configuration.md#voice)）。`everyone`: 凍結も制限もされていない、ログインしているローカルの利用者全員。`permitted`: 権限 `start_voice_rooms` を持つ人だけ。この権限は既定では組み込みの `admin` ロールだけが持ち、サポーターのプランのロールに持たせることもできます |
 | `voice_public_summary` | `true` / `false` | `false` | 公開範囲が `local` の通話のルームのページで、このサーバーにログインしていない訪問者とリモートの利用者に、ルームの名前、説明、ホスト、まだ開いているかどうかを表示し、リンクプレビューにも出すかどうか。参加者は表示されません。`false` のとき、そうした訪問者には、このサーバーのローカルの利用者向けのルームであることだけが表示されます |
+| `event_creators` | `everyone` / `permitted` | `everyone` | イベントを作れる人（[イベント](#events)）。`everyone`: 凍結も制限もされていない、ログインしているローカルの利用者全員。`permitted`: 権限 `create_events` を持つ人だけ。この権限は既定では組み込みの `admin` ロールだけが持ち、サポーターのプランのロールに持たせることもできます |
 | `public_counts` | `true` / `false` | `true` | ランディングページ（`/`、ログアウト時）と `GET /api/v1/instance/overview` に、サーバーのメンバー数、直近 7 日の各日にサーバーの利用者がした公開投稿の数、サーバーの開始日を表示するかどうか。数えるのはこのサーバーの利用者の公開投稿だけで、数は数分ごとに更新されます。`false` のとき、API はこれらを含めません |
 | `featured_accounts` | スペースかカンマで区切った、最大 20 個のローカルアカウントのユーザー名（空 = なし） | 空 | フォローする人のおすすめで、最近投稿したこのサーバーの人より先に、この順で表示するアカウント。持ち主が「おすすめに出し、名前の一部で見つかるようにする」をオフにしたアカウントはおすすめされません。[おすすめ](#suggestions-of-accounts)を参照してください |
 | `login_providers_only` | `true` / `false` | `false` | 有効なログインのプロバイダーが 1 つ以上ある間、登録とログインをログインのプロバイダーに限るかどうか。パスワードとパスキーではログインできなくなり、プロバイダーを連携していない利用者は、セッションが切れると再びログインできなくなります。有効なプロバイダーがなければ適用されません。`my instance set` は、有効なプロバイダーと連携していない有効な利用者の数を表示します。[ログインをログインのプロバイダーに限る](login-providers.md#limit-sign-in-to-login-providers)を参照してください。 |
@@ -103,6 +111,7 @@
 | `translation_server_monthly_characters` | 整数 0-1000000000000 | `500000` | サーバー全体が、UTC の 1 か月に翻訳のプロバイダーへ送れる文字数。`0` では何も送りません。無制限の値はないので、大きな数を設定してください |
 | `translation_retention_days` | 整数 1-3650（日） | `30` | 翻訳を、作ってから保持する日数。読んでも延びず、投稿とともに削除されます |
 | `translation_reports_to_server` | 真偽値 | `false` | モデレーターが、通報の文章（通報された投稿と通報者のコメント）をサーバー側のプロバイダーに送ってよいかどうか。誰が頼んでも、各プロバイダーが受け取るのは `translation_provider_visibilities` が許した公開範囲だけです。通報されたダイレクトの投稿は `direct` を許されたプロバイダーにだけ送られ、コメントは `private` として扱われます。コメントの翻訳も、削除された投稿の翻訳も保持されず、文字数は `translation_server_monthly_characters` にだけ数えられます。`false` のときは、通報の内容がプロバイダーに届くことはありません |
+| `event_records_retention_days` | 整数 30-3650（日） | `90` | イベントが終了または中止されてから、誰が回答したか、誰が承認されたか、誰が招待されたか、候補日に誰が投票したかを保持する日数。日付が決まらなかったイベントは、最後の候補日で終了します。イベント自体（設定、場所、日付と候補日、中止）は保持されます。通報されたイベントの記録は通報と同じ期間保持され、保全はほかの記録と同じように適用されます（[記録の保持](moderation.md#record-retention-and-holds)） |
 | `voice_participants_retention_days` | 整数 30-3650（日） | `90` | 通話のルームが終わってから、誰が参加したかの記録（参加、話し手と聞き手、挙手、招待、退出させた記録）を保持する日数。ルーム自体（名前、説明、ホスト、どう終わったか）は保持されます。通報されたルームの記録は通報と同じ期間保持され、保全はほかの記録と同じように適用されます |
 | `hook_inbound_status_mode`, `hook_inbound_follow_mode`, `hook_signup_check_mode`, `hook_media_check_mode`, `hook_local_status_mode`, `hook_inbound_actor_mode`, `hook_local_profile_mode` | `off`, `observe`, `enforce` | `observe` | プラグインがある間に、各[判定フック](decision-hooks.md#modes)がどこまで働くか。`off` から `enforce` へは `observe` を経てしか移れません。 |
 | `hook_inbound_status_on_failure`, `hook_inbound_follow_on_failure`, `hook_media_check_on_failure`, `hook_inbound_actor_on_failure` | `pass`, `retry` | `pass` | 強制しているときにプラグインが失敗したら、フックがどうするか（[詳細](decision-hooks.md#when-the-plugin-fails)）。 |
@@ -113,6 +122,14 @@
 | `hook_local_profile_account_age_days` | 整数 0-3650（日） | `7` | `local.profile` は、作ってからこの日数に満たないアカウントの[プロフィールの変更を審査します](decision-hooks.md#local-profiles)。`0` ではすべてのアカウントを審査します。フックを使っている間は、情報ページ（`/about`）にそのことが表示されます。 |
 | `hook_decisions_retention_days` | 整数 30-3650（日） | `90` | [フックの判定](decision-hooks.md#the-decisions)を保持する日数。 |
 | `single_user` | 真偽値 | `false` | サーバーを[一人のサーバー](#one-person-server)にするかどうか。サーバーのローカルアカウントがちょうど 1 つのときにだけオンにでき、オフにはいつでもできます |
+| `max_drafts` | 整数 1-10000 | `100` | 1 人の利用者がサーバーに保存できる、予約されていない下書きの数。下げても下書きは削除されませんが、上限を超えている利用者は新しい下書きを保存できません |
+| `max_scheduled_posts` | 整数 1-10000 | `300` | 1 人の利用者が待たせておける予約投稿の数。下げても予約は取り消されません |
+| `max_scheduled_posts_per_day` | 整数 1-10000 | `25` | 1 人の利用者が、UTC の 1 日について待たせておける予約投稿の数 |
+| `scheduled_post_min_lead_minutes` | 整数 1-1440（分） | `5` | 投稿を予約できる、少なくとも何分先か |
+| `scheduled_post_max_lead_days` | 整数 1-3660（日） | `366` | 投稿を予約できる、最大で何日先か |
+| `article_authoring` | `everyone` / `permission` | `everyone` | 新しい[記事](#articles)を書ける人: ローカルの利用者全員か、ロールに権限 `create_articles` がある利用者だけ |
+| `max_article_bytes` | 整数 1000-100000（バイト） | `100000` | 記事の本文が作る HTML の最大バイト数 |
+| `max_article_images` | 整数 0-100 | `20` | 記事の本文に入れられる、作者自身がアップロードした画像の最大数（カバー画像を除く） |
 
 - 値は保存の前に正規化されます（`TRUE` は `true` に、`0750` は `750` に、`ja_jp` は `ja-JP` になり、メディア ID は小文字になります）。
   無効な値は拒否され、何も書き込まれません。
@@ -129,12 +146,12 @@
 
 新しいアカウントはおすすめに出て、アカウントの検索で名前の一部から見つかります。プロフィールの設定で「おすすめに出し、名前の一部で見つかるようにする」をオフにした利用者は、その両方から外れます。そのあと検索でそのアカウントが見つかるのは、ユーザー名全体で探したときか、そのアカウントをフォローしている人が探したときだけです。
 
-<!-- source: automatic-deletion-of-old-posts f0cf962c9de0 -->
+<!-- source: automatic-deletion-of-old-posts 9eb8a72df28e -->
 ### 古い投稿の自動削除
 
-利用者は、自分の投稿を、公開から何日かたったときに自動で削除させることができます（設定の「古い投稿の自動削除」）。ポリシーは利用者ごとのもので、オンにするかどうか、何日後か、どの投稿を残すか（ピン留め、ブックマーク、お気に入りした投稿、メディアや投票のある投稿、選んだ公開範囲の投稿、一定数以上のブーストやお気に入りがある投稿）を利用者が決めます。この方法での投稿の削除は、作者が自分で削除するのと同じです。投稿が届いたサーバーには `Delete` が送られます。この方法で削除されるのはローカルのアカウントの投稿だけで、ブーストは削除されません。
+利用者は、自分の投稿を、公開から何日かたったときに自動で削除させることができます（設定の「古い投稿の自動削除」）。ポリシーは利用者ごとのもので、オンにするかどうか、何日後か、どの投稿を残すか（ピン留め、ブックマーク、お気に入りした投稿、メディアや投票のある投稿、記事、選んだ公開範囲の投稿、一定数以上のブーストやお気に入りがある投稿）を利用者が決めます。この方法での投稿の削除は、作者が自分で削除するのと同じです。投稿が届いたサーバーには `Delete` が送られます。この方法で削除されるのはローカルのアカウントの投稿だけで、ブーストは削除されません。
 
-`auto_delete_default_*` のキーは、新しいローカルアカウントが、どの方法（登録のフォーム、外部のログインのプロバイダー、招待、`my admin`）で作られたかにかかわらず、最初に持つポリシーです。アカウントは作られたときにこれを受け取り、その後は自分のものとして持ちます。あとでキーを変えても、既存のアカウントも、前の値を受け取ったアカウントも変わりません。設定の画面には、その値が利用者自身の値として表示されます。キーが未設定なら、新しいアカウントは自動削除がオフ、30 日後、ピン留め、ブックマーク、お気に入りした投稿とダイレクトの投稿を残す状態で始まります。既定値はインスタンスの外の人には表示されません。上限が設定されているときは、新しいアカウントは、下で説明するとおり上限に合わせて切り詰めた既定値を受け取るので、上限の内側から始まります。
+`auto_delete_default_*` のキーは、新しいローカルアカウントが、どの方法（登録のフォーム、外部のログインのプロバイダー、招待、`my admin`）で作られたかにかかわらず、最初に持つポリシーです。アカウントは作られたときにこれを受け取り、その後は自分のものとして持ちます。あとでキーを変えても、既存のアカウントも、前の値を受け取ったアカウントも変わりません。設定の画面には、その値が利用者自身の値として表示されます。キーが未設定なら、新しいアカウントは自動削除がオフ、30 日後、ピン留め、ブックマーク、お気に入りした投稿、記事、ダイレクトの投稿を残す状態で始まります。既定値はインスタンスの外の人には表示されません。上限が設定されているときは、新しいアカウントは、下で説明するとおり上限に合わせて切り詰めた既定値を受け取るので、上限の内側から始まります。
 
 <!-- source: a-maximum-for-keeping-posts b1d83e01feda -->
 #### 投稿を保持する上限
@@ -153,6 +170,42 @@
 `keep_posts_longer` はメンバーの権限です。ロールに与えると、その持ち主は投稿を好きなだけ保持でき、自動削除をオフにできます。組み込みの `admin` ロールはこの権限を持っています。[サポーターのプラン](supporters.md)にも持たせられるので、投稿を長く保持できることをプランの特典にできます。加入が終わると、猶予期間のあとで再び上限がかかります。
 
 上限は公開されています。`GET /api/v1/instance` は `auto_delete_limit` でそれを返し、概要のページにも表示されるので、登録する前に知ることができます。これらのキーの変更には `manage_settings` が必要で、ほかの設定と同じように監査ログに記録されます。Web クライアントでは「サーバーの設定」の「投稿の自動削除」のページにあり、オンにした上限や厳しくした上限を保存する前に確認を求めます。
+
+<!-- source: drafts-and-scheduled-posts 240f795223ab -->
+### 下書きと予約投稿
+
+利用者は投稿の下書きをサーバーに保存し、別の端末で書き続け、すぐに、または選んだ時刻に公開できます。下書きを読めるのは作者だけです。下書きは連合されず、アカウントのデータのエクスポートにも含まれず、アカウントが消去されるときにいっしょに削除されます。上の `max_drafts` と `scheduled_post_*` の 5 つの設定が下書きと予約の数や範囲を制限し、上限を超える保存や予約は、その上限を示すメッセージとともに拒否されます。
+
+- 予約投稿は、その時刻かその直後に、ジョブ `content.publish_scheduled_draft` によって公開されます。時刻がキューのサービスの遅延の上限より先でも同じです。その場合はジョブが戻ってきて、再び待ちます。これらは `my instance set` で設定します。たとえば `my instance set max_scheduled_posts 100` のようにします。
+- 投稿は、予約したときだけでなく、公開するときにも検査されます。その時点でモデレーションの措置により投稿を禁じられている利用者や、返信先や引用元の投稿がなくなっている投稿は、投稿されません。下書きは残り、利用者にはその理由を伝える通知（`scheduled_status_failed`。利用者は通知の設定でオフにでき、メールでは送られません）が届きます。ローカルの投稿の自動審査は、使っている間、その投稿が公開されるときに審査します。
+- 投稿には公開された時刻が記録され、古い投稿の自動削除はその時刻から数えます。
+- 下書きに添付されたメディアのファイルは、下書きがある間は保持されます。下書きを削除すると添付されていない状態になり、添付されていないアップロードの掃除で削除されます。記事の下書きのカバー画像と、本文に表示されるアップロードも同じように保持されます。
+- 下書きと予約投稿には[記事](#articles)も含まれ、投稿と同じように予約され、数えられます。記事の下書きは、作者が書いている間はタイトルがなくてもかまいません。公開するときに新しい記事として検査され、その時点で新しい記事を書けなくなっている利用者の記事は投稿されません。
+
+<!-- source: articles fbbf778b92f0 -->
+### 記事
+
+記事は、タイトル、要約、カバー画像を持つ長い投稿で、本文は作者が Markdown で書きます。記事はほかのあらゆる点で投稿と同じです。公開範囲があり、編集しても履歴が残り、ブースト、お気に入り、引用、返信、通報、削除ができ、モデレーションも投稿と同じように働きます。サーバーは、本文を書かれたときに一度だけ描画します。本文中の生の HTML は描画されず、作者自身のアップロードの画像だけが画像として表示されます。そのほかの画像はリンクになるので、読む人がほかのサイトの画像を読み込むことはありません。タイムライン、通知、検索にはタイトル、要約、カバーが表示され、本文は記事を開いたところに表示されます。
+
+- 既定では、ローカルの利用者は全員が記事を書けます。`article_authoring` を `permission` にすると、ロールに権限 `create_articles` がある利用者だけが新しい記事を書けます。すでに書かれた記事は残り、その作者は引き続き編集できます。投稿を禁じるモデレーションの措置は、記事の執筆と編集も禁じます。[サポーターのプラン](supporters.md)は、特典として `create_articles` を与えられます。
+- `max_article_bytes` が制限するのは、Markdown ではなく本文の HTML です。記事を受け取るサーバーは HTML を数えるためで、100,000 バイト（設定できる最大）は、それらが全部保持する大きさです。日本語で約 30,000 文字の本文が収まります。`max_article_images` は本文の画像の数を制限します。エディターは、記事を公開する前にこの両方を表示します。
+- 記事がダイレクトの投稿になることはなく、投票も、画像以外の添付も、コンテンツの警告もありません。センシティブな記事はタイトルと要約を表示し、本文とカバーを折りたたみます。
+- 古い投稿の自動削除は、利用者がオフにしないかぎり記事を残します（新しいアカウントでは `auto_delete_default_keep_articles`、上限のもとでは `auto_delete_max_allow_articles`）。
+- `GET /api/v1/instance` は、制限を `limits.articles` に、執筆の設定を `article_authoring` に返します。これらは `my instance set` で設定します。たとえば `my instance set article_authoring permission` のようにします。
+
+<!-- source: events 07dccecf6936 -->
+### イベント
+
+ローカルの利用者は、日付、タイムゾーン、最大 3 つの場所を決めてイベントを計画できます。場所は、このサーバーの通話のルーム、会う場所、リンクです。主催者は日付の代わりに、最大 20 の候補日を示せます。イベントを見られる利用者がそれぞれに「はい」「たぶん」「いいえ」で答え、主催者か共同主催者がそのうち 1 つを確定すると、日付が決まります。それまでは、誰も参加するかどうかを回答しません。イベントはこのサーバーの利用者のためのもので、連合されることはなく、リモートの利用者とログインしていない訪問者には一切表示されません。
+
+- 作れる人は `event_creators` で決まります。通話のルームでイベントを開くには、主催者が通話のルームを開ける必要もあります（`voice_room_starters` と構成 `voice`）。
+- イベントの通話のルームは、開始時刻に主催者をホストとして開き、最初の参加者を最大 30 分待ちます。ルームには、イベントのタイトルと、イベントの公開範囲（ローカルの利用者全員、フォロワー、主催者がフォローしている人、相互フォロー、招待された人）が引き継がれます。共同主催者、「参加」か「たぶん」と回答した人、まだ回答していない招待された人はルームに招待されるので、共同ホストがルームを引き継いでも見続けられます。ルームは開始の投稿を作らず、イベントの開始の通知が唯一の通知です。
+- ルームを開けない場合（通話がオフ、主催者がもうルームを開けない、または別のルームをホストしている、構成 `voice_max_open_rooms` が許す数のルームがすでに開いている）は、イベントはそのままになります。主催者に通知が届き、イベントのページにルームを開けなかったことが表示されます。サーバーはこれを、日付が設定または変更されたときと、開始の 1 日前にも確認し、ルームが開かない原因になりそうなことを主催者に通知します。誰もルームに来なかったときにも、主催者に通知が届きます。イベントを中止するか、イベントの通話のルームを外すと、ルームは終了し、イベントは残ります。
+- 主催者は、イベントを見られる人を選びます。ローカルの利用者全員、主催者のフォロワー、主催者がフォローしている人、相互フォロー、招待された人だけのいずれかです。招待された人と、イベントや候補日に回答した人には常に表示されます。利用者と主催者または共同主催者のあいだにブロックがあると、その利用者にはイベントが表示されません。
+- イベントの住所とリンクが表示されるのは、主催者か共同主催者が承認した参加者だけです。ただし、主催者がイベントを見られる全員に表示することもできます。リンクは `http` か `https` でなければならず、サーバーがリンクを開くことはありません。
+- イベントを見られる利用者は、自分のカレンダーに追加するために、iCalendar（`.ics`）ファイルとして保存できます。ファイルに書かれるのはその利用者が見られる場所だけなので、承認された参加者のために伏せてある住所がファイルに現れることはありません。カレンダーの購読用のアドレスはありません。
+- 1 人の利用者が作れるイベントは 1 時間に最大 10 件で、1 つのイベントが送れる招待は 1 時間に最大 100 件です。
+- 利用者はイベントを通報でき、モデレーターはイベントを中止できます。主催者を凍結または削除すると、まだ始まっていないその主催者のイベントが中止されます（[モデレーション](moderation.md#events)）。誰が回答し、誰が招待されたかは、イベントのあと `event_records_retention_days` の間保持され、候補日への投票も同じです。
 
 <!-- source: texts-one-key-one-value c639fc7dfe23 -->
 ### テキスト（1 つのキーに 1 つの値）
@@ -281,7 +334,7 @@ my admin federation sever -direction both
 - リモート側に `Reject`（`in`）や `Undo`（`out`）が送られるのは、現在のモードがその方向に送るときだけです。送らないモード（`off` など）では、フォローはローカル側でだけ終わり、リモート側には知らされません。
 - 繰り返し実行しても安全です。終わらせたフォローの数を標準出力に表示します。
 
-<!-- source: admin-screens-and-the-client-api 6a747f50af97 -->
+<!-- source: admin-screens-and-the-client-api 887d153efcf9 -->
 ## 管理画面とクライアント API
 
 CLI で変えられる設定は、すべて Web クライアントの管理画面とクライアント API でも変えられます。どちらにもロールの権限 `manage_settings` が必要です（組み込みの `admin` ロールだけが持っています）。CLI と同じく、変更はリビジョンとして残り、キーごとに監査ログに記録されます（`setting_changed`。対象はその設定で、操作者はその利用者です）。監査ログは、モデレーションの画面（「監査ログ」、`/moderation/audit-log`）で確認してください。
@@ -295,7 +348,7 @@ CLI で変えられる設定は、すべて Web クライアントの管理画�
   | 登録（`/admin/settings/registration`） | 登録（`registration_mode`、`login_providers_only`）、メンバーの招待（`invite_creators`、`member_invite_max_active`、`member_invite_max_uses`、`member_invite_max_lifetime_seconds`）、アプリ（`user_app_registration`、`oauth_metadata_document_clients`、`dynamic_client_registration`） |
   | コンテンツ（`/admin/settings/content`） | 言語（`default_locale`。アプリにある言語から選びます）、タイムライン（`local_timeline_visibility`、`federated_timeline_visibility`）、投稿（`require_media_description`）、ランディングページ（`public_counts`）、おすすめのアカウント（`featured_accounts`） |
   | 投稿の自動削除（`/admin/settings/auto-delete`） | 新しいアカウントの既定値（`auto_delete_default_*` の設定）、上限（`auto_delete_max_age_days`、`auto_delete_max_allow_*` の設定、`auto_delete_max_kept_pins`、`auto_delete_grace_days`）。オンにした上限や厳しくした上限（日数、例外、ピン留めを減らす）を保存するときは、新たに対象になるアカウントに通知が届くので、先に確認を求めます（[投稿を保持する上限](#a-maximum-for-keeping-posts)） |
-  | 連合（`/admin/settings/federation`） | 連合（`federation_mode`、`authorized_fetch`、`remote_media_policy`、`remote_media_cache_ttl_seconds`（1 時間、1 日、7 日、30 日、365 日から選びます）、`link_cards`、`link_cards_ignore_robots_txt`）、制限・凍結したサーバー（`domain_actions_visibility`、`domain_actions_rationale_visibility`）、外部の審査（`hook_*` の設定。[判定フック](decision-hooks.md)を参照） |
+  | 連合（`/admin/settings/federation`） | 連合（`federation_mode`、`federation_scope`（`allowlist` を保存するときは、その切り替えで終了するフォローを先に表示して確認を求めます。[許可したサーバーとだけ連合する](moderation.md#federating-only-with-allowed-servers)を参照）、`authorized_fetch`、`remote_media_policy`、`remote_media_cache_ttl_seconds`（1 時間、1 日、7 日、30 日、365 日から選びます）、`link_cards`、`link_cards_ignore_robots_txt`）、制限・凍結したサーバー（`domain_actions_visibility`、`domain_actions_rationale_visibility`）、外部の審査（`hook_*` の設定。[判定フック](decision-hooks.md)を参照） |
   | 検索とクローラー（`/admin/settings/discovery`） | 検索エンジンと AI（`search_indexing`、`indexable_default`、`ai_usage`、`security_contact`）、投稿の検索（`search_visibilities`。サーバーに全文検索があるときだけ） |
   | 通話（`/admin/settings/voice`） | `voice_room_starters`、`voice_public_summary`、`voice_participants_retention_days`。このページは、サーバーが通話を提供しているときだけ一覧に出ます |
 

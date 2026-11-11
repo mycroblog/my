@@ -5,17 +5,17 @@
 
 以下に書いた外部サービスの情報には、確認した日付と出典を添えています。サービスのプランや画面は変わるので、制限に頼る前にリンク先のページを確認してください。
 
-<!-- source: which-url-to-monitor 50bdaa5c9f31 -->
+<!-- source: which-url-to-monitor 1c5761757c52 -->
 ## どの URL を監視するか
 
 | パス | 用途 | DB へのアクセス | メンテナンスモード中 |
 | --- | --- | --- | --- |
-| `GET /api/v1/instance/health` | 死活監視、ステータスページ、Web クライアント | プロセスごとに 60 秒に最大 1 回 | `Retry-After` 付きの `503` と `{"status":"maintenance"}` |
-| `GET /healthz` | プラットフォームの liveness プローブ | しない | `200` `{"status":"maintenance"}` |
-| `GET /readyz` | ロードバランサーや Kubernetes の readiness プローブ | リクエストごと（同時のリクエストは 1 回のチェックを共有） | `200` `{"status":"maintenance"}` |
+| `GET /api/v1/instance/health` | 死活監視、ステータスページ、Web クライアント | プロセスごとに 60 秒に最大 1 回 | `503`（`Retry-After` 付き）と `{"status":"maintenance"}` |
+| `GET /healthz`, `GET /health/live` | プラットフォームの liveness プローブ | しない | `200` `{"status":"maintenance"}` |
+| `GET /readyz`, `GET /health/ready` | ロードバランサーや Kubernetes の readiness プローブ | リクエストごと（同時のリクエストは 1 回のチェックを共有） | `200` `{"status":"maintenance"}` |
 
-外部の監視は `/readyz` ではなく **`/api/v1/instance/health`** に向けてください。`/readyz` はリクエストのたびにデータベースに問い合わせるので、間隔の短い監視はスケールトゥゼロのデータベースを起こし続けます。プローブはプラットフォームのためのものです。
-モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) と [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) は、プラットフォーム自身の監視から長い間隔で `/readyz` をチェックします。そのコストはそれぞれの README に書かれています。
+外部の監視は **`/api/v1/instance/health`** に向けてください。`/readyz`（`/health/ready`）には向けないでください。これらはリクエストのたびにデータベースに問い合わせるので、間隔の短い監視はスケールトゥゼロのデータベースを起こし続けます。プローブはプラットフォームのためのものです。
+モジュール [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) と [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) は、プラットフォーム自身の監視から長い間隔で `/health/live`（`monitoring-gcp`）か `/readyz`（`monitoring-aws`）をチェックします。そのコストはそれぞれの README に書かれています。
 
 `/api/v1/instance/health` の応答（認証なし、`Cache-Control: no-store`）は次のとおりです。
 
@@ -23,16 +23,18 @@
 | --- | --- | --- |
 | 正常 | `200` | `{"status":"ok","checked_at":"<RFC 3339>"}` |
 | 利用不可（データベースに到達できない、またはスキーマが適用されていない） | `503` | `{"status":"unavailable","checked_at":"<RFC 3339>"}` |
-| メンテナンスモード | `Retry-After` 付きの `503` | `{"status":"maintenance"}` |
+| メンテナンスモード | `503`（`Retry-After` 付き） | `{"status":"maintenance"}` |
 
-`/healthz` と `/readyz` は、正常なときに `200` と `{"status":"ok"}` を返します。データベースの準備ができていないとき、`/readyz` は problem document 付きの `503` を返します。
+`/healthz` と `/readyz` は、正常なときに `200` と `{"status":"ok"}` を返します。データベースの準備ができていないとき、`/readyz` は problem document 付きの `503` を返します。`/health/live` と `/health/ready` は、別の名前で提供される同じチェックです。
+
+**Cloud Run では、末尾が `z` で終わらないパスを呼び出してください。** Cloud Run は末尾が `z` で終わる一部のパスを予約していて、リクエストがコンテナーに届く前に、Cloud Run 自身の `404` で応答します。`/healthz` がその 1 つで、`/readyz` が今後も応答し続ける保証はありません。Cloud Run のデプロイの外側（死活監視、`curl`）からは、`/health/live`、`/health/ready`、`/api/v1/instance/health` を使ってください。コンテナー自身のプローブには影響しません。
 本文に理由、ホスト名、バージョンが含まれることはありません。原因はサーバーのログにあります。
 
 `checked_at` は、応答のもとになったチェックの時刻です。サーバーはデータベースのチェックをプロセスごとに 1 分に最大 1 回実行し、その結果を使い回します。そのため 60 秒より短い間隔でポーリングする監視は同じ `checked_at` を見るだけで、得るものはありません。プロセスが複数あるときは、それぞれが自分のチェックを実行します。
 
 [`origin_secret`](cdn.md#refuse-requests-that-did-not-come-through-the-cdn) を設定していても、この 3 つのパスはヘッダーなしで応答するので、CDN がヘッダーを失ったことはこれらには表れません。監視を問題の最初の兆候にしているなら、`https://<host>/about` のような CDN 経由のページも監視してください。
 
-<!-- source: keep-the-monitoring-cheap 29d1da3d6dc2 -->
+<!-- source: keep-the-monitoring-cheap d7956dee97ca -->
 ## 監視を安く保つ
 
 - **スケールトゥゼロのデータベース。** 監視の間隔が、データベースが停止するまでの待ち時間より短いと、データベースは停止しません。
@@ -41,8 +43,8 @@
   目安として、間隔を 5 分以上にすれば、アイドルのデータベースはチェックの合間に停止でき、各チェックはチェックの時間とアイドル時間のぶんだけデータベースを起こします。
   連合するサーバーはほかのサーバーから一日中配送を受けるので、いずれにしてもデータベースは一日の大半起きています。
   追加のコストは静かな時間帯に限られます。
-- **アイドル時のコストを最も重視するなら、安い組み合わせにします。** `/healthz`（データベースに一切触れません）を短い間隔で、データベースを使う
-  `/api/v1/instance/health` を長い間隔（15 分以上）で監視します。`/healthz` はメンテナンスモード中も `200` を返すので、本文の `"status":"ok"` で判定してください。
+- **アイドル時のコストを最も重視するなら、安い組み合わせにします。** `/health/live`（データベースに一切触れません）を短い間隔で、データベースを使う
+  `/api/v1/instance/health` を長い間隔（15 分以上）で監視します。`/health/live` はメンテナンスモード中も `200` を返すので、本文の `"status":"ok"` で判定してください。
 - **リクエストそのものは小さなものです。** 5 分ごとに 1 回のチェックは月に約 8,640 リクエスト、1 分ごとなら約 43,200 リクエストです。これは Cloud Run の無料枠
   （月に 200 万リクエスト、180,000 vCPU 秒、360,000 GiB 秒。時間は 100 ms 単位で切り上げ。2026-10-23 確認、[Cloud Run pricing](https://cloud.google.com/run/pricing)）に収まります。
 
