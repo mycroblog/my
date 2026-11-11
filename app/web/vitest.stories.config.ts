@@ -30,7 +30,9 @@ export default mergeConfig(
         commands: { screenBudget },
         enabled: true,
         headless: true,
-        provider: playwright(),
+        // The fixtures' time zone, so that a screen counts the same on every machine: the time zone settings show
+        // more when the device's zone differs from the saved one (screen budgets, l4/budget.ts).
+        provider: playwright({ contextOptions: { timezoneId: "UTC" } }),
         instances: [{ browser: "chromium" as const }],
       },
     },
