@@ -544,14 +544,27 @@ mark an ADR `Accepted`.
 ## Translations and messages
 
 User-facing strings go into `locales/<locale>/<namespace>/<area>.json` (FormatJS JSON format), and `en` and `ja` are
-updated together.
-A key goes into the file of its area: the area is the key's first segment, or its first two segments for `admin`.
-`settings.profile.title` goes into `locales/en/client/settings.json`, and `admin.report.title` into
-`locales/en/client/admin/report.json`. A key of a new area goes into a new file of that name (nothing that bundles the
-files needs to change); `scripts/task.sh i18n:check` reports keys written in the wrong file.
-After editing, run `scripts/task.sh i18n:gen` to regenerate the pseudo-locales (`en-XA` / `ar-XB`) and the typed
-accessors, and commit what Go reads (the pseudo-locales of `server`, `internal/i18n/messages_gen.go`, and
+updated together: a key that `ja` lacks fails `scripts/task.sh i18n:check`.
+Change the catalogs with `scripts/i18n.sh` (`scripts/i18n.sh help` lists its commands). It writes a key to the file of
+its area (the key's first segment, or its first two for `admin`: `settings.profile.title` is in
+`locales/en/client/settings.json`, `admin.report.title` in `locales/en/client/admin/report.json`), refuses a text that
+breaks a rule of the check and says which, and regenerates the pseudo-locales (`en-XA` / `ar-XB`) and the typed accessors:
+
+```sh
+scripts/i18n.sh add client:lists.empty.title --en "No lists yet" --ja "リストはまだありません" --desc "Heading of the empty list of lists."
+scripts/i18n.sh set client:lists.empty.title --en "No lists" --ja "リストはありません"  # drops the machine translations of the old text
+scripts/i18n.sh mv client:lists.empty.title lists.none.title  # in every locale, and the references in the source
+scripts/i18n.sh rm client:lists.none.title                    # refused while the source refers to it
+scripts/i18n.sh show lists.empty                              # also: find "<text>", unused
+scripts/i18n.sh check --changed                               # the checks of the keys changed since origin/main
+```
+
+Commit what Go reads (the pseudo-locales of `server`, `internal/i18n/messages_gen.go`, and
 `internal/i18n/testdata/golden.json`). The pseudo-locales of `client` and the TypeScript accessors are not committed.
+
+A helper text of a client, a key that ends in `description`, `hint`, `help`, or `note`, is one short sentence: at most
+20 words in `en` and 50 characters in `ja`. Say more in the label or in the documentation. The texts that were longer
+when the rule arrived are listed in `tools/i18n/helper-text-baseline.json`; they may not grow, and the list only shrinks.
 
 Every accessor takes the arguments of a message by name, so that two arguments of the same type cannot be swapped:
 

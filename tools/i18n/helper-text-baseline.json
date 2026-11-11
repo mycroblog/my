@@ -1,0 +1,1058 @@
+{
+  "client:about.costs.description": {
+    "en": 34,
+    "ja": 70
+  },
+  "client:about.income.description": {
+    "en": 38,
+    "ja": 88
+  },
+  "client:about.retention.description": {
+    "en": 25,
+    "ja": 64
+  },
+  "client:about.status.description": {
+    "en": 23,
+    "ja": 67
+  },
+  "client:account_move.aliases.add.description": {
+    "en": 18,
+    "ja": 55
+  },
+  "client:account_move.aliases.description": {
+    "en": 25,
+    "ja": 68
+  },
+  "client:account_move.cancel.description": {
+    "en": 29,
+    "ja": 80
+  },
+  "client:account_move.move.confirm.description": {
+    "en": 23,
+    "ja": 72
+  },
+  "client:account_move.move.description": {
+    "en": 25,
+    "ja": 79
+  },
+  "client:account_move.moved.description": {
+    "en": 33,
+    "ja": 100
+  },
+  "client:account_status.appeal.confirm.description": {
+    "en": 30,
+    "ja": 72
+  },
+  "client:admin.account.actions.confirm_lift.description": {
+    "en": 22,
+    "ja": 65
+  },
+  "client:admin.account.email_suppression.lift.description": {
+    "en": 25,
+    "ja": 58
+  },
+  "client:admin.account.password_reset.confirm.description": {
+    "en": 22,
+    "ja": 56
+  },
+  "client:admin.account.password_reset.description": {
+    "en": 60,
+    "ja": 146
+  },
+  "client:admin.account.roles.description": {
+    "en": 30,
+    "ja": 77
+  },
+  "client:admin.account.two_factor.remove.description": {
+    "en": 29,
+    "ja": 68
+  },
+  "client:admin.account_actions.block_email.description": {
+    "en": 27,
+    "ja": 55
+  },
+  "client:admin.account_actions.confirm_delete_statuses.description": {
+    "en": 21,
+    "ja": 49
+  },
+  "client:admin.accounts.search.username.description": {
+    "en": 13,
+    "ja": 59
+  },
+  "client:admin.announcements.description": {
+    "en": 30,
+    "ja": 63
+  },
+  "client:admin.announcements.text.description": {
+    "en": 12,
+    "ja": 52
+  },
+  "client:admin.brand.description": {
+    "en": 43,
+    "ja": 123
+  },
+  "client:admin.brand.icon.description": {
+    "en": 26,
+    "ja": 75
+  },
+  "client:admin.brand.logo.description": {
+    "en": 27,
+    "ja": 61
+  },
+  "client:admin.brand.logo_dark.description": {
+    "en": 24,
+    "ja": 48
+  },
+  "client:admin.closure.close.confirm.description": {
+    "en": 34,
+    "ja": 96
+  },
+  "client:admin.closure.close.description": {
+    "en": 34,
+    "ja": 102
+  },
+  "client:admin.closure.closes_at.description": {
+    "en": 25,
+    "ja": 57
+  },
+  "client:admin.closure.description": {
+    "en": 36,
+    "ja": 94
+  },
+  "client:admin.closure.export_until.description": {
+    "en": 21,
+    "ja": 43
+  },
+  "client:admin.closure.withdraw.description": {
+    "en": 24,
+    "ja": 59
+  },
+  "client:admin.custom_emoji_requests.description": {
+    "en": 49,
+    "ja": 134
+  },
+  "client:admin.custom_emojis.aliases.description": {
+    "en": 22,
+    "ja": 63
+  },
+  "client:admin.custom_emojis.copy.description": {
+    "en": 24,
+    "ja": 62
+  },
+  "client:admin.custom_emojis.delete.description": {
+    "en": 30,
+    "ja": 77
+  },
+  "client:admin.custom_emojis.detail.state.description": {
+    "en": 19,
+    "ja": 55
+  },
+  "client:admin.custom_emojis.image.description": {
+    "en": 25,
+    "ja": 77
+  },
+  "client:admin.custom_emojis.image.large_hint": {
+    "en": 19,
+    "ja": 72
+  },
+  "client:admin.custom_emojis.shortcode.description": {
+    "en": 24,
+    "ja": 82
+  },
+  "client:admin.documents.body.description": {
+    "en": 43,
+    "ja": 132
+  },
+  "client:admin.documents.commerce_disclosure.description": {
+    "en": 47,
+    "ja": 121
+  },
+  "client:admin.domain_actions.confirm_suspend.description": {
+    "en": 36,
+    "ja": 93
+  },
+  "client:admin.domain_actions.csv.csv.description": {
+    "en": 26,
+    "ja": 80
+  },
+  "client:admin.domain_actions.csv.description": {
+    "en": 43,
+    "ja": 150
+  },
+  "client:admin.domain_actions.domain.description": {
+    "en": 23,
+    "ja": 61
+  },
+  "client:admin.domain_actions.obfuscate.description": {
+    "en": 17,
+    "ja": 51
+  },
+  "client:admin.domain_allows.description": {
+    "en": 39,
+    "ja": 111
+  },
+  "client:admin.domain_allows.domain.description": {
+    "en": 12,
+    "ja": 57
+  },
+  "client:admin.domain_allows.remove.description": {
+    "en": 51,
+    "ja": 120
+  },
+  "client:admin.domain_lists.delete.description": {
+    "en": 24,
+    "ja": 52
+  },
+  "client:admin.domain_lists.drafts.confirm.description": {
+    "en": 36,
+    "ja": 82
+  },
+  "client:admin.domain_lists.empty.description": {
+    "en": 19,
+    "ja": 58
+  },
+  "client:admin.domain_lists.fetches.description": {
+    "en": 27,
+    "ja": 60
+  },
+  "client:admin.domain_lists.format.mastodon_json.description": {
+    "en": 14,
+    "ja": 80
+  },
+  "client:admin.domain_lists.mode.automatic.description": {
+    "en": 27,
+    "ja": 63
+  },
+  "client:admin.domain_lists.new.description": {
+    "en": 42,
+    "ja": 114
+  },
+  "client:admin.errors.description": {
+    "en": 31,
+    "ja": 77
+  },
+  "client:admin.errors.hourly.description": {
+    "en": 24,
+    "ja": 53
+  },
+  "client:admin.finance.cancel.description": {
+    "en": 24,
+    "ja": 58
+  },
+  "client:admin.finance.description": {
+    "en": 44,
+    "ja": 98
+  },
+  "client:admin.finance.movements.description": {
+    "en": 23,
+    "ja": 49
+  },
+  "client:admin.finance.schedule.description": {
+    "en": 35,
+    "ja": 75
+  },
+  "client:admin.hook_appeal.review.description": {
+    "en": 19,
+    "ja": 61
+  },
+  "client:admin.hook_appeals.confirm_overturn.description": {
+    "en": 27,
+    "ja": 66
+  },
+  "client:admin.instance.deliveries.description": {
+    "en": 29,
+    "ja": 80
+  },
+  "client:admin.instances.open.domain.description": {
+    "en": 15,
+    "ja": 53
+  },
+  "client:admin.link_card_domains.domain.description": {
+    "en": 24,
+    "ja": 63
+  },
+  "client:admin.link_card_domains.mode.no_fetch.description": {
+    "en": 23,
+    "ja": 60
+  },
+  "client:admin.link_card_domains.mode.no_images.description": {
+    "en": 23,
+    "ja": 53
+  },
+  "client:admin.link_card_domains.new.description": {
+    "en": 34,
+    "ja": 89
+  },
+  "client:admin.link_card_domains.remove.description": {
+    "en": 33,
+    "ja": 70
+  },
+  "client:admin.login_providers.claims.description": {
+    "en": 33,
+    "ja": 102
+  },
+  "client:admin.login_providers.delete.description": {
+    "en": 28,
+    "ja": 96
+  },
+  "client:admin.login_providers.disable.description": {
+    "en": 40,
+    "ja": 118
+  },
+  "client:admin.login_providers.guilds.description": {
+    "en": 28,
+    "ja": 96
+  },
+  "client:admin.login_providers.organizations.description": {
+    "en": 25,
+    "ja": 92
+  },
+  "client:admin.login_providers.rotate.description": {
+    "en": 16,
+    "ja": 52
+  },
+  "client:admin.oauth_apps.disable.description": {
+    "en": 33,
+    "ja": 80
+  },
+  "client:admin.oauth_apps.hosts.deny.description": {
+    "en": 36,
+    "ja": 82
+  },
+  "client:admin.oauth_apps.hosts.description": {
+    "en": 21,
+    "ja": 58
+  },
+  "client:admin.oauth_apps.hosts.host.description": {
+    "en": 18,
+    "ja": 59
+  },
+  "client:admin.oauth_apps.list.description": {
+    "en": 25,
+    "ja": 69
+  },
+  "client:admin.refetch.account.description": {
+    "en": 34,
+    "ja": 88
+  },
+  "client:admin.refetch.domain.description": {
+    "en": 40,
+    "ja": 102
+  },
+  "client:admin.relays.empty.description": {
+    "en": 20,
+    "ja": 51
+  },
+  "client:admin.relays.new.description": {
+    "en": 30,
+    "ja": 61
+  },
+  "client:admin.relays.protocol.description": {
+    "en": 14,
+    "ja": 62
+  },
+  "client:admin.relays.receive.description": {
+    "en": 25,
+    "ja": 65
+  },
+  "client:admin.relays.url.description": {
+    "en": 13,
+    "ja": 60
+  },
+  "client:admin.report.forward.description": {
+    "en": 30,
+    "ja": 74
+  },
+  "client:admin.report.resolve.description": {
+    "en": 26,
+    "ja": 70
+  },
+  "client:admin.roles.badge.description": {
+    "en": 28,
+    "ja": 61
+  },
+  "client:admin.roles.badge.label.description": {
+    "en": 21,
+    "ja": 46
+  },
+  "client:admin.roles.position.description": {
+    "en": 26,
+    "ja": 48
+  },
+  "client:admin.rules.description": {
+    "en": 55,
+    "ja": 131
+  },
+  "client:admin.settings.auto_delete.default.description": {
+    "en": 20,
+    "ja": 62
+  },
+  "client:admin.settings.auto_delete.grace.description": {
+    "en": 29,
+    "ja": 72
+  },
+  "client:admin.settings.auto_delete.max.description": {
+    "en": 43,
+    "ja": 103
+  },
+  "client:admin.settings.contact.description": {
+    "en": 36,
+    "ja": 102
+  },
+  "client:admin.settings.contact.thumbnail.description": {
+    "en": 33,
+    "ja": 95
+  },
+  "client:admin.settings.crawlers.ai.deny.description": {
+    "en": 17,
+    "ja": 52
+  },
+  "client:admin.settings.crawlers.ai.deny_training.description": {
+    "en": 24,
+    "ja": 66
+  },
+  "client:admin.settings.crawlers.description": {
+    "en": 51,
+    "ja": 155
+  },
+  "client:admin.settings.crawlers.search.allow.description": {
+    "en": 22,
+    "ja": 53
+  },
+  "client:admin.settings.crawlers.search.deny.description": {
+    "en": 14,
+    "ja": 64
+  },
+  "client:admin.settings.crawlers.security_contact.description": {
+    "en": 21,
+    "ja": 123
+  },
+  "client:admin.settings.descriptions.description": {
+    "en": 46,
+    "ja": 118
+  },
+  "client:admin.settings.domain_actions.description": {
+    "en": 22,
+    "ja": 56
+  },
+  "client:admin.settings.featured.description": {
+    "en": 35,
+    "ja": 83
+  },
+  "client:admin.settings.federation.authorized_fetch.description": {
+    "en": 25,
+    "ja": 76
+  },
+  "client:admin.settings.federation.link_cards.description": {
+    "en": 39,
+    "ja": 104
+  },
+  "client:admin.settings.federation.link_cards_ignore_robots_txt.description": {
+    "en": 39,
+    "ja": 128
+  },
+  "client:admin.settings.federation.mode.both.description": {
+    "en": 18,
+    "ja": 56
+  },
+  "client:admin.settings.federation.mode.description": {
+    "en": 19,
+    "ja": 58
+  },
+  "client:admin.settings.federation.mode.inbound.description": {
+    "en": 28,
+    "ja": 75
+  },
+  "client:admin.settings.federation.mode.outbound.description": {
+    "en": 35,
+    "ja": 93
+  },
+  "client:admin.settings.federation.scope.allowlist.description": {
+    "en": 24,
+    "ja": 80
+  },
+  "client:admin.settings.finance.breakdown.description": {
+    "en": 20,
+    "ja": 59
+  },
+  "client:admin.settings.finance.description": {
+    "en": 32,
+    "ja": 66
+  },
+  "client:admin.settings.finance.viewer.description": {
+    "en": 30,
+    "ja": 70
+  },
+  "client:admin.settings.finance.viewer.item_memos.description": {
+    "en": 18,
+    "ja": 52
+  },
+  "client:admin.settings.funding.description": {
+    "en": 24,
+    "ja": 61
+  },
+  "client:admin.settings.funding.percent.description": {
+    "en": 25,
+    "ja": 64
+  },
+  "client:admin.settings.funding.target.description": {
+    "en": 27,
+    "ja": 65
+  },
+  "client:admin.settings.hooks.description": {
+    "en": 31,
+    "ja": 75
+  },
+  "client:admin.settings.hooks.failure.retry.description": {
+    "en": 26,
+    "ja": 52
+  },
+  "client:admin.settings.hooks.inbound_status.unfollowed_direct.description": {
+    "en": 29,
+    "ja": 84
+  },
+  "client:admin.settings.hooks.local_status.account_age.description": {
+    "en": 29,
+    "ja": 81
+  },
+  "client:admin.settings.hooks.retention.description": {
+    "en": 27,
+    "ja": 73
+  },
+  "client:admin.settings.hooks.signup_check.reject.description": {
+    "en": 34,
+    "ja": 78
+  },
+  "client:admin.settings.income.description": {
+    "en": 52,
+    "ja": 117
+  },
+  "client:admin.settings.income.plans.description": {
+    "en": 25,
+    "ja": 66
+  },
+  "client:admin.settings.invites.creators.everyone.description": {
+    "en": 34,
+    "ja": 97
+  },
+  "client:admin.settings.invites.description": {
+    "en": 34,
+    "ja": 80
+  },
+  "client:admin.settings.landing.counts.description": {
+    "en": 37,
+    "ja": 65
+  },
+  "client:admin.settings.login_providers_only.description": {
+    "en": 34,
+    "ja": 97
+  },
+  "client:admin.settings.name.description": {
+    "en": 58,
+    "ja": 161
+  },
+  "client:admin.settings.oauth_apps.description": {
+    "en": 31,
+    "ja": 85
+  },
+  "client:admin.settings.oauth_apps.dynamic.description": {
+    "en": 16,
+    "ja": 51
+  },
+  "client:admin.settings.oauth_apps.metadata_document.description": {
+    "en": 19,
+    "ja": 58
+  },
+  "client:admin.settings.posts.require_media_description.description": {
+    "en": 25,
+    "ja": 65
+  },
+  "client:admin.settings.preview.description": {
+    "en": 40,
+    "ja": 96
+  },
+  "client:admin.settings.registration.approval.description": {
+    "en": 26,
+    "ja": 56
+  },
+  "client:admin.settings.search.description": {
+    "en": 39,
+    "ja": 102
+  },
+  "client:admin.settings.search.local.description": {
+    "en": 24,
+    "ja": 72
+  },
+  "client:admin.settings.search.public_local.description": {
+    "en": 23,
+    "ja": 64
+  },
+  "client:admin.settings.search.visibilities.description": {
+    "en": 37,
+    "ja": 101
+  },
+  "client:admin.settings.single_user.description": {
+    "en": 72,
+    "ja": 195
+  },
+  "client:admin.settings.single_user.label.description": {
+    "en": 41,
+    "ja": 95
+  },
+  "client:admin.settings.supporter_list.description": {
+    "en": 34,
+    "ja": 101
+  },
+  "client:admin.settings.timelines.access.everyone.description": {
+    "en": 21,
+    "ja": 52
+  },
+  "client:admin.settings.voice.public_summary.description": {
+    "en": 41,
+    "ja": 96
+  },
+  "client:admin.settings.voice.retention.description": {
+    "en": 32,
+    "ja": 75
+  },
+  "client:admin.signup_blocks.import.description": {
+    "en": 28,
+    "ja": 74
+  },
+  "client:admin.signup_blocks.import.list.description": {
+    "en": 27,
+    "ja": 62
+  },
+  "client:admin.signup_blocks.value.email_hash.description": {
+    "en": 22,
+    "ja": 61
+  },
+  "client:admin.signup_blocks.value.ip_range.description": {
+    "en": 13,
+    "ja": 61
+  },
+  "client:admin.supporters.new.description": {
+    "en": 52,
+    "ja": 135
+  },
+  "client:admin.supporters.payment.description": {
+    "en": 29,
+    "ja": 72
+  },
+  "client:admin.supporters.payment.reconcile.description": {
+    "en": 30,
+    "ja": 72
+  },
+  "client:admin.supporters.plan.retire.description": {
+    "en": 28,
+    "ja": 68
+  },
+  "client:admin.supporters.program.description": {
+    "en": 35,
+    "ja": 85
+  },
+  "client:admin.supporters.subscription.cancel.description": {
+    "en": 35,
+    "ja": 90
+  },
+  "client:admin.supporters.tips.description": {
+    "en": 42,
+    "ja": 98
+  },
+  "client:admin.theme.colors.description": {
+    "en": 48,
+    "ja": 139
+  },
+  "client:admin.theme.css.description": {
+    "en": 66,
+    "ja": 194
+  },
+  "client:admin.theme.description": {
+    "en": 54,
+    "ja": 127
+  },
+  "client:admin.theme.preview.description": {
+    "en": 18,
+    "ja": 51
+  },
+  "client:admin.theme.tokens.description": {
+    "en": 39,
+    "ja": 93
+  },
+  "client:admin.translation.browser.description": {
+    "en": 30,
+    "ja": 68
+  },
+  "client:admin.translation.limits.description": {
+    "en": 30,
+    "ja": 66
+  },
+  "client:admin.translation.providers.none.description": {
+    "en": 23,
+    "ja": 51
+  },
+  "client:admin.translation.reports.description": {
+    "en": 58,
+    "ja": 157
+  },
+  "client:admin.translation.use.description": {
+    "en": 35,
+    "ja": 87
+  },
+  "client:admin.webhooks.deliveries.description": {
+    "en": 20,
+    "ja": 56
+  },
+  "client:admin.webhooks.rotate.description": {
+    "en": 28,
+    "ja": 60
+  },
+  "client:admin.webhooks.url.description": {
+    "en": 25,
+    "ja": 63
+  },
+  "client:articles.field.body.description": {
+    "en": 22,
+    "ja": 72
+  },
+  "client:articles.field.tags.description": {
+    "en": 20,
+    "ja": 51
+  },
+  "client:compose.media.hint": {
+    "en": 26,
+    "ja": 79
+  },
+  "client:compose.rejected.appeal.confirm.description": {
+    "en": 34,
+    "ja": 80
+  },
+  "client:compose.visibility.local.description": {
+    "en": 16,
+    "ja": 59
+  },
+  "client:costs.public.description": {
+    "en": 31,
+    "ja": 93
+  },
+  "client:custom_emojis.aliases.description": {
+    "en": 22,
+    "ja": 63
+  },
+  "client:custom_emojis.delete.description": {
+    "en": 22,
+    "ja": 51
+  },
+  "client:custom_emojis.description": {
+    "en": 52,
+    "ja": 123
+  },
+  "client:custom_emojis.image.description": {
+    "en": 25,
+    "ja": 77
+  },
+  "client:custom_emojis.image.large_hint": {
+    "en": 19,
+    "ja": 72
+  },
+  "client:custom_emojis.shortcode.description": {
+    "en": 24,
+    "ja": 82
+  },
+  "client:deactivated.description": {
+    "en": 19,
+    "ja": 52
+  },
+  "client:direct_messages.empty.description": {
+    "en": 35,
+    "ja": 90
+  },
+  "client:events.cancel.description": {
+    "en": 25,
+    "ja": 56
+  },
+  "client:events.form.candidates.description": {
+    "en": 22,
+    "ja": 47
+  },
+  "client:events.form.time_zone.description": {
+    "en": 19,
+    "ja": 65
+  },
+  "client:events.list.empty.description": {
+    "en": 17,
+    "ja": 52
+  },
+  "client:events.poll.confirm.description": {
+    "en": 27,
+    "ja": 55
+  },
+  "client:finance.description": {
+    "en": 46,
+    "ja": 105
+  },
+  "client:lists.empty.description": {
+    "en": 21,
+    "ja": 52
+  },
+  "client:notification_policy.action.filter.description": {
+    "en": 36,
+    "ja": 67
+  },
+  "client:notification_policy.condition.limited_account.description": {
+    "en": 21,
+    "ja": 60
+  },
+  "client:notification_policy.condition.unsolicited_private_mention.description": {
+    "en": 17,
+    "ja": 53
+  },
+  "client:notification_policy.description": {
+    "en": 63,
+    "ja": 149
+  },
+  "client:notification_requests.answers.description": {
+    "en": 18,
+    "ja": 57
+  },
+  "client:search.description": {
+    "en": 14,
+    "ja": 51
+  },
+  "client:search.posts.empty.description": {
+    "en": 27,
+    "ja": 82
+  },
+  "client:settings.account.deactivate.description": {
+    "en": 42,
+    "ja": 106
+  },
+  "client:settings.account.delete.confirm.description": {
+    "en": 20,
+    "ja": 56
+  },
+  "client:settings.account.delete.description": {
+    "en": 38,
+    "ja": 95
+  },
+  "client:settings.account.export.description": {
+    "en": 42,
+    "ja": 122
+  },
+  "client:settings.apps.delete.description": {
+    "en": 24,
+    "ja": 59
+  },
+  "client:settings.apps.description": {
+    "en": 38,
+    "ja": 89
+  },
+  "client:settings.apps.redirect_uris.description": {
+    "en": 22,
+    "ja": 98
+  },
+  "client:settings.apps.rotate.description": {
+    "en": 27,
+    "ja": 75
+  },
+  "client:settings.apps.scope.description": {
+    "en": 52,
+    "ja": 182
+  },
+  "client:settings.apps.token.description": {
+    "en": 36,
+    "ja": 97
+  },
+  "client:settings.apps.token.scope.description": {
+    "en": 39,
+    "ja": 124
+  },
+  "client:settings.authorized_apps.description": {
+    "en": 46,
+    "ja": 109
+  },
+  "client:settings.authorized_apps.revoke.description": {
+    "en": 19,
+    "ja": 55
+  },
+  "client:settings.auto_delete.description": {
+    "en": 40,
+    "ja": 85
+  },
+  "client:settings.auto_delete.enabled.description": {
+    "en": 22,
+    "ja": 62
+  },
+  "client:settings.auto_delete.limit.description": {
+    "en": 28,
+    "ja": 74
+  },
+  "client:settings.autoplay.description": {
+    "en": 54,
+    "ja": 151
+  },
+  "client:settings.default_interaction_policy.description": {
+    "en": 22,
+    "ja": 42
+  },
+  "client:settings.domain_mutes.description": {
+    "en": 48,
+    "ja": 128
+  },
+  "client:settings.import_export.export.description": {
+    "en": 40,
+    "ja": 139
+  },
+  "client:settings.import_export.import.description": {
+    "en": 28,
+    "ja": 90
+  },
+  "client:settings.invites.description": {
+    "en": 36,
+    "ja": 92
+  },
+  "client:settings.linked_accounts.add.description": {
+    "en": 24,
+    "ja": 58
+  },
+  "client:settings.linked_accounts.description": {
+    "en": 26,
+    "ja": 81
+  },
+  "client:settings.navigation.description": {
+    "en": 34,
+    "ja": 89
+  },
+  "client:settings.notifications.table.description": {
+    "en": 43,
+    "ja": 93
+  },
+  "client:settings.passkeys.add.description": {
+    "en": 25,
+    "ja": 64
+  },
+  "client:settings.passkeys.description": {
+    "en": 48,
+    "ja": 139
+  },
+  "client:settings.password.description": {
+    "en": 21,
+    "ja": 58
+  },
+  "client:settings.password.remove.description": {
+    "en": 39,
+    "ja": 100
+  },
+  "client:settings.password.set.description": {
+    "en": 40,
+    "ja": 100
+  },
+  "client:settings.preferences.display.description": {
+    "en": 22,
+    "ja": 50
+  },
+  "client:settings.profile.ai_opt_out.description": {
+    "en": 32,
+    "ja": 78
+  },
+  "client:settings.profile.badges.description": {
+    "en": 25,
+    "ja": 54
+  },
+  "client:settings.profile.discoverable.description": {
+    "en": 42,
+    "ja": 85
+  },
+  "client:settings.profile.feed_enabled.description": {
+    "en": 38,
+    "ja": 104
+  },
+  "client:settings.profile.follows_visibility.followers.description": {
+    "en": 24,
+    "ja": 47
+  },
+  "client:settings.profile.indexable.description": {
+    "en": 40,
+    "ja": 124
+  },
+  "client:settings.push.enable.description": {
+    "en": 23,
+    "ja": 57
+  },
+  "client:settings.push_prompt.description": {
+    "en": 21,
+    "ja": 47
+  },
+  "client:settings.require_media_description.description": {
+    "en": 34,
+    "ja": 78
+  },
+  "client:settings.sessions.description": {
+    "en": 31,
+    "ja": 85
+  },
+  "client:settings.sessions.revoke.description": {
+    "en": 21,
+    "ja": 55
+  },
+  "client:settings.sessions.revoke_others.description": {
+    "en": 26,
+    "ja": 75
+  },
+  "client:settings.timeline_auto_insert.description": {
+    "en": 40,
+    "ja": 91
+  },
+  "client:settings.timeline_languages.description": {
+    "en": 14,
+    "ja": 51
+  },
+  "client:settings.two_factor.recovery_codes.description": {
+    "en": 26,
+    "ja": 80
+  },
+  "client:settings.two_factor.recovery_codes.new.description": {
+    "en": 24,
+    "ja": 76
+  },
+  "client:settings.two_factor.setup.description": {
+    "en": 25,
+    "ja": 63
+  },
+  "client:status.interaction_policy.description": {
+    "en": 21,
+    "ja": 55
+  },
+  "client:supporter.cancel_subscription.description": {
+    "en": 31,
+    "ja": 63
+  },
+  "client:supporter.change.description": {
+    "en": 36,
+    "ja": 72
+  },
+  "client:supporter.listing.description": {
+    "en": 33,
+    "ja": 82
+  },
+  "client:supporter.plans.description": {
+    "en": 26,
+    "ja": 63
+  },
+  "client:tag.featured.description": {
+    "en": 23,
+    "ja": 63
+  },
+  "client:tag.followed_list.description": {
+    "en": 18,
+    "ja": 55
+  },
+  "client:tip.form.description": {
+    "en": 26,
+    "ja": 58
+  },
+  "client:voice.call.host_leave.description": {
+    "en": 20,
+    "ja": 57
+  }
+}

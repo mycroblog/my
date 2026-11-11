@@ -1,9 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Catalog loading and the repository paths shared by the i18n scripts.
-import { readdirSync, readFileSync } from "node:fs";
-import { join, relative, sep } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, join, relative, sep } from "node:path";
 
-export const repoRoot = join(import.meta.dir, "..", "..", "..");
+/** tools/i18n, where the glossary and the baseline of the tool live. */
+export const toolDir = join(import.meta.dir, "..");
+/** The repository the scripts read and write. I18N_TOOL_ROOT points the tests of the tool at a temporary one. */
+export const repoRoot = process.env.I18N_TOOL_ROOT || join(toolDir, "..", "..");
 export const localesDir = join(repoRoot, "locales");
 /** Where the Go package and its parity fixtures live. */
 export const goPackageDir = join(repoRoot, "internal", "i18n");
@@ -16,6 +28,8 @@ export const SOURCE = "en";
 /** Pseudo-locales generated from SOURCE (pseudo.ts); never edited or translated by hand. */
 export const PSEUDO_LOCALES = ["en-XA", "ar-XB"] as const;
 export const isPseudo = (locale: string): boolean => (PSEUDO_LOCALES as readonly string[]).includes(locale);
+/** The locales written in the same change as SOURCE: a key they lack is an error. The others catch up later (ADR-0009 §8). */
+export const REQUIRED_LOCALES: readonly string[] = ["ja"];
 
 /** One catalog entry, in the FormatJS JSON shape that Weblate reads natively. */
 export type Entry = { defaultMessage: string; description?: string };
@@ -88,3 +102,20 @@ export const formattingLocale = (locale: string): string => (isPseudo(locale) ? 
 
 /** Serializes JSON the way every generated and catalog file is written. */
 export const toJSON = (value: unknown): string => `${JSON.stringify(value, null, 2)}\n`;
+
+/** Writes `content` to `path` through a rename, creating its directory; false when the file already holds it. */
+export function writeFileAtomic(path: string, content: string): boolean {
+  if (existsSync(path) && readFileSync(path, "utf8") === content) return false;
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(`${path}.tmp`, content);
+  renameSync(`${path}.tmp`, path);
+  return true;
+}
+
+/** Removes a catalog file and the directories it leaves empty, up to the locale's directory. */
+export function removeCatalogFile(path: string, locale: string): void {
+  rmSync(path);
+  for (let dir = dirname(path); dir !== join(localesDir, locale) && readdirSync(dir).length === 0; dir = dirname(dir)) {
+    rmdirSync(dir);
+  }
+}

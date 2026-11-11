@@ -23,13 +23,14 @@ import {
   isClientNamespace,
   isPseudo,
   type Namespace,
+  repoRoot,
   SOURCE,
   toJSON,
 } from "./catalog";
 import { type ArgType, extractArgs, parseMessage } from "./icu";
 import { compileMessage, createTranslator } from "./runtime/translator";
 
-export const runtimeDir = join(import.meta.dir, "runtime");
+export const runtimeDir = join(repoRoot, "tools", "i18n", "src", "runtime");
 
 /** Pseudo-locale -> FormatJS pseudo-locale transform. ar-XB uses FormatJS's RTL "en-XB". */
 const PSEUDO_TRANSFORMS = { "en-XA": "en-XA", "ar-XB": "en-XB" } as const;

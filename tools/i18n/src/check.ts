@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// Catalog checks run by `scripts/task.sh i18n:check` (ADR-0009 §1).
+// Catalog checks run by `scripts/task.sh i18n:check` (ADR-0009 §1), and, for the keys of a change, by
+// `scripts/i18n.sh check --changed` and by the commands of cli.ts that write a message.
 //   error: ICU syntax error, including a plural / select without `other`
 //   error: translation argument unknown to the source, or of a different type
 //   error: plural / selectordinal category the locale's CLDR rules do not have
@@ -21,11 +22,14 @@
 //          French, ASCII double quotation marks (use « … »), ":", ";" or "?" without the narrow no-break space before
 //          it, or « » without the narrow no-break space inside them
 //   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
-//   warn:  untranslated key (falls back to en at runtime)
+//   error: key of the source missing in ja, which is written in the same change as en (`scripts/i18n.sh set`)
+//   error: helper text of a client (a key ending in description / hint / help / note) longer than its budget, and
+//          an entry of tools/i18n/helper-text-baseline.json that no longer needs to be there (budget.ts)
+//   warn:  untranslated key in a machine-translated locale (falls back to en at runtime)
 //   warn:  translation drops a source argument (sometimes legitimate)
 //   warn:  key not referenced from code
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { budgetFindings, loadBaseline } from "./budget";
 import {
   areaOf,
   type Catalog,
@@ -37,32 +41,80 @@ import {
   loadCatalog,
   loadCatalogFiles,
   rel,
-  repoRoot,
+  REQUIRED_LOCALES,
   SOURCE,
 } from "./catalog";
 import { generate, goName, pseudoPart } from "./generate";
 import { glossaryFindings, loadGlossary } from "./glossary";
 import { type Args, extractArgs, literalText, outsideSharedSubset, parseMessage, pluralCategories } from "./icu";
+import { References } from "./refs";
 
-let errors = 0;
-let warnings = 0;
-const error = (m: string) => (errors++, console.error(`error: ${m}`));
-const warn = (m: string) => (warnings++, console.warn(`warn:  ${m}`));
+export type Finding = { level: "error" | "warn"; message: string };
+let findings: Finding[] = [];
+const error = (m: string) => void findings.push({ level: "error", message: m });
+const warn = (m: string) => void findings.push({ level: "warn", message: m });
 
-const NAMESPACE = /^[a-z][a-z0-9]*$/;
+export const NAMESPACE = /^[a-z][a-z0-9]*$/;
 /** "locales/<locale>/<namespace>/<area>.json <key>", where a finding about a key points. */
 const at = (locale: string, ns: string, key: string): string => `${rel(catalogFile(locale, ns, key))} ${key}`;
-const KEY = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/;
+export const KEY = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)*$/;
 const glossary = loadGlossary();
 
-function analyze(locale: string, ns: string, key: string, message: unknown): Args | undefined {
-  const where = at(locale, ns, key);
-  if (typeof message !== "string") return void error(`${where}: defaultMessage must be a string`);
+/**
+ * The errors of one message on its own (ICU syntax, the shared subset, the copy rules, the plural categories of its
+ * locale) and of its arguments against the source message `source`, without the path they are reported under.
+ * `dropped` lists the source arguments it leaves out, which the catalog check only warns about.
+ */
+export function messageFindings(
+  locale: string,
+  ns: string,
+  message: string,
+  source?: string,
+): { errors: string[]; dropped: string[] } {
+  const collected = findings;
+  findings = [];
+  try {
+    const got = analyze(locale, ns, "", message, "");
+    const dropped: string[] = [];
+    if (got && source !== undefined && locale !== SOURCE) {
+      let want: Args | undefined;
+      try {
+        want = extractArgs(parseMessage(source));
+      } catch {}
+      if (want) dropped.push(...compareArgs("", want, got));
+    }
+    return { errors: findings.map((f) => f.message), dropped };
+  } finally {
+    findings = collected;
+  }
+}
+
+/** Reports the arguments of a translation the source does not have or types differently; returns the ones it drops. */
+function compareArgs(where: string, want: Args, got: Args): string[] {
+  for (const [name, t] of got) {
+    const w = want.get(name);
+    if (!w)
+      error(
+        `${where}unknown argument {${name}}; the source has ${[...want.keys()].map((n) => `{${n}}`).join(", ") || "no arguments"}`,
+      );
+    else if (w.kind !== t.kind) error(`${where}{${name}} is ${t.kind}, the source has ${w.kind}`);
+  }
+  return [...want.keys()].filter((name) => !got.has(name));
+}
+
+function analyze(
+  locale: string,
+  ns: string,
+  key: string,
+  message: unknown,
+  where = `${at(locale, ns, key)}: `,
+): Args | undefined {
+  if (typeof message !== "string") return void error(`${where}defaultMessage must be a string`);
   try {
     const ast = parseMessage(message);
     if (!isClientNamespace(ns)) {
       for (const f of outsideSharedSubset(ast)) {
-        error(`${where}: ${f} is outside the Go/TS shared subset (allowed only in client* namespaces)`);
+        error(`${where}${f} is outside the Go/TS shared subset (allowed only in client* namespaces)`);
       }
     }
     const rules = {
@@ -71,13 +123,16 @@ function analyze(locale: string, ns: string, key: string, message: unknown): Arg
         new Intl.PluralRules(formattingLocale(locale), { type: "ordinal" }).resolvedOptions().pluralCategories,
       ),
     };
-    for (const f of copyStyleFindings(locale, literalText(ast))) error(`${where}: ${f}`);
+    for (const f of copyStyleFindings(locale, literalText(ast))) error(`${where}${f}`);
     for (const c of pluralCategories(ast)) {
-      if (!rules[c.type].has(c.key)) error(`${where}: ${c.type} category "${c.key}" does not exist in ${locale}`);
+      if (!rules[c.type].has(c.key))
+        error(
+          `${where}${c.type} category "${c.key}" does not exist in ${locale}; it has ${[...rules[c.type]].join(", ")} (and exact selectors such as =0)`,
+        );
     }
     return extractArgs(ast);
   } catch (e) {
-    error(`${where}: ${(e as Error).message}`);
+    error(`${where}ICU syntax: ${(e as Error).message}`);
   }
 }
 
@@ -213,8 +268,12 @@ function traditionalChineseFindings(text: string): string[] {
   return out;
 }
 
-function checkCatalog(catalog: Catalog) {
-  if (!catalog[SOURCE]) return void error(`locales/${SOURCE}: the source locale is missing`);
+/** Checks the source messages, then every translation against them; returns the source ids it checked. */
+function checkCatalog(catalog: Catalog, only?: Set<string>, locales?: string[]): string[] {
+  if (!catalog[SOURCE]) {
+    error(`locales/${SOURCE}: the source locale is missing`);
+    return [];
+  }
   for (const locale of Object.keys(catalog)) {
     let canonical: string | undefined;
     try {
@@ -230,44 +289,46 @@ function checkCatalog(catalog: Catalog) {
     if (!NAMESPACE.test(ns)) error(`locales/${SOURCE}/${ns}/: namespace must match ${NAMESPACE}`);
     for (const [key, e] of Object.entries(entries)) {
       const id = `${ns}:${key}`;
-      if (!KEY.test(key)) error(`${at(SOURCE, ns, key)}: key must match ${KEY}`);
-      if (!e.description) warn(`${at(SOURCE, ns, key)}: no description for translators`);
       const name = goName(id);
       if (accessors.has(name)) error(`${id} and ${accessors.get(name)} both map to the accessor ${name}`);
       accessors.set(name, id);
+      if (only && !only.has(id)) continue;
+      if (!KEY.test(key)) error(`${at(SOURCE, ns, key)}: key must match ${KEY}`);
+      if (!e.description) warn(`${at(SOURCE, ns, key)}: no description for translators`);
       sourceArgs.set(id, analyze(SOURCE, ns, key, e.defaultMessage));
     }
   }
 
   for (const [locale, namespaces] of Object.entries(catalog)) {
-    if (locale === SOURCE) continue;
+    if (locale === SOURCE || (locales && !locales.includes(locale))) continue;
     for (const id of sourceArgs.keys()) {
       const [ns, key] = id.split(/:(.*)/s);
       if (isPseudo(locale) && pseudoPart(ns) !== "go") continue;
-      if (!namespaces[ns]?.[key]) warn(`${locale}: untranslated ${id}`);
+      if (namespaces[ns]?.[key]) continue;
+      if (REQUIRED_LOCALES.includes(locale))
+        error(
+          `${at(locale, ns, key)}: missing; ${locale} is written in the same change as ${SOURCE}: scripts/i18n.sh set ${id} --${locale} "<text>"`,
+        );
+      else warn(`${locale}: untranslated ${id}`);
     }
     for (const [ns, entries] of Object.entries(namespaces)) {
       for (const [key, e] of Object.entries(entries)) {
         const id = `${ns}:${key}`;
-        if (!sourceArgs.has(id)) {
-          error(`${at(locale, ns, key)}: not in the source locale (obsolete)`);
+        if (only && !only.has(id)) continue;
+        if (!catalog[SOURCE][ns]?.[key]) {
+          error(`${at(locale, ns, key)}: not in the source locale (obsolete); remove it: scripts/i18n.sh rm ${id}`);
           continue;
         }
         const want = sourceArgs.get(id);
         const got = analyze(locale, ns, key, e.defaultMessage);
         if (!want || !got) continue;
-        for (const [name, t] of got) {
-          const w = want.get(name);
-          if (!w) error(`${at(locale, ns, key)}: unknown argument {${name}}`);
-          else if (w.kind !== t.kind) error(`${at(locale, ns, key)}: {${name}} is ${t.kind}, the source has ${w.kind}`);
-        }
-        for (const name of want.keys()) {
-          if (!got.has(name) && !isPseudo(locale)) warn(`${at(locale, ns, key)}: drops argument {${name}}`);
+        for (const name of compareArgs(`${at(locale, ns, key)}: `, want, got)) {
+          if (!isPseudo(locale)) warn(`${at(locale, ns, key)}: drops argument {${name}}`);
         }
       }
     }
   }
-  return sourceArgs;
+  return [...sourceArgs.keys()];
 }
 
 /**
@@ -275,21 +336,10 @@ function checkCatalog(catalog: Catalog) {
  * `(*i18n.Localizer).ServerX`, or a field chain such as `.L.ServerX` in an html/template file)
  * nor by a TS key literal.
  */
-function checkUnused(ids: Iterable<string>) {
-  const read = (pattern: string, skip: (p: string) => boolean) =>
-    [...new Bun.Glob(pattern).scanSync({ cwd: repoRoot })]
-      .filter((p) => !p.includes("node_modules/") && !p.startsWith("internal/i18n/") && !skip(p))
-      .map((p) => readFileSync(join(repoRoot, p), "utf8"))
-      .join("\n");
-  const go = read("{cmd,internal,pkg}/**/*.go", (p) => p.endsWith("_gen.go") || p.endsWith("_test.go"));
-  const templates = read("internal/**/*.html", () => false);
-  const ts = existsSync(join(repoRoot, "app")) ? read("app/**/*.{ts,tsx}", (p) => p.endsWith(".gen.ts")) : "";
+function checkUnused(catalog: Catalog, ids: string[]) {
+  const references = new References(Object.keys(catalog[SOURCE]));
   for (const id of ids) {
-    const name = goName(id);
-    const usedByGo =
-      go.includes(`.${name}(`) || go.includes(`).${name}`) || new RegExp(`\\.${name}(?![A-Za-z0-9_])`).test(templates);
-    const used = (!isClientNamespace(id) && usedByGo) || ts.includes(JSON.stringify(id));
-    if (!used) warn(`unused ${id}`);
+    if (!references.used(id)) warn(`unused ${id}; refer to it, or remove it: scripts/i18n.sh rm ${id}`);
   }
 }
 
@@ -320,14 +370,43 @@ async function checkGenerated(catalog: Catalog, files: CatalogFile[]) {
   }
 }
 
-// The client pseudo-locales are generated, uncommitted files that may be missing or stale; leave them out.
-const files = loadCatalogFiles().filter((f) => !isPseudo(f.locale) || (f.ns !== "" && pseudoPart(f.ns) === "go"));
-const catalog = loadCatalog(files);
-checkLayout(files);
-const sourceArgs = checkCatalog(catalog);
-if (errors === 0) {
-  checkUnused(sourceArgs?.keys() ?? []);
-  await checkGenerated(catalog, files);
+export type CheckOptions = {
+  /** Check only the messages of these ids (the keys of a change), in every locale. */
+  only?: Set<string>;
+  /** Of the translations, check only these locales. */
+  locales?: string[];
+};
+
+/** Runs every check and returns the findings; `options` narrow the messages, never the rules. */
+export async function runCheck({ only, locales }: CheckOptions = {}): Promise<Finding[]> {
+  findings = [];
+  // The client pseudo-locales are generated, uncommitted files that may be missing or stale; leave them out.
+  const files = loadCatalogFiles().filter((f) => !isPseudo(f.locale) || (f.ns !== "" && pseudoPart(f.ns) === "go"));
+  const catalog = loadCatalog(files);
+  checkLayout(files);
+  const ids = checkCatalog(catalog, only, locales);
+  if (!findings.some((f) => f.level === "error")) {
+    for (const f of budgetFindings(catalog, loadBaseline(), only)) error(f);
+    checkUnused(catalog, ids);
+    await checkGenerated(catalog, files);
+  }
+  return findings;
 }
-console.log(`i18n: ${errors} error(s), ${warnings} warning(s)`);
-if (errors > 0) process.exit(1);
+
+/** Prints the errors, the warnings `warnings` accepts, and the summary line; returns the number of errors. */
+export function printFindings(
+  all: Finding[],
+  { warnings = () => true, seconds }: { warnings?: (message: string) => boolean; seconds?: number } = {},
+) {
+  const count = (level: Finding["level"]) => all.filter((f) => f.level === level).length;
+  for (const f of all) {
+    if (f.level === "error") console.error(`error: ${f.message}`);
+    else if (warnings(f.message)) console.warn(`warn:  ${f.message}`);
+  }
+  console.log(
+    `i18n: ${count("error")} error(s), ${count("warn")} warning(s)${seconds === undefined ? "" : ` in ${seconds.toFixed(1)}s`}`,
+  );
+  return count("error");
+}
+
+if (import.meta.main && printFindings(await runCheck()) > 0) process.exit(1);
