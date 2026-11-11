@@ -180,9 +180,11 @@ export function useDecideDrafts(id: string, onDecided: (keys: readonly string[])
       setStatus(undefined);
     },
     onSuccess: async (result, { decision, keys }) => {
+      // The confirmation closes before the drafts are fetched again: while it is open, it keeps focus inside itself,
+      // so the move to the heading or the next row, once the decided drafts are gone, would not stay.
+      setConfirming(null);
       onDecided(keys);
       await refreshDecidedDrafts(queryClient, decision, result.done);
-      setConfirming(null);
       const count = result.done.length;
       const missing = result.missing.length;
       setStatus(
