@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-27
 - Deciders: @rosylilly
-- Issue: #1576, #490, #1617, #1955
+- Issue: #1576, #490, #1617, #1955, #2863
 
 ## Decision（決定）
 
@@ -181,9 +181,8 @@ IdP が検証済みと示したメールアドレス（`email_verified` が真�
 
 ### 11. CAPTCHA: 画面と CSP
 
-- ウィジェットはサインインと登録のフォーム、およびパスワードリセットのリンクを要求するフォーム（`/auth/forgot_password`。メールを送るサーバーでだけ表示する、FR-002）にだけ出す。サーバーが描画するページはいまは JavaScript なしで動くが、CAPTCHA を有効にしたときだけ、この 3 つのページはサービスのスクリプトを読む。
+- ウィジェットはサインインと登録のフォーム、およびパスワードリセットのリンクを要求するフォーム（`/auth/forgot_password`。メールを送るサーバーでだけ表示する、FR-002）にだけ出す。この 3 つは Web クライアントの入口（ADR-0090 §16）で、CAPTCHA を有効にしたときだけサービスのスクリプトを読む。
   リセットのリンクの要求は `identity` の `RequestPasswordReset` で、レート制限の後、メールを送る前に検証する。メールを送る操作なので、サービスに届かないときは登録と同じく拒否する（fail closed）。Turnstile の `data-action` は `password_reset`。
-  `<noscript>` で「この確認には JavaScript が要る」ことを知らせる。
 - ウィジェットの言語はページのロケールに合わせ（Turnstile は `data-language`、hCaptcha と reCAPTCHA はスクリプトの `hl`）、テーマはページに合わせる（`data-theme`）。
 - ウィジェットの近くに「このページは <サービス名> でボットかどうかを確認します。<サービス名> のプライバシーポリシー」の文と、サービスのプライバシーポリシーへのリンクを出す（en / ja のメッセージ、ADR-0009）。
   reCAPTCHA では、バッジの代わりに「This site is protected by reCAPTCHA」と Google のプライバシーポリシー・利用規約を示す表示（reCAPTCHA FAQ）を兼ねる。

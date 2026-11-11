@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-26
 - Deciders: @rosylilly
-- Issue: #1349, #1350
+- Issue: #1349, #1350, #2863
 
 ## Decision（決定）
 
@@ -177,11 +177,14 @@ ADR-0100 §14 の形に、接続のための次の操作を加える（細部は
 - `POST /voice/rooms/{id}/mic`（`{session, on}`）: マイクのオン・オフ。DB に書かず、`voice_mic` の知らせで配る。ミュートさせられた後にオンにするときは、`Transport.Unmute` を呼んでから配る（§2）。
 - `POST /voice/rooms/{id}/grant`（`{session}`）: 資格情報の取り直し（§5）。
 
-### 7. Web の実装の置き場所と、ブラウザの前提
+### 7. クライアントの実装の置き場所と、ブラウザの前提
 
-- `app/web/src/features/voice/` に置く（[ADR-0025](0025-web-client-stack.md)）。WebRTC の接続を管理するコード（`RTCPeerConnection`・perfect negotiation・受け手の側の再生の制御・方式ごとの差）は React を使わない TypeScript として `features/voice/rtc/` に置き、
-  `features/voice/hooks` のフックだけがそれを使う。Oxlint の依存の境界の設定（`app/.oxlintrc.json`）に `rtc` の要素を足し、`rtc` は `@my/ui`・`api`・`components` を import しない。
-  SFU の方式のブラウザの SDK は §15。P2P はブラウザの WebRTC の API だけを使い、依存を足さない。
+- 音声を運ぶものは `@my/rtc`（[ADR-0025](0025-web-client-stack.md) §2）に置く。mycroblog を知らない `RoomSession` が、接続・マイクの公開・ミュート・出力の選択と、参加者・発話・通信の品質のイベントを持つ。
+  実装は Web の 3 つ（P2P、LiveKit、Sora）で、P2P のシグナリングはポートとして外から渡す。P2P はブラウザの WebRTC の API だけを使い、依存を足さない。SFU のブラウザの SDK は §15。
+- ネイティブの実装は、platform の Tauri の実装が Tauri のプラグインから差し出す（LiveKit の Swift / Kotlin / Rust、Sora の iOS / Android / C++ の SDK）。**P2P もネイティブで実装できる設計にする**（libwebrtc を組み込む）。v0.1.0 では Tauri のアプリを作らない。
+  iOS では WKWebView と CallKit が両立せず（Apple の DTS、Developer Forums の thread 767949、2026-11-12 に確認）、Android で画面のロックを越える通話には foreground service と Jetpack の Telecom が要る（Android の文書、2026-11-12 に確認）。画面のロックや電話の着信を越えて続く通話には、ネイティブの音声が要る。
+- 通話の安定（回線が替わったときの ICE の再起動、つなぎ直し、デバイスの切り替え）は `RoomSession` の実装が持つ。`app-features` の通話は、ホスト・挙手・発話の許可などルームの状態だけを持つ。通話は、シェルが残すスロットに出て、画面を移っても続く。
+- 実装は通信の品質（RTT・ジッタ・パケットロス）を ADR-0167 の計測に送る。
 - マイクは `getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } })`。映像は求めない。HTTPS（secure context）が要る。
 - 参加の操作（ボタンを押す）を利用者の操作として、その中で音声の再生を始める（ブラウザの自動再生の制限）。
 - 対応するブラウザは Web クライアントの対応範囲のまま。iOS のホーム画面の Web アプリ（PWA）を背面にしたとき音声の再生が止まる不具合は、iOS 15.4 で直っている
@@ -281,10 +284,10 @@ ADR-0100 §14 の形に、接続のための次の操作を加える（細部は
 
 ### 15. SFU: ブラウザの SDK
 
-- `livekit-client`（Apache-2.0）と `sora-js-sdk`（Apache-2.0）を `app/web` の依存に持つ。[ADR-0025](0025-web-client-stack.md) の技術スタックへの追加はこの ADR が決める。
+- `livekit-client`（Apache-2.0）と `sora-js-sdk`（Apache-2.0）を `@my/rtc` の依存に持つ。[ADR-0025](0025-web-client-stack.md) の技術スタックへの追加はこの ADR が決める。
 - 大きさ（spike の手元の計測、`bun build --minify`、gzip -9）: `livekit-client` 約 586 KB（gzip 150 KB）、`sora-js-sdk` 約 49 KB（gzip 11 KB）。通話の画面に入り、`Grant.Kind` が分かってから、その方式の SDK だけを動的な `import()` で読み込む。
   他の画面のバンドルは増えない。
-- SDK を使うコードは §7 の `features/voice/rtc/` に方式ごとのファイルで置き、P2P と同じ内部の境界（接続・話す・ミュート・入り直す・切る・参加者の音声の再生）に包む。
+- SDK を使うコードは方式ごとに置き、P2P と同じ `RoomSession`（§7）に包む。
 
 ### 16. SFU: 運営者の文書
 
@@ -318,6 +321,7 @@ SFU は spike #1347（[レポート](https://github.com/mycroblog/my/issues/1347
 - LiveKit の `server-sdk-go`: 書く量は少なく版の追従も SDK に任せられるが、311 パッケージ・約 22 MB を引き、Sora は結局自前の呼び出しになる。
 - SFU のプロトコルをブラウザで自前で書く: SDK に依存しないが、LiveKit と Sora のシグナリングのプロトコルを保つ費用が大きく、版の追従が要る。
 - ブラウザの SDK を静的に読み込む: 単純だが、通話を使わない利用者にも 150 KB（gzip）を読ませる。
+- ネイティブのアプリでは SFU だけにし、P2P は WebView に残すか使えなくする: libwebrtc を組み込まずに済むが、小さなインスタンスの通話が画面のロックや着信で切れる。決定者は、v0.1.0 では作らないがネイティブの P2P もできる設計を選んだ（#2863）。
 
 ## Consequences（影響）
 

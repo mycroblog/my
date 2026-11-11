@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-20
 - Deciders: @rosylilly
-- Issue: #649, #664, #1691, #1692, #1693, #2754
+- Issue: #649, #664, #1691, #1692, #1693, #2754, #2863
 
 ## Decision（決定）
 
@@ -42,6 +42,7 @@
   - `--color-hand`・`--color-hand-fg`: 音声チャットの挙手のマンゴーの色で、ロゴのスパークと同じくブランドの印であるため。
   - `--radius-avatar`: アバターの辺に対する割合であるため。
   - `--animate-*`: `theme.css` のキーフレームを名指しする一括指定であるため。部品（`--ease-celebrate` など）を上書きする。
+- 上書きした色は画面だけでなくメールにも届く。サーバーがメールを送るとき、そのサーバーの色を差し込む（ADR-0086 §2）。
 - ロゴ・ファビコン・PWA のアイコンの差し替えはトークンの上書きに含めず、§8〜§12 で扱う。
 
 ### 3. 任意の CSS
@@ -186,7 +187,7 @@ instance モジュールが持つ。テーブルの形は `docs/architecture/dat
 - **Web App Manifest**: `icons` を `pwa-512`・`pwa-192`・`maskable-512`・SVG（`sizes: "any"`）の順にする（最初を PNG にするのは、Misskey が最初のアイコンをサーバーのアイコンにするため）。
   インストール済みの PWA は、Android では Chrome が manifest を確かめたときに替わるが、デスクトップの Chrome はアイコンを替えない（入れ直すまで古いアイコン）。
 - **リンクプレビュー**: `og:image` の順に、`preview_image` と `thumbnail` の次・組み込みの画像の前として `preview-1200x630` を入れる（ADR-0028 §2）。
-- **メール**（ADR-0086 の例外）: ロゴがあるとき、外枠の MJML の先頭に `logo-mail`（ダークの地では `logo-dark-mail`、`prefers-color-scheme` のスタイルで切り替え）を
+- **メール**（ADR-0086 の例外）: ロゴがあるとき、外枠の先頭に `logo-mail`（ダークの地では `logo-dark-mail`、`prefers-color-scheme` のスタイルで切り替え）を
   `<img src="https://<host>/brand/…" width height alt="<サーバーの名前>">` で出す。URL は全員に同じで、受信者ごとの値を含めない（開封の追跡にしない）。
   外部の画像を読まないクライアントや設定では `alt` の名前が出る。ロゴがないときは画像を出さない。
 - **メンテナンスの HTML**（ADR-0088）: 画像を使わない（名前の文字で足りる）。
