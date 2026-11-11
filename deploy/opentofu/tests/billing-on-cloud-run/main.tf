@@ -33,7 +33,7 @@ variable "method" {
 
 # Needs aws alone: the service account's ID arrives as a string.
 module "billing_aws" {
-  source = "../../modules/billing-aws"
+  source = "../../modules/internal/billing-aws"
 
   web_identity                     = true
   google_service_account_unique_id = module.app.service_account_unique_id
@@ -41,7 +41,7 @@ module "billing_aws" {
 
 # Needs google.
 module "billing_gcp" {
-  source = "../../modules/billing-gcp"
+  source = "../../modules/internal/billing-gcp"
 
   project_id         = "p"
   method             = var.method
@@ -50,7 +50,7 @@ module "billing_gcp" {
 
 # Needs google.
 module "app" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "../../modules/internal/app-gcp-cloud-run"
 
   project_id      = "p"
   region          = "asia-northeast1"

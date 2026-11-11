@@ -23,7 +23,7 @@ locals {
 }
 
 module "ingress" {
-  source = "../../modules/ingress-cloudflare-app"
+  source = "../../modules/internal/ingress-cloudflare-app"
 
   zone_id             = "0123456789abcdef0123456789abcdef"
   host                = "social.example.org"
@@ -35,7 +35,7 @@ module "ingress" {
 }
 
 module "media" {
-  source = "../../modules/ingress-cloudflare-media"
+  source = "../../modules/internal/ingress-cloudflare-media"
 
   zone_id             = "0123456789abcdef0123456789abcdef"
   host                = "media.example.org"
@@ -45,7 +45,7 @@ module "media" {
 }
 
 module "app" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "../../modules/internal/app-gcp-cloud-run"
 
   env = { MY_QUEUE = "cloudtasks" }
 

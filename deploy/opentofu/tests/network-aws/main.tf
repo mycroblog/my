@@ -33,26 +33,26 @@ locals {
 }
 
 module "network" {
-  source = "../../modules/network-aws-vpc"
+  source = "../../modules/internal/network-aws-vpc"
 
   availability_zones = ["ap-northeast-1a", "ap-northeast-1c"]
   nat                = true
 }
 
 module "db" {
-  source = "../../modules/db-aws-rds"
+  source = "../../modules/internal/db-aws-rds"
 
   network = module.network
 }
 
 module "kv" {
-  source = "../../modules/kv-aws-elasticache"
+  source = "../../modules/internal/kv-aws-elasticache"
 
   network = module.network
 }
 
 module "ingress" {
-  source = "../../modules/ingress-aws-alb"
+  source = "../../modules/internal/ingress-aws-alb"
 
   host            = "social.example.org"
   certificate_arn = "arn:aws:acm:ap-northeast-1:111122223333:certificate/abc"
@@ -60,7 +60,7 @@ module "ingress" {
 }
 
 module "ecs" {
-  source = "../../modules/app-aws-ecs"
+  source = "../../modules/internal/app-aws-ecs"
 
   name             = "ecs"
   image            = "ghcr.io/mycroblog/my:0.1.0"
@@ -73,7 +73,7 @@ module "ecs" {
 }
 
 module "existing_db" {
-  source = "../../modules/db-aws-rds"
+  source = "../../modules/internal/db-aws-rds"
 
   name            = "mine"
   url_secret_name = "mine-database-url"
@@ -81,14 +81,14 @@ module "existing_db" {
 }
 
 module "existing_kv" {
-  source = "../../modules/kv-aws-elasticache"
+  source = "../../modules/internal/kv-aws-elasticache"
 
   name    = "mine-valkey"
   network = local.existing_vpc
 }
 
 module "existing_ingress" {
-  source = "../../modules/ingress-aws-alb"
+  source = "../../modules/internal/ingress-aws-alb"
 
   name            = "mine"
   host            = "social.example.org"
@@ -97,7 +97,7 @@ module "existing_ingress" {
 }
 
 module "existing_ecs" {
-  source = "../../modules/app-aws-ecs"
+  source = "../../modules/internal/app-aws-ecs"
 
   name             = "mine"
   image            = "ghcr.io/mycroblog/my:0.1.0"

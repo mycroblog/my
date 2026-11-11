@@ -74,7 +74,7 @@ With `metrics_exporter = none`, build the alerts from what Cloud Run and Cloud L
 - **Database**: the disk utilization and connection metrics of Cloud SQL, or the usage alerts of your database provider.
 - **Cost**: a Cloud Billing budget with alert thresholds ([Cost and budget](#cost-and-budget)).
 
-The module [`monitoring-gcp`](../../deploy/opentofu/modules/monitoring-gcp/README.md) makes these as policies with the names of the table below, and lists each alert it covers differently or cannot express. It has never been applied. A metric that only traffic produces has gaps on a service that scales to zero, so an alert on its absence fires falsely; its uptime check is what notices a dead idle server.
+The module [`monitoring-gcp`](../../deploy/opentofu/modules/internal/monitoring-gcp/README.md) makes these as policies with the names of the table below, and lists each alert it covers differently or cannot express. It has never been applied. A metric that only traffic produces has gaps on a service that scales to zero, so an alert on its absence fires falsely; its uptime check is what notices a dead idle server.
 
 ### AWS ECS
 
@@ -90,7 +90,7 @@ are not written in EMF; use the CPU and memory metrics of the ECS service instea
 - **Email** (`mail = ses`): the SES reputation metrics (bounce and complaint rates) in CloudWatch.
 - **Cost**: an AWS Budgets budget with alerts ([Cost and budget](#cost-and-budget)).
 
-The module [`monitoring-aws`](../../deploy/opentofu/modules/monitoring-aws/README.md) makes these as alarms with the names of the table below, with the same list. It has never been applied.
+The module [`monitoring-aws`](../../deploy/opentofu/modules/internal/monitoring-aws/README.md) makes these as alarms with the names of the table below, with the same list. It has never been applied.
 
 ## The alerts
 

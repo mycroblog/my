@@ -15,11 +15,11 @@ terraform {
 
 # Needs aws in name only: on this app it creates nothing, and returns the permission.
 module "billing_aws" {
-  source = "../../modules/billing-aws"
+  source = "../../modules/internal/billing-aws"
 }
 
 module "app" {
-  source = "../../modules/app-aws-ecs"
+  source = "../../modules/internal/app-aws-ecs"
 
   image = "ghcr.io/mycroblog/my:0.1.0"
   host  = "social.example.org"

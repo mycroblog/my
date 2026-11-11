@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 # The example as it is composed, and every swap of a block that holds, on a mocked provider: nothing here reaches AWS. It shows
-# that the configuration is consistent, not that it runs: read deploy/opentofu/modules/app-aws-ecs/README.md.
+# that the configuration is consistent, not that it runs: read deploy/opentofu/modules/internal/app-aws-ecs/README.md.
 
 mock_provider "aws" {
   mock_data "aws_caller_identity" {

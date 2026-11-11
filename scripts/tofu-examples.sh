@@ -22,7 +22,7 @@ set -euo pipefail
 
 root="${TOFU_EXAMPLES_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 tofu_dir="$root/deploy/opentofu"
-base='git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/'
+base='git::https://github.com/mycroblog/my.git//deploy/opentofu/modules/internal/'
 
 usage() {
   sed -n '/^#   scripts/,/^#$/p' "$0" | sed 's/^# \{0,1\}//' >&2
@@ -60,7 +60,7 @@ check() {
         "$base"*'?ref='"$ref"'&depth=1')
           name="${value#"$base"}"
           name="${name%%\?*}"
-          if [ ! -d "$tofu_dir/modules/$name" ]; then
+          if [ ! -d "$tofu_dir/modules/internal/$name" ]; then
             echo "$file: no module named $name: $value" >&2
             status=1
           fi
@@ -107,7 +107,7 @@ copy() {
   tar -C "$root/deploy" --exclude=.terraform -cf - opentofu | tar -C "$dir/deploy" -xf -
   for example in "$dir"/deploy/opentofu/examples/*/; do
     name="$(basename "$example")"
-    sed -i -E 's#git::https://github\.com/mycroblog/my\.git//deploy/opentofu/modules/([a-z0-9-]+)\?ref=[^"]*#../../modules/\1#' "$example"*.tf
+    sed -i -E 's#git::https://github\.com/mycroblog/my\.git//deploy/opentofu/modules/internal/([a-z0-9-]+)\?ref=[^"]*#../../modules/internal/\1#' "$example"*.tf
     if [ -d "$dir/deploy/opentofu/tests/examples/$name" ]; then
       mkdir -p "${example}tests"
       cp "$dir/deploy/opentofu/tests/examples/$name/"*.tftest.hcl "${example}tests/"

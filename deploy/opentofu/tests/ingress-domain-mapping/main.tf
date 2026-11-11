@@ -20,7 +20,7 @@ terraform {
 }
 
 module "ingress" {
-  source = "../../modules/ingress-gcp-domain-mapping"
+  source = "../../modules/internal/ingress-gcp-domain-mapping"
 
   project_id   = "p"
   region       = "asia-northeast1"
@@ -29,7 +29,7 @@ module "ingress" {
 }
 
 module "app" {
-  source = "../../modules/app-gcp-cloud-run"
+  source = "../../modules/internal/app-gcp-cloud-run"
 
   env = { MY_QUEUE = "cloudtasks" }
 
